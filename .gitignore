@@ -103,5 +103,3 @@ ENV/
 # pycharm
 .idea/
 
-# graphsage data
-demos/graphsage-test/data/
