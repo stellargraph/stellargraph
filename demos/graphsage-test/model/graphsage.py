@@ -25,7 +25,7 @@ class MeanAggregator(Layer):
             initializer=glorot_initializer((input_shape[0][1], self.output_dim)),
             trainable=True
         )
-        super(MeanAggregator, self).build(input_shape)  # Be sure to call this somewhere!
+        super(MeanAggregator, self).build(input_shape)
 
     def call(self, x, **kwargs):
         neigh_means = K.mean(x[1], axis=1)
@@ -42,8 +42,9 @@ def graphsage(nb, ns, dims, agg, x):
     nl = len(ns)
     ns += [1]
     output_dims = dims[1:]
-    input_dims = dims[0:1] + [2*d for d in dims[1:-1]]
+    input_dims = dims[0:1] + [2*d for d in dims[1:-1]]  # input dims are doubled due to concatenation
 
+    # function to recursively compose aggregators at layer
     def compose_aggs(x, layer):
         def neigh_reshape(xi, i):
             return tf.reshape(xi, [nb*ns[-i-1], ns[-i-2], input_dims[layer]])
@@ -53,7 +54,7 @@ def graphsage(nb, ns, dims, agg, x):
 
         return compose_aggs(x_next(agg(output_dims[layer]), x), layer + 1) if layer < nl else x[0]
 
-    return tf.nn.l2_normalize(compose_aggs(x, 0))
+    return tf.nn.l2_normalize(compose_aggs(x, 0), 1)
 
 
 def supervised_graphsage(
@@ -64,21 +65,25 @@ def supervised_graphsage(
         agg
 ):
     # check inputs
-    batch_size, labels, *x = batch_in
-    batch_size = tf.Print(batch_size, [batch_size])
+    nb, labels, *x = batch_in
+    nb = tf.Print(nb, [nb])
     assert len(x) == len(num_samples) + 1 and len(x) == len(dims)
 
     # graphsage
-    x_out = graphsage(batch_size, num_samples, dims, agg, x)
+    x_out = graphsage(nb, num_samples, dims, agg, x)
 
-    # outputs
+    # loss
     preds = Dense(num_labels)(x_out)
     loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=preds, labels=labels))
+
+    # optimizer
     optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
     grads_and_vars = optimizer.compute_gradients(loss)
     clipped_grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var)
                               for grad, var in grads_and_vars]
     opt_op = optimizer.apply_gradients(clipped_grads_and_vars)
+
+    # predictions
     y_preds = tf.nn.sigmoid(preds)
     y_true = labels
 

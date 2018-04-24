@@ -7,18 +7,17 @@ from util.redisutil import write_to_redis
 import time
 
 
-def print_stats(time, loss, mic, mac):
+def print_stats(t, loss, mic, mac):
     print("time={:.5f}, loss={:.5f}, f1_micro={:.5f}, f1_macro={:.5f}".format(
-        time, loss, mic, mac
+        t, loss, mic, mac
     ))
 
 
-def main():
-    nb, ns, nf = 1000, [25, 10], 50
-    graph = RedisGraph(StrictRedis(), nb, ns)
-    nl = int(graph.num_labels)
-
+def create_iterator(graph, nl, nf):
+    # input types
     inp_types = (tf.int32, tf.float32, tf.float32, tf.float32, tf.float32)
+
+    # input shapes
     inp_shapes = (
         tf.TensorShape(()),
         tf.TensorShape((None, nl)),
@@ -27,20 +26,38 @@ def main():
         tf.TensorShape((None, nf))
     )
 
-    train_ds = tf.data.Dataset.from_generator(graph.train_gen, inp_types, inp_shapes).prefetch(1)
-    test_ds = tf.data.Dataset.from_generator(graph.test_gen, inp_types, inp_shapes)
+    # train and test data
+    ds_train = tf.data.Dataset.from_generator(graph.train_gen, inp_types, inp_shapes).prefetch(1)
+    ds_test = tf.data.Dataset.from_generator(graph.test_gen, inp_types, inp_shapes)
 
-    t_batch_iter = tf.data.Iterator.from_structure(inp_types, inp_shapes)
+    tf_batch_iter = tf.data.Iterator.from_structure(inp_types, inp_shapes)
+    return (
+        tf_batch_iter,
+        tf_batch_iter.make_initializer(ds_train),
+        tf_batch_iter.make_initializer(ds_test)
+    )
 
-    train_iter_init_op = t_batch_iter.make_initializer(train_ds)
-    test_iter_init_op = t_batch_iter.make_initializer(test_ds)
 
-    batch_in = t_batch_iter.get_next()
-    loss, opt_op, y_preds, y_true = supervised_graphsage(
+def main():
+    # batch size, number of samples per layer, number of feats
+    nb, ns, nf = 1000, [25, 10], 50
+
+    # data graph
+    graph = RedisGraph(StrictRedis(), nb, ns)
+
+    # number of labels
+    nl = int(graph.num_labels)
+
+    # create iterator and its initializers
+    tf_batch_iter, tf_train_iter_init, tf_test_iter_init = create_iterator(graph, nl, nf)
+
+    # create tf model
+    tf_batch_in = tf_batch_iter.get_next()
+    tf_loss, tf_opt, tf_pred, tf_true = supervised_graphsage(
         num_labels=nl,
         dims=[nf, 128, 128],
         num_samples=ns,
-        batch_in=batch_in,
+        batch_in=tf_batch_in,
         agg=MeanAggregator
     )
 
@@ -48,21 +65,24 @@ def main():
         sess.run(tf.global_variables_initializer())
 
         # Runs for 5 epochs
-        for epoch in range(5):
+        for epoch in range(10):
             print("Epoch", epoch)
-            sess.run(train_iter_init_op)
+            # initialize iterator with train data
+            sess.run(tf_train_iter_init)
             while True:
                 try:
                     t = time.time()
-                    outs = sess.run([loss, opt_op, y_preds, y_true])
-                    print_stats(time.time() - t, outs[0], *calc_f1(outs[3], outs[2]))
+                    loss, _, pred, true = sess.run([tf_loss, tf_opt, tf_pred, tf_true])
+                    print_stats(time.time() - t, loss, *calc_f1(true, pred))
                 except tf.errors.OutOfRangeError:
+                    print("End of iterator...")
                     break
 
         # Final run with test set
-        sess.run(test_iter_init_op)
-        outs = sess.run([loss, y_preds, y_true])
-        print_stats(-1, outs[0], *calc_f1(outs[2], outs[1]))
+        sess.run(tf_test_iter_init)
+        print("Showing final test run results...")
+        loss, pred, true = sess.run([tf_loss, tf_pred, tf_true])
+        print_stats(-1, loss, *calc_f1(true, pred))
 
     print("Done")
 
