@@ -5,12 +5,20 @@ from util.evaluation import calc_f1
 from redis import StrictRedis
 from util.redisutil import write_to_redis
 import time
+import os
 
 
 def print_stats(t, loss, mic, mac):
     print("time={:.5f}, loss={:.5f}, f1_micro={:.5f}, f1_macro={:.5f}".format(
         t, loss, mic, mac
     ))
+
+
+def create_log_dir():
+    log_dir = './log'
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    return log_dir
 
 
 def create_iterator(graph, nl, nf):
@@ -62,7 +70,13 @@ def main():
     )
 
     with tf.Session() as sess:
+        # logs
+        tf_summ = tf.summary.merge_all()
+        summary_writer = tf.summary.FileWriter(create_log_dir(), sess.graph)
+
+        # initialize variables
         sess.run(tf.global_variables_initializer())
+        it = 0
 
         # Runs for 5 epochs
         for epoch in range(10):
@@ -72,8 +86,10 @@ def main():
             while True:
                 try:
                     t = time.time()
-                    loss, _, pred, true = sess.run([tf_loss, tf_opt, tf_pred, tf_true])
+                    loss, _, pred, true, summ = sess.run([tf_loss, tf_opt, tf_pred, tf_true, tf_summ])
                     print_stats(time.time() - t, loss, *calc_f1(true, pred))
+                    summary_writer.add_summary(summ, it)
+                    it += 1
                 except tf.errors.OutOfRangeError:
                     print("End of iterator...")
                     break

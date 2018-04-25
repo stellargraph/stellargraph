@@ -7,8 +7,9 @@ from util.initializer import glorot_initializer
 
 
 class MeanAggregator(Layer):
-    def __init__(self, output_dim, **kwargs):
+    def __init__(self, output_dim, act=K.relu, **kwargs):
         self.output_dim = output_dim
+        self.act = act
         super(MeanAggregator, self).__init__(**kwargs)
 
     def build(self, input_shape):
@@ -32,7 +33,7 @@ class MeanAggregator(Layer):
 
         from_self = K.dot(x[0], self.w_self)
         from_neigh = K.dot(neigh_means, self.w_neigh)
-        return K.concatenate([from_self, from_neigh], axis=1)
+        return self.act(K.concatenate([from_self, from_neigh], axis=1))
 
     def compute_output_shape(self, input_shape):
         return input_shape[0][0], 2*self.output_dim
@@ -52,7 +53,10 @@ def graphsage(nb, ns, dims, agg, x):
         def x_next(agg_f, x):
             return [agg_f([x[i], neigh_reshape(x[i+1], i)]) for i in range(nl - layer)]
 
-        return compose_aggs(x_next(agg(output_dims[layer]), x), layer + 1) if layer < nl else x[0]
+        def create_agg_f():
+            return agg(output_dims[layer]) if layer < nl - 1 else agg(output_dims[layer], act=lambda x: x)
+
+        return compose_aggs(x_next(create_agg_f(), x), layer + 1) if layer < nl else x[0]
 
     return tf.nn.l2_normalize(compose_aggs(x, 0), 1)
 
@@ -75,6 +79,7 @@ def supervised_graphsage(
     # loss
     preds = Dense(num_labels)(x_out)
     loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=preds, labels=labels))
+    tf.summary.scalar('loss', loss)
 
     # optimizer
     optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
