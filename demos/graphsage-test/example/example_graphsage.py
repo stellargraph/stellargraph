@@ -1,5 +1,5 @@
 import tensorflow as tf
-from model.graphsage import supervised_graphsage, MeanAggregator
+from model.graphsage import graphsage_nai, MeanAggregator
 from graph.redisgraph import RedisGraph
 from util.evaluation import calc_f1
 from redis import StrictRedis
@@ -47,8 +47,8 @@ def create_iterator(graph, nl, nf):
 
 
 def main():
-    # batch size, number of samples per layer, number of feats
-    nb, ns, nf = 1000, [25, 10], 50
+    # batch size, number of samples per additional layer, number of feats per layer, number of epochs
+    nb, ns, nf, ne = 1000, [25, 10], [50, 128, 128], 10
 
     # data graph
     graph = RedisGraph(StrictRedis(), nb, ns)
@@ -57,16 +57,17 @@ def main():
     nl = int(graph.num_labels)
 
     # create iterator and its initializers
-    tf_batch_iter, tf_train_iter_init, tf_test_iter_init = create_iterator(graph, nl, nf)
+    tf_batch_iter, tf_train_iter_init, tf_test_iter_init = create_iterator(graph, nl, nf[0])
 
     # create tf model
     tf_batch_in = tf_batch_iter.get_next()
-    tf_loss, tf_opt, tf_pred, tf_true = supervised_graphsage(
+    tf_loss, tf_opt, tf_pred, tf_true = graphsage_nai(
         num_labels=nl,
-        dims=[nf, 128, 128],
+        dims=nf,
         num_samples=ns,
         batch_in=tf_batch_in,
-        agg=MeanAggregator
+        agg=MeanAggregator,
+        sigmoid=True
     )
 
     with tf.Session() as sess:
@@ -79,7 +80,7 @@ def main():
         it = 0
 
         # Runs for 5 epochs
-        for epoch in range(10):
+        for epoch in range(ne):
             print("Epoch", epoch)
             # initialize iterator with train data
             sess.run(tf_train_iter_init)
