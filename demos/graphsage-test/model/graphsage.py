@@ -70,7 +70,7 @@ def graphsage(
     :param ns:      Number of neighbours sampled at each hop/layer
     :param dims:    Length of feature vector at each layer
     :param agg:     Aggregator constructor
-    :param x:       Feature matrices for each layer
+    :param x:       Feature matrices for each hop
     :param bias:    True for optional bias
     :param dropout: > 0 for optional dropout
     :return: Node embeddings for given batch
@@ -163,4 +163,36 @@ def graphsage_nai(
 
     return loss, opt_op, y_preds, y_true
 
+
+def graphsage_lai(
+        num_labels: int,
+        dims: List[int],
+        num_samples: List[int],
+        batch_in: Tuple,
+        agg,
+        sigmoid: bool = False,
+        bias: bool = False,
+        dropout: float = 0.,
+        learning_rate: float = 0.01
+):
+    """
+    Node Attribute Inference with GraphSAGE
+
+    :param num_labels:      Total number of possible labels
+    :param dims:            Feature vector lengths for each layer
+    :param num_samples:     Number of neighbours sampled for each hop/layer
+    :param batch_in:        Input tensors (batch size, labels, xs0, xs1, ..., xsn, xd0, xd1, ..., xdn)
+    :param agg:             Aggregator constructor
+    :param sigmoid:         True for multiple true labels for each node
+    :param bias:            True for optional bias
+    :param dropout:         > 0 for optional dropout
+    :param learning_rate:   Learning rate for optimizer
+    :return: loss, opt_op, y_preds, y_true
+    """
+
+    nb, labels, *x = batch_in
+    x1 = x[:len(x)/2]
+    x2 = x[len(x)/2:]
+    assert len(x1) == len(x2) and len(x1) == len(num_samples) + 1 and len(x1) == len(dims)
+    raise NotImplementedError
 
