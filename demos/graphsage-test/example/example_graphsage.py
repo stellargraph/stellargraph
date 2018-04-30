@@ -9,12 +9,27 @@ import os
 
 
 def print_stats(t, loss, mic, mac):
+    """
+    Print result statistics
+
+    :param t:       Time taken
+    :param loss:    Loss
+    :param mic:     Micro-average F1-score
+    :param mac:     Macro-average F1-score
+    """
+
     print("time={:.5f}, loss={:.5f}, f1_micro={:.5f}, f1_macro={:.5f}".format(
         t, loss, mic, mac
     ))
 
 
 def create_log_dir():
+    """
+    Create log directory
+
+    :return: log directory as string path
+    """
+
     log_dir = './log'
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -22,6 +37,16 @@ def create_log_dir():
 
 
 def create_iterator(graph, nl, nf):
+    """
+    Creates a Tensorflow iterator and its initializers with given graph object. Tensorflow initializer objects are used
+    to initialize the iterator with training or test set.
+
+    :param graph:   Graph object containing generator methods for traversing through train and test sets
+    :param nl:      Total number of labels
+    :param nf:      Length of feature vector
+    :return: Tuple of batch iterator, training set initializer, test set initializer
+    """
+
     # input types
     inp_types = (tf.int32, tf.float32, tf.float32, tf.float32, tf.float32)
 
@@ -47,6 +72,11 @@ def create_iterator(graph, nl, nf):
 
 
 def main():
+    """
+    Main training loop setup
+
+    """
+
     # batch size, number of samples per additional layer, number of feats per layer, number of epochs
     nb, ns, nf, ne = 1000, [25, 10], [50, 128, 128], 10
 
@@ -79,7 +109,7 @@ def main():
         sess.run(tf.global_variables_initializer())
         it = 0
 
-        # Runs for 5 epochs
+        # Runs for ne epochs
         for epoch in range(ne):
             print("Epoch", epoch)
             # initialize iterator with train data
