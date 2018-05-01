@@ -1,14 +1,14 @@
 """
-Node Attribute Inference on homogeneous graph with HinSAGE
+Link Attribute Inference on Heterogeneous Graph using MovieLens data
 
 """
 
 import tensorflow as tf
-from model.hinsage import hinsage_nai, MeanAggregatorHin, Schema
-from graph.redisgraph import RedisGraph
+from model.hinsage import hinsage_lai, MeanAggregatorHin, Schema
+from graph.redisgraph import RedisHin
 from util.evaluation import calc_f1
+from util.redis_movielens import write_to_redis
 from redis import StrictRedis
-from util.redis_ppi import write_to_redis
 import time
 import os
 
@@ -41,32 +41,29 @@ def create_log_dir():
     return log_dir
 
 
-def create_iterator(graph, nl, nf):
+def create_iterator(graph, nb: int, schema: Schema):
     """
     Creates a Tensorflow iterator and its initializers with given graph object. Tensorflow initializer objects are used
     to initialize the iterator with training or test set.
 
     :param graph:   Graph object containing generator methods for traversing through train and test sets
-    :param nl:      Total number of labels
-    :param nf:      Length of feature vector
+    :param schema:  Graph and sampling schema
     :return: Tuple of batch iterator, training set initializer, test set initializer
     """
 
     # input types
-    inp_types = (tf.int32, tf.float32, tf.float32, tf.float32, tf.float32)
+    inp_types = (tf.int32, tf.float32, *[tf.float32]*schema.xlen[0])
 
     # input shapes
     inp_shapes = (
         tf.TensorShape(()),
-        tf.TensorShape((None, nl)),
-        tf.TensorShape((None, nf)),
-        tf.TensorShape((None, nf)),
-        tf.TensorShape((None, nf))
+        tf.TensorShape((None, graph.num_labels)),
+        *[tf.TensorShape((None, schema.dims[0][t][0])) for t in schema.types]
     )
 
     # train and test data
-    ds_train = tf.data.Dataset.from_generator(graph.train_gen, inp_types, inp_shapes).prefetch(1)
-    ds_test = tf.data.Dataset.from_generator(graph.test_gen, inp_types, inp_shapes)
+    ds_train = tf.data.Dataset.from_generator(graph.train_gen(nb, schema), inp_types, inp_shapes).prefetch(1)
+    ds_test = tf.data.Dataset.from_generator(graph.test_gen(nb, schema), inp_types, inp_shapes)
 
     tf_batch_iter = tf.data.Iterator.from_structure(inp_types, inp_shapes)
     return (
@@ -83,35 +80,32 @@ def main():
     """
 
     # batch size, number of samples per additional layer, number of feats per layer, number of epochs
-    nb, ns, nf, ne, sgm = 1000, [25, 10], [50, 256, 256], 10, True
+    nb, ns, nf, ne, sigm = 1000, [25, 10], [256, 256, 256], 10, False
 
     # create schema for HinSAGE
     schema = Schema(
-        types=['protein']*3,
-        n_samples=(ns+[1])[::-1],
-        neighs=[[1], [2], []],
-        dims=[{'protein': (d, 1)} for d in nf],
+        types=['user', 'movie', 'movie', 'user', 'user', 'movie'],
+        n_samples=[n for n in ns+[1] for _ in range(2)][::-1],
+        neighs=[[(2, 'USM')], [(3, 'MSU')], [(4, 'MSU')], [(5, 'USM')], [], []],
+        dims=[{'user': (d, 1), 'movie': (d, 1)} for d in nf],
         n_layers=2,
-        xlen=[3, 2, 1]
+        xlen=[6, 4, 2]
     )
 
     # data graph
-    graph = RedisGraph(StrictRedis(), nb, ns)
-
-    # number of labels
-    nl = int(graph.num_labels)
+    graph = RedisHin(StrictRedis())
 
     # create iterator and its initializers
-    tf_batch_iter, tf_train_iter_init, tf_test_iter_init = create_iterator(graph, nl, nf[0])
+    tf_batch_iter, tf_train_iter_init, tf_test_iter_init = create_iterator(graph, nb, schema)
 
     # create tf model
     tf_batch_in = tf_batch_iter.get_next()
-    tf_loss, tf_opt, tf_pred, tf_true = hinsage_nai(
-        num_labels=nl,
+    tf_loss, tf_opt, tf_pred, tf_true = hinsage_lai(
+        num_labels=graph.num_labels,
         schema=schema,
         batch_in=tf_batch_in,
         agg=MeanAggregatorHin,
-        sigmoid=sgm
+        sigmoid=sigm
     )
 
     with tf.Session() as sess:
@@ -132,7 +126,7 @@ def main():
                 try:
                     t = time.time()
                     loss, _, pred, true, summ = sess.run([tf_loss, tf_opt, tf_pred, tf_true, tf_summ])
-                    print_stats(time.time() - t, loss, *calc_f1(true, pred, sgm))
+                    print_stats(time.time() - t, loss, *calc_f1(true, pred, sigm))
                     summary_writer.add_summary(summ, it)
                     it += 1
                 except tf.errors.OutOfRangeError:
@@ -143,12 +137,12 @@ def main():
         sess.run(tf_test_iter_init)
         print("Showing final test run results...")
         loss, pred, true = sess.run([tf_loss, tf_pred, tf_true])
-        print_stats(-1, loss, *calc_f1(true, pred, sgm))
+        print_stats(-1, loss, *calc_f1(true, pred, sigm))
 
     print("Done")
 
 
 if __name__ == '__main__':
-    r = write_to_redis("./data/ppi")
+    write_to_redis('./data')
     main()
 

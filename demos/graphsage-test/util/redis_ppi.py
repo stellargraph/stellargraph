@@ -1,7 +1,13 @@
+"""
+Helper functions to write PPI data to Redis prior to training.
+
+"""
+
 import numpy as np
 import json
 import os
 from redis import StrictRedis
+import pickle
 from networkx.readwrite import json_graph
 
 
@@ -69,12 +75,12 @@ def write_id_shuffle(r, name, ids):
     :return:
     """
     if ids is None:
-        ids = r.lrange(name, 0, -1)
+        ids = [pickle.loads(i) for i in r.lrange(name, 0, -1)]
         assert len(ids) > 0
 
     np.random.shuffle(ids)
     r.delete(name)
-    r.lpush(name, *ids)
+    r.lpush(name, *[pickle.dumps(i) for i in ids])
 
 
 def write_id_set(r, name, ids):

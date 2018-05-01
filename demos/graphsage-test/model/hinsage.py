@@ -12,16 +12,37 @@ class Schema:
     Schema class to create and store parameters for HinSAGE layers
 
     """
-    def __init__(self, types, n_samples, neighs, dims, n_layers, xlen):
+    def __init__(
+            self,
+            types: List[str],
+            n_samples: List[int],
+            neighs: List[List[Tuple[int, str]]],
+            dims: List[Dict[str, Tuple[int, int]]],
+            n_layers: int,
+            xlen: List[int]
+    ):
+        """
+        Create a graph and sampling schema. The order of elements of the list input arguments match the order in which
+        the batch input feature matrices are fed through from the batch iterator. The set of feature matrices that
+        compose a "batch" will be referred to as the set of sub-batches.
+
+        :param types:       Type of nodes for each sub-batch as list of strings
+        :param n_samples:   Number of samples for each sub-batch as list of integers
+        :param neighs:      List of tuples (index, edge type) defining the neighbours for each sub-batch.
+        :param dims:        Dict of 'node type': (feature length, number of neighbours) for each layer
+        :param n_layers:    Number of hidden layers
+        :param xlen:        Number of sub-batches for each layer
+        """
+
         self.types: List[str] = types
         self.n_samples: List[int] = n_samples
         self.n_samples_cumu: List[int] = list(n_samples)
         for neigh, n_sample in zip(neighs, self.n_samples_cumu):
-            for ni in neigh:
+            for ni, nt in neigh:
                 self.n_samples_cumu[ni] *= n_sample
-        self.neighs: List[List[int]] = neighs
+        self.neighs: List[List[Tuple[int, str]]] = neighs
         self.dims: List[Dict[str, Tuple[int, int]]] = dims
-        self.n_layers = n_layers
+        self.n_layers: int = n_layers
         self.xlen: List[int] = xlen
 
 
@@ -34,13 +55,14 @@ class MeanAggregatorHin(Layer):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_dim = int(output_dim/2)
-        self.nr = nr
+        self.nr = nr  # Number of neighbour edge types
         self.w_neigh = []
         self.has_bias = bias
         self.act = act
         super(MeanAggregatorHin, self).__init__(**kwargs)
 
     def build(self, input_shape):
+        # Weight matrix for each type of neighbour
         self.w_neigh = [self.add_weight(
             name='w_neigh_' + str(r),
             shape=(input_shape[1+r][2], self.half_dim),
@@ -48,6 +70,7 @@ class MeanAggregatorHin(Layer):
             trainable=True
         ) for r in range(self.nr)]
 
+        # Weight matrix for self
         self.w_self = self.add_weight(
             name='w_self',
             shape=(input_shape[0][1], self.half_dim),
@@ -55,6 +78,7 @@ class MeanAggregatorHin(Layer):
             trainable=True
         )
 
+        # Optional bias
         if self.has_bias:
             self.bias = self.add_weight(
                 name='bias',
@@ -98,8 +122,16 @@ def hinsage(
     :return: Node embeddings for given batch
     """
 
-    # function to recursively compose aggregators at layer
     def compose_aggs(x, layer):
+        """
+        Function to recursively compose aggregation layers. When current layer is at final layer, then
+        compose_aggs(x, layer) returns x.
+
+        :param x:       List of feature matrix tensors
+        :param layer:   Current layer index
+        :return:        x computed from current layer to output layer
+        """
+
         def neigh_reshape(ni, i):
             return tf.reshape(
                 x[ni],
@@ -111,7 +143,7 @@ def hinsage(
             )
 
         def neigh_list(i):
-            return [neigh_reshape(ni, i) for ni in schema.neighs[i]]
+            return [neigh_reshape(ni[0], i) for ni in schema.neighs[i]]
 
         def apply_dropout(x_self, x_neighs):
             return [tf.nn.dropout(x_self, 1 - dropout)] + [tf.nn.dropout(x_neigh, 1 - dropout) for x_neigh in x_neighs]
@@ -232,11 +264,13 @@ def hinsage_lai(
         return opt.apply_gradients(grads_and_vars)
 
     nb, labels, *x = batch_in
-    nb = tf.Print(nb, [nb], message="Batch sizes: ")
+    nb = tf.Print(nb, [nb], message="Batch size: ")
     assert len(x) == schema.xlen[0]
 
     # hinsage layers
     x_out = hinsage(nb, schema, agg, x, bias, dropout)
+
+    # concatenate output to form edge representations
     x_edge = tf.nn.l2_normalize(tf.concat(x_out, axis=1))
 
     # loss
