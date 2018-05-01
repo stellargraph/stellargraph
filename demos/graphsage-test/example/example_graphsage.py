@@ -1,9 +1,14 @@
+"""
+Node Attribute Inference on homogeneous Graph with GraphSAGE
+
+"""
+
 import tensorflow as tf
 from model.graphsage import graphsage_nai, MeanAggregator
 from graph.redisgraph import RedisGraph
 from util.evaluation import calc_f1
 from redis import StrictRedis
-from util.redisutil import write_to_redis
+from util.redis_ppi import write_to_redis
 import time
 import os
 
@@ -78,7 +83,7 @@ def main():
     """
 
     # batch size, number of samples per additional layer, number of feats per layer, number of epochs
-    nb, ns, nf, ne = 1000, [25, 10], [50, 128, 128], 10
+    nb, ns, nf, ne, sgm = 1000, [25, 10], [50, 128, 128], 10, True
 
     # data graph
     graph = RedisGraph(StrictRedis(), nb, ns)
@@ -97,7 +102,7 @@ def main():
         num_samples=ns,
         batch_in=tf_batch_in,
         agg=MeanAggregator,
-        sigmoid=True
+        sigmoid=sgm
     )
 
     with tf.Session() as sess:
@@ -118,7 +123,7 @@ def main():
                 try:
                     t = time.time()
                     loss, _, pred, true, summ = sess.run([tf_loss, tf_opt, tf_pred, tf_true, tf_summ])
-                    print_stats(time.time() - t, loss, *calc_f1(true, pred))
+                    print_stats(time.time() - t, loss, *calc_f1(true, pred, sgm))
                     summary_writer.add_summary(summ, it)
                     it += 1
                 except tf.errors.OutOfRangeError:
@@ -129,7 +134,7 @@ def main():
         sess.run(tf_test_iter_init)
         print("Showing final test run results...")
         loss, pred, true = sess.run([tf_loss, tf_pred, tf_true])
-        print_stats(-1, loss, *calc_f1(true, pred))
+        print_stats(-1, loss, *calc_f1(true, pred, sgm))
 
     print("Done")
 
