@@ -36,13 +36,17 @@ def write_to_redis(path):
             pipe.sadd(prefix + str(src) + suffix, *dst)
         pipe.execute()
 
-    def write_labels(r, labels, edgelist):
+    def write_labels(r, labels, edgelist, onehot=False):
         pipe = r.pipeline()
-        n_labels = max(labels)  # assuming no zeros
-        labels_onehot = np.eye(n_labels)[[lb-1 for lb in labels]]
-        for lb, edge in zip(labels_onehot, edgelist):
-            pipe.set('label:' + str(edge), pickle.dumps(lb))
-        pipe.set('num_labels', n_labels)
+        if onehot:
+            n_labels = max(labels)  # assuming no zeros
+            labels_onehot = np.eye(n_labels)[[lb-1 for lb in labels]]
+            for lb, edge in zip(labels_onehot, edgelist):
+                pipe.set('label:' + str(edge), pickle.dumps(lb))
+            pipe.set('num_labels', n_labels)
+        else:
+            [pipe.set('label:' + str(edge), pickle.dumps([lb])) for lb, edge in zip(labels, edgelist)]
+            pipe.set('num_labels', 1)
         pipe.execute()
 
     def write_id_set(r, name, edgelist):

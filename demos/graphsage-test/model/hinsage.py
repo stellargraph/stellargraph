@@ -1,9 +1,8 @@
 import tensorflow as tf
-import numpy as np
 from keras.layers import Dense
 from keras import backend as K
 from keras.engine.topology import Layer
-from typing import List, Tuple, Union, Dict
+from typing import List, Tuple, Union, Dict, Callable
 from util.initializer import glorot_initializer
 
 
@@ -162,38 +161,29 @@ def hinsage(
     return tf.nn.l2_normalize(x[0], 1) if len(x) == 1 else [tf.nn.l2_normalize(xi, 1) for xi in x]
 
 
-def hinsage_nai(
-        num_labels: int,
+def hinsage_supervised(
         schema: Schema,
         batch_in: Tuple,
         agg,
-        sigmoid: bool = False,
+        f_pred: Callable[[tf.Tensor], tf.Tensor],
+        f_loss: Callable[[tf.Tensor, tf.Tensor], tf.Tensor],
         bias: bool = False,
         dropout: float = 0.,
         learning_rate: float = 0.01
 ):
     """
-    Node Attribute Inference with HinSAGE
+    Supervised HinSAGE
 
-    :param num_labels:      Total number of possible labels
     :param schema:          Graph and sampling schema
     :param batch_in:        Input tensors (batch size, labels, x0, x1, ..., xn)
     :param agg:             Aggregator constructor
-    :param sigmoid:         True for multiple true labels for each node
+    :param f_pred:          Function to transform HinSAGE outputs to predictions
+    :param f_loss:          Function to transform predictions and true labels to loss
     :param bias:            True for optional bias
     :param dropout:         > 0 for optional dropout
     :param learning_rate:   Learning rate for optimizer
     :return: loss, opt_op, y_preds, y_true
     """
-
-    def _loss(preds, labels, sigmoid):
-        return tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(logits=preds, labels=labels) if sigmoid
-            else tf.nn.softmax_cross_entropy_with_logits(logits=preds, labels=labels)
-        )
-
-    def _pred(preds, sigmoid):
-        return tf.nn.sigmoid(preds) if sigmoid else tf.nn.softmax(preds)
 
     def _opt_op(loss, learning_rate):
         opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -201,90 +191,18 @@ def hinsage_nai(
                           for grad, var in opt.compute_gradients(loss)]
         return opt.apply_gradients(grads_and_vars)
 
-    # check inputs
+    # Inputs
     nb, labels, *x = batch_in
     nb = tf.Print(nb, [nb], message="Batch size: ")
     assert len(x) == schema.xlen[0]
 
-    # hinsage layers
-    x_out = hinsage(nb, schema, agg, x, bias, dropout)
+    # HinSAGE layers
+    xout = hinsage(nb, schema, agg, x, bias, dropout)
 
-    # loss
-    preds = Dense(num_labels)(x_out)
-    loss = _loss(preds, labels, sigmoid)
+    preds = f_pred(xout)
+    loss = f_loss(preds, labels)
     tf.summary.scalar('loss', loss)
-
-    # optimizer
     opt_op = _opt_op(loss, learning_rate)
 
-    # predictions
-    y_preds = _pred(preds, sigmoid)
-    y_true = labels
-
-    return loss, opt_op, y_preds, y_true
-
-
-def hinsage_lai(
-        num_labels: int,
-        schema: Schema,
-        batch_in: Tuple,
-        agg,
-        sigmoid: bool = False,
-        bias: bool = False,
-        dropout: float = 0.,
-        learning_rate: float = 0.01
-):
-    """
-    Link Attribute Inference with HinSAGE
-
-    :param num_labels:      Total number of possible labels
-    :param schema:          Graph and sampling schema
-    :param batch_in:        Input tensors (batch size, labels, x0, x1, ..., xn)
-    :param agg:             Aggregator constructor
-    :param sigmoid:         True for multiple true labels for each node
-    :param bias:            True for optional bias
-    :param dropout:         > 0 for optional dropout
-    :param learning_rate:   Learning rate for optimizer
-    :return: loss, opt_op, y_preds, y_true
-    """
-
-    def _loss(preds, labels, sigmoid):
-        return tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(logits=preds, labels=labels) if sigmoid
-            else tf.nn.softmax_cross_entropy_with_logits(logits=preds, labels=labels)
-        )
-
-    def _pred(preds, sigmoid):
-        return tf.nn.sigmoid(preds) if sigmoid else tf.nn.softmax(preds)
-
-    def _opt_op(loss, learning_rate):
-        opt = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var)
-                          for grad, var in opt.compute_gradients(loss)]
-        return opt.apply_gradients(grads_and_vars)
-
-    nb, labels, *x = batch_in
-    nb = tf.Print(nb, [nb], message="Batch size: ")
-    assert len(x) == schema.xlen[0]
-
-    # hinsage layers
-    x_out = hinsage(nb, schema, agg, x, bias, dropout)
-
-    # concatenate output to form edge representations
-    x_edge = tf.nn.l2_normalize(tf.concat(x_out, axis=1))
-
-    # loss
-    preds = Dense(num_labels)(x_edge)
-    loss = _loss(preds, labels, sigmoid)
-    tf.summary.scalar('loss', loss)
-
-    # optimizer
-    opt_op = _opt_op(loss, learning_rate)
-
-    # predictions
-    y_preds = _pred(preds, sigmoid)
-    y_true = labels
-
-    return loss, opt_op, y_preds, y_true
-
+    return loss, opt_op, preds, labels
 
