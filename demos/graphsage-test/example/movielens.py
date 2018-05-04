@@ -4,16 +4,16 @@ Link Attribute Inference on Heterogeneous Graph using MovieLens data
 """
 
 import tensorflow as tf
-from model.hinsage import hinsage_lai, MeanAggregatorHin, Schema
+from keras.layers import Dense, Concatenate
+from model.hinsage import hinsage_supervised, MeanAggregatorHin, Schema
 from graph.redisgraph import RedisHin
-from util.evaluation import calc_f1
 from util.redis_movielens import write_to_redis
 from redis import StrictRedis
 import time
 import os
 
 
-def print_stats(t, loss, mic, mac):
+def print_stats(t, loss):
     """
     Print result statistics
 
@@ -23,8 +23,8 @@ def print_stats(t, loss, mic, mac):
     :param mac:     Macro-average F1-score
     """
 
-    print("time={:.5f}, loss={:.5f}, f1_micro={:.5f}, f1_macro={:.5f}".format(
-        t, loss, mic, mac
+    print("time={:.5f}, loss={:.5f}".format(
+        t, loss
     ))
 
 
@@ -57,7 +57,7 @@ def create_iterator(graph, nb: int, schema: Schema):
     # input shapes
     inp_shapes = (
         tf.TensorShape(()),
-        tf.TensorShape((None, graph.num_labels)),
+        tf.TensorShape((None, 1)),
         *[tf.TensorShape((None, schema.dims[0][t][0])) for t in schema.types]
     )
 
@@ -73,6 +73,32 @@ def create_iterator(graph, nb: int, schema: Schema):
     )
 
 
+def _pred(x):
+    """
+    Function to transform HinSAGE output to score predictions for MovieLens graph
+
+    :param x:   HinSAGE output tensor
+    :return:    Score predictions
+    """
+
+    x0 = Dense(32, activation='sigmoid')(x[0])
+    x1 = Dense(32, activation='sigmoid')(x[1])
+    le = Concatenate()([x0, x1])
+    return Dense(1, activation='linear')(le)
+
+
+def _loss(pred: tf.Tensor, true: tf.Tensor) -> tf.Tensor:
+    """
+    Function to compute loss from score prediction for MovieLens graph
+
+    :param pred:    Predicted scores
+    :param true:    True scores
+    :return:        Loss
+    """
+
+    return tf.losses.mean_squared_error(true, pred)
+
+
 def main():
     """
     Main training loop setup
@@ -80,7 +106,7 @@ def main():
     """
 
     # batch size, number of samples per additional layer, number of feats per layer, number of epochs
-    nb, ns, nf, ne, sigm = 1000, [25, 10], [256, 256, 256], 10, False
+    nb, ns, nf, ne = 1000, [25, 10], [256, 256, 256], 10
 
     # create schema for HinSAGE
     schema = Schema(
@@ -100,12 +126,12 @@ def main():
 
     # create tf model
     tf_batch_in = tf_batch_iter.get_next()
-    tf_loss, tf_opt, tf_pred, tf_true = hinsage_lai(
-        num_labels=graph.num_labels,
+    tf_loss, tf_opt, tf_pred, tf_true = hinsage_supervised(
         schema=schema,
         batch_in=tf_batch_in,
         agg=MeanAggregatorHin,
-        sigmoid=sigm
+        f_pred=_pred,
+        f_loss=_loss
     )
 
     with tf.Session() as sess:
@@ -126,7 +152,7 @@ def main():
                 try:
                     t = time.time()
                     loss, _, pred, true, summ = sess.run([tf_loss, tf_opt, tf_pred, tf_true, tf_summ])
-                    print_stats(time.time() - t, loss, *calc_f1(true, pred, sigm))
+                    print_stats(time.time() - t, loss)
                     summary_writer.add_summary(summ, it)
                     it += 1
                 except tf.errors.OutOfRangeError:
@@ -137,7 +163,7 @@ def main():
         sess.run(tf_test_iter_init)
         print("Showing final test run results...")
         loss, pred, true = sess.run([tf_loss, tf_pred, tf_true])
-        print_stats(-1, loss, *calc_f1(true, pred, sigm))
+        print_stats(-1, loss)
 
     print("Done")
 
