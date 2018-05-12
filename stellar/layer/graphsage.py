@@ -97,14 +97,10 @@ class Graphsage:
         self.dims = [input_dim] + output_dims
         self.bias = bias
         self._dropout = Dropout(dropout)
-        self._aggs = [
-            aggregator(
-                self.dims[layer+1],
-                bias=self.bias,
-                act=K.relu if layer < self.n_layers - 1 else lambda x: x
-            )
-            for layer in range(self.n_layers)
-        ]
+        self._aggs = [aggregator(self.dims[layer+1],
+                                 bias=self.bias,
+                                 act=K.relu if layer < self.n_layers - 1 else lambda x: x)
+                      for layer in range(self.n_layers)]
         self._neigh_reshape = [[Reshape((-1, self.n_samples[i], self.dims[layer]))
                                 for i in range(self.n_layers - layer)]
                                for layer in range(self.n_layers)]
