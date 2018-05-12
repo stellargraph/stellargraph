@@ -21,7 +21,10 @@ setup(name='stellar-ml',
       version='0.1.0b',
       description='Stellar Machine Learning Library',
       license='Apache 2.0',
-      install_requires=['keras'],
-      setup_requires=[],
-      tests_require=[],
+      install_requires=['keras', 'numpy'],
+      setup_requires=['pytest-runner'],
+      tests_require=['pytest'],
+      extras_require={
+            'testing': [],
+      },
       packages=find_packages())
