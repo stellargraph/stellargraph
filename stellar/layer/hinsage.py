@@ -1,7 +1,30 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2018 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+"""
+Heterogeneous GraphSAGE and compatible aggregator layers
+
+"""
+
+
 from keras.engine.topology import Layer
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape
-from typing import List, Callable, Tuple, Dict
+from typing import List, Callable, Tuple, Dict, Union
 
 
 class MeanHinAggregator(Layer):
@@ -65,9 +88,14 @@ class MeanHinAggregator(Layer):
 
 
 class Hinsage:
+    """
+    Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
+
+    """
+
     def __init__(
             self,
-            output_dims: List[Dict[str, int]],
+            output_dims: List[Union[Dict[str, int], int]],
             n_samples: List[int],
             input_neigh_tree: List[Tuple[str, List[int]]],
             input_dim: Dict[str, int],
@@ -76,7 +104,7 @@ class Hinsage:
             dropout: float = 0.
     ):
         """
-        Construct aggregator and other supporting layers for GraphSAGE
+        Construct aggregator and other supporting layers for HinSAGE
 
         :param output_dims:         Output dimension at each layer
         :param n_samples:           Number of neighbours sampled for each hop/layer
@@ -87,30 +115,43 @@ class Hinsage:
         :param dropout:             Optional dropout
         """
 
-        def eval_neigh_tree_per_layer(layer_info):
-            reduced = [li for li in layer_info if li[1][-1] < len(layer_info)]
-            return [layer_info] if len(reduced) == 0 else [layer_info] + eval_neigh_tree_per_layer(reduced)
+        def eval_neigh_tree_per_layer(input_tree):
+            """
+            Function to evaluate the neighbourhood tree structure for every layer
+
+            :param input_tree:  Neighbourhood tree for the input batch
+            :return:            List of neighbourhood trees
+            """
+
+            reduced = [li for li in input_tree if li[1][-1] < len(input_tree)]
+            return [input_tree] if len(reduced) == 0 else [input_tree] + eval_neigh_tree_per_layer(reduced)
 
         assert len(n_samples) == len(output_dims)
         self.n_layers = len(n_samples)
         self.n_samples = n_samples
-        self.dims = [input_dim] + output_dims
         self.bias = bias
         self._dropout = Dropout(dropout)
 
-        # Neighbourhood info per layer, and depth of each input as a result
+        # Neighbourhood info per layer
         self.neigh_trees = eval_neigh_tree_per_layer([li for li in input_neigh_tree if len(li[1]) > 0])
+
+        # Depth of each input i.e. number of hops from root nodes
         depth = [self.n_layers + 1 - sum([1 for li in [input_neigh_tree] + self.neigh_trees if i < len(li)])
                  for i in range(len(input_neigh_tree))]
 
-        # Aggregator per node type per layer
+        # Dict of {node type: dimension} per layer
+        self.dims = [dim if isinstance(dim, dict)
+                     else {k: dim for k, _ in ([input_neigh_tree] + self.neigh_trees)[layer]}
+                     for layer, dim in enumerate([input_dim] + output_dims)]
+
+        # Dict of {node type: aggregator} per layer
         self._aggs = [{node_type: aggregator(output_dim,
                                              bias=self.bias,
                                              act=K.relu if layer < self.n_layers - 1 else lambda x: x)
-                       for node_type, output_dim in output_dims[layer].items()}
+                       for node_type, output_dim in self.dims[layer+1].items()}
                       for layer in range(self.n_layers)]
 
-        # Reshape layer per neighbour per node per layer
+        # Reshape object per neighbour per node per layer
         self._neigh_reshape = [[[Reshape((-1,
                                           self.n_samples[depth[i]],
                                           self.dims[layer][input_neigh_tree[neigh_index][0]]))
@@ -121,10 +162,17 @@ class Hinsage:
         self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
 
     def __call__(self, x: List):
-        def compose_aggs(x, layer):
+        """
+        Apply aggregator layers
+
+        :param x:       Batch input features
+        :return:        Output tensor
+        """
+
+        def compose_layers(x: List, layer: int):
             """
             Function to recursively compose aggregation layers. When current layer is at final layer, then
-            compose_aggs(x, layer) returns x.
+            compose_layers(x, layer) returns x.
 
             :param x:       List of feature matrix tensors
             :param layer:   Current layer index
@@ -136,11 +184,11 @@ class Hinsage:
                         for ni, neigh_index in enumerate(neigh_indices)]
 
             def x_next(agg: Dict[str, Layer]):
-                return [agg[node_type]([self._dropout(x[i])] + [self._dropout(ne)
-                                                                for ne in neigh_list(i, neigh_indices)])
+                return [agg[node_type]([self._dropout(x[i]),
+                                        *[self._dropout(ne) for ne in neigh_list(i, neigh_indices)]])
                         for i, (node_type, neigh_indices) in enumerate(self.neigh_trees[layer])]
 
-            return compose_aggs(x_next(self._aggs[layer]), layer + 1) if layer < self.n_layers else x
+            return compose_layers(x_next(self._aggs[layer]), layer + 1) if layer < self.n_layers else x
 
-        x = compose_aggs(x, 0)
+        x = compose_layers(x, 0)
         return self._normalization(x[0]) if len(x) == 1 else [self._normalization(xi) for xi in x]
