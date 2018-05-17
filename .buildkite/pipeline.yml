@@ -1,6 +1,9 @@
-
 steps:
   - name: ":python:"
-    command: "python -m pytest tests"
-    env:
-      BUILDKITE_DOCKER_COMPOSE_CONTAINER: "app"
+    command:
+    - pip install --no-cache-dir -r requirements.txt
+    - python -m pytest tests
+    plugins:
+      docker#v1.1.1:
+        image: "python:3.6"
+        workdir: /app
