@@ -1,0 +1,8 @@
+pandas==0.22.0
+chardet==3.0.4
+numpy==1.11.0
+scipy==1.0.1
+gensim==3.4.0
+networkx==1.11
+progressbar2==3.37.1
+scikit_learn==0.19.1
