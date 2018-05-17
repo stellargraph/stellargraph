@@ -1,0 +1,137 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2017-2018 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import numpy as np
+from utils.node2vec import node2vec
+from gensim.models import Word2Vec
+import time
+import pandas as pd
+
+
+class Node2VecFeatureLearning(object):
+
+    def __init__(self, nxG=None, embeddings_filename=r'..\data\model.emb'):
+        self.nxG = nxG
+        self.G  = None
+        self.model = None
+        self.embeddings_filename = embeddings_filename
+
+    #
+    # learn_embeddings() and fit() are based on the learn_embeddings() and main() functions in main.py of the
+    # reference implementation.
+    #
+    def learn_embeddings(self, walks, d, k):
+        """
+        Learn embeddings by optimizing the Skipgram objective using SGD.
+
+        :param walks:
+        :param d:
+        :param k:
+        :return:
+        """
+        walks = [list(map(str, walk)) for walk in walks]
+        self.model = Word2Vec(walks, size=d, window=k, min_count=0, sg=1, workers=2, iter=1)
+        self.model.wv.save_word2vec_format(self.embeddings_filename)
+
+        return
+
+    def fit(self, p=1, q=1, d=128, r=10, l=80, k=10):
+        """
+        Pipeline for representational learning for all nodes in a graph.
+
+        :param p:
+        :param q:
+        :param d:
+        :param r:
+        :param l:
+        :param k:
+        :return:
+        """
+
+        start_time_fit = time.time()
+        self.G = node2vec.Graph(self.nxG, False, p, q)
+        self.G.preprocess_transition_probs()
+        walks = self.G.simulate_walks(r, l)
+        #print("Time up to learn_embeddings()", time.time()-start_time_fit, "seconds")
+        self.learn_embeddings(walks, d, k)
+        print("Total time for fit()", time.time()-start_time_fit, "seconds")
+
+
+    def from_file(self, filename):
+        """
+        Helper function for loading a node2vec model from disk so that I can run experiments fast without having to
+        wait for node2vec to finish.
+
+        :param filename: The filename storing the model
+        :return:  None
+        """
+        self.model = pd.read_csv(filename, delimiter=' ', skiprows=1, header=None)
+        self.model.iloc[:, 0] = self.model.iloc[:, 0].astype(str)  # this is so that indexing works the same as having
+        # trained the model with self.fit()
+        self.model.index = self.model.iloc[:, 0]
+        self.model = self.model.drop([0], 1)
+        print(self.model.head(2))
+
+    def select_operator_from_str(self, binary_operator):
+        if binary_operator == 'l1':
+            return self.operator_l1
+        elif binary_operator == 'l2':
+            return self.operator_l2
+        elif binary_operator == 'avg':
+            return self.operator_avg
+        elif binary_operator == 'h': #hadamard
+            return self.operator_hadamard
+
+        print("CAUTION: Operator"+binary_operator+"is invalid. Returning Hadamard operator.")
+        return self.operator_hadamard  # default in case binary operator is not a valid value
+
+    def operator_hadamard(self, u, v):
+        return u*v
+
+    def operator_avg(self, u, v):
+        return (u+v)/2.0
+
+    def operator_l2(self, u, v):
+        return (u-v)**2
+
+    def operator_l1(self, u, v):
+        return np.abs(u-v)
+
+    def transform(self, data_edge, binary_operator='h'):
+        """
+        It calculates edge features for the given binary operator applied to the node features in data_edge
+
+        :param data_edge: It is a list of pairs of nodes that make an edge in the graph
+        :param binary_operator: The binary operator to apply to the node features to calculate an edge feature
+        :return: Features in X (Nxd array where N is the number of edges and d is the dimensionality of the edge
+            features that is the same as the dimensionality of the node features) and edge labels in y (0 for no edge
+            and 1 for edge).
+        """
+        X = [] # data matrix, each row is a d-dimensional feature of an edge
+        y = [] # is label 0,1 for no-edge and edge respectively
+
+        func_bin_operator = self.select_operator_from_str(binary_operator)
+
+        for row in data_edge:
+            y.append(row[-1]) # the label, 0 or 1
+            u_str = str(row[0])
+            v_str = str(row[1])
+            if type(self.model) is Word2Vec:
+                X.append(func_bin_operator(self.model[u_str], self.model[v_str]))
+            else: # Pandas Dataframe
+                X.append(func_bin_operator(self.model.loc[u_str],self.model.loc[v_str]))
+
+        return np.array(X), np.array(y)
