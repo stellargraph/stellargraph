@@ -1,0 +1,6 @@
+
+steps:
+  - name: ":python:"
+    command: "python -m pytest tests"
+    env:
+      BUILDKITE_DOCKER_COMPOSE_CONTAINER: "app"
