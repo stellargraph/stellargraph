@@ -14,8 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from setuptools import setup
+from setuptools import find_packages
 
-"""
-The layer package contains implementations of popular neural network layers for graph ML as Keras layers
-
-"""
+setup(name='stellar-ml',
+      version='0.1.0b',
+      description='Stellar Machine Learning Library',
+      license='Apache 2.0',
+      install_requires=['keras', 'numpy'],
+      setup_requires=['pytest-runner'],
+      tests_require=['pytest'],
+      extras_require={
+            'testing': [],
+      },
+      packages=find_packages())
