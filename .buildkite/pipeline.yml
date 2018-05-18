@@ -2,7 +2,7 @@ steps:
   - name: ":python:"
     command:
     - pip install --no-cache-dir -r requirements.txt
-    - python -m pytest tests
+    - python -m pytest tests -p no:cacheprovider
     plugins:
       docker#v1.1.1:
         image: "python:3.6"
