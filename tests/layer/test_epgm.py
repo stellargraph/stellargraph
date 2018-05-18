@@ -17,7 +17,6 @@
 # Tests of EPGM class defined in epgm.py
 # Author: Yuriy Tyshetskiy
 
-# import unittest
 import pytest
 import os
 import numpy as np
