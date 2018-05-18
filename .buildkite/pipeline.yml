@@ -7,3 +7,5 @@ steps:
       docker#v1.1.1:
         image: "python:3.6"
         workdir: /app
+        environment:
+          - PYTHONDONTWRITEBYTECODE=1
