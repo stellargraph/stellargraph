@@ -19,7 +19,6 @@ from math import isclose
 import os
 import networkx as nx
 import numpy as np
-from utils.epgm import EPGM
 from utils.edge_splitter import EdgeSplitter
 from utils.node2vec_feature_learning import Node2VecFeatureLearning
 from sklearn.pipeline import Pipeline
@@ -31,6 +30,8 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
+from stellar.data.epgm import EPGM
+
 
 parameters = {
     'p': 1.,  # Parameter p
