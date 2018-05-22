@@ -19,6 +19,7 @@ import os
 import numpy as np
 from utils.data_splitter import DataSplitter
 from stellar.data.epgm import EPGM
+from shutil import rmtree
 
 
 def delete_files_in_dir(path):
@@ -26,6 +27,7 @@ def delete_files_in_dir(path):
         filename_path = os.path.join(path, filename)
         if os.path.isfile(filename_path):
             os.unlink(filename_path)
+
 
 class TestEPGMIOHeterogeneous(unittest.TestCase):
 
@@ -54,7 +56,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
 
     def tearDown(self):
         # delete the files in the output directory
-        delete_files_in_dir(self.output_dir)
+        rmtree(self.base_output_directory)
 
     def test_load_epgm(self):
 
@@ -171,8 +173,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
     def tearDown(self):
         # delete the contents of the output directories
-        delete_files_in_dir(self.output_dir_lab)
-        delete_files_in_dir(self.output_dir)
+        rmtree(self.base_output_directory)
 
     def test_load_lab(self):
 
