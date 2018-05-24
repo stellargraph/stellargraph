@@ -195,6 +195,7 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=['l1']):
 
     return scores
 
+
 def print_distance_probabilities(node_distances):
     counts = Counter(node_distances)
     d_total = sum(counts.values())

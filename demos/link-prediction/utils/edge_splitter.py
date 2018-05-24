@@ -17,6 +17,7 @@
 import networkx as nx
 import pandas as pd
 import numpy as np
+from math import isclose
 
 
 class EdgeSplitter(object):
@@ -52,6 +53,7 @@ class EdgeSplitter(object):
         self.negative_edges_labels = None
 
         self.negative_edge_node_distances = None
+        self.minedges = None
 
     def train_test_split(self, p=0.5, method='global', **kwargs):
         """
@@ -69,11 +71,14 @@ class EdgeSplitter(object):
         node id defining the edge and the last column 1 or 0 for positive or negative example respectively.
         """
 
+        if p <= 0 or p >= 1:
+            raise ValueError("The value of p must be in the interval (0,1)")
+
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
-        minedges = self._get_minimum_spanning_edges()
+        self.minedges = self._get_minimum_spanning_edges()
 
-        positive_edges = self._reduce_graph(minedges=minedges, p=p)
+        positive_edges = self._reduce_graph(minedges=self.minedges, p=p)
         df = pd.DataFrame(positive_edges)
         self.positive_edges_ids = np.array(df.iloc[:, 0:2])
         self.positive_edges_labels = np.array(df.iloc[:, 2])
@@ -155,9 +160,16 @@ class EdgeSplitter(object):
             probs = [0.0, 0.25, 0.50, 0.25]
             print("Warning: Using default sampling probabilities up to 3 hops from source node with values {}".format(probs))
 
+        if not isclose(sum(probs), 1.0):
+            raise ValueError("Sampling probabilities do not sum to 1")
+
         self.negative_edge_node_distances = []
         n = len(probs)
-        num_edges_to_sample = int(self.g.number_of_edges() * p)
+
+        if self.minedges is None:
+            num_edges_to_sample = int(self.g.number_of_edges() * p)
+        else:
+            num_edges_to_sample = int((self.g.number_of_edges() - len(self.minedges)) * p)
 
         if limit_samples is not None:
             if num_edges_to_sample > limit_samples:
@@ -295,7 +307,11 @@ class EdgeSplitter(object):
         :return: Up to num_edges_to_sample*p or limit_samples edges that don't exist in the graph
         """
         self.negative_edge_node_distances = []
-        num_edges_to_sample = int(self.g.number_of_edges() * p)
+
+        if self.minedges is None:
+            num_edges_to_sample = int(self.g.number_of_edges() * p)
+        else:
+            num_edges_to_sample = int((self.g.number_of_edges() - len(self.minedges)) * p)
 
         if limit_samples is not None:
             if num_edges_to_sample > limit_samples:
@@ -312,7 +328,7 @@ class EdgeSplitter(object):
         count = 0
         sampled_edges = []
 
-        num_iter = int(np.ceil(num_edges_to_sample / (1.0*len(start_nodes))))
+        num_iter = int(np.ceil(num_edges_to_sample / (1.0*len(start_nodes)))) + 1
 
         for _ in np.arange(0, num_iter):
             np.random.shuffle(start_nodes)
