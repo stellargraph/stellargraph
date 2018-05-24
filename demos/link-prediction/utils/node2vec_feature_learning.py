@@ -61,11 +61,23 @@ class Node2VecFeatureLearning(object):
         :return:
         """
 
+        if p <= 0 or not isinstance(p, int):
+            raise ValueError("p should be positive integer")
+        if q <= 0 or not isinstance(q, int):
+            raise ValueError("q should be positive integer")
+        if d <= 0 or not isinstance(d, int):
+            raise ValueError("d should be positive integer")
+        if r <= 0 or not isinstance(r, int):
+            raise ValueError("r should be positive integer")
+        if l <= 0 or not isinstance(l, int):
+            raise ValueError("l should be positive integer")
+        if k <= 0 or not isinstance(k, int):
+            raise ValueError("l should be positive integer")
+
         start_time_fit = time.time()
         self.G = node2vec.Graph(self.nxG, False, p, q)
         self.G.preprocess_transition_probs()
         walks = self.G.simulate_walks(r, l)
-        #print("Time up to learn_embeddings()", time.time()-start_time_fit, "seconds")
         self.learn_embeddings(walks, d, k)
         print("Total time for fit()", time.time()-start_time_fit, "seconds")
 
@@ -94,9 +106,10 @@ class Node2VecFeatureLearning(object):
             return self.operator_avg
         elif binary_operator == 'h': #hadamard
             return self.operator_hadamard
+        else:
+            raise ValueError("Invalid binary operator {}".format(binary_operator))
 
-        print("CAUTION: Operator"+binary_operator+"is invalid. Returning Hadamard operator.")
-        return self.operator_hadamard  # default in case binary operator is not a valid value
+        return self.operator_hadamard  # will reach here
 
     def operator_hadamard(self, u, v):
         return u*v
@@ -125,7 +138,6 @@ class Node2VecFeatureLearning(object):
         func_bin_operator = self.select_operator_from_str(binary_operator)
 
         for ids in edge_data[0]:
-            # y.append(label[0])  # the label, 0 or 1
             u_str = str(ids[0])
             v_str = str(ids[1])
             if type(self.model) is Word2Vec:

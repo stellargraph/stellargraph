@@ -102,7 +102,7 @@ class TestEdgeSplitterHomogeneous(object):
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert num_sampled_positives == num_sampled_negatives
+        assert (num_sampled_positives - num_sampled_negatives) <= 1
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
@@ -130,7 +130,7 @@ class TestEdgeSplitterHomogeneous(object):
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert num_sampled_positives == num_sampled_negatives
+        assert (num_sampled_positives - num_sampled_negatives) <= 1
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
@@ -164,7 +164,7 @@ class TestEdgeSplitterHeterogeneous(object):
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert num_sampled_positives == num_sampled_negatives
+        assert (num_sampled_positives - num_sampled_negatives) <= 1
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
@@ -181,7 +181,7 @@ class TestEdgeSplitterHeterogeneous(object):
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert num_sampled_positives == num_sampled_negatives
+        assert (num_sampled_positives - num_sampled_negatives) <= 1
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
