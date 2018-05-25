@@ -80,9 +80,9 @@ def read_graph(graph_file, dataset_name, directed=False, weighted=False):
 class TestEdgeSplitterHomogeneous(object):
 
     if os.getcwd().split('/')[-1] == 'tests':
-        input_dir = os.path.expanduser('./resources/data/cora/cora.epgm')
+        input_dir = os.path.expanduser('../../../tests/resources/data/cora/cora.epgm')
     else:
-        input_dir = os.path.expanduser('./tests/resources/data/cora/cora.epgm')
+        input_dir = os.path.expanduser('../../tests/resources/data/cora/cora.epgm')
 
     dataset_name = 'cora'
 
@@ -144,9 +144,9 @@ class TestEdgeSplitterHomogeneous(object):
 class TestEdgeSplitterHeterogeneous(object):
 
     if os.getcwd().split('/')[-1] == 'tests':
-        input_dir = os.path.expanduser('./resources/data/yelp/yelp.epgm')
+        input_dir = os.path.expanduser('../../../tests/resources/data/yelp/yelp.epgm')
     else:
-        input_dir = os.path.expanduser('./tests/resources/data/yelp/yelp.epgm')
+        input_dir = os.path.expanduser('../../tests/resources/data/yelp/yelp.epgm')
 
     dataset_name = 'small_yelp_example'
 
@@ -188,9 +188,9 @@ class TestEdgeSplitterHeterogeneous(object):
 class TestEdgeSplitterCommon(object):
 
     if os.getcwd().split('/')[-1] == 'tests':
-        input_dir = os.path.expanduser('./resources/data/yelp/yelp.epgm')
+        input_dir = os.path.expanduser('../../../tests/resources/data/yelp/yelp.epgm')
     else:
-        input_dir = os.path.expanduser('./tests/resources/data/yelp/yelp.epgm')
+        input_dir = os.path.expanduser('../../tests/resources/data/yelp/yelp.epgm')
 
     dataset_name = 'small_yelp_example'
 
