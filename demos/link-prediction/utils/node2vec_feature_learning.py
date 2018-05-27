@@ -48,6 +48,15 @@ class Node2VecFeatureLearning(object):
 
         return
 
+    def _assert_positive_int(self, val, msg=''):
+        """
+        Raises ValueError exception if val is not a positive integer.
+        :param val: The value to check
+        :param msg: The message to return with the exception
+        """
+        if val <= 0 or not isinstance(val, int):
+            raise ValueError(msg)
+
     def fit(self, p=1, q=1, d=128, r=10, l=80, k=10):
         """
         Pipeline for representational learning for all nodes in a graph.
@@ -60,19 +69,12 @@ class Node2VecFeatureLearning(object):
         :param k:
         :return:
         """
-
-        if p <= 0 or not isinstance(p, int):
-            raise ValueError("p should be positive integer")
-        if q <= 0 or not isinstance(q, int):
-            raise ValueError("q should be positive integer")
-        if d <= 0 or not isinstance(d, int):
-            raise ValueError("d should be positive integer")
-        if r <= 0 or not isinstance(r, int):
-            raise ValueError("r should be positive integer")
-        if l <= 0 or not isinstance(l, int):
-            raise ValueError("l should be positive integer")
-        if k <= 0 or not isinstance(k, int):
-            raise ValueError("l should be positive integer")
+        self._assert_positive_int(p, msg="p should be positive integer")
+        self._assert_positive_int(q, msg="q should be positive integer")
+        self._assert_positive_int(d, msg="d should be positive integer")
+        self._assert_positive_int(r, msg="r should be positive integer")
+        self._assert_positive_int(l, msg="l should be positive integer")
+        self._assert_positive_int(k, msg="k should be positive integer")
 
         start_time_fit = time.time()
         self.G = node2vec.Graph(self.nxG, False, p, q)
@@ -108,8 +110,6 @@ class Node2VecFeatureLearning(object):
             return self.operator_hadamard
         else:
             raise ValueError("Invalid binary operator {}".format(binary_operator))
-
-        return self.operator_hadamard  # will reach here
 
     def operator_hadamard(self, u, v):
         return u*v
