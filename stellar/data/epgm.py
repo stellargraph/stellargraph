@@ -328,7 +328,11 @@ class EPGM(object):
         # add nodes to self.G_nx[graph_id], together with their attributes stored in 'data':
         self.G_nx[graph_id].add_nodes_from([(v['id'], v['data']) for v in self.G['vertices']])
         # add edges to self.G_nx[graph_id], together with their attributes stored in 'data':
-        self.G_nx[graph_id].add_edges_from([(e['source'], e['target'], e['id'], e['data']) for e in self.G['edges']])
+        # I have added the edge label in the edge data; sets the label to '' if the edges don't have a label
+        self.G_nx[graph_id].add_edges_from([(e['source'],
+                                             e['target'],
+                                             e['id'],
+                                             {**e['data'], **{'label': e['meta'].get('label', '')}}) for e in self.G['edges']])
 
         if not directed:
             self.G_nx[graph_id] = self.G_nx[graph_id].to_undirected()
