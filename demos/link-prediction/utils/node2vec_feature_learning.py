@@ -79,8 +79,8 @@ class Node2VecFeatureLearning(object):
         :param k:
         :return:
         """
-        self._assert_positive(p, msg="p should be positive integer")
-        self._assert_positive(q, msg="q should be positive integer")
+        self._assert_positive(p, msg="p should be positive number")
+        self._assert_positive(q, msg="q should be positive number")
         self._assert_positive_int(d, msg="d should be positive integer")
         self._assert_positive_int(r, msg="r should be positive integer")
         self._assert_positive_int(l, msg="l should be positive integer")
