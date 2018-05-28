@@ -59,7 +59,7 @@ class Node2VecFeatureLearning(object):
 
     def _assert_positive(self, val, msg=''):
         """
-        Raises ValueError exception if val is not a positive integer.
+        Raises ValueError exception if val is not a positive number.
         :param val: The value to check
         :param msg: The message to return with the exception
         """
