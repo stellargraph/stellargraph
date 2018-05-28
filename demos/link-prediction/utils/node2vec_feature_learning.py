@@ -57,6 +57,16 @@ class Node2VecFeatureLearning(object):
         if val <= 0 or not isinstance(val, int):
             raise ValueError(msg)
 
+    def _assert_positive(self, val, msg=''):
+        """
+        Raises ValueError exception if val is not a positive integer.
+        :param val: The value to check
+        :param msg: The message to return with the exception
+        """
+        if val <= 0:
+            raise ValueError(msg)
+
+
     def fit(self, p=1, q=1, d=128, r=10, l=80, k=10):
         """
         Pipeline for representational learning for all nodes in a graph.
@@ -69,8 +79,8 @@ class Node2VecFeatureLearning(object):
         :param k:
         :return:
         """
-        self._assert_positive_int(p, msg="p should be positive integer")
-        self._assert_positive_int(q, msg="q should be positive integer")
+        self._assert_positive(p, msg="p should be positive integer")
+        self._assert_positive(q, msg="q should be positive integer")
         self._assert_positive_int(d, msg="d should be positive integer")
         self._assert_positive_int(r, msg="r should be positive integer")
         self._assert_positive_int(l, msg="l should be positive integer")
