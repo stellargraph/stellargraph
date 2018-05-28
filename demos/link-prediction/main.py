@@ -19,7 +19,6 @@ from math import isclose
 import os
 import networkx as nx
 import numpy as np
-from utils.epgm import EPGM
 from utils.edge_splitter import EdgeSplitter
 from utils.node2vec_feature_learning import Node2VecFeatureLearning
 from sklearn.pipeline import Pipeline
@@ -31,6 +30,8 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
+from stellar.data.epgm import EPGM
+
 
 parameters = {
     'p': 1.,  # Parameter p
@@ -54,8 +55,8 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Run link prediction on homogeneous and heterogeneous graphs.")
 
-    parser.add_argument('--linkprediction', dest='link_prediction', action='store_true',
-                        help='Boolean specifying if the link prediction experiment should be run. Default is False.')
+    parser.add_argument('--dataset_name', nargs='?', default='cora',
+                        help='The dataset name as stored in graphs.json')
 
     parser.add_argument('--input_graph', nargs='?', default='~/Projects/data/cora/cora.epgm/',
                         help='Input graph filename')
@@ -70,7 +71,13 @@ def parse_args():
                         help='Negative edge sample probabilities (for local sampling method) with respect to distance from starting node')
 
     parser.add_argument('--show_hist', dest='show_histograms', action='store_true',
-                        help='If specified, a histogram of the distances between source and target nodes for negative edge samples will be plotted.')
+                        help='If specified, a histogram of the distances between source and target nodes for \
+                         negative edge samples will be plotted.')
+
+    parser.add_argument('--subsample', dest='subsample_graph', action='store_true',
+                        help='If specified, then the original graph is randomly subsampled to 10% of the original size, \
+                        with respect to the number of nodes')
+
 
     return parser.parse_args()
 
@@ -122,7 +129,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=['l1']):
     derive edge features using the operators given. Then it trains a Logistic Regression classifier to predict
     links between nodes.
     :param feature_learner: Representation learning object.
-    :param edge_data: Positive and negative edge data for training the classifier
+    :param edge_data: (2-tuple) Positive and negative edge data for training the classifier
     :param binary_operators: Binary operators applied on node features to produce the corresponding edge feature.
     :return: Returns the ROCAUC score achieved by the classifier for each of the specified binary operators
     """
@@ -188,6 +195,7 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=['l1']):
 
     return scores
 
+
 def print_distance_probabilities(node_distances):
     counts = Counter(node_distances)
     d_total = sum(counts.values())
@@ -208,9 +216,16 @@ if __name__ == "__main__":
         print("  Normalized Sampling Probabilities: {}".format(sampling_probs))
 
     graph_filename = os.path.expanduser(args.input_graph)
-
+    dataset_name = args.dataset_name
     # Load the graph from disk
-    g_nx = read_graph(graph_file=graph_filename, dataset_name='cora')
+    g_nx = read_graph(graph_file=graph_filename, dataset_name=dataset_name)
+
+    if args.subsample_graph:
+        # subsample g_nx
+        nodes = g_nx.nodes(data=False)
+        np.random.shuffle(nodes)
+        subgraph_size = int(len(nodes)*0.1)
+        g_nx = g_nx.subgraph(nodes[0:subgraph_size])
 
     # Check if graph is connected; if not, then select the largest subgraph to continue
     if nx.is_connected(g_nx):
@@ -223,9 +238,9 @@ if __name__ == "__main__":
 
     # From the original graph, extract E_test and G_test
     edge_splitter_test = EdgeSplitter(g_nx)
-    g_test, edge_data_test = edge_splitter_test.train_test_split(p=0.2,
-                                                                 method=args.sampling_method,
-                                                                 probs=sampling_probs)
+    g_test, edge_data_ids_test, edge_data_labels_test = edge_splitter_test.train_test_split(p=0.1,
+                                                                                            method=args.sampling_method,
+                                                                                            probs=sampling_probs)
     if args.show_histograms:
         if args.sampling_method == 'local':
             bins = np.arange(1, len(sampling_probs)+2)
@@ -237,12 +252,10 @@ if __name__ == "__main__":
 
     print_distance_probabilities(edge_splitter_test.negative_edge_node_distances)
 
-    edge_data_test = edge_data_test.astype(int)  # the test set of edges that we use for final evaluation
-
     edge_splitter_train = EdgeSplitter(g_test, g_nx)
-    g_train, edge_data_train = edge_splitter_train.train_test_split(p=0.2,
-                                                                    method=args.sampling_method,
-                                                                    probs=sampling_probs)
+    g_train, edge_data_ids_train, edge_data_labels_train = edge_splitter_train.train_test_split(p=0.1,
+                                                                                                method=args.sampling_method,
+                                                                                                probs=sampling_probs)
     if args.show_histograms:
         if args.sampling_method == 'local':
             bins = np.arange(1, len(sampling_probs)+2)
@@ -252,8 +265,6 @@ if __name__ == "__main__":
         plt.show()
 
     print_distance_probabilities(edge_splitter_train.negative_edge_node_distances)
-
-    edge_data_train = edge_data_train.astype(int)  # the test set of edges that we use for final evaluation
 
     # this is so that Node2Vec works because it expects Graph not MultiGraph type
     g_test = nx.Graph(g_test)
@@ -271,7 +282,7 @@ if __name__ == "__main__":
     # Train the classifier
     binary_operators = ['avg', 'l1', 'l2', 'h']
     scores_train, clf_edge, binary_operator = link_prediction_clf(feature_learner=feature_learner_train,
-                                                                  edge_data=edge_data_train,
+                                                                  edge_data=(edge_data_ids_train, edge_data_labels_train, ),
                                                                   binary_operators=binary_operators)
 
     # Do representation learning on g_test and use the previously trained classifier on g_train to predict
@@ -286,7 +297,7 @@ if __name__ == "__main__":
                              k=parameters['window_size'])
 
     scores = predict_links(feature_learner=feature_learner_test,
-                           edge_data=edge_data_test,
+                           edge_data=(edge_data_ids_test, edge_data_labels_test, ),
                            clf=clf_edge,
                            binary_operators=[binary_operator])
 
