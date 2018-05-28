@@ -25,7 +25,7 @@ class Node2VecFeatureLearning(object):
 
     def __init__(self, nxG=None, embeddings_filename=r'..\data\model.emb'):
         self.nxG = nxG
-        self.G  = None
+        self.G = None
         self.model = None
         self.embeddings_filename = embeddings_filename
 
@@ -48,6 +48,15 @@ class Node2VecFeatureLearning(object):
 
         return
 
+    def _assert_positive_int(self, val, msg=''):
+        """
+        Raises ValueError exception if val is not a positive integer.
+        :param val: The value to check
+        :param msg: The message to return with the exception
+        """
+        if val <= 0 or not isinstance(val, int):
+            raise ValueError(msg)
+
     def fit(self, p=1, q=1, d=128, r=10, l=80, k=10):
         """
         Pipeline for representational learning for all nodes in a graph.
@@ -60,12 +69,17 @@ class Node2VecFeatureLearning(object):
         :param k:
         :return:
         """
+        self._assert_positive_int(p, msg="p should be positive integer")
+        self._assert_positive_int(q, msg="q should be positive integer")
+        self._assert_positive_int(d, msg="d should be positive integer")
+        self._assert_positive_int(r, msg="r should be positive integer")
+        self._assert_positive_int(l, msg="l should be positive integer")
+        self._assert_positive_int(k, msg="k should be positive integer")
 
         start_time_fit = time.time()
         self.G = node2vec.Graph(self.nxG, False, p, q)
         self.G.preprocess_transition_probs()
         walks = self.G.simulate_walks(r, l)
-        #print("Time up to learn_embeddings()", time.time()-start_time_fit, "seconds")
         self.learn_embeddings(walks, d, k)
         print("Total time for fit()", time.time()-start_time_fit, "seconds")
 
@@ -94,9 +108,8 @@ class Node2VecFeatureLearning(object):
             return self.operator_avg
         elif binary_operator == 'h': #hadamard
             return self.operator_hadamard
-
-        print("CAUTION: Operator"+binary_operator+"is invalid. Returning Hadamard operator.")
-        return self.operator_hadamard  # default in case binary operator is not a valid value
+        else:
+            raise ValueError("Invalid binary operator {}".format(binary_operator))
 
     def operator_hadamard(self, u, v):
         return u*v
@@ -110,28 +123,26 @@ class Node2VecFeatureLearning(object):
     def operator_l1(self, u, v):
         return np.abs(u-v)
 
-    def transform(self, data_edge, binary_operator='h'):
+    def transform(self, edge_data, binary_operator='h'):
         """
         It calculates edge features for the given binary operator applied to the node features in data_edge
 
-        :param data_edge: It is a list of pairs of nodes that make an edge in the graph
+        :param edge_data: (2-tuple) It is a list of pairs of nodes that make an edge in the graph
         :param binary_operator: The binary operator to apply to the node features to calculate an edge feature
         :return: Features in X (Nxd array where N is the number of edges and d is the dimensionality of the edge
             features that is the same as the dimensionality of the node features) and edge labels in y (0 for no edge
             and 1 for edge).
         """
-        X = [] # data matrix, each row is a d-dimensional feature of an edge
-        y = [] # is label 0,1 for no-edge and edge respectively
+        X = []  # data matrix, each row is a d-dimensional feature of an edge
 
         func_bin_operator = self.select_operator_from_str(binary_operator)
 
-        for row in data_edge:
-            y.append(row[-1]) # the label, 0 or 1
-            u_str = str(row[0])
-            v_str = str(row[1])
+        for ids in edge_data[0]:
+            u_str = str(ids[0])
+            v_str = str(ids[1])
             if type(self.model) is Word2Vec:
                 X.append(func_bin_operator(self.model[u_str], self.model[v_str]))
-            else: # Pandas Dataframe
-                X.append(func_bin_operator(self.model.loc[u_str],self.model.loc[v_str]))
+            else:  # Pandas Dataframe
+                X.append(func_bin_operator(self.model.loc[u_str], self.model.loc[v_str]))
 
-        return np.array(X), np.array(y)
+        return np.array(X), edge_data[1]

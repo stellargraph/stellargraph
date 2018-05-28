@@ -19,7 +19,7 @@ import uuid
 import numpy as np
 import pandas as pd
 import logging
-from utils.epgm import EPGM
+from stellar.data.epgm import EPGM
 
 UNKNOWN_TARGET_ATTRIBUTE = '-1'
 
