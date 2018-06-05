@@ -58,6 +58,18 @@ def parse_args():
     parser.add_argument('--dataset_name', nargs='?', default='cora',
                         help='The dataset name as stored in graphs.json')
 
+    parser.add_argument('--p', nargs='?', default=0.1,
+                        help='Percent of edges to sample for positive and negative examples (valid values 0 < p < 1)')
+
+    parser.add_argument('--subgraph_size', nargs='?', default=0.1,
+                        help='Percent of nodes for a subgraph of the input data when --subsample is specified (valid values 0 < subgraph_size < 1)')
+
+    parser.add_argument('--edge_type', nargs='?', default='friend',
+                        help='The edge type to predict')
+
+    parser.add_argument('--hin', dest='hin', action='store_true',
+                        help='If specified, it indicates that the input graph in a heterogenous network; otherwise, the input graph is assumed homogeneous')
+
     parser.add_argument('--input_graph', nargs='?', default='~/Projects/data/cora/cora.epgm/',
                         help='Input graph filename')
 
@@ -208,6 +220,16 @@ def print_distance_probabilities(node_distances):
 if __name__ == "__main__":
     args = parse_args()
 
+    p = float(args.p)
+    if p <= 0 or p >= 1:
+        print("** Invalid value: p should be in the interval (0, 1) **")
+        exit(0)
+
+    subgraph_size = float(args.subgraph_size)
+    if subgraph_size <= 0 or subgraph_size > 1:
+        print("** Invalid value: subgraph_size should be in the interval (0, 1] **")
+        exit(0)
+
     print("Negative edges sampling method is set to {}.".format(args.sampling_method))
     sampling_probs = np.array([float(n) for n in args.sampling_probs.split(',')])
     if not isclose(sum(sampling_probs), 1.0):
@@ -224,8 +246,8 @@ if __name__ == "__main__":
         # subsample g_nx
         nodes = g_nx.nodes(data=False)
         np.random.shuffle(nodes)
-        subgraph_size = int(len(nodes)*0.1)
-        g_nx = g_nx.subgraph(nodes[0:subgraph_size])
+        subgraph_num_nodes = int(len(nodes)*subgraph_size)
+        g_nx = g_nx.subgraph(nodes[0:subgraph_num_nodes])
 
     # Check if graph is connected; if not, then select the largest subgraph to continue
     if nx.is_connected(g_nx):
@@ -238,9 +260,17 @@ if __name__ == "__main__":
 
     # From the original graph, extract E_test and G_test
     edge_splitter_test = EdgeSplitter(g_nx)
-    g_test, edge_data_ids_test, edge_data_labels_test = edge_splitter_test.train_test_split(p=0.1,
-                                                                                            method=args.sampling_method,
-                                                                                            probs=sampling_probs)
+    if args.hin:
+        g_test, edge_data_ids_test, \
+        edge_data_labels_test = edge_splitter_test.train_test_split(p=p,
+                                                                    edge_label=args.edge_type,
+                                                                    method=args.sampling_method,
+                                                                    probs=sampling_probs)
+    else:
+        g_test, edge_data_ids_test, \
+        edge_data_labels_test = edge_splitter_test.train_test_split(p=p,
+                                                                    method=args.sampling_method,
+                                                                    probs=sampling_probs)
     if args.show_histograms:
         if args.sampling_method == 'local':
             bins = np.arange(1, len(sampling_probs)+2)
@@ -253,9 +283,17 @@ if __name__ == "__main__":
     print_distance_probabilities(edge_splitter_test.negative_edge_node_distances)
 
     edge_splitter_train = EdgeSplitter(g_test, g_nx)
-    g_train, edge_data_ids_train, edge_data_labels_train = edge_splitter_train.train_test_split(p=0.1,
-                                                                                                method=args.sampling_method,
-                                                                                                probs=sampling_probs)
+    if args.hin:
+        g_train, edge_data_ids_train, \
+        edge_data_labels_train = edge_splitter_train.train_test_split(p=p,
+                                                                      edge_label=args.edge_type,
+                                                                      method=args.sampling_method,
+                                                                      probs=sampling_probs)
+    else:
+        g_train, edge_data_ids_train, \
+        edge_data_labels_train = edge_splitter_train.train_test_split(p=p,
+                                                                      method=args.sampling_method,
+                                                                      probs=sampling_probs)
     if args.show_histograms:
         if args.sampling_method == 'local':
             bins = np.arange(1, len(sampling_probs)+2)
