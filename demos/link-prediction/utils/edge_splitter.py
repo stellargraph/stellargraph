@@ -55,25 +55,7 @@ class EdgeSplitter(object):
         self.negative_edge_node_distances = None
         self.minedges = None
 
-    def train_test_split(self, p=0.5, method='global', **kwargs):
-        """
-        Generates positive and negative edges and a graph that has the same nodes as the original but the positive
-        edges removed
-        :param p: Percent of edges to be generated as a function of the total number of edges in the original graph
-        :param method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformaly at random.
-        If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is chosen
-        to be from the former's local neighbourhood.
-        :param probs: list The probabilities for sampling a node that is k-hops from the source node, e.g., [0.25, 0.75]
-        means that there is a 0.25 probability that the target node will be 1-hope away from the source node and 0.75
-        that it will be 2 hops away from the source node. This only affects sampling of negative edges if method is set
-        to 'local'.
-        :return: The reduced graph (positive edges removed) and the edge data as numpy array with first two columns the
-        node id defining the edge and the last column 1 or 0 for positive or negative example respectively.
-        """
-
-        if p <= 0 or p >= 1:
-            raise ValueError("The value of p must be in the interval (0,1)")
-
+    def _train_test_split_homogeneous(self, p, method, **kwargs):
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
         self.minedges = self._get_minimum_spanning_edges()
@@ -109,7 +91,154 @@ class EdgeSplitter(object):
         print("** Sampled {} positive and {} negative edges. **".format(len(self.positive_edges_ids),
                                                                         len(self.negative_edges_ids)))
 
+        return edge_data_ids, edge_data_labels
+
+    def _train_test_split_heterogeneous(self, p, method, edge_label):
+        """
+        Splitting edge data based on edge type.
+        :param p: <float> Percentage (with respect to the total number of edges) of positive and negative examples to
+        sample.
+        :param method: <str> Should be 'global' or 'local' specifying how negative edge samples are drawn
+        :param edge_label: <str> The edge type to split on
+        :return:
+        """
+        # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
+        # have been sampled.
+        self.minedges = self._get_minimum_spanning_edges()
+
+        positive_edges = self._reduce_graph_by_edge_type(minedges=self.minedges, p=p, edge_label=edge_label)
+        df = pd.DataFrame(positive_edges)
+        self.positive_edges_ids = np.array(df.iloc[:, 0:2])
+        self.positive_edges_labels = np.array(df.iloc[:, 2])
+
+        if method == 'global':
+            negative_edges = self._sample_negative_examples_by_edge_type_global(p=p,
+                                                                                edges=positive_edges,
+                                                                                edge_label=edge_label,
+                                                                                limit_samples=len(positive_edges))
+        elif method == 'local':
+            # Ah oh, where is kwargs?
+            probs = kwargs.get('probs', [0.0, 0.25, 0.50, 0.25])
+            print("Using sampling probabilities (distance from source node): {}".format(probs))
+            negative_edges = self._sample_negative_examples_local_dfs(p=p,
+                                                                      probs=probs,
+                                                                      limit_samples=len(positive_edges))
+        else:
+            raise ValueError('Invalid method {}'.format(method))
+
+        df = pd.DataFrame(negative_edges)
+        self.negative_edges_ids = np.array(df.iloc[:, 0:2])
+        self.negative_edges_labels = np.array(df.iloc[:, 2])
+
+        if len(self.positive_edges_ids) == 0:
+            raise Exception("Could not sample any positive edges")
+        if len(self.negative_edges_ids) == 0:
+            raise Exception("Could not sample any negative edges")
+
+        edge_data_ids = np.vstack((self.positive_edges_ids, self.negative_edges_ids))
+        edge_data_labels = np.hstack((self.positive_edges_labels, self.negative_edges_labels))
+        print("** Sampled {} positive and {} negative edges. **".format(len(self.positive_edges_ids),
+                                                                        len(self.negative_edges_ids)))
+
+        return edge_data_ids, edge_data_labels
+
+
+    def train_test_split(self, p=0.5, method='global', **kwargs):
+        """
+        Generates positive and negative edges and a graph that has the same nodes as the original but the positive
+        edges removed
+        :param p: Percent of edges to be generated as a function of the total number of edges in the original graph
+        :param method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformaly at random.
+        If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is chosen
+        to be from the former's local neighbourhood.
+        :param probs: list The probabilities for sampling a node that is k-hops from the source node, e.g., [0.25, 0.75]
+        means that there is a 0.25 probability that the target node will be 1-hope away from the source node and 0.75
+        that it will be 2 hops away from the source node. This only affects sampling of negative edges if method is set
+        to 'local'.
+        :param edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
+        of edges to split on
+        :return: The reduced graph (positive edges removed) and the edge data as numpy array with first two columns the
+        node id defining the edge and the last column 1 or 0 for positive or negative example respectively.
+        """
+        if p <= 0 or p >= 1:
+            raise ValueError("The value of p must be in the interval (0,1)")
+
+        edge_label = kwargs.get('edge_label', None)
+
+        if edge_label is not None:
+            print("Call a method that does the splitting based on edge type")
+            edge_data_ids, edge_data_labels = self._train_test_split_heterogeneous(p=p,
+                                                                                   method=method,
+                                                                                   edge_label=edge_label)
+        else:
+            edge_data_ids, edge_data_labels = self._train_test_split_homogeneous(p=p,
+                                                                                 method=method,
+                                                                                 kwargs=kwargs)
+
         return self.g_train, edge_data_ids, edge_data_labels
+
+    def _get_edges_of_type(self, edge_label):
+        # the graph in networkx format is stored in self.g_train
+        all_edges = self.g.edges(data=True)
+        # select those edges with edge_label
+        edges_with_label = [e for e in all_edges if e[2]['label'] == edge_label]
+
+        return edges_with_label
+
+    def _get_edge_source_and_target_node_types(self, edges):
+
+        all_nodes = self.g_train.nodes(data=True)
+        all_nodes_as_dict = { n[0]: n[1] for n in all_nodes}
+        edge_node_types = set()
+        for edge in edges:
+            edge_node_types.add((all_nodes_as_dict[edge[0]]['label'], all_nodes_as_dict[edge[1]]['label']))
+
+        return edge_node_types
+
+    def _reduce_graph_by_edge_type(self, minedges, p=0.5, edge_label=None):
+        """
+        Reduces the graph G by a factor p by removing existing edges not on minedges list such that the reduced tree
+        remains connected. The edges removed must of the type specified by edge_label.
+
+        :param minedges: spanning tree edges that cannot be removed
+        :param p: factor by which to reduce the size of the graph
+        :param edge_label: <str> The edge type to consider
+        :return: Returns the list of edges removed from G (also modifies G by removing said edges)
+        """
+        if edge_label is None:
+            raise ValueError("edge_label cannot be None")
+
+        # copy the original graph and start over in case this is not the first time
+        # reduce_graph has been called.
+        self.g_train = self.g.copy()
+
+        # determine the number of edges in the graph that have edge_label type
+        # Multiply this number by p to determine the number of positive edge examples to sample
+        all_edges = self._get_edges_of_type(edge_label=edge_label)
+        num_edges_total = len(all_edges)
+        print("Network has {} edges of type {}".format(num_edges_total, edge_label))
+        #
+        num_edges_to_remove = int(num_edges_total * p)
+        # shuffle the edges
+        np.random.shuffle(all_edges)
+        #
+        # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
+        # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
+        count = 0
+        removed_edges = []
+        for edge in all_edges:
+            edge_uv = (edge[0], edge[1])
+            edge_vu = (edge[1], edge[0])
+            if (edge_uv not in minedges) and (edge_vu not in minedges):  # for sanity check (u,v) and (v,u)
+                removed_edges.append((edge[0], edge[1], 1))  # the last entry is the label
+                self.g_train.remove_edge(edge[0], edge[1])
+                count += 1
+                if count % 1000 == 0:
+                    print("Removed", count, "edges")
+            if count == num_edges_to_remove:
+                return removed_edges
+
+        return removed_edges
 
     def _reduce_graph(self, minedges, p=0.5):
         """
@@ -343,6 +472,64 @@ class EdgeSplitter(object):
                                                                                      target=v))
                 if count == num_edges_to_sample:
                     return sampled_edges
+
+        return sampled_edges
+
+    def _sample_negative_examples_by_edge_type_global(self, edges, edge_label, p=0.5, limit_samples=None):
+        """
+        It generates a list of edges that don't exist in graph G. The number of edges is equal to the number of edges in
+        G times p (that should be in the range (0,1] or limited to limit_samples if the latter is not None. The graph
+        G is not modified. This method samples uniformly at random nodes from the graph and, if they don't have an
+        edge in the graph, records the pair as a negative edge. However, this method makes certain that the negative
+        edges are between node types of interest for edge prediction in heterogeneous graphs.
+        :param edges: The positive edge samples; it is used to infer the types of source and target nodes to sample for
+        negative examples.
+        :param p: factor that multiplies the number of edges in the graph and determines the number of no-edges to
+            be sampled.
+        :param limit_samples: int or None, it limits the maximum number of sample to the given number
+        :return: Up to num_edges_to_sample*p or limit_samples edges that don't exist in the graph
+        """
+        self.negative_edge_node_distances = []
+        # determine the number of edges in the graph that have edge_label type
+        # Multiply this number by p to determine the number of positive edge examples to sample
+        all_edges = self._get_edges_of_type(edge_label=edge_label)
+        num_edges_total = len(all_edges)
+        print("Network has {} edges of type {}".format(num_edges_total, edge_label))
+        #
+        num_edges_to_sample = int(num_edges_total * p)
+
+        if limit_samples is not None:
+            if num_edges_to_sample > limit_samples:
+                num_edges_to_sample = limit_samples
+
+        edge_source_target_node_types = self._get_edge_source_and_target_node_types(edges=edges)
+
+        start_nodes = self.g.nodes(data=True)
+        end_nodes = self.g.nodes(data=True)
+
+        count = 0
+        sampled_edges = []
+
+        num_iter = int(np.ceil(num_edges_to_sample / (1.0*len(start_nodes)))) + 1
+
+        for _ in np.arange(0, num_iter):
+            np.random.shuffle(start_nodes)
+            np.random.shuffle(end_nodes)
+            for u, v in zip(start_nodes, end_nodes):
+                u_v_edge_type = (u[1]['label'], v[1]['label'])
+                if (u_v_edge_type in edge_source_target_node_types) and (u != v) and ((u[0], v[0]) not in edges) \
+                        and ((v[0], u[0]) not in edges) and ((u[0], v[0], 0) not in sampled_edges) \
+                        and ((v[0], u[0], 0) not in sampled_edges):
+                    sampled_edges.append((u[0], v[0], 0))  # the last entry is the class label
+                    count += 1
+                    self.negative_edge_node_distances.append(nx.shortest_path_length(self.g,
+                                                                                     source=u[0],
+                                                                                     target=v[0]))
+                    if count % 1000 == 0:
+                        print("Sampled", count, "negative edges")
+
+                    if count == num_edges_to_sample:
+                        return sampled_edges
 
         return sampled_edges
 
