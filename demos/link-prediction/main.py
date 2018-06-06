@@ -67,6 +67,15 @@ def parse_args():
     parser.add_argument('--edge_type', nargs='?', default='friend',
                         help='The edge type to predict')
 
+    parser.add_argument('--edge_attribute_label', nargs='?', default='date',
+                        help='The attribute label by which to split edges')
+
+    parser.add_argument('--edge_attribute_threshold', nargs='?', default=None,
+                        help='Any edge with attribute value less that the threshold cannot be removed from graph')
+
+    parser.add_argument('--attribute_is_datetime', dest='attribute_is_datetime', action='store_true',
+                        help='If specified, the edge attribute to split on is considered datetime in format dd/mm/yyyy')
+
     parser.add_argument('--hin', dest='hin', action='store_true',
                         help='If specified, it indicates that the input graph in a heterogenous network; otherwise, the input graph is assumed homogeneous')
 
@@ -264,6 +273,9 @@ if __name__ == "__main__":
         g_test, edge_data_ids_test, \
         edge_data_labels_test = edge_splitter_test.train_test_split(p=p,
                                                                     edge_label=args.edge_type,
+                                                                    edge_attribute_label=args.edge_attribute_label,
+                                                                    edge_attribute_threshold=args.edge_attribute_threshold,
+                                                                    attribute_is_datetime=args.attribute_is_datetime,
                                                                     method=args.sampling_method,
                                                                     probs=sampling_probs)
     else:
@@ -287,6 +299,9 @@ if __name__ == "__main__":
         g_train, edge_data_ids_train, \
         edge_data_labels_train = edge_splitter_train.train_test_split(p=p,
                                                                       edge_label=args.edge_type,
+                                                                      edge_attribute_label=args.edge_attribute_label,
+                                                                      edge_attribute_threshold=args.edge_attribute_threshold,
+                                                                      attribute_is_datetime=args.attribute_is_datetime,
                                                                       method=args.sampling_method,
                                                                       probs=sampling_probs)
     else:
