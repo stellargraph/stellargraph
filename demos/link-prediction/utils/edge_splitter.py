@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -93,7 +94,7 @@ class EdgeSplitter(object):
 
         return edge_data_ids, edge_data_labels
 
-    def _train_test_split_heterogeneous(self, p, method, edge_label):
+    def _train_test_split_heterogeneous(self, p, method, edge_label, **kwargs):
         """
         Splitting edge data based on edge type.
         :param p: <float> Percentage (with respect to the total number of edges) of positive and negative examples to
@@ -104,9 +105,19 @@ class EdgeSplitter(object):
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
+        edge_attribute_label = kwargs.get('edge_attribute_label', None)
+        edge_attribute_threshold = kwargs.get('edge_attribute_threshold', None)
         self.minedges = self._get_minimum_spanning_edges()
 
-        positive_edges = self._reduce_graph_by_edge_type(minedges=self.minedges, p=p, edge_label=edge_label)
+        if edge_attribute_threshold is None:
+            positive_edges = self._reduce_graph_by_edge_type(minedges=self.minedges, p=p, edge_label=edge_label)
+        else:
+            positive_edges = self._reduce_graph_by_edge_type_and_attribute(minedges=self.minedges,
+                                                                           p=p,
+                                                                           edge_label=edge_label,
+                                                                           edge_attribute_label=edge_attribute_label,
+                                                                           edge_attribute_threshold=edge_attribute_threshold)
+
         df = pd.DataFrame(positive_edges)
         self.positive_edges_ids = np.array(df.iloc[:, 0:2])
         self.positive_edges_labels = np.array(df.iloc[:, 2])
@@ -164,24 +175,40 @@ class EdgeSplitter(object):
             raise ValueError("The value of p must be in the interval (0,1)")
 
         edge_label = kwargs.get('edge_label', None)
+        edge_attribute_label = kwargs.get('edge_attribute_label', None)
+        edge_attribute_threshold = kwargs.get('edge_attribute_threshold', None)
+        attribute_is_datetime = kwargs.get('attribute_is_datetime', None)
 
         if edge_label is not None:
-            print("Call a method that does the splitting based on edge type")
-            edge_data_ids, edge_data_labels = self._train_test_split_heterogeneous(p=p,
-                                                                                   method=method,
-                                                                                   edge_label=edge_label)
+            if edge_attribute_label and edge_attribute_threshold and not attribute_is_datetime:
+                raise ValueError("You can only split by datetime edge attribute")
+            else:  # all three are True
+                print("Call a method that does the splitting  on heterogeneous graph")
+                edge_data_ids, edge_data_labels = self._train_test_split_heterogeneous(p=p,
+                                                                                       method=method,
+                                                                                       edge_label=edge_label,
+                                                                                       edge_attribute_label=edge_attribute_label,
+                                                                                       edge_attribute_threshold=edge_attribute_threshold)
         else:
+            # treats all edge types equally
             edge_data_ids, edge_data_labels = self._train_test_split_homogeneous(p=p,
                                                                                  method=method,
                                                                                  kwargs=kwargs)
 
         return self.g_train, edge_data_ids, edge_data_labels
 
-    def _get_edges_of_type(self, edge_label):
+    def _get_edges(self, edge_label, edge_attribute_label=None, edge_attribute_threshold=None):
         # the graph in networkx format is stored in self.g_train
         all_edges = self.g.edges(data=True)
-        # select those edges with edge_label
-        edges_with_label = [e for e in all_edges if e[2]['label'] == edge_label]
+        if edge_attribute_label is None or edge_attribute_threshold is None:
+            # select those edges with edge_label
+            edges_with_label = [e for e in all_edges if e[2]['label'] == edge_label]
+        elif edge_attribute_threshold is not None and edge_attribute_threshold is not None:
+            edge_attribute_threshold_dt = datetime.datetime.strptime(edge_attribute_threshold, '%d/%m/%Y')
+            edges_with_label = [e for e in all_edges if (e[2]['label'] == edge_label
+                                and datetime.datetime.strptime(e[2][edge_attribute_label], '%d/%m/%Y') > edge_attribute_threshold_dt)]
+        else:
+            raise ValueError("Invalid parameters")  # not the most informative error!
 
         return edges_with_label
 
@@ -194,6 +221,65 @@ class EdgeSplitter(object):
             edge_node_types.add((all_nodes_as_dict[edge[0]]['label'], all_nodes_as_dict[edge[1]]['label']))
 
         return edge_node_types
+
+
+    def _reduce_graph_by_edge_type_and_attribute(self,
+                                                 minedges,
+                                                 p=0.5,
+                                                 edge_label=None,
+                                                 edge_attribute_label=None,
+                                                 edge_attribute_threshold=None):
+        """
+        Reduces the graph G by a factor p by removing existing edges not on minedges list such that the reduced tree
+        remains connected. The edges removed must of the type specified by edge_label.
+
+        :param minedges: spanning tree edges that cannot be removed
+        :param p: factor by which to reduce the size of the graph
+        :param edge_label: <str> The edge type to consider
+        :param attribute_label: <str> The edge attribute to consider
+        :param attribute_threshold: <str> The threshold value; only edges with attribute value larger than the
+        threshold can be removed
+        :return: Returns the list of edges removed from G (also modifies G by removing said edges)
+        """
+        if edge_label is None:
+            raise ValueError("edge_label cannot be None")
+        if edge_attribute_threshold is None:
+            raise ValueError("attribute_threshold cannot be None")
+
+        # copy the original graph and start over in case this is not the first time
+        # reduce_graph has been called.
+        self.g_train = self.g.copy()
+
+        # determine the number of edges in the graph that have edge_label type and edge attribute value
+        # large than attribute_threshold
+        # Multiply this number by p to determine the number of positive edge examples to sample
+        all_edges = self._get_edges(edge_label=edge_label,
+                                    edge_attribute_label=edge_attribute_label,
+                                    edge_attribute_threshold=edge_attribute_threshold)
+        num_edges_total = len(all_edges)
+        print("Network has {} edges of type {}".format(num_edges_total, edge_label))
+        #
+        num_edges_to_remove = int(num_edges_total * p)
+        # shuffle the edges
+        np.random.shuffle(all_edges)
+        #
+        # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
+        # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
+        count = 0
+        removed_edges = []
+        for edge in all_edges:
+            edge_uv = (edge[0], edge[1])
+            edge_vu = (edge[1], edge[0])
+            if (edge_uv not in minedges) and (edge_vu not in minedges):  # for sanity check (u,v) and (v,u)
+                removed_edges.append((edge[0], edge[1], 1))  # the last entry is the label
+                self.g_train.remove_edge(edge[0], edge[1])
+                count += 1
+                if count % 1000 == 0:
+                    print("Removed", count, "edges")
+            if count == num_edges_to_remove:
+                return removed_edges
+
+        return removed_edges
 
     def _reduce_graph_by_edge_type(self, minedges, p=0.5, edge_label=None):
         """
@@ -214,7 +300,7 @@ class EdgeSplitter(object):
 
         # determine the number of edges in the graph that have edge_label type
         # Multiply this number by p to determine the number of positive edge examples to sample
-        all_edges = self._get_edges_of_type(edge_label=edge_label)
+        all_edges = self._get_edges(edge_label=edge_label)
         num_edges_total = len(all_edges)
         print("Network has {} edges of type {}".format(num_edges_total, edge_label))
         #
@@ -492,7 +578,7 @@ class EdgeSplitter(object):
         self.negative_edge_node_distances = []
         # determine the number of edges in the graph that have edge_label type
         # Multiply this number by p to determine the number of positive edge examples to sample
-        all_edges = self._get_edges_of_type(edge_label=edge_label)
+        all_edges = self._get_edges(edge_label=edge_label)
         num_edges_total = len(all_edges)
         print("Network has {} edges of type {}".format(num_edges_total, edge_label))
         #
