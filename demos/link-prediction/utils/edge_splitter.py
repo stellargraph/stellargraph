@@ -131,9 +131,14 @@ class EdgeSplitter(object):
             # Ah oh, where is kwargs?
             probs = kwargs.get('probs', [0.0, 0.25, 0.50, 0.25])
             print("Using sampling probabilities (distance from source node): {}".format(probs))
-            negative_edges = self._sample_negative_examples_local_dfs(p=p,
-                                                                      probs=probs,
-                                                                      limit_samples=len(positive_edges))
+            negative_edges = self._sample_negative_examples_by_edge_type_local_dfs(p=p,
+                                                                                   probs=probs,
+                                                                                   edges_positive=positive_edges,
+                                                                                   edge_label=edge_label,
+                                                                                   limit_samples=len(positive_edges))
+            # negative_edges = self._sample_negative_examples_local_dfs(p=p,
+            #                                                           probs=probs,
+            #                                                           limit_samples=len(positive_edges))
         else:
             raise ValueError('Invalid method {}'.format(method))
 
@@ -152,7 +157,6 @@ class EdgeSplitter(object):
                                                                         len(self.negative_edges_ids)))
 
         return edge_data_ids, edge_data_labels
-
 
     def train_test_split(self, p=0.5, method='global', **kwargs):
         """
@@ -221,7 +225,6 @@ class EdgeSplitter(object):
             edge_node_types.add((all_nodes_as_dict[edge[0]]['label'], all_nodes_as_dict[edge[1]]['label']))
 
         return edge_node_types
-
 
     def _reduce_graph_by_edge_type_and_attribute(self,
                                                  minedges,
@@ -357,6 +360,109 @@ class EdgeSplitter(object):
                     print("Removed", count, "edges")
             if count == num_edges_to_remove:
                 return removed_edges
+
+    def _sample_negative_examples_by_edge_type_local_dfs(self,
+                                                         p=0.5,
+                                                         probs=None,
+                                                         edges_positive=None,
+                                                         edge_label=None,
+                                                         limit_samples=None):
+        """
+        It generates a list of edges that don't exist in graph G. The number of edges is equal to the number of edges in
+        G times p (that should be in the range (0,1] or limited to limit_samples if the latter is not None. This method
+        uses depth-first search to efficiently sample negative edges based on the local neighbourhood of randomly
+        (uniformly) sampled source nodes at distances defined by the probabilities in probs. The graph G is not
+        modified.
+        :param p: factor that multiplies the number of edges in the graph and determines the number of no-edges to
+            be sampled.
+        :param probs:
+        :param edges: <list> The positive edge examples
+        :param edge_label: <str> The edge type to sample negative examples of
+        :param limit_samples: int or None, it limits the maximum number of samples to the given number
+        :return: Up to num_edges_to_sample*p edges that don't exist in the graph
+        """
+        if probs is None:
+            probs = [0.0, 0.25, 0.50, 0.25]
+            print("Warning: Using default sampling probabilities up to 3 hops from source node with values {}".format(probs))
+
+        if not isclose(sum(probs), 1.0):
+            raise ValueError("Sampling probabilities do not sum to 1")
+
+        self.negative_edge_node_distances = []
+        n = len(probs)
+
+        # determine the number of edges in the graph that have edge_label type
+        # Multiply this number by p to determine the number of positive edge examples to sample
+        all_edges = self._get_edges(edge_label=edge_label)
+        num_edges_total = len(all_edges)
+        print("Network has {} edges of type {}".format(num_edges_total, edge_label))
+        #
+        num_edges_to_sample = int(num_edges_total * p)
+
+        # if self.minedges is None:
+        #     num_edges_to_sample = int(self.g.number_of_edges() * p)
+        # else:
+        #     num_edges_to_sample = int((self.g.number_of_edges() - len(self.minedges)) * p)
+        if limit_samples is not None:
+            if num_edges_to_sample > limit_samples:
+                num_edges_to_sample = limit_samples
+
+        edge_source_target_node_types = self._get_edge_source_and_target_node_types(edges=edges_positive)
+
+        if self.g_master is None:
+            edges = self.g.edges()
+        else:
+            edges = self.g_master.edges()
+
+        start_nodes = self.g.nodes(data=True)
+        nodes_dict = {node[0]: node[1]['label'] for node in start_nodes}
+
+        count = 0
+        sampled_edges = []
+
+        num_iter = int(np.ceil(num_edges_to_sample / (1.0*len(start_nodes))))+1
+
+        for _ in np.arange(0, num_iter):
+            np.random.shuffle(start_nodes)
+            # sample the distance to the target node using probs
+            target_node_distances = np.random.choice(n, len(start_nodes), p=probs)+1
+            for u, d in zip(start_nodes, target_node_distances):
+                # perform DFS search up to d distance from the start node u.
+                visited = {node[0]: False for node in start_nodes}
+                nodes_stack = list()
+                # start at node u
+                nodes_stack.append((u[0], 0))  # tuple is node, depth
+                while len(nodes_stack) > 0:
+                    next_node = nodes_stack.pop()
+                    v = next_node[0]   # retrieve node id
+                    dv = next_node[1]  # retrieve node distance from u
+                    if not visited[v]:
+                        visited[v] = True
+                        # Check if this nodes is at depth d; if it is, then this could be selected as the
+                        # target node for a negative edge sample. Otherwise add its neighbours to the stack, only
+                        # if the depth is less than the search depth d.
+                        if dv == d:
+                            u_v_edge_type = (nodes_dict[u[0]], nodes_dict[v])
+                            # if no edge between u and next_node[0] then this is the sample, so record and stop
+                            # searching
+                            if (u_v_edge_type in edge_source_target_node_types) and (u[0] != v) and \
+                                    ((u[0], v) not in edges) and ((v, u[0]) not in edges) and \
+                                    ((u[0], v, 0) not in sampled_edges) and ((v, u[0], 0) not in sampled_edges):
+                                sampled_edges.append((u[0], v, 0))  # the last entry is the class label
+                                count += 1
+                                self.negative_edge_node_distances.append(d)
+                                break
+                        elif dv < d:
+                            neighbours = nx.neighbors(self.g, v)
+                            np.random.shuffle(neighbours)
+                            neighbours = [(k, dv+1) for k in neighbours]
+                            nodes_stack.extend(neighbours)
+
+                if count == num_edges_to_sample:
+                    return sampled_edges
+
+        return sampled_edges
+
 
     def _sample_negative_examples_local_dfs(self, p=0.5, probs=None, limit_samples=None):
         """
