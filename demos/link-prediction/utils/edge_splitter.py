@@ -207,6 +207,7 @@ class EdgeSplitter(object):
         edge_attribute_label = kwargs.get('edge_attribute_label', None)
         edge_attribute_threshold = kwargs.get('edge_attribute_threshold', None)
         attribute_is_datetime = kwargs.get('attribute_is_datetime', None)
+        sampling_probs = kwargs.get('probs', None)
 
         if edge_label is not None:  # working with a heterogeneous graph
             if edge_attribute_label and edge_attribute_threshold and not attribute_is_datetime:
@@ -220,7 +221,7 @@ class EdgeSplitter(object):
         else:  # working with a homogeneous graph
             edge_data_ids, edge_data_labels = self._train_test_split_homogeneous(p=p,
                                                                                  method=method,
-                                                                                 kwargs=kwargs)
+                                                                                 probs=sampling_probs)
 
         return self.g_train, edge_data_ids, edge_data_labels
 
