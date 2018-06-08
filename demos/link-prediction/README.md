@@ -88,5 +88,5 @@ python main.py --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Cata
 
 **Example 4: Heterogeneous graph predicting edges based on edge type and property** 
 ``` 
-python main.py --hin --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Catalog3" --output_node_features=~/data/bc3.emb  --edge_type="friend" --edge_attribute_labe="date" --attribute_is_datetime --edge_attribute_threshold="01/01/2005" --sampling_method='global'
+python main.py --hin --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Catalog3" --output_node_features=~/data/bc3.emb  --edge_type="friend" --edge_attribute_label="date" --attribute_is_datetime --edge_attribute_threshold="01/01/2005" --sampling_method='global'
 ```
