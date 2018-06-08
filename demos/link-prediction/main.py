@@ -144,7 +144,7 @@ def read_graph(graph_file, dataset_name):
     return g
 
 
-def link_prediction_clf(feature_learner, edge_data, binary_operators=['l1']):
+def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
     """
     Performs link prediction given that node features have already been computed. It uses the node features to
     derive edge features using the operators given. Then it trains a Logistic Regression classifier to predict
@@ -158,6 +158,10 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=['l1']):
     clf_best = None
     score_best = 0
     op_best = ''
+
+    if binary_operators is None:
+        printf("WARNING: Using default binary operator 'l1'")
+        binary_operators = ['l1']
 
     # for each type of binary operator
     for binary_operator in binary_operators:
@@ -188,7 +192,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=['l1']):
     return scores, clf_best, op_best
 
 
-def predict_links(feature_learner, edge_data, clf, binary_operators=['l1']):
+def predict_links(feature_learner, edge_data, clf, binary_operators=None):
     """
     Given a node feature learner and a trained classifier, it computes edge features, uses the classifier to predict
     the given edge data and calculate prediction accuracy.
@@ -198,6 +202,10 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=['l1']):
     :param binary_operators:
     :return:
     """
+    if binary_operators is None:
+        printf("WARNING: Using default binary operator 'l1'")
+        binary_operators = ['l1']
+
     scores = []  # the auc values for each binary operator (based on test set performance)
 
     # for each type of binary operator
