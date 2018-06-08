@@ -34,6 +34,10 @@ The script accepts the following command line arguments:
 - `input_graph <str>`  The directory where the graph in EPGM format is stored.
 - `output_node_features <str>` The file where the node features from representation learning are written 
 for future reference.
+- `subsample` If specified, the graph is subsampled (number of nodes reduced) by a default 0.1 factor, e.g,
+10 percent of the original graph. This option is useful for speeding up testing on large graphs.
+- `subgrap_size <float>` The size of the graph when the `subsample` option is given. It should be a value
+in the intervale (0,1).
 - `subgraph_size <float>` Valid values are in the interval (0, 1]. It reduces the graph size by the given factor. 
 Size reduction is performed by reducing the number of nodes in the graph by the given factor and removing all other
 nodes and edges connecting those nodes.
@@ -46,6 +50,9 @@ be specified using the probs command line parameter.
 - `sampling_probs <str: comma separated list of floats>` The probability distribution for sampling distances between 
 source and target nodes. The first value should always be 0.0 and the remaining values should sum to one. An example for 
 sampling target nodes up to 4 edges away from source is `"0.0, 0.25, 0.25, 0.5"`.
+- `p <float>` If specified, it indicates the number of positive and negative edges to be used for training
+the link prediction classifier. The value indicates a percentage with respect to the relevant number of
+edges in the input graph. The default value is 0.1 and valid values are in the range (0,1).
 - `hin` If specified, it indicates that the input graph is heterogeneous. If not specified, a heterogeneous graph is
 simplified to homogeneous and the options `edge_type`, `edge_attribute_label`, `edge_attribute_threshold`, and
 `attribute_is_datetime` are ignored even if given.
