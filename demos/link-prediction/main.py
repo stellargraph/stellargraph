@@ -19,7 +19,7 @@ from math import isclose
 import os
 import networkx as nx
 import numpy as np
-from utils.edge_splitter import EdgeSplitter
+from stellar.data.edge_splitter import EdgeSplitter
 from utils.node2vec_feature_learning import Node2VecFeatureLearning
 from sklearn.pipeline import Pipeline
 from collections import Counter
