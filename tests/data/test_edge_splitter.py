@@ -296,6 +296,8 @@ class TestEdgeSplitterHeterogeneous(object):
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
+        assert num_sampled_positives > 0
+        assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) <= 2
         assert len(g_test.edges()) < len(self.g.edges())
@@ -312,6 +314,8 @@ class TestEdgeSplitterHeterogeneous(object):
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
+        assert num_sampled_positives > 0
+        assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) <= 2
         assert len(g_test.edges()) < len(self.g.edges())
