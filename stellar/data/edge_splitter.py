@@ -139,6 +139,9 @@ class EdgeSplitter(object):
                                                                            edge_attribute_label=edge_attribute_label,
                                                                            edge_attribute_threshold=edge_attribute_threshold)
 
+        if len(positive_edges) == 0:
+            raise Exception("ERROR: Unable to sample any positive edges of type '{}'".format(edge_label))
+
         df = pd.DataFrame(positive_edges)
         self.positive_edges_ids = np.array(df.iloc[:, 0:2])
         self.positive_edges_labels = np.array(df.iloc[:, 2])
@@ -312,7 +315,7 @@ class EdgeSplitter(object):
                                     edge_attribute_threshold=edge_attribute_threshold)
         # Also, calculate the number of these edges in the graph.
         num_edges_total = len(all_edges)
-        print("Graph has {} edges of type {}".format(num_edges_total, edge_label))
+        # print("Graph has {} edges of type {}".format(num_edges_total, edge_label))
         # Multiply this number by p to determine the number of positive edge examples to sample
         num_edges_to_remove = int(num_edges_total * p)
         # shuffle the edges
