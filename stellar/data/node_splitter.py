@@ -24,9 +24,8 @@ from stellar.data.epgm import EPGM
 UNKNOWN_TARGET_ATTRIBUTE = '-1'
 
 
-class DataSplitter(object):
+class NodeSplitter(object):
     def __init__(self):
-        self.logger = logging.getLogger('sciluigi-interface')
         self.format_epgm = False
         self.g_epgm = None
         self.g_id = None
