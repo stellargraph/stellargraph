@@ -22,13 +22,6 @@ from stellar.data.edge_splitter import EdgeSplitter
 from stellar.data.epgm import EPGM
 
 
-# def delete_files_in_dir(path):
-#     for filename in os.listdir(path):
-#         filename_path = os.path.join(path, filename)
-#         if os.path.isfile(filename_path):
-#             os.unlink(filename_path)
-
-
 def read_graph(graph_file, dataset_name, directed=False, weighted=False):
     """
     Reads the input network in networkx.
@@ -101,6 +94,8 @@ class TestEdgeSplitterHomogeneous(object):
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
+        assert num_sampled_positives > 0
+        assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) <= 1
         assert len(g_test.edges()) < len(self.g.edges())
@@ -116,6 +111,8 @@ class TestEdgeSplitterHomogeneous(object):
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
+        assert num_sampled_positives > 0
+        assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) <= 2
         assert len(g_test.edges()) < len(self.g.edges())
@@ -129,6 +126,8 @@ class TestEdgeSplitterHomogeneous(object):
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
+        assert num_sampled_positives > 0
+        assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) <= 2
         assert len(g_test.edges()) < len(self.g.edges())
@@ -136,9 +135,9 @@ class TestEdgeSplitterHomogeneous(object):
 
         sampling_probs = [0.2, 0.1, 0.2, 0.5, 0.2]  # values don't sum to 1
         with pytest.raises(ValueError):
-            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
-                                                                                             method='local',
-                                                                                             probs=sampling_probs)
+            self.es_obj.train_test_split(p=p,
+                                         method='local',
+                                         probs=sampling_probs)
 
 
 class TestEdgeSplitterHeterogeneous(object):
@@ -153,6 +152,141 @@ class TestEdgeSplitterHeterogeneous(object):
     g = read_graph(input_dir, dataset_name)
     es_obj = EdgeSplitter(g)
 
+    def test_split_data_by_edge_type_and_attribute(self):
+        # test global method for negative edge sampling
+        self._test_split_data_by_edge_type_and_attribute(method='global')
+
+        # test local method for positive edge sampling
+        self._test_split_data_by_edge_type_and_attribute(method='local')
+
+    def _test_split_data_by_edge_type_and_attribute(self, method):
+        p = 0.1
+        res = self.es_obj.train_test_split(p=p,
+                                           method=method,
+                                           edge_label='friend',
+                                           edge_attribute_label='date',
+                                           attribute_is_datetime=True,
+                                           edge_attribute_threshold='01/01/2008')
+        g_test, edge_data_ids_test, edge_data_labels_test = res
+
+        # if all goes well, what are the expected return values?
+        num_sampled_positives = np.sum(edge_data_labels_test == 1)
+        num_sampled_negatives = np.sum(edge_data_labels_test == 0)
+
+        assert num_sampled_positives > 0
+        assert num_sampled_negatives > 0
+        assert len(edge_data_ids_test) == len(edge_data_labels_test)
+        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert len(g_test.edges()) < len(self.g.edges())
+        assert nx.is_connected(g_test)
+
+        with pytest.raises(KeyError):
+            # This call will raise an exception because the edges of type friend don't have attribute of type 'Any'
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='Any',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='01/01/2008')
+            # This call will raise and exception because edges of type 'towards' don't have a 'date' attribute
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='towards',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='01/01/2008')
+
+        with pytest.raises(ValueError):
+            # This call will raise an exception because the edge attribute must be specified as datetime
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=False,
+                                         edge_attribute_threshold='01/01/2008')
+
+        # Th below call will raise an exception because the threshold value does not have the correct format dd/mm/yyyy
+        with pytest.raises(ValueError):
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='01/2008')
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='Jan 2005')
+
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='01-01-2000')
+            # month is out of range; no such thing as a 14th month in a year
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='01/14/2008')
+
+            # day is out of range; no such thing as a 32nd day in October
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='friend',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='32/10/2008')
+
+        with pytest.raises(Exception):
+            # This call to train_test_split will raise an exception because all the edges of type 'writes' are
+            # on the minimum spanning tree and cannot be removed.
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='writes',
+                                         edge_attribute_label='date',
+                                         attribute_is_datetime=True,
+                                         edge_attribute_threshold='01/01/2008')
+
+    def test_split_data_by_edge_type(self):
+        # test global method for negative edge sampling
+        self._test_split_data_by_edge_type(method='global')
+
+        # test local method for positive edge sampling
+        self._test_split_data_by_edge_type(method='local')
+
+    def _test_split_data_by_edge_type(self, method):
+        p = 0.1
+        g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
+                                                                                         method=method,
+                                                                                         edge_label='friend')
+
+        # if all goes well, what are the expected return values?
+        num_sampled_positives = np.sum(edge_data_labels_test == 1)
+        num_sampled_negatives = np.sum(edge_data_labels_test == 0)
+
+        assert len(edge_data_ids_test) == len(edge_data_labels_test)
+        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert len(g_test.edges()) < len(self.g.edges())
+        assert nx.is_connected(g_test)
+
+        with pytest.raises(Exception):
+            # This call will raise an exception because the graph has no edges of type 'Non Label'
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='No Label')
+
+        with pytest.raises(Exception):
+            # This call to train_test_split will raise an exception because all the edges of type 'writes' are
+            # on the minimum spanning tree and cannot be removed.
+            self.es_obj.train_test_split(p=p,
+                                         method=method,
+                                         edge_label='writes')
+
     def test_split_data_global(self):
         p = 0.1
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
@@ -166,7 +300,6 @@ class TestEdgeSplitterHeterogeneous(object):
         assert (num_sampled_positives - num_sampled_negatives) <= 2
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
-
 
     def test_split_data_local(self):
         p = 0.1
@@ -201,29 +334,23 @@ class TestEdgeSplitterCommon(object):
         # Test some edge cases for the value of p, e.g., < 0, = 0, > 1, =1
         p = 0
         with pytest.raises(ValueError):
-            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
-                                                                                             method='global')
+            self.es_obj.train_test_split(p=p, method='global')
 
         p = -0.1
         with pytest.raises(ValueError):
-            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
-                                                                                             method='global')
-
+            self.es_obj.train_test_split(p=p, method='global')
 
         p = 1.001
         with pytest.raises(ValueError):
-            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
-                                                                                             method='global')
+            self.es_obj.train_test_split(p=p, method='global')
 
         p = 1
         with pytest.raises(ValueError):
-            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
-                                                                                             method='global')
+            self.es_obj.train_test_split(p=p, method='global')
 
     def test_split_data_method_parameter(self):
         p = 0.5  # any value in the interval (0, 1) should do
         sampling_method = 'other'  # correct values are global and local only
         with pytest.raises(ValueError):
-            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(p=p,
-                                                                                             method=sampling_method)
+            self.es_obj.train_test_split(p=p, method=sampling_method)
 
