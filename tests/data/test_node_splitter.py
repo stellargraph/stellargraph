@@ -17,7 +17,7 @@
 import unittest
 import os
 import numpy as np
-from utils.data_splitter import DataSplitter
+from stellar.data.node_splitter import DataSplitter
 from stellar.data.epgm import EPGM
 from shutil import rmtree
 
@@ -33,13 +33,13 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
 
     def setUp(self):
         if os.getcwd().split('/')[-1] == 'tests':
-            self.base_output_directory = os.path.expanduser('../../../tests/resources/data_splitter')
-            self.input_dir = os.path.expanduser('../../../tests/resources/data/yelp/yelp.epgm')
-            self.output_dir = os.path.expanduser('../../../tests/resources/data_splitter/yelp.epgm.out')
+            self.base_output_directory = os.path.expanduser('resources/data_splitter')
+            self.input_dir = os.path.expanduser('resources/data/yelp/yelp.epgm')
+            self.output_dir = os.path.expanduser('resources/data_splitter/yelp.epgm.out')
         else:
-            self.base_output_directory = os.path.expanduser('../../tests/resources/data_splitter')
-            self.input_dir = os.path.expanduser('../../tests/resources/data/yelp/yelp.epgm')
-            self.output_dir = os.path.expanduser('../../tests/resources/data_splitter/yelp.epgm.out')
+            self.base_output_directory = os.path.expanduser('tests/resources/data_splitter')
+            self.input_dir = os.path.expanduser('tests/resources/data/yelp/yelp.epgm')
+            self.output_dir = os.path.expanduser('tests/resources/data_splitter/yelp.epgm.out')
 
         self.dataset_name = 'small_yelp_example'
         self.node_type = 'user'
@@ -143,17 +143,17 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
     def setUp(self):
         if os.getcwd().split('/')[-1] == 'tests':
-            self.base_output_directory = os.path.expanduser('../../../tests/resources/data_splitter')
-            self.input_dir = os.path.expanduser('../../../tests/resources/data/cora/cora.epgm')
-            self.output_dir = os.path.expanduser('../../../tests/resources/data_splitter/cora.epgm.out')
-            self.input_lab = os.path.expanduser('../../../tests/resources/data/cora/cora.lab/cora.lab')
-            self.output_dir_lab = os.path.expanduser('../../../tests/resources/data_splitter/cora.out')
+            self.base_output_directory = os.path.expanduser('resources/data_splitter')
+            self.input_dir = os.path.expanduser('resources/data/cora/cora.epgm')
+            self.output_dir = os.path.expanduser('resources/data_splitter/cora.epgm.out')
+            self.input_lab = os.path.expanduser('resources/data/cora/cora.lab/cora.lab')
+            self.output_dir_lab = os.path.expanduser('resources/data_splitter/cora.out')
         else:
-            self.base_output_directory = os.path.expanduser('../../tests/resources/data_splitter')
-            self.input_dir = os.path.expanduser('../../tests/resources/data/cora/cora.epgm')
-            self.output_dir = os.path.expanduser('../../tests/resources/data_splitter/cora.epgm.out')
-            self.input_lab = os.path.expanduser('../../tests/resources/data/cora/cora.lab/cora.lab')
-            self.output_dir_lab = os.path.expanduser('../../tests/resources/data_splitter/cora.out')
+            self.base_output_directory = os.path.expanduser('tests/resources/data_splitter')
+            self.input_dir = os.path.expanduser('tests/resources/data/cora/cora.epgm')
+            self.output_dir = os.path.expanduser('tests/resources/data_splitter/cora.epgm.out')
+            self.input_lab = os.path.expanduser('tests/resources/data/cora/cora.lab/cora.lab')
+            self.output_dir_lab = os.path.expanduser('tests/resources/data_splitter/cora.out')
 
         if not os.path.isdir(self.base_output_directory):
             os.mkdir(self.base_output_directory)
