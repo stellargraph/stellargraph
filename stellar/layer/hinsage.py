@@ -23,8 +23,8 @@ Heterogeneous GraphSAGE and compatible aggregator layers
 
 from keras.engine.topology import Layer
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape
-from typing import List, Callable, Tuple, Dict, Union
+from keras.layers import Lambda, Dropout, Reshape, Activation
+from typing import List, Callable, Tuple, Dict, Union, AnyStr
 
 
 class MeanHinAggregator(Layer):
@@ -32,10 +32,15 @@ class MeanHinAggregator(Layer):
     Mean Aggregator for HinSAGE implemented with Keras base layer
 
     """
-    def __init__(self, output_dim: int, bias: bool = False, act: Callable = K.relu, **kwargs):
+
+    def __init__(self,
+                 output_dim: int,
+                 bias: bool = False,
+                 act: AnyStr = 'relu',
+                 **kwargs):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
-        self.half_output_dim = int(output_dim/2)
+        self.half_output_dim = int(output_dim / 2)
         self.has_bias = bias
         self.act = act
         self.nr = None
@@ -48,20 +53,21 @@ class MeanHinAggregator(Layer):
     def build(self, input_shape):
         # Weight matrix for each type of neighbour
         self.nr = len(input_shape) - 1
-        self.w_neigh = [self.add_weight(
-            name='w_neigh_' + str(r),
-            shape=(input_shape[1+r][3], self.half_output_dim),
-            initializer=self._initializer,
-            trainable=True
-        ) for r in range(self.nr)]
+        self.w_neigh = [
+            self.add_weight(
+                name='w_neigh_' + str(r),
+                shape=(input_shape[1 + r][3], self.half_output_dim),
+                initializer=self._initializer,
+                trainable=True)
+            for r in range(self.nr)
+        ] # yapf: disable
 
         # Weight matrix for self
         self.w_self = self.add_weight(
             name='w_self',
             shape=(input_shape[0][2], self.half_output_dim),
             initializer=self._initializer,
-            trainable=True
-        )
+            trainable=True)
 
         # Optional bias
         if self.has_bias:
@@ -69,8 +75,7 @@ class MeanHinAggregator(Layer):
                 name='bias',
                 shape=[self.output_dim],
                 initializer='zeros',
-                trainable=True
-            )
+                trainable=True)
 
         super(MeanHinAggregator, self).build(input_shape)
 
@@ -78,10 +83,14 @@ class MeanHinAggregator(Layer):
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
 
         from_self = K.dot(x[0], self.w_self)
-        from_neigh = sum([K.dot(neigh_means[r], self.w_neigh[r]) for r in range(self.nr)]) / self.nr
+        from_neigh = sum(
+            [K.dot(neigh_means[r], self.w_neigh[r])
+             for r in range(self.nr)]) / self.nr
         total = K.concatenate([from_self, from_neigh], axis=2)
 
-        return self.act(total + self.bias if self.has_bias else total)
+        actx = self.act(total + self.bias if self.has_bias else total)
+
+        return Activation(self.act, name=kwargs.get('name'))(actx)
 
     def compute_output_shape(self, input_shape):
         return input_shape[0][0], input_shape[0][1], self.output_dim
@@ -90,9 +99,7 @@ class MeanHinAggregator(Layer):
 class Hinsage:
     """
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
-
     """
-
     def __init__(
             self,
             output_dims: List[Union[Dict[str, int], int]],
@@ -152,14 +159,16 @@ class Hinsage:
                       for layer in range(self.n_layers)]
 
         # Reshape object per neighbour per node per layer
-        self._neigh_reshape = [[[Reshape((-1,
-                                          self.n_samples[depth[i]],
-                                          self.dims[layer][input_neigh_tree[neigh_index][0]]))
-                                 for neigh_index in neigh_indices]
-                                for i, (_, neigh_indices) in enumerate(self.neigh_trees[layer])]
-                               for layer in range(self.n_layers)]
+        self._neigh_reshape = [[[
+                    Reshape((-1,
+                        self.n_samples[depth[i]],
+                        self.dims[layer][input_neigh_tree[neigh_index][0]]))
+                    for neigh_index in neigh_indices]
+                for i, (_, neigh_indices) in enumerate(self.neigh_trees[layer])]
+            for layer in range(self.n_layers)
+        ]
 
-        self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
+        self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
 
     def __call__(self, x: List):
         """
@@ -180,15 +189,26 @@ class Hinsage:
             """
 
             def neigh_list(i, neigh_indices):
-                return [self._neigh_reshape[layer][i][ni](x[neigh_index])
-                        for ni, neigh_index in enumerate(neigh_indices)]
+                return [
+                    self._neigh_reshape[layer][i][ni](x[neigh_index])
+                    for ni, neigh_index in enumerate(neigh_indices)
+                ]
 
             def x_next(agg: Dict[str, Layer]):
-                return [agg[node_type]([self._dropout(x[i]),
-                                        *[self._dropout(ne) for ne in neigh_list(i, neigh_indices)]])
-                        for i, (node_type, neigh_indices) in enumerate(self.neigh_trees[layer])]
+                return [
+                    agg[node_type]([
+                        self._dropout(x[i]), *[
+                            self._dropout(ne)
+                            for ne in neigh_list(i, neigh_indices)
+                            ]
+                        ],
+                        name="{}_{}".format(node_type,layer))
+                    for i, (node_type, neigh_indices) in enumerate(self.neigh_trees[layer])
+                ]
 
-            return compose_layers(x_next(self._aggs[layer]), layer + 1) if layer < self.n_layers else x
+            return (compose_layers(x_next(self._aggs[layer]), layer + 1)
+                    if layer < self.n_layers else x)
 
         x = compose_layers(x, 0)
-        return self._normalization(x[0]) if len(x) == 1 else [self._normalization(xi) for xi in x]
+        return (self._normalization(x[0]) if len(x) == 1
+                else [self._normalization(xi) for xi in x])
