@@ -74,6 +74,53 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
                          "Incorrect number of unique labels in y {:d} vs expected {:d}".format(number_of_unique_labels_in_y,
                                                                                                number_of_unique_labels))
 
+    def test_train_test_split_invalid_parameters(self):
+        nc = 10
+        test_size = 100
+
+        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
+        # I have to load the data again.
+        y = self.ds_obj.load_data(self.input_dir,
+                                  dataset_name=self.dataset_name,
+                                  node_type=self.node_type,
+                                  target_attribute=self.target_attribute)
+
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=None,  # this will raise a ValueError exception
+                                         p=nc,
+                                         test_size=test_size)
+
+            self.ds_obj.train_test_split(y=y,
+                                         p=-1,  # this will raise a ValueError exception
+                                         test_size=test_size)
+            self.ds_obj.train_test_split(y=y,
+                                         p=1.2,  # this will raise a ValueError exception
+                                         test_size=test_size)
+            self.ds_obj.train_test_split(y=y,
+                                         p=0,  # this will raise a ValueError exception
+                                         test_size=test_size)
+
+            self.ds_obj.train_test_split(y=y,
+                                         p=nc,
+                                         test_size=0)  # this will raise a ValueError exception
+            self.ds_obj.train_test_split(y=y,
+                                         p=nc,
+                                         test_size=-100)  # this will raise a ValueError exception
+            self.ds_obj.train_test_split(y=y,
+                                         p=nc,
+                                         test_size=99.10101)  # this will raise a ValueError exception
+
+            self.ds_obj.train_test_split(y=y,
+                                         method='percent',  # this will raise a ValueError exception; only 'count' allowed
+                                         p=nc,
+                                         test_size=test_size)
+
+            self.ds_obj.train_test_split(y=y,
+                                         method='any',  # this will raise a ValueError exception
+                                         p=nc,
+                                         test_size=test_size)
+
+
     def test_split_data_epgm(self):
 
         nc = 10
