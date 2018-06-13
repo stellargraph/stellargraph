@@ -108,7 +108,7 @@ class NodeSplitter(object):
             raise ValueError("y cannot be None")
         if method != 'count':
             raise ValueError("Only method 'count' is currently available")
-        if p < 0 or type(p) != int:
+        if p <= 0 or type(p) != int:
             raise ValueError("p should be positive integer")
 
         test_size = kwargs.get('test_size', None)
