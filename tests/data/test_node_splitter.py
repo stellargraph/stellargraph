@@ -17,7 +17,7 @@
 import unittest
 import os
 import numpy as np
-from stellar.data.node_splitter import DataSplitter
+from stellar.data.node_splitter import NodeSplitter
 from stellar.data.epgm import EPGM
 from shutil import rmtree
 
@@ -44,7 +44,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
         self.dataset_name = 'small_yelp_example'
         self.node_type = 'user'
         self.target_attribute = 'elite'
-        self.ds_obj = DataSplitter()
+        self.ds_obj = NodeSplitter()
 
         if not os.path.isdir(self.base_output_directory):
             os.mkdir(self.base_output_directory)
@@ -88,9 +88,12 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
 
         number_of_unique_labels = len(np.unique(y[:, 1])) - 1  # subtract one for missing value (-1) label
 
-        validation_size = y.shape[0] - test_size - nc*number_of_unique_labels -10  # there are 10 unlabeled point in yelp
+        # there are 10 unlabeled point in yelp
+        validation_size = y.shape[0] - test_size - nc*number_of_unique_labels -10
 
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.split_data(y, nc=nc, test_size=test_size)
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(y=y,
+                                                                                               p=nc,
+                                                                                               test_size=test_size)
 
         self.assertEqual(self.y_test.shape[0], test_size,
                          "Test dataset has wrong size {:d} vs expected {:d}".format(self.y_test.shape[0], test_size))
@@ -112,7 +115,9 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
                                   node_type=self.node_type,
                                   target_attribute=self.target_attribute)
 
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.split_data(y, nc=nc, test_size=test_size)
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(y=y,
+                                                                           p=nc,
+                                                                           test_size=test_size)
 
         self.ds_obj.write_data(self.output_dir,
                                dataset_name=self.dataset_name,
@@ -165,7 +170,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         self.dataset_name = 'cora'
         self.node_type = 'paper'
         self.target_attribute = 'subject'
-        self.ds_obj = DataSplitter()
+        self.ds_obj = NodeSplitter()
 
         # delete the contents of the output directories
         delete_files_in_dir(self.output_dir_lab)
@@ -199,7 +204,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
         validation_size = y.shape[0] - test_size - nc*number_of_unique_labels
 
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.split_data(y, nc=nc, test_size=test_size)
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(y=y,
+                                                                                               p=nc,
+                                                                                               test_size=test_size)
 
         self.assertEqual(self.y_test.shape[0], test_size,
                          "Test dataset has wrong size {:d} vs expected {:d}".format(self.y_test.shape[0], test_size))
@@ -221,7 +228,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
                                   node_type=self.node_type,
                                   target_attribute=self.target_attribute)
 
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.split_data(y, nc=nc, test_size=test_size)
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(y=y,
+                                                                           p=nc,
+                                                                           test_size=test_size)
 
         self.ds_obj.write_data(self.output_dir_lab,
                                dataset_name=self.dataset_name,
@@ -277,7 +286,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
         validation_size = y.shape[0] - test_size - nc*number_of_unique_labels
 
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.split_data(y, nc=nc, test_size=test_size)
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(y=y,
+                                                                                               p=nc,
+                                                                                               test_size=test_size)
 
         self.assertEqual(self.y_test.shape[0], test_size,
                          "Test dataset has wrong size {:d} vs expected {:d}".format(self.y_test.shape[0], test_size))
@@ -299,7 +310,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
                                   node_type=self.node_type,
                                   target_attribute=self.target_attribute)
 
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.split_data(y, nc=nc, test_size=test_size)
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(y=y,
+                                                                           p=nc,
+                                                                           test_size=test_size)
 
         self.ds_obj.write_data(self.output_dir,
                                dataset_name=self.dataset_name,

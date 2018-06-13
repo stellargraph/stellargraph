@@ -18,7 +18,6 @@ import os
 import uuid
 import numpy as np
 import pandas as pd
-import logging
 from stellar.data.epgm import EPGM
 
 UNKNOWN_TARGET_ATTRIBUTE = '-1'
@@ -58,7 +57,6 @@ class NodeSplitter(object):
         :return: N x 2 numpy arrays where the first column is the node id and the second column is the node label.
         """
         if os.path.isdir(path):
-            self.logger.debug('DATA SPLITTER: loading epgm graph from {}...'.format(path))
             self.format_epgm = True
             self.g_epgm = EPGM(path)
             graphs = self.g_epgm.G['graphs']
@@ -73,7 +71,6 @@ class NodeSplitter(object):
                 node_type = self.g_epgm.node_types(self.g_id)
                 if len(node_type) == 1:
                     node_type = node_type[0]
-                    self.logger.info('target node type not specified, assuming {} node type'.format(node_type))
                 else:
                     raise Exception('Multiple node types detected in graph {}: {}.'.format(self.g_id, node_type))
 
@@ -81,7 +78,6 @@ class NodeSplitter(object):
                 target_attribute = self.g_epgm.node_attributes(self.g_id, node_type)
                 if len(target_attribute) == 1:
                     target_attribute = target_attribute[0]
-                    self.logger.info('target node attribute not specified, assuming {} attribute'.format(target_attribute))
                 else:
                     raise Exception(
                         'Multiple node attributes detected for nodes of type {} in graph {}: {}.'.format(node_type, self.g_id, target_attribute))
@@ -89,30 +85,52 @@ class NodeSplitter(object):
             y = np.array(self._get_nodes(g_vertices, node_type=node_type, target_attribute=target_attribute))
 
         else:
-            self.logger.debug('DATA SPLITTER: loading indices and labels from {}...'.format(path))
             y_df = pd.read_csv(path, delimiter=' ', header=None, dtype=str)
             y_df.sort_values(by=[0], inplace=True)
-            self.logger.debug("labels_df shape: {}".format(y_df.shape))
 
             y = y_df.as_matrix()
 
-        self.logger.debug("labels_all shape: {}".format(y.shape))
-
         return y
 
-    def split_data(self, y, nc, test_size):
+    def train_test_split(self, p=10, y=None, method='count', **kwargs):
+        """
+        Splits node data into train, test, validation, and unlabeled sets.
+
+        :param p: <int or float> Percent or count of the number of points for each class to sample
+        :param y: <numpy array> Array of size Nx2 containing node id _ labels
+        :param method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of
+        points for each class to sample. Only 'count' is a valid option for now.
+        :param test_size: <int> number of points in test set. it should be less than or equal
+        to N - (np.unique(labels) * nc).
+        :return: y_train, y_val, y_test, y_unlabeled
+        """
+        if y is None:
+            raise ValueError("y cannot be None")
+        if method != 'count':
+            raise ValueError("Only method 'count' is currently available")
+        if p < 0 or type(p) != int:
+            raise ValueError("p should be positive integer")
+
+        test_size = kwargs.get('test_size', None)
+        # Some checks on the value of test_size
+        if test_size is None:
+            raise ValueError("test_size must be specified")
+        if test_size <=0 or type(test_size) != int:
+            raise ValueError("test_size must be positive integer")
+
+        return self._split_data(y, p, test_size)
+
+
+    def _split_data(self, y, nc, test_size):
         """
         Splits the data according to the scheme in Yang et al, ICML 2016, Revisiting semi-supervised learning with graph
         embeddings.
 
-        Args:
-            y (numpy.ndarray): Array of size N x 2 containing node id + labels.
-            nc (int): number of points from each class in train set.
-            test_size (int): number of points in test set;
-                it should be less than or equal to N - (np.unique(labels) * nc).
-
-        Returns:
-            y_train, y_val, y_test, y_unlabeled
+        :param y: <numpy.ndarray> Array of size N x 2 containing node id + labels.
+        :param nc: <int> number of points from each class in train set.
+        :param test_size: <int> number of points in test set; it should be less than or equal
+        to N - (np.unique(labels) * nc).
+        :return: y_train, y_val, y_test, y_unlabeled
         """
 
         # The label column in y could include None type, that is point with no ground truth label. These, if any,will
@@ -120,12 +138,11 @@ class NodeSplitter(object):
 
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
-        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)  # indexes of points with no class lable
+        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)  # indexes of points with no class label
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
         y_train = None
-        self.logger.debug("nc = {} and test_size = {}".format(nc, test_size))
 
         class_labels = np.unique(y[:, 1])
         ind = class_labels == UNKNOWN_TARGET_ATTRIBUTE
@@ -217,19 +234,15 @@ class NodeSplitter(object):
     def _write_data(self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled):
 
         y_train_filename = os.path.join(output_dir, dataset_name+'.idx.train')
-        self.logger.debug("Train data filename {}".format(y_train_filename))
         np.savetxt(y_train_filename, y_train, fmt='%s')  # was fmt=%d
 
         y_val_filename = os.path.join(output_dir, dataset_name+'.idx.validation')
-        self.logger.debug("Validation data filename {}".format(y_val_filename))
         np.savetxt(y_val_filename, y_val, fmt='%s')
 
         y_test_filename = os.path.join(output_dir, dataset_name+'.idx.test')
-        self.logger.debug("Test data filename {}".format(y_test_filename))
         np.savetxt(y_test_filename, y_test, fmt='%s')
 
         y_unlabeled_filename = os.path.join(output_dir, dataset_name+'.idx.unlabeled')
-        self.logger.debug("Unlabeled data filename {}".format(y_unlabeled_filename))
         np.savetxt(y_unlabeled_filename, y_unlabeled, fmt='%s')
 
         #return y_train_filename, y_val_filename, y_test_filename, y_unlabeled_filename
