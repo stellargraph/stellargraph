@@ -134,11 +134,11 @@ class EdgeDataGenerator(Sequence):
     def __getitem__(self, batch_num: int):
         'Generate one batch of data'
         start_idx = self.batch_size * batch_num
+        if (start_idx >= self.data_size):
+            print("this shouldn't happen ... ever")
+            start_idx = 0
         end_idx = start_idx + self.batch_size
 
-        if (start_idx >= self.data_size):
-            print("this shouldn't happen, but it does")
-            index = 0
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
         # Get edges and labels
