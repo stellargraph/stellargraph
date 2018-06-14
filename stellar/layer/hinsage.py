@@ -20,7 +20,6 @@ Heterogeneous GraphSAGE and compatible aggregator layers
 
 """
 
-
 from keras.engine.topology import Layer
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape, Activation
