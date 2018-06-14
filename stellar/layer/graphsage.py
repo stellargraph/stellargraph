@@ -152,6 +152,6 @@ class Graphsage:
                              self._dropout(self._neigh_reshape[layer][i](x[i+1]))])
                         for i in range(self.n_layers - layer)]
 
-            return compose_layers(x_next(self._aggs[layer]), layer + 1) if layer < self.n_layers else x
+            return compose_layers(x_next(self._aggs[layer]), layer + 1) if layer < self.n_layers else x[0]
 
         return self._normalization(compose_layers(x, 0))
