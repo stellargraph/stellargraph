@@ -99,3 +99,13 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# pycharm
+.idea/
+
+# graphsage logs
+demos/graphsage-test/log
+
+# pytest
+.pytest_cache
+

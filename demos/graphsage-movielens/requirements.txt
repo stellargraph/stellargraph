@@ -1,0 +1,7 @@
+tensorflow==1.7.0
+networkx==2.1
+numpy==1.13.3
+redis==2.10.6
+Keras==2.1.5
+scikit_learn==0.19.1
+typing==3.6.4
