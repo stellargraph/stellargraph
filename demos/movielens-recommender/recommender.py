@@ -45,14 +45,58 @@ import itertools as it
 import functools as ft
 
 from collections import defaultdict
-from typing import AnyStr, Any, List, Tuple, Dict, Optional
+from typing import AnyStr, Any, List, Tuple, Dict, Optional, Callable
 
 from keras import backend as K
-from keras import Input, Model, optimizers, losses, activations
+from keras import Input, Model, optimizers, losses, activations, metrics
 from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda
 from keras.utils import Sequence
 
 from stellar.layer.hinsage import Hinsage
+
+
+class LeakyClippedLinear(Layer):
+    """Clipped Linear Unit.
+    It follows:
+    `f(x) = x for x > alpha and x < beta`,
+    `f(x) = 0 otherwise`.
+
+    # Input shape
+        Arbitrary. Use the keyword argument `input_shape`
+        (tuple of integers, does not include the samples axis)
+        when using this layer as the first layer in a model.
+
+    # Output shape
+        Same shape as the input.
+
+    # Arguments
+        alpha: float >= 0. Lower threshold
+        beta: float >= 0. Upper threshold
+    """
+
+    def __init__(self, low=1.0, high=5.0, alpha=0.1, **kwargs):
+        super().__init__(**kwargs)
+        self.supports_masking = True
+        self.gamma = K.cast_to_floatx(1 - alpha)
+        self.lo = K.cast_to_floatx(low)
+        self.hi = K.cast_to_floatx(high)
+
+    def call(self, x, mask=None):
+        x_lo = K.relu(self.lo - x)
+        x_hi = K.relu(x - self.hi)
+        return x + self.gamma * x_lo - self.gamma * x_hi
+
+    def get_config(self):
+        config = {
+            'alpha': float(1 - self.gamma),
+            'low': float(self.lo),
+            'high': float(self.hi)
+        }
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
 
 
 class EdgeDataGenerator(Sequence):
@@ -80,7 +124,6 @@ class EdgeDataGenerator(Sequence):
         self.labels = labels
         self.data_size = len(ids)
         self.samples_per_hop = samples_per_hop
-        self.idx = 0
         self.name = name
         self.on_epoch_end()
 
@@ -88,17 +131,19 @@ class EdgeDataGenerator(Sequence):
         'Denotes the number of batches per epoch'
         return int(np.ceil(self.data_size / self.batch_size))
 
-    def __getitem__(self, index):
+    def __getitem__(self, batch_num: int):
         'Generate one batch of data'
-        if (self.idx >= self.data_size):
+        start_idx = self.batch_size * batch_num
+        end_idx = start_idx + self.batch_size
+
+        if (start_idx >= self.data_size):
             print("this shouldn't happen, but it does")
-            self.on_epoch_end()
-        print("Fetching {} batch {}".format(self.name, str(self.idx)))
+            index = 0
+        # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
         # Get edges and labels
-        idx_end = self.idx + self.batch_size
-        edges = self.ids[self.idx:idx_end]
-        batch_labels = self.labels[self.idx:idx_end]
+        edges = self.ids[start_idx:end_idx]
+        batch_labels = self.labels[start_idx:end_idx]
 
         # Extract head nodes from edges
         head_size = len(edges)
@@ -121,17 +166,7 @@ class EdgeDataGenerator(Sequence):
             for f in batch_feats
         ]
 
-        # Advance data index
-        self.idx = idx_end
-
         return batch_feats, batch_labels
-
-    def on_epoch_end(self):
-        'Resets index and shuffles data'
-        self.idx = 0
-        shuffle_inx = random.sample(range(self.data_size), self.data_size)
-        self.ids = [self.ids[i] for i in shuffle_inx]
-        self.labels = np.array([self.labels[i] for i in shuffle_inx])
 
 
 class MovielensData:
@@ -155,9 +190,8 @@ class MovielensData:
         with open(features_loc, 'rb') as f:
             self.features = pickle.load(f)
 
-        # Default config settings
+        # Feature size
         self.input_feature_size: int = self.features.shape[1]
-        self.batch_size: int = 1000
 
         # number of samples per additional layer,
         self.node_samples: List[int] = [30, 10]
@@ -177,9 +211,12 @@ class MovielensData:
 
         # Specify heterogeneous sampling schema
         self.subtree_schema = [
-            ('user', [2]), ('movie', [3]),
-            ('movie', [4]), ('user', [5]),
-            ('user', []), ('movie', []),
+            ('user', [2]),
+            ('movie', [3]),
+            ('movie', [4]),
+            ('user', [5]),
+            ('user', []),
+            ('movie', []),
         ]
 
         # Training and test edges
@@ -198,13 +235,12 @@ class MovielensData:
         self.edgelist_test = [(min(e), max(e)) for e in test_edges]
 
         # Create list of target labels
-        self.labels_train = np.array([
-            G.edges[e][target_name] for e in train_edges])
-        self.labels_test = np.array([
-            G.edges[e][target_name] for e in test_edges])
-        print("done!")
+        self.labels_train = np.array(
+            [G.edges[e][target_name] for e in train_edges])
+        self.labels_test = np.array(
+            [G.edges[e][target_name] for e in test_edges])
 
-    def shapes_from_schema(self) -> List[Tuple[int,int]]:
+    def shapes_from_schema(self) -> List[Tuple[int, int]]:
         """This comes from the schema directly
     
         Returns:    
@@ -217,14 +253,13 @@ class MovielensData:
             Input(shape=shape_at(2))
         ]
         """
+
         def shape_at(i: int) -> Tuple[int, int]:
-            return (
-                np.product(self.node_samples[:i], dtype=int),
-                self.input_feature_size
-            )
+            return (np.product(self.node_samples[:i], dtype=int),
+                    self.input_feature_size)
 
         def from_schema(schema: List[Tuple[AnyStr, List[int]]]
-                              ) -> List[Tuple[int, int]]:
+                        ) -> List[Tuple[int, int]]:
             out_shapes = []
             level_indices = defaultdict(lambda: 0)
             for ii, s in enumerate(schema):
@@ -259,7 +294,9 @@ class MovielensData:
             adj[n] = neighs
         return adj
 
-    def sample_neighbours(self, indices: List[int], ns: int,
+    def sample_neighbours(self,
+                          indices: List[int],
+                          ns: int,
                           train: bool = True) -> List[List[int]]:
         """Returns ns nodes sampled from the neighbours of the supplied indices.
         
@@ -274,230 +311,126 @@ class MovielensData:
 
         adj = self.adj_list_train if train else self.adj_list_test
         return [
-            adj[inx][i]
-            for inx in indices
+            adj[inx][i] for inx in indices
             for i in np.random.randint(len(adj[inx]), size=ns)
         ]
 
-    def edge_data_generators(self):
-        train_gen = EdgeDataGenerator(self, self.edgelist_train,
-                                      self.labels_train, self.node_samples,
-                                      self.batch_size, 'train')
+    def create_model(self) -> Hinsage:
+        return Hinsage(
+            output_dims=self.layer_sizes,
+            n_samples=self.node_samples,
+            input_neigh_tree=self.subtree_schema,
+            input_dim={
+                'user': self.input_feature_size,
+                'movie': self.input_feature_size,
+            },
+            bias=self.use_bias,
+            dropout=self.dropout)
 
-        test_gen = EdgeDataGenerator(self, self.edgelist_test,
-                                     self.labels_test, self.node_samples,
-                                     self.batch_size, 'test')
+    def edge_data_generators(self, batch_size: int) -> Tuple[Sequence]:
+        train_gen = EdgeDataGenerator(
+            data=self,
+            ids=self.edgelist_train,
+            labels=self.labels_train,
+            samples_per_hop=self.node_samples,
+            batch_size=batch_size,
+            name='train')
+
+        test_gen = EdgeDataGenerator(
+            data=self,
+            ids=self.edgelist_test,
+            labels=self.labels_test,
+            samples_per_hop=self.node_samples,
+            batch_size=batch_size,
+            name='test')
         return train_gen, test_gen
 
 
-class RecommenderPrediction(Layer):
-    def __init__(self, method='ip', use_bias=False, act='relu', **kwargs):
-        self.method = method
-        self.use_bias = use_bias
-        self.activation = activations.get(act)
-        self.output_dim = 1
-        super().__init__(**kwargs)
+def classification_predictor(hidden_1: Optional[int] = None,
+                             hidden_2: Optional[int] = None,
+                             output_act: AnyStr = 'softmax',
+                             method: AnyStr = 'ip'):
+    """Returns a function that predicts an edge classification output from node features.
 
-    def build(self, input_shape):
-        if self.method!='ip':
-            self.W = self.add_weight(
-                name='regression',
-                shape=self.compute_output_shape(input_shape),
-                initializer='glorot',
-                trainable=True)
-        if self.use_bias:
-            pass
-        super().build(input_shape)  # Be sure to call this at the end
-
-    def call(self, x):
-        if self.method == 'concat':
-            xint = K.concatenate(x, axis=-1)
-        else:
-            xint = K.prod(x, axis=-1)
-
-        if self.method == 'ip':
-            out = K.sum(xint, axis=-1)
-        else:
-            out = K.dot(xint, self.W)
-            if self.use_bias:
-                out = K.bias_add(out, self.bias)
-            if self.activation is not None:
-                out = self.activation(out)
-
-        # Reduce dims
-        return K.squeeze(out, axis=2)
-
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], self.output_dim)
-
-
-def regression_pred_mul(x):
+        hidden_1 ([type], optional): Hidden size for the transform of node 1 features.
+        hidden_2 ([type], optional): Hidden size for the transform of node 1 features.
+        edge_function (str, optional): One of 'ip', 'mul', and 'concat'
+    
+    Returns:
+        Function taking HinSAGE edge tensors and returning a logit function.
     """
-    Function to transform HinSAGE output to score predictions for MovieLens graph.
+    def edge_function(x):
+        x0 = x[0]
+        x1 = x[1]
 
-    The edge feature is formed from a Hadamard product of transformed
-    movie and user embeddings.
+        if hidden_1:
+            x0 = Dense(hidden_1, activation='relu')(x0)
 
-    :param x:   HinSAGE output tensor
-    :return:    Score predictions
+        if hidden_2:
+            x1 = Dense(hidden_2, activation='relu')(x1)
+
+        if method == 'ip':
+            out = Lambda(
+                lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
+                    [x0, x1])
+
+        elif method == 'mul':
+            le = Multiply()([x0, x1])
+            out = Dense(2, activation=output_act)(le)
+
+        elif method == 'concat':
+            le = Concatenate()([x0, x1])
+            out = Dense(2, activation=output_act)(le)
+
+        return out
+
+    return edge_function
+
+
+def regression_predictor(hidden_1: Optional[int] = None,
+                         hidden_2: Optional[int] = None,
+                         clip_limits: Optional[Tuple[int]] = None,
+                         method: AnyStr = 'ip'):
+    """Returns a function that predicts an edge regression output from node features.
+
+        hidden_1 ([type], optional): Hidden size for the transform of node 1 features.
+        hidden_2 ([type], optional): Hidden size for the transform of node 1 features.
+        edge_function (str, optional): One of 'ip', 'mul', and 'concat'
+    
+    Returns:
+        Function taking HinSAGE edge tensors.
     """
-    x0 = Dense(32, activation='relu')(x[0])
-    x1 = Dense(32, activation='relu')(x[1])
-    le = Multiply()([x0, x1])
 
-    return Dense(1, activation='linear')(le)
+    def edge_function(x):
+        x0 = x[0]
+        x1 = x[1]
 
-def regression_pred_concat(x):
-    """
-    Function to transform HinSAGE output to score predictions for MovieLens graph
+        if hidden_1:
+            x0 = Dense(hidden_1, activation='relu')(x0)
 
-    The edge feature is formed from a concatenation of transformed movie
-    and user embeddings followed by a dense NN layer.
+        if hidden_2:
+            x1 = Dense(hidden_2, activation='relu')(x1)
 
-    :param x:   HinSAGE output tensor
-    :return:    Score predictions
-    """
-    x0 = Dense(16, activation='relu')(x[0])
-    x1 = Dense(16, activation='relu')(x[1])
-    le = Concatenate()([x0, x1])
-    le = Dense(32, activation='relu')(le)
+        if method == 'ip':
+            out = Lambda(
+                lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
+                    [x0, x1])
 
-    return Dense(1, activation='linear')(le)
+        elif method == 'mul':
+            le = Multiply()([x0, x1])
+            out = Dense(1, activation='linear')(le)
 
+        elif method == 'concat':
+            le = Concatenate()([x0, x1])
+            out = Dense(1, activation='linear')(le)
 
-def regression_pred_ip(x):
-    """
-    Function to transform HinSAGE output to score predictions for MovieLens graph
+        if clip_limits:
+            out = LeakyClippedLinear(
+                low=clip_limits[0], high=clip_limits[1], alpha=0.1)(out)
+        return out
 
-    This is a direct inner product between the user and movie embedddings.
-
-    :param x:   HinSAGE output tensor
-    :return:    Score predictions
-    """
-    x0 = Dense(16, activation='relu')(x[0])
-    x1 = Dense(16, activation='relu')(x[1])
-    return Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
-        [x0, x1])
+    return edge_function
 
 
-def train(ml_data: MovielensData, batch_size: int = 1000, num_epochs: int = 10):
-    """
-    Main training loop
-    """
-    # Select the edge regressor to use
-    if ml_data.edge_regressor == "ip":
-        regression_pred = regression_pred_ip
-
-    elif ml_data.edge_regressor == "concat":
-        regression_pred = regression_pred_concat
-
-    elif ml_data.edge_regressor == "mul":
-        regression_pred = regression_pred_mul
-
-    # Create data iterator
-    train_iter, test_iter = ml_data.edge_data_generators()
-
-    # HINSAGE model
-    hs = Hinsage(
-        output_dims=ml_data.layer_sizes,
-        n_samples=ml_data.node_samples,
-        input_neigh_tree=ml_data.subtree_schema,
-        input_dim={'user': ml_data.input_feature_size,
-                   'movie': ml_data.input_feature_size,},
-        bias=ml_data.use_bias,
-        dropout=ml_data.dropout)
-
-    x_inp = [Input(shape=s) for s in ml_data.shapes_from_schema()]
-    x_out = hs(x_inp)
-
-    print("outputs", x_out)
-
-    # Final estimator layer
-    #rl = RecommenderPrediction(method='ip', act='relu')
-    pred = regression_pred(x_out)
-
-    print("final model:", pred)
-
-    model = Model(inputs=x_inp, outputs=pred)
-    model.compile(
-        optimizer=optimizers.Adam(lr=0.01),
-        loss=losses.mean_squared_error,
-        metrics=['accuracy'])
-
-
-    model.fit_generator(train_iter, epochs=1, verbose=2)
-
-
-
-def test(ml_data: MovielensData, model_file: AnyStr):
-    """
-    Predict and measure the test performance
-    """
-    pass
-
-
-if __name__ == '__main__':
-    # yapf: disable
-    parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
-    parser.add_argument(
-        '-c', '--checkpoint', nargs='?', type=str, default=None,
-        help="Load a save checkpoint file")
-    parser.add_argument(
-        '-n', '--batch_size', type=int, default=500,
-        help="Load a save checkpoint file")
-    parser.add_argument(
-        '-e', '--epochs', type=int, default=10,
-        help="Number of epochs to train for")
-    parser.add_argument(
-        '-s', '--neighbour_samples', type=int, nargs='*', default=[30, 10],
-        help="The number of nodes sampled at each layer")
-    parser.add_argument(
-        '-l', '--layer_size', type=int, nargs='*', default=[50, 50],
-        help="The number of hidden features at each layer")
-    parser.add_argument(
-        '-m', '--method', type=str, default='ip',
-        help="The edge regression method: 'concat', 'mul', or 'ip")
-    parser.add_argument(
-        '-b', '--baseline', action='store_true',
-        help="Use a learned offset for each node.")
-    parser.add_argument(
-        '-g', '--graph', type=str,
-        default='data/ml-1m_split_graphnx.pkl',
-        help="The graph stored in networkx pickle format.")
-    parser.add_argument(
-        '-f', '--features', type=str, default='data/ml-1m_embeddings.pkl',
-        help="The node features to use, stored as a pickled numpy array.")
-    parser.add_argument(
-        '-t', '--target', type=str, default='score',
-        help="The target edge attribute, default is 'score'")
-    args, cmdline_args = parser.parse_known_args()
-    # yapf: enable
-
-    print("Running GraphSAGE recommender:")
-
-    graph_loc = os.path.expanduser(args.graph)
-    features_loc = os.path.expanduser(args.features)
-
-    ml_data = MovielensData(graph_loc, features_loc, args.target)
-
-    # Training: batch size & epochs
-    batch_size = args.batch_size
-    num_epochs = args.epochs
-
-    # number of samples per additional layer,
-    ml_data.node_samples = args.neighbour_samples
-
-    # number of features per additional layer
-    ml_data.layer_size = args.layer_size
-
-    # The edge regressor to use
-    ml_data.edge_regressor = args.method
-
-    # Per-node baselines - learns a baseline for movies and users
-    # requires fixed set of train/test movies + users
-    ml_data.node_baseline = args.baseline
-
-    if args.checkpoint is None:
-        train(ml_data, batch_size, num_epochs)
-    else:
-        test(ml_data, args.checkpoint)
+def root_mean_square_error(s_true, s_pred):
+    return K.sqrt(K.mean(K.pow(s_true - s_pred, 2)))
