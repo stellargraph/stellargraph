@@ -66,6 +66,35 @@ def test_mean_hin_agg_apply():
     assert actual == pytest.approx(expected)
 
 
+def test_mean_hin_agg_apply_2():
+    agg1 = MeanHinAggregator(2, act=lambda z: z)
+    agg1._initializer = 'ones'
+    agg2 = MeanHinAggregator(2, act=lambda z: z+1)
+    agg2._initializer = 'ones'
+
+
+    inp = [
+        keras.Input(shape=(1, 2)),
+        keras.Input(shape=(1, 2, 2)),
+        keras.Input(shape=(1, 2, 4))
+    ]
+    out1 = agg1(inp, name="test")
+    out2 = agg2(inp, name="test")
+
+    model = keras.Model(inputs=inp, outputs=[out1,out2])
+
+    x = [
+        np.array([[[1, 1]]]),
+        np.array([[[[2, 2], [2, 2]]]]),
+        np.array([[[[3, 3, 3, 3], [3, 3, 3, 3]]]])
+    ]
+
+    actual = model.predict(x)
+    print(actual)
+    expected = [np.array([[[2, 8]]]), np.array([[[4, 10]]])]
+    assert actual == pytest.approx(expected)
+
+
 def test_hinsage_constructor():
     hs = Hinsage(
         output_dims=[{'1': 2, '2': 2}, {'1': 2}],
