@@ -51,7 +51,7 @@ class MeanAggregator(Layer):
         self.w_self = None
         self.bias = None
         self._initializer = 'glorot_uniform'
-        super(MeanAggregator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def build(self, input_shape):
         self.w_neigh = self.add_weight(
@@ -73,7 +73,7 @@ class MeanAggregator(Layer):
                 initializer='zeros',
                 trainable=True
             )
-        super(MeanAggregator, self).build(input_shape)
+        super().build(input_shape)
 
     def call(self, x, **kwargs):
         neigh_means = K.mean(x[1], axis=2)

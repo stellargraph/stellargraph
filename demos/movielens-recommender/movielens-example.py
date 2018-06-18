@@ -52,12 +52,10 @@ from keras import Input, Model, optimizers, losses, activations, metrics
 from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda
 from keras.utils import Sequence
 
-from recommender import (MovielensData, root_mean_square_error,
-                         regression_predictor)
+from recommender import MovielensData, root_mean_square_error, regression_predictor
 
 
-def train(ml_data: MovielensData, batch_size: int = 1000,
-          num_epochs: int = 10):
+def train(ml_data: MovielensData, batch_size: int = 1000, num_epochs: int = 10):
     # Create data iterators
     train_iter, test_iter = ml_data.edge_data_generators(batch_size)
 
@@ -69,20 +67,21 @@ def train(ml_data: MovielensData, batch_size: int = 1000,
 
     # Final estimator layer
     score_prediction = regression_predictor(
-        hidden_1=32, hidden_2=32,
-        method=ml_data.edge_regressor,
-        )(x_out)
+        hidden_1=32, hidden_2=32, method=ml_data.edge_regressor
+    )(x_out)
 
     # Create Keras model for training
     model = Model(inputs=x_inp, outputs=score_prediction)
     model.compile(
         optimizer=optimizers.Adam(lr=0.0005),
         loss=losses.mean_squared_error,
-        metrics=[root_mean_square_error, metrics.mae])
+        metrics=[root_mean_square_error, metrics.mae],
+    )
 
     # Train model
     history = model.fit_generator(
-        train_iter, epochs=num_epochs, verbose=2, shuffle=True)
+        train_iter, epochs=num_epochs, verbose=2, shuffle=True
+    )
 
     # Evaluate and print metrics
     test_metrics = model.evaluate_generator(test_iter)
@@ -96,42 +95,73 @@ def test(ml_data: MovielensData, model_file: AnyStr):
     pass
 
 
-if __name__ == '__main__':
-    # yapf: disable
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
     parser.add_argument(
-        '-c', '--checkpoint', nargs='?', type=str, default=None,
-        help="Load a save checkpoint file")
+        "-c",
+        "--checkpoint",
+        nargs="?",
+        type=str,
+        default=None,
+        help="Load a save checkpoint file",
+    )
     parser.add_argument(
-        '-n', '--batch_size', type=int, default=500,
-        help="Load a save checkpoint file")
+        "-n", "--batch_size", type=int, default=500, help="Load a save checkpoint file"
+    )
     parser.add_argument(
-        '-e', '--epochs', type=int, default=10,
-        help="Number of epochs to train for")
+        "-e", "--epochs", type=int, default=10, help="Number of epochs to train for"
+    )
     parser.add_argument(
-        '-s', '--neighbour_samples', type=int, nargs='*', default=[30, 10],
-        help="The number of nodes sampled at each layer")
+        "-s",
+        "--neighbour_samples",
+        type=int,
+        nargs="*",
+        default=[30, 10],
+        help="The number of nodes sampled at each layer",
+    )
     parser.add_argument(
-        '-l', '--layer_size', type=int, nargs='*', default=[50, 50],
-        help="The number of hidden features at each layer")
+        "-l",
+        "--layer_size",
+        type=int,
+        nargs="*",
+        default=[50, 50],
+        help="The number of hidden features at each layer",
+    )
     parser.add_argument(
-        '-m', '--method', type=str, default='ip',
-        help="The edge regression method: 'concat', 'mul', or 'ip")
+        "-m",
+        "--method",
+        type=str,
+        default="ip",
+        help="The edge regression method: 'concat', 'mul', or 'ip",
+    )
     parser.add_argument(
-        '-b', '--baseline', action='store_true',
-        help="Use a learned offset for each node.")
+        "-b",
+        "--baseline",
+        action="store_true",
+        help="Use a learned offset for each node.",
+    )
     parser.add_argument(
-        '-g', '--graph', type=str,
-        default='data/ml-1m_split_graphnx.pkl',
-        help="The graph stored in networkx pickle format.")
+        "-g",
+        "--graph",
+        type=str,
+        default="data/ml-1m_split_graphnx.pkl",
+        help="The graph stored in networkx pickle format.",
+    )
     parser.add_argument(
-        '-f', '--features', type=str, default='data/ml-1m_embeddings.pkl',
-        help="The node features to use, stored as a pickled numpy array.")
+        "-f",
+        "--features",
+        type=str,
+        default="data/ml-1m_embeddings.pkl",
+        help="The node features to use, stored as a pickled numpy array.",
+    )
     parser.add_argument(
-        '-t', '--target', type=str, default='score',
-        help="The target edge attribute, default is 'score'")
+        "-t",
+        "--target",
+        type=str,
+        default="score",
+        help="The target edge attribute, default is 'score'",
+    )
     args, cmdline_args = parser.parse_known_args()
-    # yapf: enable
 
     print("Running GraphSAGE recommender:")
 

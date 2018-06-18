@@ -35,7 +35,7 @@ class MeanHinAggregator(Layer):
     def __init__(self,
                  output_dim: int,
                  bias: bool = False,
-                 act: AnyStr = 'relu',
+                 act: Callable = K.relu,
                  **kwargs):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
@@ -47,7 +47,7 @@ class MeanHinAggregator(Layer):
         self.w_self = None
         self.bias = None
         self._initializer = 'glorot_uniform'
-        super(MeanHinAggregator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def build(self, input_shape):
         # Weight matrix for each type of neighbour
@@ -59,7 +59,7 @@ class MeanHinAggregator(Layer):
                 initializer=self._initializer,
                 trainable=True)
             for r in range(self.nr)
-        ] # yapf: disable
+        ]
 
         # Weight matrix for self
         self.w_self = self.add_weight(
@@ -76,7 +76,7 @@ class MeanHinAggregator(Layer):
                 initializer='zeros',
                 trainable=True)
 
-        super(MeanHinAggregator, self).build(input_shape)
+        super().build(input_shape)
 
     def call(self, x, **kwargs):
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
@@ -86,7 +86,6 @@ class MeanHinAggregator(Layer):
             [K.dot(neigh_means[r], self.w_neigh[r])
              for r in range(self.nr)]) / self.nr
         total = K.concatenate([from_self, from_neigh], axis=2)
-
         actx = self.act(total + self.bias if self.has_bias else total)
 
         return Activation(self.act, name=kwargs.get('name'))(actx)

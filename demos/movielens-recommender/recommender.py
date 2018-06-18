@@ -1,35 +1,7 @@
 """
-Link Attribute Inference on a Heterogeneous Graph for the MovieLens dataset
+Link Attribute Inference on a Heterogeneous Graph,
 
-usage: movielens.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
-                    [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
-                    [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-m METHOD] [-b]
-                    [-g GRAPH] [-f FEATURES] [-t TARGET]
-
-Run GraphSAGE on movielens
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -c [CHECKPOINT], --checkpoint [CHECKPOINT]
-                        Load a save checkpoint file
-  -n BATCH_SIZE, --batch_size BATCH_SIZE
-                        Load a save checkpoint file
-  -e EPOCHS, --epochs EPOCHS
-                        Number of epochs to train for
-  -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
-                        The number of nodes sampled at each layer
-  -l [LAYER_SIZE [LAYER_SIZE ...]], --layer_size [LAYER_SIZE [LAYER_SIZE ...]]
-                        The number of hidden features at each layer
-  -m METHOD, --method METHOD
-                        The edge regression method: 'concat', 'mul', or 'ip
-  -b, --baseline        Use a learned offset for each node.
-  -g GRAPH, --graph GRAPH
-                        The graph stored in networkx pickle format.
-  -f FEATURES, --features FEATURES
-                        The node features to use, stored as a pickled numpy
-                        array.
-  -t TARGET, --target TARGET
-                        The target edge attribute, default is 'score'
+Containing functions for the MovieLens dataset (Move these elsewhere?)
 """
 import time
 import os
@@ -56,25 +28,14 @@ from stellar.layer.hinsage import Hinsage
 
 
 class LeakyClippedLinear(Layer):
-    """Clipped Linear Unit.
-    It follows:
-    `f(x) = x for x > alpha and x < beta`,
-    `f(x) = 0 otherwise`.
+    """Leaky Clipped Linear Unit.
 
-    # Input shape
-        Arbitrary. Use the keyword argument `input_shape`
-        (tuple of integers, does not include the samples axis)
-        when using this layer as the first layer in a model.
-
-    # Output shape
-        Same shape as the input.
-
-    # Arguments
-        alpha: float >= 0. Lower threshold
-        beta: float >= 0. Upper threshold
+        Args:
+            low (float): Lower threshold
+            high (float): Lower threshold
+            alpha (float) The slope of the function below low or above high.
     """
-
-    def __init__(self, low=1.0, high=5.0, alpha=0.1, **kwargs):
+    def __init__(self, low: float=1.0, high: float=5.0, alpha: float=0.1, **kwargs):
         super().__init__(**kwargs)
         self.supports_masking = True
         self.gamma = K.cast_to_floatx(1 - alpha)
@@ -110,11 +71,11 @@ class EdgeDataGenerator(Sequence):
                  batch_size: int = 1000,
                  name: AnyStr = 'train'):
         """Generate Data for the edge inference problem
-        
+
         Args:
             ids (List[Tuple[int, int]]): Edge IDs -> Tuple of (src, dst)
             labels (List[int]): Labels corresponding to previous edge IDs
-            number_of_samples (int): 
+            number_of_samples (int):
             batch_size (int, optional): Defaults to 1000.
             name (AnyStr, optional): Defaults to 'train'.
         """
@@ -242,8 +203,8 @@ class MovielensData:
 
     def shapes_from_schema(self) -> List[Tuple[int, int]]:
         """This comes from the schema directly
-    
-        Returns:    
+
+        Returns:
          [
             Input(shape=shape_at(0)),
             Input(shape=shape_at(0)),
@@ -274,11 +235,11 @@ class MovielensData:
     def nx_to_adj(self, G: nx.Graph,
                   edge_splits: List[int]) -> Dict[int, List[int]]:
         """Convert networkx graph to adjacency list
-        
+
         Args:
             G (nx.Graph): NetworkX graph
             edge_split (List[int]): Edge property to filter on.
-        
+
         Returns:
             [type]: Dict
         """
@@ -299,12 +260,12 @@ class MovielensData:
                           ns: int,
                           train: bool = True) -> List[List[int]]:
         """Returns ns nodes sampled from the neighbours of the supplied indices.
-        
+
         Args:
-            indices (List[int]): List of nodes to sample neigbhours of 
+            indices (List[int]): List of nodes to sample neigbhours of
             ns (int): Number of sampled neighbours, per node
             train (bool, optional): Use training graph if True, else test graph.
-        
+
         Returns:
             List[List[int]]: List of neighbour samples for each index.
         """
@@ -355,7 +316,7 @@ def classification_predictor(hidden_1: Optional[int] = None,
         hidden_1 ([type], optional): Hidden size for the transform of node 1 features.
         hidden_2 ([type], optional): Hidden size for the transform of node 1 features.
         edge_function (str, optional): One of 'ip', 'mul', and 'concat'
-    
+
     Returns:
         Function taking HinSAGE edge tensors and returning a logit function.
     """
@@ -396,7 +357,7 @@ def regression_predictor(hidden_1: Optional[int] = None,
         hidden_1 ([type], optional): Hidden size for the transform of node 1 features.
         hidden_2 ([type], optional): Hidden size for the transform of node 1 features.
         edge_function (str, optional): One of 'ip', 'mul', and 'concat'
-    
+
     Returns:
         Function taking HinSAGE edge tensors.
     """
