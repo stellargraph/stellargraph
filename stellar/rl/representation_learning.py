@@ -16,48 +16,49 @@
 
 
 class RepresentationLearning(object):
-    '''
+    """
     Abstract base class for representation learning.
     All public methods should be overridden by sub-classes.
-    '''
+    """
+
     def __init__(self, graph):
         self.graph = graph
 
-    def fit(self, graph, method='random-walk', **kwargs):  # Call fit to perform RL
-        '''
+    def fit(self, graph, method="random-walk", **kwargs):  # Call fit to perform RL
+        """
 
         :param graph: The graph
         :param method: Can be one of 'random-walk', 'biased-random-walk, 'gcn, 'fast-gcn', 'graph-sage', 'hin-sage'
         :param kwargs: Any other arguments specific to the RL method implemented in the sub-class
         :return:
-        '''
+        """
         pass
 
 
 class NodeRepresentationLearning(RepresentationLearning):
-    '''
+    """
     Representation learning for nodes.
-    '''
-    def fit(self, method='random-walk', **kwargs):
-        '''
+    """
+
+    def fit(self, method="random-walk", **kwargs):
+        """
         Given the selected method, e.g., random-walk, gcn, fast-gcn, graph-sage, it calculates features for each
         node in the graph.
         :param graph: The graph
         :param random_walk_explorer: Object, sub-class of GraphWalk, for random-walk method.
         :param gcn_learner: Object, for gcn-based methods
         :return:
-        '''
+        """
         pass
 
 
 class EdgeRepresentationLearning(RepresentationLearning):
-    '''
+    """
     Representation learning for edges.
-    '''
+    """
 
-
-    def fit(self, method='random-walk', **kwargs):
-        '''
+    def fit(self, method="random-walk", **kwargs):
+        """
         Given the selected method, e.g., random-walk, gcn, fast-gcn, graph-sage, it calculates features for each
         node in the graph.
         :param graph: The graph
@@ -67,9 +68,5 @@ class EdgeRepresentationLearning(RepresentationLearning):
         :param random_walk_explorer: Object, sub-class of GraphWalk, for random-walk method.
         :param gcn_learner: Object, for gcn-based methods
         :return:
-        '''
+        """
         pass
-
-
-
-
