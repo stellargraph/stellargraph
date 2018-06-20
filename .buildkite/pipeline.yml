@@ -9,3 +9,13 @@ steps:
         workdir: /app
         environment:
           - PYTHONDONTWRITEBYTECODE=1
+  - name: "style"
+    command:
+    - pip install -q --no-cache-dir black
+    - black --check stellar tests
+    plugins:
+      docker#v1.1.1:
+        image: "python:3.6"
+        workdir: /app
+        environment:
+          - PYTHONDONTWRITEBYTECODE=1
