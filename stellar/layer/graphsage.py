@@ -33,7 +33,9 @@ class MeanAggregator(Layer):
 
     """
 
-    def __init__(self, output_dim: int, bias: bool = False, act: Callable = K.relu, **kwargs):
+    def __init__(
+        self, output_dim: int, bias: bool = False, act: Callable = K.relu, **kwargs
+    ):
         """
         Construct mean aggregator
 
@@ -50,28 +52,28 @@ class MeanAggregator(Layer):
         self.w_neigh = None
         self.w_self = None
         self.bias = None
-        self._initializer = 'glorot_uniform'
+        self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
 
     def build(self, input_shape):
         self.w_neigh = self.add_weight(
-            name='w_neigh',
+            name="w_neigh",
             shape=(input_shape[1][3], self.half_output_dim),
             initializer=self._initializer,
-            trainable=True
+            trainable=True,
         )
         self.w_self = self.add_weight(
-            name='w_self',
+            name="w_self",
             shape=(input_shape[0][2], self.half_output_dim),
             initializer=self._initializer,
-            trainable=True
+            trainable=True,
         )
         if self.has_bias:
             self.bias = self.add_weight(
-                name='bias',
+                name="bias",
                 shape=[self.output_dim],
-                initializer='zeros',
-                trainable=True
+                initializer="zeros",
+                trainable=True,
             )
         super().build(input_shape)
 
@@ -95,13 +97,13 @@ class Graphsage:
     """
 
     def __init__(
-            self,
-            output_dims: List[int],
-            n_samples: List[int],
-            input_dim: int,
-            aggregator: Layer = MeanAggregator,
-            bias: bool = False,
-            dropout: float = 0.
+        self,
+        output_dims: List[int],
+        n_samples: List[int],
+        input_dim: int,
+        aggregator: Layer = MeanAggregator,
+        bias: bool = False,
+        dropout: float = 0.,
     ):
         """
         Construct aggregator and other supporting layers for GraphSAGE
@@ -120,13 +122,21 @@ class Graphsage:
         self.dims = [input_dim] + output_dims
         self.bias = bias
         self._dropout = Dropout(dropout)
-        self._aggs = [aggregator(self.dims[layer+1],
-                                 bias=self.bias,
-                                 act=K.relu if layer < self.n_layers - 1 else lambda x: x)
-                      for layer in range(self.n_layers)]
-        self._neigh_reshape = [[Reshape((-1, self.n_samples[i], self.dims[layer]))
-                                for i in range(self.n_layers - layer)]
-                               for layer in range(self.n_layers)]
+        self._aggs = [
+            aggregator(
+                self.dims[layer + 1],
+                bias=self.bias,
+                act=K.relu if layer < self.n_layers - 1 else lambda x: x,
+            )
+            for layer in range(self.n_layers)
+        ]
+        self._neigh_reshape = [
+            [
+                Reshape((-1, self.n_samples[i], self.dims[layer]))
+                for i in range(self.n_layers - layer)
+            ]
+            for layer in range(self.n_layers)
+        ]
         self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
 
     def __call__(self, x: List):
@@ -148,10 +158,20 @@ class Graphsage:
             """
 
             def x_next(agg):
-                return [agg([self._dropout(x[i]),
-                             self._dropout(self._neigh_reshape[layer][i](x[i+1]))])
-                        for i in range(self.n_layers - layer)]
+                return [
+                    agg(
+                        [
+                            self._dropout(x[i]),
+                            self._dropout(self._neigh_reshape[layer][i](x[i + 1])),
+                        ]
+                    )
+                    for i in range(self.n_layers - layer)
+                ]
 
-            return compose_layers(x_next(self._aggs[layer]), layer + 1) if layer < self.n_layers else x[0]
+            return (
+                compose_layers(x_next(self._aggs[layer]), layer + 1)
+                if layer < self.n_layers
+                else x[0]
+            )
 
         return self._normalization(compose_layers(x, 0))

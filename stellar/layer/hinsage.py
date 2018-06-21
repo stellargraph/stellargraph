@@ -32,11 +32,9 @@ class MeanHinAggregator(Layer):
 
     """
 
-    def __init__(self,
-                 output_dim: int,
-                 bias: bool = False,
-                 act: Callable = K.relu,
-                 **kwargs):
+    def __init__(
+        self, output_dim: int, bias: bool = False, act: Callable = K.relu, **kwargs
+    ):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
@@ -46,7 +44,7 @@ class MeanHinAggregator(Layer):
         self.w_neigh = []
         self.w_self = None
         self.bias = None
-        self._initializer = 'glorot_uniform'
+        self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
 
     def build(self, input_shape):
@@ -54,27 +52,30 @@ class MeanHinAggregator(Layer):
         self.nr = len(input_shape) - 1
         self.w_neigh = [
             self.add_weight(
-                name='w_neigh_' + str(r),
+                name="w_neigh_" + str(r),
                 shape=(input_shape[1 + r][3], self.half_output_dim),
                 initializer=self._initializer,
-                trainable=True)
+                trainable=True,
+            )
             for r in range(self.nr)
         ]
 
         # Weight matrix for self
         self.w_self = self.add_weight(
-            name='w_self',
+            name="w_self",
             shape=(input_shape[0][2], self.half_output_dim),
             initializer=self._initializer,
-            trainable=True)
+            trainable=True,
+        )
 
         # Optional bias
         if self.has_bias:
             self.bias = self.add_weight(
-                name='bias',
+                name="bias",
                 shape=[self.output_dim],
-                initializer='zeros',
-                trainable=True)
+                initializer="zeros",
+                trainable=True,
+            )
 
         super().build(input_shape)
 
@@ -82,13 +83,14 @@ class MeanHinAggregator(Layer):
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
 
         from_self = K.dot(x[0], self.w_self)
-        from_neigh = sum(
-            [K.dot(neigh_means[r], self.w_neigh[r])
-             for r in range(self.nr)]) / self.nr
+        from_neigh = (
+            sum([K.dot(neigh_means[r], self.w_neigh[r]) for r in range(self.nr)])
+            / self.nr
+        )
         total = K.concatenate([from_self, from_neigh], axis=2)
         actx = self.act(total + self.bias if self.has_bias else total)
 
-        return Activation(self.act, name=kwargs.get('name'))(actx)
+        return Activation(self.act, name=kwargs.get("name"))(actx)
 
     def compute_output_shape(self, input_shape):
         return input_shape[0][0], input_shape[0][1], self.output_dim
@@ -98,15 +100,16 @@ class Hinsage:
     """
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
     """
+
     def __init__(
-            self,
-            output_dims: List[Union[Dict[str, int], int]],
-            n_samples: List[int],
-            input_neigh_tree: List[Tuple[str, List[int]]],
-            input_dim: Dict[str, int],
-            aggregator: Layer = MeanHinAggregator,
-            bias: bool = False,
-            dropout: float = 0.
+        self,
+        output_dims: List[Union[Dict[str, int], int]],
+        n_samples: List[int],
+        input_neigh_tree: List[Tuple[str, List[int]]],
+        input_dim: Dict[str, int],
+        aggregator: Layer = MeanHinAggregator,
+        bias: bool = False,
+        dropout: float = 0.,
     ):
         """
         Construct aggregator and other supporting layers for HinSAGE
@@ -129,7 +132,11 @@ class Hinsage:
             """
 
             reduced = [li for li in input_tree if li[1][-1] < len(input_tree)]
-            return [input_tree] if len(reduced) == 0 else [input_tree] + eval_neigh_tree_per_layer(reduced)
+            return (
+                [input_tree]
+                if len(reduced) == 0
+                else [input_tree] + eval_neigh_tree_per_layer(reduced)
+            )
 
         assert len(n_samples) == len(output_dims)
         self.n_layers = len(n_samples)
@@ -138,31 +145,54 @@ class Hinsage:
         self._dropout = Dropout(dropout)
 
         # Neighbourhood info per layer
-        self.neigh_trees = eval_neigh_tree_per_layer([li for li in input_neigh_tree if len(li[1]) > 0])
+        self.neigh_trees = eval_neigh_tree_per_layer(
+            [li for li in input_neigh_tree if len(li[1]) > 0]
+        )
 
         # Depth of each input i.e. number of hops from root nodes
-        depth = [self.n_layers + 1 - sum([1 for li in [input_neigh_tree] + self.neigh_trees if i < len(li)])
-                 for i in range(len(input_neigh_tree))]
+        depth = [
+            self.n_layers
+            + 1
+            - sum([1 for li in [input_neigh_tree] + self.neigh_trees if i < len(li)])
+            for i in range(len(input_neigh_tree))
+        ]
 
         # Dict of {node type: dimension} per layer
-        self.dims = [dim if isinstance(dim, dict)
-                     else {k: dim for k, _ in ([input_neigh_tree] + self.neigh_trees)[layer]}
-                     for layer, dim in enumerate([input_dim] + output_dims)]
+        self.dims = [
+            dim
+            if isinstance(dim, dict)
+            else {k: dim for k, _ in ([input_neigh_tree] + self.neigh_trees)[layer]}
+            for layer, dim in enumerate([input_dim] + output_dims)
+        ]
 
         # Dict of {node type: aggregator} per layer
-        self._aggs = [{node_type: aggregator(output_dim,
-                                             bias=self.bias,
-                                             act=K.relu if layer < self.n_layers - 1 else lambda x: x)
-                       for node_type, output_dim in self.dims[layer+1].items()}
-                      for layer in range(self.n_layers)]
+        self._aggs = [
+            {
+                node_type: aggregator(
+                    output_dim,
+                    bias=self.bias,
+                    act=K.relu if layer < self.n_layers - 1 else lambda x: x,
+                )
+                for node_type, output_dim in self.dims[layer + 1].items()
+            }
+            for layer in range(self.n_layers)
+        ]
 
         # Reshape object per neighbour per node per layer
-        self._neigh_reshape = [[[
-                    Reshape((-1,
-                        self.n_samples[depth[i]],
-                        self.dims[layer][input_neigh_tree[neigh_index][0]]))
-                    for neigh_index in neigh_indices]
-                for i, (_, neigh_indices) in enumerate(self.neigh_trees[layer])]
+        self._neigh_reshape = [
+            [
+                [
+                    Reshape(
+                        (
+                            -1,
+                            self.n_samples[depth[i]],
+                            self.dims[layer][input_neigh_tree[neigh_index][0]],
+                        )
+                    )
+                    for neigh_index in neigh_indices
+                ]
+                for i, (_, neigh_indices) in enumerate(self.neigh_trees[layer])
+            ]
             for layer in range(self.n_layers)
         ]
 
@@ -194,19 +224,27 @@ class Hinsage:
 
             def x_next(agg: Dict[str, Layer]):
                 return [
-                    agg[node_type]([
-                        self._dropout(x[i]), *[
-                            self._dropout(ne)
-                            for ne in neigh_list(i, neigh_indices)
-                            ]
+                    agg[node_type](
+                        [
+                            self._dropout(x[i]),
+                            *[self._dropout(ne) for ne in neigh_list(i, neigh_indices)],
                         ],
-                        name="{}_{}".format(node_type,layer))
-                    for i, (node_type, neigh_indices) in enumerate(self.neigh_trees[layer])
+                        name="{}_{}".format(node_type, layer),
+                    )
+                    for i, (node_type, neigh_indices) in enumerate(
+                        self.neigh_trees[layer]
+                    )
                 ]
 
-            return (compose_layers(x_next(self._aggs[layer]), layer + 1)
-                    if layer < self.n_layers else x)
+            return (
+                compose_layers(x_next(self._aggs[layer]), layer + 1)
+                if layer < self.n_layers
+                else x
+            )
 
         x = compose_layers(x, 0)
-        return (self._normalization(x[0]) if len(x) == 1
-                else [self._normalization(xi) for xi in x])
+        return (
+            self._normalization(x[0])
+            if len(x) == 1
+            else [self._normalization(xi) for xi in x]
+        )
