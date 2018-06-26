@@ -3,6 +3,8 @@ import keras
 from keras import backend as K
 import numpy as np
 from data import GeneGraph, DataGenerator, TestDataGenerator
+from sklearn.metrics import precision_score, recall_score, f1_score, average_precision_score, roc_auc_score
+import os
 
 
 def create_model(nf, n_samples):
@@ -58,36 +60,64 @@ def create_model(nf, n_samples):
     return model
 
 
-def train(g: GeneGraph, nf, n_samples):
-    batch_iter = DataGenerator(g, nf, n_samples)
+def train(g: GeneGraph, nf, n_samples, epochs=1):
+    train_iter = DataGenerator(g, nf, n_samples, name="train")
+    valid_iter = DataGenerator(g, nf, n_samples, name="validate")
     model = create_model(nf, n_samples)
-    model.fit_generator(batch_iter, epochs=10, verbose=2)
+    model.fit_generator(train_iter, epochs=epochs, validation_data=valid_iter, max_queue_size=1, shuffle=True, verbose=2)
+    # print("Final train_iter.idx: {}, train_iter.data_size: {}".format(train_iter.idx, train_iter.data_size))   #this is not necessarily 0 at the end of training, since the iterator can be called more than needed, to fill the queue
+    # print("Final valid_iter.idx: {}, valid_iter.data_size: {}".format(valid_iter.idx, valid_iter.data_size))   #this is not necessarily 0, since the iterator can be called more than needed, to fill the queue
     return model
 
 
-def test(g: GeneGraph, nf, n_samples, model):
+def test(g: GeneGraph, nf, n_samples, model, threshold=0.5):
     test_iter = TestDataGenerator(g, nf, n_samples)
-    y_preds = model.predict_generator(test_iter)
-    y_trues_bin = np.concatenate(test_iter.y_true).ravel()[:len(g.ids_test)]
-    y_preds_bin = np.array(np.reshape(y_preds, (-1,)) >= 0.5, dtype=np.float64)
-    met = lambda f, k: sum([f(y_trues_bin[i], y_preds_bin[i]) and y_preds_bin[i] == k for i in range(len(g.ids_test))])
-    return {'tn': met(lambda t, p: t == p, 0),
+    y_preds_proba = model.predict_generator(test_iter)
+    y_preds_proba = np.reshape(y_preds_proba, (-1,))
+    y_preds = np.array(y_preds_proba >= threshold, dtype=np.float64)
+    y_trues = np.concatenate(test_iter.y_true).ravel()[:len(g.ids_test)]  # test_iter can be called more times than needed, to fill the queue, hence test_iter.y_true might be longer than needed and thus needs truncating
+
+    # Evaluate metrics (binary classification task):
+    precision = precision_score(y_trues, y_preds)
+    recall = recall_score(y_trues, y_preds)
+    average_precision = average_precision_score(y_trues, y_preds_proba)
+    f1score = f1_score(y_trues, y_preds)
+    roc_auc = roc_auc_score(y_trues, y_preds_proba)
+
+    met = lambda f, k: sum([f(y_trues[i], y_preds[i]) and y_preds[i] == k for i in range(len(g.ids_test))])
+    conf_matrix = {'tn': met(lambda t, p: t == p, 0),
             'fp': met(lambda t, p: t != p, 1),
             'fn': met(lambda t, p: t != p, 0),
             'tp': met(lambda t, p: t == p, 1)}
 
 
+    return precision, recall, f1score, average_precision, roc_auc, conf_matrix
+
+
 def main():
     print("Reading graph...")
+    data_dir = "/Users/tys017/Projects/Graph_Analytics/data/Alzheimer_genes/data_small_whole_graph/"
+    edge_data_fname = os.path.join(data_dir,"interactions_alz_nonalz_gwas.txt")
+    gene_attr_fname = os.path.join(data_dir,"nodes_alz_nonalz_gwas_filt.txt")
     g = GeneGraph(
-        "/Users/jun021/work/datasets/genes/data_small_whole_graph/interactions_alz_nonalz_gwas.txt",
-        "/Users/jun021/work/datasets/genes/data_small_whole_graph/nodes_alz_nonalz_gwas_filt.txt"
+        edge_data_fname,
+        gene_attr_fname
     )
-    nf = 414
-    n_samples = [5, 5]
-    model = train(g, nf, n_samples)
-    confu_mat = test(g, nf, n_samples, model)
-    print(confu_mat)
+    nf = g.feats.shape[1]   # number of node features
+    n_samples = [5, 5]      # YT: number of sampled neighbours (per edge type) for 1st and 2nd hop neighbourhoods of each node
+    print("Training the model...")
+    model = train(g, nf, n_samples, epochs=10)
+
+    print("Evaluating the model on test set...")
+    threshold = 0.5
+    precision, recall, f1score, average_precision, roc_auc, conf_matrix = test(g, nf, n_samples, model, threshold)
+    print('Precision score: {0:0.2f}'.format(precision))
+    print('Recall score: {0:0.2f}'.format(recall))
+    print('F1 score: {0:0.2f}'.format(f1score))
+    print('Average precision-recall score: {0:0.2f}'.format(average_precision))
+    print('ROC AUC score: {0:0.2f}'.format(roc_auc))
+    print("Confusion matrix for threshold={}:".format(threshold))
+    print(conf_matrix)
 
 
 if __name__ == "__main__":
