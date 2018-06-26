@@ -32,11 +32,12 @@ class GeneGraph:
 
         # Features
         self.feats = gene_attr.drop(["node_type"], axis=1)
-        self.feats.loc[-1] = [0] * 414
+        self.feats.loc[-1] = [0] * self.feats.shape[1]  # create an all-zeros feature vector for the special node with ind -1, i.e., a non-existant node
 
         # Labels
         self.labels = gene_attr["node_type"].map(lambda x: x == "alz")
 
+        # YT: create separate adjacency lists, one per edge type:
         self.adj_coex = (
             edge_data.loc[edge_data["int_type"] == "coexpression"]
             .groupby(["ensg1"])["ensg2"]
@@ -52,13 +53,14 @@ class GeneGraph:
             .groupby(["ensg1"])["ensg2"]
             .apply(list)
         )
-        self.adj_coex[-1] = [-1]
-        self.adj_ppi[-1] = [-1]
-        self.adj_epis[-1] = [-1]
+        self.adj_coex[-1] = [-1]  # YT: special (non-existent) node's adj list for coex edge type: neighbour of node [-1] (non-existent)
+                                  # is node [-1] (non-existent) with all-zeros feature vector
+        self.adj_ppi[-1] = [-1]   # YT: same for ppi edge type
+        self.adj_epis[-1] = [-1]  # YT: same for epis edge type
         for gene in gene_attr.index:
             for adj in [self.adj_coex, self.adj_ppi, self.adj_epis]:
                 if gene not in adj.index:
-                    adj[gene] = []
+                    adj[gene] = []  # YT: add empty neighbour lists to adj lists, for nodes who don't have neighbours via the corresponding edge type
 
     def get_feats(self, indices: List[int]):
         return self.feats.loc[indices].fillna(0).as_matrix()
@@ -105,15 +107,29 @@ class DataGenerator(keras.utils.Sequence):
         name: str = "train",
     ):
         """Initialization"""
-        self.batch_size = batch_size
+        if isinstance(batch_size,int):
+            self.batch_size = batch_size
+        else:
+            raise Exception("DataGenerator: batch_size should be of type int, got {}".format(type(batch_size)))
+
+        if isinstance(nf,int):
+            self.nf = nf
+        else:
+            raise Exception("DataGenerator: nf should be of type int, got {}".format(type(nf)))
+
         self.g = g
-        self.ids = g.ids_train
-        self.data_size = len(self.ids)
-        self.nf = nf
         self.ns = ns
+        if name == "train":
+            self.ids = g.ids_train
+        elif name == "validate":
+            self.ids = g.ids_val
+        else:
+            raise Exception("DataGenerator: name is {}; should be either \"train\" or \"validate\"".format(name))
+
+        self.data_size = len(self.ids)
         self.idx = 0
         self.name = name
-        self.on_epoch_end()
+        self.on_epoch_end()   # shuffle the data entries
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
@@ -121,20 +137,36 @@ class DataGenerator(keras.utils.Sequence):
 
     def __getitem__(self, index):
         """Generate one batch of data"""
-        if self.idx >= self.data_size:
-            print("this shouldn't happen, but it does")
+        if self.idx > self.data_size:
+            raise Exception(
+                "DataGenerator: index {} exceeds data size {}. This shouldn't happen!".format(
+                    self.idx, self.data_size
+                )
+            )
+        elif self.idx == self.data_size:
+            print(
+                "DataGenerator: index {} is equal to data size {}. Calling self.on_epoch_end()...".format(
+                    self.idx, self.data_size
+                )
+            )
             self.on_epoch_end()
+        else:
+            pass
+
         end = min(self.idx + self.batch_size, self.data_size)
         indices = list(self.ids[range(self.idx, end)])
         tgt, inp = self.g.get_batch(indices, self.ns)
         self.idx = end
+
+        # print('DataGenerator: index={}, batch size={}, self.idx={}, self.data_size={}'.format(index,len(indices),self.idx,self.data_size))
 
         return inp, tgt
 
     def on_epoch_end(self):
         """Updates indexes after each epoch"""
         self.idx = 0
-        np.random.shuffle(self.ids)
+        if self.name == "train":
+            np.random.shuffle(self.ids)
 
 
 class TestDataGenerator(keras.utils.Sequence):
@@ -150,7 +182,6 @@ class TestDataGenerator(keras.utils.Sequence):
         self.ns = ns
         self.idx = 0
         self.y_true = []
-        self.on_epoch_end()
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
@@ -163,6 +194,10 @@ class TestDataGenerator(keras.utils.Sequence):
         tgt, inp = self.g.get_batch(indices, self.ns)
         self.y_true += [tgt]
         self.idx = end
+
+        # print('TestDataGenerator: index={}, batch size={}, self.idx={}, self.data_size={}'.format(index, len(indices),
+        #                                                                                            self.idx,
+        #                                                                                            self.data_size))
 
         return inp
 
