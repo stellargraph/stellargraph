@@ -150,11 +150,11 @@ class DataGenerator(keras.utils.Sequence):
                 )
             )
         elif self.idx == self.data_size:
-            print(
-                "DataGenerator: index {} is equal to data size {}. Calling self.on_epoch_end()...".format(
-                    self.idx, self.data_size
-                )
-            )
+            # print(
+            #     "DataGenerator: index {} is equal to data size {}. Calling self.on_epoch_end()...".format(
+            #         self.idx, self.data_size
+            #     )
+            # )
             self.on_epoch_end()
         else:
             pass
