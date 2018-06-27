@@ -87,7 +87,8 @@ class MeanHinAggregator(Layer):
             sum([K.dot(neigh_means[r], self.w_neigh[r]) for r in range(self.nr)])
             / self.nr
         )
-        total = K.concatenate([from_self, from_neigh], axis=2)
+        total = K.concatenate([from_self, from_neigh], axis=2)   #YT: this corresponds to concat=Partial
+        # TODO: implement concat=Full and concat=False
         actx = self.act(total + self.bias if self.has_bias else total)
 
         return Activation(self.act, name=kwargs.get("name"))(actx)
