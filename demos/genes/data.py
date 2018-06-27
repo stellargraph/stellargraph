@@ -70,12 +70,18 @@ class GeneGraph:
 
     def sample_neighs(self, indices: List[int], ns: int):
         def with_adj(adj_curr):
-            return [
-                [-1] * ns
-                if len(adj) == 0 or ((not isinstance(adj, list)) and pd.isnull(adj))
-                else [adj[i] for i in np.random.randint(len(adj), size=ns)]
-                for adj in adj_curr.loc[indices].values
-            ]
+            if ns>0:
+                return [
+                    [-1] * ns
+                    if len(adj) == 0 or ((not isinstance(adj, list)) and pd.isnull(adj))
+            else [adj[i] for i in np.random.randint(len(adj), size=ns)]   # YT: sample ns neighbours of each node in indices
+                    for adj in adj_curr.loc[indices].values
+                ]
+            else:   # YT: if ns=0, do not sample neighbours and return a special node -1 (non-existent) with all-zero feature vector for neighbour aggregation
+                return [
+                    [-1]
+                    for adj in adj_curr.loc[indices].values
+                ]
 
         return with_adj(self.adj_coex), with_adj(self.adj_ppi), with_adj(self.adj_epis)
 
