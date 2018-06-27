@@ -13,7 +13,7 @@ from sklearn.metrics import (
 import os
 
 
-class GeneHinSAGEClassifier(object):
+class GeneHinSageClassifier(object):
     """Gene classification model with HinSAGE+logistic regression architecture"""
 
     def __init__(self, nf, n_samples, emb_dim=256):
@@ -51,7 +51,7 @@ class GeneHinSAGEClassifier(object):
         hs = Hinsage(
             output_dims=[self.emb_dim] * len(n_samples),
             n_samples=n_samples,
-            input_neigh_tree=[
+            input_neigh_tree=[  # TODO: must be simplified, and generalised to work for any number of HinSAGE layers
                 ("gene", [1, 2, 3]),
                 ("gene", [4, 5, 6]),
                 ("gene", [7, 8, 9]),
@@ -69,7 +69,7 @@ class GeneHinSAGEClassifier(object):
             input_dim={"gene": self.nf},
         )
 
-        x_inp = [
+        x_inp = [  # TODO: must be simplified, and generalised to work for any number of HinSAGE layers
             keras.Input(shape=(1, self.nf)),
             keras.Input(shape=(n_at(1), self.nf)),
             keras.Input(shape=(n_at(1), self.nf)),
@@ -88,12 +88,12 @@ class GeneHinSAGEClassifier(object):
         x_out = keras.layers.Reshape((self.emb_dim,))(hs(x_inp))
         pred = keras.layers.Activation("sigmoid")(keras.layers.Dense(1)(x_out))
 
-        self.model = keras.Model(
-            inputs=x_inp, outputs=pred
-        )  # stack the layers together into a model
+        # stack the layers together into a model, and compile the model with desired loss:
+        self.model = keras.Model(inputs=x_inp, outputs=pred)
+
         self.model.compile(
             optimizer=keras.optimizers.Adam(lr=0.01),
-            loss=create_weighted_binary_crossentropy(0.6, 9),
+            loss=create_weighted_binary_crossentropy(0.6, 9), # TODO: calculate weights automatically
             metrics=["accuracy"],
         )
 
@@ -117,9 +117,7 @@ class GeneHinSAGEClassifier(object):
         y_preds_proba = self.model.predict_generator(test_iter)
         y_preds_proba = np.reshape(y_preds_proba, (-1,))
         y_preds = np.array(y_preds_proba >= threshold, dtype=np.float64)
-        y_trues = np.concatenate(test_iter.y_true).ravel()[
-            : len(g.ids_test)
-        ]  # test_iter can be called more times than needed, to fill the queue, hence test_iter.y_true might be longer than needed and thus needs truncating
+        y_trues = np.concatenate(test_iter.y_true).ravel()[: len(g.ids_test)]  # test_iter can be called more times than needed, to fill the queue, hence test_iter.y_true might be longer than needed and thus needs truncating
 
         # Evaluate metrics (binary classification task):
         precision = precision_score(y_trues, y_preds)
@@ -145,12 +143,12 @@ class GeneHinSAGEClassifier(object):
 
 
 def main():
-    print("Reading graph...")
     data_dir = "/Users/tys017/Projects/Graph_Analytics/data/Alzheimer_genes/data_small_whole_graph/"
     edge_data_fname = os.path.join(data_dir, "interactions_alz_nonalz_gwas.txt")
     gene_attr_fname = os.path.join(data_dir, "nodes_alz_nonalz_gwas_filt.txt")
-    # Create the gene "graph" with genes as nodes and 3 adjacency lists, 1 per edge type
-    # Split the nodes into train/validation/test sets, and store them in g.ids_train, g.ids_val, and g.ids_test
+    print("Reading graph...")
+    # - Create the gene "graph" (NOT yet a nx graph!) with genes as nodes and 3 adjacency lists, 1 per edge type
+    # - Split the nodes into train/validation/test sets, and store them in g.ids_train, g.ids_val, and g.ids_test
     g = GeneGraph(edge_data_fname, gene_attr_fname)
     nf = g.feats.shape[1]  # number of node features
     # YT: number of sampled neighbours (per edge type) for 1st and 2nd hop neighbourhoods of each node
@@ -158,16 +156,15 @@ def main():
     n_samples = [2, 5]
 
     # Create a model:
-    gene_model = GeneHinSAGEClassifier(nf, n_samples, emb_dim=256)
+    gene_model = GeneHinSageClassifier(nf, n_samples, emb_dim=256)
 
-    print("Training the model...")
-    gene_model.train(g, epochs=3)
+    print("Training the {}-layer model with n_samples={}...".format(len(n_samples), n_samples))
+    gene_model.train(g, epochs=5)
 
     print("Evaluating the model on test set...")
     threshold = 0.5
-    precision, recall, f1score, average_precision, roc_auc, conf_matrix = gene_model.test(
-        g, threshold
-    )
+    precision, recall, f1score, average_precision, roc_auc, conf_matrix = \
+        gene_model.test(g, threshold)
     print("Precision score: {0:0.2f}".format(precision))
     print("Recall score: {0:0.2f}".format(recall))
     print("F1 score: {0:0.2f}".format(f1score))
