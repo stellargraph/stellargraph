@@ -95,7 +95,7 @@ class GeneGraph:
         return (
             self.get_labels(indices),
             [
-                self.get_feats(flatten(inds)).reshape([nb, -1, 414])
+                self.get_feats(flatten(inds)).reshape([nb, -1, self.feats.shape[1]])
                 for inds in [[indices], coex, ppi, epis, *coex_1, *ppi_1, *epis_1]
             ],
         )

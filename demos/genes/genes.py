@@ -123,7 +123,8 @@ def main():
         gene_attr_fname
     )
     nf = g.feats.shape[1]   # number of node features
-    n_samples = [5, 10]      # YT: number of sampled neighbours (per edge type) for 1st and 2nd hop neighbourhoods of each node
+    n_samples = [10, 10]    # YT: number of sampled neighbours (per edge type) for 1st and 2nd hop neighbourhoods of each node
+                            # length of n_samples list defines the number of layers in HinSAGE model
 
     # Create a model:
     gene_model = GeneHinSAGEClassifier(nf, n_samples, emb_dim=256)
