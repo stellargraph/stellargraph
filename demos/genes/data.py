@@ -91,7 +91,7 @@ class GeneGraph:
 
         return with_adj(self.adj_coex), with_adj(self.adj_ppi), with_adj(self.adj_epis)
 
-    def get_batch(self, indices: List[int], ns: List[int]):
+    def get_batch(self, indices: List[int], ns: List[int]):  # This will soon be replaced by the Mapper class
         nb = len(indices)
         flatten = lambda l: [item for sublist in l for item in sublist]
         coex, ppi, epis = self.sample_neighs(indices, ns[0])
