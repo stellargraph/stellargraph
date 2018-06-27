@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import networkx as nx
+import numpy as np
+import random
+
 
 class GraphWalk(object):
     """
@@ -113,10 +117,105 @@ class BreadthFirstWalk(GraphWalk):
     def run(self, **kwargs):
         """
 
-        :param n: Number of walks. If it is equal to the number of nodes in the graph, then it generates all the
-        sub-graphs with every node as the root and up to the given depth, d.
-        :param d: Depth of walk as in distance (number of edges) from starting node.
-        :return: (The return value might differ when compared to the other walk types with exception to
-        DepthFirstWalk defined above)
+        :param nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
+        given depth d.
+        :param n: <int> Number of walks per node id.
+        :param d: <int> Depth of walk as in distance (number of edges) from root node.
+        :param n_size: <int> The number of neighbouring nodes to expand. If a node's degree is smaller
+        than this parameter then resampling with replacement is used. If the node degree is larger than this parameter
+        then sampling without replacement is used to select a subset of the neighbouring nodes.
+        :return: A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        pass
+        nodes = kwargs.get("nodes", None)
+        n = kwargs.get("n", None)
+        d = kwargs.get("d", None)
+        n_size = kwargs.get("n_size", None)
+
+        self._check_parameter_values(nodes=nodes, n=n, d=d, n_size=n_size)
+
+        walks = []
+
+        for node in nodes:  # iterate over root nodes
+            for _ in range(n):  # do n bounded breadth first walks from each root node
+                q = list()  # the queue of neighbours
+                walk = list()  # the list of nodes in the subgraph of node
+                q.extend(
+                    [(node, 0)]
+                )  # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                while len(q) > 0:
+                    # remove the top element in the queue and
+                    frontier = q.pop(
+                        0
+                    )  # index 0 pop the item from the front of the list
+                    depth = frontier[1] + 1  # the depth of the neighbouring nodes
+                    walk.extend([frontier[0]])  # add to the walk
+                    if (
+                        depth <= d
+                    ):  # consider the subgraph up to and including depth d from root node
+                        neighbours = nx.neighbors(self.graph, frontier[0])
+                        if len(neighbours) == 0:
+                            # Oops, this node has no neighbours and it doesn't have a self link.
+                            # We can't handle this so raise an exception.
+                            raise ValueError(
+                                "Node with id {} has no neighbours and no self link. I don't know what to do!".format(
+                                    frontier[0]
+                                )
+                            )
+                        elif len(neighbours) < n_size:  # sample with replacement
+                            neighbours = random.choices(neighbours, k=n_size)
+                        elif (
+                            len(neighbours) > n_size
+                        ):  # sample without replacement up to n_size nodes
+                            neighbours = random.sample(neighbours, k=n_size)
+                        # add them to the back of the queue
+                        q.extend([(sampled_node, depth) for sampled_node in neighbours])
+
+                # finished i-th walk from node so add it to the list of walks as a list
+                walks.append(walk)
+
+        return walks
+
+    def _check_parameter_values(self, nodes, n, d, n_size):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        :param nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
+        given depth d.
+        :param n: <int> Number of walks per node id.
+        :param d: <int> Depth of walk as in distance (number of edges) from root node.
+        :param n_size: <int> The number of neighbouring nodes to expand. If a node's degree is smaller
+        than this parameter then resampling with replacement is used. If the node degree is larger than this parameter
+        then sampling without replacement is used to select a subset of the neighbouring nodes.
+        """
+        if nodes is None:
+            raise ValueError("A list of root node IDs was not provided.")
+        if type(nodes) != list:
+            raise ValueError("nodes parameter should be a list of node IDs.")
+        if (
+            len(nodes) == 0
+        ):  # this is not an error but maybe a warning should be printed to inform the caller
+            print(
+                "WARNING: No root node IDs given. An empty list will be returned as a result."
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "The number of walks per root node, n, should be a positive integer."
+            )
+        if type(n) != int:
+            raise ValueError(
+                "The number of walks per root node, n, should be integer type."
+            )
+
+        if d < 0:
+            raise ValueError("The walk depth, d, should be non-negative integer.")
+        if type(d) != int:
+            raise ValueError("The walk depth, d, should be integer type.")
+
+        if n_size <= 0:
+            raise ValueError(
+                "The neighbourhood size, n_size, should be positive integer."
+            )
+        if type(n_size) != int:
+            raise ValueError("The neighbourhood size, n_size, should be integer type.")
