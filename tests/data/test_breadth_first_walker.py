@@ -28,8 +28,8 @@ def create_test_graph():
     """
     g = nx.Graph()
     edges = [
-        ('0', 1),
-        ('0', 2),
+        ("0", 1),
+        ("0", 2),
         (1, 3),
         (1, 4),
         (3, 6),
@@ -38,7 +38,7 @@ def create_test_graph():
         (2, 5),
         (5, 9),
         (5, 10),
-        ('0', '0'),
+        ("0", "0"),
         (1, 1),
         (3, 3),
         (6, 6),
@@ -56,13 +56,12 @@ def create_test_graph():
 
 
 class TestBreadthFirstWalk(object):
-
     def test_parameter_checking(self):
         g = create_test_graph()
         bfw = BreadthFirstWalk(g)
 
         d = 1
-        nodes = ['0', 1]
+        nodes = ["0", 1]
         n = 1
         n_size = 1
 
@@ -71,7 +70,7 @@ class TestBreadthFirstWalk(object):
             bfw.run(nodes=None, d=d, n=n, n_size=n_size)
             bfw.run(nodes=0, d=d, n=n, n_size=n_size)
             # only list is acceptable type for nodes
-            bfw.run(nodes=(1, 2, ), d=d, n=n, n_size=n_size)
+            bfw.run(nodes=(1, 2), d=d, n=n, n_size=n_size)
             # d has to be positive integer or 0
             bfw.run(nodes=nodes, d=1.5, n=n, n_size=n_size)
             bfw.run(nodes=nodes, d=-1, n=n, n_size=n_size)
@@ -83,7 +82,7 @@ class TestBreadthFirstWalk(object):
             bfw.run(nodes=nodes, d=d, n=n, n_size=0)
             bfw.run(nodes=nodes, d=d, n=n, n_size=-5)
             bfw.run(nodes=nodes, d=d, n=-1, n_size=2.4)
-            bfw.run(nodes=nodes, d=d, n=n, n_size=(1, 2, ))
+            bfw.run(nodes=nodes, d=d, n=n, n_size=(1, 2))
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
         # is the best for checking this behaviour.
@@ -91,14 +90,13 @@ class TestBreadthFirstWalk(object):
         subgraph = bfw.run(nodes=nodes, d=d, n=n, n_size=n_size)
         assert len(subgraph) == 0
 
-
     def test_walk_generation_single_root_node(self):
 
         g = create_test_graph()
         bfw = BreadthFirstWalk(g)
 
         d = 0
-        nodes = ['0']
+        nodes = ["0"]
         n = 1
         n_size = 1
 
@@ -111,11 +109,11 @@ class TestBreadthFirstWalk(object):
 
         n_size = 2
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs[0]) == (1-n_size**(d+1))//(1-n_size)
+        assert len(subgraphs[0]) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs[0]) == (1-n_size**(d+1))//(1-n_size)
+        assert len(subgraphs[0]) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         d = 2
         n_size = 1
@@ -124,11 +122,11 @@ class TestBreadthFirstWalk(object):
 
         n_size = 2
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs[0]) == (1-n_size**(d+1))//(1-n_size)
+        assert len(subgraphs[0]) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs[0]) == (1-n_size**(d+1))//(1-n_size)
+        assert len(subgraphs[0]) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
     def test_walk_generation_many_root_nodes(self):
 
@@ -136,7 +134,7 @@ class TestBreadthFirstWalk(object):
         bfw = BreadthFirstWalk(g)
 
         d = 0
-        nodes = ['0', 2]
+        nodes = ["0", 2]
         n = 1
         n_size = 1
 
@@ -156,13 +154,13 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
         assert len(subgraphs) == 2
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
         assert len(subgraphs) == 2
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 1
         d = 2
@@ -175,13 +173,13 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
         assert len(subgraphs) == 2
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
         assert len(subgraphs) == 2
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
     def test_walk_generation_number_of_walks_per_root_nodes(self):
 
@@ -209,13 +207,13 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
         assert len(subgraphs) == 2
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
         assert len(subgraphs) == 2
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         #############################################################
         nodes = [1, 5]
@@ -224,21 +222,21 @@ class TestBreadthFirstWalk(object):
         d = 1
 
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs) == n*len(nodes)
+        assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
             assert len(subgraph) == 2
 
         n_size = 2
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs) == n*len(nodes)
+        assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs) == n*len(nodes)
+        assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         #############################################################
         nodes = [1, 5]
@@ -247,18 +245,18 @@ class TestBreadthFirstWalk(object):
         d = 2
 
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs) == n*len(nodes)
+        assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 3
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs) == n*len(nodes)
+        assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
 
         n_size = 4
         subgraphs = bfw.run(nodes=nodes, n=n, d=d, n_size=n_size)
-        assert len(subgraphs) == n*len(nodes)
+        assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
-            assert len(subgraph) == (1-n_size**(d+1))//(1-n_size)
+            assert len(subgraph) == (1 - n_size ** (d + 1)) // (1 - n_size)
