@@ -63,7 +63,16 @@ def create_model(nf, n_samples):
 def train(g: GeneGraph, nf, n_samples, epochs=1):
     train_iter = DataGenerator(g, nf, n_samples, name="train")
     valid_iter = DataGenerator(g, nf, n_samples, name="validate")
-    model = create_model(nf, n_samples)
+
+    # YT: create a proxy of n_samples to be passed to create_model, for model building.
+    # If none of ns in n_samples is 0, then n_samples_model is just a copy of n_samples
+    # If any of ns in n_samples is 0, replace it with 1 (1 neighbour sampled per node), but ensure in sample_neighs()
+    # that the sampled neighbour in this case is a special "non-node" with index -1 and all-zero feature vector
+    # This allows flexibility of setting any element of n_samples to 0, to avoid sampling neighbours in that hop
+    # In particular, this allows to set ALL elements of n_samples to 0, thus ignoring the graph structure completely
+    n_samples_model = [ns if ns>0 else 1 for ns in n_samples]
+    model = create_model(nf, n_samples_model)
+
     model.fit_generator(train_iter, epochs=epochs, validation_data=valid_iter, max_queue_size=1, shuffle=True, verbose=2)
     # print("Final train_iter.idx: {}, train_iter.data_size: {}".format(train_iter.idx, train_iter.data_size))   #this is not necessarily 0 at the end of training, since the iterator can be called more than needed, to fill the queue
     # print("Final valid_iter.idx: {}, valid_iter.data_size: {}".format(valid_iter.idx, valid_iter.data_size))   #this is not necessarily 0, since the iterator can be called more than needed, to fill the queue
@@ -104,7 +113,7 @@ def main():
         gene_attr_fname
     )
     nf = g.feats.shape[1]   # number of node features
-    n_samples = [5, 5]      # YT: number of sampled neighbours (per edge type) for 1st and 2nd hop neighbourhoods of each node
+    n_samples = [0, 0]      # YT: number of sampled neighbours (per edge type) for 1st and 2nd hop neighbourhoods of each node
     print("Training the model...")
     model = train(g, nf, n_samples, epochs=10)
 
