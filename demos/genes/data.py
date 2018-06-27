@@ -32,7 +32,9 @@ class GeneGraph:
 
         # Features
         self.feats = gene_attr.drop(["node_type"], axis=1)
-        self.feats.loc[-1] = [0] * self.feats.shape[1]  # create an all-zeros feature vector for the special node with ind -1, i.e., a non-existant node
+        self.feats.loc[-1] = [0] * self.feats.shape[
+            1
+        ]  # create an all-zeros feature vector for the special node with ind -1, i.e., a non-existant node
 
         # Labels
         self.labels = gene_attr["node_type"].map(lambda x: x == "alz")
@@ -53,16 +55,21 @@ class GeneGraph:
             .groupby(["ensg1"])["ensg2"]
             .apply(list)
         )
-        self.adj_coex[-1] = [-1]  # YT: special (non-existent) node's adj list for coex edge type: neighbour of node [-1] (non-existent)
-                                  # is node [-1] (non-existent) with all-zeros feature vector
-        self.adj_ppi[-1] = [-1]   # YT: same for ppi edge type
+        self.adj_coex[-1] = [
+            -1
+        ]  # YT: special (non-existent) node's adj list for coex edge type: neighbour of node [-1] (non-existent)
+        # is node [-1] (non-existent) with all-zeros feature vector
+        self.adj_ppi[-1] = [-1]  # YT: same for ppi edge type
         self.adj_epis[-1] = [-1]  # YT: same for epis edge type
         for gene in gene_attr.index:
             for adj in [self.adj_coex, self.adj_ppi, self.adj_epis]:
                 if gene not in adj.index:
-                    adj[gene] = []  # YT: add empty neighbour lists to adj lists, for nodes who don't have neighbours via the corresponding edge type
+                    adj[
+                        gene
+                    ] = []  # YT: add empty neighbour lists to adj lists, for nodes who don't have neighbours via the corresponding edge type
 
     def get_feats(self, indices: List[int]):
+        """Get features of nodes whose list is given in indices"""
         return self.feats.loc[indices].fillna(0).as_matrix()
 
     def get_labels(self, indices: List[int]):
@@ -70,18 +77,17 @@ class GeneGraph:
 
     def sample_neighs(self, indices: List[int], ns: int):
         def with_adj(adj_curr):
-            if ns>0:
+            if ns > 0:
                 return [
                     [-1] * ns
                     if len(adj) == 0 or ((not isinstance(adj, list)) and pd.isnull(adj))
-            else [adj[i] for i in np.random.randint(len(adj), size=ns)]   # YT: sample ns neighbours of each node in indices
+                    else [
+                        adj[i] for i in np.random.randint(len(adj), size=ns)
+                    ]  # YT: sample ns neighbours of each node in indices
                     for adj in adj_curr.loc[indices].values
                 ]
-            else:   # YT: if ns=0, do not sample neighbours and return a special node -1 (non-existent) with all-zero feature vector for neighbour aggregation
-                return [
-                    [-1]
-                    for adj in adj_curr.loc[indices].values
-                ]
+            else:  # YT: if ns=0, do not sample neighbours and return a special node -1 (non-existent) with all-zero feature vector for neighbour aggregation
+                return [[-1] for adj in adj_curr.loc[indices].values]
 
         return with_adj(self.adj_coex), with_adj(self.adj_ppi), with_adj(self.adj_epis)
 
@@ -113,15 +119,21 @@ class DataGenerator(keras.utils.Sequence):
         name: str = "train",
     ):
         """Initialization"""
-        if isinstance(batch_size,int):
+        if isinstance(batch_size, int):
             self.batch_size = batch_size
         else:
-            raise Exception("DataGenerator: batch_size should be of type int, got {}".format(type(batch_size)))
+            raise Exception(
+                "DataGenerator: batch_size should be of type int, got {}".format(
+                    type(batch_size)
+                )
+            )
 
-        if isinstance(nf,int):
+        if isinstance(nf, int):
             self.nf = nf
         else:
-            raise Exception("DataGenerator: nf should be of type int, got {}".format(type(nf)))
+            raise Exception(
+                "DataGenerator: nf should be of type int, got {}".format(type(nf))
+            )
 
         self.g = g
         self.ns = ns
@@ -130,12 +142,16 @@ class DataGenerator(keras.utils.Sequence):
         elif name == "validate":
             self.ids = g.ids_val
         else:
-            raise Exception("DataGenerator: name is {}; should be either \"train\" or \"validate\"".format(name))
+            raise Exception(
+                'DataGenerator: name is {}; should be either "train" or "validate"'.format(
+                    name
+                )
+            )
 
         self.data_size = len(self.ids)
         self.idx = 0
         self.name = name
-        self.on_epoch_end()   # shuffle the data entries
+        self.on_epoch_end()  # shuffle the data entries
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
@@ -164,7 +180,8 @@ class DataGenerator(keras.utils.Sequence):
         tgt, inp = self.g.get_batch(indices, self.ns)
         self.idx = end
 
-        # print('DataGenerator: index={}, batch size={}, self.idx={}, self.data_size={}'.format(index,len(indices),self.idx,self.data_size))
+        # print("{}DataGenerator: len(inp) = {}, len(tgt) = {}".format(self.name, len(inp), len(tgt)))
+        # print('{}DataGenerator: index={}, batch size={}, self.idx={}, self.data_size={}'.format(self.name,index,len(indices),self.idx,self.data_size))
 
         return inp, tgt
 
