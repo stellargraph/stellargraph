@@ -19,12 +19,12 @@
 GraphSAGE and compatible aggregator layers
 
 """
-
-
+import numpy as np
 from keras.engine.topology import Layer
+from keras import Input
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape
-from typing import List, Callable
+from typing import List, Callable, Tuple, AnyStr
 
 
 class MeanAggregator(Layer):
@@ -90,7 +90,7 @@ class MeanAggregator(Layer):
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
-class Graphsage:
+class GraphSAGE:
     """
     Implementation of the GraphSAGE algorithm with Keras layers.
 
@@ -119,6 +119,7 @@ class Graphsage:
         assert len(n_samples) == len(output_dims)
         self.n_layers = len(n_samples)
         self.n_samples = n_samples
+        self.input_feature_size = input_dim
         self.dims = [input_dim] + output_dims
         self.bias = bias
         self._dropout = Dropout(dropout)
@@ -132,7 +133,7 @@ class Graphsage:
         ]
         self._neigh_reshape = [
             [
-                Reshape((-1, self.n_samples[i], self.dims[layer]))
+                Reshape((-1, max(1,self.n_samples[i]), self.dims[layer]))
                 for i in range(self.n_layers - layer)
             ]
             for layer in range(self.n_layers)
@@ -175,3 +176,41 @@ class Graphsage:
             )
 
         return self._normalization(compose_layers(x, 0))
+
+    def _input_shapes(self) -> List[Tuple[int, int]]:
+        def shape_at(i: int) -> Tuple[int, int]:
+            return (
+                max(1, np.product(self.n_samples[:i], dtype=int)),
+                self.input_feature_size,
+            )
+
+        input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
+        return input_shapes
+
+    def default_model(self, flatten_output=False):
+        """
+        Return model with default inputs
+
+        Arg:
+            flatten_output: The GraphSAGE model will return an output tensor
+                of form (batch_size, 1, feature_size). If this flag
+                is true, the output will be of size
+                (batch_size, 1*feature_size)
+
+        Returns:
+            x_inp: Keras input tensors for specified graphsage model
+            y_out: Keras tensor for GraphSAGE model output
+
+        """
+        # Create tensor inputs
+        x_inp = [Input(shape=s) for s in self._input_shapes()]
+
+        # Output from GraphSAGE model
+        x_out = self(x_inp)
+
+        print(x_inp, x_out)
+
+        if flatten_output:
+            x_out = Reshape((-1,))(x_out)
+
+        return x_inp, x_out
