@@ -69,10 +69,10 @@ def test_graphsage_constructor():
     G.add_edges_from(elist)
 
     # Add example features
-    for v in G.nodes:
-        G.nodes[v]['feature'] = np.ones(n_feat)
+    for v in G.nodes():
+        G.node[v]['feature'] = np.ones(n_feat)
 
-    mapper = GraphSAGENodeMapper(G, G.nodes, create_test_sampler(G, [2,2]), batch_size=2)
+    mapper = GraphSAGENodeMapper(G, G.nodes(), create_test_sampler(G, [2,2]), batch_size=2)
 
     assert mapper.batch_size == 2
     assert mapper.data_size == 4
@@ -90,10 +90,10 @@ def test_graphsage_1():
     G.add_edges_from(elist)
 
     # Add example features
-    for v in G.nodes:
-        G.nodes[v]['feature'] = np.ones(n_feat)
+    for v in G.nodes():
+        G.node[v]['feature'] = np.ones(n_feat)
 
-    mapper = GraphSAGENodeMapper(G, G.nodes, create_test_sampler(G, [2,2]), batch_size=n_batch)
+    mapper = GraphSAGENodeMapper(G, G.nodes(), create_test_sampler(G, [2,2]), batch_size=n_batch)
 
     assert len(mapper) == 2
 
@@ -118,11 +118,11 @@ def test_graphsage_2():
     G.add_edges_from(elist)
 
     # Add example features
-    for v in G.nodes:
-        G.nodes[v]['feature'] = np.ones(n_feat)
+    for v in G.nodes():
+        G.node[v]['feature'] = np.ones(n_feat)
 
     with pytest.raises(RuntimeWarning):
-        GraphSAGENodeMapper(G, G.nodes, create_test_sampler(G, [2,2]), feature_size=8, batch_size=n_batch)
+        GraphSAGENodeMapper(G, G.nodes(), create_test_sampler(G, [2,2]), feature_size=8, batch_size=n_batch)
 
 
 def test_graphsage_3():
@@ -135,10 +135,10 @@ def test_graphsage_3():
     G.add_edges_from(elist)
 
     # Add example features
-    for v in G.nodes:
-        G.nodes[v]['feature'] = np.ones(n_feat)
+    for v in G.nodes():
+        G.node[v]['feature'] = np.ones(n_feat)
 
-    mapper = GraphSAGENodeMapper(G, G.nodes, create_test_sampler(G, [0]), batch_size=n_batch)
+    mapper = GraphSAGENodeMapper(G, G.nodes(), create_test_sampler(G, [0]), batch_size=n_batch)
 
     assert len(mapper) == 2
 
@@ -160,10 +160,10 @@ def test_graphsage_no_samples():
     G.add_edges_from(elist)
 
     # Add example features
-    for v in G.nodes:
-        G.nodes[v]['feature'] = np.ones(n_feat)
+    for v in G.nodes():
+        G.node[v]['feature'] = np.ones(n_feat)
 
-    mapper = GraphSAGENodeMapper(G, G.nodes, create_test_sampler(G, []), batch_size=n_batch)
+    mapper = GraphSAGENodeMapper(G, G.nodes(), create_test_sampler(G, []), batch_size=n_batch)
 
     assert len(mapper) == 2
     nf,nl = mapper[0]

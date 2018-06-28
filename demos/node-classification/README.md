@@ -24,7 +24,7 @@ For the `epgm-example.py` script, a graph in EPGM format is required.
 
 Run the example for ML-1m with movie & user features using the following command:
 ```
- python epgm-example.py -g <path_to>/cora.epgm -n 100 -e 20 -l 50 20 -s 20 10
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -n 100 -e 20 -l 50 20 -s 20 10
 ```
 
 ## References
