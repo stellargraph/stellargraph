@@ -65,7 +65,7 @@ class GraphSAGENodeMapper(Sequence):
         self.label_id = target_id
 
         # Check that all nodes have features of the same size
-        feature_sizes = {np.size(G.nodes[v].get("feature")) for v in G.nodes}
+        feature_sizes = {np.size(vdata.get("feature")) for v, vdata in G.nodes(data=True)}
 
         if feature_size:
             self.feature_size = feature_size
@@ -87,7 +87,7 @@ class GraphSAGENodeMapper(Sequence):
     ) -> List[np.ndarray]:
         # Create features and node indices if required
         batch_feats = [
-            [self.G.nodes[v].get("feature") for v in layer_nodes]
+            [self.G.node[v].get("feature") for v in layer_nodes]
             if len(layer_nodes) > 0
             else np.zeros((head_size, self.feature_size))
             for layer_nodes in node_samples
@@ -101,7 +101,7 @@ class GraphSAGENodeMapper(Sequence):
 
     def _get_labels(self, head_nodes: List[AnyStr]) -> List[Any]:
         # Get labels for each node in node_samples
-        batch_labels = [self.G.nodes[v].get(self.label_id) for v in head_nodes]
+        batch_labels = [self.G.node[v].get(self.label_id) for v in head_nodes]
         return np.array(batch_labels)
 
     def __getitem__(self, batch_num: int) -> [List[np.ndarray], List[np.ndarray]]:
