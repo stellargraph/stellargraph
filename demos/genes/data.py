@@ -54,9 +54,15 @@ class GeneGraph:
 
         # YT: add empty neighbour lists to adj lists, for nodes that don't have neighbours via the corresponding edge type
         for edge_type in edge_types:
-            missing_genes = set(gene_attr.index).difference(set(self.adj[edge_type].index))
-            adj_ext = pd.Series([list()] * len(missing_genes), index=missing_genes)  # form a series to append to self.adj[edge_type]
-            self.adj[edge_type] = self.adj[edge_type].append(adj_ext, verify_integrity=True)  # append adj_ext
+            missing_genes = set(gene_attr.index).difference(
+                set(self.adj[edge_type].index)
+            )
+            adj_ext = pd.Series(
+                [list()] * len(missing_genes), index=missing_genes
+            )  # form a series to append to self.adj[edge_type]
+            self.adj[edge_type] = self.adj[edge_type].append(
+                adj_ext, verify_integrity=True
+            )  # append adj_ext
 
     def get_feats(self, indices: List[int]):
         """Get features of nodes whose list is given in indices"""
@@ -67,6 +73,7 @@ class GeneGraph:
 
     def sample_neighs(self, indices: List[int], ns: int):
         """Neighbour sampling method"""
+
         def with_adj(adj_curr):
             if ns > 0:
                 return [
@@ -82,7 +89,9 @@ class GeneGraph:
 
         return tuple([with_adj(adj) for adj in self.adj.values()])
 
-    def get_batch(self, indices: List[int], ns: List[int]):  # This will soon be replaced by the Mapper class
+    def get_batch(
+        self, indices: List[int], ns: List[int]
+    ):  # This will soon be replaced by the Mapper class
         nb = len(indices)
         flatten = lambda l: [item for sublist in l for item in sublist]
 
@@ -108,7 +117,11 @@ class GeneGraph:
             self.get_labels(indices),
             [
                 self.get_feats(flatten(inds)).reshape([nb, -1, self.feats.shape[1]])
-                for inds in [[indices], *neigh_1hop, *[n for n in neigh_2hop[et] for et in self.adj.keys()]]
+                for inds in [
+                    [indices],
+                    *neigh_1hop,
+                    *[n for n in neigh_2hop[et] for et in self.adj.keys()],
+                ]
             ],
         )
 
