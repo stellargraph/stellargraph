@@ -45,14 +45,86 @@ class UniformRandomWalk(GraphWalk):
     def run(self, **kwargs):
         """
 
-        :param n: Total number of random walks
-        :param l: Length of each random walk
-        :param seed: Random number generator seed
-        :parame e_types: List of edge types that the random walker is allowed to traverse. Set to None for homogeneous
-        graphs with a single edge type.
-        :return:
+        :param nodes: <list> The root nodes as a list of node IDs
+        :param n: <int> Total number of random walks per root node
+        :param length: <int> Maximum length of each random walk
+        :param seed: <int> Random number generator seed; default is None
+        :return: <list> List of lists of nodes ids for each of the random walks
         """
-        pass
+        nodes = kwargs.get("nodes", None)
+        n = kwargs.get("n", None)
+        length = kwargs.get("length", None)
+        seed = kwargs.get("seed", None)
+
+        self._check_parameter_values(nodes=nodes, n=n, length=length, seed=seed)
+
+        random.seed(seed)  # seed the random umber generator
+
+        walks = []
+        for node in nodes:  # iterate over root nodes
+            for walk_number in range(n):  # generate n walks per root node
+                walk = list()
+                current_node = node
+                for _ in range(length):
+                    walk.extend([current_node])
+                    neighbours = nx.neighbors(self.graph, current_node)
+                    if (
+                        len(neighbours) == 0
+                    ):  # for whatever reason this node has no neighbours so stop
+                        break
+                    else:
+                        random.shuffle(neighbours)  # shuffles the list in place
+                        current_node = neighbours[0]  # select the first node to follow
+
+                walks.append(walk)
+
+        return walks
+
+    def _check_parameter_values(self, nodes, n, length, seed):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        :param nodes: <list> A list of root node ids such that from each node a uniform random walk of up to length l
+        will be generated.
+        :param n: <int> Number of walks per node id.
+        :param length: <int> Maximum length of walk measured as the number of edges followed from root node.
+        :param seed: <int> Random number genertor seed
+        """
+        if nodes is None:
+            raise ValueError("A list of root node IDs was not provided.")
+        if type(nodes) != list:
+            raise ValueError("nodes parameter should be a list of node IDs.")
+        if (
+            len(nodes) == 0
+        ):  # this is not an error but maybe a warning should be printed to inform the caller
+            print(
+                "WARNING: No root node IDs given. An empty list will be returned as a result."
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "The number of walks per root node, n, should be a positive integer."
+            )
+        if type(n) != int:
+            raise ValueError(
+                "The number of walks per root node, n, should be integer type."
+            )
+
+        if length <= 0:
+            raise ValueError("The walk length, length, should be positive integer.")
+        if type(length) != int:
+            raise ValueError("The walk length, length, should be integer type.")
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "The random number generator seed value, seed, should be positive integer or None."
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "The random number generator seed value, seed, should be integer type or None."
+                )
 
 
 class BiasedRandomWalk(GraphWalk):
@@ -120,20 +192,20 @@ class BreadthFirstWalk(GraphWalk):
         :param nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
         given depth d.
         :param n: <int> Number of walks per node id.
-        :param d: <int> Depth of walk as in distance (number of edges) from root node.
-        :param n_size: <int> The number of neighbouring nodes to expand. If a node's degree is smaller
-        than this parameter then resampling with replacement is used. If the node degree is larger than this parameter
-        then sampling without replacement is used to select a subset of the neighbouring nodes.
+        :param n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
+        If a node's degree is smaller than the corresponding parameter then resampling with replacement is used.
+        If the node degree is larger than the corresponding parameter then sampling without replacement is used to
+        select a subset of the neighbouring nodes.
         :return: A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
         nodes = kwargs.get("nodes", None)
         n = kwargs.get("n", None)
-        d = kwargs.get("d", None)
         n_size = kwargs.get("n_size", None)
 
-        self._check_parameter_values(nodes=nodes, n=n, d=d, n_size=n_size)
+        self._check_parameter_values(nodes=nodes, n=n, n_size=n_size)
 
         walks = []
+        d = len(n_size)  # depth of search
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -142,6 +214,7 @@ class BreadthFirstWalk(GraphWalk):
                 q.extend(
                     [(node, 0)]
                 )  # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+
                 while len(q) > 0:
                     # remove the top element in the queue and
                     frontier = q.pop(
@@ -161,12 +234,14 @@ class BreadthFirstWalk(GraphWalk):
                                     frontier[0]
                                 )
                             )
-                        elif len(neighbours) < n_size:  # sample with replacement
-                            neighbours = random.choices(neighbours, k=n_size)
                         elif (
-                            len(neighbours) > n_size
+                            len(neighbours) < n_size[depth - 1]
+                        ):  # sample with replacement
+                            neighbours = random.choices(neighbours, k=n_size[depth - 1])
+                        elif (
+                            len(neighbours) > n_size[depth - 1]
                         ):  # sample without replacement up to n_size nodes
-                            neighbours = random.sample(neighbours, k=n_size)
+                            neighbours = random.sample(neighbours, k=n_size[depth - 1])
                         # add them to the back of the queue
                         q.extend([(sampled_node, depth) for sampled_node in neighbours])
 
@@ -175,7 +250,7 @@ class BreadthFirstWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, d, n_size):
+    def _check_parameter_values(self, nodes, n, n_size):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -183,10 +258,10 @@ class BreadthFirstWalk(GraphWalk):
         :param nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
         given depth d.
         :param n: <int> Number of walks per node id.
-        :param d: <int> Depth of walk as in distance (number of edges) from root node.
-        :param n_size: <int> The number of neighbouring nodes to expand. If a node's degree is smaller
-        than this parameter then resampling with replacement is used. If the node degree is larger than this parameter
-        then sampling without replacement is used to select a subset of the neighbouring nodes.
+        :param n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
+        If a node's degree is smaller than the corresponding parameter then resampling with replacement is used.
+        If the node degree is larger than the corresponding parameter then sampling without replacement is used to
+        select a subset of the neighbouring nodes.
         """
         if nodes is None:
             raise ValueError("A list of root node IDs was not provided.")
@@ -208,14 +283,22 @@ class BreadthFirstWalk(GraphWalk):
                 "The number of walks per root node, n, should be integer type."
             )
 
-        if d < 0:
-            raise ValueError("The walk depth, d, should be non-negative integer.")
-        if type(d) != int:
-            raise ValueError("The walk depth, d, should be integer type.")
-
-        if n_size <= 0:
+        if n_size is None:
             raise ValueError(
-                "The neighbourhood size, n_size, should be positive integer."
+                "The neighbourhood size, n_size, must be a list of integers not None"
             )
-        if type(n_size) != int:
-            raise ValueError("The neighbourhood size, n_size, should be integer type.")
+        if type(n_size) != list:
+            raise ValueError(
+                "The neighbourhood size, n_size, must be a list of integers"
+            )
+
+        if len(n_size) == 0:
+            raise ValueError(
+                "The neighbourhood size, n_size, should not be empty list."
+            )
+
+        for d in n_size:
+            if type(d) != int:
+                raise ValueError(
+                    "The neighbourhood size, n_size, must be list of integers."
+                )
