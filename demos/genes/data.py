@@ -40,33 +40,23 @@ class GeneGraph:
         self.labels = gene_attr["node_type"].map(lambda x: x == "alz")
 
         # YT: create separate adjacency lists, one per edge type:
-        self.adj_coex = (
-            edge_data.loc[edge_data["int_type"] == "coexpression"]
-            .groupby(["ensg1"])["ensg2"]
-            .apply(list)
-        )
-        self.adj_ppi = (
-            edge_data.loc[edge_data["int_type"] == "PPI"]
-            .groupby(["ensg1"])["ensg2"]
-            .apply(list)
-        )
-        self.adj_epis = (
-            edge_data.loc[edge_data["int_type"] == "epistasis"]
-            .groupby(["ensg1"])["ensg2"]
-            .apply(list)
-        )
-        self.adj_coex[-1] = [
-            -1
-        ]  # YT: special (non-existent) node's adj list for coex edge type: neighbour of node [-1] (non-existent)
-        # is node [-1] (non-existent) with all-zeros feature vector
-        self.adj_ppi[-1] = [-1]  # YT: same for ppi edge type
-        self.adj_epis[-1] = [-1]  # YT: same for epis edge type
-        for gene in gene_attr.index:
-            for adj in [self.adj_coex, self.adj_ppi, self.adj_epis]:
-                if gene not in adj.index:
-                    adj[
-                        gene
-                    ] = []  # YT: add empty neighbour lists to adj lists, for nodes who don't have neighbours via the corresponding edge type
+        edge_types = np.unique(edge_data["int_type"])
+        self.adj = dict()
+        for edge_type in edge_types:
+            self.adj[edge_type] = (
+                edge_data.loc[edge_data["int_type"] == edge_type]
+                .groupby(["ensg1"])["ensg2"]
+                .apply(list)
+            )
+            # YT: add special (non-existent) node's entry into adj lists for all edge types: neighbours of node [-1] (non-existent)
+            # is an empty list
+            self.adj[edge_type][-1] = []
+
+        # YT: add empty neighbour lists to adj lists, for nodes that don't have neighbours via the corresponding edge type
+        for edge_type in edge_types:
+            missing_genes = set(gene_attr.index).difference(set(self.adj[edge_type].index))
+            adj_ext = pd.Series([list()] * len(missing_genes), index=missing_genes)  # form a series to append to self.adj[edge_type]
+            self.adj[edge_type] = self.adj[edge_type].append(adj_ext, verify_integrity=True)  # append adj_ext
 
     def get_feats(self, indices: List[int]):
         """Get features of nodes whose list is given in indices"""
@@ -76,6 +66,7 @@ class GeneGraph:
         return np.array(self.labels[indices], dtype=np.float64)
 
     def sample_neighs(self, indices: List[int], ns: int):
+        """Neighbour sampling method"""
         def with_adj(adj_curr):
             if ns > 0:
                 return [
@@ -89,20 +80,35 @@ class GeneGraph:
             else:  # YT: if ns=0, do not sample neighbours and return a special node -1 (non-existent) with all-zero feature vector for neighbour aggregation
                 return [[-1] for adj in adj_curr.loc[indices].values]
 
-        return with_adj(self.adj_coex), with_adj(self.adj_ppi), with_adj(self.adj_epis)
+        return tuple([with_adj(adj) for adj in self.adj.values()])
 
     def get_batch(self, indices: List[int], ns: List[int]):  # This will soon be replaced by the Mapper class
         nb = len(indices)
         flatten = lambda l: [item for sublist in l for item in sublist]
-        coex, ppi, epis = self.sample_neighs(indices, ns[0])
-        coex_1 = self.sample_neighs(flatten(coex), ns[1])
-        ppi_1 = self.sample_neighs(flatten(ppi), ns[1])
-        epis_1 = self.sample_neighs(flatten(epis), ns[1])
+
+        # ppi, coex, epis = self.sample_neighs(indices, ns[0])
+        # ppi_1 = self.sample_neighs(flatten(ppi), ns[1])
+        # coex_1 = self.sample_neighs(flatten(coex), ns[1])
+        # epis_1 = self.sample_neighs(flatten(epis), ns[1])
+        # return (
+        #     self.get_labels(indices),
+        #     [
+        #         self.get_feats(flatten(inds)).reshape([nb, -1, self.feats.shape[1]])
+        #         for inds in [[indices], ppi, coex, epis, *ppi_1, *coex_1, *epis_1]
+        #     ],
+        # )
+
+        # YT: somewhat generalized version of the commented-out snippet above:
+        neigh_1hop = self.sample_neighs(indices, ns[0])
+        neigh_2hop = dict()
+        for i, et in enumerate(self.adj.keys()):
+            neigh_2hop[et] = self.sample_neighs(flatten(neigh_1hop[i]), ns[1])
+
         return (
             self.get_labels(indices),
             [
                 self.get_feats(flatten(inds)).reshape([nb, -1, self.feats.shape[1]])
-                for inds in [[indices], coex, ppi, epis, *coex_1, *ppi_1, *epis_1]
+                for inds in [[indices], *neigh_1hop, *[n for n in neigh_2hop[et] for et in self.adj.keys()]]
             ],
         )
 
