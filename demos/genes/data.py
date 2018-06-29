@@ -32,9 +32,8 @@ class GeneGraph:
 
         # Features
         self.feats = gene_attr.drop(["node_type"], axis=1)
-        self.feats.loc[-1] = [0] * self.feats.shape[
-            1
-        ]  # create an all-zeros feature vector for the special node with ind -1, i.e., a non-existant node
+        # create an all-zeros feature vector for the special node with ind -1, i.e., a non-existant node:
+        self.feats.loc[-1] = [0] * self.feats.shape[1]
 
         # Labels
         self.labels = gene_attr["node_type"].map(lambda x: x == "alz")

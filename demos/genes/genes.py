@@ -167,7 +167,7 @@ def main():
             len(n_samples), n_samples
         )
     )
-    gene_model.train(g, epochs=5)
+    gene_model.train(g, epochs=10)
 
     print("Evaluating the model on test set...")
     threshold = 0.5
