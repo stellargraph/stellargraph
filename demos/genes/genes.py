@@ -93,7 +93,9 @@ class GeneHinSageClassifier(object):
 
         self.model.compile(
             optimizer=keras.optimizers.Adam(lr=0.01),
-            loss=create_weighted_binary_crossentropy(0.6, 9), # TODO: calculate weights automatically
+            loss=create_weighted_binary_crossentropy(
+                0.6, 9
+            ),  # TODO: calculate weights automatically
             metrics=["accuracy"],
         )
 
@@ -117,7 +119,9 @@ class GeneHinSageClassifier(object):
         y_preds_proba = self.model.predict_generator(test_iter)
         y_preds_proba = np.reshape(y_preds_proba, (-1,))
         y_preds = np.array(y_preds_proba >= threshold, dtype=np.float64)
-        y_trues = np.concatenate(test_iter.y_true).ravel()[: len(g.ids_test)]  # test_iter can be called more times than needed, to fill the queue, hence test_iter.y_true might be longer than needed and thus needs truncating
+        y_trues = np.concatenate(test_iter.y_true).ravel()[
+            : len(g.ids_test)
+        ]  # test_iter can be called more times than needed, to fill the queue, hence test_iter.y_true might be longer than needed and thus needs truncating
 
         # Evaluate metrics (binary classification task):
         precision = precision_score(y_trues, y_preds)
@@ -158,13 +162,18 @@ def main():
     # Create a model:
     gene_model = GeneHinSageClassifier(nf, n_samples, emb_dim=256)
 
-    print("Training the {}-layer model with n_samples={}...".format(len(n_samples), n_samples))
+    print(
+        "Training the {}-layer model with n_samples={}...".format(
+            len(n_samples), n_samples
+        )
+    )
     gene_model.train(g, epochs=5)
 
     print("Evaluating the model on test set...")
     threshold = 0.5
-    precision, recall, f1score, average_precision, roc_auc, conf_matrix = \
-        gene_model.test(g, threshold)
+    precision, recall, f1score, average_precision, roc_auc, conf_matrix = gene_model.test(
+        g, threshold
+    )
     print("Precision score: {0:0.2f}".format(precision))
     print("Recall score: {0:0.2f}".format(recall))
     print("F1 score: {0:0.2f}".format(f1score))
