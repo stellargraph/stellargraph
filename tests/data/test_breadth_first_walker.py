@@ -16,7 +16,7 @@
 
 import pytest
 import networkx as nx
-from stellar.data.explorer import BreadthFirstWalk
+from stellar.data.explorer import SampledBreadthFirstWalk
 
 
 def create_test_graph():
@@ -80,7 +80,7 @@ def expected_bfw_size(n_size):
 class TestBreadthFirstWalk(object):
     def test_parameter_checking(self):
         g = create_test_graph()
-        bfw = BreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = ["0", 1]
         n = 1
@@ -110,7 +110,7 @@ class TestBreadthFirstWalk(object):
 
     def test_walk_generation_single_root_node_loner(self):
         g = create_test_graph()
-        bfw = BreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = ["loner"]
         n = 1
@@ -131,7 +131,7 @@ class TestBreadthFirstWalk(object):
 
     def test_walk_generation_single_root_node_self_loner(self):
         g = create_test_graph()
-        bfw = BreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = ["self loner"]
         n = 1
@@ -192,7 +192,7 @@ class TestBreadthFirstWalk(object):
     def test_walk_generation_single_root_node(self):
 
         g = create_test_graph()
-        bfw = BreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = ["0"]
         n = 1
@@ -235,7 +235,7 @@ class TestBreadthFirstWalk(object):
     def test_walk_generation_many_root_nodes(self):
 
         g = create_test_graph()
-        bfw = BreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = ["0", 2]
         n = 1
@@ -298,7 +298,7 @@ class TestBreadthFirstWalk(object):
     def test_walk_generation_number_of_walks_per_root_nodes(self):
 
         g = create_test_graph()
-        bfw = BreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = [1]
         n = 2
