@@ -179,11 +179,17 @@ class DepthFirstWalk(GraphWalk):
         """
         pass
 
-
 class BreadthFirstWalk(GraphWalk):
     """
     Breadth First Walk that generates all paths from a starting node to a given depth.
     It can be used to extract a sub-graph starting from a node and up to a given depth.
+    """
+    pass
+
+class SampledBreadthFirstWalk(GraphWalk):
+    """
+    Breadth First Walk that generates a sampled number of paths from a starting node.
+    It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
     def run(self, **kwargs):
@@ -191,7 +197,7 @@ class BreadthFirstWalk(GraphWalk):
 
         :param nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
         given depth d.
-        :param n: <int> Number of walks per node id.
+        :param n: <int> Number of walks per node id. Default is 1.
         :param n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
         If a node's degree is smaller than the corresponding parameter then resampling with replacement is used.
         If the node degree is larger than the corresponding parameter then sampling without replacement is used to
@@ -199,7 +205,7 @@ class BreadthFirstWalk(GraphWalk):
         :return: A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
         nodes = kwargs.get("nodes", None)
-        n = kwargs.get("n", None)
+        n = kwargs.get("n", 1)
         n_size = kwargs.get("n_size", None)
 
         self._check_parameter_values(nodes=nodes, n=n, n_size=n_size)
