@@ -179,12 +179,15 @@ class DepthFirstWalk(GraphWalk):
         """
         pass
 
+
 class BreadthFirstWalk(GraphWalk):
     """
     Breadth First Walk that generates all paths from a starting node to a given depth.
     It can be used to extract a sub-graph starting from a node and up to a given depth.
     """
+
     pass
+
 
 class SampledBreadthFirstWalk(GraphWalk):
     """
