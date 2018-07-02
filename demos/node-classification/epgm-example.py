@@ -148,31 +148,6 @@ def read_epgm_graph(
     return g_nx
 
 
-class GraphsageSampler:
-    def __init__(self, G):
-        self.G = G
-
-    def _sample_neighbourhood(self, head_nodes, samples_per_hop):
-        if len(samples_per_hop) < 1:
-            return [head_nodes]
-
-        num_for_hop, next_samples = samples_per_hop[0], samples_per_hop[1:]
-        hop_samples = []
-        for hn in head_nodes:
-            neighs = list(self.G.neighbors(hn))
-            if len(neighs) < num_for_hop:
-                neigh_sampled = random.choices(neighs, k=num_for_hop)
-            else:
-                neigh_sampled = random.sample(neighs, num_for_hop)
-            hop_samples.extend(neigh_sampled)
-
-        return [head_nodes] + self._sample_neighbourhood(hop_samples, next_samples)
-
-    def run(self, nodes=[], n=1, n_size=[]):
-
-        return self._sample_neighbourhood(nodes, n_size)
-
-
 def train(
     G,
     layer_size: List[int],
