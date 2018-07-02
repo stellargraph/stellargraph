@@ -19,3 +19,15 @@ steps:
         workdir: /app
         environment:
           - PYTHONDONTWRITEBYTECODE=1
+
+  - wait: ~
+    continue_on_failure: true
+
+  - label: "push logs"
+    trigger: "buildkite-logger"
+    async: true
+    build:
+      env:
+        PIPELINE_SLUG: "${BUILDKITE_PIPELINE_SLUG}"
+        BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
+        BRANCH: "${BUILDKITE_BRANCH}"
