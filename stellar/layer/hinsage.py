@@ -33,7 +33,7 @@ class MeanHinAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int, bias: bool = False, act: Callable = K.relu, **kwargs
+        self, output_dim: int = 0, bias: bool = False, act: Callable = K.relu, **kwargs
     ):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
@@ -46,6 +46,11 @@ class MeanHinAggregator(Layer):
         self.bias = None
         self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
+
+    def get_config(self):
+        config = {"output_dim": self.output_dim, "bias": self.has_bias}
+        base_config = super().get_config()
+        return {**base_config, **config}
 
     def build(self, input_shape):
         # Weight matrix for each type of neighbour
