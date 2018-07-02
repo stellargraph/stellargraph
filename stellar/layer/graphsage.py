@@ -34,7 +34,7 @@ class MeanAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int, bias: bool = False, act: Callable = K.relu, **kwargs
+        self, output_dim: int = 0, bias: bool = False, act: Callable = K.relu, **kwargs
     ):
         """
         Construct mean aggregator
@@ -54,6 +54,11 @@ class MeanAggregator(Layer):
         self.bias = None
         self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
+
+    def get_config(self):
+        config = {"output_dim": self.output_dim, "bias": self.has_bias}
+        base_config = super().get_config()
+        return {**base_config, **config}
 
     def build(self, input_shape):
         self.w_neigh = self.add_weight(
@@ -133,7 +138,7 @@ class GraphSAGE:
         ]
         self._neigh_reshape = [
             [
-                Reshape((-1, max(1,self.n_samples[i]), self.dims[layer]))
+                Reshape((-1, max(1, self.n_samples[i]), self.dims[layer]))
                 for i in range(self.n_layers - layer)
             ]
             for layer in range(self.n_layers)
@@ -207,8 +212,6 @@ class GraphSAGE:
 
         # Output from GraphSAGE model
         x_out = self(x_inp)
-
-        print(x_inp, x_out)
 
         if flatten_output:
             x_out = Reshape((-1,))(x_out)

@@ -1,7 +1,10 @@
 """
-Graph node classification using GraphSAGE. Requires a EPGM graph as input.
+Graph node classification using GraphSAGE.
+Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
+Example usage:
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 50 50 -s 20 10 -e 20 -d 0.5 -r 0.01
 
 usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
@@ -28,31 +31,22 @@ optional arguments:
   -t TARGET, --target TARGET
                         The target node attribute
 """
-import time
 import os
 import argparse
-import pickle
 import random
-
-import tensorflow as tf
 import numpy as np
-import pandas as pd
 import networkx as nx
-import itertools as it
-import functools as ft
-
-from collections import defaultdict
 from typing import AnyStr, Any, List, Tuple, Dict, Optional
 
-from keras import backend as K
-from keras import Input, Model, optimizers, losses, activations, metrics
-from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda
-from keras.utils import Sequence
+import keras
+from keras import optimizers, losses, layers, metrics
 from keras.utils.np_utils import to_categorical
 
 from stellar.data.epgm import EPGM
 from stellar.data.node_splitter import NodeSplitter
-from stellar.layer.graphsage import GraphSAGE
+from stellar.data.explorer import SampledBreadthFirstWalk
+
+from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.node_mappers import GraphSAGENodeMapper
 
 
@@ -95,8 +89,8 @@ def read_epgm_graph(
     converted_attr = pred_attr.union([target_attribute])
 
     # Index nodes in graph
-    for ii, v in enumerate(g_nx.nodes):
-        g_nx.nodes[v]["id"] = ii
+    for ii, v in enumerate(g_nx.nodes()):
+        g_nx.node[v]["id"] = ii
 
     # Enumerate attributes to give numerical index
     g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
@@ -111,13 +105,13 @@ def read_epgm_graph(
 
     elif target_type == "categorical":
         g_nx.target_category_values = list(
-            set([g_nx.nodes[n][target_attribute] for n in g_nx.nodes])
+            set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
         )
         target_value_function = lambda x: g_nx.target_category_values.index(x)
 
     elif target_type == "1hot":
         g_nx.target_category_values = list(
-            set([g_nx.nodes[n][target_attribute] for n in g_nx.nodes])
+            set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
         )
         target_value_function = lambda x: to_categorical(
             g_nx.target_category_values.index(x), len(g_nx.target_category_values)
@@ -155,9 +149,8 @@ def read_epgm_graph(
 
 
 class GraphsageSampler:
-    def __init__(self, G, samples_per_hop):
+    def __init__(self, G):
         self.G = G
-        self.samples_per_hop = samples_per_hop
 
     def _sample_neighbourhood(self, head_nodes, samples_per_hop):
         if len(samples_per_hop) < 1:
@@ -175,20 +168,20 @@ class GraphsageSampler:
 
         return [head_nodes] + self._sample_neighbourhood(hop_samples, next_samples)
 
-    def __call__(self, head_nodes):
-        return self._sample_neighbourhood(head_nodes, self.samples_per_hop)
+    def run(self, nodes=[], n=1, n_size=[]):
+
+        return self._sample_neighbourhood(nodes, n_size)
 
 
 def train(
     G,
     layer_size: List[int],
-    node_samples: List[int],
+    num_samples: List[int],
     batch_size: int = 100,
     num_epochs: int = 10,
+    learning_rate: float = 0.005,
+    dropout: float = 0.0,
 ):
-    # Sampler object
-    sampler = GraphsageSampler(G, node_samples)
-
     # Split head nodes into train/test
     splitter = NodeSplitter()
     graph_nodes = np.array(
@@ -198,34 +191,39 @@ def train(
         y=graph_nodes, p=300, test_size=500
     )
     train_ids = [v[0] for v in train_nodes]
-    test_ids = [v[0] for v in test_nodes]
+    test_ids = list(G.nodes())
     val_ids = [v[0] for v in val_nodes]
 
-    # Mapper object
+    # Sampler chooses random sampled subgraph for each head node
+    sampler = SampledBreadthFirstWalk(G)
+
+    # Mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
-        G, train_ids, sampler, batch_size, target_id="target", name="train"
+        G, train_ids, sampler, batch_size, num_samples, target_id="target", name="train"
     )
     test_mapper = GraphSAGENodeMapper(
-        G, test_ids, sampler, batch_size, target_id="target", name="test"
+        G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
     )
 
     # GraphSAGE model
     model = GraphSAGE(
         output_dims=layer_size,
-        n_samples=node_samples,
+        n_samples=num_samples,
         input_dim=G.feature_size,
         bias=True,
-        dropout=0.5,
+        dropout=dropout,
     )
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
-    prediction = Dense(units=len(G.target_category_values), activation="softmax")(x_out)
+    prediction = layers.Dense(
+        units=len(G.target_category_values), activation="softmax"
+    )(x_out)
 
     # Create Keras model for training
-    model = Model(inputs=x_inp, outputs=prediction)
+    model = keras.Model(inputs=x_inp, outputs=prediction)
     model.compile(
-        optimizer=optimizers.Adam(lr=0.0005),
+        optimizer=optimizers.Adam(lr=learning_rate),
         loss=losses.categorical_crossentropy,
         metrics=[metrics.categorical_accuracy],
     )
@@ -238,13 +236,49 @@ def train(
     # Evaluate and print metrics
     test_metrics = model.evaluate_generator(test_mapper)
 
-    print("Test Evaluation:")
+    print("\nTest Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
+    # Save model
+    str_numsamp = "_".join([str(x) for x in num_samples])
+    str_layer = "_".join([str(x) for x in layer_size])
+    model.save(
+        "graphsage_n{}_l{}_d{}_i{}.h5".format(
+            str_numsamp, str_layer, dropout, G.feature_size
+        )
+    )
 
-def test(G, model_file: AnyStr):
-    pass
+
+def test(G, model_file: AnyStr, batch_size: int):
+    model = keras.models.load_model(
+        model_file, custom_objects={"MeanAggregator": MeanAggregator}
+    )
+
+    # Get required input shapes from model
+    num_samples = [
+        int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
+        for ii in range(len(model.input_shape) - 1)
+    ]
+
+    # Split head nodes into train/test
+    splitter = NodeSplitter()
+    all_ids = list(G.nodes())
+
+    # Sampler chooses random sampled subgraph for each head node
+    sampler = SampledBreadthFirstWalk(G)
+
+    # Mapper feeds data from sampled subgraph to GraphSAGE model
+    test_mapper = GraphSAGENodeMapper(
+        G, all_ids, sampler, batch_size, num_samples, target_id="target", name="test"
+    )
+
+    # Evaluate and print metrics
+    test_metrics = model.evaluate_generator(test_mapper)
+
+    print("\nTest Evaluation:")
+    for name, val in zip(model.metrics_names, test_metrics):
+        print("\t{}: {:0.4f}".format(name, val))
 
 
 if __name__ == "__main__":
@@ -264,6 +298,16 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-e", "--epochs", type=int, default=10, help="Number of epochs to train for"
+    )
+    parser.add_argument(
+        "-d", "--dropout", type=float, default=0.0, help="Dropout for GraphSAGE model"
+    )
+    parser.add_argument(
+        "-r",
+        "--learningrate",
+        type=float,
+        default=0.0005,
+        help="Learning rate for training model",
     )
     parser.add_argument(
         "-s",
@@ -308,17 +352,15 @@ if __name__ == "__main__":
         remove_converted_attrs=False,
     )
 
-    # Training: batch size & epochs
-    batch_size = args.batch_size
-    num_epochs = args.epochs
-
-    # number of samples per additional layer,
-    node_samples = args.neighbour_samples
-
-    # number of features per additional layer
-    layer_size = args.layer_size
-
     if args.checkpoint is None:
-        train(G, layer_size, node_samples, batch_size, num_epochs)
+        train(
+            G,
+            args.layer_size,
+            args.neighbour_samples,
+            args.batch_size,
+            args.epochs,
+            args.learningrate,
+            args.dropout,
+        )
     else:
-        test(G, args.checkpoint)
+        test(G, args.checkpoint, args.batch_size)

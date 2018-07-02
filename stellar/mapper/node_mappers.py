@@ -41,6 +41,7 @@ class GraphSAGENodeMapper(Sequence):
             in the training, subgraphs will still be sampled from all nodes.
         sampler: A sampler instance on graph G.
         batch_size: Size of batch to return.
+        num_samples: List of number of samples per layer (hop) to take.
         target_id: Name of target value in node attribute dictionary.
         feature_size: Node feature size (optional)
         name: Name of mapper
@@ -52,20 +53,33 @@ class GraphSAGENodeMapper(Sequence):
         ids: List[Any],
         sampler: Callable[[List[Any]], List[List[Any]]],
         batch_size: int,
+        num_samples: List[int],
         target_id: AnyStr = None,
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
         self.G = G
         self.sampler = sampler
+        self.num_samples = num_samples
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
         self.label_id = target_id
 
+        # Ensure features are available:
+        nodes_have_features = all(
+            ["feature" in vdata for v, vdata in G.nodes(data=True)]
+        )
+        if not nodes_have_features:
+            print("Warning: Not all nodes have a 'feature' attribute.")
+            print("Warning: This is required for the GraphSAGE mapper.")
+
         # Check that all nodes have features of the same size
-        feature_sizes = {np.size(vdata.get("feature")) for v, vdata in G.nodes(data=True)}
+        # Note: if there are no features in the nodes this will be 1!
+        feature_sizes = {
+            np.size(vdata.get("feature")) for v, vdata in G.nodes(data=True)
+        }
 
         if feature_size:
             self.feature_size = feature_size
@@ -76,6 +90,7 @@ class GraphSAGENodeMapper(Sequence):
                 print("Found feature sizes: {}".format(feature_sizes))
 
         if self.feature_size not in feature_sizes:
+            print("Found feature sizes: {}".format(feature_sizes))
             raise RuntimeWarning("Specified feature size doesn't match graph features")
 
     def __len__(self):
@@ -117,9 +132,22 @@ class GraphSAGENodeMapper(Sequence):
         head_nodes = self.ids[start_idx:end_idx]
 
         # Get sampled nodes
-        node_samples = self.sampler(head_nodes)
+        node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
+
+        # Reshape node samples to sensible format
+        def get_levels(loc, lsize, samples_per_hop, walks):
+            end_loc = loc + lsize
+            walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
+            if len(samples_per_hop) < 1:
+                return [walks_at_level]
+            return [walks_at_level] + get_levels(
+                end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
+            )
+
+        nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
 
         # Get features and labels
-        batch_feats = self._get_features(node_samples, len(head_nodes))
+        batch_feats = self._get_features(nodes_per_hop, len(head_nodes))
         batch_labels = self._get_labels(head_nodes) if self.label_id else None
+
         return batch_feats, batch_labels
