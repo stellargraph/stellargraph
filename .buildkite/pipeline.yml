@@ -1,22 +1,23 @@
 steps:
-  - name: ":python:"
+  - label: ":python:"
     command:
-    - pip install -q --no-cache-dir -r requirements.txt
-    - python -m pytest tests -p no:cacheprovider
+      - pip install --no-cache-dir -r requirements.txt
+        && python -m pytest tests -p no:cacheprovider
     plugins:
-      docker#v1.1.1:
+      docker#v1.3.0:
         image: "python:3.6"
         workdir: /app
         environment:
           - PYTHONDONTWRITEBYTECODE=1
-  - name: "style"
+
+  - label: "style"
     command:
-    - pip install -q --no-cache-dir black
-    - black --check stellar tests
+      - --check stellar tests
     plugins:
-      docker#v1.1.1:
-        image: "python:3.6"
+      docker#v1.3.0:
+        image: "513929068678.dkr.ecr.ap-southeast-2.amazonaws.com/black"
         workdir: /app
+        entrypoint: /usr/bin/black
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 
@@ -28,6 +29,7 @@ steps:
     async: true
     build:
       env:
-        PIPELINE_SLUG: "${BUILDKITE_PIPELINE_SLUG}"
-        BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
-        BRANCH: "${BUILDKITE_BRANCH}"
+        LOGGER_PIPELINE_SLUG: "${BUILDKITE_PIPELINE_SLUG}"
+        LOGGER_BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
+        LOGGER_BRANCH: "${BUILDKITE_BRANCH}"
+        LOGGER_SLACK_CHANNEL: "#build-bots"
