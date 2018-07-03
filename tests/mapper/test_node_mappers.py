@@ -31,6 +31,8 @@ GraphSAGENodeMapper(
 g
 """
 from stellar.mapper.node_mappers import *
+from stellar.data.explorer import SampledBreadthFirstWalk, UniformRandomWalk
+
 import networkx as nx
 import random
 import numpy as np
@@ -49,11 +51,11 @@ def create_test_sampler(G):
         )
         return head_nodes + neigh_samples(list(neighbour_samples), next_samples)
 
-    class sampler:
-        def run(nodes=[], n=1, n_size=[]):
+    class Sampler(SampledBreadthFirstWalk):
+        def run(self, nodes=[], n=1, n_size=[]):
             return [neigh_samples([hn], n_size) for hn in nodes]
 
-    return sampler
+    return Sampler(G)
 
 
 def test_graphsage_constructor():
@@ -101,6 +103,25 @@ def test_graphsage_1():
 
     with pytest.raises(IndexError):
         nf, nl = mapper[2]
+
+
+def test_graphsage_wrong_sampler():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_edges_from(elist)
+
+    # Add example features
+    for v in G.nodes():
+        G.node[v]["feature"] = np.ones(n_feat)
+
+    with pytest.raises(TypeError):
+        mapper = GraphSAGENodeMapper(
+            G, G.nodes(), UniformRandomWalk(G), batch_size=n_batch, num_samples=[2, 2]
+        )
 
 
 def test_graphsage_2():
