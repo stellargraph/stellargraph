@@ -19,16 +19,12 @@ Mappers to provide input data for the graph models in layers.
 
 """
 import networkx as nx
-
 import numpy as np
 import itertools as it
-import functools as ft
-
-from typing import AnyStr, Any, List, Tuple, Dict, Optional, Callable
-
-from keras import backend as K
+from typing import AnyStr, Any, List, Optional, Callable
 from keras.utils import Sequence
-from keras.utils.np_utils import to_categorical
+
+from stellar.data.explorer import SampledBreadthFirstWalk
 
 
 class GraphSAGENodeMapper(Sequence):
@@ -37,8 +33,10 @@ class GraphSAGENodeMapper(Sequence):
     Args:
         G: NetworkX graph. The nodes must have a "feature" attribute that
             is used as input to the graph layers.
-        ids: The node IDs to batch. These are the head nodes which are used
-            in the training, subgraphs will still be sampled from all nodes.
+        ids: The node IDs to batch. These are the head nodes which are
+             used as the nodes to train or inference and the embeddings
+             calculated for these nodes are passed to the downstream task.
+             Subgraphs are sampled from all nodes.
         sampler: A sampler instance on graph G.
         batch_size: Size of batch to return.
         num_samples: List of number of samples per layer (hop) to take.
@@ -66,6 +64,12 @@ class GraphSAGENodeMapper(Sequence):
         self.batch_size = batch_size
         self.name = name
         self.label_id = target_id
+
+        # Check correct graph sampler is used
+        if not isinstance(sampler, SampledBreadthFirstWalk):
+            raise TypeError(
+                "Sampler must be an instance of from SampledBreadthFirstWalk"
+            )
 
         # Ensure features are available:
         nodes_have_features = all(
@@ -100,7 +104,18 @@ class GraphSAGENodeMapper(Sequence):
     def _get_features(
         self, node_samples: List[List[AnyStr]], head_size: int
     ) -> List[np.ndarray]:
+        """
+        Collect features from sampled nodes.
+        Args:
+            node_samples: A list of lists of node IDs
+            head_size: The number of head nodes (typically the batch size).
+
+        Returns:
+            A list of numpy arrays that store the features for each head
+            node.
+        """
         # Create features and node indices if required
+        # Note the if there are no samples for a level, a zero array is returned.
         batch_feats = [
             [self.G.node[v].get("feature") for v in layer_nodes]
             if len(layer_nodes) > 0
@@ -114,7 +129,16 @@ class GraphSAGENodeMapper(Sequence):
         ]
         return batch_feats
 
-    def _get_labels(self, head_nodes: List[AnyStr]) -> List[Any]:
+    def _get_labels(self, head_nodes: List[AnyStr]) -> np.ndarray:
+        """
+        Collects the labels of the head nodes. They are assumed to be stored as
+        node attributes with the key self.label_id
+        Args:
+            head_nodes: Nodes to get labels for.
+
+        Returns:
+            An array of labels.
+        """
         # Get labels for each node in node_samples
         batch_labels = [self.G.node[v].get(self.label_id) for v in head_nodes]
         return np.array(batch_labels)

@@ -28,19 +28,13 @@ GraphSAGENodeMapper(
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     )
-
+g
 """
 from stellar.mapper.node_mappers import *
 import networkx as nx
-
 import random
-
 import numpy as np
 import itertools as it
-import functools as ft
-
-from keras import backend as K
-
 import pytest
 
 

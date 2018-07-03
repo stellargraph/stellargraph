@@ -16,15 +16,13 @@ pip install -e .
 Currently this example is tested on the CORA dataset. The GraphSAGE model assumes that node
 features are available.
 
-### Getting the data
-
 For the `epgm-example.py` script, a graph in EPGM format is required.
 
 ## Running the script
 
-Run the example for ML-1m with movie & user features using the following command:
+The example can be run on the cora graph (stored in EPGM format) with the following command:
 ```
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -n 100 -e 20 -l 50 20 -s 20 10
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 50 50 -s 20 10 -e 20 -d 0.5 -r 0.01
 ```
 
 ## References
