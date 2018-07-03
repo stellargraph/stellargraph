@@ -58,7 +58,7 @@ def test_mean_agg_apply():
 
 
 def test_graphsage_constructor():
-    gs = Graphsage(output_dims=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(output_dims=[4], n_samples=[2], input_dim=2)
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.n_layers == 1
@@ -67,7 +67,7 @@ def test_graphsage_constructor():
 
 
 def test_graphsage_constructor_1():
-    gs = Graphsage(
+    gs = GraphSAGE(
         output_dims=[4, 6, 8], n_samples=[2, 4, 6], input_dim=2, bias=True, dropout=0.5
     )
     assert gs.dims == [2, 4, 6, 8]
@@ -78,7 +78,7 @@ def test_graphsage_constructor_1():
 
 
 def test_graphsage_apply():
-    gs = Graphsage(output_dims=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(output_dims=[4], n_samples=[2], input_dim=2)
     gs._normalization = lambda x: x
     for agg in gs._aggs:
         agg._initializer = "ones"
@@ -97,7 +97,7 @@ def test_graphsage_apply():
 
 
 def test_graphsage_apply_1():
-    gs = Graphsage(output_dims=[2, 2, 2], n_samples=[2, 2, 2], input_dim=2)
+    gs = GraphSAGE(output_dims=[2, 2, 2], n_samples=[2, 2, 2], input_dim=2)
     gs._normalization = lambda z: z
     for agg in gs._aggs:
         agg._initializer = "ones"
