@@ -16,9 +16,13 @@ optional arguments:
   -c [CHECKPOINT], --checkpoint [CHECKPOINT]
                         Load a saved checkpoint file
   -n BATCH_SIZE, --batch_size BATCH_SIZE
-                        Load a save checkpoint file
+                        Batch size for training
   -e EPOCHS, --epochs EPOCHS
-                        Number of epochs to train for
+                        The number of epochs to train the model
+  -d DROPOUT, --dropout DROPOUT
+                        Dropout for the GraphSAGE model, between 0.0 and 1.0
+  -r LEARNINGRATE, --learningrate LEARNINGRATE
+                        Learning rate for training model
   -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
                         The number of nodes sampled at each layer
   -l [LAYER_SIZE [LAYER_SIZE ...]], --layer_size [LAYER_SIZE [LAYER_SIZE ...]]
@@ -29,14 +33,13 @@ optional arguments:
                         The node features to use, stored as a pickled numpy
                         array.
   -t TARGET, --target TARGET
-                        The target node attribute
+                        The target node attribute (categorical)
 """
 import os
 import argparse
-import random
 import numpy as np
 import networkx as nx
-from typing import AnyStr, Any, List, Tuple, Dict, Optional
+from typing import AnyStr, List
 
 import keras
 from keras import optimizers, losses, layers, metrics
@@ -88,17 +91,20 @@ def read_epgm_graph(
     )
     converted_attr = pred_attr.union([target_attribute])
 
-    # Index nodes in graph
-    for ii, v in enumerate(g_nx.nodes()):
-        g_nx.node[v]["id"] = ii
-
     # Enumerate attributes to give numerical index
     g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
 
     # Store feature size in graph [??]
     g_nx.feature_size = len(g_nx.pred_map)
 
-    # How do we map target attributes to numerical values?
+    # We map the targets differently depending on target type/
+    # * If target_type is None, use the target values directly
+    #   (e.g. for regression or binary classification problems)
+    # * If the target is 'categorical' encode the target categories
+    #   as integers between 0 and number_of_categories - 1
+    # * If the target is '1hot' encode the target categories
+    #   as a binary vector of length number_of_categories.
+    #   see the Keras function keras.utils.np_utils.to_categorical
     g_nx.target_category_values = None
     if target_type is None:
         target_value_function = lambda x: x
@@ -120,6 +126,7 @@ def read_epgm_graph(
     else:
         raise ValueError("Target type '{}' is not supported.".format(target_type))
 
+    # Set the "feature" and encoded "target" attributes for all nodes in the graph.
     for v, vdata in g_nx.nodes(data=True):
         # Decode attributes to a feature array
         attr_array = np.zeros(g_nx.feature_size)
@@ -157,13 +164,26 @@ def train(
     learning_rate: float = 0.005,
     dropout: float = 0.0,
 ):
+    """
+    Train the GraphSAGE model on the specified graph G
+    with given parameters.
+
+    Args:
+        G: NetworkX graph file
+        layer_size: A list of number of hidden nodes in each layer
+        num_samples: Number of neighbours to sample at each layer
+        batch_size: Size of batch for inference
+        num_epochs: Number of epochs to train the model
+        learning_rate: Initial Learning rate
+        dropout: The dropout (0->1)
+    """
     # Split head nodes into train/test
     splitter = NodeSplitter()
     graph_nodes = np.array(
         [(v, vdata.get("subject")) for v, vdata in G.nodes(data=True)]
     )
     train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
-        y=graph_nodes, p=300, test_size=500
+        y=graph_nodes, p=100, test_size=500
     )
     train_ids = [v[0] for v in train_nodes]
     test_ids = list(G.nodes())
@@ -178,6 +198,15 @@ def train(
     )
     test_mapper = GraphSAGENodeMapper(
         G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
+    )
+    val_mapper = GraphSAGENodeMapper(
+        G,
+        val_ids,
+        sampler,
+        batch_size,
+        num_samples,
+        target_id="target",
+        name="validate",
     )
 
     # GraphSAGE model
@@ -209,9 +238,14 @@ def train(
     )
 
     # Evaluate and print metrics
+    val_metrics = model.evaluate_generator(val_mapper)
     test_metrics = model.evaluate_generator(test_mapper)
 
-    print("\nTest Evaluation:")
+    print("\nValidation Set Metrics:")
+    for name, val in zip(model.metrics_names, val_metrics):
+        print("\t{}: {:0.4f}".format(name, val))
+
+    print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
@@ -226,6 +260,14 @@ def train(
 
 
 def test(G, model_file: AnyStr, batch_size: int):
+    """
+    Load the serialized model and evaluate on all nodes in the graph.
+
+    Args:
+        G: NetworkX graph file
+        model_file: Location of Keras model to load
+        batch_size: Size of batch for inference
+    """
     model = keras.models.load_model(
         model_file, custom_objects={"MeanAggregator": MeanAggregator}
     )
@@ -236,12 +278,9 @@ def test(G, model_file: AnyStr, batch_size: int):
         for ii in range(len(model.input_shape) - 1)
     ]
 
-    # Split head nodes into train/test
-    splitter = NodeSplitter()
-    all_ids = list(G.nodes())
-
     # Sampler chooses random sampled subgraph for each head node
     sampler = SampledBreadthFirstWalk(G)
+    all_ids = list(G.nodes())
 
     # Mapper feeds data from sampled subgraph to GraphSAGE model
     test_mapper = GraphSAGENodeMapper(
@@ -251,7 +290,7 @@ def test(G, model_file: AnyStr, batch_size: int):
     # Evaluate and print metrics
     test_metrics = model.evaluate_generator(test_mapper)
 
-    print("\nTest Evaluation:")
+    print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
@@ -269,13 +308,21 @@ if __name__ == "__main__":
         help="Load a saved checkpoint file",
     )
     parser.add_argument(
-        "-n", "--batch_size", type=int, default=500, help="Load a save checkpoint file"
+        "-n", "--batch_size", type=int, default=500, help="Batch size for training"
     )
     parser.add_argument(
-        "-e", "--epochs", type=int, default=10, help="Number of epochs to train for"
+        "-e",
+        "--epochs",
+        type=int,
+        default=10,
+        help="The number of epochs to train the model",
     )
     parser.add_argument(
-        "-d", "--dropout", type=float, default=0.0, help="Dropout for GraphSAGE model"
+        "-d",
+        "--dropout",
+        type=float,
+        default=0.0,
+        help="Dropout for the GraphSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
         "-r",
