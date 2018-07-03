@@ -163,7 +163,7 @@ def train(
         [(v, vdata.get("subject")) for v, vdata in G.nodes(data=True)]
     )
     train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
-        y=graph_nodes, p=300, test_size=500
+        y=graph_nodes, p=20, test_size=1000
     )
     train_ids = [v[0] for v in train_nodes]
     test_ids = list(G.nodes())
@@ -175,6 +175,9 @@ def train(
     # Mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
         G, train_ids, sampler, batch_size, num_samples, target_id="target", name="train"
+    )
+    valid_mapper = GraphSAGENodeMapper(
+        G, val_ids, sampler, batch_size, num_samples, target_id="target", name="validate"
     )
     test_mapper = GraphSAGENodeMapper(
         G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
@@ -205,7 +208,7 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_mapper, epochs=num_epochs, verbose=2, shuffle=True
+        train_mapper, epochs=num_epochs, validation_data=valid_mapper, verbose=2, shuffle=True
     )
 
     # Evaluate and print metrics
