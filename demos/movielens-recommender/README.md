@@ -1,20 +1,15 @@
-# graphsage-movielens
+# Graphsage Recommender -- Movielens Example
 
 This is an example of using Heterogeneous GraphSAGE as a hybrid recommender
 system for the Movielens dataset.
 
-
 ## Requirements
-Prior to running any of the examples, ensure you have a redis instance running
-locally on the default port 6379.
-```commandline
-redis-server
-```
+Install the Stellar ML library.
 
-Additionally, set the PYTHONPATH environment variable to include this directory,
-for example in bash execute the following:
-```commandline
-export PYTHONPATH=.
+In top-level stellar-ml directory install using pip:
+
+```
+pip install -e .
 ```
 
 ## MovieLens Data
@@ -71,14 +66,14 @@ There are two movielens datasets that have been preprepared:
 
 Run the example for ML-1m with movie & user features using the following command:
 ```
-python example/movielens.py --graph=ml-1m_split_graphnx.pkl
-    --features=ml-1m_features.pkl --baseline
+python movielens-example.py --graph=ml-1m_split_graphnx.pkl
+    --features=ml-1m_features.pkl --epochs 10
 ```
 
 Run the example for ML-1m with node2vec embeddings using the following command:
 ```
-python example/movielens.py --graph=ml-1m_split_graphnx.pkl
-    --features=ml-1m_embeddings.pkl --baseline
+python movielens-example.py --graph=ml-1m_split_graphnx.pkl
+    --features=ml-1m_embeddings.pkl --epochs 10
 ```
 
 These examples trains HinSAGE to predict the "score" attribute on links. This

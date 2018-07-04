@@ -45,8 +45,8 @@ def test_mean_agg_constructor_1():
 
 def test_mean_agg_apply():
     agg = MeanAggregator(4, act=lambda x: x)
-    agg._initializer = 'ones'
-    inp1 = keras.Input(shape=(1, 2,))
+    agg._initializer = "ones"
+    inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 2, 2))
     out = agg([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
@@ -58,7 +58,7 @@ def test_mean_agg_apply():
 
 
 def test_graphsage_constructor():
-    gs = Graphsage(output_dims=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(output_dims=[4], n_samples=[2], input_dim=2)
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.n_layers == 1
@@ -67,7 +67,9 @@ def test_graphsage_constructor():
 
 
 def test_graphsage_constructor_1():
-    gs = Graphsage(output_dims=[4, 6, 8], n_samples=[2, 4, 6], input_dim=2, bias=True, dropout=0.5)
+    gs = GraphSAGE(
+        output_dims=[4, 6, 8], n_samples=[2, 4, 6], input_dim=2, bias=True, dropout=0.5
+    )
     assert gs.dims == [2, 4, 6, 8]
     assert gs.n_samples == [2, 4, 6]
     assert gs.n_layers == 3
@@ -76,10 +78,10 @@ def test_graphsage_constructor_1():
 
 
 def test_graphsage_apply():
-    gs = Graphsage(output_dims=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(output_dims=[4], n_samples=[2], input_dim=2)
     gs._normalization = lambda x: x
     for agg in gs._aggs:
-        agg._initializer = 'ones'
+        agg._initializer = "ones"
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(2, 2))
@@ -95,10 +97,10 @@ def test_graphsage_apply():
 
 
 def test_graphsage_apply_1():
-    gs = Graphsage(output_dims=[2, 2, 2], n_samples=[2, 2, 2], input_dim=2)
+    gs = GraphSAGE(output_dims=[2, 2, 2], n_samples=[2, 2, 2], input_dim=2)
     gs._normalization = lambda z: z
     for agg in gs._aggs:
-        agg._initializer = 'ones'
+        agg._initializer = "ones"
 
     inp = [keras.Input(shape=(i, 2)) for i in [1, 2, 4, 8]]
     out = gs(inp)
@@ -108,11 +110,9 @@ def test_graphsage_apply_1():
         np.array([[[1, 1]]]),
         np.array([[[2, 2], [2, 2]]]),
         np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
-        np.array([[[4, 4], [4, 4], [4, 4], [4, 4], [5, 5], [5, 5], [5, 5], [5, 5]]])
+        np.array([[[4, 4], [4, 4], [4, 4], [4, 4], [5, 5], [5, 5], [5, 5], [5, 5]]]),
     ]
 
     actual = model.predict(x)
     expected = np.array([[[16, 25]]])
     assert expected == pytest.approx(actual)
-
-

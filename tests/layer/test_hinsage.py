@@ -45,11 +45,11 @@ def test_mean_hin_agg_constructor_1():
 
 def test_mean_hin_agg_apply():
     agg = MeanHinAggregator(2, act=lambda z: z)
-    agg._initializer = 'ones'
+    agg._initializer = "ones"
     inp = [
         keras.Input(shape=(1, 2)),
         keras.Input(shape=(1, 2, 2)),
-        keras.Input(shape=(1, 2, 4))
+        keras.Input(shape=(1, 2, 4)),
     ]
     out = agg(inp)
     model = keras.Model(inputs=inp, outputs=out)
@@ -57,7 +57,7 @@ def test_mean_hin_agg_apply():
     x = [
         np.array([[[1, 1]]]),
         np.array([[[[2, 2], [2, 2]]]]),
-        np.array([[[[3, 3, 3, 3], [3, 3, 3, 3]]]])
+        np.array([[[[3, 3, 3, 3], [3, 3, 3, 3]]]]),
     ]
 
     actual = model.predict(x)
@@ -66,12 +66,47 @@ def test_mean_hin_agg_apply():
     assert actual == pytest.approx(expected)
 
 
+def test_mean_hin_agg_apply_2():
+    agg1 = MeanHinAggregator(2, act=lambda z: z)
+    agg1._initializer = "ones"
+    agg2 = MeanHinAggregator(2, act=lambda z: z + 1)
+    agg2._initializer = "ones"
+
+    inp = [
+        keras.Input(shape=(1, 2)),
+        keras.Input(shape=(1, 2, 2)),
+        keras.Input(shape=(1, 2, 4)),
+    ]
+    out1 = agg1(inp, name="test")
+    out2 = agg2(inp, name="test")
+
+    model = keras.Model(inputs=inp, outputs=[out1, out2])
+
+    x = [
+        np.array([[[1, 1]]]),
+        np.array([[[[2, 2], [2, 2]]]]),
+        np.array([[[[3, 3, 3, 3], [3, 3, 3, 3]]]]),
+    ]
+
+    actual = model.predict(x)
+    print(actual)
+    expected = [np.array([[[2, 8]]]), np.array([[[4, 10]]])]
+    assert actual == pytest.approx(expected)
+
+
 def test_hinsage_constructor():
     hs = Hinsage(
-        output_dims=[{'1': 2, '2': 2}, {'1': 2}],
+        output_dims=[{"1": 2, "2": 2}, {"1": 2}],
         n_samples=[2, 2],
-        input_neigh_tree=[('1', [1, 2]), ('1', [3, 4]), ('2', [5]), ('1', []), ('2', []), ('2', [])],
-        input_dim={'1': 2, '2': 2}
+        input_neigh_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
     )
     assert hs.n_layers == 2
     assert hs.n_samples == [2, 2]
@@ -80,15 +115,22 @@ def test_hinsage_constructor():
 
 def test_hinsage_apply():
     hs = Hinsage(
-        output_dims=[{'1': 2, '2': 2}, 2],
+        output_dims=[{"1": 2, "2": 2}, 2],
         n_samples=[2, 2],
-        input_neigh_tree=[('1', [1, 2]), ('1', [3, 4]), ('2', [5]), ('1', []), ('2', []), ('2', [])],
-        input_dim={'1': 2, '2': 4}
+        input_neigh_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
     )
     hs._normalization = lambda z: z
     for aggs in hs._aggs:
         for _, agg in aggs.items():
-            agg._initializer = 'ones'
+            agg._initializer = "ones"
 
     inp = [
         keras.Input(shape=(1, 2)),
@@ -96,7 +138,7 @@ def test_hinsage_apply():
         keras.Input(shape=(2, 4)),
         keras.Input(shape=(4, 2)),
         keras.Input(shape=(4, 4)),
-        keras.Input(shape=(4, 4))
+        keras.Input(shape=(4, 4)),
     ]
 
     out = hs(inp)
@@ -108,7 +150,7 @@ def test_hinsage_apply():
         np.array([[[4, 4, 4, 4], [4, 4, 4, 4]]]),
         np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
         np.array([[[6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6]]]),
-        np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]])
+        np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
     ]
 
     actual = model.predict(x)

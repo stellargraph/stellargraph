@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from stellar.data.epgm import EPGM
 
-UNKNOWN_TARGET_ATTRIBUTE = '-1'
+UNKNOWN_TARGET_ATTRIBUTE = "-1"
 
 
 class NodeSplitter(object):
@@ -42,8 +42,11 @@ class NodeSplitter(object):
         # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
         # from being added to train, test, and validation datasets.
         # y = [(node['id'], node['data'][target_attribute]) for node in graph_nodes if node['meta']['label'] == node_type]
-        y = [(node['id'], node['data'].get(target_attribute, UNKNOWN_TARGET_ATTRIBUTE))
-             for node in graph_nodes if node['meta']['label'] == node_type]
+        y = [
+            (node["id"], node["data"].get(target_attribute, UNKNOWN_TARGET_ATTRIBUTE))
+            for node in graph_nodes
+            if node["meta"]["label"] == node_type
+        ]
 
         return y
 
@@ -59,20 +62,24 @@ class NodeSplitter(object):
         if os.path.isdir(path):
             self.format_epgm = True
             self.g_epgm = EPGM(path)
-            graphs = self.g_epgm.G['graphs']
+            graphs = self.g_epgm.G["graphs"]
             for g in graphs:
-                if g['meta']['label'] == dataset_name:
-                    self.g_id = g['id']
+                if g["meta"]["label"] == dataset_name:
+                    self.g_id = g["id"]
 
             self.g_nx = self.g_epgm.to_nx(self.g_id)
-            g_vertices = self.g_epgm.G['vertices']  # retrieve all graph vertices
+            g_vertices = self.g_epgm.G["vertices"]  # retrieve all graph vertices
 
             if node_type is None:
                 node_type = self.g_epgm.node_types(self.g_id)
                 if len(node_type) == 1:
                     node_type = node_type[0]
                 else:
-                    raise Exception('Multiple node types detected in graph {}: {}.'.format(self.g_id, node_type))
+                    raise Exception(
+                        "Multiple node types detected in graph {}: {}.".format(
+                            self.g_id, node_type
+                        )
+                    )
 
             if target_attribute is None:
                 target_attribute = self.g_epgm.node_attributes(self.g_id, node_type)
@@ -80,19 +87,26 @@ class NodeSplitter(object):
                     target_attribute = target_attribute[0]
                 else:
                     raise Exception(
-                        'Multiple node attributes detected for nodes of type {} in graph {}: {}.'.format(node_type, self.g_id, target_attribute))
+                        "Multiple node attributes detected for nodes of type {} in graph {}: {}.".format(
+                            node_type, self.g_id, target_attribute
+                        )
+                    )
 
-            y = np.array(self._get_nodes(g_vertices, node_type=node_type, target_attribute=target_attribute))
+            y = np.array(
+                self._get_nodes(
+                    g_vertices, node_type=node_type, target_attribute=target_attribute
+                )
+            )
 
         else:
-            y_df = pd.read_csv(path, delimiter=' ', header=None, dtype=str)
+            y_df = pd.read_csv(path, delimiter=" ", header=None, dtype=str)
             y_df.sort_values(by=[0], inplace=True)
 
             y = y_df.as_matrix()
 
         return y
 
-    def train_test_split(self, p=10, y=None, method='count', **kwargs):
+    def train_test_split(self, p=10, y=None, method="count", **kwargs):
         """
         Splits node data into train, test, validation, and unlabeled sets.
 
@@ -106,20 +120,19 @@ class NodeSplitter(object):
         """
         if y is None:
             raise ValueError("y cannot be None")
-        if method != 'count':
+        if method != "count":
             raise ValueError("Only method 'count' is currently available")
         if p <= 0 or type(p) != int:
             raise ValueError("p should be positive integer")
 
-        test_size = kwargs.get('test_size', None)
+        test_size = kwargs.get("test_size", None)
         # Some checks on the value of test_size
         if test_size is None:
             raise ValueError("test_size must be specified")
-        if test_size <=0 or type(test_size) != int:
+        if test_size <= 0 or type(test_size) != int:
             raise ValueError("test_size must be positive integer")
 
         return self._split_data(y, p, test_size)
-
 
     def _split_data(self, y, nc, test_size):
         """
@@ -138,7 +151,9 @@ class NodeSplitter(object):
 
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
-        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)  # indexes of points with no class label
+        ind = np.nonzero(
+            y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE
+        )  # indexes of points with no class label
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
@@ -153,14 +168,20 @@ class NodeSplitter(object):
             test_size = y.shape[0] - class_labels.size * nc
 
         for clabel in class_labels:
-            ind = np.nonzero(y[:, 1] == clabel)  # indexes of points with class label clabel
+            ind = np.nonzero(
+                y[:, 1] == clabel
+            )  # indexes of points with class label clabel
             # select nc of these at random for the training set
             if ind[0].size <= nc:
                 # too few labeled examples for class so use half for training and half for testing
                 ind_selected = np.random.choice(ind[0], ind[0].size // 2, replace=False)
             else:
                 ind_selected = np.random.choice(ind[0], nc, replace=False)
-            y_used[ind_selected] = 1  # mark these as used to make sure that they are not sampled for the test set
+            y_used[
+                ind_selected
+            ] = (
+                1
+            )  # mark these as used to make sure that they are not sampled for the test set
             if y_train is None:
                 y_train = y[ind_selected]
             else:
@@ -171,7 +192,11 @@ class NodeSplitter(object):
         # now sample test_size points for the test set
         ind = np.nonzero(y_used == 0)  # indexes of points that are not in training set
         if len(ind[0]) < test_size:
-            raise Exception('Not enough nodes available for the test set: available {} nodes, needed {}. Aborting'.format(len(ind[0]), test_size))
+            raise Exception(
+                "Not enough nodes available for the test set: available {} nodes, needed {}. Aborting".format(
+                    len(ind[0]), test_size
+                )
+            )
         ind_selected = np.random.choice(ind[0], test_size, replace=False)
         y_test = y[ind_selected]
         y_used[ind_selected] = 1
@@ -191,29 +216,43 @@ class NodeSplitter(object):
             os.mkdir(output_dir)
 
         if self.format_epgm:
-            return self._write_data_epgm(output_dir=output_dir, dataset_name=dataset_name,
-                                         y_train=y_train, y_test=y_test, y_val=y_val, y_unlabeled=y_unlabeled)
+            return self._write_data_epgm(
+                output_dir=output_dir,
+                dataset_name=dataset_name,
+                y_train=y_train,
+                y_test=y_test,
+                y_val=y_val,
+                y_unlabeled=y_unlabeled,
+            )
         else:
-            return self._write_data(output_dir=output_dir, dataset_name=dataset_name,
-                                    y_train=y_train, y_test=y_test, y_val=y_val, y_unlabeled=y_unlabeled)
+            return self._write_data(
+                output_dir=output_dir,
+                dataset_name=dataset_name,
+                y_train=y_train,
+                y_test=y_test,
+                y_val=y_val,
+                y_unlabeled=y_unlabeled,
+            )
 
-    def _write_data_epgm(self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled):
+    def _write_data_epgm(
+        self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled
+    ):
 
         G_train = self.g_nx.subgraph(y_train[:, 0]).copy()
         G_train.id = uuid.uuid4().hex
-        G_train.name = dataset_name+'_train'
+        G_train.name = dataset_name + "_train"
 
         G_val = self.g_nx.subgraph(y_val[:, 0]).copy()
         G_val.id = uuid.uuid4().hex
-        G_val.name = dataset_name+'_val'
+        G_val.name = dataset_name + "_val"
 
         G_test = self.g_nx.subgraph(y_test[:, 0]).copy()
         G_test.id = uuid.uuid4().hex
-        G_test.name = dataset_name+'_test'
+        G_test.name = dataset_name + "_test"
 
         G_unlabeled = self.g_nx.subgraph(y_unlabeled[:, 0]).copy()
         G_unlabeled.id = uuid.uuid4().hex
-        G_unlabeled.name = dataset_name+'_unlabeled'
+        G_unlabeled.name = dataset_name + "_unlabeled"
 
         # We are not interested in edges of G_train, G_val, and G_test, so remove them:
         G_train.remove_edges_from(list(G_train.edges()))
@@ -231,24 +270,26 @@ class NodeSplitter(object):
 
         return {"epgm_directory": output_dir}
 
-    def _write_data(self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled):
+    def _write_data(
+        self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled
+    ):
 
-        y_train_filename = os.path.join(output_dir, dataset_name+'.idx.train')
-        np.savetxt(y_train_filename, y_train, fmt='%s')  # was fmt=%d
+        y_train_filename = os.path.join(output_dir, dataset_name + ".idx.train")
+        np.savetxt(y_train_filename, y_train, fmt="%s")  # was fmt=%d
 
-        y_val_filename = os.path.join(output_dir, dataset_name+'.idx.validation')
-        np.savetxt(y_val_filename, y_val, fmt='%s')
+        y_val_filename = os.path.join(output_dir, dataset_name + ".idx.validation")
+        np.savetxt(y_val_filename, y_val, fmt="%s")
 
-        y_test_filename = os.path.join(output_dir, dataset_name+'.idx.test')
-        np.savetxt(y_test_filename, y_test, fmt='%s')
+        y_test_filename = os.path.join(output_dir, dataset_name + ".idx.test")
+        np.savetxt(y_test_filename, y_test, fmt="%s")
 
-        y_unlabeled_filename = os.path.join(output_dir, dataset_name+'.idx.unlabeled')
-        np.savetxt(y_unlabeled_filename, y_unlabeled, fmt='%s')
+        y_unlabeled_filename = os.path.join(output_dir, dataset_name + ".idx.unlabeled")
+        np.savetxt(y_unlabeled_filename, y_unlabeled, fmt="%s")
 
-        #return y_train_filename, y_val_filename, y_test_filename, y_unlabeled_filename
+        # return y_train_filename, y_val_filename, y_test_filename, y_unlabeled_filename
         return {
-            'train_data_filename': y_train_filename,
-            'val_data_filename': y_val_filename,
-            'test_data_filename': y_test_filename,
-            'unlabeled_data_filename': y_unlabeled_filename,
+            "train_data_filename": y_train_filename,
+            "val_data_filename": y_val_filename,
+            "test_data_filename": y_test_filename,
+            "unlabeled_data_filename": y_unlabeled_filename,
         }
