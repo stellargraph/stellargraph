@@ -559,6 +559,12 @@ class EdgeSplitter(object):
         else:
             edges = self.g_master.edges()
 
+        # NOT FINISHED
+        # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
+        # the source and target node ids.
+        edges_set = {u[0] + u[1] for u in edges}
+        sampled_edges_set = set()
+
         start_nodes = self.g.nodes(data=True)
         nodes_dict = {node[0]: node[1]["label"] for node in start_nodes}
 
@@ -596,20 +602,32 @@ class EdgeSplitter(object):
                             # the membership of an element in a number of lists that can grow very large for large
                             # graphs and number examples to sample. Later, we should have a closer look at how we can
                             # speed this up.
+                            # if (
+                            #     (u_v_edge_type in edge_source_target_node_types)
+                            #     and (u[0] != v)
+                            #     and ((u[0], v) not in edges)
+                            #     and ((v, u[0]) not in edges)
+                            #     and ((u[0], v, 0) not in sampled_edges)
+                            #     and ((v, u[0], 0) not in sampled_edges)
+                            # ):
                             if (
                                 (u_v_edge_type in edge_source_target_node_types)
                                 and (u[0] != v)
-                                and ((u[0], v) not in edges)
-                                and ((v, u[0]) not in edges)
-                                and ((u[0], v, 0) not in sampled_edges)
-                                and ((v, u[0], 0) not in sampled_edges)
+                                and ((u[0] + v) not in edges_set)
+                                and ((v + u[0]) not in edges_set)
+                                and ((u[0] + v) not in sampled_edges_set)
+                                and ((v + u[0]) not in sampled_edges_set)
                             ):
+
                                 sampled_edges.append(
                                     (u[0], v, 0)
                                 )  # the last entry is the class label
+                                sampled_edges_set.add(u[0]+v)
                                 count += 1
+                                if count % 1000 == 0:
+                                    print("Sampled {} negatives".format(count))
                                 self.negative_edge_node_distances.append(d)
-                                break
+                            break
                         elif dv < d:
                             neighbours = nx.neighbors(self.g, v)
                             np.random.shuffle(neighbours)
@@ -668,6 +686,11 @@ class EdgeSplitter(object):
         else:
             edges = self.g_master.edges()
 
+        # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
+        # the source and target node ids.
+        edges_set = {u[0] + u[1] for u in edges}
+        sampled_edges_set = set()
+
         start_nodes = self.g.nodes(data=False)
 
         count = 0
@@ -699,23 +722,25 @@ class EdgeSplitter(object):
                             # searching
                             if (
                                 (u != v)
-                                and ((u, v) not in edges)
-                                and ((v, u) not in edges)
-                                and ((u, v, 0) not in sampled_edges)
-                                and ((v, u, 0) not in sampled_edges)
+                                and ((u + v) not in edges_set)
+                                and ((v + u) not in edges_set)
+                                and ((u + v) not in sampled_edges_set)
+                                and ((v + u) not in sampled_edges_set)
                             ):
                                 sampled_edges.append(
                                     (u, v, 0)
                                 )  # the last entry is the class label
+                                sampled_edges_set.add(u + v)
                                 count += 1
                                 self.negative_edge_node_distances.append(d)
+                                if count % 1000 == 0:
+                                    print("Sampled {} negatives".format(count))
                                 break
                         elif dv < d:
                             neighbours = nx.neighbors(self.g, v)
                             np.random.shuffle(neighbours)
                             neighbours = [(k, dv + 1) for k in neighbours]
                             nodes_stack.extend(neighbours)
-
                 if count == num_edges_to_sample:
                     return sampled_edges
 
@@ -830,6 +855,11 @@ class EdgeSplitter(object):
         else:
             edges = self.g_master.edges()
 
+        # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
+        # the source and target node ids.
+        edges_set = {u[0] + u[1] for u in edges}
+        sampled_edges_set = set()
+
         start_nodes = self.g.nodes(data=False)
         end_nodes = self.g.nodes(data=False)
 
@@ -837,25 +867,24 @@ class EdgeSplitter(object):
         sampled_edges = []
 
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
-
         for _ in np.arange(0, num_iter):
             np.random.shuffle(start_nodes)
             np.random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 if (
                     (u != v)
-                    and ((u, v) not in edges)
-                    and ((v, u) not in edges)
-                    and ((u, v, 0) not in sampled_edges)
-                    and ((v, u, 0) not in sampled_edges)
+                    and ((u + v) not in edges_set)
+                    and ((v + u) not in edges_set)
+                    and ((u + v) not in sampled_edges_set)
+                    and ((v + u) not in sampled_edges_set)
                 ):
                     sampled_edges.append((u, v, 0))  # the last entry is the class label
+                    sampled_edges_set.add(u + v)  # for fast lookups
                     count += 1
-                    self.negative_edge_node_distances.append(
-                        nx.shortest_path_length(self.g, source=u, target=v)
-                    )
                 if count == num_edges_to_sample:
                     return sampled_edges
+                if count % 1000 == 0:
+                    print("Sampled {} negative examples".format(count))
 
         return sampled_edges
 
@@ -895,6 +924,11 @@ class EdgeSplitter(object):
             edges=edges
         )
 
+        # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
+        # the source and target node ids.
+        edges_set = {u[0] + u[1] for u in edges}
+        sampled_edges_set = set()
+
         start_nodes = self.g.nodes(data=True)
         end_nodes = self.g.nodes(data=True)
 
@@ -908,21 +942,30 @@ class EdgeSplitter(object):
             np.random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 u_v_edge_type = (u[1]["label"], v[1]["label"])
+                # if (
+                #     (u_v_edge_type in edge_source_target_node_types)
+                #     and (u != v)
+                #     and ((u[0], v[0]) not in edges)
+                #     and ((v[0], u[0]) not in edges)
+                #     and ((u[0], v[0], 0) not in sampled_edges)
+                #     and ((v[0], u[0], 0) not in sampled_edges)
+                # ):
                 if (
                     (u_v_edge_type in edge_source_target_node_types)
                     and (u != v)
-                    and ((u[0], v[0]) not in edges)
-                    and ((v[0], u[0]) not in edges)
-                    and ((u[0], v[0], 0) not in sampled_edges)
-                    and ((v[0], u[0], 0) not in sampled_edges)
+                    and ((u[0] + v[0]) not in edges_set)
+                    and ((v[0] + u[0]) not in edges_set)
+                    and ((u[0] + v[0]) not in sampled_edges_set)
+                    and ((v[0] + u[0]) not in sampled_edges_set)
                 ):
                     sampled_edges.append(
                         (u[0], v[0], 0)
                     )  # the last entry is the class label
+                    sampled_edges_set.add(u[0] + v[0])
                     count += 1
-                    self.negative_edge_node_distances.append(
-                        nx.shortest_path_length(self.g, source=u[0], target=v[0])
-                    )
+                    # self.negative_edge_node_distances.append(
+                    #     nx.shortest_path_length(self.g, source=u[0], target=v[0])
+                    # )
                     if count % 1000 == 0:
                         print("Sampled", count, "negative edges")
 
