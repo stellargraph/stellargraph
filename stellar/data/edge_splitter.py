@@ -58,6 +58,7 @@ class EdgeSplitter(object):
 
         self.negative_edge_node_distances = None
         self.minedges = None  # the minimum spanning tree as a list of edges.
+        self.minedges_set = None  # lookup dictionary for edges in minimum spanning tree
 
     def _train_test_split_homogeneous(self, p, method, **kwargs):
         """
@@ -74,7 +75,7 @@ class EdgeSplitter(object):
         self.minedges = self._get_minimum_spanning_edges()
 
         # Sample the positive examples
-        positive_edges = self._reduce_graph(minedges=self.minedges, p=p)
+        positive_edges = self._reduce_graph(minedges=self.minedges_set, p=p)
         df = pd.DataFrame(positive_edges)
         self.positive_edges_ids = np.array(df.iloc[:, 0:2])
         self.positive_edges_labels = np.array(df.iloc[:, 2])
@@ -144,11 +145,11 @@ class EdgeSplitter(object):
         # Note: The caller guarantees the edge_label is not None so we don't have to check here again.
         if edge_attribute_threshold is None:
             positive_edges = self._reduce_graph_by_edge_type(
-                minedges=self.minedges, p=p, edge_label=edge_label
+                minedges=self.minedges_set, p=p, edge_label=edge_label
             )
         else:
             positive_edges = self._reduce_graph_by_edge_type_and_attribute(
-                minedges=self.minedges,
+                minedges=self.minedges_set,
                 p=p,
                 edge_label=edge_label,
                 edge_attribute_label=edge_attribute_label,
@@ -386,6 +387,7 @@ class EdgeSplitter(object):
         # print("Graph has {} edges of type {}".format(num_edges_total, edge_label))
         # Multiply this number by p to determine the number of positive edge examples to sample
         num_edges_to_remove = int(num_edges_total * p)
+
         # shuffle the edges
         np.random.shuffle(all_edges)
         #
@@ -394,10 +396,8 @@ class EdgeSplitter(object):
         count = 0
         removed_edges = []
         for edge in all_edges:
-            edge_uv = (edge[0], edge[1])
-            edge_vu = (edge[1], edge[0])
-            if (edge_uv not in minedges) and (
-                edge_vu not in minedges
+            if ((edge[0] + edge[1]) not in minedges) and (
+                (edge[1] + edge[1]) not in minedges
             ):  # for sanity check (u,v) and (v,u)
                 removed_edges.append(
                     (edge[0], edge[1], 1)
@@ -443,10 +443,8 @@ class EdgeSplitter(object):
         count = 0
         removed_edges = []
         for edge in all_edges:
-            edge_uv = (edge[0], edge[1])
-            edge_vu = (edge[1], edge[0])
-            if (edge_uv not in minedges) and (
-                edge_vu not in minedges
+            if ((edge[0] + edge[1]) not in minedges) and (
+                (edge[1] + edge[0]) not in minedges
             ):  # for sanity check (u,v) and (v,u)
                 removed_edges.append(
                     (edge[0], edge[1], 1)
@@ -483,10 +481,10 @@ class EdgeSplitter(object):
         count = 0
         removed_edges = []
         for edge_uv in all_edges:
-            edge_vu = (edge_uv[1], edge_uv[0])
-            if (edge_uv not in minedges) and (
-                edge_vu not in minedges
+            if ((edge_uv[0] + edge_uv[1]) not in minedges) and (
+                (edge_uv[1] + edge_uv[0]) not in minedges
             ):  # for sanity check (u,v) and (v,u)
+
                 removed_edges.append(
                     (edge_uv[0], edge_uv[1], 1)
                 )  # the last entry is the label
@@ -559,7 +557,6 @@ class EdgeSplitter(object):
         else:
             edges = self.g_master.edges()
 
-        # NOT FINISHED
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         edges_set = {u[0] + u[1] for u in edges}
@@ -602,14 +599,6 @@ class EdgeSplitter(object):
                             # the membership of an element in a number of lists that can grow very large for large
                             # graphs and number examples to sample. Later, we should have a closer look at how we can
                             # speed this up.
-                            # if (
-                            #     (u_v_edge_type in edge_source_target_node_types)
-                            #     and (u[0] != v)
-                            #     and ((u[0], v) not in edges)
-                            #     and ((v, u[0]) not in edges)
-                            #     and ((u[0], v, 0) not in sampled_edges)
-                            #     and ((v, u[0], 0) not in sampled_edges)
-                            # ):
                             if (
                                 (u_v_edge_type in edge_source_target_node_types)
                                 and (u[0] != v)
@@ -622,7 +611,7 @@ class EdgeSplitter(object):
                                 sampled_edges.append(
                                     (u[0], v, 0)
                                 )  # the last entry is the class label
-                                sampled_edges_set.add(u[0]+v)
+                                sampled_edges_set.add(u[0] + v)
                                 count += 1
                                 if count % 1000 == 0:
                                     print("Sampled {} negatives".format(count))
@@ -981,4 +970,8 @@ class EdgeSplitter(object):
         """
         mst = nx.minimum_spanning_edges(self.g, data=False)
         edges = list(mst)
+        # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
+        # the source and target node ids.
+        self.minedges_set = {u[0] + u[1] for u in edges}
+
         return edges
