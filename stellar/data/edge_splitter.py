@@ -931,14 +931,6 @@ class EdgeSplitter(object):
             np.random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 u_v_edge_type = (u[1]["label"], v[1]["label"])
-                # if (
-                #     (u_v_edge_type in edge_source_target_node_types)
-                #     and (u != v)
-                #     and ((u[0], v[0]) not in edges)
-                #     and ((v[0], u[0]) not in edges)
-                #     and ((u[0], v[0], 0) not in sampled_edges)
-                #     and ((v[0], u[0], 0) not in sampled_edges)
-                # ):
                 if (
                     (u_v_edge_type in edge_source_target_node_types)
                     and (u != v)
@@ -952,9 +944,6 @@ class EdgeSplitter(object):
                     )  # the last entry is the class label
                     sampled_edges_set.add(u[0] + v[0])
                     count += 1
-                    # self.negative_edge_node_distances.append(
-                    #     nx.shortest_path_length(self.g, source=u[0], target=v[0])
-                    # )
                     if count % 1000 == 0:
                         print("Sampled", count, "negative edges")
 
