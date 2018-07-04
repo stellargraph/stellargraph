@@ -17,9 +17,21 @@
 import networkx as nx
 
 
-class StellarGraph(nx.MultiDiGraph):
+class StellarGraph(nx.MultiGraph):
     """
-    Our own StellarGraph class, inherited from nx.MultiDiGraph, with extra stuff to be added that's needed by samplers and mappers
+    Our own class for heterogeneous undirected graphs, inherited from nx.MultiGraph, with extra stuff to be added that's needed by samplers and mappers
     """
 
-    pass
+    def __init__(self):
+        super().__init__()
+
+
+class StellarDiGraph(nx.MultiDiGraph):
+    """
+    Our own class for heterogeneous directed graphs, inherited from nx.MultiDiGraph, with extra stuff to be added that's needed by samplers and mappers
+    """
+
+    def __init__(self):
+        super().__init__()
+
+
