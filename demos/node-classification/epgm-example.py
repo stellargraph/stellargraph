@@ -183,7 +183,7 @@ def train(
         [(v, vdata.get("subject")) for v, vdata in G.nodes(data=True)]
     )
     train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
-        y=graph_nodes, p=100, test_size=500
+        y=graph_nodes, p=20, test_size=1000
     )
     train_ids = [v[0] for v in train_nodes]
     test_ids = list(G.nodes())
@@ -234,16 +234,15 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_mapper, epochs=num_epochs, verbose=2, shuffle=True
+        train_mapper,
+        epochs=num_epochs,
+        validation_data=val_mapper,
+        verbose=2,
+        shuffle=True,
     )
 
     # Evaluate and print metrics
-    val_metrics = model.evaluate_generator(val_mapper)
     test_metrics = model.evaluate_generator(test_mapper)
-
-    print("\nValidation Set Metrics:")
-    for name, val in zip(model.metrics_names, val_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
 
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
