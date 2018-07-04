@@ -33,5 +33,3 @@ class StellarDiGraph(nx.MultiDiGraph):
 
     def __init__(self):
         super().__init__()
-
-
