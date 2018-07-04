@@ -18,7 +18,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(name='stellar-ml',
-      version='0.1.0',
+      version='0.2.0',
       description='Stellar Machine Learning Library',
       license='Apache 2.0',
       install_requires=['keras', 'numpy'],
