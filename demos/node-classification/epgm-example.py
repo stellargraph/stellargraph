@@ -91,6 +91,10 @@ def read_epgm_graph(
     )
     converted_attr = pred_attr.union([target_attribute])
 
+    # sets are unordered, so sort them to ensure reproducible order:
+    pred_attr = sorted(pred_attr)
+    converted_attr = sorted(converted_attr)
+
     # Enumerate attributes to give numerical index
     g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
 
@@ -110,13 +114,13 @@ def read_epgm_graph(
         target_value_function = lambda x: x
 
     elif target_type == "categorical":
-        g_nx.target_category_values = list(
+        g_nx.target_category_values = sorted(
             set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
         )
         target_value_function = lambda x: g_nx.target_category_values.index(x)
 
     elif target_type == "1hot":
-        g_nx.target_category_values = list(
+        g_nx.target_category_values = sorted(
             set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
         )
         target_value_function = lambda x: to_categorical(
@@ -186,8 +190,8 @@ def train(
         y=graph_nodes, p=20, test_size=1000
     )
     train_ids = [v[0] for v in train_nodes]
-    test_ids = list(G.nodes())
     val_ids = [v[0] for v in val_nodes]
+    test_ids = [v[0] for v in test_nodes]
 
     # Sampler chooses random sampled subgraph for each head node
     sampler = SampledBreadthFirstWalk(G)
@@ -195,9 +199,6 @@ def train(
     # Mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
         G, train_ids, sampler, batch_size, num_samples, target_id="target", name="train"
-    )
-    test_mapper = GraphSAGENodeMapper(
-        G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
     )
     val_mapper = GraphSAGENodeMapper(
         G,
@@ -207,6 +208,9 @@ def train(
         num_samples,
         target_id="target",
         name="validate",
+    )
+    test_mapper = GraphSAGENodeMapper(
+        G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
     )
 
     # GraphSAGE model
@@ -256,6 +260,7 @@ def train(
             str_numsamp, str_layer, dropout, G.feature_size
         )
     )
+    print("Checkpoint")
 
 
 def test(G, model_file: AnyStr, batch_size: int):
