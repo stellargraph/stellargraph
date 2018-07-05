@@ -187,7 +187,7 @@ def train(
         [(v, vdata.get("subject")) for v, vdata in G.nodes(data=True)]
     )
     train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
-        y=graph_nodes, p=20, test_size=1000
+        y=graph_nodes, p=500, test_size=1000
     )
     train_ids = [v[0] for v in train_nodes]
     val_ids = [v[0] for v in val_nodes]
@@ -260,7 +260,6 @@ def train(
             str_numsamp, str_layer, dropout, G.feature_size
         )
     )
-    print("Checkpoint")
 
 
 def test(G, model_file: AnyStr, batch_size: int):
