@@ -5,7 +5,14 @@ from typing import List
 
 
 class GeneGraph:
+    """A class for gene graph structure to use with this example"""
     def __init__(self, edge_data_file, gene_attr_file):
+        """
+
+        Args:
+            edge_data_file: path to gene-gene interactions file
+            gene_attr_file: path to gene attributes file
+        """
         # Read edge data
         edge_data = pd.read_csv(edge_data_file, delim_whitespace=True).drop(
             ["score", "data_source"], axis=1
@@ -64,14 +71,43 @@ class GeneGraph:
             )  # append adj_ext
 
     def get_feats(self, indices: List[int]):
-        """Get features of nodes whose list is given in indices"""
+        """
+        Get features of nodes whose list is given in indices
+
+        Args:
+            indices: a list of node indices for which features are needed
+
+        Returns:
+            a matrix of feature vectors for the input nodes
+
+        """
         return self.feats.loc[indices].fillna(0).as_matrix()
 
     def get_labels(self, indices: List[int]):
+        """
+        Get labels of nodes whose list is given in indices
+        Args:
+            indices: a list of node indices for which labels are needed
+
+        Returns:
+            array of labels for the input nodes
+
+        """
         return np.array(self.labels[indices], dtype=np.float64)
 
     def sample_neighs(self, indices: List[int], ns: int):
-        """Neighbour sampling method"""
+        """
+        Neighbour sampling method
+
+        Args:
+            indices: list of node indices, whose neighbours are to be sampled
+            ns: number of sampled neighbours required
+
+        Returns:
+            a list of tuples of lists, [ind, tuple([<sampled neighbours via edge type 1>], [<sampled neighbours via edge type 2>], ...)]
+            each list in the tuple containing ids of sampled neighbours via each edge type
+
+        """
 
         def with_adj(adj_curr):
             if ns > 0:
@@ -90,7 +126,20 @@ class GeneGraph:
 
     def get_batch(
         self, indices: List[int], ns: List[int]
-    ):  # This will soon be replaced by the Mapper class
+    ):
+        """
+        Function to get a batch for the HinSAGE model
+        This will soon be replaced by the Mapper class
+
+        Args:
+            indices: list of head nodes' indices
+            ns: list of number of neighbour node samples, per hop (per HinSAGE layer)
+
+        Returns: labels of head nodes, list of tensors with features of nodes in the sampled subgraph
+            A list of lists of tensors: [[head node features], [features of 1-hop edge-type-1 neighbours via edge type 1], ...,
+            [features of 1-hop edge-type-1 neighbours of edge-type-1 neighbours], ...]
+
+        """
         nb = len(indices)
         flatten = lambda l: [item for sublist in l for item in sublist]
 
@@ -126,7 +175,7 @@ class GeneGraph:
 
 
 class DataGenerator(keras.utils.Sequence):
-    """Generates data for Keras"""
+    """Generates train/validation data (labeled data) for Keras"""
 
     def __init__(
         self,
@@ -136,7 +185,16 @@ class DataGenerator(keras.utils.Sequence):
         batch_size: int = 1000,
         name: str = "train",
     ):
-        """Initialization"""
+        """
+        Initialization
+
+        Args:
+            g: GeneGraph object
+            nf: number of node features (feature vector length)
+            ns: list of number of neighbour node samples, per hop (per HinSAGE layer)
+            batch_size: number of head nodes per minibatch
+            name: generator's name, to distinguish generator instances (e.g., train, validate, test)
+        """
         if isinstance(batch_size, int):
             self.batch_size = batch_size
         else:
@@ -211,10 +269,18 @@ class DataGenerator(keras.utils.Sequence):
 
 
 class TestDataGenerator(keras.utils.Sequence):
-    """Generates data for Keras"""
+    """Generates test/prediction data for Keras"""
 
     def __init__(self, g: GeneGraph, nf: int, ns: List[int], batch_size: int = 1000):
-        """Initialization"""
+        """
+        Initialization
+
+        Args:
+            g: GeneGraph object
+            nf: number of node features (feature vector length)
+            ns: list of number of neighbour node samples, per hop (per HinSAGE layer)
+            batch_size: number of head nodes per minibatch
+        """
         self.batch_size = batch_size
         self.g = g
         self.ids = g.ids_test
