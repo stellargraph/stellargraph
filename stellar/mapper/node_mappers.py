@@ -175,3 +175,22 @@ class GraphSAGENodeMapper(Sequence):
         batch_labels = self._get_labels(head_nodes) if self.label_id else None
 
         return batch_feats, batch_labels
+
+
+class HinSAGENodeMapper(Sequence):
+    """Keras-compatible data mapper for Heterogeneous GraphSAGE
+
+    Args:
+        G: NetworkX graph. The nodes must have a "feature" attribute that
+            is used as input to the graph layers.
+        ids: The node IDs to batch. These are the head nodes which are
+             used as the nodes to train or inference and the embeddings
+             calculated for these nodes are passed to the downstream task.
+             Subgraphs are sampled from all nodes.
+        sampler: A sampler instance on graph G.
+        batch_size: Size of batch to return.
+        num_samples: List of number of samples per layer (hop) to take.
+        target_id: Name of target value in node attribute dictionary.
+        feature_size: Node feature size (optional)
+        name: Name of mapper
+    """
