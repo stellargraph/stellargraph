@@ -11,6 +11,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 import os
+import argparse
 
 
 class GeneHinSageClassifier(object):
@@ -18,10 +19,10 @@ class GeneHinSageClassifier(object):
 
     def __init__(self, nf, n_samples, emb_dim=256):
         """
-
-        :param nf: number of node features
-        :param n_samples: list of numbers of node samples, per edge type, for each layer (hop)
-        :param emb_dim: dimensionality of the hidden node representations (embeddings)
+        Args:
+            nf: number of node features
+            n_samples: list of numbers of node samples, per edge type, for each layer (hop)
+            emb_dim: dimensionality of the hidden node representations (embeddings)
         """
         self.nf = nf
         self.n_samples = n_samples
@@ -100,6 +101,16 @@ class GeneHinSageClassifier(object):
         )
 
     def train(self, g: GeneGraph, epochs=1):
+        """
+        Train self.model
+        Args:
+            g: GeneGraph object
+            epochs: number of training epochs required
+
+        Returns:
+            nothing, but changes the state of self.model by training its parameters
+
+        """
         train_iter = DataGenerator(g, self.nf, self.n_samples, name="train")
         valid_iter = DataGenerator(g, self.nf, self.n_samples, name="validate")
 
@@ -115,6 +126,17 @@ class GeneHinSageClassifier(object):
         # print("Final valid_iter.idx: {}, valid_iter.data_size: {}".format(valid_iter.idx, valid_iter.data_size))   #this is not necessarily 0, since the iterator can be called more than needed, to fill the queue
 
     def test(self, g: GeneGraph, threshold=0.5):
+        """
+        Test self.model
+
+        Args:
+            g: GeneGraph object
+            threshold: binary class decision threshold
+
+        Returns:
+            test set metrics: precision, recall, etc.
+
+        """
         test_iter = TestDataGenerator(g, self.nf, self.n_samples)
         y_preds_proba = self.model.predict_generator(test_iter)
         y_preds_proba = np.reshape(y_preds_proba, (-1,))
@@ -147,9 +169,32 @@ class GeneHinSageClassifier(object):
 
 
 def main():
-    data_dir = "/Users/tys017/Projects/Graph_Analytics/data/Alzheimer_genes/data_small_whole_graph/"
-    edge_data_fname = os.path.join(data_dir, "interactions_alz_nonalz_gwas.txt")
-    gene_attr_fname = os.path.join(data_dir, "nodes_alz_nonalz_gwas_filt.txt")
+    parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        default="",
+        help="Path to the directory where the gene attributes and gene-gene links are stored.",
+    )
+    parser.add_argument(
+        "-g",
+        "--gene_attr",
+        type=str,
+        default="nodes_alz_nonalz_gwas_filt.txt",
+        help="Name of file with gene attributes.",
+    )
+    parser.add_argument(
+        "-e",
+        "--gene_edges",
+        type=str,
+        default="interactions_alz_nonalz_gwas.txt",
+        help="Name of file with gene-gene interactions (edges).",
+    )
+    args, cmdline_args = parser.parse_known_args()
+
+    data_dir = os.path.expanduser(args.data_path)
+    edge_data_fname = os.path.join(data_dir, args.gene_edges)
+    gene_attr_fname = os.path.join(data_dir, args.gene_attr)
     print("Reading graph...")
     # - Create the gene "graph" (NOT yet a nx graph!) with genes as nodes and 3 adjacency lists, 1 per edge type
     # - Split the nodes into train/validation/test sets, and store them in g.ids_train, g.ids_val, and g.ids_test
