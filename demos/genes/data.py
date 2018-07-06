@@ -6,6 +6,7 @@ from typing import List
 
 class GeneGraph:
     """A class for gene graph structure to use with this example"""
+
     def __init__(self, edge_data_file, gene_attr_file):
         """
 
@@ -124,9 +125,7 @@ class GeneGraph:
 
         return tuple([with_adj(adj) for adj in self.adj.values()])
 
-    def get_batch(
-        self, indices: List[int], ns: List[int]
-    ):
+    def get_batch(self, indices: List[int], ns: List[int]):
         """
         Function to get a batch for the HinSAGE model
         This will soon be replaced by the Mapper class
