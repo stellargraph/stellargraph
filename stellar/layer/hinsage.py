@@ -27,14 +27,18 @@ from typing import List, Callable, Tuple, Dict, Union, AnyStr
 
 
 class MeanHinAggregator(Layer):
-    """
-    Mean Aggregator for HinSAGE implemented with Keras base layer
+    """Mean Aggregator for HinSAGE implemented with Keras base layer
 
+    Args:
+        output_dim: (int)
+        bias: (bool) Use bias in layer or not (Default False)
+        act: (Callable) Activation function
     """
 
     def __init__(
         self, output_dim: int = 0, bias: bool = False, act: Callable = K.relu, **kwargs
     ):
+
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
@@ -48,11 +52,21 @@ class MeanHinAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
+        """Gets class configuration for Keras serialization"""
         config = {"output_dim": self.output_dim, "bias": self.has_bias}
         base_config = super().get_config()
         return {**base_config, **config}
 
     def build(self, input_shape):
+        """
+        Creates
+
+        Args:
+          input_shape:
+
+        Returns:
+
+        """
         # Weight matrix for each type of neighbour
         self.nr = len(input_shape) - 1
         self.w_neigh = [
@@ -85,6 +99,16 @@ class MeanHinAggregator(Layer):
         super().build(input_shape)
 
     def call(self, x, **kwargs):
+        """
+
+
+        Args:
+          x:
+          **kwargs:
+
+        Returns:
+
+        """
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
 
         from_self = K.dot(x[0], self.w_self)
@@ -92,19 +116,29 @@ class MeanHinAggregator(Layer):
             sum([K.dot(neigh_means[r], self.w_neigh[r]) for r in range(self.nr)])
             / self.nr
         )
-        total = K.concatenate([from_self, from_neigh], axis=2)
+        total = K.concatenate(
+            [from_self, from_neigh], axis=2
+        )  # YT: this corresponds to concat=Partial
+        # TODO: implement concat=Full and concat=False
         actx = self.act(total + self.bias if self.has_bias else total)
 
         return Activation(self.act, name=kwargs.get("name"))(actx)
 
     def compute_output_shape(self, input_shape):
+        """
+
+
+        Args:
+          input_shape:
+
+        Returns:
+
+        """
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
 class Hinsage:
-    """
-    Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
-    """
+    """Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers."""
 
     def __init__(
         self,
@@ -132,8 +166,12 @@ class Hinsage:
             """
             Function to evaluate the neighbourhood tree structure for every layer
 
-            :param input_tree:  Neighbourhood tree for the input batch
-            :return:            List of neighbourhood trees
+            Args:
+              input_tree: Neighbourhood tree for the input batch
+
+            Returns:
+              List of neighbourhood trees
+
             """
 
             reduced = [li for li in input_tree if li[1][-1] < len(input_tree)]
@@ -216,18 +254,44 @@ class Hinsage:
             Function to recursively compose aggregation layers. When current layer is at final layer, then
             compose_layers(x, layer) returns x.
 
-            :param x:       List of feature matrix tensors
-            :param layer:   Current layer index
-            :return:        x computed from current layer to output layer
+            Args:
+              x: List of feature matrix tensors
+              layer: Current layer index
+              x: List:
+              layer: int:
+
+            Returns:
+              x computed from current layer to output layer
+
             """
 
             def neigh_list(i, neigh_indices):
+                """
+
+
+                Args:
+                  i:
+                  neigh_indices:
+
+                Returns:
+
+                """
                 return [
                     self._neigh_reshape[layer][i][ni](x[neigh_index])
                     for ni, neigh_index in enumerate(neigh_indices)
                 ]
 
             def x_next(agg: Dict[str, Layer]):
+                """
+
+
+                Args:
+                  agg: Dict[str:
+                  Layer]:
+
+                Returns:
+
+                """
                 return [
                     agg[node_type](
                         [
