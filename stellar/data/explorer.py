@@ -181,6 +181,7 @@ class MetaPathWalk(GraphWalk):
         self, nodes=None, n=None, length=None, metapaths=None, label="label", seed=None
     ):
         """
+        Method for performing metapath-driven random walks on heterogeneous graphs.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -193,7 +194,7 @@ class MetaPathWalk(GraphWalk):
             seed: <int> Random number generator seed; default is None
 
         Returns:
-            <list> List of lists of nodes ids for each of the random walks
+            <list> List of lists of nodes ids for each of the random walks generated
         """
         self._check_parameter_values(
             nodes=nodes, n=n, length=length, metapaths=metapaths, label=label, seed=seed
@@ -244,16 +245,6 @@ class MetaPathWalk(GraphWalk):
                     walks.append(walk)  # store the walk
 
         return walks
-
-    # def _filter_metapaths(self, node_label, metapaths):
-    #
-    #     filtered_metapaths = []
-    #
-    #     for metapath in metapaths:
-    #         if len(metapath) > 0 and metapath[0] == node_label:
-    #             filtered_metapaths.append(metapath)
-    #
-    #     return filtered_metapaths
 
     def _check_parameter_values(self, nodes, n, length, metapaths, label, seed):
         """

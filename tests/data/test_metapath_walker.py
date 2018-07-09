@@ -23,7 +23,7 @@ def create_test_graph():
     """
     Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers. Each node
     also has a label based on the type of its id such that nodes with string ids and those with integer ids have
-    labels 's' and 'n' resepctively.
+    labels 's' and 'n' respectively.
 
     Returns:
         A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
@@ -37,20 +37,20 @@ def create_test_graph():
         (1, 3),
         (1, 4),
         (3, 6),
-        (4, 7),
+        (4, "7"),
         (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
+        (2, "5"),
+        ("5", 9),
+        ("5", 10),
         ("0", "0"),
         (1, 1),
         (3, 3),
         (6, 6),
         (4, 4),
-        (7, 7),
+        ("7", "7"),
         (8, 8),
         (2, 2),
-        (5, 5),
+        ("5", "5"),
         (9, 9),
         (
             "self loner",
@@ -178,7 +178,42 @@ class TestMetaPathWalk(object):
 
         nodes = ["0"]
         n = 1
-        n_size = [0]
+        length = 15
+        metapaths = [["s", "n", "n", "s"]]
+        seed = 42
+
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert len(walks) == n
+        assert len(walks[0]) <= length  # test against maximum walk length
+
+        n = 5
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert len(walks) == n
+        assert len(walks[0]) <= length  # test against maximum walk length
+
+        metapaths = [["s", "n", "s"], ["s", "n", "n", "s"]]
+        n = 1
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert len(walks) == n * len(metapaths)
+        for walk in walks:
+            assert len(walk) <= length  # test against maximum walk length
+
+        metapaths = [["s", "n", "s"], ["s", "n", "n", "s"]]
+        n = 5
+        length = 100
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert len(walks) == n * len(metapaths)
+        for walk in walks:
+            assert len(walk) <= length  # test against maximum walk length
+
+        nodes = [8]
+        metapaths = [["s", "n", "s"], ["s", "n", "n", "s"]]
+        n = 5
+        length = 100
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert (
+            len(walks) == 0
+        )  # metapaths start with a node of type 's' but starting node is type 'n' so an empty list is returned
 
     def test_walk_generation_many_root_nodes(self):
 
@@ -187,13 +222,49 @@ class TestMetaPathWalk(object):
 
         nodes = ["0", 2]
         n = 1
-        n_size = [0]
+        length = 15
+        metapaths = [["s", "n", "n", "s"]]
+        seed = 42
 
-    def test_walk_generation_number_of_walks_per_root_nodes(self):
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert (
+            len(walks) == 1
+        )  # the starting node 2 should not generate a walk because it is of type 'n' not 's'
+        assert len(walks[0]) <= length  # test against maximum walk length
 
-        g = create_test_graph()
-        mrw = MetaPathWalk(g)
+        metapaths = [["s", "n", "n", "s"], ["n", "n", "s"]]
 
-        nodes = [1]
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert (
+            len(walks) == 2
+        )  # each starting node will generate one walk from each metapath
+        for walk in walks:
+            assert len(walk) <= length  # test against maximum walk length
+
         n = 2
-        n_size = [0]
+        nodes = ["0", "5"]
+        metapaths = [["s", "n", "n", "s"]]
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert len(walks) == n * len(
+            nodes
+        )  # each starting node will generate one walk from each metapath
+        for walk in walks:
+            assert len(walk) <= length  # test against maximum walk length
+
+        n = 2
+        nodes = ["0", "5", 1, 6]
+        metapaths = [["s", "n", "n", "s"]]
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert (
+            len(walks) == n * 2
+        )  # the first two starting node will generate one walk from each metapath
+        for walk in walks:
+            assert len(walk) <= length  # test against maximum walk length
+
+        n = 5
+        nodes = ["0", "5", 1, 6]
+        metapaths = [["s", "n", "n", "s"], ["n", "s", "n"], ["n", "n"]]
+        walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
+        assert len(walks) == n * 6
+        for walk in walks:
+            assert len(walk) <= length  # test against maximum walk length
