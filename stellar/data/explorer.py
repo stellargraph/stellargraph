@@ -243,6 +243,14 @@ class MetaPathWalk(GraphWalk):
                         )  # the next node in the walk
 
                     walks.append(walk)  # store the walk
+                    if len(walks) % 10000 == 0:
+                        print(
+                            "Completed {:.2f}% of walks ({} out of {})".format(
+                                100 * len(walks) / (len(metapaths) * len(nodes) * n),
+                                len(walks),
+                                len(metapaths) * len(nodes) * n,
+                            )
+                        )
 
         return walks
 
