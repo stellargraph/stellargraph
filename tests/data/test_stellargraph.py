@@ -22,32 +22,35 @@ def test_graph_constructor():
     sg = StellarGraph()
     assert sg.is_directed() == False
 
+
 def test_digraph_constructor():
     sg = StellarDiGraph()
     assert sg.is_directed() == True
 
+
 def test_graph_schema():
     sg = StellarGraph()
-    sg.add_nodes_from([0,1,2,3], label='movie')
-    sg.add_nodes_from([4,5], label='user')
-    sg.add_edges_from([(0,4), (1,4), (1,5), (2,4), (3,5)], label='rating')
+    sg.add_nodes_from([0, 1, 2, 3], label="movie")
+    sg.add_nodes_from([4, 5], label="user")
+    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="rating")
 
     schema = sg.create_graph_schema()
 
-    assert 'movie' in schema.schema
-    assert 'user' in schema.schema
-    assert len(schema.schema['movie']) == 1
-    assert len(schema.schema['user']) == 1
+    assert "movie" in schema.schema
+    assert "user" in schema.schema
+    assert len(schema.schema["movie"]) == 1
+    assert len(schema.schema["user"]) == 1
+
 
 def test_digraph_schema():
     sg = StellarDiGraph()
-    sg.add_nodes_from([0, 1, 2, 3], label='movie')
-    sg.add_nodes_from([4, 5], label='user')
-    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label='rating')
+    sg.add_nodes_from([0, 1, 2, 3], label="movie")
+    sg.add_nodes_from([4, 5], label="user")
+    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="rating")
 
     schema = sg.create_graph_schema()
 
-    assert 'movie' in schema.schema
-    assert 'user' in schema.schema
-    assert len(schema.schema['movie']) == 1
-    assert len(schema.schema['user']) == 0
+    assert "movie" in schema.schema
+    assert "user" in schema.schema
+    assert len(schema.schema["movie"]) == 1
+    assert len(schema.schema["user"]) == 0
