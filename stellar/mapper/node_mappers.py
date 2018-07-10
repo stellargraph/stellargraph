@@ -27,6 +27,7 @@ from keras.utils import Sequence
 from stellar.data.explorer import SampledBreadthFirstWalk
 from stellar.data.stellargraph import StellarGraphBase
 
+
 class GraphSAGENodeMapper(Sequence):
     """Keras-compatible data mapper for Homogeneous GraphSAGE
 
@@ -194,6 +195,7 @@ class HinSAGENodeMapper(Sequence):
         feature_size: Node feature size (optional)
         name: Name of mapper
     """
+
     def __init__(
         self,
         G: StellarGraphBase,
@@ -249,9 +251,7 @@ class HinSAGENodeMapper(Sequence):
         # Get graph schema
         gs = G.create_graph_schema()
         n_hops = len(num_samples)
-        head_node_types = {
-            gs.node_type(n) for n in ids
-        }
+        head_node_types = {gs.node_type(n) for n in ids}
 
         # Currently raise an error if head nodes don't have the same type
         if len(head_node_types) != 1:
@@ -262,7 +262,6 @@ class HinSAGENodeMapper(Sequence):
 
         # Get sampling schema
         self.schema = gs.schema
-
 
     def __len__(self):
         "Denotes the number of batches per epoch"
