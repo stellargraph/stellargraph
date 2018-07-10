@@ -44,7 +44,7 @@ from typing import AnyStr, List, Optional
 import keras
 from keras import optimizers, losses, layers, metrics
 from keras.utils.np_utils import to_categorical
-from keras.layers import Concatenate, Dense, Lambda, Multiply
+from keras.layers import Concatenate, Dense, Lambda, Multiply, Reshape
 from keras import backend as K
 
 from stellar.data.epgm import EPGM
@@ -58,9 +58,7 @@ def read_epgm_graph(
     graph_file,
     dataset_name=None,
     node_type=None,
-    target_attribute=None,
     ignored_attributes=[],
-    target_type=None,
     remove_converted_attrs=False,
 ):
     G_epgm = EPGM(graph_file)
@@ -105,44 +103,15 @@ def read_epgm_graph(
     # Find target and predicted attributes from attribute set
     node_attributes = set(G_epgm.node_attributes(graph_id, node_type))
     pred_attr = node_attributes.difference(
-        set(ignored_attributes).union([target_attribute])
+        set(ignored_attributes)
     )
-    converted_attr = pred_attr.union([target_attribute])
+    converted_attr = pred_attr
 
     # Enumerate attributes to give numerical index
     g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
 
     # Store feature size in graph [??]
     g_nx.feature_size = len(g_nx.pred_map)
-
-    # We map the targets differently depending on target type/
-    # * If target_type is None, use the target values directly
-    #   (e.g. for regression or binary classification problems)
-    # * If the target is 'categorical' encode the target categories
-    #   as integers between 0 and number_of_categories - 1
-    # * If the target is '1hot' encode the target categories
-    #   as a binary vector of length number_of_categories.
-    #   see the Keras function keras.utils.np_utils.to_categorical
-    g_nx.target_category_values = None
-    if target_type is None:
-        target_value_function = lambda x: x
-
-    elif target_type == "categorical":
-        g_nx.target_category_values = list(
-            set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
-        )
-        target_value_function = lambda x: g_nx.target_category_values.index(x)
-
-    elif target_type == "1hot":
-        g_nx.target_category_values = list(
-            set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
-        )
-        target_value_function = lambda x: to_categorical(
-            g_nx.target_category_values.index(x), len(g_nx.target_category_values)
-        )
-
-    else:
-        raise ValueError("Target type '{}' is not supported.".format(target_type))
 
     # Set the "feature" and encoded "target" attributes for all nodes in the graph.
     for v, vdata in g_nx.nodes(data=True):
@@ -155,9 +124,6 @@ def read_epgm_graph(
 
         # Replace with feature array
         vdata["feature"] = attr_array
-
-        # Decode target attribute to target array
-        vdata["target"] = target_value_function(vdata.get(target_attribute))
 
         # Remove attributes
         if remove_converted_attrs:
@@ -176,13 +142,16 @@ def read_epgm_graph(
 def classification_predictor(
     hidden_1: Optional[int] = None,
     hidden_2: Optional[int] = None,
+    output_dim: int = 2,
     output_act: AnyStr = "softmax",
     method: AnyStr = "ip",
 ):
-    """Returns a function that predicts an edge classification output from node features.
+    """Returns a function that predicts a binary edge classification output from node features.
 
         hidden_1 ([type], optional): Hidden size for the transform of node 1 features.
         hidden_2 ([type], optional): Hidden size for the transform of node 1 features.
+        output_dim: Number of output units (dimensionality of the output)
+        output_act: (str, optional): output function, one of "softmax", "sigmoid", etc.
         edge_function (str, optional): One of 'ip', 'mul', and 'concat'
 
     Returns:
@@ -206,14 +175,17 @@ def classification_predictor(
 
         elif method == "mul":
             le = Multiply()([x0, x1])
-            out = Dense(2, activation=output_act)(le)
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((1,))(out)
 
         elif method == "concat":
             le = Concatenate()([x0, x1])
-            out = Dense(2, activation=output_act)(le)
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((1,))(out)
 
         return out
 
+    print("Using \'{}\' method to combine node embeddings into edge embeddings".format(method))
     return edge_function
 
 
@@ -281,7 +253,12 @@ def train(
     x_out = [x_out_src, x_out_dst]
 
     # Final estimator layer - a binary link classifier
-    prediction = classification_predictor(hidden_1=32, hidden_2=32, method="ip")(x_out)
+    # prediction = classification_predictor(hidden_1=32, hidden_2=32, num_classes=len(set(edge_labels_train)), method="ip")(x_out)
+    prediction = classification_predictor(hidden_1=32, hidden_2=32, output_dim=1, output_act="sigmoid",
+                                          method="concat")(x_out)
+    # prediction = classification_predictor(hidden_1=32, hidden_2=32, output_dim=len(set(edge_labels_train)),
+    #                                       output_act="softmax", method="ip")(x_out)
+
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
@@ -308,7 +285,7 @@ def train(
     history = model.fit_generator(
         train_mapper,
         epochs=num_epochs,
-        # validation_data=val_mapper,
+        validation_data=test_mapper,
         verbose=2,
         shuffle=True,
     )
@@ -440,26 +417,25 @@ if __name__ == "__main__":
         "-g", "--graph", type=str, default=None, help="The graph stored in EPGM format."
     )
     parser.add_argument(
-        "-f",
-        "--features",
-        type=str,
-        default=None,
-        help="The node features to use, stored as a pickled numpy array.",
+        "-i",
+        "--ignore_node_attr",
+        nargs='+',
+        default=[],
+        help="List of node attributes to ignore (e.g., name, id, etc.)",
     )
     parser.add_argument(
-        "-t",
-        "--target",
+        "-m",
+        "--method",
         type=str,
-        default="subject",
-        help="The target node attribute (categorical)",
+        default="ip",
+        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', or 'ip",
     )
     args, cmdline_args = parser.parse_known_args()
 
     graph_loc = os.path.expanduser(args.graph)
     G = read_epgm_graph(
         graph_loc,
-        target_attribute=args.target,
-        target_type="1hot",
+        ignored_attributes=args.ignore_node_attr,
         remove_converted_attrs=False,
     )
 
