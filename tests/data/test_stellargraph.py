@@ -18,6 +18,7 @@ import pytest
 import networkx as nx
 from stellar.data.stellargraph import *
 
+
 def test_graph_constructor():
     sg = StellarGraph()
     assert sg.is_directed() == False
