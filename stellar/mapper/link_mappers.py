@@ -63,9 +63,8 @@ class GraphSAGELinkMapper(Sequence):
         self.G = G
         self.sampler = SampledBreadthFirstWalk(G)
         self.num_samples = num_samples
-        self.labels = link_labels
-
         self.ids = list(ids)
+        self.labels = link_labels
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
@@ -141,9 +140,7 @@ class GraphSAGELinkMapper(Sequence):
 
         if start_idx >= self.data_size:
             raise IndexError(
-                "{}: batch_num larger than length of data".format(
-                    type(self).__name__
-                )
+                "{}: batch_num larger than length of data".format(type(self).__name__)
             )
 
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
