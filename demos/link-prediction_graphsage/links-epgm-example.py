@@ -105,6 +105,10 @@ def read_epgm_graph(
     pred_attr = node_attributes.difference(set(ignored_attributes))
     converted_attr = pred_attr
 
+    # sets are unordered, so sort them to ensure reproducible order of node features:
+    pred_attr = sorted(pred_attr)
+    converted_attr = sorted(converted_attr)
+
     # Enumerate attributes to give numerical index
     g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
 
