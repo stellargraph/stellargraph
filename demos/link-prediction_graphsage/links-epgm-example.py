@@ -102,9 +102,7 @@ def read_epgm_graph(
 
     # Find target and predicted attributes from attribute set
     node_attributes = set(G_epgm.node_attributes(graph_id, node_type))
-    pred_attr = node_attributes.difference(
-        set(ignored_attributes)
-    )
+    pred_attr = node_attributes.difference(set(ignored_attributes))
     converted_attr = pred_attr
 
     # Enumerate attributes to give numerical index
@@ -140,19 +138,19 @@ def read_epgm_graph(
 
 
 def classification_predictor(
-    hidden_1: Optional[int] = None,
-    hidden_2: Optional[int] = None,
-    output_dim: int = 2,
-    output_act: AnyStr = "softmax",
+    hidden_src: Optional[int] = None,
+    hidden_dst: Optional[int] = None,
+    output_dim: int = 1,
+    output_act: AnyStr = "sigmoid",
     method: AnyStr = "ip",
 ):
     """Returns a function that predicts a binary edge classification output from node features.
 
-        hidden_1 ([type], optional): Hidden size for the transform of node 1 features.
-        hidden_2 ([type], optional): Hidden size for the transform of node 1 features.
+        hidden_src ([type], optional): Hidden size for the transform of source node features.
+        hidden_dst ([type], optional): Hidden size for the transform of destination node features.
         output_dim: Number of output units (dimensionality of the output)
         output_act: (str, optional): output function, one of "softmax", "sigmoid", etc.
-        edge_function (str, optional): One of 'ip', 'mul', and 'concat'
+        edge_function (str, optional): One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
 
     Returns:
         Function taking HinSAGE edge tensors and returning a logit function.
@@ -162,11 +160,11 @@ def classification_predictor(
         x0 = x[0]
         x1 = x[1]
 
-        if hidden_1:
-            x0 = Dense(hidden_1, activation="relu")(x0)
+        if hidden_src:
+            x0 = Dense(hidden_src, activation="relu")(x0)
 
-        if hidden_2:
-            x1 = Dense(hidden_2, activation="relu")(x1)
+        if hidden_dst:
+            x1 = Dense(hidden_dst, activation="relu")(x1)
 
         if method == "ip":
             out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
@@ -176,16 +174,27 @@ def classification_predictor(
         elif method == "mul":
             le = Multiply()([x0, x1])
             out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((1,))(out)
+            out = Reshape((output_dim,))(out)
 
         elif method == "concat":
             le = Concatenate()([x0, x1])
             out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((1,))(out)
+            out = Reshape((output_dim,))(out)
+
+        else:
+            raise NotImplementedError(
+                "classification_predictor: the requested method '{}' is not known/not implemented".format(
+                    method
+                )
+            )
 
         return out
 
-    print("Using \'{}\' method to combine node embeddings into edge embeddings".format(method))
+    print(
+        "Using '{}' method to combine node embeddings into edge embeddings".format(
+            method
+        )
+    )
     return edge_function
 
 
@@ -213,16 +222,19 @@ def train(
     """
 
     # Split links into train/test
+    print(
+        "Using '{}' method to sample negative links".format(args.edge_sampling_method)
+    )
     # From the original graph, extract E_test and the reduced graph G_test:
     edge_splitter_test = EdgeSplitter(G)
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
-        p=0.1, method=args.sampling_method, probs=args.sampling_probs
+        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
     # From G_test, extract E_train and the reduced graph G_train:
     edge_splitter_train = EdgeSplitter(G_test, G)
     G_train, edge_ids_train, edge_labels_train = edge_splitter_train.train_test_split(
-        p=0.1, method=args.sampling_method, probs=args.sampling_probs
+        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
@@ -246,21 +258,24 @@ def train(
         bias=True,
         dropout=dropout,
     )
+
+    # Expose input and output sockets of the model, for source and destination nodes of links:
     x_inp_src, x_out_src = model.default_model(flatten_output=not True)
     x_inp_dst, x_out_dst = model.default_model(flatten_output=not True)
-    # re-pack into a list where (source, target) inputs alternate, for link inputs:
+    # re-pack into a list where (source, target) inputs alternate, for link inputs and outputs:
     x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
     x_out = [x_out_src, x_out_dst]
 
-    # Final estimator layer - a binary link classifier
-    # prediction = classification_predictor(hidden_1=32, hidden_2=32, num_classes=len(set(edge_labels_train)), method="ip")(x_out)
-    prediction = classification_predictor(hidden_1=32, hidden_2=32, output_dim=1, output_act="sigmoid",
-                                          method="concat")(x_out)
-    # prediction = classification_predictor(hidden_1=32, hidden_2=32, output_dim=len(set(edge_labels_train)),
-    #                                       output_act="softmax", method="ip")(x_out)
+    # Final estimator layer
+    prediction = classification_predictor(
+        hidden_src=None,
+        hidden_dst=None,
+        output_dim=1,
+        output_act="sigmoid",
+        method=args.edge_feature_method,
+    )(x_out)
 
-
-    # Create Keras model for training
+    # Create Keras model
     model = keras.Model(inputs=x_inp, outputs=prediction)
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate),
@@ -268,15 +283,15 @@ def train(
         metrics=[metrics.binary_accuracy],
     )
 
-    # Evaluate the initial model on the train and test set:
+    # Evaluate the initial (untrained) model on the train and test set:
     init_train_metrics = model.evaluate_generator(train_mapper)
     init_test_metrics = model.evaluate_generator(test_mapper)
 
-    print("\nTrain Set Metrics of the initial model:")
+    print("\nTrain Set Metrics of the initial (untrained) model:")
     for name, val in zip(model.metrics_names, init_train_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    print("\nTest Set Metrics of the initial model:")
+    print("\nTest Set Metrics of the initial (untrained) model:")
     for name, val in zip(model.metrics_names, init_test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
@@ -362,19 +377,19 @@ if __name__ == "__main__":
         help="Load a saved checkpoint file",
     )
     parser.add_argument(
-        "--sampling_method",
+        "--edge_sampling_method",
         nargs="?",
         default="global",
         help="Negative edge sampling method: local or global",
     )
     parser.add_argument(
-        "--sampling_probs",
+        "--edge_sampling_probs",
         nargs="?",
-        default="0.0, 0.25, 0.50, 0.25",
+        default=[0.0, 0.25, 0.50, 0.25],
         help="Negative edge sample probabilities (for local sampling method) with respect to distance from starting node",
     )
     parser.add_argument(
-        "-n", "--batch_size", type=int, default=500, help="Batch size for training"
+        "-b", "--batch_size", type=int, default=500, help="Batch size for training"
     )
     parser.add_argument(
         "-e",
@@ -419,13 +434,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "-i",
         "--ignore_node_attr",
-        nargs='+',
+        nargs="+",
         default=[],
         help="List of node attributes to ignore (e.g., name, id, etc.)",
     )
     parser.add_argument(
         "-m",
-        "--method",
+        "--edge_feature_method",
         type=str,
         default="ip",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', or 'ip",
