@@ -45,7 +45,7 @@ def test_LinkMapper_constructor():
     G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
-    edge_labels = [0]*G.number_of_edges()
+    edge_labels = [0] * G.number_of_edges()
 
     mapper = GraphSAGELinkMapper(
         G, G.edges(), edge_labels, batch_size=2, num_samples=[2, 2]
@@ -71,7 +71,12 @@ def test_GraphSAGELinkMapper_1():
 
     # test graph
     G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]   # make sure the number of edges is divisible by n_batch, for this test to succeed
+    elist = [
+        (1, 2),
+        (2, 3),
+        (1, 4),
+        (4, 2),
+    ]  # make sure the number of edges is divisible by n_batch, for this test to succeed
     G.add_edges_from(elist)
     data_size = G.number_of_edges()
     edge_labels = [0] * data_size
@@ -88,12 +93,12 @@ def test_GraphSAGELinkMapper_1():
 
     for hop in range(2):
         nf, nl = mapper[hop]
-        assert len(nf) == 3*2
+        assert len(nf) == 3 * 2
         for ii in range(2):
-            assert nf[ii].shape == (min(n_batch,data_size), 1, n_feat)
-            assert nf[ii+2].shape == (min(n_batch,data_size), 2, n_feat)
-            assert nf[ii+2*2].shape == (min(n_batch,data_size), 2 * 2, n_feat)
-            assert nl == [0]*min(n_batch,data_size)
+            assert nf[ii].shape == (min(n_batch, data_size), 1, n_feat)
+            assert nf[ii + 2].shape == (min(n_batch, data_size), 2, n_feat)
+            assert nf[ii + 2 * 2].shape == (min(n_batch, data_size), 2 * 2, n_feat)
+            assert nl == [0] * min(n_batch, data_size)
 
     with pytest.raises(IndexError):
         nf, nl = mapper[2]
@@ -148,10 +153,10 @@ def test_GraphSAGELinkMapper_3():
 
     for ii in range(1):
         nf, nl = mapper[ii]
-        assert len(nf) == 2*2
+        assert len(nf) == 2 * 2
         for _ in range(len(nf)):
-            assert nf[_].shape == (min(n_batch,data_size), 1, n_feat)
-        assert nl == [0]*min(n_batch,data_size)
+            assert nf[_].shape == (min(n_batch, data_size), 1, n_feat)
+        assert nl == [0] * min(n_batch, data_size)
 
 
 def test_GraphSAGELinkMapper_no_samples():
