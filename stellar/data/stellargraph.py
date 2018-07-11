@@ -296,7 +296,7 @@ class StellarGraphBase:
         for nt in gs.node_types:
             # Filter nodes by type
             nt_nodes = [
-                ndata for n,ndata in self.nodes(data=True) if gs.get_node_type(n) == nt
+                ndata for n, ndata in self.nodes(data=True) if gs.get_node_type(n) == nt
             ]
             s += "  {}: [{}]\n".format(nt, len(nt_nodes))
 
@@ -304,9 +304,7 @@ class StellarGraphBase:
             attrs = set(it.chain(*[ndata.keys() for ndata in nt_nodes]))
             attrs.discard(self._node_type_attr)
             if len(attrs) > 0:
-                s += "        Attributes: {}\n".format(
-                    attrs
-                )
+                s += "        Attributes: {}\n".format(attrs)
 
             s += "    Edge types: "
             s += ", ".join(["{}-{}->{}".format(*e) for e in gs.schema[nt]]) + "\n"
@@ -315,10 +313,14 @@ class StellarGraphBase:
         for et in gs.edge_types:
             # Filter edges by type
             et_edges = [
-                e[3] for e in self.edges(keys=True, data=True) if gs.get_edge_type(e[:3]) == et
+                e[3]
+                for e in self.edges(keys=True, data=True)
+                if gs.get_edge_type(e[:3]) == et
             ]
             if len(et_edges) > 0:
-                s += "    {et[0]}-{et[1]}->{et[2]}: [{len}]\n".format(et=et, len=len(et_edges))
+                s += "    {et[0]}-{et[1]}->{et[2]}: [{len}]\n".format(
+                    et=et, len=len(et_edges)
+                )
 
             # Get the attributes for this edge type
             attrs = set(it.chain(*[edata.keys() for edata in et_edges]))

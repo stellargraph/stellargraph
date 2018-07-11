@@ -99,11 +99,12 @@ def test_graph_schema():
         assert ndata["label"] == schema.get_node_type(n)
 
     # Test edge type lookup
-    node_labels = nx.get_node_attributes(sg, 'label')
+    node_labels = nx.get_node_attributes(sg, "label")
     for n1, n2, k, edata in sg.edges(keys=True, data=True):
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
+
 
 def test_digraph_schema():
     sg = create_graph_1(StellarDiGraph())
@@ -119,24 +120,25 @@ def test_digraph_schema():
         assert ndata["label"] == schema.get_node_type(n)
 
     # Test edge type lookup
-    node_labels = nx.get_node_attributes(sg, 'label')
+    node_labels = nx.get_node_attributes(sg, "label")
     for n1, n2, k, edata in sg.edges(keys=True, data=True):
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
+
 
 def test_graph_schema_sampling():
     for sg in [
         create_graph_1(),
         create_graph_2(),
         create_graph_1(StellarDiGraph()),
-        create_graph_2(StellarDiGraph())
+        create_graph_2(StellarDiGraph()),
     ]:
         schema = sg.create_graph_schema()
         type_list = schema.get_type_adjacency_list(["user", "movie"], n_hops=2)
 
-        assert type_list[0][0] == 'user'
-        assert type_list[1][0] == 'movie'
+        assert type_list[0][0] == "user"
+        assert type_list[1][0] == "movie"
 
         for lt in type_list:
             adj_types = [t.n2 for t in schema.schema[lt[0]]]
