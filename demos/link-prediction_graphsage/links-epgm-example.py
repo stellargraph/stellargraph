@@ -42,8 +42,7 @@ import networkx as nx
 from typing import AnyStr, List, Optional
 
 import keras
-from keras import optimizers, losses, layers, metrics
-from keras.utils.np_utils import to_categorical
+from keras import optimizers, losses, metrics
 from keras.layers import Concatenate, Dense, Lambda, Multiply, Reshape
 from keras import backend as K
 
@@ -141,7 +140,7 @@ def read_epgm_graph(
     return g_nx
 
 
-def classification_predictor(
+def link_classifier(
     hidden_src: Optional[int] = None,
     hidden_dst: Optional[int] = None,
     output_dim: int = 1,
@@ -255,7 +254,7 @@ def train(
     )
 
     # GraphSAGE model
-    model = GraphSAGE(
+    graphsage = GraphSAGE(
         output_dims=layer_size,
         n_samples=num_samples,
         input_dim=G.feature_size,
@@ -263,15 +262,15 @@ def train(
         dropout=dropout,
     )
 
-    # Expose input and output sockets of the model, for source and destination nodes of links:
-    x_inp_src, x_out_src = model.default_model(flatten_output=not True)
-    x_inp_dst, x_out_dst = model.default_model(flatten_output=not True)
+    # Expose input and output sockets of the model, for source and destination nodes:
+    x_inp_src, x_out_src = graphsage.default_model(flatten_output=not True)
+    x_inp_dst, x_out_dst = graphsage.default_model(flatten_output=not True)
     # re-pack into a list where (source, target) inputs alternate, for link inputs and outputs:
     x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
     x_out = [x_out_src, x_out_dst]
 
     # Final estimator layer
-    prediction = classification_predictor(
+    prediction = link_classifier(
         hidden_src=None,
         hidden_dst=None,
         output_dim=1,
@@ -279,7 +278,7 @@ def train(
         method=args.edge_feature_method,
     )(x_out)
 
-    # Create Keras model
+    # Stack the GraphSAGE and prediction layers into a Keras model, and specify the loss
     model = keras.Model(inputs=x_inp, outputs=prediction)
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate),
