@@ -26,6 +26,9 @@ class GraphWalk(object):
     def __init__(self, graph):
         self.graph = graph
 
+    def neighbors(self, graph, node):
+        return list(nx.neighbors(graph, node))
+
     def run(self, **kwargs):
         """
         To be overridden by subclasses. It is the main entry point for performing random walks on the given
@@ -69,7 +72,7 @@ class UniformRandomWalk(GraphWalk):
                 current_node = node
                 for _ in range(length):
                     walk.extend([current_node])
-                    neighbours = nx.neighbors(self.graph, current_node)
+                    neighbours = self.neighbors(self.graph, current_node)
                     if (
                         len(neighbours) == 0
                     ):  # for whatever reason this node has no neighbours so stop
@@ -236,7 +239,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     if (
                         depth <= d
                     ):  # consider the subgraph up to and including depth d from root node
-                        neighbours = nx.neighbors(self.graph, frontier[0])
+                        neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
                             # Oops, this node has no neighbours and it doesn't have a self link.
                             # We can't handle this so raise an exception.
