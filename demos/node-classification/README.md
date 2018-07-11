@@ -22,7 +22,7 @@ For the `epgm-example.py` script, a graph in EPGM format is required.
 
 The example can be run on the cora graph (stored in EPGM format) with the following command:
 ```
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 50 50 -s 20 10 -e 20 -d 0.5 -r 0.01
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 20 20 -s 20 10 -e 20 -d 0.5 -r 0.01
 ```
 
 ## References
