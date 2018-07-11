@@ -4,7 +4,7 @@ Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
 Example usage:
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 50 50 -s 20 10 -e 20 -d 0.5 -r 0.01
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 20 20 -s 20 10 -e 20 -d 0.5 -r 0.02
 
 usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
@@ -202,13 +202,7 @@ def train(
         G, train_ids, sampler, batch_size, num_samples, target_id="target", name="train"
     )
     val_mapper = GraphSAGENodeMapper(
-        G,
-        val_ids,
-        sampler,
-        batch_size,
-        num_samples,
-        target_id="target",
-        name="validate",
+        G, val_ids, sampler, batch_size, num_samples, target_id="target", name="val"
     )
     test_mapper = GraphSAGENodeMapper(
         G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
@@ -295,15 +289,15 @@ def test(G, model_file: AnyStr, batch_size: int):
     all_ids = list(G.nodes())
 
     # Mapper feeds data from sampled subgraph to GraphSAGE model
-    test_mapper = GraphSAGENodeMapper(
+    all_mapper = GraphSAGENodeMapper(
         G, all_ids, sampler, batch_size, num_samples, target_id="target", name="test"
     )
 
     # Evaluate and print metrics
-    test_metrics = model.evaluate_generator(test_mapper)
+    all_metrics = model.evaluate_generator(all_mapper)
 
     print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, test_metrics):
+    for name, val in zip(model.metrics_names, all_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
 
