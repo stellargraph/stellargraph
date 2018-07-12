@@ -155,18 +155,20 @@ def link_classifier(
     hidden_dst: Optional[int] = None,
     output_dim: int = 1,
     output_act: AnyStr = "sigmoid",
-    method: AnyStr = "ip",
+    edge_feature_method: AnyStr = "ip",
 ):
     """Returns a function that predicts a binary edge classification output from node features.
 
         hidden_src ([type], optional): Hidden size for the transform of source node features.
         hidden_dst ([type], optional): Hidden size for the transform of destination node features.
-        output_dim: Number of output units (dimensionality of the output)
-        output_act: (str, optional): output function, one of "softmax", "sigmoid", etc.
-        edge_function (str, optional): One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
+        output_dim: Number of classifier's output units (desired dimensionality of the output)
+        output_act: (str, optional): output function, one of "softmax", "sigmoid", etc. - this can be user-defined, but must be a Keras function
+        edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
+            One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
 
     Returns:
-        Function taking HinSAGE edge tensors and returning a logit function.
+        Function taking GraphSAGE edge tensors (i.e., pairs of (node_src, node_dst) tensors) and
+        returning logits of output_dim length.
     """
 
     def edge_function(x):
@@ -179,17 +181,17 @@ def link_classifier(
         if hidden_dst:
             x1 = Dense(hidden_dst, activation="relu")(x1)
 
-        if method == "ip":
+        if edge_feature_method == "ip":
             out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
                 [x0, x1]
             )
 
-        elif method == "mul":
+        elif edge_feature_method == "mul":
             le = Multiply()([x0, x1])
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
-        elif method == "concat":
+        elif edge_feature_method == "concat":
             le = Concatenate()([x0, x1])
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
@@ -197,7 +199,7 @@ def link_classifier(
         else:
             raise NotImplementedError(
                 "classification_predictor: the requested method '{}' is not known/not implemented".format(
-                    method
+                    edge_feature_method
                 )
             )
 
@@ -205,7 +207,7 @@ def link_classifier(
 
     print(
         "Using '{}' method to combine node embeddings into edge embeddings".format(
-            method
+            edge_feature_method
         )
     )
     return edge_function
