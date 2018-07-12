@@ -494,7 +494,9 @@ class EdgeSplitter(object):
         else:
             all_edges = list(self.g_train.edges())
 
-        num_edges_to_remove = int((self.g_train.number_of_edges() - len(self.minedges)) * p)
+        num_edges_to_remove = int(
+            (self.g_train.number_of_edges() - len(self.minedges)) * p
+        )
 
         # shuffle the edges
         np.random.shuffle(all_edges)
