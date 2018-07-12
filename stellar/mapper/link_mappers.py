@@ -134,7 +134,17 @@ class GraphSAGELinkMapper(Sequence):
         return batch_feats
 
     def __getitem__(self, batch_num: int):
-        "Generate one batch of data"
+        """
+        Generate one batch of data for links as (node_src, node_dst) pairs
+
+        Args:
+            batch_num: number of a batch
+
+        Returns:
+            batch_feats: node features for 2 sampled subgraphs with head nodes being node_src, node_dst extracted from links in the batch
+            batch_labels: link labels
+
+        """
         start_idx = self.batch_size * batch_num
         end_idx = start_idx + self.batch_size
 
@@ -150,11 +160,10 @@ class GraphSAGELinkMapper(Sequence):
         batch_labels = self.labels[start_idx:end_idx]
         batch_feats = [[] for ii in range(2)]
 
-        # Extract head nodes from edges; recall that each edge is a tuple of 2 nodes
-        head_size = len(edges)
+        # Extract head nodes from edges; recall that each edge is a tuple of 2 nodes, so we are extracting 2 head nodes per edge
         head_nodes = [[e[ii] for e in edges] for ii in range(2)]
 
-        # Get sampled nodes
+        # Get sampled nodes for the subgraphs for the head nodes
         for ii in range(2):
             node_samples = self.sampler.run(
                 nodes=head_nodes[ii], n=1, n_size=self.num_samples
@@ -172,10 +181,11 @@ class GraphSAGELinkMapper(Sequence):
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
 
-            # Get features
+            # Get features for the sampled nodes
             batch_feats[ii] = self._get_features(nodes_per_hop, len(head_nodes[ii]))
 
-        # re-pack into a list where source, target feats alternate:
+        # re-pack features into a list where source, target feats alternate, to feed into GraphSAGE model with
+        # (node_src, node_dst) input sockets:
         batch_feats = [
             feats for ab in zip(batch_feats[0], batch_feats[1]) for feats in ab
         ]
