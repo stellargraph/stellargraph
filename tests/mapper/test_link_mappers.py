@@ -160,6 +160,11 @@ def test_GraphSAGELinkMapper_3():
 
 
 def test_GraphSAGELinkMapper_no_samples():
+    """
+    The SampledBFS sampler, created inside the mapper, currently throws a ValueError when the num_samples list is empty.
+    This might change in the future, so this test might have to be re-written.
+
+    """
     n_feat = 4
     n_batch = 2
 
