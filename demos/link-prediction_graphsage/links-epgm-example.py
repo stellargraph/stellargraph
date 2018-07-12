@@ -4,24 +4,26 @@ Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
 Example usage:
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 50 50 -s 20 10 -e 20 -d 0.5 -r 0.01
+python links-epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -e 10 -l 64 32 -b 10 -s 10 20 -r 0.001 -d 0.5 --ignore_node_attr subject --edge_sampling_method local --edge_feature_method concat
 
-usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
+usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
                        [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
-                       [-f FEATURES] [-t TARGET]
+                       [-r LEARNING_RATE] [-d DROPOUT]
+                       [-i [IGNORE_NODE_ATTR]]
+                       [--edge_sampling_method] [--edge_feature_method]
 
 optional arguments:
   -h, --help            show this help message and exit
   -c [CHECKPOINT], --checkpoint [CHECKPOINT]
                         Load a saved checkpoint file
-  -n BATCH_SIZE, --batch_size BATCH_SIZE
-                        Batch size for training
+  -b BATCH_SIZE, --batch_size BATCH_SIZE
+                        Batch size for training/validation/testing
   -e EPOCHS, --epochs EPOCHS
                         The number of epochs to train the model
   -d DROPOUT, --dropout DROPOUT
                         Dropout for the GraphSAGE model, between 0.0 and 1.0
-  -r LEARNINGRATE, --learningrate LEARNINGRATE
+  -r LEARNING_RATE, --learningrate LEARNING_RATE
                         Learning rate for training model
   -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
                         The number of nodes sampled at each layer
@@ -29,11 +31,19 @@ optional arguments:
                         The number of hidden features at each layer
   -g GRAPH, --graph GRAPH
                         The graph stored in EPGM format.
-  -f FEATURES, --features FEATURES
-                        The node features to use, stored as a pickled numpy
-                        array.
-  -t TARGET, --target TARGET
-                        The target node attribute (categorical)
+  -i IGNORE_NODE_ATTR, --ignore_node_attr FEATURES
+                        List of node attributes to ignore (e.g., names, ids, etc.)
+  --edge_sampling_method
+        method for sampling negative links, either 'local' or 'global'
+        'local': negative links are sampled to have destination nodes that are in the local neighbourhood of a source node,
+                i.e., 2-k hops away, where k is the maximum number of hops specified by --edge_sampling_probs argument
+        'global': negative links are sampled randomly from all negative links in the graph
+  --edge_sampling_probs
+        probabilities for sampling negative links.
+        Must start with 0 (no negative links to 1-hop neighbours, as these are positive by definition)
+  --edge_feature_method
+        Method for combining (src, dst) node embeddings into edge embeddings.
+        Can be one of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
 """
 import os
 import argparse
