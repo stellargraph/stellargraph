@@ -16,7 +16,7 @@
 
 import pytest
 import networkx as nx
-from stellar.data.explorer import MetaPathWalk
+from stellar.data.explorer import UniformRandomMetaPathWalk
 
 
 def create_test_graph():
@@ -75,7 +75,7 @@ def create_test_graph():
 class TestMetaPathWalk(object):
     def test_parameter_checking(self):
         g = create_test_graph()
-        mrw = MetaPathWalk(g)
+        mrw = UniformRandomMetaPathWalk(g)
 
         nodes = [1]
         n = 1
@@ -98,6 +98,17 @@ class TestMetaPathWalk(object):
             mrw.run(nodes=nodes, n=n, length=0, metapaths=metapaths, seed=seed)
             mrw.run(nodes=nodes, n=n, length=4.6, metapaths=metapaths, seed=seed)
             mrw.run(nodes=nodes, n=n, length=1.0000001, metapaths=metapaths, seed=seed)
+            # metapaths have to start and end with the same node type
+            mrw.run(nodes=nodes, n=n, length=length, metapaths=[["s", "n"]], seed=seed)
+            mrw.run(
+                nodes=nodes,
+                n=n,
+                length=length,
+                metapaths=[["s", "n", "s"], ["n", "s"]],
+                seed=seed,
+            )
+            # metapaths have to have minimum length of two
+            mrw.run(nodes=nodes, n=n, length=length, metapaths=[["s"]], seed=seed)
             # metapaths has to be a list of lists of strings denoting the node labels
             mrw.run(nodes=nodes, n=n, length=length, metapaths=["n", "s"], seed=seed)
             mrw.run(nodes=nodes, n=n, length=length, metapaths=[[1, 2]], seed=seed)
@@ -130,7 +141,7 @@ class TestMetaPathWalk(object):
 
     def test_walk_generation_single_root_node_loner(self):
         g = create_test_graph()
-        mrw = MetaPathWalk(g)
+        mrw = UniformRandomMetaPathWalk(g)
 
         seed = None
         nodes = ["loner"]  # has no edges, not even to itself
@@ -150,7 +161,7 @@ class TestMetaPathWalk(object):
 
     def test_walk_generation_single_root_node_self_loner(self):
         g = create_test_graph()
-        mrw = MetaPathWalk(g)
+        mrw = UniformRandomMetaPathWalk(g)
 
         seed = None
         nodes = ["self loner"]  # this node has self edges but not other edges
@@ -174,7 +185,7 @@ class TestMetaPathWalk(object):
     def test_walk_generation_single_root_node(self):
 
         g = create_test_graph()
-        mrw = MetaPathWalk(g)
+        mrw = UniformRandomMetaPathWalk(g)
 
         nodes = ["0"]
         n = 1
@@ -218,7 +229,7 @@ class TestMetaPathWalk(object):
     def test_walk_generation_many_root_nodes(self):
 
         g = create_test_graph()
-        mrw = MetaPathWalk(g)
+        mrw = UniformRandomMetaPathWalk(g)
 
         nodes = ["0", 2]
         n = 1
@@ -232,7 +243,7 @@ class TestMetaPathWalk(object):
         )  # the starting node 2 should not generate a walk because it is of type 'n' not 's'
         assert len(walks[0]) <= length  # test against maximum walk length
 
-        metapaths = [["s", "n", "n", "s"], ["n", "n", "s"]]
+        metapaths = [["s", "n", "n", "s"], ["n", "n", "s", "n"]]
 
         walks = mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed)
         assert (
