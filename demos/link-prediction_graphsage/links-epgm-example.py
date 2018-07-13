@@ -372,9 +372,10 @@ def test(G, model_file: AnyStr, batch_size: int):
     )
 
     # Evaluate and print metrics
+    # TODO: add all-links evaluation
     test_metrics = model.evaluate_generator(test_mapper)
 
-    print("\nAll-link Evaluation:")
+    print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
