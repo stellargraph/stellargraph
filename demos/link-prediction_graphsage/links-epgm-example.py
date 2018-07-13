@@ -287,7 +287,7 @@ def train(
         hidden_dst=None,
         output_dim=1,
         output_act="sigmoid",
-        method=args.edge_feature_method,
+        edge_feature_method=args.edge_feature_method,
     )(x_out)
 
     # Stack the GraphSAGE and prediction layers into a Keras model, and specify the loss
@@ -358,17 +358,17 @@ def test(G, model_file: AnyStr, batch_size: int):
     # Get required input shapes from model
     num_samples = [
         int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
-        for ii in range(len(model.input_shape) - 1)
+        for ii in range(1, len(model.input_shape) - 1, 2)
     ]
 
     edge_splitter_test = EdgeSplitter(G)
-    G_test, edge_ids_all, edge_labels_all = edge_splitter_test.train_test_split(
-        p=1, method=args.sampling_method, probs=args.sampling_probs
+    G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
+        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(
-        G, edge_ids_all, edge_labels_all, batch_size, num_samples, name="test_all"
+        G, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
     )
 
     # Evaluate and print metrics
