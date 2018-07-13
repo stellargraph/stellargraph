@@ -172,16 +172,16 @@ class BiasedRandomWalk(GraphWalk):
         pass
 
 
-class MetaPathWalk(GraphWalk):
+class UniformRandomMetaPathWalk(GraphWalk):
     """
-    For heterogeneous graphs, it performs walks based on given metapaths.
+    For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
 
     def run(
-        self, nodes=None, n=None, length=None, metapaths=None, label="label", seed=None
+        self, nodes=None, n=None, length=None, metapaths=None, node_type_attribute="label", seed=None
     ):
         """
-        Method for performing metapath-driven random walks on heterogeneous graphs.
+        Method for performing metapath-driven uniform random walks on heterogeneous graphs.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -190,14 +190,14 @@ class MetaPathWalk(GraphWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
             [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
             schemas of length 3 and 5 respectively.
-            label: <str> The node attribute name that stores the node's label
+            node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed; default is None
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks generated
         """
         self._check_parameter_values(
-            nodes=nodes, n=n, length=length, metapaths=metapaths, label=label, seed=seed
+            nodes=nodes, n=n, length=length, metapaths=metapaths, node_type_attribute=node_type_attribute, seed=seed
         )
 
         random.seed(seed)  # seed the random number generator
@@ -206,7 +206,7 @@ class MetaPathWalk(GraphWalk):
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.node[node]["label"]
+            label = self.graph.node[node][node_type_attribute]
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -215,12 +215,12 @@ class MetaPathWalk(GraphWalk):
 
             for metapath in filtered_metapaths:
                 # augment metapath to be length long
-                if (
-                    len(metapath) == 1
-                ):  # special case for random walks like in a homogeneous graphs
-                    metapath = metapath * length
-                else:
-                    metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
+                # if (
+                #     len(metapath) == 1
+                # ):  # special case for random walks like in a homogeneous graphs
+                #     metapath = metapath * length
+                # else:
+                metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
                 for _ in range(n):
                     walk = []  # holds the walk data for this walk; first node is the starting node
                     current_node = node
@@ -232,7 +232,7 @@ class MetaPathWalk(GraphWalk):
                         neighbours = [
                             node
                             for node in neighbours
-                            if self.graph.node[node]["label"] == metapath[d]
+                            if self.graph.node[node][node_type_attribute] == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
@@ -246,7 +246,7 @@ class MetaPathWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, length, metapaths, label, seed):
+    def _check_parameter_values(self, nodes, n, length, metapaths, node_type_attribute, seed):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -258,6 +258,7 @@ class MetaPathWalk(GraphWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
             [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
             schemas of length 3 and 5 respectively.
+            node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed
 
         """
@@ -320,9 +321,9 @@ class MetaPathWalk(GraphWalk):
                         type(self).__name__
                     )
                 )
-            if len(metapath) == 0:
+            if len(metapath) < 2:
                 raise ValueError(
-                    "({}) Each metapath must specify at least one node type".format(
+                    "({}) Each metapath must specify at least two node types".format(
                         type(self).__name__
                     )
                 )
@@ -334,11 +335,17 @@ class MetaPathWalk(GraphWalk):
                             type(self).__name__
                         )
                     )
+            if metapath[0] != metapath[-1]:
+                raise ValueError(
+                    "({} The first and last node type in a metapath should be the same.".format(
+                        type(self).__name__
+                    )
+                )
 
-        if type(label) != str:
+        if type(node_type_attribute) != str:
             raise ValueError(
                 "({}) The parameter label should be string type not {} as given".format(
-                    type(self).__name__, type(label).__name__
+                    type(self).__name__, type(node_type_label).__name__
                 )
             )
 
