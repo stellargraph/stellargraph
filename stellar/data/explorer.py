@@ -178,7 +178,13 @@ class UniformRandomMetaPathWalk(GraphWalk):
     """
 
     def run(
-        self, nodes=None, n=None, length=None, metapaths=None, node_type_attribute="label", seed=None
+        self,
+        nodes=None,
+        n=None,
+        length=None,
+        metapaths=None,
+        node_type_attribute="label",
+        seed=None,
     ):
         """
         Method for performing metapath-driven uniform random walks on heterogeneous graphs.
@@ -197,7 +203,12 @@ class UniformRandomMetaPathWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks generated
         """
         self._check_parameter_values(
-            nodes=nodes, n=n, length=length, metapaths=metapaths, node_type_attribute=node_type_attribute, seed=seed
+            nodes=nodes,
+            n=n,
+            length=length,
+            metapaths=metapaths,
+            node_type_attribute=node_type_attribute,
+            seed=seed,
         )
 
         random.seed(seed)  # seed the random number generator
@@ -246,7 +257,9 @@ class UniformRandomMetaPathWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, length, metapaths, node_type_attribute, seed):
+    def _check_parameter_values(
+        self, nodes, n, length, metapaths, node_type_attribute, seed
+    ):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
