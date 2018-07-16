@@ -21,7 +21,7 @@ from typing import AnyStr, Any, List, Tuple, Dict, Optional, Callable
 
 from keras import backend as K
 from keras import Input, Model, optimizers, losses, activations, metrics
-from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda
+from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda, Reshape
 from keras.utils import Sequence
 
 from stellar.layer.hinsage import Hinsage
@@ -380,10 +380,12 @@ def regression_predictor(hidden_1: Optional[int] = None,
         elif method == 'mul':
             le = Multiply()([x0, x1])
             out = Dense(1, activation='linear')(le)
+            out = Reshape((1,))(out)
 
         elif method == 'concat':
             le = Concatenate()([x0, x1])
             out = Dense(1, activation='linear')(le)
+            out = Reshape((1,))(out)
 
         if clip_limits:
             out = LeakyClippedLinear(
