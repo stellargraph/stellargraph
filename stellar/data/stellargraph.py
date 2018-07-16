@@ -322,14 +322,13 @@ class StellarGraphBase:
         )
 
         # Sample the nodes for our analysis
-        all_nodes = list(self.nodes)
         if sample:
+            all_nodes = list(self.nodes)
             snodes = random.sample(all_nodes, sample)
+            sedges = self.edges(snodes, keys=True)
         else:
-            snodes = all_nodes
-
-        # Collect all edges from sampled nodes
-        sedges = self.edges(snodes, keys=True)
+            snodes = None
+            sedges = None
 
         gs = self.create_graph_schema(create_type_maps=True, nodes=snodes, edges=sedges)
 
