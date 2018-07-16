@@ -217,22 +217,26 @@ class EdgeSplitter(object):
         For heterogeneous graphs, positive and negative examples can be generated based on specified edge type or
         edge type and edge property given a threshold value for the latter.
 
-        :param p: Percent of edges to be generated as a function of the total number of edges in the original graph
-        :param method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformaly at random.
-        If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is chosen
-        to be from the former's local neighbourhood.
-        :param probs: list The probabilities for sampling a node that is k-hops from the source node, e.g., [0.25, 0.75]
-        means that there is a 0.25 probability that the target node will be 1-hope away from the source node and 0.75
-        that it will be 2 hops away from the source node. This only affects sampling of negative edges if method is set
-        to 'local'.
-        :param edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
-        of edges to split on
-        :param edge_attribute_label: <str> The label for the edge attribute to split on
-        :param edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
-        examples
-        :param attribute_is_datetime: <boolean> Specifies if edge attribute is datetime or not.
-        :return: The reduced graph (positive edges removed) and the edge data as numpy array with first two columns the
-        node id defining the edge and the last column 1 or 0 for positive or negative example respectively.
+        Args:
+            p: <float> Percent of edges to be generated as a function of the total number of edges in the original graph
+            method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformaly at random.
+            If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is chosen
+            to be from the former's local neighbourhood.
+            probs: <list> list The probabilities for sampling a node that is k-hops from the source node,
+            e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
+            source node and 0.75 that it will be 2 hops away from the source node. This only affects sampling of
+            negative edges if method is set to 'local'.
+            edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
+            of edges to split on.
+            edge_attribute_label: <str> The label for the edge attribute to split on.
+            edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
+            examples.
+            attribute_is_datetime: <boolean> Specifies if edge attribute is datetime or not.
+
+        Returns:
+            The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first Nx2 holding the
+            node ids for the edges and the second Nx1 holding the edge labels, 0 for negative and 1 for positive
+            example.
         """
         if p <= 0 or p >= 1:
             raise ValueError("The value of p must be in the interval (0,1)")

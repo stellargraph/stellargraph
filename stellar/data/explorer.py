@@ -413,7 +413,7 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes=None, n=1, n_size=None):
+    def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
 
         Args:
@@ -423,14 +423,18 @@ class SampledBreadthFirstWalk(GraphWalk):
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk. Sampling of
             neighbours with replacement is always used regardless of the node degree and number of neighbours
             requested.
+            seed: <int> Random number generator seed; default is None
+
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        self._check_parameter_values(nodes=nodes, n=n, n_size=n_size)
+        self._check_parameter_values(nodes=nodes, n=n, n_size=n_size, seed=seed)
 
         walks = []
         d = len(n_size)  # depth of search
+
+        random.seed(seed)
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -470,7 +474,7 @@ class SampledBreadthFirstWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, n_size):
+    def _check_parameter_values(self, nodes, n, n_size, seed):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -480,6 +484,7 @@ class SampledBreadthFirstWalk(GraphWalk):
             given depth d.
             n: <int> Number of walks per node id.
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
+            seed: <int> Random number generator seed; default is None
 
         """
         if nodes is None:
@@ -540,6 +545,20 @@ class SampledBreadthFirstWalk(GraphWalk):
             if type(d) != int:
                 raise ValueError(
                     "({}) The neighbourhood size, n_size, must be list of integers.".format(
+                        type(self).__name__
+                    )
+                )
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
                         type(self).__name__
                     )
                 )
