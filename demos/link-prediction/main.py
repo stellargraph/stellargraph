@@ -160,7 +160,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
     op_best = ''
 
     if binary_operators is None:
-        printf("WARNING: Using default binary operator 'l1'")
+        print("WARNING: Using default binary operator 'l1'")
         binary_operators = ['l1']
 
     # for each type of binary operator
@@ -203,7 +203,7 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
     :return:
     """
     if binary_operators is None:
-        printf("WARNING: Using default binary operator 'l1'")
+        print("WARNING: Using default binary operator 'l1'")
         binary_operators = ['l1']
 
     scores = []  # the auc values for each binary operator (based on test set performance)
