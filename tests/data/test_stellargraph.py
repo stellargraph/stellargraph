@@ -22,14 +22,14 @@ from stellar.data.stellargraph import *
 def create_graph_1(sg=StellarGraph()):
     sg.add_nodes_from([0, 1, 2, 3], label="movie")
     sg.add_nodes_from([4, 5], label="user")
-    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="rating")
+    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
     return sg
 
 
 def create_graph_2(sg=StellarGraph()):
     sg.add_nodes_from([0, 1, 2, 3], label="movie")
     sg.add_nodes_from([4, 5], label="user")
-    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="rating")
+    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
     sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
     sg.add_edges_from([(4, 5)], label="friend")
     return sg
@@ -105,6 +105,17 @@ def test_graph_schema():
             schema.get_edge_type((n1, n2, k))
         )
 
+    # Test edge_types_for_node
+    ets = schema.edge_types_for_node_type("user")
+    assert len(ets) == 1
+
+    ets = schema.edge_types_for_node_type("movie")
+    assert len(ets) == 1
+
+    # Test undirected graph types
+    assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
+    assert schema.get_edge_type((0, 4, 0)) == ("movie", "rating", "user")
+
 
 def test_digraph_schema():
     sg = create_graph_1(StellarDiGraph())
@@ -112,8 +123,8 @@ def test_digraph_schema():
 
     assert "movie" in schema.schema
     assert "user" in schema.schema
-    assert len(schema.schema["movie"]) == 1
-    assert len(schema.schema["user"]) == 0
+    assert len(schema.schema["user"]) == 1
+    assert len(schema.schema["movie"]) == 0
 
     # Test node type lookup
     for n, ndata in sg.nodes(data=True):
@@ -125,6 +136,15 @@ def test_digraph_schema():
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
+
+    ets = schema.edge_types_for_node_type("user")
+    assert len(ets) == 1
+
+    ets = schema.edge_types_for_node_type("movie")
+    assert len(ets) == 0
+
+    assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
+    assert schema.get_edge_type((0, 4, 0)) == None
 
 
 def test_graph_schema_sampling():
@@ -146,6 +166,3 @@ def test_graph_schema_sampling():
 
             if len(list_types) > 0:
                 assert set(adj_types) == set(list_types)
-
-
-test_graph_schema_sampling()

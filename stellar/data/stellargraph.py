@@ -35,11 +35,15 @@ class GraphSchema:
     create_graph_schema method.
     """
 
+    _is_directed = False
     node_types = None
     edge_types = None
     schema = None
     node_type_map = None
     edge_type_map = None
+
+    def is_directed(self):
+        return self._is_directed
 
     def node_index(self, name):
         """
@@ -147,22 +151,38 @@ class GraphSchema:
 
     def get_edge_type(self, edge, index=False):
         """
-        Return the type of the edge
+        Return the type of the edge as a triple of
+            (source_node_type, relation_type, dest_node_type).
+
+        The edge is specified as a standard NetworkX multigraph edge
+        triple of (node_id_1, node_id_2, edge_key).
+
+        If the graph schema is undirected and there is an edge type for
+        the edge (node_id_2, node_id_1, edge_key) then the edge type
+        for this node will be returned permuted to match the node order.
+
         Args:
-            edge: The edge ID from the original graph [a tuple (n1,n2)]
+            edge: The edge ID from the original graph as a triple.
             index: Return a numeric type index if True,
-                otherwise return the type triple:
-                 (source_node_type, relation_type, dest_node_type).
+                otherwise return the type triple.
 
         Returns:
-            A node type triple or index
+            A node type triple or index.
         """
         try:
             if edge in self.edge_type_map:
                 et = self.edge_type_map[edge]
-            else:
+                edge_type = et if index else self.edge_types[et]
+
+            elif not self.is_directed():
                 et = self.edge_type_map[(edge[1], edge[0], edge[2])]
-            edge_type = et if index else self.edge_types[et]
+                if index:
+                    edge_type = et
+                else:
+                    et = self.edge_types[et]
+                    edge_type = EdgeType(et[2], et[1], et[0])
+            else:
+                raise IndexError
 
         except IndexError:
             print("Warning: Edge '{}' not found in type map.".format(edge))
@@ -436,6 +456,7 @@ class StellarGraphBase:
 
         # Create schema object
         gs = GraphSchema()
+        gs._is_directed = self.is_directed()
         gs.edge_types = edge_types
         gs.node_types = node_types
         gs.schema = schema
@@ -449,7 +470,7 @@ class StellarGraphBase:
                 for n, ndata in self.nodes(data=True)
             }
             edge_type_map = {
-                edge[:3]: edge_types.index(
+                (edge[0], edge[1], edge[2]): edge_types.index(
                     EdgeType(
                         node_types[node_type_map[edge[0]]],
                         edge[3][self._edge_type_attr],
