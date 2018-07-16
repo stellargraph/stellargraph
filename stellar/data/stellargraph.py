@@ -386,13 +386,13 @@ class StellarGraphBase:
             GraphSchema object.
         """
         if nodes is None:
-            nodes = self.nodes
+            nodes = self.nodes()
         elif create_type_maps is True:
             raise ValueError(
                 "Creating type mapes for subsampled nodes is not supported"
             )
         if edges is None:
-            edges = self.edges
+            edges = self.edges(keys=True)
         elif create_type_maps is True:
             raise ValueError(
                 "Creating type mapes for subsampled edges is not supported"
@@ -405,7 +405,7 @@ class StellarGraphBase:
         # Create edge type index list
         edge_types = set()
         for n1, n2, k in edges:
-            edata = self.adj[n1][n1][k]
+            edata = self.adj[n1][n2][k]
 
             # Edge type tuple
             node_type_1 = self.node[n1][self._node_type_attr]
