@@ -101,6 +101,11 @@ class TestBreadthFirstWalk(object):
             bfw.run(nodes=nodes, n=n, n_size=[-5])
             bfw.run(nodes=nodes, n=-1, n_size=[2.4])
             bfw.run(nodes=nodes, n=n, n_size=(1, 2))
+            # seed must be positive integer or 0
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed=-1235)
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed=10.987665)
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed=-982.4746)
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed="don't be random")
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
         # is the best for checking this behaviour.
@@ -371,3 +376,38 @@ class TestBreadthFirstWalk(object):
         assert len(subgraphs) == n * len(nodes)
         for subgraph in subgraphs:
             assert len(subgraph) == expected_bfw_size(n_size=n_size)
+
+    def test_fixed_random_seed(self):
+
+        g = create_test_graph()
+        bfw = SampledBreadthFirstWalk(g)
+
+        w0 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
+        w1 = bfw.run(nodes=[1], n=1, n_size=[7], seed=1010)
+
+        assert len(w0) == len(w1)
+        assert w0 != w1
+
+        w0 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
+        w1 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
+
+        assert len(w0) == len(w1)
+        assert w0 == w1
+
+        w0 = bfw.run(nodes=[1], n=5, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=[1], n=5, n_size=[12], seed=101)
+
+        assert len(w0) == len(w1)
+        assert w0 == w1
+
+        w0 = bfw.run(nodes=[9, "self loner"], n=1, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=[9, "self loner"], n=1, n_size=[12], seed=101)
+
+        assert len(w0) == len(w1)
+        assert w0 == w1
+
+        w0 = bfw.run(nodes=[1, "self loner", 4], n=5, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=[1, "self loner", 4], n=5, n_size=[12], seed=101)
+
+        assert len(w0) == len(w1)
+        assert w0 == w1
