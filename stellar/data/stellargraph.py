@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import queue
+import random
 import itertools as it
 
 import networkx as nx
@@ -22,10 +23,18 @@ from networkx.classes.multidigraph import MultiDiGraph
 
 from collections import namedtuple
 
+# The edge type triple
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
 
 
 class GraphSchema:
+    """
+    Class to encapsulate the schema information for a heterogeneous graph.
+
+    Typically this should be created from a StellarGraph object, using the
+    create_graph_schema method.
+    """
+
     node_types = None
     edge_types = None
     schema = None
@@ -44,7 +53,7 @@ class GraphSchema:
         """
         try:
             index = self.node_types.index(name)
-        except:
+        except ValueError:
             print("Warning: Node key '{}' not found.".format(name))
             index = None
         return index
@@ -61,8 +70,12 @@ class GraphSchema:
         """
         try:
             key = self.node_types[index]
-        except:
-            print("Warning: Node index '{}' too large.".format(index))
+        except IndexError:
+            print(
+                "Warning: Node index '{}' invalid. Should be an integer between 0 and {}.".format(
+                    index, len(self.node_types) - 1
+                )
+            )
             key = None
         return key
 
@@ -78,7 +91,7 @@ class GraphSchema:
         """
         try:
             index = self.edge_types.index(edge_type)
-        except:
+        except ValueError:
             print("Warning: Edge key '{}' not found.".format(edge_type))
             index = None
         return index
@@ -95,8 +108,12 @@ class GraphSchema:
         """
         try:
             key = self.edge_types[index]
-        except:
-            print("Warning: Edge index '{}' too large.".format(index))
+        except IndexError:
+            print(
+                "Warning: Edge index '{}' invalid. Should be an integer between 0 and {}.".format(
+                    index, len(self.edge_types) - 1
+                )
+            )
             key = None
         return key
 
@@ -123,7 +140,7 @@ class GraphSchema:
             nt = self.node_type_map[node]
             node_type = nt if index else self.node_types[nt]
 
-        except:
+        except IndexError:
             print("Warning: Node '{}' not found in type map.".format(node))
             node_type = None
         return node_type
@@ -147,7 +164,7 @@ class GraphSchema:
                 et = self.edge_type_map[(edge[1], edge[0], edge[2])]
             edge_type = et if index else self.edge_types[et]
 
-        except:
+        except IndexError:
             print("Warning: Edge '{}' not found in type map.".format(edge))
             edge_type = None
         return edge_type
@@ -163,12 +180,12 @@ class GraphSchema:
         """
         try:
             edge_types = self.schema[node_type]
-        except:
+        except IndexError:
             print("Warning: Node type '{}' not found.".format(node_type))
             edge_types = []
         return edge_types
 
-    def get_sampling_tree(self, head_node_types, n_hops):
+    def _get_sampling_tree(self, head_node_types, n_hops):
         """
         Returns a sampling tree for the specified head node types
         for neighbours up to n_hops away.
@@ -282,14 +299,39 @@ class StellarGraphBase:
         )
         return s
 
-    def info(self):
-        gs = self.create_graph_schema(create_type_maps=True)
+    def info(self, sample=None):
+        """
+        Return an information string summarizing information on the current graph.
+        This includes node and edge type information and their attributes.
 
+        Note: This requires processing all nodes and edges and could take a long
+        time for a large graph.
+
+        Args:
+            sample (int): To speed up the graph analysis, use only a random sample of
+                          this many nodes and edges.
+
+        Returns:
+            An information string.
+        """
+        nx.to_directed
         directed_str = "Directed" if self.is_directed() else "Undirected"
         s = "{}: {} multigraph\n".format(type(self).__name__, directed_str)
         s += " Nodes: {}, Edges: {}\n".format(
             self.number_of_nodes(), self.number_of_edges()
         )
+
+        # Sample the nodes for our analysis
+        all_nodes = list(self.nodes)
+        if sample:
+            snodes = random.sample(all_nodes, sample)
+        else:
+            snodes = all_nodes
+
+        # Collect all edges from sampled nodes
+        sedges = self.edges(snodes, keys=True)
+
+        gs = self.create_graph_schema(create_type_maps=True, nodes=snodes, edges=sedges)
 
         # Go over all node types
         s += "\n Node types:\n"
@@ -330,7 +372,7 @@ class StellarGraphBase:
 
         return s
 
-    def create_graph_schema(self, create_type_maps=True):
+    def create_graph_schema(self, create_type_maps=True, nodes=None, edges=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -343,15 +385,28 @@ class StellarGraphBase:
         Returns:
             GraphSchema object.
         """
+        if nodes is None:
+            nodes = self.nodes
+        elif create_type_maps is True:
+            raise ValueError(
+                "Creating type mapes for subsampled nodes is not supported"
+            )
+        if edges is None:
+            edges = self.edges
+        elif create_type_maps is True:
+            raise ValueError(
+                "Creating type mapes for subsampled edges is not supported"
+            )
+
         # Create node type index list
-        node_types = sorted(
-            {ndata[self._node_type_attr] for n, ndata in self.nodes(data=True)}
-        )
+        node_types = sorted({self.node[n][self._node_type_attr] for n in nodes})
         graph_schema = {nt: set() for nt in node_types}
 
         # Create edge type index list
         edge_types = set()
-        for n1, n2, edata in self.edges(keys=False, data=True):
+        for n1, n2, k in edges:
+            edata = self.adj[n1][n1][k]
+
             # Edge type tuple
             node_type_1 = self.node[n1][self._node_type_attr]
             node_type_2 = self.node[n2][self._node_type_attr]
