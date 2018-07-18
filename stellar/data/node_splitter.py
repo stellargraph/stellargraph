@@ -106,32 +106,75 @@ class NodeSplitter(object):
 
         return y
 
-    def train_test_split(self, y=None, p=10, method="count", test_size=None, train_size=None):
+    def _check_parameters(self, y, p, method, test_size, train_size, seed):
+        """
+
+        Args:
+            y: <numpy array> Array of size Nx2 containing node id, label columns
+            p: <int or float> Percent or count of the number of points for each class to sample
+            method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of points
+            for each class to sample. If method is 'absolute' then p is ignored and the parameters test_size and
+            train_size should be specified.
+            test_size: <int> number of points in test set. For method 'count', it should be less than or equal to
+            N - (np.unique(labels) * p) where N is the number of labeled points in y.
+            train_size: <int> The number of points in the train set.
+            seed: <int> seed for random number generator, positive int or 0
+
+        """
+        if y is None:
+            raise ValueError("({}) y should be numpy array, not None".format(type(self).__name__))
+        if method != "count" and method != "percent" and method != "absolute":
+            raise ValueError("({}) Valid methods are 'count', 'percent', and 'absolute' not {}".format(type(self).__name__, method))
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+
+        if method == 'count':
+            if p <= 0 or type(p) != int:
+                raise ValueError("({}) p should be positive integer".format(type(self).__name__))
+            if test_size is None or test_size <= 0 or type(test_size) != int:
+                raise ValueError("({}) test_size must be positive integer".format(type(self).__name__))
+
+        elif method == 'percent':
+            if type(p) != float or p  < 0. or p > 1.:
+                raise ValueError("({}) p should be float in the range [0,1].".format(type(self).__name__))
+
+        elif method == 'absolute':
+            if test_size is None or test_size <= 0 or type(test_size) != int:
+                raise ValueError("({}) test_size should be positive integer".format(type(self).__name__))
+            if train_size is None or train_size <= 0 or type(train_size) != int:
+                raise ValueError("({}) train_size should be positive integer".format(type(self).__name__))
+
+    def train_test_split(self, y=None, p=10, method="count", test_size=None, train_size=None, seed=None):
         """
         Splits node data into train, test, validation, and unlabeled sets.
 
-        :param p: <int or float> Percent or count of the number of points for each class to sample
-        :param y: <numpy array> Array of size Nx2 containing node id _ labels
-        :param method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of
-        points for each class to sample. If method is 'absolute' then p is ignored and the parameters test_size and
-        train_size should be specified.
-        :param test_size: <int> number of points in test set. For method 'count', it should be less than or equal
-        to N - (np.unique(labels) * nc) where N is the number of labeled points in y.
-        :param train_size: <int> The number of points in the train set
-        :return: y_train, y_val, y_test, y_unlabeled
-        """
-        if y is None:
-            raise ValueError("y cannot be None")
-        if method != "count":
-            raise ValueError("Only method 'count' is currently available")
-        if p <= 0 or type(p) != int:
-            raise ValueError("p should be positive integer")
+        Args:
+            y: <numpy array> Array of size Nx2 containing node id, label columns
+            p: <int or float> Percent or count of the number of points for each class to sample
+            method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of points
+            for each class to sample. If method is 'absolute' then p is ignored and the parameters test_size and
+            train_size should be specified.
+            test_size: <int> number of points in test set. For method 'count', it should be less than or equal to
+            N - (np.unique(labels) * nc) where N is the number of labeled points in y.
+            train_size: <int> The number of points in the train set.
+            seed: <int> seed for random number generator, positive int or 0
 
-        # Some checks on the value of test_size
-        if test_size is None:
-            raise ValueError("test_size must be specified")
-        if test_size <= 0 or type(test_size) != int:
-            raise ValueError("test_size must be positive integer")
+        Returns:
+            y_train, y_val, y_test, y_unlabeled
+        """
+        self._check_parameters(y=y, p=p, method=method, test_size=test_size, train_size=train_size, seed=seed)
 
         if method == "count":
             return self._split_data(y, p, test_size)
