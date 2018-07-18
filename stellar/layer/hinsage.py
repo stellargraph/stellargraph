@@ -297,7 +297,10 @@ class Hinsage:
                     agg[node_type](
                         [
                             Dropout(self.dropout)(x[i]),
-                            *[Dropout(self.dropout)(ne) for ne in neigh_list(i, neigh_indices)],
+                            *[
+                                Dropout(self.dropout)(ne)
+                                for ne in neigh_list(i, neigh_indices)
+                            ],
                         ],
                         name="{}_{}".format(node_type, layer),
                     )
