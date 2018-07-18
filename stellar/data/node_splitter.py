@@ -106,16 +106,18 @@ class NodeSplitter(object):
 
         return y
 
-    def train_test_split(self, p=10, y=None, method="count", **kwargs):
+    def train_test_split(self, y=None, p=10, method="count", test_size=None, train_size=None):
         """
         Splits node data into train, test, validation, and unlabeled sets.
 
         :param p: <int or float> Percent or count of the number of points for each class to sample
         :param y: <numpy array> Array of size Nx2 containing node id _ labels
         :param method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of
-        points for each class to sample. Only 'count' is a valid option for now.
-        :param test_size: <int> number of points in test set. it should be less than or equal
-        to N - (np.unique(labels) * nc).
+        points for each class to sample. If method is 'absolute' then p is ignored and the parameters test_size and
+        train_size should be specified.
+        :param test_size: <int> number of points in test set. For method 'count', it should be less than or equal
+        to N - (np.unique(labels) * nc) where N is the number of labeled points in y.
+        :param train_size: <int> The number of points in the train set
         :return: y_train, y_val, y_test, y_unlabeled
         """
         if y is None:
@@ -125,14 +127,69 @@ class NodeSplitter(object):
         if p <= 0 or type(p) != int:
             raise ValueError("p should be positive integer")
 
-        test_size = kwargs.get("test_size", None)
         # Some checks on the value of test_size
         if test_size is None:
             raise ValueError("test_size must be specified")
         if test_size <= 0 or type(test_size) != int:
             raise ValueError("test_size must be positive integer")
 
-        return self._split_data(y, p, test_size)
+        if method == "count":
+            return self._split_data(y, p, test_size)
+        elif method == "percent":
+            train_size = int(y.shape[0]*p)
+            test_size = y.shape[0]-train_size
+            return self._split_data_absolute(y=y, test_size=test_size, train_size=train_size)
+        elif method == "absolute":
+            return self._split_data_absolute(y=y, test_size=test_size, train_size=train_size)
+
+    def _split_data_absolute(self, y, test_size, train_size):
+        """
+
+        Args:
+            y: <numpy.ndarray> Array of size N x 2 containing node id + labels.
+            test_size: <int> number of points in test set.
+            train_size: <int> The number of points in the train set.
+
+        Returns:
+            y_train, y_val, y_test, y_unlabeled
+
+        """
+        # The label column in y could include None type, that is point with no ground truth label. These, if any,will
+        # be returned separately in y_unlabeled dataset
+        y_used = np.zeros(y.shape[0])  # initialize all the points are available
+
+        ind = np.nonzero(
+            y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE
+        )  # indexes of points with no class label
+        y_unlabeled = y[ind]
+        y_used[ind] = 1
+
+        y_train = None
+
+        ind = np.nonzero(y_used == 0)  # unused points
+        ind_sampled = np.random.choice(ind[0], train_size, replace=False)
+        y_used[ind_sampled] = 1  # mark these as used to make sure that they are not sampled for the test set
+
+        # now sample test_size points for the test set
+        ind = np.nonzero(y_used == 0)  # indexes of points that are not in training set
+        if len(ind[0]) < test_size:
+            raise Exception(
+                "Not enough nodes available for the test set: available {} nodes, needed {}. Aborting".format(
+                    len(ind[0]), test_size
+                )
+            )
+        ind_sampled = np.random.choice(ind[0], test_size, replace=False)
+        y_test = y[ind_sampled]
+        y_used[ind_sampled] = 1
+        # print("y_test shape: ", y_test.shape)
+
+        # Validation set
+        # the remaining points (if any) go into the validation set
+        ind = np.nonzero(y_used == 0)
+        y_val = y[ind[0]]
+        # print("y_val shape:", y_val.shape)
+
+        return y_train, y_val, y_test, y_unlabeled
 
     def _split_data(self, y, nc, test_size):
         """
