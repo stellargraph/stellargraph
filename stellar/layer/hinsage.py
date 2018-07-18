@@ -185,7 +185,8 @@ class Hinsage:
         self.n_layers = len(n_samples)
         self.n_samples = n_samples
         self.bias = bias
-        self._dropout = Dropout(dropout)
+        self.dropout = dropout
+        # self._dropout = Dropout(dropout)
 
         # Neighbourhood info per layer
         self.neigh_trees = eval_neigh_tree_per_layer(
@@ -295,8 +296,8 @@ class Hinsage:
                 return [
                     agg[node_type](
                         [
-                            self._dropout(x[i]),
-                            *[self._dropout(ne) for ne in neigh_list(i, neigh_indices)],
+                            Dropout(self.dropout)(x[i]),
+                            *[Dropout(self.dropout)(ne) for ne in neigh_list(i, neigh_indices)],
                         ],
                         name="{}_{}".format(node_type, layer),
                     )
