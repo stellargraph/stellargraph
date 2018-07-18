@@ -275,10 +275,11 @@ def train(
     )
 
     # Expose input and output sockets of the model, for source and destination nodes:
-    x_inp_src, x_out_src = graphsage.default_model(flatten_output=not True)
-    x_inp_dst, x_out_dst = graphsage.default_model(flatten_output=not True)
-    # re-pack into a list where (source, target) inputs alternate, for link inputs and outputs:
+    x_inp_src, x_out_src = graphsage.default_model(flatten_output=True)
+    x_inp_dst, x_out_dst = graphsage.default_model(flatten_output=True)
+    # re-pack into a list where (source, target) inputs alternate, for link inputs:
     x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
+    # same for outputs:
     x_out = [x_out_src, x_out_dst]
 
     # Final estimator layer
