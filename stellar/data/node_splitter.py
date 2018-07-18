@@ -176,6 +176,8 @@ class NodeSplitter(object):
         """
         self._check_parameters(y=y, p=p, method=method, test_size=test_size, train_size=train_size, seed=seed)
 
+        np.random.seed(seed=seed)
+
         if method == "count":
             return self._split_data(y, p, test_size)
         elif method == "percent":
