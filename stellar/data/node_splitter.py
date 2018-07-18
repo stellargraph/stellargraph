@@ -108,23 +108,29 @@ class NodeSplitter(object):
 
     def _check_parameters(self, y, p, method, test_size, train_size, seed):
         """
+        Checks that the parameters have valid values. It not, then it raises a ValueError exception with a
+        message corresponding to the invalid parameter.
 
         Args:
-            y: <numpy array> Array of size Nx2 containing node id, label columns
-            p: <int or float> Percent or count of the number of points for each class to sample
-            method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of points
-            for each class to sample. If method is 'absolute' then p is ignored and the parameters test_size and
-            train_size should be specified.
-            test_size: <int> number of points in test set. For method 'count', it should be less than or equal to
-            N - (np.unique(labels) * p) where N is the number of labeled points in y.
-            train_size: <int> The number of points in the train set.
+            y: <numpy array> Array of size Nx2 containing node id, label columns.
+            p: <int or float> Percent or count of the number of points for each class to sample.
+            method: <str> One of 'count', 'percent', or 'absolute'.
+            test_size: <int> number of points in the test set. For method 'count', it should be less than or equal to
+            N - (np.unique(labels) * nc) where N is the number of labeled points in y.
+            train_size: <int> The number of points in the train set only used by method 'absolute'.
             seed: <int> seed for random number generator, positive int or 0
 
         """
         if y is None:
-            raise ValueError("({}) y should be numpy array, not None".format(type(self).__name__))
+            raise ValueError(
+                "({}) y should be numpy array, not None".format(type(self).__name__)
+            )
         if method != "count" and method != "percent" and method != "absolute":
-            raise ValueError("({}) Valid methods are 'count', 'percent', and 'absolute' not {}".format(type(self).__name__, method))
+            raise ValueError(
+                "({}) Valid methods are 'count', 'percent', and 'absolute' not {}".format(
+                    type(self).__name__, method
+                )
+            )
 
         if seed is not None:
             if seed < 0:
@@ -140,52 +146,99 @@ class NodeSplitter(object):
                     )
                 )
 
-        if method == 'count':
+        if method == "count":
             if p <= 0 or type(p) != int:
-                raise ValueError("({}) p should be positive integer".format(type(self).__name__))
+                raise ValueError(
+                    "({}) p should be positive integer".format(type(self).__name__)
+                )
             if test_size is None or test_size <= 0 or type(test_size) != int:
-                raise ValueError("({}) test_size must be positive integer".format(type(self).__name__))
+                raise ValueError(
+                    "({}) test_size must be positive integer".format(
+                        type(self).__name__
+                    )
+                )
 
-        elif method == 'percent':
-            if type(p) != float or p  < 0. or p > 1.:
-                raise ValueError("({}) p should be float in the range [0,1].".format(type(self).__name__))
+        elif method == "percent":
+            if type(p) != float or p < 0. or p > 1.:
+                raise ValueError(
+                    "({}) p should be float in the range [0,1].".format(
+                        type(self).__name__
+                    )
+                )
 
-        elif method == 'absolute':
+        elif method == "absolute":
             if test_size is None or test_size <= 0 or type(test_size) != int:
-                raise ValueError("({}) test_size should be positive integer".format(type(self).__name__))
+                raise ValueError(
+                    "({}) test_size should be positive integer".format(
+                        type(self).__name__
+                    )
+                )
             if train_size is None or train_size <= 0 or type(train_size) != int:
-                raise ValueError("({}) train_size should be positive integer".format(type(self).__name__))
+                raise ValueError(
+                    "({}) train_size should be positive integer".format(
+                        type(self).__name__
+                    )
+                )
 
-    def train_test_split(self, y=None, p=10, method="count", test_size=None, train_size=None, seed=None):
+    def train_test_split(
+        self, y=None, p=10, method="count", test_size=None, train_size=None, seed=None
+    ):
         """
         Splits node data into train, test, validation, and unlabeled sets.
 
+        Any points in y that have value UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
+
+        The validation set includes all the point that remain after the train, test and unlabeled sets have been
+        created. As a result, it is possible the the validation set is empty, e.g., when method is set to 'percent'.
+
+        The train, and test sets are build based on the specified method, 'count', 'percent', or 'absolute'.
+
+        method='count': The value of parameter p specifies the number of points in the train set for each class. The
+        test set size must be specified using the test_size parameter.
+
+        method='percent': The value of parameter p specifies the train set size (and 1-p the test set size) as a
+        percentage of the total number of points in y (including the unlabeled points.) The split is performed uniformly
+        at random and the point labels (as specified in y) are not taken into account.
+
+        method='absolute': The values of the parameters train_size and test_size specify the size of the train and test
+        sets respectively. Points are selected uniformly at random and the label (as specified in y) are not taken into
+        account.
+
         Args:
-            y: <numpy array> Array of size Nx2 containing node id, label columns
-            p: <int or float> Percent or count of the number of points for each class to sample
-            method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of points
-            for each class to sample. If method is 'absolute' then p is ignored and the parameters test_size and
-            train_size should be specified.
-            test_size: <int> number of points in test set. For method 'count', it should be less than or equal to
+            y: <numpy array> Array of size Nx2 containing node id, label columns.
+            p: <int or float> Percent or count of the number of points for each class to sample.
+            method: <str> One of 'count', 'percent', or 'absolute'.
+            test_size: <int> number of points in the test set. For method 'count', it should be less than or equal to
             N - (np.unique(labels) * nc) where N is the number of labeled points in y.
-            train_size: <int> The number of points in the train set.
+            train_size: <int> The number of points in the train set only used by method 'absolute'.
             seed: <int> seed for random number generator, positive int or 0
 
         Returns:
             y_train, y_val, y_test, y_unlabeled
         """
-        self._check_parameters(y=y, p=p, method=method, test_size=test_size, train_size=train_size, seed=seed)
+        self._check_parameters(
+            y=y,
+            p=p,
+            method=method,
+            test_size=test_size,
+            train_size=train_size,
+            seed=seed,
+        )
 
         np.random.seed(seed=seed)
 
         if method == "count":
             return self._split_data(y, p, test_size)
         elif method == "percent":
-            train_size = int(y.shape[0]*p)
-            test_size = y.shape[0]-train_size
-            return self._split_data_absolute(y=y, test_size=test_size, train_size=train_size)
+            train_size = int(y.shape[0] * p)
+            test_size = y.shape[0] - train_size
+            return self._split_data_absolute(
+                y=y, test_size=test_size, train_size=train_size
+            )
         elif method == "absolute":
-            return self._split_data_absolute(y=y, test_size=test_size, train_size=train_size)
+            return self._split_data_absolute(
+                y=y, test_size=test_size, train_size=train_size
+            )
 
     def _split_data_absolute(self, y, test_size, train_size):
         """
@@ -213,7 +266,12 @@ class NodeSplitter(object):
 
         ind = np.nonzero(y_used == 0)  # unused points
         ind_sampled = np.random.choice(ind[0], train_size, replace=False)
-        y_used[ind_sampled] = 1  # mark these as used to make sure that they are not sampled for the test set
+        y_train = y[ind_sampled]
+        y_used[
+            ind_sampled
+        ] = (
+            1
+        )  # mark these as used to make sure that they are not sampled for the test set
 
         # now sample test_size points for the test set
         ind = np.nonzero(y_used == 0)  # indexes of points that are not in training set
