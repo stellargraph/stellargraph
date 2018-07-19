@@ -180,12 +180,14 @@ class BiasedRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        self._check_parameter_values(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
+        self._check_parameter_values(
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed
+        )
 
         np.random.seed(seed)  # seed the random number generator
 
-        ip = 1./p
-        iq = 1./q
+        ip = 1. / p
+        iq = 1. / q
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -207,12 +209,16 @@ class BiasedRandomWalk(GraphWalk):
                             # is sampled with equal probability from all the neighbours
                             previous_node = current_node
                             previous_node_neighbours = neighbours
-                            current_node = neighbours[np.random.choice(a=len(neighbours))]
+                            current_node = neighbours[
+                                np.random.choice(a=len(neighbours))
+                            ]
                         else:
                             # determine the sampling probabilities for all the nodes
                             # Note: Calculating the transition probabilities this way is slow!
-                            common_neighbours = set(neighbours).intersection(previous_node_neighbours)
-                            probs = [iq]*len(neighbours)
+                            common_neighbours = set(neighbours).intersection(
+                                previous_node_neighbours
+                            )
+                            probs = [iq] * len(neighbours)
                             for i, nn in enumerate(neighbours):
                                 if nn == previous_node:
                                     probs[i] = ip
@@ -222,7 +228,9 @@ class BiasedRandomWalk(GraphWalk):
                             total_prob = sum(probs)
                             probs = [m / total_prob for m in probs]
                             previous_node = current_node
-                            current_node = neighbours[np.random.choice(a=len(neighbours), p=probs)]
+                            current_node = neighbours[
+                                np.random.choice(a=len(neighbours), p=probs)
+                            ]
 
                 walks.append(walk)
 
