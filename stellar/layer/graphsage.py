@@ -127,7 +127,8 @@ class GraphSAGE:
         self.input_feature_size = input_dim
         self.dims = [input_dim] + output_dims
         self.bias = bias
-        self._dropout = Dropout(dropout)
+        self.dropout = dropout
+        # self._dropout = Dropout(dropout)
         self._aggs = [
             aggregator(
                 self.dims[layer + 1],
@@ -167,8 +168,10 @@ class GraphSAGE:
                 return [
                     agg(
                         [
-                            self._dropout(x[i]),
-                            self._dropout(self._neigh_reshape[layer][i](x[i + 1])),
+                            Dropout(self.dropout)(x[i]),
+                            Dropout(self.dropout)(
+                                self._neigh_reshape[layer][i](x[i + 1])
+                            ),
                         ]
                     )
                     for i in range(self.n_layers - layer)
