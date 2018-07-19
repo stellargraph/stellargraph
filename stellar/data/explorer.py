@@ -162,7 +162,8 @@ class UniformRandomWalk(GraphWalk):
 
 class BiasedRandomWalk(GraphWalk):
     """
-    Performs biased second order random walks (like Node2Vec random walks)
+    Performs biased second order random walks (like those used in Node2Vec algorithm
+    https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
     def run(self, nodes=None, n=None, p=1., q=1., length=None, seed=None):
@@ -171,8 +172,8 @@ class BiasedRandomWalk(GraphWalk):
         Args:
             nodes: <list> The root nodes as a list of node IDs
             n: <int> Total number of random walks per root node
-            p: <float>
-            q: <float>
+            p: <float> Defines probability, 1/p, of returning to source node
+            q: <float> Defines probability, 1/q, for moving to a node away from the source node
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
 
@@ -198,6 +199,7 @@ class BiasedRandomWalk(GraphWalk):
                 previous_node_neighbours = self.neighbors(self.graph, previous_node)
                 for _ in range(length):
                     walk.extend([current_node])
+                    # the neighbours of the current node
                     neighbours = self.neighbors(self.graph, current_node)
                     if (
                         len(neighbours) == 0
@@ -214,13 +216,13 @@ class BiasedRandomWalk(GraphWalk):
                             ]
                         else:
                             # determine the sampling probabilities for all the nodes
-                            # Note: Calculating the transition probabilities this way is slow!
                             common_neighbours = set(neighbours).intersection(
                                 previous_node_neighbours
-                            )
+                            )  # nodes that are in commone between the previous and current nodes; these get
+                            # 1. transition probabilities
                             probs = [iq] * len(neighbours)
                             for i, nn in enumerate(neighbours):
-                                if nn == previous_node:
+                                if nn == previous_node:  # this is the previous node
                                     probs[i] = ip
                                 elif nn in common_neighbours:
                                     probs[i] = 1.
