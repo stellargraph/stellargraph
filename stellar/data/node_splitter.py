@@ -231,7 +231,7 @@ class NodeSplitter(object):
             return self._split_data(y, p, test_size)
         elif method == "percent":
             n_unlabelled_points = np.sum(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
-            train_size = int((y.shape[0]-n_unlabelled_points) * p)
+            train_size = int((y.shape[0] - n_unlabelled_points) * p)
             test_size = y.shape[0] - n_unlabelled_points - train_size
             return self._split_data_absolute(
                 y=y, test_size=test_size, train_size=train_size
