@@ -684,15 +684,16 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 )
             )
 
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
         if type(n) != int:
             raise ValueError(
                 "({}) The number of walks per root node, n, should be integer type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be a positive integer.".format(
                     type(self).__name__
                 )
             )
@@ -724,6 +725,12 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         type(self).__name__
                     )
                 )
+            if d < 0:
+                raise ValueError(
+                    "({}) n_sie should be positive integer or 0.".format(
+                        type(self).__name__
+                    )
+                )
 
         if graph_schema is not None and type(graph_schema) is not GraphSchema:
             raise ValueError(
@@ -733,15 +740,15 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
             )
 
         if seed is not None:
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
             if type(seed) != int:
                 raise ValueError(
                     "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
                         type(self).__name__
                     )
                 )
