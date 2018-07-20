@@ -24,8 +24,9 @@ class GraphWalk(object):
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph):
+    def __init__(self, graph, graph_schema=None):
         self.graph = graph
+        self.graph_schema = graph_schema
 
     def neighbors(self, graph, node):
         return list(nx.neighbors(graph, node))
@@ -593,7 +594,11 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
         )
 
         if graph_schema is None:
-            graph_schema = self.graph.create_graph_schema(create_type_maps=True)
+            if self.graph_schema is None:
+                self.graph_schema = self.graph.create_graph_schema(
+                    create_type_maps=True
+                )
+            graph_schema = self.graph_schema
 
         walks = []
         d = len(n_size)  # depth of search
