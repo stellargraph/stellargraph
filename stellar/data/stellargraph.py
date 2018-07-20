@@ -149,6 +149,48 @@ class GraphSchema:
             node_type = None
         return node_type
 
+    def is_of_edge_type(self, edge, edge_type, index=False):
+        """
+        Tests if an edge is of the given edge type.
+
+        The edge is specified as a standard NetworkX multigraph edge
+        triple of (node_id_1, node_id_2, edge_key).
+
+        If the graph schema is undirected then the ordering of the nodes
+        of the edge type doesn't matter.
+
+        Args:
+            edge: The edge ID from the original graph as a triple.
+            edge_type: The type of the edge as a tuple or EdgeType triple.
+
+        Returns:
+            True if the edge is of the given type
+        """
+        try:
+            if edge in self.edge_type_map:
+                eindex = self.edge_type_map[edge]
+
+            elif not self.is_directed():
+                eindex = self.edge_type_map[(edge[1], edge[0], edge[2])]
+
+            else:
+                raise IndexError
+
+            et = self.edge_types[eindex]
+
+            if self.is_directed():
+                match = et == edge_type
+            else:
+                match = (et == edge_type) or (
+                    et == (edge_type[2], edge_type[1], edge_type[0])
+                )
+
+        except IndexError:
+            print("Warning: Edge '{}' not found in type map.".format(edge))
+            match = False
+
+        return match
+
     def get_edge_type(self, edge, index=False):
         """
         Return the type of the edge as a triple of
