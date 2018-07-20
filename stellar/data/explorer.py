@@ -16,6 +16,7 @@
 
 import networkx as nx
 import random
+from stellar.data.stellargraph import GraphSchema
 
 
 class GraphWalk(object):
@@ -23,8 +24,12 @@ class GraphWalk(object):
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph):
+    def __init__(self, graph, graph_schema=None):
         self.graph = graph
+        self.graph_schema = graph_schema
+
+    def neighbors(self, graph, node):
+        return list(nx.neighbors(graph, node))
 
     def run(self, **kwargs):
         """
@@ -69,7 +74,7 @@ class UniformRandomWalk(GraphWalk):
                 current_node = node
                 for _ in range(length):
                     walk.extend([current_node])
-                    neighbours = nx.neighbors(self.graph, current_node)
+                    neighbours = self.neighbors(self.graph, current_node)
                     if (
                         len(neighbours) == 0
                     ):  # for whatever reason this node has no neighbours so stop
@@ -172,16 +177,22 @@ class BiasedRandomWalk(GraphWalk):
         pass
 
 
-class MetaPathWalk(GraphWalk):
+class UniformRandomMetaPathWalk(GraphWalk):
     """
-    For heterogeneous graphs, it performs walks based on given metapaths.
+    For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
 
     def run(
-        self, nodes=None, n=None, length=None, metapaths=None, label="label", seed=None
+        self,
+        nodes=None,
+        n=None,
+        length=None,
+        metapaths=None,
+        node_type_attribute="label",
+        seed=None,
     ):
         """
-        Method for performing metapath-driven random walks on heterogeneous graphs.
+        Method for performing metapath-driven uniform random walks on heterogeneous graphs.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -190,14 +201,19 @@ class MetaPathWalk(GraphWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
             [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
             schemas of length 3 and 5 respectively.
-            label: <str> The node attribute name that stores the node's label
+            node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed; default is None
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks generated
         """
         self._check_parameter_values(
-            nodes=nodes, n=n, length=length, metapaths=metapaths, label=label, seed=seed
+            nodes=nodes,
+            n=n,
+            length=length,
+            metapaths=metapaths,
+            node_type_attribute=node_type_attribute,
+            seed=seed,
         )
 
         random.seed(seed)  # seed the random number generator
@@ -206,7 +222,7 @@ class MetaPathWalk(GraphWalk):
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.node[node]["label"]
+            label = self.graph.node[node][node_type_attribute]
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -215,12 +231,12 @@ class MetaPathWalk(GraphWalk):
 
             for metapath in filtered_metapaths:
                 # augment metapath to be length long
-                if (
-                    len(metapath) == 1
-                ):  # special case for random walks like in a homogeneous graphs
-                    metapath = metapath * length
-                else:
-                    metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
+                # if (
+                #     len(metapath) == 1
+                # ):  # special case for random walks like in a homogeneous graphs
+                #     metapath = metapath * length
+                # else:
+                metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
                 for _ in range(n):
                     walk = []  # holds the walk data for this walk; first node is the starting node
                     current_node = node
@@ -232,7 +248,7 @@ class MetaPathWalk(GraphWalk):
                         neighbours = [
                             node
                             for node in neighbours
-                            if self.graph.node[node]["label"] == metapath[d]
+                            if self.graph.node[node][node_type_attribute] == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
@@ -254,7 +270,9 @@ class MetaPathWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, length, metapaths, label, seed):
+    def _check_parameter_values(
+        self, nodes, n, length, metapaths, node_type_attribute, seed
+    ):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -266,6 +284,7 @@ class MetaPathWalk(GraphWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
             [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
             schemas of length 3 and 5 respectively.
+            node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed
 
         """
@@ -328,9 +347,9 @@ class MetaPathWalk(GraphWalk):
                         type(self).__name__
                     )
                 )
-            if len(metapath) == 0:
+            if len(metapath) < 2:
                 raise ValueError(
-                    "({}) Each metapath must specify at least one node type".format(
+                    "({}) Each metapath must specify at least two node types".format(
                         type(self).__name__
                     )
                 )
@@ -342,11 +361,17 @@ class MetaPathWalk(GraphWalk):
                             type(self).__name__
                         )
                     )
+            if metapath[0] != metapath[-1]:
+                raise ValueError(
+                    "({} The first and last node type in a metapath should be the same.".format(
+                        type(self).__name__
+                    )
+                )
 
-        if type(label) != str:
+        if type(node_type_attribute) != str:
             raise ValueError(
                 "({}) The parameter label should be string type not {} as given".format(
-                    type(self).__name__, type(label).__name__
+                    type(self).__name__, type(node_type_label).__name__
                 )
             )
 
@@ -398,7 +423,7 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes=None, n=1, n_size=None):
+    def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
 
         Args:
@@ -408,14 +433,18 @@ class SampledBreadthFirstWalk(GraphWalk):
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk. Sampling of
             neighbours with replacement is always used regardless of the node degree and number of neighbours
             requested.
+            seed: <int> Random number generator seed; default is None
+
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        self._check_parameter_values(nodes=nodes, n=n, n_size=n_size)
+        self._check_parameter_values(nodes=nodes, n=n, n_size=n_size, seed=seed)
 
         walks = []
         d = len(n_size)  # depth of search
+
+        random.seed(seed)
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -435,7 +464,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     if (
                         depth <= d
                     ):  # consider the subgraph up to and including depth d from root node
-                        neighbours = nx.neighbors(self.graph, frontier[0])
+                        neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
                             # Oops, this node has no neighbours and it doesn't have a self link.
                             # We can't handle this so raise an exception.
@@ -455,7 +484,7 @@ class SampledBreadthFirstWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, n_size):
+    def _check_parameter_values(self, nodes, n, n_size, seed):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -465,6 +494,7 @@ class SampledBreadthFirstWalk(GraphWalk):
             given depth d.
             n: <int> Number of walks per node id.
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
+            seed: <int> Random number generator seed; default is None
 
         """
         if nodes is None:
@@ -525,6 +555,213 @@ class SampledBreadthFirstWalk(GraphWalk):
             if type(d) != int:
                 raise ValueError(
                     "({}) The neighbourhood size, n_size, must be list of integers.".format(
+                        type(self).__name__
+                    )
+                )
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+
+
+class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
+    """
+    Breadth First Walk for heterogeneous graphs that generates a sampled number of paths from a starting node.
+    It can be used to extract a random sub-graph starting from a set of initial nodes.
+    """
+
+    def run(self, nodes=None, n=1, n_size=None, graph_schema=None, seed=None):
+        """
+
+        Args:
+            nodes:  <list> A list of root node ids such that from each node n BFWs will be generated up to the
+            given depth d.
+            n: <int> Number of walks per node id.
+            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk. Sampling of
+            neighbours with replacement is always used regardless of the node degree and number of neighbours
+            requested.
+            graph_schema: <GraphSchema> If None then the graph schema is extracted from self.graph
+            seed: <int> Random number generator seed; default is None
+
+        Returns:
+            A list of lists such that each list element is a sequence of ids corresponding to a sampled Heterogeneous
+            BFW.
+        """
+        self._check_parameter_values(
+            nodes=nodes, n=n, n_size=n_size, graph_schema=graph_schema, seed=seed
+        )
+
+        if graph_schema is None:
+            if self.graph_schema is None:
+                self.graph_schema = self.graph.create_graph_schema(
+                    create_type_maps=True
+                )
+            graph_schema = self.graph_schema
+
+        walks = []
+        d = len(n_size)  # depth of search
+
+        random.seed(seed)
+
+        for node in nodes:  # iterate over root nodes
+            for _ in range(n):  # do n bounded breadth first walks from each root node
+                q = list()  # the queue of neighbours
+                walk = list()  # the list of nodes in the subgraph of node
+                q.extend(
+                    [(node, 0)]
+                )  # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                walk.append([node])  # add the root node
+                while len(q) > 0:
+                    # remove the top element in the queue and
+                    frontier = q.pop(
+                        0
+                    )  # index 0 pop the item from the front of the list
+                    depth = frontier[1] + 1  # the depth of the neighbouring nodes
+                    # walk.extend([frontier[0]])  # add to the walk
+                    if (
+                        depth <= d
+                    ):  # consider the subgraph up to and including depth d from root node
+                        current_node_type = graph_schema.get_node_type(frontier[0])
+                        current_edge_types = graph_schema.edge_types_for_node_type(
+                            current_node_type
+                        )
+                        neighbours = dict(self.graph.adj[frontier[0]])
+                        # print("sampling:", frontier[0], current_node_type)
+                        for et in current_edge_types:
+                            neigh_et = [
+                                n2
+                                for n2, nkeys in neighbours.items()
+                                for k in iter(nkeys)
+                                if graph_schema.is_of_edge_type(
+                                    (frontier[0], n2, k), et
+                                )
+                            ]
+                            samples = (
+                                random.choices(neigh_et, k=n_size[depth - 1])
+                                if len(neigh_et) > 0
+                                else []
+                            )
+                            # print("\t", et, neigh_et, samples)
+                            walk.append(samples)
+                            q.extend(
+                                [(sampled_node, depth) for sampled_node in samples]
+                            )
+
+                # finished i-th walk from node so add it to the list of walks as a list
+                walks.append(walk)
+
+        return walks
+
+    def _check_parameter_values(self, nodes, n, n_size, graph_schema, seed):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        Args:
+            nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
+            given depth d.
+            n: <int> Number of walks per node id.
+            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
+            graph_schema: <GraphSchema> None or a stellar graph schema object
+            seed: <int> Random number generator seed; default is None
+
+        """
+        if nodes is None:
+            raise ValueError(
+                "({}) A list of root node IDs was not provided (nodes parameter is None).".format(
+                    type(self).__name__
+                )
+            )
+        if type(nodes) != list:
+            raise ValueError(
+                "({}) The nodes parameter should be a list of node IDs.".format(
+                    type(self).__name__
+                )
+            )
+        if (
+            len(nodes) == 0
+        ):  # this is not an error but maybe a warning should be printed to inform the caller
+            print(
+                "WARNING: ({}) No root node IDs given. An empty list will be returned as a result.".format(
+                    type(self).__name__
+                )
+            )
+
+        if type(n) != int:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be integer type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be a positive integer.".format(
+                    type(self).__name__
+                )
+            )
+
+        if n_size is None:
+            raise ValueError(
+                "({}) The neighbourhood size, n_size, must be a list of integers not None.".format(
+                    type(self).__name__
+                )
+            )
+        if type(n_size) != list:
+            raise ValueError(
+                "({}) The neighbourhood size, n_size, must be a list of integers.".format(
+                    type(self).__name__
+                )
+            )
+
+        if len(n_size) == 0:
+            raise ValueError(
+                "({}) The neighbourhood size, n_size, should not be empty list.".format(
+                    type(self).__name__
+                )
+            )
+
+        for d in n_size:
+            if type(d) != int:
+                raise ValueError(
+                    "({}) The neighbourhood size, n_size, must be list of integers.".format(
+                        type(self).__name__
+                    )
+                )
+            if d < 0:
+                raise ValueError(
+                    "({}) n_sie should be positive integer or 0.".format(
+                        type(self).__name__
+                    )
+                )
+
+        if graph_schema is not None and type(graph_schema) is not GraphSchema:
+            raise ValueError(
+                "({}) The parameter graph_schema should be either None or of type GraphSchema.".format(
+                    type(self).__name__
+                )
+            )
+
+        if seed is not None:
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
                         type(self).__name__
                     )
                 )

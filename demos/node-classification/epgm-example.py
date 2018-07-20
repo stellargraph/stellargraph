@@ -4,7 +4,7 @@ Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
 Example usage:
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 50 50 -s 20 10 -e 20 -d 0.5 -r 0.01
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 20 20 -s 20 10 -e 20 -d 0.5 -r 0.02
 
 usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
@@ -91,6 +91,10 @@ def read_epgm_graph(
     )
     converted_attr = pred_attr.union([target_attribute])
 
+    # sets are unordered, so sort them to ensure reproducible order:
+    pred_attr = sorted(pred_attr)
+    converted_attr = sorted(converted_attr)
+
     # Enumerate attributes to give numerical index
     g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
 
@@ -110,13 +114,13 @@ def read_epgm_graph(
         target_value_function = lambda x: x
 
     elif target_type == "categorical":
-        g_nx.target_category_values = list(
+        g_nx.target_category_values = sorted(
             set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
         )
         target_value_function = lambda x: g_nx.target_category_values.index(x)
 
     elif target_type == "1hot":
-        g_nx.target_category_values = list(
+        g_nx.target_category_values = sorted(
             set([g_nx.node[n][target_attribute] for n in g_nx.nodes()])
         )
         target_value_function = lambda x: to_categorical(
@@ -186,8 +190,9 @@ def train(
         y=graph_nodes, p=20, test_size=1000
     )
     train_ids = [v[0] for v in train_nodes]
-    test_ids = list(G.nodes())
     val_ids = [v[0] for v in val_nodes]
+    test_ids = [v[0] for v in test_nodes]
+    all_ids = list(G.nodes())
 
     # Sampler chooses random sampled subgraph for each head node
     sampler = SampledBreadthFirstWalk(G)
@@ -196,17 +201,14 @@ def train(
     train_mapper = GraphSAGENodeMapper(
         G, train_ids, sampler, batch_size, num_samples, target_id="target", name="train"
     )
+    val_mapper = GraphSAGENodeMapper(
+        G, val_ids, sampler, batch_size, num_samples, target_id="target", name="val"
+    )
     test_mapper = GraphSAGENodeMapper(
         G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
     )
-    val_mapper = GraphSAGENodeMapper(
-        G,
-        val_ids,
-        sampler,
-        batch_size,
-        num_samples,
-        target_id="target",
-        name="validate",
+    all_mapper = GraphSAGENodeMapper(
+        G, all_ids, sampler, batch_size, num_samples, target_id="target", name="all"
     )
 
     # GraphSAGE model
@@ -248,6 +250,11 @@ def train(
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
+    all_nodes_metrics = model.evaluate_generator(all_mapper)
+    print("\nAll-node Evaluation:")
+    for name, val in zip(model.metrics_names, all_nodes_metrics):
+        print("\t{}: {:0.4f}".format(name, val))
+
     # Save model
     str_numsamp = "_".join([str(x) for x in num_samples])
     str_layer = "_".join([str(x) for x in layer_size])
@@ -282,15 +289,15 @@ def test(G, model_file: AnyStr, batch_size: int):
     all_ids = list(G.nodes())
 
     # Mapper feeds data from sampled subgraph to GraphSAGE model
-    test_mapper = GraphSAGENodeMapper(
+    all_mapper = GraphSAGENodeMapper(
         G, all_ids, sampler, batch_size, num_samples, target_id="target", name="test"
     )
 
     # Evaluate and print metrics
-    test_metrics = model.evaluate_generator(test_mapper)
+    all_metrics = model.evaluate_generator(all_mapper)
 
     print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, test_metrics):
+    for name, val in zip(model.metrics_names, all_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
 

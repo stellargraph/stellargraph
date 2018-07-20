@@ -53,7 +53,8 @@ def read_graph(graph_file, dataset_name, directed=False, weighted=False):
         else:
             # This is the correct way to set the edge weight in a MultiGraph.
             edge_weights = {e: 1 for e in g.edges(keys=True)}
-            nx.set_edge_attributes(g, "weight", edge_weights)
+            nx.set_edge_attributes(g, name="weight", values=edge_weights)
+
     except:  # otherwise, assume arg.input points to an edgelist file
         if weighted:
             g = nx.read_edgelist(
