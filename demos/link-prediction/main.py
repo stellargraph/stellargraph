@@ -54,7 +54,6 @@ def parse_args():
     Parses the command line arguments.
 
     Returns:
-
     """
     parser = argparse.ArgumentParser(
         description="Run link prediction on homogeneous and heterogeneous graphs."
@@ -331,7 +330,6 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
 
     return scores
 
-
 def train_homogeneous_graph(
     g_train,
     g_test,
@@ -442,7 +440,6 @@ def train_heterogeneous_graph(
     for score in scores:
         print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
-
 
 if __name__ == "__main__":
     args = parse_args()
