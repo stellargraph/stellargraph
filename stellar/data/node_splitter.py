@@ -147,11 +147,11 @@ class NodeSplitter(object):
                 )
 
         if method == "count":
-            if p <= 0 or type(p) != int:
+            if type(p) != int or p <= 0:
                 raise ValueError(
                     "({}) p should be positive integer".format(type(self).__name__)
                 )
-            if test_size is None or test_size <= 0 or type(test_size) != int:
+            if test_size is None or type(test_size) != int or test_size <= 0:
                 raise ValueError(
                     "({}) test_size must be positive integer".format(
                         type(self).__name__
@@ -167,13 +167,13 @@ class NodeSplitter(object):
                 )
 
         elif method == "absolute":
-            if test_size is None or test_size <= 0 or type(test_size) != int:
+            if test_size is None or type(test_size) != int or test_size <= 0:
                 raise ValueError(
                     "({}) test_size should be positive integer".format(
                         type(self).__name__
                     )
                 )
-            if train_size is None or train_size <= 0 or type(train_size) != int:
+            if train_size is None or type(train_size) != int or train_size <= 0:
                 raise ValueError(
                     "({}) train_size should be positive integer".format(
                         type(self).__name__
@@ -230,8 +230,9 @@ class NodeSplitter(object):
         if method == "count":
             return self._split_data(y, p, test_size)
         elif method == "percent":
-            train_size = int(y.shape[0] * p)
-            test_size = y.shape[0] - train_size
+            n_unlabelled_points = np.sum(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
+            train_size = int((y.shape[0]-n_unlabelled_points) * p)
+            test_size = y.shape[0] - n_unlabelled_points - train_size
             return self._split_data_absolute(
                 y=y, test_size=test_size, train_size=train_size
             )
