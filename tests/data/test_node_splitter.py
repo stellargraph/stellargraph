@@ -110,69 +110,83 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
                 method=method,
                 test_size=test_size,
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
                 p=-1,
                 method=method,
                 test_size=test_size,  # this will raise a ValueError exception
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
                 p=1.2,  # this will raise a ValueError exception
                 method=method,
                 test_size=test_size,
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
                 p=0,
                 method=method,
                 test_size=test_size,  # this will raise a ValueError exception
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, p=nc, method=method, test_size=0
             )  # this will raise a ValueError exception
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, p=nc, method=method, test_size=-100
             )  # this will raise a ValueError exception
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, p=nc, method=method, test_size=99.10101
             )  # this will raise a ValueError exception
-
-            # check parameter values for 'percent' method
-            method = "percent"
+        # check parameter values for 'percent' method
+        method = "percent"
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, p=1.0, method=method  # must be less than 1.
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
-                y=y, p=0.0, method=method  # must be greater than 0.
+                y=y, p=-0.5, method=method  # must be greater than or equalt 0.
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, p=10, method=method  # must be float in range (0, 1)
             )
 
-            # check parameter values for 'absolute' method
-            method = "absolute"
+        # check parameter values for 'absolute' method
+        method = "absolute"
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, method=method, p=0.25
             )  # must specify train_size and test_size parameters, p is not used
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, method=method, test_size=0, train_size=1000
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(y=y, method=method, test_size=99, train_size=0)
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y, method=method, test_size=0.25, train_size=0.75
             )  # test_size and train_size should be integers not percentages
 
-            # test invalid method
+        # test invalid method
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
                 method="other",  # valid values are 'percent', 'count', and 'absolute'
                 p=nc,
                 test_size=test_size,
             )
-            # testing seed value
+        # testing seed value
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(y=y, p=nc, test_size=100, seed=-1003)
-
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(y=y, p=nc, test_size=100, seed=101.13)
 
     def test_split_data_epgm(self):
