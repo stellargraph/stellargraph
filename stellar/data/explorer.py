@@ -459,13 +459,6 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
                             break
-                            # # Oops, this node has no neighbours and it doesn't have a self link.
-                            # # We can't handle this so raise an exception.
-                            # raise ValueError(
-                            #     "({}) Node with id {} has no neighbours and no self link. I don't know what to do!".format(
-                            #         type(self).__name__, frontier[0]
-                            #     )
-                            # )
                         else:  # sample with replacement
                             neighbours = random.choices(neighbours, k=n_size[depth - 1])
 
@@ -511,15 +504,16 @@ class SampledBreadthFirstWalk(GraphWalk):
                 )
             )
 
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
         if type(n) != int:
             raise ValueError(
                 "({}) The number of walks per root node, n, should be integer type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be a positive integer.".format(
                     type(self).__name__
                 )
             )
@@ -547,21 +541,27 @@ class SampledBreadthFirstWalk(GraphWalk):
         for d in n_size:
             if type(d) != int:
                 raise ValueError(
-                    "({}) The neighbourhood size, n_size, must be list of integers.".format(
+                    "({}) The neighbourhood size, n_size, must be list of positive integers or 0.".format(
+                        type(self).__name__
+                    )
+                )
+            if d < 0:
+                raise ValueError(
+                    "({}) The neighbourhood size, n_size, must be list of positive integers or 0.".format(
                         type(self).__name__
                     )
                 )
 
         if seed is not None:
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
             if type(seed) != int:
                 raise ValueError(
                     "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
                         type(self).__name__
                     )
                 )
