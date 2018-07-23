@@ -458,13 +458,14 @@ class SampledBreadthFirstWalk(GraphWalk):
                     ):  # consider the subgraph up to and including depth d from root node
                         neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
-                            # Oops, this node has no neighbours and it doesn't have a self link.
-                            # We can't handle this so raise an exception.
-                            raise ValueError(
-                                "({}) Node with id {} has no neighbours and no self link. I don't know what to do!".format(
-                                    type(self).__name__, frontier[0]
-                                )
-                            )
+                            break
+                            # # Oops, this node has no neighbours and it doesn't have a self link.
+                            # # We can't handle this so raise an exception.
+                            # raise ValueError(
+                            #     "({}) Node with id {} has no neighbours and no self link. I don't know what to do!".format(
+                            #         type(self).__name__, frontier[0]
+                            #     )
+                            # )
                         else:  # sample with replacement
                             neighbours = random.choices(neighbours, k=n_size[depth - 1])
 
