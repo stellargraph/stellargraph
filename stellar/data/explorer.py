@@ -195,30 +195,30 @@ class BiasedRandomWalk(GraphWalk):
             for walk_number in range(n):  # generate n walks per root node
                 walk = list()
                 current_node = node
-                previous_node = node
-                previous_node_neighbours = self.neighbors(self.graph, previous_node)
-                for _ in range(length):
-                    walk.extend([current_node])
-                    # the neighbours of the current node
-                    neighbours = self.neighbors(self.graph, current_node)
-                    if (
-                        len(neighbours) == 0
-                    ):  # for whatever reason this node has no neighbours so stop
-                        break
-                    else:
-                        if len(walk) == 1:
-                            # this is the root node so there is no previous node. The next node
-                            # is sampled with equal probability from all the neighbours
-                            previous_node = current_node
-                            previous_node_neighbours = neighbours
-                            current_node = neighbours[
-                                np.random.choice(a=len(neighbours))
-                            ]
+                # add the current node to the walk
+                walk.extend([current_node])
+                # the neighbours of the current node
+                # for isolated nodes the length of neighbours will be 0; we will test for this later
+                neighbours = self.neighbors(self.graph, current_node)
+                previous_node = current_node
+                previous_node_neighbours = neighbours
+                if len(neighbours) > 0:  # special check for isolated root nodes
+                    # this is the root node so there is no previous node. The next node
+                    # is sampled with equal probability from all the neighbours
+                    current_node = neighbours[np.random.choice(a=len(neighbours))]
+                    for _ in range(length - 1):
+                        walk.extend([current_node])
+                        # the neighbours of the current node
+                        neighbours = self.neighbors(self.graph, current_node)
+                        if (
+                            len(neighbours) == 0
+                        ):  # for whatever reason this node has no neighbours so stop
+                            break
                         else:
                             # determine the sampling probabilities for all the nodes
                             common_neighbours = set(neighbours).intersection(
                                 previous_node_neighbours
-                            )  # nodes that are in commone between the previous and current nodes; these get
+                            )  # nodes that are in common between the previous and current nodes; these get
                             # 1. transition probabilities
                             probs = [iq] * len(neighbours)
                             for i, nn in enumerate(neighbours):
@@ -230,10 +230,10 @@ class BiasedRandomWalk(GraphWalk):
                             total_prob = sum(probs)
                             probs = [m / total_prob for m in probs]
                             previous_node = current_node
+                            # select the next node based on the calculated transition probabilities
                             current_node = neighbours[
                                 np.random.choice(a=len(neighbours), p=probs)
                             ]
-
                 walks.append(walk)
 
         return walks
