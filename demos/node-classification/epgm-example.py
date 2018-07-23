@@ -192,23 +192,20 @@ def train(
     train_ids = [v[0] for v in train_nodes]
     val_ids = [v[0] for v in val_nodes]
     test_ids = [v[0] for v in test_nodes]
-    all_ids = list(G.nodes())
-
-    # Sampler chooses random sampled subgraph for each head node
-    sampler = SampledBreadthFirstWalk(G)
+    all_ids = list(G)
 
     # Mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
-        G, train_ids, sampler, batch_size, num_samples, target_id="target", name="train"
+        G, train_ids, batch_size, num_samples, target_id="target", name="train"
     )
     val_mapper = GraphSAGENodeMapper(
-        G, val_ids, sampler, batch_size, num_samples, target_id="target", name="val"
+        G, val_ids, batch_size, num_samples, target_id="target", name="val"
     )
     test_mapper = GraphSAGENodeMapper(
-        G, test_ids, sampler, batch_size, num_samples, target_id="target", name="test"
+        G, test_ids, batch_size, num_samples, target_id="target", name="test"
     )
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, sampler, batch_size, num_samples, target_id="target", name="all"
+        G, all_ids, batch_size, num_samples, target_id="target", name="all"
     )
 
     # GraphSAGE model
@@ -284,13 +281,9 @@ def test(G, model_file: AnyStr, batch_size: int):
         for ii in range(len(model.input_shape) - 1)
     ]
 
-    # Sampler chooses random sampled subgraph for each head node
-    sampler = SampledBreadthFirstWalk(G)
-    all_ids = list(G.nodes())
-
-    # Mapper feeds data from sampled subgraph to GraphSAGE model
+    # Mapper for all nodes to feed data to GraphSAGE model
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, sampler, batch_size, num_samples, target_id="target", name="test"
+        G, list(G), batch_size, num_samples, target_id="target", name="test"
     )
 
     # Evaluate and print metrics
