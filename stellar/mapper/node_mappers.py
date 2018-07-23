@@ -50,7 +50,6 @@ class GraphSAGENodeMapper(Sequence):
         self,
         G: StellarGraphBase,
         ids: List[Any],
-        sampler: Callable[[List[Any]], List[List[Any]]],
         batch_size: int,
         num_samples: List[int],
         target_id: AnyStr = None,
@@ -58,7 +57,6 @@ class GraphSAGENodeMapper(Sequence):
         name: AnyStr = None,
     ):
         self.G = G
-        self.sampler = sampler
         self.num_samples = num_samples
         self.ids = list(ids)
         self.data_size = len(self.ids)
@@ -66,11 +64,8 @@ class GraphSAGENodeMapper(Sequence):
         self.name = name
         self.label_id = target_id
 
-        # Check correct graph sampler is used
-        if not isinstance(sampler, SampledBreadthFirstWalk):
-            raise TypeError(
-                "Sampler must be an instance of from SampledBreadthFirstWalk"
-            )
+        # Create sampler for GraphSAGE
+        self.sampler = SampledBreadthFirstWalk(G)
 
         # Ensure features are available:
         nodes_have_features = all(
