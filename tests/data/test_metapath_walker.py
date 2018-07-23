@@ -83,23 +83,34 @@ class TestMetaPathWalk(object):
         seed = None
         metapaths = [["n", "s", "n"]]
 
+        # nodes should be a list of node ids even for a single node
         with pytest.raises(ValueError):
-            # nodes should be a list of node ids even for a single node
             mrw.run(nodes=None, n=n, length=length, metapaths=metapaths, seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=0, n=n, length=length, metapaths=metapaths, seed=seed)
-            # only list is acceptable type for nodes
+        # only list is acceptable type for nodes
+        with pytest.raises(ValueError):
             mrw.run(nodes=(1, 2), n=n, length=length, metapaths=metapaths, seed=seed)
-            # n has to be positive integer
+        # n has to be positive integer
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=-1, length=length, metapaths=metapaths, seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=11.4, length=length, metapaths=metapaths, seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=0, length=length, metapaths=metapaths, seed=seed)
-            # length has to be positive integer
+        # length has to be positive integer
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=-3, metapaths=metapaths, seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=0, metapaths=metapaths, seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=4.6, metapaths=metapaths, seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=1.0000001, metapaths=metapaths, seed=seed)
-            # metapaths have to start and end with the same node type
+        # metapaths have to start and end with the same node type
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=[["s", "n"]], seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(
                 nodes=nodes,
                 n=n,
@@ -107,14 +118,19 @@ class TestMetaPathWalk(object):
                 metapaths=[["s", "n", "s"], ["n", "s"]],
                 seed=seed,
             )
-            # metapaths have to have minimum length of two
+        # metapaths have to have minimum length of two
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=[["s"]], seed=seed)
-            # metapaths has to be a list of lists of strings denoting the node labels
+        # metapaths has to be a list of lists of strings denoting the node labels
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=["n", "s"], seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=[[1, 2]], seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(
                 nodes=nodes, n=n, length=length, metapaths=[["n", "s"], []], seed=seed
             )
+        with pytest.raises(ValueError):
             mrw.run(
                 nodes=nodes,
                 n=n,
@@ -122,7 +138,9 @@ class TestMetaPathWalk(object):
                 metapaths=[["n", "s"], ["s", 1]],
                 seed=seed,
             )
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=[("n", "s")], seed=seed)
+        with pytest.raises(ValueError):
             mrw.run(
                 nodes=nodes,
                 n=n,
@@ -130,8 +148,10 @@ class TestMetaPathWalk(object):
                 metapaths=(["n", "s"], ["s", "n", "s"]),
                 seed=seed,
             )
-            # seed has to be integer or None
+        # seed has to be integer or None
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=-1)
+        with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=1000.345)
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method

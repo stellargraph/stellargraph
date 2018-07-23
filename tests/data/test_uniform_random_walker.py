@@ -68,33 +68,47 @@ class TestUniformRandomWalk(object):
         length = 2
         seed = None
 
+        # nodes should be a list of node ids even for a single node
         with pytest.raises(ValueError):
-            # nodes should be a list of node ids even for a single node
             urw.run(nodes=None, n=n, length=length, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(
                 nodes="0", n=n, length=length, seed=seed
             )  # can't just pass a node id, need list, e.g., ["0"]
+        with pytest.raises(ValueError):
             urw.run(
                 nodes=(1, 2), n=n, length=length, seed=seed
             )  # tuple is not accepted, only list
-
-            # n has to be positive integer
+        # n has to be positive integer
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=0, length=length, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=-121, length=length, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=21.4, length=length, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=-0.5, length=length, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=0.0001, length=length, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n="2", length=length, seed=seed)
 
-            # length has to be positive integer
+        # length has to be positive integer
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length=0, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length=-5, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length=11.9, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length=-9.9, seed=seed)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length="10", seed=seed)
 
-            # seed has to be None, 0,  or positive integer
+        # seed has to be None, 0,  or positive integer
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length=length, seed=-1)
+        with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=n, length=length, seed=1010.8)
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method

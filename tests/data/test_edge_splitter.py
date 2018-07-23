@@ -211,6 +211,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 attribute_is_datetime=True,
                 edge_attribute_threshold="01/01/2008",
             )
+        with pytest.raises(KeyError):
             # This call will raise and exception because edges of type 'towards' don't have a 'date' attribute
             self.es_obj.train_test_split(
                 p=p,
@@ -242,6 +243,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 attribute_is_datetime=True,
                 edge_attribute_threshold="01/2008",
             )
+        with pytest.raises(ValueError):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
@@ -250,7 +252,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 attribute_is_datetime=True,
                 edge_attribute_threshold="Jan 2005",
             )
-
+        with pytest.raises(ValueError):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
@@ -259,6 +261,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 attribute_is_datetime=True,
                 edge_attribute_threshold="01-01-2000",
             )
+        with pytest.raises(ValueError):
             # month is out of range; no such thing as a 14th month in a year
             self.es_obj.train_test_split(
                 p=p,
@@ -268,7 +271,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 attribute_is_datetime=True,
                 edge_attribute_threshold="01/14/2008",
             )
-
+        with pytest.raises(ValueError):
             # day is out of range; no such thing as a 32nd day in October
             self.es_obj.train_test_split(
                 p=p,
