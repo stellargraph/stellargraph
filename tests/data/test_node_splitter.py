@@ -455,6 +455,76 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             ),
         )
 
+        # remove points with UNKNOWN_TARGET_ATTRIBUTE
+        y[80:, 1] = "2"
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (75, 2),
+            "Train set size is incorrect, expected (75, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (25, 2),
+            "Test set size is incorrect, expected (25, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (0, 2),
+            "Unlabeled set size is incorrect, expected (0, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.33
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (33, 2),
+            "Train set size is incorrect, expected (33, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (67, 2),
+            "Test set siz   e is incorrect, expected (67, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (0, 2),
+            "Unlabeled set size is incorrect, expected (0, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
     def test_load_lab(self):
 
         y = self.ds_obj.load_data(
