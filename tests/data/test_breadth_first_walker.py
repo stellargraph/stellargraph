@@ -136,7 +136,6 @@ class TestBreadthFirstWalk(object):
         n = 1
         n_size = [0]
 
-        # all should raise ValueError
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         assert len(subgraphs[0]) == 1  # all elements should the same node
@@ -163,7 +162,6 @@ class TestBreadthFirstWalk(object):
         n = 3
         n_size = [0]
 
-        # all should raise ValueError
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         for subgraph in subgraphs:
