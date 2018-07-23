@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import unittest
+import uuid
 import os
 import numpy as np
 from stellar.data.node_splitter import NodeSplitter
@@ -333,6 +334,126 @@ class TestEPGMIOHomogenous(unittest.TestCase):
     def tearDown(self):
         # delete the contents of the output directories
         rmtree(self.base_output_directory)
+
+    def create_toy_dataset(self):
+        # 100 node ids with 40 class 0, 40 class 1, and 20 unknown '-1'
+        node_ids = [uuid.uuid4() for i in np.arange(100)]
+        labels = ["-1"] * 100
+        labels[0:40] = [0] * 40
+        labels[40:80] = [1] * 40
+
+        y = np.transpose(np.vstack((node_ids, labels)))
+
+        return y
+
+    def test_split_with_percent(self):
+        method = "percent"
+        p = 0.5
+
+        y = self.create_toy_dataset()
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (40, 2),
+            "Train set size is incorrect, expected (40, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (40, 2),
+            "Test set size is incorrect, expected (40, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.33
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (26, 2),
+            "Train set size is incorrect, expected (26, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (54, 2),
+            "Test set size is incorrect, expected (54, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.75
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (60, 2),
+            "Train set size is incorrect, expected (60, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (20, 2),
+            "Test set size is incorrect, expected (20, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
 
     def test_load_lab(self):
 
