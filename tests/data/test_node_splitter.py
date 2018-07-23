@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import unittest
+import uuid
 import os
 import numpy as np
 from stellar.data.node_splitter import NodeSplitter
@@ -92,6 +93,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
     def test_train_test_split_invalid_parameters(self):
         nc = 10
         test_size = 100
+        method = "count"
 
         # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
         # I have to load the data again.
@@ -106,44 +108,87 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
             self.ds_obj.train_test_split(
                 y=None,  # this will raise a ValueError exception
                 p=nc,
+                method=method,
                 test_size=test_size,
             )
-
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
-                y=y, p=-1, test_size=test_size  # this will raise a ValueError exception
+                y=y,
+                p=-1,
+                method=method,
+                test_size=test_size,  # this will raise a ValueError exception
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
                 p=1.2,  # this will raise a ValueError exception
+                method=method,
                 test_size=test_size,
             )
-            self.ds_obj.train_test_split(
-                y=y, p=0, test_size=test_size  # this will raise a ValueError exception
-            )
-
-            self.ds_obj.train_test_split(
-                y=y, p=nc, test_size=0
-            )  # this will raise a ValueError exception
-            self.ds_obj.train_test_split(
-                y=y, p=nc, test_size=-100
-            )  # this will raise a ValueError exception
-            self.ds_obj.train_test_split(
-                y=y, p=nc, test_size=99.10101
-            )  # this will raise a ValueError exception
-
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
-                method="percent",  # this will raise a ValueError exception; only 'count' allowed
+                p=0,
+                method=method,
+                test_size=test_size,  # this will raise a ValueError exception
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=nc, method=method, test_size=0
+            )  # this will raise a ValueError exception
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=nc, method=method, test_size=-100
+            )  # this will raise a ValueError exception
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=nc, method=method, test_size=99.10101
+            )  # this will raise a ValueError exception
+        # check parameter values for 'percent' method
+        method = "percent"
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=1.0, method=method  # must be less than 1.
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=-0.5, method=method  # must be greater than or equalt 0.
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=10, method=method  # must be float in range (0, 1)
+            )
+
+        # check parameter values for 'absolute' method
+        method = "absolute"
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, method=method, p=0.25
+            )  # must specify train_size and test_size parameters, p is not used
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, method=method, test_size=0, train_size=1000
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=y, method=method, test_size=99, train_size=0)
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, method=method, test_size=0.25, train_size=0.75
+            )  # test_size and train_size should be integers not percentages
+
+        # test invalid method
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y,
+                method="other",  # valid values are 'percent', 'count', and 'absolute'
                 p=nc,
                 test_size=test_size,
             )
-
-            self.ds_obj.train_test_split(
-                y=y,
-                method="any",  # this will raise a ValueError exception
-                p=nc,
-                test_size=test_size,
-            )
+        # testing seed value
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=y, p=nc, test_size=100, seed=-1003)
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=y, p=nc, test_size=100, seed=101.13)
 
     def test_split_data_epgm(self):
 
@@ -290,6 +335,196 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         # delete the contents of the output directories
         rmtree(self.base_output_directory)
 
+    def create_toy_dataset(self):
+        # 100 node ids with 40 class 0, 40 class 1, and 20 unknown '-1'
+        node_ids = [uuid.uuid4() for i in np.arange(100)]
+        labels = ["-1"] * 100
+        labels[0:40] = [0] * 40
+        labels[40:80] = [1] * 40
+
+        y = np.transpose(np.vstack((node_ids, labels)))
+
+        return y
+
+    def test_split_with_percent(self):
+        method = "percent"
+        p = 0.5
+
+        y = self.create_toy_dataset()
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (40, 2),
+            "Train set size is incorrect, expected (40, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (40, 2),
+            "Test set size is incorrect, expected (40, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.33
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (26, 2),
+            "Train set size is incorrect, expected (26, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (54, 2),
+            "Test set size is incorrect, expected (54, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.75
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (60, 2),
+            "Train set size is incorrect, expected (60, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (20, 2),
+            "Test set size is incorrect, expected (20, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        # remove points with UNKNOWN_TARGET_ATTRIBUTE
+        y[80:, 1] = "2"
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (75, 2),
+            "Train set size is incorrect, expected (75, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (25, 2),
+            "Test set size is incorrect, expected (25, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (0, 2),
+            "Unlabeled set size is incorrect, expected (0, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.33
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (33, 2),
+            "Train set size is incorrect, expected (33, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (67, 2),
+            "Test set siz   e is incorrect, expected (67, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (0, 2),
+            "Unlabeled set size is incorrect, expected (0, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
     def test_load_lab(self):
 
         y = self.ds_obj.load_data(
@@ -308,7 +543,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
         nc = 20
         test_size = 100
-
+        method = "count"
         # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
         # I have to load the data again.
         y = self.ds_obj.load_data(
@@ -321,7 +556,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         number_of_unique_labels = len(np.unique(y[:, 1]))
 
         validation_size = y.shape[0] - test_size - nc * number_of_unique_labels
-
+        #
+        # Test using method 'count'
+        #
         self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
             y=y, p=nc, test_size=test_size
         )
@@ -346,6 +583,87 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             validation_size,
             "Train dataset has wrong size {:d} vs expected {:d}".format(
                 self.y_val.shape[0], validation_size
+            ),
+        )
+        #
+        # Test using method 'percent'
+        #
+        p = 0.75
+        method = "percent"
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(len(self.y_val), 0, "Validation set should be empty.")
+        self.assertEqual(
+            y.shape[0],
+            self.y_train.shape[0] + self.y_test.shape[0] + self.y_unlabeled.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0],
+                y.shape[0],
+            ),
+        )
+
+        self.assertEqual(
+            self.y_train.shape[0],
+            int(y.shape[0] * p),
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], int(y.shape[0] * p)
+            ),
+        )
+        self.assertEqual(
+            self.y_test.shape[0],
+            int(y.shape[0] * (1. - p)),
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], int(y.shape[0] * (1. - p))
+            ),
+        )
+
+        #
+        # Test using method 'absolute'
+        #
+        method = "absolute"
+        train_size = 1000
+        test_size = 98
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, method=method, test_size=test_size, train_size=train_size
+        )
+        validation_size = y.shape[0] - (
+            train_size + test_size + self.y_unlabeled.shape[0]
+        )
+        self.assertEqual(
+            self.y_val.shape[0], validation_size, "Validation set has incorrect size."
+        )
+        self.assertEqual(
+            y.shape[0],
+            self.y_train.shape[0]
+            + self.y_test.shape[0]
+            + self.y_unlabeled.shape[0]
+            + self.y_val.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0]
+                + self.y_val.shape[0],
+                y.shape[0],
+            ),
+        )
+        self.assertEqual(
+            self.y_train.shape[0],
+            train_size,
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], train_size
+            ),
+        )
+        self.assertEqual(
+            self.y_test.shape[0],
+            test_size,
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], test_size
             ),
         )
 
@@ -470,6 +788,86 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             validation_size,
             "Train dataset has wrong size {:d} vs expected {:d}".format(
                 self.y_val.shape[0], validation_size
+            ),
+        )
+        #
+        # Test using method 'percent'
+        #
+        p = 0.5
+        method = "percent"
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(len(self.y_val), 0, "Validation set should be empty.")
+        self.assertEqual(
+            y.shape[0],
+            self.y_train.shape[0] + self.y_test.shape[0] + self.y_unlabeled.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0],
+                y.shape[0],
+            ),
+        )
+
+        self.assertEqual(
+            self.y_train.shape[0],
+            int(y.shape[0] * p),
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], int(y.shape[0] * p)
+            ),
+        )
+        self.assertEqual(
+            self.y_test.shape[0],
+            int(y.shape[0] * (1. - p)),
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], int(y.shape[0] * (1. - p))
+            ),
+        )
+        #
+        # Test using method 'absolute'
+        #
+        method = "absolute"
+        train_size = 299
+        test_size = 101
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, method=method, test_size=test_size, train_size=train_size
+        )
+        validation_size = y.shape[0] - (
+            train_size + test_size + self.y_unlabeled.shape[0]
+        )
+        self.assertEqual(
+            self.y_val.shape[0], validation_size, "Validation set has incorrect size."
+        )
+        self.assertEqual(
+            y.shape[0],
+            self.y_train.shape[0]
+            + self.y_test.shape[0]
+            + self.y_unlabeled.shape[0]
+            + self.y_val.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0]
+                + self.y_val.shape[0],
+                y.shape[0],
+            ),
+        )
+        self.assertEqual(
+            self.y_train.shape[0],
+            train_size,
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], train_size
+            ),
+        )
+        self.assertEqual(
+            self.y_test.shape[0],
+            test_size,
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], test_size
             ),
         )
 

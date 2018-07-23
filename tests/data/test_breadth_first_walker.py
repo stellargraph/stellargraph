@@ -89,22 +89,37 @@ class TestBreadthFirstWalk(object):
         with pytest.raises(ValueError):
             # nodes should be a list of node ids even for a single node
             bfw.run(nodes=None, n=n, n_size=n_size)
+        with pytest.raises(ValueError):
             bfw.run(nodes=0, n=n, n_size=n_size)
+        with pytest.raises(ValueError):
             # only list is acceptable type for nodes
             bfw.run(nodes=(1, 2), n=n, n_size=n_size)
-            # n has to be positive integer
+
+        # n has to be positive integer
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=-1, n_size=n_size)
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=10.1, n_size=n_size)
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=0, n_size=n_size)
-            # n_size has to be list of positive integers
+
+        # n_size has to be list of positive integers
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=0)
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=[-5])
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=-1, n_size=[2.4])
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=(1, 2))
-            # seed must be positive integer or 0
+        # seed must be positive integer or 0
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=n_size, seed=-1235)
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=n_size, seed=10.987665)
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=n_size, seed=-982.4746)
+        with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=n_size, seed="don't be random")
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
@@ -121,18 +136,60 @@ class TestBreadthFirstWalk(object):
         n = 1
         n_size = [0]
 
-        # all should raise ValueError
-        with pytest.raises(ValueError):
-            subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert subgraphs[0][0] == "loner"
 
-            n_size = [1]
-            subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        n_size = [1]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert subgraphs[0][0] == "loner"
 
-            n_size = [2, 2]
-            subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        n_size = [2, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert subgraphs[0][0] == "loner"
 
-            n_size = [3, 2]
-            subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        n_size = [3, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert subgraphs[0][0] == "loner"
+
+        n = 3
+        n_size = [0]
+
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == 1  # root node only
+            assert subgraph[0] == "loner"
+
+        n_size = [1]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == 1  # root node only
+            assert subgraph[0] == "loner"
+
+        n = 99
+        n_size = [2, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == 1  # root node only
+            assert subgraph[0] == "loner"
+
+        n = 17
+        n_size = [3, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == 1  # root node only
+            assert subgraph[0] == "loner"
 
     def test_walk_generation_single_root_node_self_loner(self):
         g = create_test_graph()

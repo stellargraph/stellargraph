@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import networkx as nx
+import numpy as np
 import random
 from stellar.data.stellargraph import GraphSchema
 
@@ -29,6 +30,9 @@ class GraphWalk(object):
         self.graph_schema = graph_schema
 
     def neighbors(self, graph, node):
+        if node not in graph:
+            print("node {} not in graph".format(node))
+            print("Graph nodes {}".format(graph.nodes()))
         return list(nx.neighbors(graph, node))
 
     def run(self, **kwargs):
@@ -160,21 +164,169 @@ class UniformRandomWalk(GraphWalk):
 
 class BiasedRandomWalk(GraphWalk):
     """
-    Performs biased second order random walks (like Node2Vec random walks)
+    Performs biased second order random walks (like those used in Node2Vec algorithm
+    https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def run(self, **kwargs):
+    def run(self, nodes=None, n=None, p=1., q=1., length=None, seed=None):
         """
 
-        :param p: p parameter in Node2Vec
-        :param q: q parameter in Node2Vec
-        :param n: Number of random walks
-        :param l: Length of random walks
-        :param e_types: List of edge types that the random walk is allowed to traverse. Set to None for homogeneous
-        graphs with a single edge type.
-        :return:
+        Args:
+            nodes: <list> The root nodes as a list of node IDs
+            n: <int> Total number of random walks per root node
+            p: <float> Defines probability, 1/p, of returning to source node
+            q: <float> Defines probability, 1/q, for moving to a node away from the source node
+            length: <int> Maximum length of each random walk
+            seed: <int> Random number generator seed; default is None
+
+        Returns:
+            <list> List of lists of nodes ids for each of the random walks
+
         """
-        pass
+        self._check_parameter_values(
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed
+        )
+
+        np.random.seed(seed)  # seed the random number generator
+
+        ip = 1. / p
+        iq = 1. / q
+
+        walks = []
+        for node in nodes:  # iterate over root nodes
+            for walk_number in range(n):  # generate n walks per root node
+                walk = list()
+                current_node = node
+                # add the current node to the walk
+                walk.extend([current_node])
+                # the neighbours of the current node
+                # for isolated nodes the length of neighbours will be 0; we will test for this later
+                neighbours = self.neighbors(self.graph, current_node)
+                previous_node = current_node
+                previous_node_neighbours = neighbours
+                if len(neighbours) > 0:  # special check for isolated root nodes
+                    # this is the root node so there is no previous node. The next node
+                    # is sampled with equal probability from all the neighbours
+                    current_node = neighbours[np.random.choice(a=len(neighbours))]
+                    for _ in range(length - 1):
+                        walk.extend([current_node])
+                        # the neighbours of the current node
+                        neighbours = self.neighbors(self.graph, current_node)
+                        if (
+                            len(neighbours) == 0
+                        ):  # for whatever reason this node has no neighbours so stop
+                            break
+                        else:
+                            # determine the sampling probabilities for all the nodes
+                            common_neighbours = set(neighbours).intersection(
+                                previous_node_neighbours
+                            )  # nodes that are in common between the previous and current nodes; these get
+                            # 1. transition probabilities
+                            probs = [iq] * len(neighbours)
+                            for i, nn in enumerate(neighbours):
+                                if nn == previous_node:  # this is the previous node
+                                    probs[i] = ip
+                                elif nn in common_neighbours:
+                                    probs[i] = 1.
+                            # normalize the probabilities
+                            total_prob = sum(probs)
+                            probs = [m / total_prob for m in probs]
+                            previous_node = current_node
+                            # select the next node based on the calculated transition probabilities
+                            current_node = neighbours[
+                                np.random.choice(a=len(neighbours), p=probs)
+                            ]
+                walks.append(walk)
+
+        return walks
+
+    def _check_parameter_values(self, nodes, n, p, q, length, seed):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        Args:
+            nodes: <list> A list of root node ids such that from each node a uniform random walk of up to length l
+            will be generated.
+            n: <int> Number of walks per node id.
+            p: <float>
+            q: <float>
+            length: <int> Maximum length of walk measured as the number of edges followed from root node.
+            seed: <int> Random number generator seed
+
+        """
+        if nodes is None:
+            raise ValueError(
+                "({}) A list of root node IDs was not provided.".format(
+                    type(self).__name__
+                )
+            )
+        if type(nodes) != list:
+            raise ValueError("nodes parameter should be a list of node IDs.")
+        if (
+            len(nodes) == 0
+        ):  # this is not an error but maybe a warning should be printed to inform the caller
+            print(
+                "WARNING: ({}) No root node IDs given. An empty list will be returned as a result.".format(
+                    type(self).__name__
+                )
+            )
+
+        if type(n) != int:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be integer type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be a positive integer.".format(
+                    type(self).__name__
+                )
+            )
+
+        if p <= 0. or p > 1.:
+            raise ValueError(
+                "({}) Parameter p should be in the range (0, 1].".format(
+                    type(self).__name__
+                )
+            )
+
+        if q <= 0. or q > 1.:
+            raise ValueError(
+                "({}) Parameter q should be in the range (0, 1].".format(
+                    type(self).__name__
+                )
+            )
+
+        if type(length) != int:
+            raise ValueError(
+                "({}) The walk length, length, should be integer type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if length <= 0:
+            raise ValueError(
+                "({}) The walk length, length, should be positive integer.".format(
+                    type(self).__name__
+                )
+            )
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
 
 
 class UniformRandomMetaPathWalk(GraphWalk):
@@ -466,13 +618,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     ):  # consider the subgraph up to and including depth d from root node
                         neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
-                            # Oops, this node has no neighbours and it doesn't have a self link.
-                            # We can't handle this so raise an exception.
-                            raise ValueError(
-                                "({}) Node with id {} has no neighbours and no self link. I don't know what to do!".format(
-                                    type(self).__name__, frontier[0]
-                                )
-                            )
+                            break
                         else:  # sample with replacement
                             neighbours = random.choices(neighbours, k=n_size[depth - 1])
 
@@ -518,15 +664,16 @@ class SampledBreadthFirstWalk(GraphWalk):
                 )
             )
 
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
         if type(n) != int:
             raise ValueError(
                 "({}) The number of walks per root node, n, should be integer type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if n <= 0:
+            raise ValueError(
+                "({}) The number of walks per root node, n, should be a positive integer.".format(
                     type(self).__name__
                 )
             )
@@ -554,21 +701,27 @@ class SampledBreadthFirstWalk(GraphWalk):
         for d in n_size:
             if type(d) != int:
                 raise ValueError(
-                    "({}) The neighbourhood size, n_size, must be list of integers.".format(
+                    "({}) The neighbourhood size, n_size, must be list of positive integers or 0.".format(
+                        type(self).__name__
+                    )
+                )
+            if d < 0:
+                raise ValueError(
+                    "({}) The neighbourhood size, n_size, must be list of positive integers or 0.".format(
                         type(self).__name__
                     )
                 )
 
         if seed is not None:
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
             if type(seed) != int:
                 raise ValueError(
                     "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
                         type(self).__name__
                     )
                 )
