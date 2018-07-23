@@ -121,42 +121,42 @@ class UniformRandomWalk(GraphWalk):
                 )
             )
 
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
         if type(n) != int:
             raise ValueError(
                 "({}) The number of walks per root node, n, should be integer type.".format(
                     type(self).__name__
                 )
             )
-
-        if length <= 0:
+        if n <= 0:
             raise ValueError(
-                "({}) The walk length, length, should be positive integer.".format(
+                "({}) The number of walks per root node, n, should be a positive integer.".format(
                     type(self).__name__
                 )
             )
+
         if type(length) != int:
             raise ValueError(
                 "({}) The walk length, length, should be integer type.".format(
                     type(self).__name__
                 )
             )
+        if length <= 0:
+            raise ValueError(
+                "({}) The walk length, length, should be positive integer.".format(
+                    type(self).__name__
+                )
+            )
 
         if seed is not None:
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
             if type(seed) != int:
                 raise ValueError(
                     "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
                         type(self).__name__
                     )
                 )
