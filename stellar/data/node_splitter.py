@@ -106,33 +106,188 @@ class NodeSplitter(object):
 
         return y
 
-    def train_test_split(self, p=10, y=None, method="count", **kwargs):
+    def _check_parameters(self, y, p, method, test_size, train_size, seed):
+        """
+        Checks that the parameters have valid values. It not, then it raises a ValueError exception with a
+        message corresponding to the invalid parameter.
+
+        Args:
+            y: <numpy array> Array of size Nx2 containing node id, label columns.
+            p: <int or float> Percent or count of the number of points for each class to sample.
+            method: <str> One of 'count', 'percent', or 'absolute'.
+            test_size: <int> number of points in the test set. For method 'count', it should be less than or equal to
+            N - (np.unique(labels) * nc) where N is the number of labeled points in y.
+            train_size: <int> The number of points in the train set only used by method 'absolute'.
+            seed: <int> seed for random number generator, positive int or 0
+
+        """
+        if y is None:
+            raise ValueError(
+                "({}) y should be numpy array, not None".format(type(self).__name__)
+            )
+        if method != "count" and method != "percent" and method != "absolute":
+            raise ValueError(
+                "({}) Valid methods are 'count', 'percent', and 'absolute' not {}".format(
+                    type(self).__name__, method
+                )
+            )
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+
+        if method == "count":
+            if type(p) != int or p <= 0:
+                raise ValueError(
+                    "({}) p should be positive integer".format(type(self).__name__)
+                )
+            if test_size is None or type(test_size) != int or test_size <= 0:
+                raise ValueError(
+                    "({}) test_size must be positive integer".format(
+                        type(self).__name__
+                    )
+                )
+
+        elif method == "percent":
+            if type(p) != float or p < 0. or p > 1.:
+                raise ValueError(
+                    "({}) p should be float in the range [0,1].".format(
+                        type(self).__name__
+                    )
+                )
+
+        elif method == "absolute":
+            if test_size is None or type(test_size) != int or test_size <= 0:
+                raise ValueError(
+                    "({}) test_size should be positive integer".format(
+                        type(self).__name__
+                    )
+                )
+            if train_size is None or type(train_size) != int or train_size <= 0:
+                raise ValueError(
+                    "({}) train_size should be positive integer".format(
+                        type(self).__name__
+                    )
+                )
+
+    def train_test_split(
+        self, y=None, p=10, method="count", test_size=None, train_size=None, seed=None
+    ):
         """
         Splits node data into train, test, validation, and unlabeled sets.
 
-        :param p: <int or float> Percent or count of the number of points for each class to sample
-        :param y: <numpy array> Array of size Nx2 containing node id _ labels
-        :param method: <str> Specified whether p is a percentage ('percent') or a count ('count') of the number of
-        points for each class to sample. Only 'count' is a valid option for now.
-        :param test_size: <int> number of points in test set. it should be less than or equal
-        to N - (np.unique(labels) * nc).
-        :return: y_train, y_val, y_test, y_unlabeled
+        Any points in y that have value UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
+
+        The validation set includes all the point that remain after the train, test and unlabeled sets have been
+        created. As a result, it is possible the the validation set is empty, e.g., when method is set to 'percent'.
+
+        The train, and test sets are build based on the specified method, 'count', 'percent', or 'absolute'.
+
+        method='count': The value of parameter p specifies the number of points in the train set for each class. The
+        test set size must be specified using the test_size parameter.
+
+        method='percent': The value of parameter p specifies the train set size (and 1-p the test set size) as a
+        percentage of the total number of points in y (including the unlabeled points.) The split is performed uniformly
+        at random and the point labels (as specified in y) are not taken into account.
+
+        method='absolute': The values of the parameters train_size and test_size specify the size of the train and test
+        sets respectively. Points are selected uniformly at random and the label (as specified in y) are not taken into
+        account.
+
+        Args:
+            y: <numpy array> Array of size Nx2 containing node id, label columns.
+            p: <int or float> Percent or count of the number of points for each class to sample.
+            method: <str> One of 'count', 'percent', or 'absolute'.
+            test_size: <int> number of points in the test set. For method 'count', it should be less than or equal to
+            N - (np.unique(labels) * nc) where N is the number of labeled points in y.
+            train_size: <int> The number of points in the train set only used by method 'absolute'.
+            seed: <int> seed for random number generator, positive int or 0
+
+        Returns:
+            y_train, y_val, y_test, y_unlabeled
         """
-        if y is None:
-            raise ValueError("y cannot be None")
-        if method != "count":
-            raise ValueError("Only method 'count' is currently available")
-        if p <= 0 or type(p) != int:
-            raise ValueError("p should be positive integer")
+        self._check_parameters(
+            y=y,
+            p=p,
+            method=method,
+            test_size=test_size,
+            train_size=train_size,
+            seed=seed,
+        )
 
-        test_size = kwargs.get("test_size", None)
-        # Some checks on the value of test_size
-        if test_size is None:
-            raise ValueError("test_size must be specified")
-        if test_size <= 0 or type(test_size) != int:
-            raise ValueError("test_size must be positive integer")
+        np.random.seed(seed=seed)
 
-        return self._split_data(y, p, test_size)
+        if method == "count":
+            return self._split_data(y, p, test_size)
+        elif method == "percent":
+            n_unlabelled_points = np.sum(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
+            train_size = int((y.shape[0] - n_unlabelled_points) * p)
+            test_size = y.shape[0] - n_unlabelled_points - train_size
+            return self._split_data_absolute(
+                y=y, test_size=test_size, train_size=train_size
+            )
+        elif method == "absolute":
+            return self._split_data_absolute(
+                y=y, test_size=test_size, train_size=train_size
+            )
+
+    def _split_data_absolute(self, y, test_size, train_size):
+        """
+
+        Args:
+            y: <numpy.ndarray> Array of size N x 2 containing node id + labels.
+            test_size: <int> number of points in test set.
+            train_size: <int> The number of points in the train set.
+
+        Returns:
+            y_train, y_val, y_test, y_unlabeled
+
+        """
+        # The label column in y could include None type, that is point with no ground truth label. These, if any,will
+        # be returned separately in y_unlabeled dataset
+        y_used = np.zeros(y.shape[0])  # initialize all the points are available
+
+        # indexes of points with no class label:
+        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
+        y_unlabeled = y[ind]
+        y_used[ind] = 1
+
+        ind = np.nonzero(y_used == 0)  # unused points
+        ind_sampled = np.random.choice(ind[0], train_size, replace=False)
+        y_train = y[ind_sampled]
+        # mark these as used to make sure that they are not sampled for the test set
+        y_used[ind_sampled] = 1
+
+        # now sample test_size points for the test set
+        ind = np.nonzero(y_used == 0)  # indexes of points that are not in training set
+        if len(ind[0]) < test_size:
+            raise Exception(
+                "Not enough nodes available for the test set: available {} nodes, needed {}. Aborting".format(
+                    len(ind[0]), test_size
+                )
+            )
+        ind_sampled = np.random.choice(ind[0], test_size, replace=False)
+        y_test = y[ind_sampled]
+        y_used[ind_sampled] = 1
+        # print("y_test shape: ", y_test.shape)
+
+        # Validation set
+        # the remaining labeled points (if any) go into the validation set
+        ind = np.nonzero(y_used == 0)
+        y_val = y[ind[0]]
+        # print("y_val shape:", y_val.shape)
+
+        return y_train, y_val, y_test, y_unlabeled
 
     def _split_data(self, y, nc, test_size):
         """
@@ -151,9 +306,8 @@ class NodeSplitter(object):
 
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
-        ind = np.nonzero(
-            y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE
-        )  # indexes of points with no class label
+        # indexes of points with no class label:
+        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
@@ -168,20 +322,16 @@ class NodeSplitter(object):
             test_size = y.shape[0] - class_labels.size * nc
 
         for clabel in class_labels:
-            ind = np.nonzero(
-                y[:, 1] == clabel
-            )  # indexes of points with class label clabel
+            # indexes of points with class label clabel:
+            ind = np.nonzero(y[:, 1] == clabel)
             # select nc of these at random for the training set
             if ind[0].size <= nc:
                 # too few labeled examples for class so use half for training and half for testing
                 ind_selected = np.random.choice(ind[0], ind[0].size // 2, replace=False)
             else:
                 ind_selected = np.random.choice(ind[0], nc, replace=False)
-            y_used[
-                ind_selected
-            ] = (
-                1
-            )  # mark these as used to make sure that they are not sampled for the test set
+            # mark these as used to make sure that they are not sampled for the test set:
+            y_used[ind_selected] = 1
             if y_train is None:
                 y_train = y[ind_selected]
             else:
