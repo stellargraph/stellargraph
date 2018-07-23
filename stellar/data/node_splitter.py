@@ -257,22 +257,16 @@ class NodeSplitter(object):
         # be returned separately in y_unlabeled dataset
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
-        ind = np.nonzero(
-            y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE
-        )  # indexes of points with no class label
+        # indexes of points with no class label:
+        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
-
-        y_train = None
 
         ind = np.nonzero(y_used == 0)  # unused points
         ind_sampled = np.random.choice(ind[0], train_size, replace=False)
         y_train = y[ind_sampled]
-        y_used[
-            ind_sampled
-        ] = (
-            1
-        )  # mark these as used to make sure that they are not sampled for the test set
+        # mark these as used to make sure that they are not sampled for the test set
+        y_used[ind_sampled] = 1
 
         # now sample test_size points for the test set
         ind = np.nonzero(y_used == 0)  # indexes of points that are not in training set
@@ -288,7 +282,7 @@ class NodeSplitter(object):
         # print("y_test shape: ", y_test.shape)
 
         # Validation set
-        # the remaining points (if any) go into the validation set
+        # the remaining labeled points (if any) go into the validation set
         ind = np.nonzero(y_used == 0)
         y_val = y[ind[0]]
         # print("y_val shape:", y_val.shape)
@@ -312,9 +306,8 @@ class NodeSplitter(object):
 
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
-        ind = np.nonzero(
-            y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE
-        )  # indexes of points with no class label
+        # indexes of points with no class label:
+        ind = np.nonzero(y[:, 1] == UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
@@ -329,20 +322,16 @@ class NodeSplitter(object):
             test_size = y.shape[0] - class_labels.size * nc
 
         for clabel in class_labels:
-            ind = np.nonzero(
-                y[:, 1] == clabel
-            )  # indexes of points with class label clabel
+            # indexes of points with class label clabel:
+            ind = np.nonzero(y[:, 1] == clabel)
             # select nc of these at random for the training set
             if ind[0].size <= nc:
                 # too few labeled examples for class so use half for training and half for testing
                 ind_selected = np.random.choice(ind[0], ind[0].size // 2, replace=False)
             else:
                 ind_selected = np.random.choice(ind[0], nc, replace=False)
-            y_used[
-                ind_selected
-            ] = (
-                1
-            )  # mark these as used to make sure that they are not sampled for the test set
+            # mark these as used to make sure that they are not sampled for the test set:
+            y_used[ind_selected] = 1
             if y_train is None:
                 y_train = y[ind_selected]
             else:
