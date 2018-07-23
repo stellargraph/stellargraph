@@ -330,6 +330,7 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
 
     return scores
 
+
 def train_homogeneous_graph(
     g_train,
     g_test,
@@ -384,6 +385,8 @@ def train_homogeneous_graph(
     for score in scores:
         print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
+
+    return feature_learner_train, feature_learner_test
 
 
 def train_heterogeneous_graph(
@@ -440,6 +443,8 @@ def train_heterogeneous_graph(
     for score in scores:
         print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
+
+    return feature_learner_train, feature_learner_test
 
 
 if __name__ == "__main__":
