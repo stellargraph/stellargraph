@@ -383,9 +383,7 @@ class StellarGraphBase:
         # Convert them to strings before sorting.
         node_index_to_id = sorted(self.nodes(), key=str)
 
-        node_id_to_index = {
-            node: ii for ii,node in enumerate(node_index_to_id)
-        }
+        node_id_to_index = {node: ii for ii, node in enumerate(node_index_to_id)}
         return node_index_to_id, node_id_to_index
 
     def info(self, sample=None):

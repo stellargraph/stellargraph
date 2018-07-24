@@ -17,15 +17,16 @@ import itertools as it
 import numpy as np
 from keras.utils.np_utils import to_categorical
 
+
 class NodeFeatureConverter:
     def __init__(
         self,
         from_graph,
+        to_graph=None,
         ignored_attributes=[],
         attributes=None,
-        to_graph=True,
         remove_converted_attrs=False,
-        dtype='float32'
+        dtype="float32",
     ):
         # Form consistent node indexing
         self.node_list = sorted(from_graph, key=str)
@@ -53,7 +54,7 @@ class NodeFeatureConverter:
         self.feature_size = len(self.feature_list)
 
         # Store features in graph
-        if to_graph:
+        if to_graph is not None:
             # Set the "feature" and encoded "target" attributes for all nodes in the graph.
             for v in self.node_list:
                 vdata = from_graph.nodes[v]
@@ -66,7 +67,7 @@ class NodeFeatureConverter:
                         node_feature_array[index] = attr_value
 
                 # Store feature array in graph
-                vdata["feature"] = node_feature_array
+                to_graph.nodes[v]["feature"] = node_feature_array
 
                 # Remove attributes
                 if remove_converted_attrs:
@@ -170,7 +171,6 @@ class NodeTargetConverter:
         else:
             raise ValueError("Target type '{}' is not supported.".format(target_type))
 
-
     def __len__(self):
         if self.target_category_values:
             return len(self.target_category_values)
@@ -199,7 +199,7 @@ class NodeTargetConverter:
         label_values = np.array([self(v[1]) for v in node_pairs_list])
         return ids, label_values
 
-    def get_node_labels_for_ids(self, node_ids):
+    def get_targets_for_ids(self, node_ids):
         """
         Convert a list of node IDs to a list of
         node_ids and label values.
@@ -211,6 +211,35 @@ class NodeTargetConverter:
             A list of node_ids and a list of target values to
             be passed to a mapper object.
         """
-        label_values = np.array([self(self._graph.nodes[v][self._target_attr]) for v in node_ids])
+        label_values = np.array(
+            [self(self._graph.nodes[v][self._target_attr]) for v in node_ids]
+        )
         return node_ids, label_values
 
+    def get_node_label_pairs(self, node_ids=None, convert=False):
+        """
+        Get a list of node IDs and labels for the splitter.
+
+        Args:
+            node_ids: List of node IDs in the graph, if not specified all
+                nodes will be used.
+            convert: If True the raw target values will be converted
+                to the required numeric representation,
+                if False they will be returned as raw values.
+
+        Returns:
+            A list tuples of (node_id, target) to be passed to the splitter.
+        """
+        if node_ids is None:
+            node_ids = list(self._graph)
+
+        if convert:
+            id_target_pairs = [
+                (v, self(self._graph.nodes[v][self._target_attr])) for v in node_ids
+            ]
+        else:
+            id_target_pairs = [
+                (v, self._graph.nodes[v][self._target_attr]) for v in node_ids
+            ]
+
+        return id_target_pairs

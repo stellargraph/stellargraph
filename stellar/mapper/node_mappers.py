@@ -41,7 +41,7 @@ class GraphSAGENodeMapper(Sequence):
         sampler: A sampler instance on graph G.
         batch_size: Size of batch to return.
         num_samples: List of number of samples per layer (hop) to take.
-        target_id: Name of target value in node attribute dictionary.
+        targets: List of numeric targets for supervised models.
         feature_size: Node feature size (optional)
         name: Name of mapper
     """
@@ -50,9 +50,9 @@ class GraphSAGENodeMapper(Sequence):
         self,
         G: StellarGraphBase,
         ids: List[Any],
-        labels: List[Any],
         batch_size: int,
         num_samples: List[int],
+        targets: List[Any] = None,
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
@@ -62,10 +62,14 @@ class GraphSAGENodeMapper(Sequence):
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
-        self.label_data = labels
+        self.target_data = targets
 
         # Create sampler for GraphSAGE
         self.sampler = SampledBreadthFirstWalk(G)
+
+        # Ensure number of targets matches number of ids
+        if targets is not None and len(ids) != len(targets):
+            raise ValueError("Length of ids must match length of targets")
 
         # Ensure features are available:
         nodes_have_features = all(
@@ -136,7 +140,11 @@ class GraphSAGENodeMapper(Sequence):
 
         # Get head nodes
         head_nodes = self.ids[start_idx:end_idx]
-        batch_labels = self.label_data[start_idx:end_idx]
+
+        if self.target_data is not None:
+            batch_targets = self.target_data[start_idx:end_idx]
+        else:
+            batch_targets = None
 
         # Get sampled nodes
         node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
@@ -156,7 +164,7 @@ class GraphSAGENodeMapper(Sequence):
         # Get features and labels
         batch_feats = self._get_features(nodes_per_hop, len(head_nodes))
 
-        return batch_feats, batch_labels
+        return batch_feats, batch_targets
 
 
 class HinSAGENodeMapper(Sequence):
