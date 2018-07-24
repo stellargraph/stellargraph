@@ -193,7 +193,7 @@ def read_graph(graph_file, dataset_name):
         else:
             # This is the correct way to set the edge weight in a MultiGraph.
             edge_weights = {e: 1 for e in g.edges(keys=True)}
-            nx.set_edge_attributes(g, "weight", edge_weights)
+            nx.set_edge_attributes(g, name="weight", values=edge_weights)
     except:  # otherwise, assume arg.input points to an edgelist file
         if parameters["weighted"]:
             g = nx.read_edgelist(
@@ -308,6 +308,7 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
     :param binary_operators:
     :return:
     """
+
     if binary_operators is None:
         print("WARNING: Using default binary operator 'h'")
         binary_operators = ["h"]
@@ -325,10 +326,41 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
         else:
             score_auc = roc_auc_score(y, y_pred[:, 1])
 
+        # print('Correct labels y {}'.format(y))
+        # print('Predictions y_pred {}'.format(y_pred[:, 1]))
         print("Prediction score:", score_auc)
         scores.append({"op": binary_operator, "score": score_auc})
 
     return scores
+
+
+def predict(feature_learner, edge_data, clf, binary_operators=None):
+    """
+    Given a node feature learner and a trained classifier, it computes edge features, uses the classifier to predict
+    the given edge data and calculate prediction accuracy.
+    :param feature_learner:
+    :param edge_data:
+    :param clf:
+    :param binary_operators:
+    :return: a prediction probability for each binary operator in a dictionary where operator is key and prediction is
+    the value.
+    """
+
+    if binary_operators is None:
+        print("WARNING: Using default binary operator 'h'")
+        binary_operators = ["h"]
+
+    predictions = {}
+    # for each type of binary operator
+    for binary_operator in binary_operators:
+        # Derive edge features from node features using the given binary operator
+        X, y = feature_learner.transform(edge_data, binary_operator)
+        #
+        y_pred = clf.predict_proba(X)  # predict
+
+        predictions[binary_operator] = y_pred
+
+    return predictions
 
 
 def train_homogeneous_graph(
@@ -386,7 +418,7 @@ def train_homogeneous_graph(
         print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
 
-    return feature_learner_train, feature_learner_test
+    return feature_learner_train, feature_learner_test, clf_edge
 
 
 def train_heterogeneous_graph(
@@ -444,7 +476,25 @@ def train_heterogeneous_graph(
         print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
 
-    return feature_learner_train, feature_learner_test
+    return feature_learner_train, feature_learner_test, clf_edge
+
+
+def get_subgraph_bfs(g, n, d):
+    nodes = []  # the nodes in the subgraph
+    frontier = [n]
+
+    for _ in range(d+1):
+        next_frontier = []
+        while len(frontier) > 0:
+            cn = frontier.pop()
+            nodes.extend([cn])
+            nn = list(nx.neighbors(g, cn))
+            next_frontier.extend(nn)
+        frontier.extend(next_frontier)
+
+    nodes = list(set(nodes))
+
+    return nodes
 
 
 if __name__ == "__main__":
