@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-Graph node classification using GraphSAGE.
+Heterogeneous Graph node classification using GraphSAGE.
 Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
@@ -300,9 +300,16 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-t",
-        "--target",
+        "--target_attr",
         type=str,
         default="subject",
+        help="The target node attribute (categorical)",
+    )
+    parser.add_argument(
+        "-t",
+        "--target_type",
+        type=str,
+        default="user",
         help="The target node attribute (categorical)",
     )
     args, cmdline_args = parser.parse_known_args()
