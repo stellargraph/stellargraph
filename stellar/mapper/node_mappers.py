@@ -50,9 +50,9 @@ class GraphSAGENodeMapper(Sequence):
         self,
         G: StellarGraphBase,
         ids: List[Any],
+        labels: List[Any],
         batch_size: int,
         num_samples: List[int],
-        target_id: AnyStr = None,
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
@@ -62,7 +62,7 @@ class GraphSAGENodeMapper(Sequence):
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
-        self.label_id = target_id
+        self.label_data = labels
 
         # Create sampler for GraphSAGE
         self.sampler = SampledBreadthFirstWalk(G)
@@ -125,20 +125,6 @@ class GraphSAGENodeMapper(Sequence):
         ]
         return batch_feats
 
-    def _get_labels(self, head_nodes: List[AnyStr]) -> np.ndarray:
-        """
-        Collects the labels of the head nodes. They are assumed to be stored as
-        node attributes with the key self.label_id
-        Args:
-            head_nodes: Nodes to get labels for.
-
-        Returns:
-            An array of labels.
-        """
-        # Get labels for each node in node_samples
-        batch_labels = [self.G.node[v].get(self.label_id) for v in head_nodes]
-        return np.array(batch_labels)
-
     def __getitem__(self, batch_num: int) -> [List[np.ndarray], List[np.ndarray]]:
         "Generate one batch of data"
         start_idx = self.batch_size * batch_num
@@ -150,6 +136,7 @@ class GraphSAGENodeMapper(Sequence):
 
         # Get head nodes
         head_nodes = self.ids[start_idx:end_idx]
+        batch_labels = self.label_data[start_idx:end_idx]
 
         # Get sampled nodes
         node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
@@ -168,7 +155,6 @@ class GraphSAGENodeMapper(Sequence):
 
         # Get features and labels
         batch_feats = self._get_features(nodes_per_hop, len(head_nodes))
-        batch_labels = self._get_labels(head_nodes) if self.label_id else None
 
         return batch_feats, batch_labels
 
