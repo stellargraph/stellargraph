@@ -69,13 +69,14 @@ from stellar.mapper.node_mappers import GraphSAGENodeMapper
 
 def train(
     G,
+    target_converter,
+    feature_converter,
     layer_size,
     num_samples,
     batch_size=100,
     num_epochs=10,
     learning_rate=0.005,
     dropout=0.0,
-    target_attr=None,
 ):
     """
     Train the GraphSAGE model on the specified graph G
@@ -90,21 +91,11 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # Convert graph node attributes to values
-    feature_converter = NodeFeatureConverter(
-        from_graph=G, ignored_attributes=[target_attr, "label"], to_graph=True
-    )
-
-    # Function to convert labels to values for the Keras model
-    target_converter = NodeTargetConverter(
-        from_graph=G, target=target_attr, target_type="1hot"
-    )
+    # This is very clunky: is there a nicer way?
+    graph_nodes = np.array(target_converter.get_node_label_pairs())
 
     # Split head nodes into train/test
     splitter = NodeSplitter()
-    graph_nodes = np.array(
-        [(v, vdata.get(target_attr)) for v, vdata in G.nodes(data=True)]
-    )
     train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
         y=graph_nodes, p=50, test_size=1000
     )
@@ -115,16 +106,16 @@ def train(
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
-        G, train_ids, train_labels, batch_size, num_samples, name="train"
+        G, train_ids, batch_size, num_samples, train_labels, name="train"
     )
     val_mapper = GraphSAGENodeMapper(
-        G, val_ids, val_labels, batch_size, num_samples, name="val"
+        G, val_ids, batch_size, num_samples, val_labels, name="val"
     )
     test_mapper = GraphSAGENodeMapper(
-        G, test_ids, test_labels, batch_size, num_samples, name="test"
+        G, test_ids, batch_size, num_samples, test_labels, name="test"
     )
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, all_labels, batch_size, num_samples, name="all"
+        G, all_ids, batch_size, num_samples, all_labels, name="all"
     )
 
     # GraphSAGE model
@@ -179,7 +170,7 @@ def train(
     )
 
 
-def test(G, model_file, batch_size, target_attr):
+def test(G, target_converter, feature_converter, model_file, batch_size, target_attr):
     """
     Load the serialized model and evaluate on all nodes in the graph.
 
@@ -198,18 +189,10 @@ def test(G, model_file, batch_size, target_attr):
         for ii in range(len(model.input_shape) - 1)
     ]
 
-    # Convert graph node attributes to feature vectors and target values
-    feature_converter = NodeFeatureConverter(
-        from_graph=G, ignored_attributes=[target_attr, "label"], to_graph=True
-    )
-    target_converter = NodeTargetConverter(
-        from_graph=G, target=target_attr, target_type="1hot"
-    )
-
     # Mapper feeds data from sampled subgraph to GraphSAGE model
     all_ids, all_labels = target_converter.get_node_labels_for_ids(list(G))
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, all_labels, batch_size, num_samples, name="all"
+        G, all_ids, batch_size, num_samples, targets=all_labels, name="all"
     )
 
     # Evaluate and print metrics
@@ -307,19 +290,29 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
+    # Load graph
     graph_loc = os.path.expanduser(args.graph)
     G = from_epgm(graph_loc)
+
+    # Convert graph node attributes to feature vectors and target values
+    feature_converter = NodeFeatureConverter(
+        from_graph=G, to_graph=G, ignored_attributes=[args.target, "label"]
+    )
+    target_converter = NodeTargetConverter(
+        from_graph=G, target=args.target, target_type="1hot"
+    )
 
     if args.checkpoint is None:
         train(
             G,
+            target_converter,
+            feature_converter,
             args.layer_size,
             args.neighbour_samples,
             args.batch_size,
             args.epochs,
             args.learningrate,
             args.dropout,
-            args.target,
         )
     else:
-        test(G, args.checkpoint, args.batch_size, args.target)
+        test(G, target_converter, feature_converter, args.checkpoint, args.batch_size)
