@@ -84,6 +84,8 @@ def train(
 
     Args:
         G: NetworkX graph file
+        target_converter: Class to give numeric representations of node targets
+        feature_converter: CLass to give numeric representations of the node features
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -176,6 +178,8 @@ def test(G, target_converter, feature_converter, model_file, batch_size, target_
 
     Args:
         G: NetworkX graph file
+        target_converter: Class to give numeric representations of node targets
+        feature_converter: CLass to give numeric representations of the node features
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
