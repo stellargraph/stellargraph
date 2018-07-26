@@ -20,6 +20,7 @@ link attribute inference (regression)"""
 from typing import AnyStr, Optional, List, Tuple
 from keras.layers import Layer, Concatenate, Dense, Lambda, Multiply, Reshape
 from keras import backend as K
+import sys
 
 
 class LeakyClippedLinear(Layer):
@@ -64,7 +65,7 @@ def link_inference(
     output_dim: int = 1,
     output_act: AnyStr = "linear",
     edge_feature_method: AnyStr = "ip",
-    name: AnyStr = "",
+    name: AnyStr = "link_inference",
 ):
     """Defines an edge inference function that takes source, destination node features as input,
     and returns a numeric vector of output_dim size.
@@ -159,7 +160,7 @@ def link_classification(
         output_dim=output_dim,
         output_act=output_act,
         edge_feature_method=edge_feature_method,
-        name="link_classification",
+        name=sys._getframe().f_code.co_name # "link_classification"
     )
 
     return edge_function
@@ -194,7 +195,7 @@ def link_regression(
         output_dim=1,
         output_act="linear",
         edge_feature_method=edge_feature_method,
-        name="link_regression",
+        name=sys._getframe().f_code.co_name # "link_regression"
     )
 
     if clip_limits:
