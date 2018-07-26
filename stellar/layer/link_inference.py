@@ -30,7 +30,10 @@ class LeakyClippedLinear(Layer):
             high (float): Lower threshold
             alpha (float) The slope of the function below low or above high.
     """
-    def __init__(self, low: float=1.0, high: float=5.0, alpha: float=0.1, **kwargs):
+
+    def __init__(
+        self, low: float = 1.0, high: float = 5.0, alpha: float = 0.1, **kwargs
+    ):
         super().__init__(**kwargs)
         self.supports_masking = True
         self.gamma = K.cast_to_floatx(1 - alpha)
@@ -44,15 +47,85 @@ class LeakyClippedLinear(Layer):
 
     def get_config(self):
         config = {
-            'alpha': float(1 - self.gamma),
-            'low': float(self.lo),
-            'high': float(self.hi)
+            "alpha": float(1 - self.gamma),
+            "low": float(self.lo),
+            "high": float(self.hi),
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
     def compute_output_shape(self, input_shape):
         return input_shape
+
+
+def link_inference(
+    hidden_src: Optional[List[int]] = None,
+    hidden_dst: Optional[List[int]] = None,
+    output_dim: int = 1,
+    output_act: AnyStr = "linear",
+    edge_feature_method: AnyStr = "ip",
+    name: AnyStr = "",
+):
+    """Defines an edge inference function that takes source, destination node features as input,
+    and returns a numeric vector of output_dim size.
+
+        hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
+            If None, no dense transform is applied.
+        hidden_dst ([list[int]], optional): Hidden sizes for dense layer transforms of destination node features.
+            If None, no dense transform is applied.
+        output_dim: (int) Number of predictor's output units (desired dimensionality of the output)
+        output_act: (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
+            this can be user-defined, but must be a Keras function
+        edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
+            One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
+
+    Returns:
+        Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
+        returning a vector of output_dim length (e.g., edge class probabilities, edge attribute prediction, etc.).
+    """
+
+    def edge_function(x):
+        x0 = x[0]
+        x1 = x[1]
+
+        if hidden_src:
+            for hid_src in hidden_src:
+                x0 = Dense(hid_src, activation="relu")(x0)
+
+        if hidden_dst:
+            for hid_dst in hidden_dst:
+                x1 = Dense(hid_dst, activation="relu")(x1)
+
+        if edge_feature_method == "ip":
+            out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
+                [x0, x1]
+            )
+
+        elif edge_feature_method == "mul":
+            le = Multiply()([x0, x1])
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((output_dim,))(out)
+
+        elif edge_feature_method == "concat":
+            le = Concatenate()([x0, x1])
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((output_dim,))(out)
+
+        else:
+            raise NotImplementedError(
+                "{}: the requested method '{}' is not known/not implemented".format(
+                    name, edge_feature_method
+                )
+            )
+
+        return out
+
+    print(
+        "{}: using '{}' method to combine node embeddings into edge embeddings".format(
+            name, edge_feature_method
+        )
+    )
+    return edge_function
 
 
 def link_classification(
@@ -62,7 +135,7 @@ def link_classification(
     output_act: AnyStr = "sigmoid",
     edge_feature_method: AnyStr = "ip",
 ):
-    """Returns a function that predicts a binary or multi-class edge classification output from
+    """Defines a function that predicts a binary or multi-class edge classification output from
     source, destination node features.
 
         hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
@@ -80,47 +153,15 @@ def link_classification(
         returning logits of output_dim length (e.g., edge class probabilities).
     """
 
-    def edge_function(x):
-        x0 = x[0]
-        x1 = x[1]
-
-        if hidden_src:
-            for hid_src in hidden_src:
-                x0 = Dense(hid_src, activation="relu")(x0)
-
-        if hidden_dst:
-            for hid_dst in hidden_dst:
-                x1 = Dense(hid_dst, activation="relu")(x1)
-
-        if edge_feature_method == "ip":
-            out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
-                [x0, x1]
-            )
-
-        elif edge_feature_method == "mul":
-            le = Multiply()([x0, x1])
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        elif edge_feature_method == "concat":
-            le = Concatenate()([x0, x1])
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        else:
-            raise NotImplementedError(
-                "classification_predictor: the requested method '{}' is not known/not implemented".format(
-                    edge_feature_method
-                )
-            )
-
-        return out
-
-    print(
-        "Using '{}' method to combine node embeddings into edge embeddings".format(
-            edge_feature_method
-        )
+    edge_function = link_inference(
+        hidden_src=hidden_src,
+        hidden_dst=hidden_dst,
+        output_dim=output_dim,
+        output_act=output_act,
+        edge_feature_method=edge_feature_method,
+        name="link_classification",
     )
+
     return edge_function
 
 
@@ -130,7 +171,7 @@ def link_regression(
     clip_limits: Optional[Tuple[int]] = None,
     edge_feature_method: AnyStr = "ip",
 ):
-    """Returns a function that predicts an edge regression output from
+    """Returns a function that predicts a scalar edge regression output from
     source, destination node features.
 
         hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
@@ -147,50 +188,18 @@ def link_regression(
         returning a numeric value (e.g., edge attribute being predicted) constructed according to edge_feature_method.
     """
 
-    def edge_function(x):
-        x0 = x[0]
-        x1 = x[1]
-
-        if hidden_src:
-            for hid_src in hidden_src:
-                x0 = Dense(hid_src, activation="relu")(x0)
-
-        if hidden_dst:
-            for hid_dst in hidden_dst:
-                x1 = Dense(hid_dst, activation="relu")(x1)
-
-        if edge_feature_method == "ip":
-            out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
-                [x0, x1]
-            )
-
-        elif edge_feature_method == "mul":
-            le = Multiply()([x0, x1])
-            out = Dense(1, activation="linear")(le)
-            out = Reshape((1,))(out)
-
-        elif edge_feature_method == "concat":
-            le = Concatenate()([x0, x1])
-            out = Dense(1, activation="linear")(le)
-            out = Reshape((1,))(out)
-
-        else:
-            raise NotImplementedError(
-                "classification_predictor: the requested method '{}' is not known/not implemented".format(
-                    edge_feature_method
-                )
-            )
-
-        if clip_limits:
-            out = LeakyClippedLinear(
-                low=clip_limits[0], high=clip_limits[1], alpha=0.1)(out)
-
-        return out
-
-    print(
-        "Using '{}' method to combine node embeddings into edge embeddings".format(
-            edge_feature_method
-        )
+    edge_function = link_inference(
+        hidden_src=hidden_src,
+        hidden_dst=hidden_dst,
+        output_dim=1,
+        output_act="linear",
+        edge_feature_method=edge_feature_method,
+        name="link_regression",
     )
+
+    if clip_limits:
+        edge_function = LeakyClippedLinear(
+            low=clip_limits[0], high=clip_limits[1], alpha=0.1
+        )(edge_function)
 
     return edge_function
