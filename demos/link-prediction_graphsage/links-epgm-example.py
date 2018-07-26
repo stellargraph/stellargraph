@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2018 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Graph link prediction using GraphSAGE.
 Requires a EPGM graph as input.
@@ -49,18 +65,17 @@ import os
 import argparse
 import numpy as np
 import networkx as nx
-from typing import AnyStr, List, Optional
+from typing import AnyStr, List
 
 import keras
 from keras import optimizers, losses, metrics
-from keras.layers import Concatenate, Dense, Lambda, Multiply, Reshape
-from keras import backend as K
 
 from stellar.data.epgm import EPGM
 from stellar.data.edge_splitter import EdgeSplitter
 
 from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.link_mappers import GraphSAGELinkMapper
+from stellar.layer.link_inference import link_classifier
 
 
 def read_epgm_graph(
@@ -148,69 +163,6 @@ def read_epgm_graph(
         )
     )
     return g_nx
-
-
-def link_classifier(
-    hidden_src: Optional[int] = None,
-    hidden_dst: Optional[int] = None,
-    output_dim: int = 1,
-    output_act: AnyStr = "sigmoid",
-    edge_feature_method: AnyStr = "ip",
-):
-    """Returns a function that predicts a binary edge classification output from node features.
-
-        hidden_src ([type], optional): Hidden size for the transform of source node features.
-        hidden_dst ([type], optional): Hidden size for the transform of destination node features.
-        output_dim: Number of classifier's output units (desired dimensionality of the output)
-        output_act: (str, optional): output function, one of "softmax", "sigmoid", etc. - this can be user-defined, but must be a Keras function
-        edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
-            One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
-
-    Returns:
-        Function taking GraphSAGE edge tensors (i.e., pairs of (node_src, node_dst) tensors) and
-        returning logits of output_dim length.
-    """
-
-    def edge_function(x):
-        x0 = x[0]
-        x1 = x[1]
-
-        if hidden_src:
-            x0 = Dense(hidden_src, activation="relu")(x0)
-
-        if hidden_dst:
-            x1 = Dense(hidden_dst, activation="relu")(x1)
-
-        if edge_feature_method == "ip":
-            out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
-                [x0, x1]
-            )
-
-        elif edge_feature_method == "mul":
-            le = Multiply()([x0, x1])
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        elif edge_feature_method == "concat":
-            le = Concatenate()([x0, x1])
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        else:
-            raise NotImplementedError(
-                "classification_predictor: the requested method '{}' is not known/not implemented".format(
-                    edge_feature_method
-                )
-            )
-
-        return out
-
-    print(
-        "Using '{}' method to combine node embeddings into edge embeddings".format(
-            edge_feature_method
-        )
-    )
-    return edge_function
 
 
 def train(
