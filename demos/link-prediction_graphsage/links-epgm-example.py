@@ -75,7 +75,7 @@ from stellar.data.edge_splitter import EdgeSplitter
 
 from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.link_mappers import GraphSAGELinkMapper
-from stellar.layer.link_inference import link_classifier
+from stellar.layer.link_inference import link_classification
 
 
 def read_epgm_graph(
@@ -235,7 +235,7 @@ def train(
     x_out = [x_out_src, x_out_dst]
 
     # Final estimator layer
-    prediction = link_classifier(
+    prediction = link_classification(
         hidden_src=None,
         hidden_dst=None,
         output_dim=1,
