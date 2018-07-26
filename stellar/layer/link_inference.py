@@ -160,7 +160,7 @@ def link_classification(
         output_dim=output_dim,
         output_act=output_act,
         edge_feature_method=edge_feature_method,
-        name=sys._getframe().f_code.co_name # "link_classification"
+        name="link_classification"
     )
 
     return edge_function
@@ -195,7 +195,7 @@ def link_regression(
         output_dim=1,
         output_act="linear",
         edge_feature_method=edge_feature_method,
-        name=sys._getframe().f_code.co_name # "link_regression"
+        name="link_regression"
     )
 
     if clip_limits:
