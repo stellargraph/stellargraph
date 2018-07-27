@@ -456,7 +456,6 @@ class StellarGraphBase:
         Returns:
             An information string.
         """
-        nx.to_directed
         directed_str = "Directed" if self.is_directed() else "Undirected"
         s = "{}: {} multigraph\n".format(type(self).__name__, directed_str)
         s += " Nodes: {}, Edges: {}\n".format(

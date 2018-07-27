@@ -164,34 +164,36 @@ def test_graph_schema_node_types():
         schema = sg.create_graph_schema(create_type_maps=True)
 
         for n, ndata in sg.nodes(data=True):
-            assert schema.get_node_type(n) == ndata['label']
+            assert schema.get_node_type(n) == ndata["label"]
 
 
 def test_graph_schema_edge_types():
-    for sg in [
-        create_graph_1(),
-        create_graph_2(),
-    ]:
+    for sg in [create_graph_1(), create_graph_2()]:
         schema = sg.create_graph_schema(create_type_maps=True)
 
         for n1, n2, k in sg.edges(keys=True):
-            et = (sg.nodes[n1]['label'], sg.edges[(n1, n2, k)]['label'], sg.nodes[n2]['label'])
-            assert schema.get_edge_type((n1,n2,k)) == et
+            et = (
+                sg.node[n1]["label"],
+                sg.adj[n1][n2][k]["label"],
+                sg.node[n2]["label"],
+            )
+            assert schema.get_edge_type((n1, n2, k)) == et
 
             # Check the is_of_edge_type function: it should work either way round for undirected
             # graphs
             assert schema.is_of_edge_type((n1, n2, k), et)
             assert schema.is_of_edge_type((n1, n2, k), (et[2], et[1], et[0]))
 
-    for sg in [
-        create_graph_1(StellarDiGraph()),
-        create_graph_2(StellarDiGraph()),
-    ]:
+    for sg in [create_graph_1(StellarDiGraph()), create_graph_2(StellarDiGraph())]:
         schema = sg.create_graph_schema(create_type_maps=True)
 
         for n1, n2, k in sg.edges(keys=True):
-            et = (sg.nodes[n1]['label'], sg.edges[(n1, n2, k)]['label'], sg.nodes[n2]['label'])
-            assert schema.get_edge_type((n1,n2,k)) == et
+            et = (
+                sg.node[n1]["label"],
+                sg.adj[n1][n2][k]["label"],
+                sg.node[n2]["label"],
+            )
+            assert schema.get_edge_type((n1, n2, k)) == et
 
             # Check the is_of_edge_type function: it should only work one way for directed graphs
             assert schema.is_of_edge_type((n1, n2, k), et)
@@ -227,6 +229,6 @@ def test_graph_schema_sampling_layout():
         create_graph_2(StellarDiGraph()),
     ]:
         schema = sg.create_graph_schema(create_type_maps=True)
-        sampling_layout = schema.get_sampling_layout(["user"], [2,2])
+        sampling_layout = schema.get_sampling_layout(["user"], [2, 2])
 
         pass
