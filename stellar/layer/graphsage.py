@@ -24,7 +24,7 @@ from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape, Activation
-from typing import List, Callable, Tuple, AnyStr
+from typing import List, Tuple, AnyStr
 
 
 class MeanAggregator(Layer):
@@ -34,7 +34,7 @@ class MeanAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int = 0, bias: bool = False, act: str = "linear", **kwargs
+        self, output_dim: int = 0, bias: bool = False, act: AnyStr = "linear", **kwargs
     ):
         """
         Construct mean aggregator
@@ -48,7 +48,8 @@ class MeanAggregator(Layer):
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
         self.has_bias = bias
-        self.act = Activation(act)
+        self.act = act
+        self._act = Activation(act)
         self.w_neigh = None
         self.w_self = None
         self.bias = None
@@ -56,7 +57,7 @@ class MeanAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
-        config = {"output_dim": self.output_dim, "bias": self.has_bias}
+        config = {"output_dim": self.output_dim, "bias": self.has_bias, "act": self.act}
         base_config = super().get_config()
         return {**base_config, **config}
 
@@ -89,7 +90,7 @@ class MeanAggregator(Layer):
         from_neigh = K.dot(neigh_means, self.w_neigh)
         total = K.concatenate([from_self, from_neigh], axis=2)
 
-        return self.act(total + self.bias if self.has_bias else total)
+        return self._act(total + self.bias if self.has_bias else total)
 
     def compute_output_shape(self, input_shape):
         return input_shape[0][0], input_shape[0][1], self.output_dim
@@ -131,7 +132,7 @@ class GraphSAGE:
         # self._dropout = Dropout(dropout)
         self._aggs = [
             aggregator(
-                self.dims[layer + 1],
+                output_dim=self.dims[layer + 1],
                 bias=self.bias,
                 act="relu" if layer < self.n_layers - 1 else "linear",
             )
