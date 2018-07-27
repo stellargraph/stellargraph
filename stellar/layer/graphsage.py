@@ -23,7 +23,7 @@ import numpy as np
 from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape
+from keras.layers import Lambda, Dropout, Reshape, Activation
 from typing import List, Callable, Tuple, AnyStr
 
 
@@ -34,21 +34,21 @@ class MeanAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int = 0, bias: bool = False, act: Callable = K.relu, **kwargs
+        self, output_dim: int = 0, bias: bool = False, act: str = "linear", **kwargs
     ):
         """
         Construct mean aggregator
 
         :param output_dim:  Output dimension
         :param bias:        Optional bias
-        :param act:         Activation function
+        :param act:         name of the activation function; must be a Keras activation function
         """
 
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
         self.has_bias = bias
-        self.act = act
+        self.act = Activation(act)
         self.w_neigh = None
         self.w_self = None
         self.bias = None
@@ -133,7 +133,7 @@ class GraphSAGE:
             aggregator(
                 self.dims[layer + 1],
                 bias=self.bias,
-                act=K.relu if layer < self.n_layers - 1 else lambda x: x,
+                act="relu" if layer < self.n_layers - 1 else "linear",
             )
             for layer in range(self.n_layers)
         ]
