@@ -59,6 +59,13 @@ def test_digraph_constructor():
     assert sg._edge_type_attr == "type"
 
 
+def test_info():
+    sg = create_graph_2()
+    info_str = sg.info()
+    info_str = sg.info(show_attributes=False)
+    # How can we check this?
+
+
 def test_graph_from_nx():
     Gnx = nx.karate_club_graph()
     sg = StellarGraph(Gnx)
@@ -147,6 +154,50 @@ def test_digraph_schema():
     assert schema.get_edge_type((0, 4, 0)) == None
 
 
+def test_graph_schema_node_types():
+    for sg in [
+        create_graph_1(),
+        create_graph_2(),
+        create_graph_1(StellarDiGraph()),
+        create_graph_2(StellarDiGraph()),
+    ]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+
+        for n, ndata in sg.nodes(data=True):
+            assert schema.get_node_type(n) == ndata['label']
+
+
+def test_graph_schema_edge_types():
+    for sg in [
+        create_graph_1(),
+        create_graph_2(),
+    ]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+
+        for n1, n2, k in sg.edges(keys=True):
+            et = (sg.nodes[n1]['label'], sg.edges[(n1, n2, k)]['label'], sg.nodes[n2]['label'])
+            assert schema.get_edge_type((n1,n2,k)) == et
+
+            # Check the is_of_edge_type function: it should work either way round for undirected
+            # graphs
+            assert schema.is_of_edge_type((n1, n2, k), et)
+            assert schema.is_of_edge_type((n1, n2, k), (et[2], et[1], et[0]))
+
+    for sg in [
+        create_graph_1(StellarDiGraph()),
+        create_graph_2(StellarDiGraph()),
+    ]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+
+        for n1, n2, k in sg.edges(keys=True):
+            et = (sg.nodes[n1]['label'], sg.edges[(n1, n2, k)]['label'], sg.nodes[n2]['label'])
+            assert schema.get_edge_type((n1,n2,k)) == et
+
+            # Check the is_of_edge_type function: it should only work one way for directed graphs
+            assert schema.is_of_edge_type((n1, n2, k), et)
+            assert ~schema.is_of_edge_type((n1, n2, k), (et[2], et[1], et[0]))
+
+
 def test_graph_schema_sampling():
     for sg in [
         create_graph_1(),
@@ -166,3 +217,16 @@ def test_graph_schema_sampling():
 
             if len(list_types) > 0:
                 assert set(adj_types) == set(list_types)
+
+
+def test_graph_schema_sampling_layout():
+    for sg in [
+        create_graph_1(),
+        create_graph_2(),
+        create_graph_1(StellarDiGraph()),
+        create_graph_2(StellarDiGraph()),
+    ]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+        sampling_layout = schema.get_sampling_layout(["user"], [2,2])
+
+        pass
