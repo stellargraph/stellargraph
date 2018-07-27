@@ -23,7 +23,7 @@ import numpy as np
 from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape, Activation
+from keras.layers import Lambda, Dropout, Reshape
 from keras import activations
 from typing import List, Tuple, Callable, AnyStr
 
@@ -35,7 +35,11 @@ class MeanAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int = 0, bias: bool = False, act: Callable or AnyStr = "linear", **kwargs
+        self,
+        output_dim: int = 0,
+        bias: bool = False,
+        act: Callable or AnyStr = "relu",
+        **kwargs
     ):
         """
         Args:
@@ -57,7 +61,11 @@ class MeanAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
-        config = {"output_dim": self.output_dim, "bias": self.has_bias, "act": activations.serialize(self.act)}
+        config = {
+            "output_dim": self.output_dim,
+            "bias": self.has_bias,
+            "act": activations.serialize(self.act),
+        }
         base_config = super().get_config()
         return {**base_config, **config}
 
