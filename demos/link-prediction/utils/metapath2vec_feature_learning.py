@@ -95,7 +95,7 @@ class Metapath2VecFeatureLearning(object):
         start_time_fit = time.time()
         # self.G = node2vec.Graph(self.nxG, False, p, q)
         # self.G.preprocess_transition_probs()
-        metapath_walker = MetaPathWalk(self.nxG)
+        metapath_walker = UniformRandomMetaPathWalk(self.nxG)
         # walks = self.G.simulate_walks(r, l)
         time_b = time.time()
         walks = metapath_walker.run(
