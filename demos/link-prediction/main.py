@@ -326,8 +326,8 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
         else:
             score_auc = roc_auc_score(y, y_pred[:, 1])
 
-        # print('Correct labels y {}'.format(y))
-        # print('Predictions y_pred {}'.format(y_pred[:, 1]))
+        print('Correct labels y {}'.format(y))
+        print('Predictions y_pred {}'.format(y_pred[:, 1]))
         print("Prediction score:", score_auc)
         scores.append({"op": binary_operator, "score": score_auc})
 
