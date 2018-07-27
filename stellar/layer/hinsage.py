@@ -22,7 +22,8 @@ Heterogeneous GraphSAGE and compatible aggregator layers
 
 from keras.engine.topology import Layer
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape, Activation
+from keras.layers import Lambda, Dropout, Reshape
+from keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
 
 
@@ -36,14 +37,25 @@ class MeanHinAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int = 0, bias: bool = False, act: Callable = K.relu, **kwargs
+        self,
+        output_dim: int = 0,
+        bias: bool = False,
+        act: Union[Callable, AnyStr] = "relu",
+        **kwargs
     ):
+        """
+        Args:
+            output_dim: Output dimension
+            bias: Optional bias
+            act: name of the activation function to use (must be a Keras activation function),
+                or alternatively, a TensorFlow operation.
+        """
 
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
         self.has_bias = bias
-        self.act = act
+        self.act = activations.get(act)
         self.nr = None
         self.w_neigh = []
         self.w_self = None
@@ -53,7 +65,11 @@ class MeanHinAggregator(Layer):
 
     def get_config(self):
         """Gets class configuration for Keras serialization"""
-        config = {"output_dim": self.output_dim, "bias": self.has_bias}
+        config = {
+            "output_dim": self.output_dim,
+            "bias": self.has_bias,
+            "act": activations.serialize(self.act),
+        }
         base_config = super().get_config()
         return {**base_config, **config}
 
@@ -120,9 +136,8 @@ class MeanHinAggregator(Layer):
             [from_self, from_neigh], axis=2
         )  # YT: this corresponds to concat=Partial
         # TODO: implement concat=Full and concat=False
-        actx = self.act(total + self.bias if self.has_bias else total)
 
-        return Activation(self.act, name=kwargs.get("name"))(actx)
+        return self.act(total + self.bias if self.has_bias else total)
 
     def compute_output_shape(self, input_shape):
         """
@@ -215,7 +230,7 @@ class Hinsage:
                 node_type: aggregator(
                     output_dim,
                     bias=self.bias,
-                    act=K.relu if layer < self.n_layers - 1 else lambda x: x,
+                    act="relu" if layer < self.n_layers - 1 else "linear",
                 )
                 for node_type, output_dim in self.dims[layer + 1].items()
             }
