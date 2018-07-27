@@ -120,9 +120,8 @@ class MeanHinAggregator(Layer):
             [from_self, from_neigh], axis=2
         )  # YT: this corresponds to concat=Partial
         # TODO: implement concat=Full and concat=False
-        actx = self.act(total + self.bias if self.has_bias else total)
 
-        return Activation(self.act, name=kwargs.get("name"))(actx)
+        return self.act(total + self.bias if self.has_bias else total)
 
     def compute_output_shape(self, input_shape):
         """
