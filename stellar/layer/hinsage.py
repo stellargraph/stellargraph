@@ -40,7 +40,7 @@ class MeanHinAggregator(Layer):
         self,
         output_dim: int = 0,
         bias: bool = False,
-        act: Callable or AnyStr = "relu",
+        act: Union[Callable, AnyStr] = "relu",
         **kwargs
     ):
         """
