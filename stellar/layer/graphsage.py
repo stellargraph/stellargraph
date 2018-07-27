@@ -24,7 +24,8 @@ from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape, Activation
-from typing import List, Tuple, AnyStr
+from keras import activations
+from typing import List, Tuple, Callable, AnyStr
 
 
 class MeanAggregator(Layer):
@@ -34,22 +35,21 @@ class MeanAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int = 0, bias: bool = False, act: AnyStr = "linear", **kwargs
+        self, output_dim: int = 0, bias: bool = False, act: Callable or AnyStr = "linear", **kwargs
     ):
         """
-        Construct mean aggregator
-
-        :param output_dim:  Output dimension
-        :param bias:        Optional bias
-        :param act:         name of the activation function; must be a Keras activation function
+        Args:
+            output_dim: Output dimension
+            bias: Optional bias
+            act: name of the activation function to use (must be a Keras activation function),
+                or alternatively, a TensorFlow operation.
         """
 
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
         self.has_bias = bias
-        self.act = act
-        self._act = Activation(act)
+        self.act = activations.get(act)
         self.w_neigh = None
         self.w_self = None
         self.bias = None
@@ -57,7 +57,7 @@ class MeanAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
-        config = {"output_dim": self.output_dim, "bias": self.has_bias, "act": self.act}
+        config = {"output_dim": self.output_dim, "bias": self.has_bias, "act": activations.serialize(self.act)}
         base_config = super().get_config()
         return {**base_config, **config}
 
@@ -90,7 +90,7 @@ class MeanAggregator(Layer):
         from_neigh = K.dot(neigh_means, self.w_neigh)
         total = K.concatenate([from_self, from_neigh], axis=2)
 
-        return self._act(total + self.bias if self.has_bias else total)
+        return self.act(total + self.bias if self.has_bias else total)
 
     def compute_output_shape(self, input_shape):
         return input_shape[0][0], input_shape[0][1], self.output_dim
