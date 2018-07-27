@@ -1,4 +1,4 @@
-networkx==1.11
+networkx>=1.11
 chardet==3.0.4
 setuptools==33.1.1
 Keras==2.1.6

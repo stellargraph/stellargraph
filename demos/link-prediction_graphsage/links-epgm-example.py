@@ -107,7 +107,7 @@ def read_epgm_graph(
 
     # This is the correct way to set the edge weight in a MultiGraph.
     edge_weights = {e: 1 for e in g_nx.edges(keys=True)}
-    nx.set_edge_attributes(g_nx, "weight", edge_weights)
+    nx.set_edge_attributes(g_nx, name="weight", values=edge_weights)
 
     # Find target and predicted attributes from attribute set
     node_attributes = set(G_epgm.node_attributes(graph_id, node_type))
