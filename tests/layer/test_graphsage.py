@@ -32,7 +32,7 @@ def test_mean_agg_constructor():
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert not agg.has_bias
-    assert agg.act == keras.backend.relu
+    assert agg.act.__name__ == "relu"
 
 
 def test_mean_agg_constructor_1():
