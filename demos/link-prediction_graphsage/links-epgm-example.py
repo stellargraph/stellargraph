@@ -236,8 +236,6 @@ def train(
 
     # Final estimator layer
     prediction = link_classification(
-        hidden_src=None,
-        hidden_dst=None,
         output_dim=1,
         output_act="sigmoid",
         edge_feature_method=args.edge_feature_method,
