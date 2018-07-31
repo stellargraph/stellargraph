@@ -24,11 +24,13 @@ import keras
 import numpy as np
 import pytest
 
+
 class Test_Link_Inference(object):
     """
     Group of tests for link_inference() function
     """
-    d = 100    # dimensionality of embedding vector space
+
+    d = 100  # dimensionality of embedding vector space
     d_out = 10  # dimensionality of link inference output
 
     def test_ip(self):
@@ -38,20 +40,24 @@ class Test_Link_Inference(object):
         x_src /= np.linalg.norm(x_src)  # normalize x_src
         x_dst = np.random.randn(self.d)
         x_dst -= x_dst.dot(x_src) * x_src  # make x_dst orthogonal to x_src
-        x_dst /= np.linalg.norm(x_dst)   # normalize x_dst
+        x_dst /= np.linalg.norm(x_dst)  # normalize x_dst
 
         expected = np.dot(x_src, x_dst)
 
         sess = tf.InteractiveSession()
 
-        x_src = tf.constant(x_src, shape=(1, self.d), dtype='float64')
-        x_dst = tf.constant(x_dst, shape=(1, self.d), dtype='float64')
+        x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
+        x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
-        li = link_inference(edge_feature_method='ip')([x_src, x_dst])
-        print("link inference with 'ip' operator on orthonormal vectors: {}, expected: {}".format(li.eval(), expected))
+        li = link_inference(edge_feature_method="ip")([x_src, x_dst])
+        print(
+            "link inference with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
+                li.eval(), expected
+            )
+        )
         assert li.eval() == pytest.approx(0)
 
-        li = link_inference(edge_feature_method='ip')([x_src, x_src])
+        li = link_inference(edge_feature_method="ip")([x_src, x_src])
         print("link inference with 'ip' operator on unit vector: ", li.eval())
         assert li.eval() == pytest.approx(1)
 
@@ -73,7 +79,9 @@ class Test_Link_Inference(object):
         inp_dst = keras.Input(shape=(1, self.d))
 
         for op in ["mul", "l1", "l2", "avg"]:
-            out = link_inference(output_dim=self.d_out, edge_feature_method=op)([inp_src, inp_dst])
+            out = link_inference(output_dim=self.d_out, edge_feature_method=op)(
+                [inp_src, inp_dst]
+            )
             li = keras.Model(inputs=[inp_src, inp_dst], outputs=out)
 
             res = li.predict(x=[x_src, x_dst])
@@ -87,7 +95,8 @@ class Test_Link_Classification(object):
     """
     Group of tests for link_classification() function
     """
-    d = 100    # dimensionality of embedding vector space
+
+    d = 100  # dimensionality of embedding vector space
     d_out = 10  # dimensionality of link classification output
 
     def test_ip(self):
@@ -97,20 +106,24 @@ class Test_Link_Classification(object):
         x_src /= np.linalg.norm(x_src)  # normalize x_src
         x_dst = np.random.randn(self.d)
         x_dst -= x_dst.dot(x_src) * x_src  # make x_dst orthogonal to x_src
-        x_dst /= np.linalg.norm(x_dst)   # normalize x_dst
+        x_dst /= np.linalg.norm(x_dst)  # normalize x_dst
 
         expected = np.dot(x_src, x_dst)
 
         sess = tf.InteractiveSession()
 
-        x_src = tf.constant(x_src, shape=(1, self.d), dtype='float64')
-        x_dst = tf.constant(x_dst, shape=(1, self.d), dtype='float64')
+        x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
+        x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
-        li = link_classification(edge_feature_method='ip')([x_src, x_dst])
-        print("link classification with 'ip' operator on orthonormal vectors: {}, expected: {}".format(li.eval(), expected))
+        li = link_classification(edge_feature_method="ip")([x_src, x_dst])
+        print(
+            "link classification with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
+                li.eval(), expected
+            )
+        )
         assert li.eval() == pytest.approx(0)
 
-        li = link_classification(edge_feature_method='ip')([x_src, x_src])
+        li = link_classification(edge_feature_method="ip")([x_src, x_src])
         print("link classification with 'ip' operator on unit vector: ", li.eval())
         assert li.eval() == pytest.approx(1)
 
@@ -132,11 +145,15 @@ class Test_Link_Classification(object):
         inp_dst = keras.Input(shape=(1, self.d))
 
         for op in ["mul", "l1", "l2", "avg"]:
-            out = link_classification(output_dim=self.d_out, edge_feature_method=op)([inp_src, inp_dst])
+            out = link_classification(output_dim=self.d_out, edge_feature_method=op)(
+                [inp_src, inp_dst]
+            )
             li = keras.Model(inputs=[inp_src, inp_dst], outputs=out)
 
             res = li.predict(x=[x_src, x_dst])
-            print("link classification with '{}' operator: {}".format(op, res.flatten()))
+            print(
+                "link classification with '{}' operator: {}".format(op, res.flatten())
+            )
 
             assert res.shape == (1, self.d_out)
             assert isinstance(res.flatten()[0], np.float32)
@@ -148,7 +165,8 @@ class Test_Link_Regression(object):
     """
     Group of tests for link_regression() function
     """
-    d = 100    # dimensionality of embedding vector space
+
+    d = 100  # dimensionality of embedding vector space
     d_out = 10  # dimensionality of link classification output
     clip_limits = (0, 1)
 
@@ -159,20 +177,24 @@ class Test_Link_Regression(object):
         x_src /= np.linalg.norm(x_src)  # normalize x_src
         x_dst = np.random.randn(self.d)
         x_dst -= x_dst.dot(x_src) * x_src  # make x_dst orthogonal to x_src
-        x_dst /= np.linalg.norm(x_dst)   # normalize x_dst
+        x_dst /= np.linalg.norm(x_dst)  # normalize x_dst
 
         expected = np.dot(x_src, x_dst)
 
         sess = tf.InteractiveSession()
 
-        x_src = tf.constant(x_src, shape=(1, self.d), dtype='float64')
-        x_dst = tf.constant(x_dst, shape=(1, self.d), dtype='float64')
+        x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
+        x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
-        li = link_regression(edge_feature_method='ip')([x_src, x_dst])
-        print("link regression with 'ip' operator on orthonormal vectors: {}, expected: {}".format(li.eval(), expected))
+        li = link_regression(edge_feature_method="ip")([x_src, x_dst])
+        print(
+            "link regression with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
+                li.eval(), expected
+            )
+        )
         assert li.eval() == pytest.approx(0)
 
-        li = link_regression(edge_feature_method='ip')([x_src, x_src])
+        li = link_regression(edge_feature_method="ip")([x_src, x_src])
         print("link regression with 'ip' operator on unit vector: ", li.eval())
         assert li.eval() == pytest.approx(1)
 
@@ -194,7 +216,9 @@ class Test_Link_Regression(object):
         inp_dst = keras.Input(shape=(1, self.d))
 
         for op in ["mul", "l1", "l2", "avg"]:
-            out = link_regression(output_dim=self.d_out, edge_feature_method=op)([inp_src, inp_dst])
+            out = link_regression(output_dim=self.d_out, edge_feature_method=op)(
+                [inp_src, inp_dst]
+            )
             li = keras.Model(inputs=[inp_src, inp_dst], outputs=out)
 
             res = li.predict(x=[x_src, x_dst])
@@ -202,7 +226,6 @@ class Test_Link_Regression(object):
 
             assert res.shape == (1, self.d_out)
             assert isinstance(res.flatten()[0], np.float32)
-
 
     def test_clip_limits(self):
         """
@@ -225,7 +248,11 @@ class Test_Link_Regression(object):
         inp_dst = keras.Input(shape=(1, self.d))
 
         for op in ["mul", "l1", "l2", "avg"]:
-            out = link_regression(output_dim=self.d_out, edge_feature_method=op, clip_limits=self.clip_limits)([inp_src, inp_dst])
+            out = link_regression(
+                output_dim=self.d_out,
+                edge_feature_method=op,
+                clip_limits=self.clip_limits,
+            )([inp_src, inp_dst])
             li = keras.Model(inputs=[inp_src, inp_dst], outputs=out)
 
             res = li.predict(x=[x_src, x_dst])
@@ -233,4 +260,3 @@ class Test_Link_Regression(object):
 
             assert res.shape == (1, self.d_out)
             assert isinstance(res.flatten()[0], np.float32)
-
