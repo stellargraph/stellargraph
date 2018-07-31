@@ -55,6 +55,7 @@ class Test_Link_Inference(object):
                 li.eval(), expected
             )
         )
+        assert li.eval() == pytest.approx(expected)
         assert li.eval() == pytest.approx(0)
 
         li = link_inference(edge_feature_method="ip")([x_src, x_src])
