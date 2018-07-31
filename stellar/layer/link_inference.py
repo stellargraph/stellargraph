@@ -61,8 +61,6 @@ class LeakyClippedLinear(Layer):
 
 
 def link_inference(
-    hidden_src: Optional[List[int]] = None,
-    hidden_dst: Optional[List[int]] = None,
     output_dim: int = 1,
     output_act: AnyStr = "linear",
     edge_feature_method: AnyStr = "ip",
@@ -72,10 +70,6 @@ def link_inference(
     Defines an edge inference function that takes source, destination node features as input,
     and returns a numeric vector of output_dim size.
 
-        hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
-            If None, no dense transform is applied.
-        hidden_dst ([list[int]], optional): Hidden sizes for dense layer transforms of destination node features.
-            If None, no dense transform is applied.
         output_dim (int): Number of predictor's output units (desired dimensionality of the output)
         output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
             this can be user-defined, but must be a Keras function
@@ -96,14 +90,6 @@ def link_inference(
     def edge_function(x):
         x0 = x[0]
         x1 = x[1]
-
-        if hidden_src:
-            for hid_src in hidden_src:
-                x0 = Dense(hid_src, activation="relu")(x0)
-
-        if hidden_dst:
-            for hid_dst in hidden_dst:
-                x1 = Dense(hid_dst, activation="relu")(x1)
 
         if edge_feature_method == "ip":
             out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
