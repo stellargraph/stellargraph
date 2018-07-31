@@ -75,7 +75,7 @@ def link_inference(
             this can be user-defined, but must be a Keras function
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
             One of:
-                'ip' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
                 'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
                 'concat' (concatenation),
                 'l1' (l1(u,v)_i = |u_i-v_i|),
@@ -91,7 +91,7 @@ def link_inference(
         x0 = x[0]
         x1 = x[1]
 
-        if edge_feature_method == "ip":
+        if edge_feature_method == "ip" or edge_feature_method == "dot":
             out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
                 [x0, x1]
             )
@@ -159,7 +159,7 @@ def link_classification(
             this can be user-defined, but must be a Keras function
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
             One of:
-                'ip' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
                 'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
                 'concat' (concatenation),
                 'l1' (l1(u,v)_i = |u_i-v_i|),
@@ -195,7 +195,7 @@ def link_regression(
             the LeakyClippedLinear unit is not applied.
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
             One of:
-                'ip' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
                 'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
                 'concat' (concatenation),
                 'l1' (l1(u,v)_i = |u_i-v_i|),
