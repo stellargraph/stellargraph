@@ -64,6 +64,7 @@ def link_inference(
     output_dim: int = 1,
     output_act: AnyStr = "linear",
     edge_feature_method: AnyStr = "ip",
+    clip_limits: Optional[Tuple[float]] = None,
     name: AnyStr = "link_inference",
 ):
     """
@@ -81,6 +82,9 @@ def link_inference(
                 'l1' (l1(u,v)_i = |u_i-v_i|),
                 'l2' (l2(u,v)_i = (u_i-v_i)^2),
                 'avg' (avg(u,v) = (u+v)/2)
+        clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
+            the LeakyClippedLinear unit is not applied.
+        name (str): optional name of the defined function, used for error logging
 
     Returns:
         Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
@@ -135,6 +139,11 @@ def link_inference(
                 )
             )
 
+        if clip_limits:
+            out = LeakyClippedLinear(
+                low=clip_limits[0], high=clip_limits[1], alpha=0.1
+            )(out)
+
         return out
 
     print(
@@ -183,7 +192,7 @@ def link_classification(
 
 def link_regression(
     output_dim: int = 1,
-    clip_limits: Optional[Tuple[int]] = None,
+    clip_limits: Optional[Tuple[float]] = None,
     edge_feature_method: AnyStr = "ip",
 ):
     """
@@ -191,7 +200,7 @@ def link_regression(
     (source, destination) node features.
 
         output_dim (int): Dimensionality of the output vector, default is 1 for scalar output
-        clip_limits (Tuple[int]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
+        clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
             One of:
@@ -211,12 +220,8 @@ def link_regression(
         output_dim=output_dim,
         output_act="linear",
         edge_feature_method=edge_feature_method,
+        clip_limits=clip_limits,
         name="link_regression",
     )
-
-    if clip_limits:
-        edge_function = LeakyClippedLinear(
-            low=clip_limits[0], high=clip_limits[1], alpha=0.1
-        )(edge_function)
 
     return edge_function
