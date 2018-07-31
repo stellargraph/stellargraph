@@ -20,9 +20,8 @@ link attribute inference (regression)
 """
 
 from typing import AnyStr, Optional, List, Tuple
-from keras.layers import Layer, Concatenate, Dense, Lambda, Multiply, Reshape
+from keras.layers import Layer, Concatenate, Dense, Lambda, Multiply, Average, Reshape
 from keras import backend as K
-import sys
 
 
 class LeakyClippedLinear(Layer):
@@ -81,7 +80,13 @@ def link_inference(
         output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
             this can be user-defined, but must be a Keras function
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
-            One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
+            One of:
+                'ip' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
+                'concat' (concatenation),
+                'l1' (l1(u,v)_i = |u_i-v_i|),
+                'l2' (l2(u,v)_i = (u_i-v_i)^2),
+                'avg' (avg(u,v) = (u+v)/2)
 
     Returns:
         Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
@@ -105,13 +110,35 @@ def link_inference(
                 [x0, x1]
             )
 
-        elif edge_feature_method == "mul":
+        elif edge_feature_method == "l1":
+            # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
+            le = Lambda(lambda x: K.abs(x[0] - x[1]))([x0, x1])
+            # add dense layer to convert le to the desired output:
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((output_dim,))(out)
+
+        elif edge_feature_method == "l2":
+            # l2(u,v)_i = (u_i - v_i)^2 - vector of the same size as u,v
+            le = Lambda(lambda x: K.square(x[0] - x[1]))([x0, x1])
+            # add dense layer to convert le to the desired output:
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((output_dim,))(out)
+
+        elif edge_feature_method == "mul" or edge_feature_method == "hadamard":
             le = Multiply()([x0, x1])
+            # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
         elif edge_feature_method == "concat":
             le = Concatenate()([x0, x1])
+            # add dense layer to convert le to the desired output:
+            out = Dense(output_dim, activation=output_act)(le)
+            out = Reshape((output_dim,))(out)
+
+        elif edge_feature_method == "avg":
+            le = Average()([x0, x1])
+            # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
@@ -145,7 +172,13 @@ def link_classification(
         output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
             this can be user-defined, but must be a Keras function
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
-            One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
+            One of:
+                'ip' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
+                'concat' (concatenation),
+                'l1' (l1(u,v)_i = |u_i-v_i|),
+                'l2' (l2(u,v)_i = (u_i-v_i)^2),
+                'avg' (avg(u,v) = (u+v)/2)
 
     Returns:
         Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
@@ -175,7 +208,13 @@ def link_regression(
         clip_limits (Tuple[int]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
-            One of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
+            One of:
+                'ip' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
+                'concat' (concatenation),
+                'l1' (l1(u,v)_i = |u_i-v_i|),
+                'l2' (l2(u,v)_i = (u_i-v_i)^2),
+                'avg' (avg(u,v) = (u+v)/2)
 
     Returns:
         Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
