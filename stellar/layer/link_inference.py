@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Link inference functions for link classification (including link prediction) and
-link attribute inference (regression)"""
+"""
+Link inference functions for link classification (including link prediction) and
+link attribute inference (regression)
+"""
 
 from typing import AnyStr, Optional, List, Tuple
 from keras.layers import Layer, Concatenate, Dense, Lambda, Multiply, Reshape
@@ -67,7 +69,8 @@ def link_inference(
     edge_feature_method: AnyStr = "ip",
     name: AnyStr = "link_inference",
 ):
-    """Defines an edge inference function that takes source, destination node features as input,
+    """
+    Defines an edge inference function that takes source, destination node features as input,
     and returns a numeric vector of output_dim size.
 
         hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
@@ -130,19 +133,14 @@ def link_inference(
 
 
 def link_classification(
-    hidden_src: Optional[List[int]] = None,
-    hidden_dst: Optional[List[int]] = None,
     output_dim: int = 1,
     output_act: AnyStr = "sigmoid",
     edge_feature_method: AnyStr = "ip",
 ):
-    """Defines a function that predicts a binary or multi-class edge classification output from
-    source, destination node features.
+    """
+    Defines a function that predicts a binary or multi-class edge classification output from
+    (source, destination) node features.
 
-        hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
-            If None, no dense transform is applied.
-        hidden_dst ([list[int]], optional): Hidden sizes for dense layer transforms of destination node features.
-            If None, no dense transform is applied.
         output_dim: (int) Number of classifier's output units (desired dimensionality of the output)
         output_act: (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
             this can be user-defined, but must be a Keras function
@@ -155,8 +153,6 @@ def link_classification(
     """
 
     edge_function = link_inference(
-        hidden_src=hidden_src,
-        hidden_dst=hidden_dst,
         output_dim=output_dim,
         output_act=output_act,
         edge_feature_method=edge_feature_method,
@@ -167,18 +163,13 @@ def link_classification(
 
 
 def link_regression(
-    hidden_src: Optional[List[int]] = None,
-    hidden_dst: Optional[List[int]] = None,
     clip_limits: Optional[Tuple[int]] = None,
     edge_feature_method: AnyStr = "ip",
 ):
-    """Returns a function that predicts a scalar edge regression output from
-    source, destination node features.
+    """
+    Defines a function that predicts a scalar edge regression output from
+    (source, destination) node features.
 
-        hidden_src ([list[int]], optional): Hidden sizes for dense layer transforms of source node features.
-            If None, no dense transform is applied.
-        hidden_dst ([list[int]], optional): Hidden sizes for dense layer transforms of destination node features.
-            If None, no dense transform is applied.
         clip_limits (Tuple[int]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
@@ -190,8 +181,6 @@ def link_regression(
     """
 
     edge_function = link_inference(
-        hidden_src=hidden_src,
-        hidden_dst=hidden_dst,
         output_dim=1,
         output_act="linear",
         edge_feature_method=edge_feature_method,
