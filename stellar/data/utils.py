@@ -19,6 +19,41 @@ from keras.utils.np_utils import to_categorical
 
 
 class NodeFeatureConverter:
+    """
+    Helper class to convert node labels to numeric feature vectors for machine learning.
+
+    This class will order all attributes and assign each attribute a single vector
+    element. Then, for each node, the attribute values for that node will be assigned
+    to the appropriate vector element. If there is no attribute for a particular node,
+    a zero will be assigned. This feature vector will then be written to the node
+    of the `to_graph` as the attribute named `feature`. Optionally the attributes
+    used in creating this feature vector will be deleted, if `remove_converted_attrs`
+    is True.
+
+    If the argument `attributes` is not specified the attributes for all nodes
+    will be found and used as the attribute list. Note that not all nodes are required
+    to have all attributes.
+
+    Also note that it is important specify the target attribute in the `ignored_attributes`
+    list otherwise this will be put into the feature vector.
+
+    e.g. Given a graph G with node attributes including a target attribute named `target`
+         we convert these attributes to feature vectors and store in the same graph with
+         the following command:
+
+         node_feat_conv = NodeFeatureConverter(G, G, ignored_attributes=['target'])
+
+    Args:
+        from_graph: NetworkX or StellarGraph containing node attributes to parse
+        to_graph: NetworkX or StellarGraph to store the numeric feature attributes
+        ignored_attributes:  Attributes to ignore when creating feature vector
+        attributes: List of attributes to use to create feature vector
+        remove_converted_attrs: If True, remove the attributes in the from_graph
+            after they have been processed. If False, do not modify the graph.
+        dtype: Data type of the
+
+    """
+
     def __init__(
         self,
         from_graph,
@@ -38,7 +73,7 @@ class NodeFeatureConverter:
         # Get a set of attributes to use for features
         if attributes is None:
             all_attrs = set(
-                it.chain(*[from_graph.nodes[v].keys() for v in self.node_list])
+                it.chain(*[from_graph.node[v].keys() for v in self.node_list])
             )
         else:
             all_attrs = set(attributes)
@@ -48,26 +83,26 @@ class NodeFeatureConverter:
 
         # sets are unordered, so sort them to ensure reproducible order:
         self.feature_list = sorted(feature_attr)
-        self.feature_id_to_index = {a: ii for ii, a in enumerate(feature_attr)}
+        self.feature_id_to_index = {a: ii for ii, a in enumerate(self.feature_list)}
 
         # Feature size will be number of found attributes
         self.feature_size = len(self.feature_list)
 
         # Store features in graph
         if to_graph is not None:
-            # Set the "feature" and encoded "target" attributes for all nodes in the graph.
+            # Set the "feature" attributes for all nodes in the graph.
             for v in self.node_list:
-                vdata = from_graph.nodes[v]
+                vdata = from_graph.node[v]
 
                 # Decode attributes to a feature array
                 node_feature_array = np.zeros(self.feature_size, dtype=dtype)
                 for attr_name, attr_value in vdata.items():
                     index = self.feature_id_to_index.get(attr_name)
-                    if index:
+                    if index is not None:
                         node_feature_array[index] = attr_value
 
                 # Store feature array in graph
-                to_graph.nodes[v]["feature"] = node_feature_array
+                to_graph.node[v]["feature"] = node_feature_array
 
                 # Remove attributes
                 if remove_converted_attrs:
@@ -78,9 +113,7 @@ class NodeFeatureConverter:
         # Store features in indexed array
         else:
             self.feature_array = np.zeros((n_nodes, self.feature_size), dtype=dtype)
-
-            # Set the "feature" and encoded "target" attributes for all nodes in the graph.
-            for ii, v in enumerate(self.node_list):
+g            for ii, v in enumerate(self.node_list):
                 vdata = from_graph.nodes[v]
 
                 # Decode attributes to a feature array
@@ -116,7 +149,7 @@ class NodeFeatureConverter:
 class NodeTargetConverter:
     """
     Targets need to be converted to a numeric value, if not one already.
-    Depening on the downstream model, different conversions are required.
+    Depending on the downstream model, different conversions are required.
 
     * If target_type is None, convert the target attributes to float
       (e.g. for regression)
@@ -137,8 +170,14 @@ class NodeTargetConverter:
         self._graph = from_graph
         self._target_attr = target
 
-        # THis is none for non-categorical values
+        # This is none for non-categorical values
         self.target_category_values = None
+
+        # In the semi-supervised case, not all nodes have a target attribute.
+        # Here filter the nodes that do.
+        nodes_with_target = [
+            n for n, n_data in from_graph.nodes(data=True) if target in n_data
+        ]
 
         if target_type is None:
             self.target_to_value = lambda x: np.float32(x)
@@ -146,7 +185,7 @@ class NodeTargetConverter:
 
         elif target_type == "categorical":
             self.target_category_values = sorted(
-                set([from_graph.node[n][target] for n in from_graph.nodes()])
+                set([from_graph.node[n][target] for n in nodes_with_target])
             )
 
             self.target_to_value = lambda x: self.target_category_values.index(x)
@@ -154,8 +193,9 @@ class NodeTargetConverter:
 
         elif target_type == "1hot" or target_type == "onehot":
             self.target_category_values = sorted(
-                set([from_graph.node[n][target] for n in from_graph.nodes()])
+                set([from_graph.node[n][target] for n in nodes_with_target])
             )
+
             self.value_to_target = lambda x: self.target_category_values[
                 np.argmax(x, axis=1)
             ]
@@ -165,6 +205,7 @@ class NodeTargetConverter:
 
         elif target_type in np.typeDict:
             dtype = np.typeDict[target_type]
+
             self.target_to_value = lambda x: dtype(x)
             self.value_to_target = lambda x: dtype(x)
 
@@ -179,9 +220,9 @@ class NodeTargetConverter:
 
     def __call__(self, x, inverse=False):
         if not inverse:
-            return self.target_to_value(x)
+            return self.target_to_value(x) if x is not None else None
         else:
-            return self.value_to_target(x)
+            return self.value_to_target(x) if x is not None else None
 
     def convert_node_label_pairs(self, node_pairs_list):
         """
@@ -208,13 +249,12 @@ class NodeTargetConverter:
             node_ids: List of node IDs in the graph.
 
         Returns:
-            A list of node_ids and a list of target values to
-            be passed to a mapper object.
+            A list target values to be passed to a mapper object.
         """
         label_values = np.array(
-            [self(self._graph.nodes[v][self._target_attr]) for v in node_ids]
+            [self(self._graph.node[v].get(self._target_attr)) for v in node_ids]
         )
-        return node_ids, label_values
+        return label_values
 
     def get_node_label_pairs(self, node_ids=None, convert=False):
         """
@@ -235,11 +275,11 @@ class NodeTargetConverter:
 
         if convert:
             id_target_pairs = [
-                (v, self(self._graph.nodes[v][self._target_attr])) for v in node_ids
+                (v, self(self._graph.node[v].get(self._target_attr))) for v in node_ids
             ]
         else:
             id_target_pairs = [
-                (v, self._graph.nodes[v][self._target_attr]) for v in node_ids
+                (v, self._graph.node[v].get(self._target_attr)) for v in node_ids
             ]
 
         return id_target_pairs
