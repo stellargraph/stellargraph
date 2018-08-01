@@ -113,7 +113,7 @@ class NodeFeatureConverter:
         # Store features in indexed array
         else:
             self.feature_array = np.zeros((n_nodes, self.feature_size), dtype=dtype)
-g            for ii, v in enumerate(self.node_list):
+            for ii, v in enumerate(self.node_list):
                 vdata = from_graph.nodes[v]
 
                 # Decode attributes to a feature array
