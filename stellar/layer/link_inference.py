@@ -72,8 +72,8 @@ def link_inference(
     and returns a numeric vector of output_dim size.
 
         output_dim (int): Number of predictor's output units (desired dimensionality of the output)
-        output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
-            this can be user-defined, but must be a Keras function
+        output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc.,
+            or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
             One of:
                 'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
@@ -164,8 +164,8 @@ def link_classification(
     (source, destination) node features.
 
         output_dim (int): Number of classifier's output units (desired dimensionality of the output)
-        output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc. -
-            this can be user-defined, but must be a Keras function
+        output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc.,
+            or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
             One of:
                 'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
