@@ -40,24 +40,6 @@ import itertools as it
 import pytest
 
 
-def create_test_sampler(G):
-    def neigh_samples(head_nodes, current_per_hop):
-        if len(current_per_hop) < 1:
-            return list(head_nodes)
-
-        num_for_hop, next_samples = current_per_hop[0], current_per_hop[1:]
-        neighbour_samples = it.chain(
-            *[random.choices(list(G.neighbors(hn)), k=num_for_hop) for hn in head_nodes]
-        )
-        return head_nodes + neigh_samples(list(neighbour_samples), next_samples)
-
-    class Sampler(SampledBreadthFirstWalk):
-        def run(self, nodes=[], n=1, n_size=[]):
-            return [neigh_samples([hn], n_size) for hn in nodes]
-
-    return Sampler(G)
-
-
 def test_graphsage_constructor():
     n_feat = 4
 
@@ -66,9 +48,7 @@ def test_graphsage_constructor():
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
 
-    mapper = GraphSAGENodeMapper(
-        G, G.nodes(), create_test_sampler(G), batch_size=2, num_samples=[2, 2]
-    )
+    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
     assert mapper.batch_size == 2
     assert mapper.data_size == 4
     assert len(mapper.ids) == 4
@@ -87,9 +67,7 @@ def test_graphsage_1():
     for v in G.nodes():
         G.node[v]["feature"] = np.ones(n_feat)
 
-    mapper = GraphSAGENodeMapper(
-        G, G.nodes(), create_test_sampler(G), batch_size=n_batch, num_samples=[2, 2]
-    )
+    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=n_batch, num_samples=[2, 2])
 
     assert len(mapper) == 2
 
@@ -103,25 +81,6 @@ def test_graphsage_1():
 
     with pytest.raises(IndexError):
         nf, nl = mapper[2]
-
-
-def test_graphsage_wrong_sampler():
-    n_feat = 4
-    n_batch = 2
-
-    # test graph
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    for v in G.nodes():
-        G.node[v]["feature"] = np.ones(n_feat)
-
-    with pytest.raises(TypeError):
-        mapper = GraphSAGENodeMapper(
-            G, G.nodes(), UniformRandomWalk(G), batch_size=n_batch, num_samples=[2, 2]
-        )
 
 
 def test_graphsage_2():
@@ -139,12 +98,7 @@ def test_graphsage_2():
 
     with pytest.raises(RuntimeWarning):
         GraphSAGENodeMapper(
-            G,
-            G.nodes(),
-            create_test_sampler(G),
-            batch_size=n_batch,
-            num_samples=[2, 2],
-            feature_size=8,
+            G, G.nodes(), batch_size=n_batch, num_samples=[2, 2], feature_size=8
         )
 
 
@@ -161,9 +115,7 @@ def test_graphsage_3():
     for v in G.nodes():
         G.node[v]["feature"] = np.ones(n_feat)
 
-    mapper = GraphSAGENodeMapper(
-        G, G.nodes(), create_test_sampler(G), batch_size=n_batch, num_samples=[0]
-    )
+    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=n_batch, num_samples=[0])
 
     assert len(mapper) == 2
 
@@ -173,27 +125,3 @@ def test_graphsage_3():
         assert nf[0].shape == (n_batch, 1, n_feat)
         assert nf[1].shape == (n_batch, 1, n_feat)
         assert nl is None
-
-
-def test_graphsage_no_samples():
-    n_feat = 4
-    n_batch = 2
-
-    # test graph
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    for v in G.nodes():
-        G.node[v]["feature"] = np.ones(n_feat)
-
-    mapper = GraphSAGENodeMapper(
-        G, G.nodes(), create_test_sampler(G), batch_size=n_batch, num_samples=[]
-    )
-
-    assert len(mapper) == 2
-    nf, nl = mapper[0]
-
-    assert len(nf) == 1
-    assert nl is None
