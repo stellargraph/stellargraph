@@ -20,22 +20,22 @@ from keras.utils.np_utils import to_categorical
 
 class NodeFeatureConverter:
     """
-    Helper class to convert node labels to numeric feature vectors for machine learning.
+    Helper class to convert node attributes to numeric feature vectors for machine learning.
 
-    This class will order all attributes and assign each attribute a single vector
+    This class will order all node attributes and assign each attribute a single feature vector
     element. Then, for each node, the attribute values for that node will be assigned
-    to the appropriate vector element. If there is no attribute for a particular node,
-    a zero will be assigned. This feature vector will then be written to the node
+    to the appropriate node's feature vector element. If there is no attribute for a particular node,
+    a zero will be assigned. The resulting node feature vector will then be written to the node
     of the `to_graph` as the attribute named `feature`. Optionally the attributes
     used in creating this feature vector will be deleted, if `remove_converted_attrs`
     is True.
 
-    If the argument `attributes` is not specified the attributes for all nodes
+    If the argument `attributes` is not specified the union set of all attributes for all nodes
     will be found and used as the attribute list. Note that not all nodes are required
     to have all attributes.
 
-    Also note that it is important specify the target attribute in the `ignored_attributes`
-    list otherwise this will be put into the feature vector.
+    Also note that it is important to specify the target attribute (the attribute to be predicted in the subsequent machine
+    learning task on the graph) in the `ignored_attributes` list, otherwise this will be put into the feature vector.
 
     e.g. Given a graph G with node attributes including a target attribute named `target`
          we convert these attributes to feature vectors and store in the same graph with
@@ -50,7 +50,7 @@ class NodeFeatureConverter:
         attributes: List of attributes to use to create feature vector
         remove_converted_attrs: If True, remove the attributes in the from_graph
             after they have been processed. If False, do not modify the graph.
-        dtype: Data type of the
+        dtype: Data type of the numeric node feature vectors
 
     """
 
@@ -148,8 +148,9 @@ class NodeFeatureConverter:
 
 class NodeTargetConverter:
     """
-    Targets need to be converted to a numeric value, if not one already.
-    Depending on the downstream model, different conversions are required.
+    Node target attributes (targets to be learned/predicted by the machine learning task on the graph) need to be
+    converted to a numeric value, if not one already.
+    Depending on the downstream machine learning model, different conversions are required.
 
     * If target_type is None, convert the target attributes to float
       (e.g. for regression)
