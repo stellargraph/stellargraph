@@ -182,6 +182,14 @@ def train(
         dropout: The dropout (0->1)
     """
     # Split head nodes into train/test
+
+    # TODO: a "baby" version for the future:
+    # G = StellarGraph(g_nx)
+    # nfs = NodeFeatureSpecification(G, ...)
+    # nts = NodeTargetSpecification(G, ...)
+    # model = NodeClassification(G, nfs, nts, model="GraphSAGE", classifier="logistic")
+    # predictions = model.predict(node_ids)
+
     splitter = NodeSplitter()
     graph_nodes = np.array(
         [(v, vdata.get("subject")) for v, vdata in G.nodes(data=True)]
@@ -251,6 +259,8 @@ def train(
     print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, all_nodes_metrics):
         print("\t{}: {:0.4f}".format(name, val))
+
+    # TODO: extract the GraphSAGE embeddings from x_out, and save/plot them
 
     # Save model
     str_numsamp = "_".join([str(x) for x in num_samples])
