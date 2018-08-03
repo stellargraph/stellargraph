@@ -163,23 +163,23 @@ class GraphSAGE:
         :return:        Output tensor
         """
 
-        def compose_layers(x: List, layer: int):
+        def compose_layers(_x: List, layer: int):
             """
-            Function to recursively compose aggregation layers. When current layer is at final layer, then length of x
-            should be 1, and compose_layers(x, layer) returns x[0].
+            Function to recursively compose aggregation layers. When current layer is at final layer, then length of _x
+            should be 1, and compose_layers(_x, layer) returns _x[0].
 
-            :param x:       List of feature matrix tensors
+            :param _x:       List of feature matrix tensors
             :param layer:   Current layer index
-            :return:        x computed from current layer to output layer
+            :return:        _x computed from current layer to output layer
             """
 
             def x_next(agg):
                 return [
                     agg(
                         [
-                            Dropout(self.dropout)(x[i]),
+                            Dropout(self.dropout)(_x[i]),
                             Dropout(self.dropout)(
-                                self._neigh_reshape[layer][i](x[i + 1])
+                                self._neigh_reshape[layer][i](_x[i + 1])
                             ),
                         ]
                     )
@@ -189,8 +189,12 @@ class GraphSAGE:
             return (
                 compose_layers(x_next(self._aggs[layer]), layer + 1)
                 if layer < self.n_layers
-                else x[0]
+                else _x[0]
             )
+
+        assert isinstance(x, list), "Input features must be a list"
+        assert len(x) == self.n_layers + 1 > 1, \
+            "Length of input features should match the number of GraphSAGE layers"
 
         return self._normalization(compose_layers(x, 0))
 
