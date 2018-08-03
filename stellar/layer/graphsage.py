@@ -193,8 +193,9 @@ class GraphSAGE:
             )
 
         assert isinstance(x, list), "Input features must be a list"
-        assert len(x) == self.n_layers + 1 > 1, \
-            "Length of input features should match the number of GraphSAGE layers"
+        assert (
+            len(x) == self.n_layers + 1 > 1
+        ), "Length of input features should match the number of GraphSAGE layers"
 
         return self._normalization(compose_layers(x, 0))
 
