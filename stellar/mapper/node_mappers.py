@@ -55,7 +55,7 @@ class GraphSAGENodeMapper(Sequence):
         target_id: AnyStr = None,
         feature_size: Optional[int] = None,
         name: AnyStr = None,
-        #TODO: add a check=True argument, toggling the checks for node ids and features
+        # TODO: add a check=True argument, toggling the checks for node ids and features
     ):
         self.G = G
         self.num_samples = num_samples
@@ -74,7 +74,7 @@ class GraphSAGENodeMapper(Sequence):
         # TODO: e.g., assert G.nodes_have_features(FEATURE_LABEL)
         nodes_have_features = all(
             ["feature" in vdata for v, vdata in G.nodes(data=True)]
-            #TODO: make "feature" a special global variable, e.g., NODE_FEATURE_LABEL
+            # TODO: make "feature" a special global variable, e.g., NODE_FEATURE_LABEL
         )
         if not nodes_have_features:
             print("Warning: Not all nodes have a 'feature' attribute.")
