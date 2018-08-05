@@ -172,7 +172,7 @@ def train(
     )
 
 
-def test(G, target_converter, feature_converter, model_file, batch_size, target_attr):
+def test(G, target_converter, feature_converter, model_file, batch_size):
     """
     Load the serialized model and evaluate on all nodes in the graph.
 
@@ -194,9 +194,10 @@ def test(G, target_converter, feature_converter, model_file, batch_size, target_
     ]
 
     # Mapper feeds data from sampled subgraph to GraphSAGE model
-    all_ids, all_labels = target_converter.get_node_labels_for_ids(list(G))
+    all_ids = list(G)
+    all_labels = target_converter.get_targets_for_ids(all_ids)
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, targets=all_labels, name="all"
+        G, all_ids, batch_size, num_samples, all_labels, name="all"
     )
 
     # Evaluate and print metrics
@@ -206,20 +207,23 @@ def test(G, target_converter, feature_converter, model_file, batch_size, target_
     for name, val in zip(model.metrics_names, all_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    # Save predictions
+    # Predict on all nodes
     node_predictions = model.predict_generator(all_mapper)
     predictions = pd.DataFrame(
         [
             {
-                **{"Node": node, "True Class": all_labels[ii]},
+                **{"Node": node, "True Class": target_converter(all_labels[ii], True)},
                 **{
-                    target_converter(jj, True): node_predictions[ii, jj]
+                    target_converter.target_category_values[jj]: node_predictions[ii, jj]
                     for jj in range(len(target_converter))
                 },
             }
             for ii, node in enumerate(all_ids)
         ]
     )
+
+    # Save predictions
+    print("Predictions saved to `predictions.csv`")
     predictions.to_csv("predictions.csv")
 
 

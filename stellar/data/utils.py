@@ -198,7 +198,7 @@ class NodeTargetConverter:
             )
 
             self.value_to_target = lambda x: self.target_category_values[
-                np.argmax(x, axis=1)
+                np.argmax(x)
             ]
             self.target_to_value = lambda x: to_categorical(
                 self.target_category_values.index(x), len(self.target_category_values)
