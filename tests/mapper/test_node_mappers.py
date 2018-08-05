@@ -397,3 +397,4 @@ def test_hinnodemapper_no_neighbors():
 
     # Second edge type (e2): Node 0 has 2, node 1 has none, and node 6 sampling has terminated
     assert np.all(batch_feats[3][:, 0, 0] == np.array([12, 0, 0]))
+
