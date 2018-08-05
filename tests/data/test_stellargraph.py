@@ -221,14 +221,62 @@ def test_graph_schema_sampling():
                 assert set(adj_types) == set(list_types)
 
 
-def test_graph_schema_sampling_layout():
-    for sg in [
-        create_graph_1(),
-        create_graph_2(),
-        create_graph_1(StellarDiGraph()),
-        create_graph_2(StellarDiGraph()),
-    ]:
-        schema = sg.create_graph_schema(create_type_maps=True)
-        sampling_layout = schema.get_sampling_layout(["user"], [2, 2])
+def test_graph_schema_sampling_layout_1():
+    sg = create_graph_1()
+    schema = sg.create_graph_schema(create_type_maps=True)
+    sampling_layout = schema.get_sampling_layout(["user"], [2, 2])
 
-        pass
+    assert len(sampling_layout) == 1
+
+    assert sampling_layout[0][2] == ("user", [2, 3])
+    assert sampling_layout[0][1] == ("movie", [1])
+    assert sampling_layout[0][0] == ("user", [0])
+
+    sg = create_graph_2()
+    schema = sg.create_graph_schema(create_type_maps=True)
+    sampling_layout = schema.get_sampling_layout(["user"], [1, 2])
+
+    assert len(sampling_layout) == 1
+
+    assert sampling_layout[0] == [
+        ("user", [0]),
+        ("movie", [1]),
+        ("user", [2]),
+        ("movie", [3]),
+        ("user", [4]),
+        ("user", [5]),
+        ("movie", [6]),
+        ("user", [7]),
+        ("movie", [8]),
+        ("user", [9]),
+        ("user", [10]),
+    ]
+
+
+def test_graph_schema_sampling_layout_multiple():
+    sg = create_graph_1()
+    schema = sg.create_graph_schema(create_type_maps=True)
+    sampling_layout = schema.get_sampling_layout(["user", "movie"], [1, 2, 2])
+
+    assert len(sampling_layout) == 2
+
+    assert sampling_layout[0] == [
+        ("user", [0]),
+        ("movie", []),
+        ("movie", [1]),
+        ("user", []),
+        ("user", [2]),
+        ("movie", []),
+        ("movie", [3, 4]),
+        ("user", []),
+    ]
+    assert sampling_layout[1] == [
+        ("user", []),
+        ("movie", [0]),
+        ("movie", []),
+        ("user", [1]),
+        ("user", []),
+        ("movie", [2]),
+        ("movie", []),
+        ("user", [3, 4]),
+    ]

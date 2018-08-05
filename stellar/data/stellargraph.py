@@ -303,8 +303,8 @@ class GraphSchema:
 
             # The head nodes will be the first sample in the appropriate
             # sampling list, and the ii-th in the adjacenecy list
-            sample_to_adj = {ii: 0}
-            adj_to_samples[0][1].append(ii)
+            sample_to_adj = {0: ii}
+            adj_to_samples[ii][1].append(0)
 
             # Set the start group as the head node and point the index to the next hop
             node_groups = [(ii, hnt)]
