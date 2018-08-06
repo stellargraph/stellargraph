@@ -197,9 +197,7 @@ class NodeTargetConverter:
                 set([from_graph.node[n][target] for n in nodes_with_target])
             )
 
-            self.value_to_target = lambda x: self.target_category_values[
-                np.argmax(x)
-            ]
+            self.value_to_target = lambda x: self.target_category_values[np.argmax(x)]
             self.target_to_value = lambda x: to_categorical(
                 self.target_category_values.index(x), len(self.target_category_values)
             )
