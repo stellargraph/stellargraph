@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-Graph node classification using GraphSAGE.
+Heterogeneous Graph node classification using GraphSAGE.
 Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
@@ -69,14 +69,13 @@ from stellar.mapper.node_mappers import GraphSAGENodeMapper
 
 def train(
     G,
-    target_converter,
-    feature_converter,
     layer_size,
     num_samples,
     batch_size=100,
     num_epochs=10,
     learning_rate=0.005,
     dropout=0.0,
+    target_attr=None,
 ):
     """
     Train the GraphSAGE model on the specified graph G
@@ -84,8 +83,6 @@ def train(
 
     Args:
         G: NetworkX graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -93,19 +90,21 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # This is very clunky: is there a nicer way?
-    graph_nodes = np.array(target_converter.get_node_label_pairs())
+    # Convert graph node attributes to values
+    feature_converter = NodeFeatureConverter(
+        from_graph=G, ignored_attributes=[target_attr, "label"], to_graph=True
+    )
+
+    # Function to convert labels to values for the Keras model
+    target_converter = NodeTargetConverter(
+        from_graph=G, target=target_attr, target_type="1hot"
+    )
 
     # Split head nodes into train/test
-
-    # TODO: a "baby" version for the future:
-    # G = StellarGraph(g_nx)
-    # nfs = NodeFeatureSpecification(G, ...)
-    # nts = NodeTargetSpecification(G, ...)
-    # model = NodeClassification(G, nfs, nts, model="GraphSAGE", classifier="logistic")
-    # predictions = model.predict(node_ids)
-
     splitter = NodeSplitter()
+    graph_nodes = np.array(
+        [(v, vdata.get(target_attr)) for v, vdata in G.nodes(data=True)]
+    )
     train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
         y=graph_nodes, p=50, test_size=1000
     )
@@ -116,16 +115,16 @@ def train(
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
-        G, train_ids, batch_size, num_samples, train_labels, name="train"
+        G, train_ids, train_labels, batch_size, num_samples, name="train"
     )
     val_mapper = GraphSAGENodeMapper(
-        G, val_ids, batch_size, num_samples, val_labels, name="val"
+        G, val_ids, val_labels, batch_size, num_samples, name="val"
     )
     test_mapper = GraphSAGENodeMapper(
-        G, test_ids, batch_size, num_samples, test_labels, name="test"
+        G, test_ids, test_labels, batch_size, num_samples, name="test"
     )
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, all_labels, name="all"
+        G, all_ids, all_labels, batch_size, num_samples, name="all"
     )
 
     # GraphSAGE model
@@ -170,8 +169,6 @@ def train(
     for name, val in zip(model.metrics_names, all_nodes_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    # TODO: extract the GraphSAGE embeddings from x_out, and save/plot them
-
     # Save model
     str_numsamp = "_".join([str(x) for x in num_samples])
     str_layer = "_".join([str(x) for x in layer_size])
@@ -182,14 +179,12 @@ def train(
     )
 
 
-def test(G, target_converter, feature_converter, model_file, batch_size):
+def test(G, model_file, batch_size, target_attr):
     """
     Load the serialized model and evaluate on all nodes in the graph.
 
     Args:
         G: NetworkX graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
@@ -203,11 +198,18 @@ def test(G, target_converter, feature_converter, model_file, batch_size):
         for ii in range(len(model.input_shape) - 1)
     ]
 
+    # Convert graph node attributes to feature vectors and target values
+    feature_converter = NodeFeatureConverter(
+        from_graph=G, ignored_attributes=[target_attr, "label"], to_graph=True
+    )
+    target_converter = NodeTargetConverter(
+        from_graph=G, target=target_attr, target_type="1hot"
+    )
+
     # Mapper feeds data from sampled subgraph to GraphSAGE model
-    all_ids = list(G)
-    all_labels = target_converter.get_targets_for_ids(all_ids)
+    all_ids, all_labels = target_converter.get_node_labels_for_ids(list(G))
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, all_labels, name="all"
+        G, all_ids, all_labels, batch_size, num_samples, name="all"
     )
 
     # Evaluate and print metrics
@@ -217,23 +219,20 @@ def test(G, target_converter, feature_converter, model_file, batch_size):
     for name, val in zip(model.metrics_names, all_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    # Predict on all nodes
+    # Save predictions
     node_predictions = model.predict_generator(all_mapper)
     predictions = pd.DataFrame(
         [
             {
-                **{"Node": node, "True Class": target_converter(all_labels[ii], True)},
+                **{"Node": node, "True Class": all_labels[ii]},
                 **{
-                    target_converter.target_category_values[jj]: node_predictions[ii, jj]
+                    target_converter(jj, True): node_predictions[ii, jj]
                     for jj in range(len(target_converter))
                 },
             }
             for ii, node in enumerate(all_ids)
         ]
     )
-
-    # Save predictions
-    print("Predictions saved to `predictions.csv`")
     predictions.to_csv("predictions.csv")
 
 
@@ -301,36 +300,33 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-t",
-        "--target",
+        "--target_attr",
         type=str,
         default="subject",
         help="The target node attribute (categorical)",
     )
+    parser.add_argument(
+        "-t",
+        "--target_type",
+        type=str,
+        default="user",
+        help="The target node attribute (categorical)",
+    )
     args, cmdline_args = parser.parse_known_args()
 
-    # Load graph
     graph_loc = os.path.expanduser(args.graph)
     G = from_epgm(graph_loc)
-
-    # Convert graph node attributes to feature vectors and target values
-    feature_converter = NodeFeatureConverter(
-        from_graph=G, to_graph=G, ignored_attributes=[args.target, "label"]
-    )
-    target_converter = NodeTargetConverter(
-        from_graph=G, target=args.target, target_type="1hot"
-    )
 
     if args.checkpoint is None:
         train(
             G,
-            target_converter,
-            feature_converter,
             args.layer_size,
             args.neighbour_samples,
             args.batch_size,
             args.epochs,
             args.learningrate,
             args.dropout,
+            args.target,
         )
     else:
-        test(G, target_converter, feature_converter, args.checkpoint, args.batch_size)
+        test(G, args.checkpoint, args.batch_size, args.target)

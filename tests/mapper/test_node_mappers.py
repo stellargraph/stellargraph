@@ -118,10 +118,58 @@ def test_graphsage_3():
     mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=n_batch, num_samples=[0])
 
     assert len(mapper) == 2
-
-    for ii in range(1):
+    for ii in range(len(mapper)):
         nf, nl = mapper[ii]
         assert len(nf) == 2
         assert nf[0].shape == (n_batch, 1, n_feat)
         assert nf[1].shape == (n_batch, 1, n_feat)
         assert nl is None
+
+
+def test_graphsage_with_targets():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_edges_from(elist)
+
+    for v in G.nodes():
+        G.node[v]["feature"] = np.ones(n_feat)
+
+    nodes = list(G)
+    targets = np.random.choice([0, 1], size=len(nodes))
+
+    mapper = GraphSAGENodeMapper(
+        G, nodes, batch_size=n_batch, num_samples=[0], targets=targets
+    )
+
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert len(nf) == 2
+        assert nf[0].shape == (n_batch, 1, n_feat)
+        assert nf[1].shape == (n_batch, 1, n_feat)
+        assert type(nl) == np.ndarray
+
+
+def test_graphsage_wrong_target_length():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_edges_from(elist)
+
+    for v in G.nodes():
+        G.node[v]["feature"] = np.ones(n_feat)
+
+    nodes = list(G)
+    targets = np.random.choice([0, 1], size=2)
+
+    with pytest.raises(ValueError):
+        GraphSAGENodeMapper(
+            G, nodes, batch_size=n_batch, num_samples=[0], targets=targets
+        )

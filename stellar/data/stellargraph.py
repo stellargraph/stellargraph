@@ -361,6 +361,31 @@ class StellarGraphBase:
         )
         return s
 
+    def create_node_index_map(self):
+        """
+        A mapping between integer indices and node IDs and the reverse.
+        This mapping is stable for graphs with the same node ids.
+
+        Returns two mappings: `node_index_to_id` and `node_id_to_index`
+        such that:
+            node_index_to_id[index] = node_id
+            node_id_to_index[node_id] = index
+
+        where:
+            index is an integer from 0 to G.number_of_nodes() - 1
+            node_id is the label of the node in the graph,
+            i.e. one of list(G)
+
+        Returns:
+            node_index_to_id, node_id_to_index
+        """
+        # Node IDs may be integers, strings or in fact any hashable type.
+        # Convert them to strings before sorting.
+        node_index_to_id = sorted(self.nodes(), key=str)
+
+        node_id_to_index = {node: ii for ii, node in enumerate(node_index_to_id)}
+        return node_index_to_id, node_id_to_index
+
     def info(self, sample=None):
         """
         Return an information string summarizing information on the current graph.
