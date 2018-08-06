@@ -32,7 +32,7 @@ def test_mean_hin_agg_constructor():
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert not agg.has_bias
-    assert agg.act == keras.backend.relu
+    assert agg.act.__name__ == "relu"
 
 
 def test_mean_hin_agg_constructor_1():
@@ -90,7 +90,7 @@ def test_mean_hin_agg_apply_2():
 
     actual = model.predict(x)
     print(actual)
-    expected = [np.array([[[2, 8]]]), np.array([[[4, 10]]])]
+    expected = [np.array([[[2, 8]]]), np.array([[[3, 9]]])]
     assert actual == pytest.approx(expected)
 
 
