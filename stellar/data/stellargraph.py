@@ -247,7 +247,7 @@ class GraphSchema:
             edge_types = []
         return edge_types
 
-    def _get_sampling_tree(self, head_node_types, n_hops):
+    def get_sampling_tree(self, head_node_types, n_hops):
         """
         Returns a sampling tree for the specified head node types
         for neighbours up to n_hops away.
@@ -258,38 +258,88 @@ class GraphSchema:
             n_hops: The number of hops away
 
         Returns:
-            A list of the form [(unique_id, node_type, [children]), ...]
-            where children are (unique_id, edge_type, [children])
+            A list of the form [(type_adjacency_index, node_type, [children]), ...]
+            where children are (type_adjacency_index, node_type, [children])
 
         """
+        adjacency_list = self.get_type_adjacency_list(head_node_types, n_hops)
 
-        def gen_key(key, *args):
-            return key + "_".join(map(str, args))
-
-        def get_neighbor_types(node_type, level, key=""):
-            if level == 0:
-                return []
-
-            neighbour_node_types = [
-                (
-                    gen_key(key, ii),
-                    et,
-                    get_neighbor_types(et.n2, level - 1, gen_key(key, ii) + "_"),
-                )
-                for ii, et in enumerate(self.schema[node_type])
+        def pack_tree(nodes, level):
+            return [
+                (n, adjacency_list[n][0], pack_tree(adjacency_list[n][1], level + 1))
+                for n in nodes
             ]
-            return neighbour_node_types
 
-        # Create root nodes at top of heirachy and recurse in schema from head nodes.
-        neighbour_node_types = [
-            (
-                str(jj),
-                node_type,
-                get_neighbor_types(node_type, n_hops, gen_key("", jj) + "#"),
-            )
-            for jj, node_type in enumerate(head_node_types)
-        ]
-        return neighbour_node_types
+        # The first k nodes will be the head nodes in the adjacency list
+        # TODO: generalize this?
+        return adjacency_list, pack_tree(range(len(head_node_types)), 0)
+
+    def get_sampling_layout(self, head_node_types, num_samples):
+        """
+        For a sampling scheme with a list of head node types and the
+        number of samples per hop, return the map from the actual
+        sample index to the adjacency list index.
+
+        Args:
+            head_node_types: A list of node types of the head nodes.
+            num_samples: A list of integers that are the number of neighbours
+                         to sample at each hop.
+
+        Returns:
+            A list containing, for each head node type, a list consisting of
+            tuples of (node_type, sampling_index). The list matches the
+            list given by the method `get_type_adjacency_list(...)` and can be
+            used to reformat the samples given by `SampledBreadthFirstWalk` to
+            that expected by the HinSAGE model.
+        """
+        adjacency_list = self.get_type_adjacency_list(head_node_types, len(num_samples))
+        sample_index_layout = []
+        sample_inverse_layout = []
+
+        # The head nodes are the first K nodes in the adjacency list
+        # TODO: generalize this?
+        for ii, hnt in enumerate(head_node_types):
+            adj_to_samples = [(adj[0], []) for adj in adjacency_list]
+
+            # The head nodes will be the first sample in the appropriate
+            # sampling list, and the ii-th in the adjacenecy list
+            sample_to_adj = {0: ii}
+            adj_to_samples[ii][1].append(0)
+
+            # Set the start group as the head node and point the index to the next hop
+            node_groups = [(ii, hnt)]
+            sample_index = 1
+
+            # Iterate over all hops
+            for jj, nsamples in enumerate(num_samples):
+                next_node_groups = []
+                for a_key, nt1 in node_groups:
+                    # For each node we sample from all edge types from that node
+                    edge_types = self.edge_types_for_node_type(nt1)
+
+                    # We want to place the samples for these edge types in the correct
+                    # place in the adjacency list
+                    next_keys = adjacency_list[a_key][1]
+
+                    for et, next_key in zip(edge_types, next_keys):
+                        # These are psueo-samples for each edge type
+                        sample_types = [(next_key, et.n2)] * nsamples
+                        next_node_groups.extend(sample_types)
+
+                        # Store the node type, adjacency and sampling indices
+                        sample_to_adj[sample_index] = next_key
+                        adj_to_samples[next_key][1].append(sample_index)
+                        sample_index += 1
+
+                        # Sanity check
+                        assert adj_to_samples[next_key][0] == et.n2
+
+                node_groups = next_node_groups
+
+            # Add samples to layout and inverse layout
+            sample_index_layout.append(sample_to_adj)
+            sample_inverse_layout.append(adj_to_samples)
+        return sample_inverse_layout
 
     def get_type_adjacency_list(self, head_node_types, n_hops):
         """
@@ -308,6 +358,12 @@ class GraphSchema:
         Returns:
             List of form [ (node_type, [children]), ...]
         """
+        if not isinstance(head_node_types, (list, tuple)):
+            raise TypeError("The head node types should be a list or tuple.")
+
+        if not isinstance(n_hops, int):
+            raise ValueError("n_hops should be an integer")
+
         to_process = queue.Queue()
 
         # Add head nodes
@@ -382,11 +438,10 @@ class StellarGraphBase:
         # Node IDs may be integers, strings or in fact any hashable type.
         # Convert them to strings before sorting.
         node_index_to_id = sorted(self.nodes(), key=str)
-
         node_id_to_index = {node: ii for ii, node in enumerate(node_index_to_id)}
         return node_index_to_id, node_id_to_index
 
-    def info(self, sample=None):
+    def info(self, show_attributes=True, sample=None):
         """
         Return an information string summarizing information on the current graph.
         This includes node and edge type information and their attributes.
@@ -401,7 +456,6 @@ class StellarGraphBase:
         Returns:
             An information string.
         """
-        nx.to_directed
         directed_str = "Directed" if self.is_directed() else "Undirected"
         s = "{}: {} multigraph\n".format(type(self).__name__, directed_str)
         s += " Nodes: {}, Edges: {}\n".format(
@@ -431,7 +485,7 @@ class StellarGraphBase:
             # Get the attributes for this node type
             attrs = set(it.chain(*[ndata.keys() for ndata in nt_nodes]))
             attrs.discard(self._node_type_attr)
-            if len(attrs) > 0:
+            if show_attributes and len(attrs) > 0:
                 s += "        Attributes: {}\n".format(attrs)
 
             s += "    Edge types: "
@@ -453,7 +507,7 @@ class StellarGraphBase:
             # Get the attributes for this edge type
             attrs = set(it.chain(*[edata.keys() for edata in et_edges]))
             attrs.discard(self._edge_type_attr)
-            if len(attrs) > 0:
+            if show_attributes and len(attrs) > 0:
                 s += "        Attributes: {}\n".format(attrs)
 
         return s

@@ -183,12 +183,17 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         n_size = [2, 3]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == 1
-        assert len(subgraphs[0]) == 3
+        assert (
+            len(subgraphs[0]) == 9
+        )  # we return all fake samples in walk even if there are no neighbours
         assert subgraphs[0][0][0] == 0  # this should be the root node id
+
         # node 0 is of type 'user' and for the simple test graph it has 2 types of edges, rating, and friend,
-        # so 2 empty subgraphs should be returned
-        assert len(subgraphs[0][1]) == 0  # this should be empty list
-        assert len(subgraphs[0][2]) == 0  # this should be empty
+        # so 2 subgraphs with None should be returned
+        assert len(subgraphs[0][1]) == 2
+        assert all([x is None for x in subgraphs[0][1]])  # this should only be None
+        assert len(subgraphs[0][2]) == 2
+        assert all([x is None for x in subgraphs[0][2]])  # this should only be None
 
     def test_walk_generation_single_root_node_self_loner(self):
         g = create_simple_test_graph()
@@ -215,34 +220,44 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         assert len(subgraphs) == 1
         assert len(subgraphs[0]) == 3
         assert subgraphs[0][0][0] == root_node_id  # this should be the root node id
+
         # node 0 is of type 'user' and for the simple test graph it has 2 types of edges, rating, and friend,
-        # so 1 subgraph with the root id corresponding to friend type edge and 1 empty subgraph should be returned
+        # so 1 subgraph with the root id corresponding to friend type edge and 1 subgraph with None should be returned
         assert subgraphs[0][1][0] == root_node_id  # this should be the root node id
-        assert len(subgraphs[0][2]) == 0  # this should be the empty list
+        assert len(subgraphs[0][2]) == 1  # this should be None
+        assert subgraphs[0][2] == [None]  # this should be None
 
         n_size = [2, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
-        # The correct result should be [[[7], [7, 7], [], [7, 7], [], [7, 7], []]] so check
+        # The correct result should be:
+        #  [[[7], [7, 7], [None, None], [7, 7], [None, None], [7, 7], [None, None], [None, None], [None, None]]]
         assert len(subgraphs) == 1
-        assert len(subgraphs[0]) == 7
+        assert len(subgraphs[0]) == 9
         for level in subgraphs[0]:
             assert type(level) == list
             if len(level) > 0:
+                # All values should be rood_node_id or None
                 for value in level:
-                    assert value == root_node_id
+                    assert (value == root_node_id) or (value is None)
 
         n_size = [2, 2, 3]
-        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
-        # The correct result should be
-        # [[[7], [7, 7], [], [7, 7], [], [7, 7], [], [7, 7, 7], [], [7, 7, 7], [], [7, 7, 7], [], [7, 7, 7], []]]
-        # so check
-        assert len(subgraphs) == 1
-        assert len(subgraphs[0]) == 15
-        for level in subgraphs[0]:
+        subgraphs2 = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        # The correct result should be the same as previous output plus:
+        #  [[7]*3, [None]*3, [7]*3, [None]*3, [None]*3,  [None]*3, [7]*3, [None]*3, [7]*3
+        # concatenated with 10 [None]*3
+        assert len(subgraphs2) == 1
+        assert len(subgraphs2[0]) == 29
+
+        # The previous list should be the same as start of this one
+        assert all(
+            [subgraphs[0][ii] == subgraphs2[0][ii] for ii in range(len(subgraphs))]
+        )
+
+        for level in subgraphs2[0]:
             assert type(level) == list
             if len(level) > 0:
                 for value in level:
-                    assert value == root_node_id
+                    assert (value == root_node_id) or (value is None)
 
     def test_walk_generation_single_root_node(self):
 
@@ -461,7 +476,8 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         assert len(subgraphs) == len(nodes) * n
         for i, subgraph in enumerate(subgraphs):
             assert len(subgraph) == 3
-        valid_result = [[[0], [], []], [[7], [7, 7], []]]
+
+        valid_result = [[[0], [None, None], [None, None]], [[7], [7, 7], [None, None]]]
         for a, b in zip(subgraphs, valid_result):
             assert a == b
 
@@ -471,7 +487,17 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         assert len(subgraphs) == len(nodes) * n
         assert subgraphs[0][0][0] == nodes[0]
         valid_result = [
-            [[0], [], []],
+            [
+                [0],
+                [None, None],
+                [None, None],
+                [None, None],
+                [None, None],
+                [None, None],
+                [None, None],
+                [None, None],
+                [None, None],
+            ],
             [[4], [1, "5"], [2, 2], [4, 4], [3, 2], [1, 1], [6, 3], [1, 1], [4, 4]],
         ]
         for a, b in zip(subgraphs, valid_result):
