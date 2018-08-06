@@ -59,6 +59,13 @@ def test_digraph_constructor():
     assert sg._edge_type_attr == "type"
 
 
+def test_info():
+    sg = create_graph_2()
+    info_str = sg.info()
+    info_str = sg.info(show_attributes=False)
+    # How can we check this?
+
+
 def test_graph_from_nx():
     Gnx = nx.karate_club_graph()
     sg = StellarGraph(Gnx)
@@ -147,6 +154,52 @@ def test_digraph_schema():
     assert schema.get_edge_type((0, 4, 0)) == None
 
 
+def test_graph_schema_node_types():
+    for sg in [
+        create_graph_1(),
+        create_graph_2(),
+        create_graph_1(StellarDiGraph()),
+        create_graph_2(StellarDiGraph()),
+    ]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+
+        for n, ndata in sg.nodes(data=True):
+            assert schema.get_node_type(n) == ndata["label"]
+
+
+def test_graph_schema_edge_types():
+    for sg in [create_graph_1(), create_graph_2()]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+
+        for n1, n2, k in sg.edges(keys=True):
+            et = (
+                sg.node[n1]["label"],
+                sg.adj[n1][n2][k]["label"],
+                sg.node[n2]["label"],
+            )
+            assert schema.get_edge_type((n1, n2, k)) == et
+
+            # Check the is_of_edge_type function: it should work either way round for undirected
+            # graphs
+            assert schema.is_of_edge_type((n1, n2, k), et)
+            assert schema.is_of_edge_type((n1, n2, k), (et[2], et[1], et[0]))
+
+    for sg in [create_graph_1(StellarDiGraph()), create_graph_2(StellarDiGraph())]:
+        schema = sg.create_graph_schema(create_type_maps=True)
+
+        for n1, n2, k in sg.edges(keys=True):
+            et = (
+                sg.node[n1]["label"],
+                sg.adj[n1][n2][k]["label"],
+                sg.node[n2]["label"],
+            )
+            assert schema.get_edge_type((n1, n2, k)) == et
+
+            # Check the is_of_edge_type function: it should only work one way for directed graphs
+            assert schema.is_of_edge_type((n1, n2, k), et)
+            assert ~schema.is_of_edge_type((n1, n2, k), (et[2], et[1], et[0]))
+
+
 def test_graph_schema_sampling():
     for sg in [
         create_graph_1(),
@@ -166,3 +219,64 @@ def test_graph_schema_sampling():
 
             if len(list_types) > 0:
                 assert set(adj_types) == set(list_types)
+
+
+def test_graph_schema_sampling_layout_1():
+    sg = create_graph_1()
+    schema = sg.create_graph_schema(create_type_maps=True)
+    sampling_layout = schema.get_sampling_layout(["user"], [2, 2])
+
+    assert len(sampling_layout) == 1
+
+    assert sampling_layout[0][2] == ("user", [2, 3])
+    assert sampling_layout[0][1] == ("movie", [1])
+    assert sampling_layout[0][0] == ("user", [0])
+
+    sg = create_graph_2()
+    schema = sg.create_graph_schema(create_type_maps=True)
+    sampling_layout = schema.get_sampling_layout(["user"], [1, 2])
+
+    assert len(sampling_layout) == 1
+
+    assert sampling_layout[0] == [
+        ("user", [0]),
+        ("movie", [1]),
+        ("user", [2]),
+        ("movie", [3]),
+        ("user", [4]),
+        ("user", [5]),
+        ("movie", [6]),
+        ("user", [7]),
+        ("movie", [8]),
+        ("user", [9]),
+        ("user", [10]),
+    ]
+
+
+def test_graph_schema_sampling_layout_multiple():
+    sg = create_graph_1()
+    schema = sg.create_graph_schema(create_type_maps=True)
+    sampling_layout = schema.get_sampling_layout(["user", "movie"], [1, 2, 2])
+
+    assert len(sampling_layout) == 2
+
+    assert sampling_layout[0] == [
+        ("user", [0]),
+        ("movie", []),
+        ("movie", [1]),
+        ("user", []),
+        ("user", [2]),
+        ("movie", []),
+        ("movie", [3, 4]),
+        ("user", []),
+    ]
+    assert sampling_layout[1] == [
+        ("user", []),
+        ("movie", [0]),
+        ("movie", []),
+        ("user", [1]),
+        ("user", []),
+        ("movie", [2]),
+        ("movie", []),
+        ("user", [3, 4]),
+    ]
