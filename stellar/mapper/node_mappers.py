@@ -77,6 +77,7 @@ class GraphSAGENodeMapper(Sequence):
         targets: List[Any] = None,
         feature_size: Optional[int] = None,
         name: AnyStr = None,
+        # TODO: add a check=True argument, toggling the checks for node ids and features
     ):
         self.G = G
         self.num_samples = num_samples

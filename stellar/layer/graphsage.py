@@ -24,7 +24,8 @@ from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape
-from typing import List, Callable, Tuple, AnyStr
+from keras import activations
+from typing import List, Tuple, Callable, AnyStr
 
 
 class MeanAggregator(Layer):
@@ -34,21 +35,25 @@ class MeanAggregator(Layer):
     """
 
     def __init__(
-        self, output_dim: int = 0, bias: bool = False, act: Callable = K.relu, **kwargs
+        self,
+        output_dim: int = 0,
+        bias: bool = False,
+        act: Callable or AnyStr = "relu",
+        **kwargs
     ):
         """
-        Construct mean aggregator
-
-        :param output_dim:  Output dimension
-        :param bias:        Optional bias
-        :param act:         Activation function
+        Args:
+            output_dim: Output dimension
+            bias: Optional bias
+            act: name of the activation function to use (must be a Keras activation function),
+                or alternatively, a TensorFlow operation.
         """
 
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
         self.has_bias = bias
-        self.act = act
+        self.act = activations.get(act)
         self.w_neigh = None
         self.w_self = None
         self.bias = None
@@ -56,7 +61,11 @@ class MeanAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
-        config = {"output_dim": self.output_dim, "bias": self.has_bias}
+        config = {
+            "output_dim": self.output_dim,
+            "bias": self.has_bias,
+            "act": activations.serialize(self.act),
+        }
         base_config = super().get_config()
         return {**base_config, **config}
 
@@ -131,9 +140,9 @@ class GraphSAGE:
         # self._dropout = Dropout(dropout)
         self._aggs = [
             aggregator(
-                self.dims[layer + 1],
+                output_dim=self.dims[layer + 1],
                 bias=self.bias,
-                act=K.relu if layer < self.n_layers - 1 else lambda x: x,
+                act="relu" if layer < self.n_layers - 1 else "linear",
             )
             for layer in range(self.n_layers)
         ]
@@ -154,23 +163,23 @@ class GraphSAGE:
         :return:        Output tensor
         """
 
-        def compose_layers(x: List, layer: int):
+        def compose_layers(_x: List, layer: int):
             """
-            Function to recursively compose aggregation layers. When current layer is at final layer, then length of x
-            should be 1, and compose_layers(x, layer) returns x[0].
+            Function to recursively compose aggregation layers. When current layer is at final layer, then length of _x
+            should be 1, and compose_layers(_x, layer) returns _x[0].
 
-            :param x:       List of feature matrix tensors
+            :param _x:       List of feature matrix tensors
             :param layer:   Current layer index
-            :return:        x computed from current layer to output layer
+            :return:        _x computed from current layer to output layer
             """
 
             def x_next(agg):
                 return [
                     agg(
                         [
-                            Dropout(self.dropout)(x[i]),
+                            Dropout(self.dropout)(_x[i]),
                             Dropout(self.dropout)(
-                                self._neigh_reshape[layer][i](x[i + 1])
+                                self._neigh_reshape[layer][i](_x[i + 1])
                             ),
                         ]
                     )
@@ -180,8 +189,13 @@ class GraphSAGE:
             return (
                 compose_layers(x_next(self._aggs[layer]), layer + 1)
                 if layer < self.n_layers
-                else x[0]
+                else _x[0]
             )
+
+        assert isinstance(x, list), "Input features must be a list"
+        assert (
+            len(x) == self.n_layers + 1 > 1
+        ), "Length of input features should match the number of GraphSAGE layers"
 
         return self._normalization(compose_layers(x, 0))
 

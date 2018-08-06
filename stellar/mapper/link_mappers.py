@@ -20,9 +20,10 @@ Mappers to provide input data for link prediction/link attribute inference probl
 """
 
 import networkx as nx
+from stellar.data.stellargraph import StellarGraphBase
 import numpy as np
 import itertools as it
-from typing import AnyStr, Any, List, Tuple, Callable, Optional
+from typing import AnyStr, Any, List, Tuple, Optional
 from keras.utils import Sequence
 
 from stellar.data.explorer import SampledBreadthFirstWalk
@@ -32,7 +33,7 @@ class GraphSAGELinkMapper(Sequence):
     """Keras-compatible link data mapper for link prediction using Homogeneous GraphSAGE
 
     Args:
-        G: NetworkX graph. The graph nodes must have a "feature" attribute that
+        G: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
             is used as input to the GraphSAGE model.
         ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
@@ -50,7 +51,7 @@ class GraphSAGELinkMapper(Sequence):
 
     def __init__(
         self,
-        G: nx.Graph,
+        G: StellarGraphBase or nx.Graph,
         ids: List[
             Tuple[Any, Any]
         ],  # allow for node ids to be anything, e.g., str or int
