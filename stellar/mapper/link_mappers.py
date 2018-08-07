@@ -23,7 +23,7 @@ import networkx as nx
 from stellar.data.stellargraph import StellarGraphBase
 import numpy as np
 import itertools as it
-from typing import AnyStr, Any, List, Tuple, Optional
+from typing import AnyStr, Any, List, Tuple, Optional, Dict
 from keras.utils import Sequence
 import operator
 from functools import reduce
@@ -227,10 +227,10 @@ class HinSAGELinkMapper(Sequence):
         ids: List[
             Tuple[Any, Any]
         ],  # allow for node ids to be anything, e.g., str or int
-        link_type: Optional[Tuple[Any, Any, Any]],
         link_labels: List[Any] or np.ndarray,
         batch_size: int,
         num_samples: List[int],
+        link_type: Optional[Tuple[AnyStr, AnyStr, AnyStr]] = None,
         feature_size_by_type: Optional[Dict[AnyStr, int]] = None,
         name: AnyStr = None,
     ):
@@ -248,13 +248,14 @@ class HinSAGELinkMapper(Sequence):
                 "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
 
-        # Create sampler for GraphSAGE
+        # Create sampler for HinSAGE
         self.sampler = SampledHeterogeneousBreadthFirstWalk(G)
 
         # Generate graph schema
         self.schema = G.create_graph_schema(create_type_maps=True)
 
-        # Check that the given link type is valid for G:
+        # Check that the given link type is valid for G,
+        # and get (src,dst) node types (head_node_types)
         if link_type:
             assert isinstance(link_type, tuple)
             assert (
@@ -265,13 +266,11 @@ class HinSAGELinkMapper(Sequence):
             ), "Provided link type {} is not valid".format(
                 link_type
             )
-            head_node_types = tuple((link_type[0], link_type[2]))
+            self.head_node_types = tuple((link_type[0], link_type[2]))
 
         else:  # try to infer the link type
-            Warning(
-                "{}: no link type provided, inferring (src,dst) node types from provided link ids...".format(
-                    type(self).__name__
-                )
+            print(
+                "Warning: {}: no link type provided, inferring (src,dst) node types from provided link ids...".format(type(self).__name__)
             )
             # Get head node types from all src, dst nodes extracted from all links,
             # and make sure there's only one pair of node types:
@@ -280,22 +279,16 @@ class HinSAGELinkMapper(Sequence):
                 head_node_types.append(
                     tuple(self.schema.get_node_type(v) for v in (src, dst))
                 )
-            head_node_types = sorted(set(head_node_types))
+            head_node_types = list(set(head_node_types))
             assert (
                 len(head_node_types) == 1
             ), "All (src,dst) node types for inferred links must be of the same type!"
-            head_node_types = head_node_types[
-                0
-            ]  # get the tuple of (src, dst) node types
 
-            # link_type = self.schema.edge_types_for_node_type(head_node_types[0])
-            # if len(link_type) != 1:
-            #     Warning("{} link types found between nodes of types {},{}")
-
-        self.head_node_types = head_node_types
+            # get the tuple of (src, dst) node types
+            self.head_node_types = head_node_types[0]
 
         self._sampling_schema = self.schema.get_sampling_layout(
-            [head_node_types], num_samples
+            self.head_node_types, num_samples
         )
 
         # Ensure number of labels matches number of ids
@@ -350,7 +343,7 @@ class HinSAGELinkMapper(Sequence):
         # Note the if there are no samples for a node a zero array is returned.
         # TODO: Generalize this to an arbitrary vector?
         # Resize features to (batch_size, n_neighbours, feature_size)
-        # for each node type (we could have different feature size for each node type)
+        # for each node type (note that we can have different feature size for each node type)
         batch_feats = [
             np.reshape(
                 [
@@ -425,12 +418,12 @@ class HinSAGELinkMapper(Sequence):
                 ]
             )
 
-        # Interleave the two lists, nodes_by_type[0] (for src head nodes) and nodes_by_type[1] (for dst head nodes)
-        nodes_by_type_joint = [
+        # Interlace the two lists, nodes_by_type[0] (for src head nodes) and nodes_by_type[1] (for dst head nodes)
+        nodes_by_type = [
             tuple((ab[0][0], reduce(operator.concat, (ab[0][1], ab[1][1]))))
             for ab in zip(nodes_by_type[0], nodes_by_type[1])
         ]
 
-        batch_feats = self._get_features(nodes_by_type_joint, len(edges))
+        batch_feats = self._get_features(nodes_by_type, len(edges))
 
         return batch_feats, batch_labels
