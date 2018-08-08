@@ -32,13 +32,8 @@ g
 """
 from stellar.data.stellargraph import *
 from stellar.mapper.node_mappers import *
-from stellar.data.explorer import (
-    SampledBreadthFirstWalk,
-    SampledHeterogeneousBreadthFirstWalk,
-)
 
 import networkx as nx
-import random
 import numpy as np
 import itertools as it
 import pytest
