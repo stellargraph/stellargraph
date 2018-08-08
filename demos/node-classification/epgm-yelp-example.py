@@ -59,10 +59,10 @@ import pandas as pd
 import keras
 from keras import optimizers, losses, layers, metrics
 
+from stellar.data.stellargraph import StellarGraph
+from stellar.data.converter import *
 from stellar.data.node_splitter import NodeSplitter
-from stellar.data.explorer import SampledBreadthFirstWalk
 from stellar.data.loader import from_epgm
-from stellar.data.utils import NodeFeatureConverter, NodeTargetConverter
 from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.node_mappers import GraphSAGENodeMapper
 
@@ -294,58 +294,66 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
+    # Specify node attributes to use to create features
+    user_attrs = [
+        "compliment_cool",
+        "cool",
+        "useful",
+        "funny",
+        "fans",
+        "average_stars",
+        "compliment_hot",
+        "compliment_more",
+        "compliment_profile",
+        "compliment_cute",
+        "compliment_list",
+        "compliment_note",
+        "compliment_plain",
+        "compliment_funny",
+        "compliment_writer",
+        "compliment_photos",
+    ]
+
+    review_attrs = ["stars", "useful"]
+
+    business_attrs = [
+        "BikeParking",
+        "Alcohol",
+        "RestaurantsPriceRange2",
+        "BusinessAcceptsCreditCards",
+        "WiFi",
+        "DogsAllowed",
+        "GoodForKids",
+        "NoiseLevel",
+    ]
+
+    # Convert graph node attributes to feature vectors
+    nfs = NodeAttributeSpecification()
+    nfs.add_attribute_types("user", user_attrs, NumericConverter)
+    nfs.add_attribute_types("review", review_attrs, NumericConverter)
+    nfs.add_attribute_type("business", "stars", NumericConverter)
+    nfs.add_attribute_types(
+        "business", business_attrs, OneHotCategoricalConverter, flatten_binary=True
+    )
+
+    # Convert graph node attributes to  target values
+    nts= NodeAttributeSpecification()
+    nts.add_attribute_types("user", ["elite"], OneHotCategoricalConverter)
+
     # Load graph
     graph_loc = os.path.expanduser(args.graph)
     G = from_epgm(graph_loc)
 
-    user_attrs = ['compliment_cool',
-                  'cool',
-                  'useful',
-                  'funny',
-                  'fans',
-                  'average_stars',
-                  'compliment_hot',
-                  'compliment_more',
-                  'compliment_profile',
-                  'compliment_cute',
-                  'compliment_list',
-                  'compliment_note',
-                  'compliment_plain',
-                  'compliment_funny',
-                  'compliment_writer',
-                  'compliment_photos'
-                  ]
-
-    review_attrs = ['stars',
-                    'useful',
-                    ]
-
-    business_attrs = [
-        'BikeParking', 'Alcohol', 'RestaurantsPriceRange2', 'BusinessAcceptsCreditCards', 'WiFi', 'DogsAllowed',
-        'GoodForKids', 'NoiseLevel'
+    # Reduce graph to only contain a subset of node types
+    node_types_to_keep = ["review", "user", "business"]
+    filtered_nodes = [
+        n for n, ndata in G.nodes(data=True) if ndata["label"] in node_types_to_keep
     ]
-
-    nfs = NodeFeatureSpecification()
-    nfs.add_attribute_types('user', user_attrs, NumericConverter)
-    nfs.add_attribute_types('review', review_attrs, NumericConverter)
-    nfs.add_attribute_type('business', 'stars', NumericConverter)
-    nfs.add_attribute_types('business', business_attrs, OneHotCategoricalConverter)
-
-    nfc = NewNodeFeatureConverter(Gsub, feature_spec=nfs)
-
-    # Convert graph node attributes to feature vectors and target values
-    feature_converter = NodeFeatureConverter(
-        from_graph=G, to_graph=G, ignored_attributes=[args.target, "label"]
-    )
-    target_converter = NodeTargetConverter(
-        from_graph=G, target=args.target, target_type="1hot"
-    )
+    G = StellarGraph(nx.subgraph(G, filtered_nodes), feature_spec=nfs, target_spec=nts)
 
     if args.checkpoint is None:
         train(
             G,
-            target_converter,
-            feature_converter,
             args.layer_size,
             args.neighbour_samples,
             args.batch_size,

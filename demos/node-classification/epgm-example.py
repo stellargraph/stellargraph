@@ -93,6 +93,13 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
+    train_nodes, test_nodes, _ = G.train_test_split(p=50, test_size=1000)
+    train_nodes, test_nodes, val_nodes, _ = G.train_test_val_split(p=50, test_size=1000)
+
+    train_mapper = GraphSAGENodeMapper(
+        G, train_nodes, batch_size, num_samples, name="train"
+    )
+
     # This is very clunky: is there a nicer way?
     graph_nodes = np.array(target_converter.get_node_label_pairs())
 

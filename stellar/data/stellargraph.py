@@ -18,12 +18,15 @@ import random
 import itertools as it
 
 import networkx as nx
+import numpy as np
 from networkx.classes.multigraph import MultiGraph
 from networkx.classes.multidigraph import MultiDiGraph
 
 from collections import namedtuple
 
 # The edge type triple
+from stellar import GLOBALS
+
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
 
 
@@ -396,8 +399,17 @@ class StellarGraphBase:
         super().__init__(incoming_graph_data, **attr)
 
         # Names of attributes that store the type of nodes and edges
-        self._node_type_attr = attr.get("node_type_name", "label")
-        self._edge_type_attr = attr.get("edge_type_name", "label")
+        self._node_type_attr = attr.get("node_type_name", GLOBALS.TYPE_ATTR_NAME)
+        self._edge_type_attr = attr.get("edge_type_name", GLOBALS.TYPE_ATTR_NAME)
+
+        # Get feature & target specifications, if supplied:
+        self._feature_spec = attr.get("feature_spec", None)
+        self._target_spec = attr.get("target_spec", None)
+
+        # Names for the feature/target type (used if they are supplied and
+        #  feature/target spec not supplied"
+        self._feature_attr = attr.get("feature_name", GLOBALS.FEATURE_ATTR_NAME)
+        self._feature_attr = attr.get("target_name", GLOBALS.TARGET_ATTR_NAME)
 
         # Ensure that the incoming graph data has node & edge types
         # TODO: This requires traversing all nodes and edges. Is there another way?
@@ -417,29 +429,126 @@ class StellarGraphBase:
         )
         return s
 
-    def create_node_index_map(self):
+    def create_node_index_maps(self, schema=None):
         """
         A mapping between integer indices and node IDs and the reverse.
         This mapping is stable for graphs with the same node ids.
 
-        Returns two mappings: `node_index_to_id` and `node_id_to_index`
+        Each node type has an associated `node_id_to_index` and `node_index_to_id`
         such that:
             node_index_to_id[index] = node_id
             node_id_to_index[node_id] = index
 
         where:
-            index is an integer from 0 to G.number_of_nodes() - 1
+            index is an integer from 0 to number_of_nodes_for_type - 1 and is
+            seperate for each node type.
             node_id is the label of the node in the graph,
-            i.e. one of list(G)
 
         Returns:
-            node_index_to_id, node_id_to_index
+            a dictionary with an entry for each node type with values
+            being the two index maps described above, namely:
+            {'type_1': (node_id_to_index, node_index_to_id), ... }
+
         """
-        # Node IDs may be integers, strings or in fact any hashable type.
-        # Convert them to strings before sorting.
-        node_index_to_id = sorted(self.nodes(), key=str)
-        node_id_to_index = {node: ii for ii, node in enumerate(node_index_to_id)}
-        return node_index_to_id, node_id_to_index
+        # Generate schema
+        if schema is None:
+            schema = self.create_graph_schema(create_type_maps=True)
+
+        # Get the features for each node type
+        node_index_maps = {}
+        for nt in schema.node_types:
+            nodes_for_type = [v for v in self.nodes() if schema.get_node_type(v) == nt]
+
+            # Node IDs may be integers, strings or in fact any hashable type.
+            # Convert them to strings to do the sorting.
+            node_index_to_id = sorted(nodes_for_type, key=str)
+            node_id_to_index = {node: ii for ii, node in enumerate(node_index_to_id)}
+            node_index_maps[nt] = (node_id_to_index, node_index_to_id)
+
+        return node_index_maps
+
+    def convert_attributes_to_numeric(self):
+        """
+        This is run automatically by the ML components of stellar. It converts the attributes
+        specified in the NodeAttributeSpecification object for features and targets to
+        numeric vectors.
+        """
+        # Create feature array dictionary
+        # This will store the feature arrays for each type of node
+        self._node_attribute_arrays = {}
+
+        # Generate schema
+        schema = self.create_graph_schema(create_type_maps=True)
+
+        # This will store the maps between node ID and index in the attribute arrays
+        self._node_index_maps = self.create_node_index_maps(schema)
+
+        # Determine if feature attributes will come directly from the feature attribute or
+        # through the feature_spec converter
+        if self._feature_spec is not None:
+            # Get the features for each node type
+            for nt in schema.node_types:
+                nt_id_to_index, nt_node_list = self._node_index_maps[nt]
+
+                feature_data = [
+                    self.node[v].get(self._feature_attr) for v in nt_node_list
+                ]
+                # Check the if there are nodes without features
+                if None in feature_data:
+                    raise RuntimeError(
+                        "Not all nodes are required to have a numeric feature "
+                        "vector this should be in the attribute named '{}'".format(
+                            self._feature_attr
+                        )
+                    )
+
+                # Get the size of the features
+                n_nodes = len(feature_data)
+                feature_sizes = {np.size(a) for a in feature_data}
+                # Check all are the same for this node type
+                if len(feature_sizes) > 1:
+                    raise ValueError(
+                        "Feature sizes in nodes of type {} is inconsistent, "
+                        "found the following feature sizes: {}".format(
+                            nt, feature_sizes
+                        )
+                    )
+
+                # Convert to numpy array
+                self._node_attribute_arrays[nt] = np.asanyarray(feature_data)
+
+        else:
+            # Use feature spec to get feature vectors & put them in an array
+            for nt in schema.node_types:
+                nt_id_to_index, nt_node_list = self._node_index_maps[nt]
+                n_nodes = len(nt_node_list)
+
+                # Convert the node attributes to a feature array
+                node_data = [self.node[v] for v in nt_node_list]
+                self._node_attribute_arrays[nt] = self._feature_spec.fit_transform_all(nt, node_data)
+
+    def get_feature_for_nodes(self, nodes):
+        """
+        Get the numeric feature vector for the specified node or nodes
+        Args:
+            n: Node ID or list of node IDs
+
+        Returns:
+            Numpy array containing the node features for the requested nodes.
+        """
+        pass
+
+    def get_target_for_nodes(self, nodes):
+        """
+        Get the numeric target vector for the specified node or nodes
+        Args:
+            n: Node ID or list of node IDs
+
+        Returns:
+            List containing the node targets, if they are specified for
+             the nodes, or None if the node has no target value.
+        """
+        pass
 
     def info(self, show_attributes=True, sample=None):
         """
