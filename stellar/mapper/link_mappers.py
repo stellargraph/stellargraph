@@ -202,12 +202,12 @@ class GraphSAGELinkMapper(Sequence):
 class HinSAGELinkMapper(Sequence):
     """Keras-compatible link data mapper for link prediction using Heterogeneous GraphSAGE (HinSAGE)
 
-    # TODO: decide on the following:
-         1. Do we need to pass link_type (target link type) to the link mapper, considering that the mapper actually
-         only cares about (src,dst) node types, and these can be inferred from the passed link ids (although this might
-         be expensive, as it requires parsing the links ids)
-         2. If we pass link_type, do we need to check that it is present in the graph schema? It's possible to do link
-         prediction on a graph where that link type is completely removed from the graph (e.g., "same_as" links in ER)
+    Notes:
+         We don't need to pass link_type (target link type) to the link mapper, considering that:
+            1. The mapper actually only cares about (src,dst) node types, and these can be inferred from the passed
+                link ids (although this might be expensive, as it requires parsing the links ids passed - yet only once)
+            2. It's possible to do link prediction on a graph where that link type is completely removed from the graph
+                (e.g., "same_as" links in ER)
 
     Args:
         G: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
@@ -219,8 +219,6 @@ class HinSAGELinkMapper(Sequence):
             are passed to the downstream task of link prediction or link attribute inference.
             The source and target nodes of the links are used as head nodes for which subgraphs are sampled.
             The subgraphs are sampled from all nodes.
-        link_type: a triple uniquely specifying the link type of interest (for which predictions are needed),
-            in the form (src_node_type, relation, dst_node_type)
         link_labels: Labels of the above links, e.g., 0 or 1 for the link prediction problem.
         batch_size: Size of batch of links to return.
         num_samples: List of number of neighbour node samples per GraphSAGE layer (hop) to take.
@@ -252,7 +250,6 @@ class HinSAGELinkMapper(Sequence):
         link_labels: List[Any] or np.ndarray,
         batch_size: int,
         num_samples: List[int],
-        link_type: Optional[Tuple[AnyStr, AnyStr, AnyStr]] = None,
         feature_size_by_type: Optional[Dict[AnyStr, int]] = None,
         name: AnyStr = None,
     ):
@@ -270,35 +267,15 @@ class HinSAGELinkMapper(Sequence):
                 "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
 
+        # Get head node types from all src, dst nodes extracted from all links,
+        # and make sure there's only one pair of node types:
+        self.head_node_types = self._infer_head_node_types()
+
         # Create sampler for HinSAGE
         self.sampler = SampledHeterogeneousBreadthFirstWalk(G)
 
         # Generate graph schema
         self.schema = G.create_graph_schema(create_type_maps=True)
-
-        # Check that the given link type is valid for G,
-        # and get (src,dst) node types (head_node_types)
-        if link_type:
-            assert isinstance(link_type, tuple)
-            assert (
-                len(link_type) == 3
-            ), "Link type must be a triple of (src_node_type, relation, dst_node_type)"
-            assert (
-                link_type in self.schema.edge_types
-            ), "Provided link type {} is not valid".format(
-                link_type
-            )
-            self.head_node_types = tuple((link_type[0], link_type[2]))
-
-        else:  # try to infer the link type
-            print(
-                "Warning: {}: no link type provided, inferring (src,dst) node types from provided link ids...".format(
-                    type(self).__name__
-                )
-            )
-            # Get head node types from all src, dst nodes extracted from all links,
-            # and make sure there's only one pair of node types:
-            self.head_node_types = self._infer_head_node_types()
 
         self.sampling_schema = self.schema.get_sampling_layout(
             self.head_node_types, num_samples
