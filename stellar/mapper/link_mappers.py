@@ -202,6 +202,13 @@ class GraphSAGELinkMapper(Sequence):
 class HinSAGELinkMapper(Sequence):
     """Keras-compatible link data mapper for link prediction using Heterogeneous GraphSAGE (HinSAGE)
 
+    # TODO: decide on the following:
+         1. Do we need to pass link_type (target link type) to the link mapper, considering that the mapper actually
+         only cares about (src,dst) node types, and these can be inferred from the passed link ids (although this might
+         be expensive, as it requires parsing the links ids)
+         2. If we pass link_type, do we need to check that it is present in the graph schema? It's possible to do link
+         prediction on a graph where that link type is completely removed from the graph (e.g., "same_as" links in ER)
+
     Args:
         G: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
             is used as input to the HinSAGE model.
@@ -212,7 +219,7 @@ class HinSAGELinkMapper(Sequence):
             are passed to the downstream task of link prediction or link attribute inference.
             The source and target nodes of the links are used as head nodes for which subgraphs are sampled.
             The subgraphs are sampled from all nodes.
-        link_type: a triple uniquely specifying the edge type of interest (for which predictions are needed),
+        link_type: a triple uniquely specifying the link type of interest (for which predictions are needed),
             in the form (src_node_type, relation, dst_node_type)
         link_labels: Labels of the above links, e.g., 0 or 1 for the link prediction problem.
         batch_size: Size of batch of links to return.
@@ -220,6 +227,21 @@ class HinSAGELinkMapper(Sequence):
         feature_size_by_type: Node feature size for each node type in provided links (optional)
         name: Name of mapper
     """
+
+    def _infer_head_node_types(self):
+        """Get head node types from all src, dst nodes extracted from all links in self.ids"""
+        head_node_types = []
+        for src, dst in self.ids:  # loop over all edges in self.ids
+            head_node_types.append(
+                tuple(self.schema.get_node_type(v) for v in (src, dst))
+            )
+        head_node_types = list(set(head_node_types))
+
+        assert (
+            len(head_node_types) == 1
+        ), "All (src,dst) node types for inferred links must be of the same type!"
+
+        return head_node_types[0]
 
     def __init__(
         self,
@@ -270,24 +292,15 @@ class HinSAGELinkMapper(Sequence):
 
         else:  # try to infer the link type
             print(
-                "Warning: {}: no link type provided, inferring (src,dst) node types from provided link ids...".format(type(self).__name__)
+                "Warning: {}: no link type provided, inferring (src,dst) node types from provided link ids...".format(
+                    type(self).__name__
+                )
             )
             # Get head node types from all src, dst nodes extracted from all links,
             # and make sure there's only one pair of node types:
-            head_node_types = []
-            for src, dst in self.ids:  # loop over all edges in self.ids
-                head_node_types.append(
-                    tuple(self.schema.get_node_type(v) for v in (src, dst))
-                )
-            head_node_types = list(set(head_node_types))
-            assert (
-                len(head_node_types) == 1
-            ), "All (src,dst) node types for inferred links must be of the same type!"
+            self.head_node_types = self._infer_head_node_types()
 
-            # get the tuple of (src, dst) node types
-            self.head_node_types = head_node_types[0]
-
-        self._sampling_schema = self.schema.get_sampling_layout(
+        self.sampling_schema = self.schema.get_sampling_layout(
             self.head_node_types, num_samples
         )
 
@@ -414,7 +427,7 @@ class HinSAGELinkMapper(Sequence):
                             [],
                         ),
                     )
-                    for nt, indices in self._sampling_schema[ii]
+                    for nt, indices in self.sampling_schema[ii]
                 ]
             )
 
