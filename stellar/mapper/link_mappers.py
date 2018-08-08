@@ -267,15 +267,15 @@ class HinSAGELinkMapper(Sequence):
                 "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
 
+        # Generate graph schema
+        self.schema = G.create_graph_schema(create_type_maps=True)
+        
         # Get head node types from all src, dst nodes extracted from all links,
         # and make sure there's only one pair of node types:
         self.head_node_types = self._infer_head_node_types()
 
         # Create sampler for HinSAGE
         self.sampler = SampledHeterogeneousBreadthFirstWalk(G)
-
-        # Generate graph schema
-        self.schema = G.create_graph_schema(create_type_maps=True)
 
         self.sampling_schema = self.schema.get_sampling_layout(
             self.head_node_types, num_samples
