@@ -32,10 +32,7 @@ g
 from stellar.mapper.link_mappers import *
 from stellar.data.stellargraph import *
 
-import networkx as nx
-import random
 import numpy as np
-import itertools as it
 import pytest
 
 
@@ -240,7 +237,7 @@ class Test_HinSAGELinkMapper(object):
     batch_size = 2
     num_samples = [2, 3]
 
-    def test_LinkMapper_constructor(self):
+    def test_HinSAGELinkMapper_constructor(self):
 
         # Constructor with a homogeneous graph:
         G = example_HIN_homo(self.n_feat)
@@ -281,14 +278,27 @@ class Test_HinSAGELinkMapper(object):
         assert mapper.data_size == len(link_labels)
         assert mapper.head_node_types == ("movie", "user")
 
-    def test_LinkMapper_constructor_multiple_link_types(self):
+    def test_HinSAGELinkMapper_constructor_multiple_link_types(self):
         G = example_HIN_1(self.n_feat)
         links = [
             (1, 4),
             (1, 5),
             (0, 4),
             (5, 0),
-        ]  # first 3 are ('movie', 'user') links, the last is ('user', 'movie') link
+        ]  # first 3 are ('movie', 'user') links, the last is ('user', 'movie') link.
+        link_labels = [0] * len(links)
+
+        with pytest.raises(AssertionError):
+            HinSAGELinkMapper(
+                G,
+                links,
+                link_labels,
+                batch_size=self.batch_size,
+                num_samples=self.num_samples,
+                feature_size_by_type=self.n_feat,
+            )
+
+        links = G.edges()   # all edges in G, which have multiple link types
         link_labels = [0] * len(links)
 
         with pytest.raises(AssertionError):
@@ -303,7 +313,7 @@ class Test_HinSAGELinkMapper(object):
 
     def test_HinSAGELinkMapper_1(self):
         G = example_HIN_1(self.n_feat)
-        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # ('movie', 'user') links
+        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
         data_size = len(links)
         link_labels = [0] * data_size
 
