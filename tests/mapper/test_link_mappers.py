@@ -298,7 +298,7 @@ class Test_HinSAGELinkMapper(object):
                 feature_size_by_type=self.n_feat,
             )
 
-        links = G.edges()   # all edges in G, which have multiple link types
+        links = G.edges()  # all edges in G, which have multiple link types
         link_labels = [0] * len(links)
 
         with pytest.raises(AssertionError):
@@ -376,20 +376,3 @@ class Test_HinSAGELinkMapper(object):
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
-
-    def test_HinSAGELinkMapper_constructor_invalid_link_type(self):
-        G = example_HIN_1(self.n_feat)
-        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
-        link_labels = [0] * len(links)
-        link_type = ("movie", "friend", "user")  # invalid link type to be passed to HinSAGELinkMapper
-
-        with pytest.raises(AssertionError):
-            HinSAGELinkMapper(
-                G,
-                links,
-                link_labels,
-                link_type = link_type,
-                batch_size=self.batch_size,
-                num_samples=self.num_samples,
-                feature_size_by_type=self.n_feat,
-            )
