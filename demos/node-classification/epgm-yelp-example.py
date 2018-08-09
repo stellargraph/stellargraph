@@ -93,18 +93,10 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # This is very clunky: is there a nicer way?
-    graph_nodes = np.array(target_converter.get_node_label_pairs())
-
-    # Split head nodes into train/test
-    splitter = NodeSplitter()
-    train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
-        y=graph_nodes, p=50, test_size=1000
+    # Split "user" nodes into train/test
+    train_nodes, val_nodes, test_nodes, _ = graph_train_test_val_split(
+        graph=G, node_type="user", p=50, test_size=1000
     )
-    train_ids, train_labels = target_converter.convert_node_label_pairs(train_nodes)
-    val_ids, val_labels = target_converter.convert_node_label_pairs(val_nodes)
-    test_ids, test_labels = target_converter.convert_node_label_pairs(test_nodes)
-    all_ids, all_labels = target_converter.convert_node_label_pairs(graph_nodes)
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
@@ -349,7 +341,7 @@ if __name__ == "__main__":
     filtered_nodes = [
         n for n, ndata in G.nodes(data=True) if ndata["label"] in node_types_to_keep
     ]
-    G = StellarGraph(nx.subgraph(G, filtered_nodes), feature_spec=nfs, target_spec=nts)
+    G = StellarGraph(G.subgraph(filtered_nodes), feature_spec=nfs, target_spec=nts)
 
     if args.checkpoint is None:
         train(
@@ -362,4 +354,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(G, target_converter, feature_converter, args.checkpoint, args.batch_size)
+        test(G, args.checkpoint, args.batch_size)

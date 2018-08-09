@@ -13,9 +13,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import collections
 import itertools as it
 import numpy as np
 from keras.utils.np_utils import to_categorical
+
+
+def is_real_iterable(x):
+    """
+    Tests if x is an iterable and is not a string.
+
+    Args:
+        x:
+
+    Returns:
+        True if x is an iterable (but not a string) and False otherwise
+    """
+    return isinstance(x, collections.Iterable) and not isinstance(x, (str, bytes))
 
 
 class NodeFeatureConverter:
