@@ -22,6 +22,136 @@ from stellar.data.epgm import EPGM
 
 UNKNOWN_TARGET_ATTRIBUTE = "-1"
 
+# Easier functional interface for the splitter:
+def train_val_test_split(
+    G,
+    node_type=None,
+    test_size=0.4,
+    train_size=0.2,
+    stratify=False,
+    seed=None,
+):
+    """
+        Splits node data into train, test, validation, and unlabeled sets.
+
+        Any nodes that have a target value equal to UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
+
+        The validation set includes all nodes that remain after the train, test and unlabeled sets have been
+        created. As a result, it is possible the the validation set is empty.
+
+    Args:
+        G : StellarGraph containing the nodes to be split.
+
+        test_size: float, int
+        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to
+        include in the test split. If int, represents the absolute number of test samples.
+
+        train_size: float, int
+        If float, should be between 0.0 and 1.0 and represent the proportion of the dataset to
+        include in the train split. If int, represents the absolute number of train samples.
+        If None, the value is automatically set to the complement of the test size.
+
+        seed: int or None, optional (default=None)
+            If this is an int the seed will be used to initialize a random number generator,
+            otherwith the numpy default will be used.
+
+        shuffle : boolean, optional (default=True)
+            Whether or not to shuffle the data before splitting. If shuffle=False then stratify must be None.
+
+        stratify: bool
+            If True the data is split in a stratified fashion with equal numbers of nodes taken
+            for each target category.
+
+    Returns:
+            y_train, y_val, y_test, y_unlabeled
+    """
+    node_splitter = NodeSplitter()
+
+    nodes = G.get_nodes_of_type(node_type)
+
+    # We will need to get the darn labels regardless so we can calculate the number
+    # of unlabelled nodes
+    labels = [
+        G.node[n].get(G._target_attr, UNKNOWN_TARGET_ATTRIBUTE) for n in nodes
+    ]
+
+    # Number of nodes and number without a label
+    n_nodes = len(nodes)
+    n_known = sum(l != UNKNOWN_TARGET_ATTRIBUTE for l in labels)
+
+    # Find the number of nodes to use in the training set
+    if isinstance(train_size, float) and (0 < train_size <= 1):
+        train_size_n = int(n_known * train_size)
+
+    elif isinstance(train_size, int):
+        train_size_n = train_size
+
+    else:
+        raise ValueError("Splitter: train_size should be specified as a float or int")
+
+    # Find the number of nodes to use in the test set
+    if isinstance(test_size, float) and (0 < test_size <= 1):
+        test_size_n = int(n_known * test_size)
+
+    elif isinstance(test_size, int):
+        test_size_n = test_size
+
+    else:
+        raise ValueError("Splitter: train_size should be specified as a float or int")
+
+    # Find the number of nodes to use in the validation set
+    val_size = None
+    if isinstance(val_size, float) and (0 < val_size <= 1):
+        val_size_n = int(n_known * val_size)
+
+    elif isinstance(val_size, int):
+        val_size_n = val_size
+
+    else:
+        val_size_n = max(0, n_known - (train_size_n + test_size_n))
+
+    # Check that these sizes make sense
+    if (train_size_n + test_size_n + val_size_n) > n_known:
+        raise ValueError(
+            "Number of train, test and val nodes "
+            "is greater than the total number of labelled nodes."
+        )
+
+    # Now the splitter needs the node IDs and labels zipped together
+    # TODO: This is a hack as the splitter only works when this array is sting type
+    nodeid_and_label = np.array([nl for nl in enumerate(labels)], dtype="U")
+
+    # If stratified sampling, we need the target labels.
+    if stratify:
+        class_set = set(labels)
+
+        # Remove the unknown target type
+        class_set.discard(UNKNOWN_TARGET_ATTRIBUTE)
+
+        # The number of classes we have
+        n_classes = len(class_set)
+
+        # The number of nodes we want per class
+        p = int(train_size_n / n_classes)
+
+        splits = node_splitter.train_test_split(
+            y=nodeid_and_label, p=p, method="count", test_size=test_size_n, seed=seed
+        )
+
+    else:
+        splits = node_splitter.train_test_split(
+            y=nodeid_and_label,
+            method="absolute",
+            train_size=train_size_n,
+            test_size=test_size_n,
+            seed=seed,
+        )
+
+    # Get the node_ids out of the splitter
+    node_ids_out = [[nodes[int(ind)] for ind in split[:, 0]] for split in splits]
+
+    return node_ids_out
+
 
 class NodeSplitter(object):
     def __init__(self):
@@ -42,6 +172,7 @@ class NodeSplitter(object):
         # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
         # from being added to train, test, and validation datasets.
         # y = [(node['id'], node['data'][target_attribute]) for node in graph_nodes if node['meta']['label'] == node_type]
+        # TODO: Change this to handler user speficied node type attribute name, not just assume "label"
         y = [
             (node["id"], node["data"].get(target_attribute, UNKNOWN_TARGET_ATTRIBUTE))
             for node in graph_nodes

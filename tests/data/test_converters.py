@@ -25,37 +25,6 @@ import itertools as it
 import pytest
 
 
-def example_stellar_graph_1():
-    G = StellarGraph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add some node attributes
-    G.node[1]["a1"] = 1
-    G.node[3]["a1"] = 1
-    G.node[1]["a2"] = 1
-    G.node[4]["a2"] = 1
-    G.node[3]["a3"] = 1
-    return G
-
-
-def example_hin_1():
-    G = StellarGraph()
-    G.add_nodes_from([0, 1, 2, 3], label="A")
-    G.add_nodes_from([4, 5, 6], label="B")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
-    G.add_edges_from([(4, 5)], label="F")
-
-    # Add some node attributes
-    G.node[1]["a"] = 1
-    G.node[2]["a"] = 2
-    G.node[3]["a"] = 2
-    G.node[4]["a"] = 1
-    G.node[5]["a"] = 4
-    return G
-
-
-
 def test_converter_categorical():
     data = [1, 5, 5, 1, 6]
     conv = CategoricalConverter()
@@ -94,6 +63,18 @@ def test_converter_categorical_1hot():
     assert converted_data == pytest.approx(expected)
 
 
+def test_converter_binary():
+    data = [1, "a", None, 0, "false"]
+    conv = BinaryConverter()
+    converted_data = conv.fit_transform(data)
+
+    expected = np.array([1, 1, 0, 0, 1])
+
+    assert isinstance(conv, StellarAttributeConverter)
+    assert len(conv) == 1
+    assert converted_data == pytest.approx(expected)
+
+
 def test_converter_categorical_1hot_binary():
     data = [1, 5, 5, 1, 5]
     conv = OneHotCategoricalConverter(flatten_binary=False)
@@ -109,7 +90,7 @@ def test_converter_categorical_1hot_binary():
     converted_data = conv.fit_transform(data)
 
     assert len(conv) == 1
-    assert converted_data == pytest.approx([0,1,1,0,1])
+    assert converted_data == pytest.approx([0, 1, 1, 0, 1])
 
 
 def test_converter_numeric():
@@ -123,7 +104,7 @@ def test_converter_numeric():
 
     conv = NumericConverter(normalize="standard")
     converted_data = conv.fit_transform(data)
-    expected = (np.array(data) - 4)/1.26491
+    expected = (np.array(data) - 4) / 1.26491
     assert isinstance(conv, StellarAttributeConverter)
     assert len(conv) == 1
     assert converted_data == pytest.approx(expected, rel=1e-3)
@@ -134,22 +115,23 @@ def test_attribute_spec():
     nfs.add_attribute_type("", "a1", NumericConverter, default_value=0, normalize=False)
     nfs.add_attribute_type("", "a2", NumericConverter, default_value=0, normalize=False)
 
-    data = [{"a1":1, "a2":1}, {"a2":1}, {"a1":1}, {}]
+    data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
 
     attr_list = nfs.get_attributes("")
-    assert attr_list == ['a1', 'a2']
+    assert attr_list == ["a1", "a2"]
 
     converted_data = nfs.fit_transform("", data)
-    expected = [[1,1], [0,1], [1,0], [0,0]]
+    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
 
     assert converted_data == pytest.approx(expected)
+
 
 def test_attribute_spec_normalize_error():
     nfs = NodeAttributeSpecification()
     nfs.add_attribute_type("", "a1", NumericConverter, default_value=0)
     nfs.add_attribute_type("", "a2", NumericConverter, default_value=0)
 
-    data = [{"a1":1, "a2":1}, {"a2":1}, {"a1":1}, {}]
+    data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
 
     # We expect an error here as the normalization works before values have been
     # imputed with the default value, therefore the std dev will be zero.
@@ -163,15 +145,26 @@ def test_attribute_spec_normalize_error():
     with pytest.raises(ValueError):
         nfs.fit_transform("", data)
 
+
+def test_attribute_spec_binary_conv():
+    nfs = NodeAttributeSpecification()
+    nfs.add_attribute_type("", "a1", BinaryConverter)
+    nfs.add_attribute_type("", "a2", BinaryConverter)
+
+    data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
+    converted_data = nfs.fit_transform("", data)
+    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+    assert converted_data == pytest.approx(expected)
+
+
 def test_attribute_spec_mixed():
     nfs = NodeAttributeSpecification()
     nfs.add_attribute_type("", "a1", OneHotCategoricalConverter)
     nfs.add_attribute_type("", "a2", NumericConverter, default_value="mean")
 
-    data = [{"a1":1, "a2":0}, {"a1":"a", "a2":1}, {"a1":1}, {"a1": "a"}]
+    data = [{"a1": 1, "a2": 0}, {"a1": "a", "a2": 1}, {"a1": 1}, {"a1": "a"}]
 
     converted_data = nfs.fit_transform("", data)
-    expected = [[1,0,-1], [0,1,1], [1,0,0], [0,1,0]]
+    expected = [[1, 0, -1], [0, 1, 1], [1, 0, 0], [0, 1, 0]]
 
     assert converted_data == pytest.approx(expected)
-

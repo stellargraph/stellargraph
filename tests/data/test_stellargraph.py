@@ -17,7 +17,7 @@
 import pytest
 import networkx as nx
 from stellar.data.stellargraph import *
-
+from stellar.data.converter import *
 
 def create_graph_1(sg=StellarGraph()):
     sg.add_nodes_from([0, 1, 2, 3], label="movie")
@@ -33,6 +33,48 @@ def create_graph_2(sg=StellarGraph()):
     sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
     sg.add_edges_from([(4, 5)], label="friend")
     return sg
+
+
+def example_stellar_graph_1(set_numeric=False):
+    G = StellarGraph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_nodes_from([1,2,3,4], label="default")
+    G.add_edges_from(elist, label="default")
+
+    # Add some numeric node attributes
+    if set_numeric:
+        for v in G.nodes():
+            G.node[v][set_numeric] = v * np.ones(10)
+    else:
+        # Add some node attributes
+        G.node[1]["a1"] = 1
+        G.node[3]["a1"] = 1
+        G.node[1]["a2"] = 1
+        G.node[4]["a2"] = 1
+        G.node[3]["a3"] = 1
+
+    return G
+
+
+def example_hin_1(set_numeric=False, for_nodes=[]):
+    G = StellarGraph()
+    G.add_nodes_from([0, 1, 2, 3], label="A")
+    G.add_nodes_from([4, 5, 6], label="B")
+    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
+    G.add_edges_from([(4, 5)], label="F")
+
+    # Add some numeric node attributes
+    if set_numeric:
+        for v in for_nodes:
+            G.node[v][set_numeric] = v * np.ones(10)
+    else:
+        # Add some node attributes
+        G.node[1]["a"] = 1
+        G.node[2]["a"] = 2
+        G.node[3]["a"] = 2
+        G.node[4]["a"] = 1
+        G.node[5]["a"] = 4
+    return G
 
 
 def test_graph_constructor():
@@ -280,3 +322,83 @@ def test_graph_schema_sampling_layout_multiple():
         ("movie", []),
         ("user", [3, 4]),
     ]
+
+
+def test_numeric_feature_conversion_prefilled():
+    sg = example_stellar_graph_1(set_numeric="feature")
+    sg.convert_attributes_to_numeric()
+
+    assert "default" in sg._node_attribute_arrays
+    aa = sg._node_attribute_arrays["default"]
+
+    assert aa[:, 0] == pytest.approx([1,2,3,4])
+
+    sg = example_hin_1(set_numeric="feature", for_nodes=[0,1,2,3,4,5])
+    sg.convert_attributes_to_numeric()
+
+    assert "A" in sg._node_attribute_arrays
+    assert "B" in sg._node_attribute_arrays
+
+    aa = sg._node_attribute_arrays["A"]
+    assert aa[:, 0] == pytest.approx([0,1,2,3])
+    assert aa.shape == (4,10)
+
+    ab = sg._node_attribute_arrays["B"]
+    assert ab.shape == (3,10)
+    assert ab[:, 0] == pytest.approx([4,5,0])
+
+def test_numeric_target_conversion_prefilled():
+    sg = example_stellar_graph_1(set_numeric="target")
+    sg.convert_attributes_to_numeric()
+
+    assert "default" in sg._node_target_arrays
+    aa = sg._node_target_arrays["default"]
+
+    assert aa[:, 0] == pytest.approx([1,2,3,4])
+
+    sg = example_hin_1(set_numeric="target", for_nodes=[0,1,2,3,4,5])
+    sg.convert_attributes_to_numeric()
+
+    assert "A" in sg._node_target_arrays
+    assert "B" in sg._node_target_arrays
+
+    aa = sg._node_target_arrays["A"]
+    assert aa[:, 0] == pytest.approx([0,1,2,3])
+    assert aa.shape == (4,10)
+
+    ab = sg._node_target_arrays["B"]
+    assert ab.shape == (3,10)
+    assert ab[:, 0] == pytest.approx([4,5,0])
+
+
+def test_numeric_feature_conversion():
+    sg = example_stellar_graph_1()
+
+    # Try without spec:
+    # TODO: Should we throw an error here?
+    sg.convert_attributes_to_numeric()
+
+    nfs = NodeAttributeSpecification()
+    nfs.add_attribute_type("default", "a1", BinaryConverter)
+    nfs.add_attribute_type("default", "a2", BinaryConverter)
+
+    nts = NodeAttributeSpecification()
+    nts.add_attribute_type("default", "a3", BinaryConverter)
+
+    sg.set_attribute_specifications(nfs, nts)
+    sg.convert_attributes_to_numeric()
+
+    # Test inferred node type
+    expected = [[1, 1], [0, 0], [1, 0], [0, 1]]
+    assert sg.get_feature_for_nodes([1,2,3,4]) == pytest.approx(expected)
+
+    expected = [0, 0, 1, 0]
+    assert sg.get_target_for_nodes([1,2,3,4]) == pytest.approx(expected)
+
+    # Test explicit node type
+    expected = [[1, 1], [0, 0], [1, 0], [0, 1]]
+    assert sg.get_feature_for_nodes([1,2,3,4], "default") == pytest.approx(expected)
+
+    expected = [0, 0, 1, 0]
+    assert sg.get_target_for_nodes([1,2,3,4], "default") == pytest.approx(expected)
+
