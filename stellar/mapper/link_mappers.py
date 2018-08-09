@@ -38,7 +38,7 @@ class GraphSAGELinkMapper(Sequence):
     """Keras-compatible link data mapper for link prediction using Homogeneous GraphSAGE
 
     Args:
-        G: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
+        g: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
             is used as input to the GraphSAGE model.
         ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
@@ -56,7 +56,7 @@ class GraphSAGELinkMapper(Sequence):
 
     def __init__(
         self,
-        G: StellarGraphBase or nx.Graph,
+        g: StellarGraphBase or nx.Graph,
         ids: List[
             Tuple[Any, Any]
         ],  # allow for node ids to be anything, e.g., str or int
@@ -66,8 +66,8 @@ class GraphSAGELinkMapper(Sequence):
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
-        self.G = G
-        self.sampler = SampledBreadthFirstWalk(G)
+        self.g = g
+        self.sampler = SampledBreadthFirstWalk(g)
         self.num_samples = num_samples
         self.ids = list(ids)
         self.labels = link_labels
@@ -83,7 +83,7 @@ class GraphSAGELinkMapper(Sequence):
 
         # Ensure features are available:
         nodes_have_features = all(
-            ["feature" in vdata for v, vdata in self.G.nodes(data=True)]
+            ["feature" in vdata for v, vdata in self.g.nodes(data=True)]
         )
         if not nodes_have_features:
             print("Warning: Not all nodes have a 'feature' attribute.")
@@ -92,7 +92,7 @@ class GraphSAGELinkMapper(Sequence):
         # Check that all nodes have features of the same size
         # Note: if there are no features in the nodes this will be 1!
         feature_sizes = {
-            np.size(vdata.get("feature")) for v, vdata in self.G.nodes(data=True)
+            np.size(vdata.get("feature")) for v, vdata in self.g.nodes(data=True)
         }
 
         if feature_size:
@@ -127,7 +127,7 @@ class GraphSAGELinkMapper(Sequence):
         # Create features and node indices if required
         # Note the if there are no samples for a level, a zero array is returned.
         batch_feats = [
-            [self.G.node[v].get("feature") for v in layer_nodes]
+            [self.g.node[v].get("feature") for v in layer_nodes]
             if len(layer_nodes) > 0
             else np.zeros((head_size, self.feature_size))
             for layer_nodes in node_samples
@@ -210,7 +210,7 @@ class HinSAGELinkMapper(Sequence):
                 (e.g., "same_as" links in ER)
 
     Args:
-        G: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
+        g: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
             is used as input to the HinSAGE model.
         ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
@@ -239,11 +239,13 @@ class HinSAGELinkMapper(Sequence):
             len(head_node_types) == 1
         ), "All (src,dst) node types for inferred links must be of the same type!"
 
+        # assert head_node_types[0] != ('',''), "Head node types should not be empty"
+
         return head_node_types[0]
 
     def __init__(
         self,
-        G: StellarGraphBase,
+        g: StellarGraphBase,
         ids: List[
             Tuple[Any, Any]
         ],  # allow for node ids to be anything, e.g., str or int
@@ -253,7 +255,7 @@ class HinSAGELinkMapper(Sequence):
         feature_size_by_type: Optional[Dict[AnyStr, int]] = None,
         name: AnyStr = None,
     ):
-        self.G = G
+        self.g = g
         self.num_samples = num_samples
         self.ids = list(ids)
         self.labels = link_labels
@@ -262,23 +264,27 @@ class HinSAGELinkMapper(Sequence):
         self.name = name
 
         # We require a StellarGraph for this
-        if not isinstance(G, StellarGraphBase):
+        if not isinstance(g, StellarGraphBase):
             raise TypeError(
                 "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
 
         # Generate graph schema
-        self.schema = G.create_graph_schema(create_type_maps=True)
+        self.schema = self.g.create_graph_schema(create_type_maps=True)
 
         # Get head node types from all src, dst nodes extracted from all links,
         # and make sure there's only one pair of node types:
         self.head_node_types = self._infer_head_node_types()
 
         # Create sampler for HinSAGE
-        self.sampler = SampledHeterogeneousBreadthFirstWalk(G)
+        self.sampler = SampledHeterogeneousBreadthFirstWalk(g)
 
         self.sampling_schema = self.schema.get_sampling_layout(
             self.head_node_types, num_samples
+        )
+
+        self.type_adjacency_list = self.schema.get_type_adjacency_list(
+            self.head_node_types, len(self.num_samples)
         )
 
         # Ensure number of labels matches number of ids
@@ -291,7 +297,7 @@ class HinSAGELinkMapper(Sequence):
             for nt in self.schema.node_types:
                 feature_sizes = {
                     np.size(vdata["feature"]) if "feature" in vdata else None
-                    for v, vdata in G.nodes(data=True)
+                    for v, vdata in self.g.nodes(data=True)
                     if self.schema.get_node_type(v) == nt
                 }
 
@@ -339,7 +345,7 @@ class HinSAGELinkMapper(Sequence):
                 [
                     np.zeros(self.feature_size_by_type[nt])
                     if v is None
-                    else self.G.node[v].get("feature")
+                    else self.g.node[v].get("feature")
                     for v in layer_nodes
                 ],
                 (head_size, -1, self.feature_size_by_type[nt]),
