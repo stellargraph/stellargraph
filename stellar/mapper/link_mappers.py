@@ -296,8 +296,7 @@ class HinSAGELinkMapper(Sequence):
             self.feature_size_by_type = {}
             for nt in self.schema.node_types:
                 feature_sizes = {
-                    # np.size(vdata["feature"]) if "feature" in vdata else None    # YT: this was a bug! We need np.shape(vdata["feature"])[1] instead
-                    np.shape(vdata["feature"])[1] if "feature" in vdata else None
+                    np.size(vdata["feature"]) if "feature" in vdata else None
                     for v, vdata in self.g.nodes(data=True)
                     if self.schema.get_node_type(v) == nt
                 }
@@ -390,7 +389,12 @@ class HinSAGELinkMapper(Sequence):
         node_samples = []
         for ii in range(2):
             node_samples.append(
-                self.sampler.run(nodes=head_nodes[ii], n=1, n_size=self.num_samples)
+                self.sampler.run(
+                    nodes=head_nodes[ii],
+                    n=1,
+                    n_size=self.num_samples,
+                    graph_schema=self.schema,
+                )
             )
 
         # Reshape node samples to the required format for the HinSAGE model
