@@ -258,7 +258,7 @@ class HinSAGELinkMapper(Sequence):
         self.g = g
         self.num_samples = num_samples
         self.ids = list(ids)
-        self.labels = link_labels
+        self.labels = np.array(link_labels)
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
@@ -375,11 +375,11 @@ class HinSAGELinkMapper(Sequence):
                 "{}: batch_num larger than length of data".format(type(self).__name__)
             )
 
-        # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
-
         # Get edges and labels
         edges = self.ids[start_idx:end_idx]
         batch_labels = self.labels[start_idx:end_idx]
+
+        # print("Fetching {} batch {} (data size: {})".format(self.name, batch_num, len(edges)))
 
         # Extract head nodes from edges; recall that each edge is a tuple of 2 nodes, so we are extracting 2 head nodes per edge
         head_nodes = [[e[ii] for e in edges] for ii in range(2)]
