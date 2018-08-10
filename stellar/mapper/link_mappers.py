@@ -389,11 +389,7 @@ class HinSAGELinkMapper(Sequence):
         node_samples = []
         for ii in range(2):
             node_samples.append(
-                self.sampler.run(
-                    nodes=head_nodes[ii],
-                    n=1,
-                    n_size=self.num_samples,
-                )
+                self.sampler.run(nodes=head_nodes[ii], n=1, n_size=self.num_samples)
             )
 
         # Reshape node samples to the required format for the HinSAGE model
