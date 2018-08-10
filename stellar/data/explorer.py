@@ -788,7 +788,9 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         if current_node is None:
                             neighbours = {}
                         else:
-                            neighbours = dict(self.graph.adj[current_node])
+                            # neighbours = dict(self.graph.adj[current_node])
+                            # YT: better to use iterator, takes less memory?
+                            neighbours = self.graph.adj[current_node]
 
                         # print("sampling:", frontier[0], current_node_type)
                         # Create samples of neigbhours for all edge types
