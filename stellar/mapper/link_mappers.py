@@ -277,7 +277,7 @@ class HinSAGELinkMapper(Sequence):
         self.head_node_types = self._infer_head_node_types()
 
         # Create sampler for HinSAGE
-        self.sampler = SampledHeterogeneousBreadthFirstWalk(g)
+        self.sampler = SampledHeterogeneousBreadthFirstWalk(g, graph_schema=self.schema)
 
         self.sampling_schema = self.schema.get_sampling_layout(
             self.head_node_types, num_samples
@@ -393,7 +393,6 @@ class HinSAGELinkMapper(Sequence):
                     nodes=head_nodes[ii],
                     n=1,
                     n_size=self.num_samples,
-                    graph_schema=self.schema,
                 )
             )
 
