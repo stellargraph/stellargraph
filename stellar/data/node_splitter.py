@@ -452,6 +452,7 @@ class NodeSplitter(object):
             # re-adjust so that none of the training samples end up in the test set
             test_size = y.shape[0] - class_labels.size * nc
 
+
         for clabel in class_labels:
             # indexes of points with class label clabel:
             ind = np.nonzero(y[:, 1] == clabel)

@@ -61,7 +61,7 @@ from keras import optimizers, losses, layers, metrics
 
 from stellar.data.stellargraph import StellarGraph
 from stellar.data.converter import *
-from stellar.data.node_splitter import NodeSplitter
+from stellar.data.node_splitter import train_val_test_split
 from stellar.data.loader import from_epgm
 from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.node_mappers import GraphSAGENodeMapper
@@ -94,22 +94,22 @@ def train(
         dropout: The dropout (0->1)
     """
     # Split "user" nodes into train/test
-    train_nodes, val_nodes, test_nodes, _ = graph_train_test_val_split(
-        graph=G, node_type="user", p=50, test_size=1000
+    train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
+        G, node_type="user", train_size=0.25, test_size=0.5
     )
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = GraphSAGENodeMapper(
-        G, train_ids, batch_size, num_samples, train_labels, name="train"
+        G, train_ids, batch_size, num_samples, name="train"
     )
     val_mapper = GraphSAGENodeMapper(
-        G, val_ids, batch_size, num_samples, val_labels, name="val"
+        G, val_ids, batch_size, num_samples, name="val"
     )
     test_mapper = GraphSAGENodeMapper(
-        G, test_ids, batch_size, num_samples, test_labels, name="test"
+        G, test_ids, batch_size, num_samples, name="test"
     )
     all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, all_labels, name="all"
+        G, all_ids, batch_size, num_samples, name="all"
     )
 
     # GraphSAGE model
