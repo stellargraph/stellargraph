@@ -758,6 +758,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
 
         random.seed(seed)
 
+        # TODO: parallelize the loop over root nodes (currently it's very slow)
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = list()  # the queue of neighbours
@@ -787,7 +788,10 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         if current_node is None:
                             neighbours = {}
                         else:
-                            neighbours = dict(self.graph.adj[frontier[0]])
+                            # neighbours = dict(self.graph.adj[current_node])
+                            # YT: better to use iterator rather than dict(iterator),
+                            # as it takes less memory?
+                            neighbours = self.graph.adj[current_node]
 
                         # print("sampling:", frontier[0], current_node_type)
                         # Create samples of neigbhours for all edge types
@@ -797,7 +801,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                                 for n2, nkeys in neighbours.items()
                                 for k in iter(nkeys)
                                 if graph_schema.is_of_edge_type(
-                                    (frontier[0], n2, k), et
+                                    (current_node, n2, k), et
                                 )
                             ]
 
