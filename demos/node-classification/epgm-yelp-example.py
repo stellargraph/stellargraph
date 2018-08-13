@@ -225,44 +225,7 @@ def test(G, target_converter, feature_converter, model_file, batch_size, target_
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
-    model = keras.models.load_model(
-        model_file, custom_objects={"MeanAggregator": MeanAggregator}
-    )
-
-    # Get required input shapes from model
-    num_samples = [
-        int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
-        for ii in range(len(model.input_shape) - 1)
-    ]
-
-    # Mapper feeds data from sampled subgraph to GraphSAGE model
-    all_ids, all_labels = target_converter.get_node_labels_for_ids(list(G))
-    all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, targets=all_labels, name="all"
-    )
-
-    # Evaluate and print metrics
-    all_metrics = model.evaluate_generator(all_mapper)
-
-    print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, all_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
-
-    # Save predictions
-    node_predictions = model.predict_generator(all_mapper)
-    predictions = pd.DataFrame(
-        [
-            {
-                **{"Node": node, "True Class": all_labels[ii]},
-                **{
-                    target_converter(jj, True): node_predictions[ii, jj]
-                    for jj in range(len(target_converter))
-                },
-            }
-            for ii, node in enumerate(all_ids)
-        ]
-    )
-    predictions.to_csv("predictions.csv")
+    pass
 
 
 if __name__ == "__main__":
