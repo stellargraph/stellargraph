@@ -789,7 +789,8 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             neighbours = {}
                         else:
                             # neighbours = dict(self.graph.adj[current_node])
-                            # YT: better to use iterator, takes less memory?
+                            # YT: better to use iterator rather than dict(iterator),
+                            # as it takes less memory?
                             neighbours = self.graph.adj[current_node]
 
                         # print("sampling:", frontier[0], current_node_type)
