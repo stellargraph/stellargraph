@@ -95,7 +95,7 @@ def test_mean_hin_agg_apply_2():
 
 
 def test_hinsage_constructor():
-    hs = Hinsage(
+    hs = HinSAGE(
         output_dims=[{"1": 2, "2": 2}, {"1": 2}],
         n_samples=[2, 2],
         input_neigh_tree=[
@@ -114,7 +114,7 @@ def test_hinsage_constructor():
 
 
 def test_hinsage_apply():
-    hs = Hinsage(
+    hs = HinSAGE(
         output_dims=[{"1": 2, "2": 2}, 2],
         n_samples=[2, 2],
         input_neigh_tree=[

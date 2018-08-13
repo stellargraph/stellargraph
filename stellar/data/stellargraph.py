@@ -437,7 +437,7 @@ class StellarGraphBase:
         )
         return s
 
-    def create_node_index_maps(self, schema=None):
+    def create_node_index_maps(self, schema=None, include_invalid=True):
         """
         A mapping between integer indices and node IDs and the reverse.
         This mapping is stable for graphs with the same node ids.
@@ -451,6 +451,12 @@ class StellarGraphBase:
             index is an integer from 0 to number_of_nodes_for_type - 1 and is
             seperate for each node type.
             node_id is the label of the node in the graph,
+
+        Args:
+            schema: The graph schema object. If none this will be calculated
+                internally.
+            include_invalid: If True an invalid node with ID "None" will also
+                be indexed.
 
         Returns:
             a dictionary with an entry for each node type with values
@@ -467,6 +473,9 @@ class StellarGraphBase:
         for nt in schema.node_types:
             nodes_for_type = [v for v in self.nodes() if schema.get_node_type(v) == nt]
 
+            if include_invalid:
+                nodes_for_type.append(None)
+
             # Node IDs may be integers, strings or in fact any hashable type.
             # Convert them to strings to do the sorting.
             node_index_to_id = sorted(nodes_for_type, key=str)
@@ -475,7 +484,7 @@ class StellarGraphBase:
 
         return node_index_maps
 
-    def _convert_attributes(self, spec, node_types, attr_name, fit):
+    def _convert_attributes(self, spec, node_types, attr_name, train):
         attribute_arrays = {}
 
         # Determine if target values will come directly from the target attribute or
@@ -485,23 +494,28 @@ class StellarGraphBase:
             for nt in node_types:
                 nt_id_to_index, nt_node_list = self._node_index_maps[nt]
 
-                attr_data = [self.node[v].get(attr_name) for v in nt_node_list]
+                attr_data = [
+                    v if v is None else self.node[v].get(attr_name)
+                    for v in nt_node_list
+                ]
 
                 # Get the size of the features
-                n_nodes = len(attr_data)
-                data_sizes = {np.size(a) if a is not None else None for a in attr_data}
+                data_sizes = {
+                    np.size(self.node[v].get(attr_name, []))
+                    for v in nt_node_list
+                    if v is not None
+                }
 
                 # Allow some nodes not to have targets
-                if None in data_sizes:
+                if 0 in data_sizes:
                     print(
                         "Warning: Some nodes have no value for attribute '{}', "
                         "using default value.".format(attr_name)
                     )
-                    data_sizes.discard(None)
+                    data_sizes.discard(0)
 
                 # Check all are the same for this node type
                 if len(data_sizes) > 1:
-                    print(data_sizes)
                     raise ValueError(
                         "Data sizes in nodes of type {} are inconsistent "
                         "for the attribute '{}' ".format(nt, attr_name)
@@ -514,9 +528,16 @@ class StellarGraphBase:
                 # Create zero attribute array
                 data_size = data_sizes.pop()
 
+                # Dummy feature/target value for invalid nodes,
+                # this will be inserted into the array in two cases:
+                # 1. node ID of None (representing sampling for a missing neighbour)
+                # 2. node with no attribute
+                # TODO: Make these two cases more explicit, allow custom values.
+                dummy_value = np.zeros(data_size)
+
                 # Convert to numpy array
                 attribute_arrays[nt] = np.asarray(
-                    [x if x is not None else np.zeros(data_size) for x in attr_data]
+                    [x if x is not None else dummy_value for x in attr_data]
                 )
 
         else:
@@ -525,26 +546,35 @@ class StellarGraphBase:
                 nt_id_to_index, nt_node_list = self._node_index_maps[nt]
 
                 # Convert the node attributes to a feature array
-                node_data = [self.node[v] for v in nt_node_list]
-                if fit:
-                    attribute_arrays[nt] = spec.fit_transform(nt, node_data)
+                node_data = [self.node[v] for v in nt_node_list if v is not None]
+                if train:
+                    aa = spec.fit_transform(nt, node_data)
                 else:
-                    attribute_arrays[nt] = spec.transform(nt, node_data)
+                    aa = spec.transform(nt, node_data)
+
+                # Append dummy value as final row.
+                dummy_value = np.zeros(aa.shape[1], dtype=aa.dtype)
+                # NOTE: This assumes that the dummy value is always the final row
+                # which is how we currently construct things in _node_index_maps,
+                # but is fragile
+                # TODO: improve robustness here, is there a better way to do this?
+                assert nt_node_list[-1] is None
+                assert sum(n is None for n in nt_node_list) == 1
+
+                attribute_arrays[nt] = np.vstack([aa, dummy_value])
 
         return attribute_arrays
 
-    def set_attribute_specifications(self, feature_spec=None, target_spec=None):
+    def set_attribute_spec(self, feature_spec=None, target_spec=None):
+        self.fit_attribute_spec(feature_spec, target_spec, train=False)
+
+    def fit_attribute_spec(self, feature_spec=None, target_spec=None, train=True):
+        """
+        """
         if feature_spec is not None:
             self._feature_spec = feature_spec
         if target_spec is not None:
             self._target_spec = target_spec
-
-    def convert_attributes_to_numeric(self, fit=True):
-        """
-        This is run automatically by the ML components of stellar. It converts the attributes
-        specified in the NodeAttributeSpecification object for features and targets to
-        numeric vectors.
-        """
 
         # Generate schema
         schema = self.create_graph_schema(create_type_maps=True)
@@ -555,12 +585,34 @@ class StellarGraphBase:
         # Determine if feature attributes will come directly from the feature attribute or
         # through the feature_spec converter
         self._node_attribute_arrays = self._convert_attributes(
-            self._feature_spec, schema.node_types, self._feature_attr, fit
+            self._feature_spec, schema.node_types, self._feature_attr, train=True
         )
 
         self._node_target_arrays = self._convert_attributes(
-            self._target_spec, schema.node_types, self._target_attr, fit
+            self._target_spec, schema.node_types, self._target_attr, train=True
         )
+
+    def check_graph_for_ml(self, features=True, supervised=True):
+        """
+        Checks if all properties required for machine learning training/inference are set up.
+        An error will be raised if the graph is not correctly setup.
+        """
+        # TODO: This are simple tests and miss many problems that could arise, improve!
+        # TODO: At this point perhaps we should generate features rather than in fit_attribute_spec
+        # TODO: but if so how do we know whether to fit the attribute specs or not?
+        # Check features on the nodes:
+        if features and len(self._node_attribute_arrays) == 0:
+            raise RuntimeError(
+                "Run 'fit_attribute_spec' on the graph with numeric feature attributes "
+                "or a feature specification to generate node features for machine learning"
+            )
+
+        # Check features on the nodes:
+        if supervised and len(self._node_target_arrays) == 0:
+            raise RuntimeError(
+                "Run 'fit_attribute_spec' on the graph with numeric target attributes "
+                "or a target specification to generate node targets for supervised learning"
+            )
 
     def get_feature_for_nodes(self, nodes, node_type=None):
         """
@@ -578,18 +630,38 @@ class StellarGraphBase:
         if not utils.is_real_iterable(nodes):
             nodes = [nodes]
 
-        node_data = [self.node[n] for n in nodes]
-
         # Get the node type
         if node_type is None:
-            node_types = {nd.get(self._node_type_attr) for nd in node_data}
+            node_types = {
+                self.node[n].get(self._node_type_attr) for n in nodes if n is not None
+            }
 
             if None in node_types:
                 raise ValueError(
                     "All nodes must have a type specified as the "
                     "'{}' attribute.".format(self._node_type_attr)
                 )
+
+            if len(node_types) > 1:
+                raise ValueError("All nodes must be of the same type.")
+
+            if len(node_types) == 0:
+                raise ValueError(
+                    "At least one node must be given if node_type not specified"
+                )
+
             node_type = node_types.pop()
+
+        # Check node_types
+        if node_type not in self._node_attribute_arrays:
+            raise ValueError(
+                "Features not found for node type '{}', has fit_attribute_specs been run?"
+            )
+
+        # Edge case: if we are given no nodes, what do we do?
+        if len(nodes) == 0:
+            feature_size = self._node_attribute_arrays[node_type].shape[1]
+            return np.empty((0, feature_size))
 
         # Get index for nodes of this type
         nt_id_to_index, nt_node_list = self._node_index_maps[node_type]
@@ -617,6 +689,7 @@ class StellarGraphBase:
         if not utils.is_real_iterable(nodes):
             nodes = [nodes]
 
+        # TODO: What if nodes are not all in graph?
         node_data = [self.node[n] for n in nodes]
 
         # Get the node type
@@ -630,6 +703,12 @@ class StellarGraphBase:
                 )
             node_type = node_types.pop()
 
+        # Check node_types
+        if node_type not in self._node_target_arrays:
+            raise ValueError(
+                "Targets not found for node type '{}', has fit_attribute_specs been run?"
+            )
+
         # Get index for nodes of this type
         nt_id_to_index, nt_node_list = self._node_index_maps[node_type]
         node_indices = [nt_id_to_index.get(n) for n in nodes]
@@ -642,6 +721,133 @@ class StellarGraphBase:
 
         features = self._node_target_arrays[node_type][node_indices]
         return features
+
+    def get_nodes_with_target(self, node_type=None):
+        """
+        Get the nodes that have a valid target value
+        Args:
+            node_type: The type label for the nodes. If None, all nodes are used.
+
+        Returns:
+            List containing the nodes that do not have a valid target attribute
+        """
+        nodes = self.get_nodes_of_type(node_type)
+
+        if self._target_spec is not None:
+            # If we have a target spec, find the attributes that are converted and get the nodes that don't have
+            #  get the nodes that don't have one or more of these attrivutes
+            target_attrs = self._target_spec.get_attributes(node_type)
+            nodes_with_targets = set(nodes)
+            for attr_name in target_attrs:
+                nodes_with_targets.intersection_update(
+                    n for n in nodes if attr_name in self.node[n]
+                )
+        else:
+            # Otherwise directly get nodes with the _target_attr attribute
+            nodes_with_targets = {n for n in nodes if self._target_attr in self.node[n]}
+
+        # Nodes without target
+        nodes_without_target = set(nodes).difference(nodes_with_targets)
+
+        return nodes_with_targets, nodes_without_target
+
+    def get_raw_targets(self, nodes, node_type=None, unlabeled_value=None):
+        """
+        Get the raw target label for the nodes, currently required for splitting.
+
+        Args:
+            node_type: The type label for the nodes. If None, all nodes are used.
+
+        Returns:
+            List containing the nodes that do not have a valid target attribute
+        """
+        if self._target_spec is not None:
+            # If we have a target spec, find the attributes that are converted and
+            #  get the nodes that don't have one or more of these attrivutes
+            target_attrs = self._target_spec.get_attributes(node_type)
+
+            # Let's just use the first one for now.
+            # TODO: What happens if there are multiple targets?
+            target_attr = next(iter(target_attrs))
+        else:
+            # Otherwise directly get nodes with the _target_attr attribute
+            target_attr = self._target_attr
+
+        target_values = [self.node[n].get(target_attr, unlabeled_value) for n in nodes]
+
+        return target_values
+
+    def get_feature_sizes(self, node_types=None):
+        """
+        Get the feature sizes for the specified node types.
+
+        Args:
+            node_types: A list of node types. If None all current node types
+                will be used.
+
+        Returns:
+            A dictionary of node type and integer feature size.
+        """
+        # TODO: Infer node type
+        self.check_graph_for_ml(features=True)
+
+        if self._feature_spec is not None:
+            node_types = self.get_node_types()
+            fsize = {nt: self._feature_spec.get_output_size(nt) for nt in node_types}
+
+        else:
+            # Otherwise directly get nodes with the _target_attr attribute
+            fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
+
+        return fsize
+
+    def get_feature_size(self, node_type=None):
+        """
+        Get the feature size for the nodes of the specified type.
+
+        Args:
+            node_type: The type label for the nodes. If None and all nodes are of
+                a single type the feature size for that type is returned.
+
+        Returns:
+            The feature size is returned as an integer.
+        """
+        # TODO: Infer node type
+        self.check_graph_for_ml(features=True)
+
+        # TODO: Check if node type is in schema!
+
+        if self._feature_spec is not None:
+            fsize = self._feature_spec.get_output_size(node_type)
+
+        else:
+            # Otherwise directly get nodes with the _target_attr attribute
+            fsize = self._node_attribute_arrays[node_type].shape[1]
+
+        return fsize
+
+    def get_target_size(self, node_type=None):
+        """
+        Get the feature size for the nodes of the specified type.
+
+        Args:
+            node_type: The type label for the nodes. If None and all nodes are of
+                a single type the feature size for that type is returned.
+
+        Returns:
+            The feature size is returned as an integer.
+        """
+        # TODO: Infer node type
+        self.check_graph_for_ml(supervised=True)
+
+        if self._feature_spec is not None:
+            fsize = self._target_spec.get_output_size(node_type)
+
+        else:
+            # Otherwise directly get nodes with the _target_attr attribute
+            fsize = self._node_target_arrays[node_type].shape[1]
+
+        return fsize
 
     def get_nodes_of_type(self, node_type=None):
         """
@@ -661,6 +867,21 @@ class StellarGraphBase:
                 for n, ndata in self.nodes(data=True)
                 if ndata.get(self._node_type_attr) == node_type
             ]
+
+    def get_node_types(self):
+        """
+        Get a list of all node types in the graph.
+
+        Returns:
+            set of types
+        """
+        # TODO: create a schmea when we geenrate _node_attribute_arrays and use it?
+        if len(self._node_attribute_arrays) > 0:
+            return set(self._node_attribute_arrays.keys())
+        else:
+            return {
+                ndata.get(self._node_type_attr) for n, ndata in self.nodes(data=True)
+            }
 
     def info(self, show_attributes=True, sample=None):
         """
@@ -760,7 +981,9 @@ class StellarGraphBase:
             )
 
         # Create node type index list
-        node_types = sorted({self.node[n].get(self._node_type_attr) for n in nodes})
+        node_types = sorted(
+            {self.node[n].get(self._node_type_attr) for n in nodes}, key=str
+        )
 
         if None in node_types:
             raise ValueError(

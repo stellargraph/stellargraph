@@ -63,14 +63,12 @@ from stellar.data.stellargraph import StellarGraph
 from stellar.data.converter import *
 from stellar.data.node_splitter import train_val_test_split
 from stellar.data.loader import from_epgm
-from stellar.layer.graphsage import GraphSAGE, MeanAggregator
-from stellar.mapper.node_mappers import GraphSAGENodeMapper
+from stellar.layer.hinsage import HinSAGE, MeanHinAggregator
+from stellar.mapper.node_mappers import HinSAGENodeMapper
 
 
 def train(
     G,
-    target_converter,
-    feature_converter,
     layer_size,
     num_samples,
     batch_size=100,
@@ -93,37 +91,89 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
+    # Specify node attributes to use to create features
+    user_attrs = [
+        "cool",
+        "useful",
+        "funny",
+        "fans",
+        "average_stars",
+        "compliment_cool",
+        "compliment_hot",
+        "compliment_more",
+        "compliment_profile",
+        "compliment_cute",
+        "compliment_list",
+        "compliment_note",
+        "compliment_plain",
+        "compliment_funny",
+        "compliment_writer",
+        "compliment_photos",
+    ]
+
+    review_attrs = ["stars", "useful"]
+
+    business_attrs = [
+        "BikeParking",
+        "Alcohol",
+        "RestaurantsPriceRange2",
+        "BusinessAcceptsCreditCards",
+        "WiFi",
+        "DogsAllowed",
+        "GoodForKids",
+        "NoiseLevel",
+    ]
+
+    # Convert graph node attributes to feature vectors
+    nfs = NodeAttributeSpecification()
+    nfs.add_attribute_list("user", user_attrs, NumericConverter)
+    nfs.add_attribute_list("review", review_attrs, NumericConverter)
+    nfs.add_attribute("business", "stars", NumericConverter)
+    nfs.add_attribute_list(
+        "business", business_attrs, OneHotCategoricalConverter, flatten_binary=True
+    )
+
+    # Convert graph node attributes to  target values
+    nts = NodeAttributeSpecification()
+    nts.add_attribute_list("user", ["elite"], OneHotCategoricalConverter)
+
+    # Reduce graph to only contain a subset of node types
+    node_types_to_keep = ["review", "user", "business"]
+    filtered_nodes = [
+        n for n, ndata in G.nodes(data=True) if ndata["label"] in node_types_to_keep
+    ]
+    G = StellarGraph(G.subgraph(filtered_nodes))
+
+    # Fit the graph to the attribute converters:
+    G.fit_attribute_spec(feature_spec=nfs, target_spec=nts)
+
     # Split "user" nodes into train/test
     train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
         G, node_type="user", train_size=0.25, test_size=0.5
     )
+    user_nodes = G.get_nodes_of_type("user")
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    train_mapper = GraphSAGENodeMapper(
-        G, train_ids, batch_size, num_samples, name="train"
-    )
-    val_mapper = GraphSAGENodeMapper(
-        G, val_ids, batch_size, num_samples, name="val"
-    )
-    test_mapper = GraphSAGENodeMapper(
-        G, test_ids, batch_size, num_samples, name="test"
-    )
-    all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, name="all"
-    )
+    train_mapper = HinSAGENodeMapper(G, train_nodes, batch_size, num_samples)
+    val_mapper = HinSAGENodeMapper(G, val_nodes, batch_size, num_samples)
+    test_mapper = HinSAGENodeMapper(G, test_nodes, batch_size, num_samples)
+    all_mapper = HinSAGENodeMapper(G, user_nodes, batch_size, num_samples)
 
     # GraphSAGE model
-    model = GraphSAGE(
+    model = HinSAGE(
         output_dims=layer_size,
         n_samples=num_samples,
-        input_dim=feature_converter.feature_size,
+        input_neigh_tree=train_mapper.schema.get_type_adjacency_list(["user"], 2),
+        input_dim=G.get_feature_sizes(),
         bias=True,
         dropout=dropout,
     )
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
-    prediction = layers.Dense(units=len(target_converter), activation="softmax")(x_out)
+    prediction = layers.Dense(units=G.get_target_size("user"), activation="softmax")(
+        x_out
+    )
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
@@ -158,8 +208,8 @@ def train(
     str_numsamp = "_".join([str(x) for x in num_samples])
     str_layer = "_".join([str(x) for x in layer_size])
     model.save(
-        "graphsage_n{}_l{}_d{}_i{}.h5".format(
-            str_numsamp, str_layer, dropout, feature_converter.feature_size
+        "graphsage_n{}_l{}_d{}_r{}.h5".format(
+            str_numsamp, str_layer, dropout, learning_rate
         )
     )
 
@@ -286,62 +336,11 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
-    # Specify node attributes to use to create features
-    user_attrs = [
-        "compliment_cool",
-        "cool",
-        "useful",
-        "funny",
-        "fans",
-        "average_stars",
-        "compliment_hot",
-        "compliment_more",
-        "compliment_profile",
-        "compliment_cute",
-        "compliment_list",
-        "compliment_note",
-        "compliment_plain",
-        "compliment_funny",
-        "compliment_writer",
-        "compliment_photos",
-    ]
-
-    review_attrs = ["stars", "useful"]
-
-    business_attrs = [
-        "BikeParking",
-        "Alcohol",
-        "RestaurantsPriceRange2",
-        "BusinessAcceptsCreditCards",
-        "WiFi",
-        "DogsAllowed",
-        "GoodForKids",
-        "NoiseLevel",
-    ]
-
-    # Convert graph node attributes to feature vectors
-    nfs = NodeAttributeSpecification()
-    nfs.add_attribute_types("user", user_attrs, NumericConverter)
-    nfs.add_attribute_types("review", review_attrs, NumericConverter)
-    nfs.add_attribute_type("business", "stars", NumericConverter)
-    nfs.add_attribute_types(
-        "business", business_attrs, OneHotCategoricalConverter, flatten_binary=True
-    )
-
-    # Convert graph node attributes to  target values
-    nts= NodeAttributeSpecification()
-    nts.add_attribute_types("user", ["elite"], OneHotCategoricalConverter)
-
     # Load graph
     graph_loc = os.path.expanduser(args.graph)
     G = from_epgm(graph_loc)
 
-    # Reduce graph to only contain a subset of node types
-    node_types_to_keep = ["review", "user", "business"]
-    filtered_nodes = [
-        n for n, ndata in G.nodes(data=True) if ndata["label"] in node_types_to_keep
-    ]
-    G = StellarGraph(G.subgraph(filtered_nodes), feature_spec=nfs, target_spec=nts)
+    print(G.info())
 
     if args.checkpoint is None:
         train(

@@ -1,4 +1,4 @@
-from stellar.layer.hinsage import Hinsage
+from stellar.layer.hinsage import HinSAGE
 import keras
 from keras import backend as K
 import numpy as np
@@ -49,7 +49,7 @@ class GeneHinSageClassifier(object):
 
             return weighted_binary_crossentropy
 
-        hs = Hinsage(
+        hs = HinSAGE(
             output_dims=[self.emb_dim] * len(n_samples),
             n_samples=n_samples,
             input_neigh_tree=[  # TODO: must be simplified, and generalised to work for any number of HinSAGE layers
