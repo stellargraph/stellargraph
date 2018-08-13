@@ -178,7 +178,7 @@ class LinkInference(object):
         # Create Keras model for training
         model = Model(inputs=x_inp, outputs=score_prediction)
         model.compile(
-            optimizer=optimizers.Adam(lr=args.learningrate),
+            optimizer=optimizers.Adam(lr=learning_rate),
             loss=losses.mean_squared_error,
             metrics=[root_mean_square_error, metrics.mae],
         )
@@ -288,6 +288,7 @@ if __name__ == "__main__":
 
     if args.checkpoint is None:
         model.train(
+            learning_rate=args.learningrate,
             layer_size=args.layer_size,
             num_samples=args.neighbour_samples,
             batch_size=args.batch_size,
