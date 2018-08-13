@@ -19,12 +19,16 @@
 Heterogeneous GraphSAGE and compatible aggregator layers
 
 """
+import numpy as np
 
 from keras.engine.topology import Layer
-from keras import backend as K
+from keras import backend as K, Input
 from keras.layers import Lambda, Dropout, Reshape
 from keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
+from collections import defaultdict
+import itertools as it
+import operator as op
 
 
 class MeanHinAggregator(Layer):
@@ -116,14 +120,14 @@ class MeanHinAggregator(Layer):
 
     def call(self, x, **kwargs):
         """
-
+        Apply MeanAggregation on input tensors, x
 
         Args:
-          x:
+          x: Keras Tensor
           **kwargs:
 
         Returns:
-
+            Keras Tensor representing the aggregated embeddings in the input.
         """
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
 
@@ -141,18 +145,18 @@ class MeanHinAggregator(Layer):
 
     def compute_output_shape(self, input_shape):
         """
-
+        The output shape
 
         Args:
           input_shape:
 
         Returns:
-
+            Tuple of the output shape
         """
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
-class Hinsage:
+class HinSAGE:
     """Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers."""
 
     def __init__(
@@ -177,6 +181,9 @@ class Hinsage:
         :param dropout:             Optional dropout
         """
 
+        # TODO: I feel that this needs refactoring.
+        # Does this assume that the adjacency list is ordered?
+        # What are the assumptions of this function, and can we move it to the schema?
         def eval_neigh_tree_per_layer(input_tree):
             """
             Function to evaluate the neighbourhood tree structure for every layer
@@ -201,6 +208,10 @@ class Hinsage:
         self.n_samples = n_samples
         self.bias = bias
         self.dropout = dropout
+
+        # TODO: Refactor
+        self.subtree_schema = input_neigh_tree
+        self.input_dims = input_dim
         # self._dropout = Dropout(dropout)
 
         # Neighbourhood info per layer
@@ -336,3 +347,57 @@ class Hinsage:
             if len(x) == 1
             else [self._normalization(xi) for xi in x]
         )
+
+    def _input_shapes(self) -> List[Tuple[int, int]]:
+        """
+        Returns the input shapes for the tensors of the supplied neighbourhood type tree
+
+        Returns:
+            A list of tuples giving the shape (number of nodes, feature size) for
+            the corresponding item in the neighbourhood type tree (self.subtree_schema)
+        """
+        neighbor_sizes = list(it.accumulate([1] + self.n_samples, op.mul))
+
+        def get_shape(stree, cnode, level=0):
+            adj = stree[cnode][1]
+            size_dict = {
+                cnode: (neighbor_sizes[level], self.input_dims[stree[cnode][0]])
+            }
+            if len(adj) > 0:
+                size_dict.update(
+                    {
+                        k: s
+                        for a in adj
+                        for k, s in get_shape(stree, a, level + 1).items()
+                    }
+                )
+            return size_dict
+
+        input_shapes = get_shape(self.subtree_schema, 0)
+        return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
+
+    def default_model(self, flatten_output=False):
+        """
+        Return model with default inputs
+
+        Arg:
+            flatten_output: The HinSAGE model returns an output tensor
+                of form (batch_size, 1, feature_size) -
+                if this flag is True, the output will be resized to
+                (batch_size, feature_size)
+
+        Returns:
+            x_inp: Keras input tensors for specified HinSAGE model
+            y_out: Keras tensor for GraphSAGE model output
+
+        """
+        # Create tensor inputs
+        x_inp = [Input(shape=s) for s in self._input_shapes()]
+
+        # Output from GraphSAGE model
+        x_out = self(x_inp)
+
+        if flatten_output:
+            x_out = Reshape((-1,))(x_out)
+
+        return x_inp, x_out

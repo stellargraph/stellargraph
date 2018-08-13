@@ -25,6 +25,21 @@ import itertools as it
 import pytest
 
 
+def example_stellar_graph_1():
+    G = StellarGraph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+
+    G.add_nodes_from([1, 2, 3, 4], label="")
+    G.add_edges_from(elist, label="")
+
+    # Add some node attributes
+    G.node[1]["a1"] = 1
+    G.node[3]["a1"] = 1
+    G.node[1]["a2"] = 1
+    G.node[4]["a2"] = 1
+    return G
+
+
 def test_converter_categorical():
     data = [1, 5, 5, 1, 6]
     conv = CategoricalConverter()
@@ -112,8 +127,42 @@ def test_converter_numeric():
 
 def test_attribute_spec():
     nfs = NodeAttributeSpecification()
-    nfs.add_attribute_type("", "a1", NumericConverter, default_value=0, normalize=False)
-    nfs.add_attribute_type("", "a2", NumericConverter, default_value=0, normalize=False)
+    nfs.add_attribute("", "a1", NumericConverter, default_value=0, normalize=False)
+    nfs.add_attribute("", "a2", NumericConverter, default_value=0, normalize=False)
+
+    data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
+
+    attr_list = nfs.get_attributes("")
+    assert attr_list == ["a1", "a2"]
+
+    converted_data = nfs.fit_transform("", data)
+    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+
+    assert converted_data == pytest.approx(expected)
+
+
+def test_attribute_spec_add_list():
+    nfs = NodeAttributeSpecification()
+    nfs.add_attribute_list(
+        "", ["a1", "a2"], NumericConverter, default_value=0, normalize=False
+    )
+
+    data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
+
+    attr_list = nfs.get_attributes("")
+    assert attr_list == ["a1", "a2"]
+
+    converted_data = nfs.fit_transform("", data)
+    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+
+    assert converted_data == pytest.approx(expected)
+
+
+def test_attribute_spec_add_all():
+    G = example_stellar_graph_1()
+
+    nfs = NodeAttributeSpecification()
+    nfs.add_all_attributes(G, "", NumericConverter, default_value=0, normalize=False)
 
     data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
 
@@ -128,8 +177,8 @@ def test_attribute_spec():
 
 def test_attribute_spec_normalize_error():
     nfs = NodeAttributeSpecification()
-    nfs.add_attribute_type("", "a1", NumericConverter, default_value=0)
-    nfs.add_attribute_type("", "a2", NumericConverter, default_value=0)
+    nfs.add_attribute("", "a1", NumericConverter, default_value=0)
+    nfs.add_attribute("", "a2", NumericConverter, default_value=0)
 
     data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
 
@@ -139,7 +188,7 @@ def test_attribute_spec_normalize_error():
         nfs.fit_transform("", data)
 
     nfs = NodeAttributeSpecification()
-    nfs.add_attribute_type("", "a", NumericConverter, default_value=0)
+    nfs.add_attribute("", "a", NumericConverter, default_value=0)
 
     data = [{"a": 1}, {"a": 1}, {"a": 1}, {"a": 1}]
     with pytest.raises(ValueError):
@@ -148,8 +197,8 @@ def test_attribute_spec_normalize_error():
 
 def test_attribute_spec_binary_conv():
     nfs = NodeAttributeSpecification()
-    nfs.add_attribute_type("", "a1", BinaryConverter)
-    nfs.add_attribute_type("", "a2", BinaryConverter)
+    nfs.add_attribute("", "a1", BinaryConverter)
+    nfs.add_attribute("", "a2", BinaryConverter)
 
     data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
     converted_data = nfs.fit_transform("", data)
@@ -159,8 +208,8 @@ def test_attribute_spec_binary_conv():
 
 def test_attribute_spec_mixed():
     nfs = NodeAttributeSpecification()
-    nfs.add_attribute_type("", "a1", OneHotCategoricalConverter)
-    nfs.add_attribute_type("", "a2", NumericConverter, default_value="mean")
+    nfs.add_attribute("", "a1", OneHotCategoricalConverter)
+    nfs.add_attribute("", "a2", NumericConverter, default_value="mean")
 
     data = [{"a1": 1, "a2": 0}, {"a1": "a", "a2": 1}, {"a1": 1}, {"a1": "a"}]
 

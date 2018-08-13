@@ -18,13 +18,15 @@ import os
 import uuid
 import numpy as np
 import pandas as pd
+
+from stellar.data.stellargraph import StellarGraphBase
 from stellar.data.epgm import EPGM
 
 UNKNOWN_TARGET_ATTRIBUTE = "-1"
 
 # Easier functional interface for the splitter:
 def train_val_test_split(
-    G,
+    G: StellarGraphBase,
     node_type=None,
     test_size=0.4,
     train_size=0.2,
@@ -67,17 +69,18 @@ def train_val_test_split(
     """
     node_splitter = NodeSplitter()
 
+    # We will need to get the darn labels regardless of if we have stratification
     nodes = G.get_nodes_of_type(node_type)
-
-    # We will need to get the darn labels regardless so we can calculate the number
-    # of unlabelled nodes
-    labels = [
-        G.node[n].get(G._target_attr, UNKNOWN_TARGET_ATTRIBUTE) for n in nodes
-    ]
+    labels = G.get_raw_targets(
+        nodes, node_type, unlabeled_value=UNKNOWN_TARGET_ATTRIBUTE
+    )
 
     # Number of nodes and number without a label
     n_nodes = len(nodes)
     n_known = sum(l != UNKNOWN_TARGET_ATTRIBUTE for l in labels)
+
+    if n_known == 0:
+        raise RuntimeError("No nodes with target attribute to split.")
 
     # Find the number of nodes to use in the training set
     if isinstance(train_size, float) and (0 < train_size <= 1):
@@ -451,7 +454,6 @@ class NodeSplitter(object):
         if test_size > y.shape[0] - class_labels.size * nc:
             # re-adjust so that none of the training samples end up in the test set
             test_size = y.shape[0] - class_labels.size * nc
-
 
         for clabel in class_labels:
             # indexes of points with class label clabel:
