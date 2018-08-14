@@ -114,7 +114,8 @@ class GraphSAGE:
         self,
         output_dims: List[int],
         n_samples: List[int],
-        input_dim: int,
+        mapper = None,
+        input_dim: int = None,
         aggregator: Layer = MeanAggregator,
         bias: bool = False,
         dropout: float = 0.,
@@ -133,11 +134,20 @@ class GraphSAGE:
         assert len(n_samples) == len(output_dims)
         self.n_layers = len(n_samples)
         self.n_samples = n_samples
-        self.input_feature_size = input_dim
-        self.dims = [input_dim] + output_dims
         self.bias = bias
         self.dropout = dropout
-        # self._dropout = Dropout(dropout)
+
+        # We can get a few things from the mapper
+        if input_dim is None:
+            assert mapper is not None
+            self.input_feature_size = mapper.graph.get_feature_size()
+        else:
+            self.input_feature_size = input_dim
+
+        # Feature dimensions for each layer
+        self.dims = [self.input_feature_size] + output_dims
+
+        # Aggregator functions for each layer
         self._aggs = [
             aggregator(
                 output_dim=self.dims[layer + 1],
@@ -146,6 +156,8 @@ class GraphSAGE:
             )
             for layer in range(self.n_layers)
         ]
+
+        # Sizes of the neighbours for each layer
         self._neigh_reshape = [
             [
                 Reshape((-1, max(1, self.n_samples[i]), self.dims[layer]))
@@ -153,6 +165,7 @@ class GraphSAGE:
             ]
             for layer in range(self.n_layers)
         ]
+
         self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
 
     def __call__(self, x: List):

@@ -53,6 +53,8 @@ optional arguments:
 """
 import os
 import argparse
+import pickle
+
 import numpy as np
 import pandas as pd
 
@@ -115,14 +117,12 @@ def train(
     # Create mappers for GraphSAGE that input data from the graph to the model
     train_mapper = GraphSAGENodeMapper(G, train_nodes, batch_size, num_samples)
     val_mapper = GraphSAGENodeMapper(G, val_nodes, batch_size, num_samples)
-    test_mapper = GraphSAGENodeMapper(G, test_nodes, batch_size, num_samples)
-    all_mapper = GraphSAGENodeMapper(G, list(G), batch_size, num_samples)
 
     # GraphSAGE model
     model = GraphSAGE(
         output_dims=layer_size,
         n_samples=num_samples,
-        input_dim=G.get_feature_size("paper"),
+        mapper=train_mapper,
         bias=True,
         dropout=dropout,
     )
@@ -150,13 +150,15 @@ def train(
         shuffle=True,
     )
 
-    # Evaluate and print metrics
+    # Evaluate on test set and print metrics
+    test_mapper = GraphSAGENodeMapper(G, test_nodes, batch_size, num_samples)
     test_metrics = model.evaluate_generator(test_mapper)
-
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
+    # Evaluate over all nodes and print metrics
+    all_mapper = GraphSAGENodeMapper(G, list(G), batch_size, num_samples)
     all_nodes_metrics = model.evaluate_generator(all_mapper)
     print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, all_nodes_metrics):
@@ -165,13 +167,17 @@ def train(
     # TODO: extract the GraphSAGE embeddings from x_out, and save/plot them
 
     # Save model
-    str_numsamp = "_".join([str(x) for x in num_samples])
-    str_layer = "_".join([str(x) for x in layer_size])
-    model.save(
-        "graphsage_n{}_l{}_d{}_r{}.h5".format(
-            str_numsamp, str_layer, dropout, learning_rate
-        )
+    save_str = "_n{}_l{}_d{}_r{}".format(
+        "_".join([str(x) for x in num_samples]),
+        "_".join([str(x) for x in layer_size]),
+        dropout,
+        learning_rate,
     )
+    model.save("epgm_example_model" + save_str + ".h5")
+
+    # We must also save the attribute spec, as it is fitted to the data
+    with open("epgm_example_specs" + save_str + ".pkl", "wb") as f:
+        pickle.dump([nfs, nts], f)
 
 
 def test(G, model_file, batch_size):
@@ -185,7 +191,7 @@ def test(G, model_file, batch_size):
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
-    #TODO: This needs to be written
+    # TODO: This needs to be written
     pass
 
 

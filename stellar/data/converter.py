@@ -265,7 +265,7 @@ class NodeAttributeSpecification:
             )
         return self._node_specs[node_type][attr]
 
-    def get_output_size(self, node_type):
+    def get_output_size(self, node_type=None):
         """
         Get the size of the output vector for the node_type
 
@@ -275,10 +275,19 @@ class NodeAttributeSpecification:
         Returns:
             An integer specifying the vector length for this node type
         """
-        if node_type not in self._node_specs:
-            return 0
-        else:
-            return np.sum([len(conv) for conv in self._node_specs[node_type].values()])
+        if node_type is None:
+            if len(self._node_specs) == 1:
+                node_type = next(iter(self._node_specs.keys()))
+            else:
+                raise ValueError(
+                    "Node type must be specified if there are multiple node types"
+                )
+        elif node_type not in self._node_specs:
+            raise ValueError(
+                "Node type '{}' not found in attribute specification.".format(node_type)
+            )
+
+        return np.sum([len(conv) for conv in self._node_specs[node_type].values()])
 
     def fit_transform(self, node_type, data):
         """

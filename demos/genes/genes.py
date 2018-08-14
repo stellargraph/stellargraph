@@ -52,7 +52,7 @@ class GeneHinSageClassifier(object):
         hs = HinSAGE(
             output_dims=[self.emb_dim] * len(n_samples),
             n_samples=n_samples,
-            input_neigh_tree=[  # TODO: must be simplified, and generalised to work for any number of HinSAGE layers
+            input_neighbor_tree=[  # TODO: must be simplified, and generalised to work for any number of HinSAGE layers
                 ("gene", [1, 2, 3]),
                 ("gene", [4, 5, 6]),
                 ("gene", [7, 8, 9]),

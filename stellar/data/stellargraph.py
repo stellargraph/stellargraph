@@ -506,7 +506,7 @@ class StellarGraphBase:
                     if v is not None
                 }
 
-                # Allow some nodes not to have targets
+                # Warn if nodes don't have the attribute
                 if 0 in data_sizes:
                     print(
                         "Warning: Some nodes have no value for attribute '{}', "
@@ -521,7 +521,7 @@ class StellarGraphBase:
                         "for the attribute '{}' ".format(nt, attr_name)
                     )
 
-                # If some groups have no nodes with (target) attributes, skip them
+                # If some node_type have no nodes with the attribute, skip them
                 if len(data_sizes) == 0:
                     continue
 
@@ -566,10 +566,40 @@ class StellarGraphBase:
         return attribute_arrays
 
     def set_attribute_spec(self, feature_spec=None, target_spec=None):
+        """
+        Transform the node attributes to feature and target vectors, for use
+        with machine learning models.
+
+        If feature_spec or target_spec are not provided, the corresponding vectors
+        are assumed to be stored in the feature_name (by default "feature") and
+        target_name (by default "target") attributes in the nodes and are additionally
+        assumed to be suitable for use in machine learning models.
+
+        This function is used when the feature_spec and/or target_spec have already
+        been used to train a model.
+        """
         self.fit_attribute_spec(feature_spec, target_spec, train=False)
 
     def fit_attribute_spec(self, feature_spec=None, target_spec=None, train=True):
         """
+        Transform the node attributes to feature and target vectors, for use
+        with machine learning models.
+
+        If feature_spec or target_spec are not provided, the corresponding vectors
+        are assumed to be stored in the feature_name (by default "feature") and
+        target_name (by default "target") attributes in the nodes and are additionally
+        assumed to be suitable for use in machine learning models.
+
+        If feature_spec or target_spec is provided, the feature/target vectors will
+        be created as per the specification. This is data dependant and the node
+        attributes of the current state of the graph will be used to fit the supplied
+        attribute specification.
+
+        Once a machine learning model is trained, the fitted feature specifications should
+        be used with that model and this function should not be used with train=True.
+        Instead if using a trained machine learning model, supply the attribute
+        specifications used to train that model to the `set_attribute_spec` function
+        or set the flag train=False in this function.
         """
         if feature_spec is not None:
             self._feature_spec = feature_spec
@@ -592,6 +622,9 @@ class StellarGraphBase:
             self._target_spec, schema.node_types, self._target_attr, train=True
         )
 
+        # Create graph schema at this point?
+
+
     def check_graph_for_ml(self, features=True, supervised=True):
         """
         Checks if all properties required for machine learning training/inference are set up.
@@ -613,6 +646,8 @@ class StellarGraphBase:
                 "Run 'fit_attribute_spec' on the graph with numeric target attributes "
                 "or a target specification to generate node targets for supervised learning"
             )
+
+        # How about checking the schema?
 
     def get_feature_for_nodes(self, nodes, node_type=None):
         """
