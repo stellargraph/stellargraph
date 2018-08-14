@@ -309,3 +309,11 @@ class HinSAGENodeMapper(Sequence):
         ]
 
         return batch_feats, batch_targets
+
+    def get_head_node_type(self):
+        """
+        Get the head node for this mapper.
+        Returns:
+            Node type
+        """
+        return self._head_node_type

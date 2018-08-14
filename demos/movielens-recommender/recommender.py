@@ -280,7 +280,7 @@ class MovielensData:
         return HinSAGE(
             output_dims=self.layer_sizes,
             n_samples=self.node_samples,
-            input_neigh_tree=self.subtree_schema,
+            input_neighbor_tree=self.subtree_schema,
             input_dim={
                 'user': self.input_feature_size,
                 'movie': self.input_feature_size,

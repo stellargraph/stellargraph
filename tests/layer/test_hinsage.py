@@ -98,7 +98,7 @@ def test_hinsage_constructor():
     hs = HinSAGE(
         output_dims=[{"1": 2, "2": 2}, {"1": 2}],
         n_samples=[2, 2],
-        input_neigh_tree=[
+        input_neighbor_tree=[
             ("1", [1, 2]),
             ("1", [3, 4]),
             ("2", [5]),
@@ -117,7 +117,7 @@ def test_hinsage_apply():
     hs = HinSAGE(
         output_dims=[{"1": 2, "2": 2}, 2],
         n_samples=[2, 2],
-        input_neigh_tree=[
+        input_neighbor_tree=[
             ("1", [1, 2]),
             ("1", [3, 4]),
             ("2", [5]),

@@ -53,6 +53,8 @@ optional arguments:
 """
 import os
 import argparse
+import pickle
+
 import numpy as np
 import pandas as pd
 
@@ -67,21 +69,13 @@ from stellar.layer.hinsage import HinSAGE, MeanHinAggregator
 from stellar.mapper.node_mappers import HinSAGENodeMapper
 
 
-def train(
-    G,
-    layer_size,
-    num_samples,
-    batch_size=100,
-    num_epochs=10,
-    learning_rate=0.005,
-    dropout=0.0,
-):
+def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dropout):
     """
     Train the GraphSAGE model on the specified graph G
     with given parameters.
 
     Args:
-        G: NetworkX graph file
+        G: StellarGraph graph file
         target_converter: Class to give numeric representations of node targets
         feature_converter: CLass to give numeric representations of the node features
         layer_size: A list of number of hidden nodes in each layer
@@ -133,9 +127,10 @@ def train(
         "business", business_attrs, OneHotCategoricalConverter, flatten_binary=True
     )
 
-    # Convert graph node attributes to  target values
+    # Convert graph node attributes for target type to target vector
+    target_node_type = "user"
     nts = NodeAttributeSpecification()
-    nts.add_attribute_list("user", ["elite"], OneHotCategoricalConverter)
+    nts.add_attribute_list(target_node_type, ["elite"], OneHotCategoricalConverter)
 
     # Reduce graph to only contain a subset of node types
     node_types_to_keep = ["review", "user", "business"]
@@ -149,31 +144,22 @@ def train(
 
     # Split "user" nodes into train/test
     train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
-        G, node_type="user", train_size=0.25, test_size=0.5
+        G, node_type=target_node_type, train_size=0.25, test_size=0.5
     )
-    user_nodes = G.get_nodes_of_type("user")
+    user_nodes = G.get_nodes_of_type(target_node_type)
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = HinSAGENodeMapper(G, train_nodes, batch_size, num_samples)
     val_mapper = HinSAGENodeMapper(G, val_nodes, batch_size, num_samples)
-    test_mapper = HinSAGENodeMapper(G, test_nodes, batch_size, num_samples)
-    all_mapper = HinSAGENodeMapper(G, user_nodes, batch_size, num_samples)
 
     # GraphSAGE model
-    model = HinSAGE(
-        output_dims=layer_size,
-        n_samples=num_samples,
-        input_neigh_tree=train_mapper.schema.get_type_adjacency_list(["user"], 2),
-        input_dim=G.get_feature_sizes(),
-        bias=True,
-        dropout=dropout,
-    )
+    model = HinSAGE(layer_size, num_samples, train_mapper, bias=True, dropout=dropout)
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
-    prediction = layers.Dense(units=G.get_target_size("user"), activation="softmax")(
-        x_out
-    )
+    prediction = layers.Dense(
+        units=G.get_target_size(target_node_type), activation="softmax"
+    )(x_out)
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
@@ -192,26 +178,32 @@ def train(
         shuffle=True,
     )
 
-    # Evaluate and print metrics
+    # Evaluate on test set and print metrics
+    test_mapper = HinSAGENodeMapper(G, test_nodes, batch_size, num_samples)
     test_metrics = model.evaluate_generator(test_mapper)
-
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
+    # Evaluate over all nodes and print metrics
+    all_mapper = HinSAGENodeMapper(G, user_nodes, batch_size, num_samples)
     all_nodes_metrics = model.evaluate_generator(all_mapper)
     print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, all_nodes_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
     # Save model
-    str_numsamp = "_".join([str(x) for x in num_samples])
-    str_layer = "_".join([str(x) for x in layer_size])
-    model.save(
-        "graphsage_n{}_l{}_d{}_r{}.h5".format(
-            str_numsamp, str_layer, dropout, learning_rate
-        )
+    save_str = "_n{}_l{}_d{}_r{}".format(
+        "_".join([str(x) for x in num_samples]),
+        "_".join([str(x) for x in layer_size]),
+        dropout,
+        learning_rate,
     )
+    model.save("epgm_yelp_model" + save_str + ".h5")
+
+    # We must also save the attribute spec, as it is fitted to the data
+    with open("epgm_yelp_specs" + save_str + ".pkl", "wb") as f:
+        pickle.dump([nfs, nts], f)
 
 
 def test(G, target_converter, feature_converter, model_file, batch_size, target_attr):
@@ -261,7 +253,7 @@ if __name__ == "__main__":
         "-r",
         "--learningrate",
         type=float,
-        default=0.0005,
+        default=0.005,
         help="Learning rate for training model",
     )
     parser.add_argument(
@@ -269,7 +261,7 @@ if __name__ == "__main__":
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[30, 10],
+        default=[10, 10],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
@@ -277,7 +269,7 @@ if __name__ == "__main__":
         "--layer_size",
         type=int,
         nargs="*",
-        default=[50, 50],
+        default=[20, 20],
         help="The number of hidden features at each layer",
     )
     parser.add_argument(

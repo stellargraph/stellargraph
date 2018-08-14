@@ -30,6 +30,8 @@ from collections import defaultdict
 import itertools as it
 import operator as op
 
+from stellar.data.stellargraph import StellarGraphBase
+
 
 class MeanHinAggregator(Layer):
     """Mean Aggregator for HinSAGE implemented with Keras base layer
@@ -163,8 +165,10 @@ class HinSAGE:
         self,
         output_dims: List[Union[Dict[str, int], int]],
         n_samples: List[int],
-        input_neigh_tree: List[Tuple[str, List[int]]],
-        input_dim: Dict[str, int],
+        mapper=None,
+        target_node_type: AnyStr = None,
+        input_neighbor_tree: List[Tuple[str, List[int]]] = None,
+        input_dim: Dict[str, int] = None,
         aggregator: Layer = MeanHinAggregator,
         bias: bool = False,
         dropout: float = 0.,
@@ -174,7 +178,7 @@ class HinSAGE:
 
         :param output_dims:         Output dimension at each layer
         :param n_samples:           Number of neighbours sampled for each hop/layer
-        :param input_neigh_tree     Tree structure describing the neighbourhood information of the input
+        :param input_neighbor_tree     Tree structure describing the neighbourhood information of the input
         :param input_dim:           Feature vector dimension
         :param aggregator:          Aggregator class
         :param bias:                Optional bias
@@ -209,30 +213,50 @@ class HinSAGE:
         self.bias = bias
         self.dropout = dropout
 
-        # TODO: Refactor
-        self.subtree_schema = input_neigh_tree
-        self.input_dims = input_dim
-        # self._dropout = Dropout(dropout)
+        # Set the target/head node type
+        if target_node_type is None:
+            assert mapper is not None
+            self._head_node_type = mapper.get_head_node_type()
+        else:
+            self._head_node_type = target_node_type
+
+        # Get the sampling tree from the graph, if not given
+        # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
+        if input_neighbor_tree is None:
+            assert mapper is not None
+            self.subtree_schema = mapper.schema.get_type_adjacency_list(
+                [self._head_node_type], len(n_samples)
+            )
+        else:
+            self.subtree_schema = input_neighbor_tree
+
+        # Set the input dimensions
+        # TODO: I feel dirty using the graph through the mapper
+        if input_dim is None:
+            assert mapper is not None
+            self.input_dims = mapper.graph.get_feature_sizes()
+        else:
+            self.input_dims = input_dim
 
         # Neighbourhood info per layer
         self.neigh_trees = eval_neigh_tree_per_layer(
-            [li for li in input_neigh_tree if len(li[1]) > 0]
+            [li for li in self.subtree_schema if len(li[1]) > 0]
         )
 
         # Depth of each input i.e. number of hops from root nodes
         depth = [
             self.n_layers
             + 1
-            - sum([1 for li in [input_neigh_tree] + self.neigh_trees if i < len(li)])
-            for i in range(len(input_neigh_tree))
+            - sum([1 for li in [self.subtree_schema] + self.neigh_trees if i < len(li)])
+            for i in range(len(self.subtree_schema))
         ]
 
         # Dict of {node type: dimension} per layer
         self.dims = [
             dim
             if isinstance(dim, dict)
-            else {k: dim for k, _ in ([input_neigh_tree] + self.neigh_trees)[layer]}
-            for layer, dim in enumerate([input_dim] + output_dims)
+            else {k: dim for k, _ in ([self.subtree_schema] + self.neigh_trees)[layer]}
+            for layer, dim in enumerate([self.input_dims] + output_dims)
         ]
 
         # Dict of {node type: aggregator} per layer
@@ -256,7 +280,7 @@ class HinSAGE:
                         (
                             -1,
                             self.n_samples[depth[i]],
-                            self.dims[layer][input_neigh_tree[neigh_index][0]],
+                            self.dims[layer][self.subtree_schema[neigh_index][0]],
                         )
                     )
                     for neigh_index in neigh_indices
