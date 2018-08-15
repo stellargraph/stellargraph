@@ -114,7 +114,7 @@ class GraphSAGE:
         self,
         output_dims: List[int],
         n_samples: List[int],
-        mapper = None,
+        mapper=None,
         input_dim: int = None,
         aggregator: Layer = MeanAggregator,
         bias: bool = False,
