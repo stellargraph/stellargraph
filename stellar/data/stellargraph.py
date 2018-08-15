@@ -624,7 +624,6 @@ class StellarGraphBase:
 
         # Create graph schema at this point?
 
-
     def check_graph_for_ml(self, features=True, supervised=True):
         """
         Checks if all properties required for machine learning training/inference are set up.
