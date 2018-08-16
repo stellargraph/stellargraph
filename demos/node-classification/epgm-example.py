@@ -22,34 +22,6 @@ This currently is only tested on the CORA dataset.
 Example usage:
 python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm
 
-usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
-                       [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
-                       [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
-                       [-f FEATURES] [-t TARGET]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -c [CHECKPOINT], --checkpoint [CHECKPOINT]
-                        Load a saved checkpoint file
-  -n BATCH_SIZE, --batch_size BATCH_SIZE
-                        Batch size for training
-  -e EPOCHS, --epochs EPOCHS
-                        The number of epochs to train the model
-  -d DROPOUT, --dropout DROPOUT
-                        Dropout for the GraphSAGE model, between 0.0 and 1.0
-  -r LEARNINGRATE, --learningrate LEARNINGRATE
-                        Learning rate for training model
-  -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
-                        The number of nodes sampled at each layer
-  -l [LAYER_SIZE [LAYER_SIZE ...]], --layer_size [LAYER_SIZE [LAYER_SIZE ...]]
-                        The number of hidden features at each layer
-  -g GRAPH, --graph GRAPH
-                        The graph stored in EPGM format.
-  -f FEATURES, --features FEATURES
-                        The node features to use, stored as a pickled numpy
-                        array.
-  -t TARGET, --target TARGET
-                        The target node attribute (categorical)
 """
 import os
 import argparse
@@ -82,13 +54,10 @@ def train(
     dropout=0.0,
 ):
     """
-    Train the GraphSAGE model on the specified graph G
-    with given parameters.
+    Train a GraphSAGE model on the specified graph G with given parameters.
 
     Args:
         G: NetworkX graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -114,9 +83,17 @@ def train(
         G, train_size=160, test_size=1000, stratify=True
     )
 
+    # Get targets for the mapper
+    train_targets = G.get_target_for_nodes(train_nodes)
+    val_targets = G.get_target_for_nodes(val_nodes)
+
     # Create mappers for GraphSAGE that input data from the graph to the model
-    train_mapper = GraphSAGENodeMapper(G, train_nodes, batch_size, num_samples)
-    val_mapper = GraphSAGENodeMapper(G, val_nodes, batch_size, num_samples)
+    train_mapper = GraphSAGENodeMapper(
+        G, train_nodes, batch_size, num_samples, targets=train_targets
+    )
+    val_mapper = GraphSAGENodeMapper(
+        G, val_nodes, batch_size, num_samples, targets=val_targets
+    )
 
     # GraphSAGE model
     model = GraphSAGE(
@@ -149,20 +126,33 @@ def train(
         verbose=2,
         shuffle=True,
     )
+    # Get targets for the mapper
+    val_targets = G.get_target_for_nodes(val_nodes)
 
     # Evaluate on test set and print metrics
-    test_mapper = GraphSAGENodeMapper(G, test_nodes, batch_size, num_samples)
+    test_targets = G.get_target_for_nodes(test_nodes)
+    test_mapper = GraphSAGENodeMapper(
+        G, test_nodes, batch_size, num_samples, targets=test_targets
+    )
     test_metrics = model.evaluate_generator(test_mapper)
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    # Evaluate over all nodes and print metrics
-    all_mapper = GraphSAGENodeMapper(G, list(G), batch_size, num_samples)
-    all_nodes_metrics = model.evaluate_generator(all_mapper)
-    print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, all_nodes_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
+    # Get predictions for all nodes
+    all_nodes = list(G)
+    all_mapper = GraphSAGENodeMapper(G, all_nodes, batch_size, num_samples)
+    all_predictions = model.predict_generator(all_mapper)
+
+    # Turn predictions back into the original categories
+    node_predictions = nts.inverse_transform("paper", all_predictions)
+    accuracy = np.mean(
+        [
+            G.node[n]["subject"] == p["subject"]
+            for n, p in zip(all_nodes, node_predictions)
+        ]
+    )
+    print("All-node accuracy: {:3f}".format(accuracy))
 
     # TODO: extract the GraphSAGE embeddings from x_out, and save/plot them
 
@@ -228,7 +218,7 @@ if __name__ == "__main__":
         "-r",
         "--learningrate",
         type=float,
-        default=0.01,
+        default=0.005,
         help="Learning rate for training model",
     )
     parser.add_argument(
@@ -249,13 +239,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-g", "--graph", type=str, default=None, help="The graph stored in EPGM format."
-    )
-    parser.add_argument(
-        "-f",
-        "--features",
-        type=str,
-        default=None,
-        help="The node features to use, stored as a pickled numpy array.",
     )
     parser.add_argument(
         "-t",

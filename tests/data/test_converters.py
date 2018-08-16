@@ -49,6 +49,9 @@ def test_converter_categorical():
     assert len(conv) == 1
     assert all(converted_data == [0, 1, 1, 0, 2])
 
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == data
+
 
 def test_converter_categorical_mixed():
     data = [1, "a", "a", 1, "b", 2]
@@ -59,10 +62,13 @@ def test_converter_categorical_mixed():
     assert len(conv) == 1
     assert all(converted_data == [0, 2, 2, 0, 3, 1])
 
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == data
+
 
 def test_converter_categorical_1hot():
     data = [1, 5, 5, 1, 6]
-    conv = OneHotCategoricalConverter(flatten_binary=False)
+    conv = OneHotCategoricalConverter()
     converted_data = conv.fit_transform(data)
 
     expected = np.array([[1, 0, 0], [0, 1, 0], [0, 1, 0], [1, 0, 0], [0, 0, 1]])
@@ -71,11 +77,19 @@ def test_converter_categorical_1hot():
     assert len(conv) == 3
     assert converted_data == pytest.approx(expected)
 
-    conv = OneHotCategoricalConverter(flatten_binary=True)
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == data
+
+    conv = OneHotCategoricalConverter(without_first=True)
     converted_data = conv.fit_transform(data)
 
-    assert len(conv) == 3
+    expected = np.array([[0, 0], [1, 0], [1, 0], [0, 0], [0, 1]])
+
+    assert len(conv) == 2
     assert converted_data == pytest.approx(expected)
+
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == data
 
 
 def test_converter_binary():
@@ -89,10 +103,14 @@ def test_converter_binary():
     assert len(conv) == 1
     assert converted_data == pytest.approx(expected)
 
+    # Note we can't recover the original for binary converters
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == [1, 1, None, None, 1]
+
 
 def test_converter_categorical_1hot_binary():
     data = [1, 5, 5, 1, 5]
-    conv = OneHotCategoricalConverter(flatten_binary=False)
+    conv = OneHotCategoricalConverter()
     converted_data = conv.fit_transform(data)
 
     expected = np.array([[1, 0], [0, 1], [0, 1], [1, 0], [0, 1]])
@@ -101,11 +119,17 @@ def test_converter_categorical_1hot_binary():
     assert len(conv) == 2
     assert np.all(converted_data == expected)
 
-    conv = OneHotCategoricalConverter(flatten_binary=True)
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == data
+
+    conv = OneHotCategoricalConverter(without_first=True)
     converted_data = conv.fit_transform(data)
 
     assert len(conv) == 1
     assert converted_data == pytest.approx([0, 1, 1, 0, 1])
+
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == data
 
 
 def test_converter_numeric():
@@ -117,12 +141,18 @@ def test_converter_numeric():
     assert len(conv) == 1
     assert converted_data == pytest.approx(data)
 
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == pytest.approx(data)
+
     conv = NumericConverter(normalize="standard")
     converted_data = conv.fit_transform(data)
     expected = (np.array(data) - 4) / 1.26491
     assert isinstance(conv, StellarAttributeConverter)
     assert len(conv) == 1
     assert converted_data == pytest.approx(expected, rel=1e-3)
+
+    orig_data = conv.inverse_transform(converted_data)
+    assert orig_data == pytest.approx(data)
 
 
 def test_attribute_spec():
@@ -137,8 +167,10 @@ def test_attribute_spec():
 
     converted_data = nfs.fit_transform("", data)
     expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
-
     assert converted_data == pytest.approx(expected)
+
+    orig_data = nfs.inverse_transform("", converted_data)
+    assert len(orig_data) == len(data)
 
 
 def test_attribute_spec_add_list():
@@ -205,6 +237,9 @@ def test_attribute_spec_binary_conv():
     expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
     assert converted_data == pytest.approx(expected)
 
+    orig_data = nfs.inverse_transform("", converted_data)
+    assert len(orig_data) == len(data)
+
 
 def test_attribute_spec_mixed():
     nfs = NodeAttributeSpecification()
@@ -217,3 +252,6 @@ def test_attribute_spec_mixed():
     expected = [[1, 0, -1], [0, 1, 1], [1, 0, 0], [0, 1, 0]]
 
     assert converted_data == pytest.approx(expected)
+
+    orig_data = nfs.inverse_transform("", converted_data)
+    assert len(orig_data) == len(data)

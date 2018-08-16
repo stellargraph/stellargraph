@@ -615,11 +615,11 @@ class StellarGraphBase:
         # Determine if feature attributes will come directly from the feature attribute or
         # through the feature_spec converter
         self._node_attribute_arrays = self._convert_attributes(
-            self._feature_spec, schema.node_types, self._feature_attr, train=True
+            self._feature_spec, schema.node_types, self._feature_attr, train=train
         )
 
         self._node_target_arrays = self._convert_attributes(
-            self._target_spec, schema.node_types, self._target_attr, train=True
+            self._target_spec, schema.node_types, self._target_attr, train=train
         )
 
         # Create graph schema at this point?
@@ -753,8 +753,8 @@ class StellarGraphBase:
                 "must all be of the same type."
             )
 
-        features = self._node_target_arrays[node_type][node_indices]
-        return features
+        targets = self._node_target_arrays[node_type][node_indices]
+        return targets
 
     def get_nodes_with_target(self, node_type=None):
         """
