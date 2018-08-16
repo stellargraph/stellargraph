@@ -357,6 +357,45 @@ class NodeAttributeSpecification:
         )
         return feature_array
 
+    def inverse_transform(self, node_type, data):
+        """
+        Convert the supplied numeric vectors back to the form of the original data.
+
+        Args:
+            node_type: The node type
+            data: A numpy array of numeric data.
+
+        Returns:
+            A list containing the input attributes.
+
+        """
+        n_data = len(data)
+
+        # The indices in the transformed vector for each attribute
+        indices_for_attr = self.get_feature_indices(node_type)
+
+        # Convert numeric values to the original domain for each attribute
+        converted_features = {}
+        attr_list = self.get_attributes(node_type)
+        for attr_name in attr_list:
+            conv = self.get_converter(node_type, attr_name)
+
+            assert conv is not None
+            assert attr_name in indices_for_attr
+
+            # Extract data for this attribute
+            index_range = indices_for_attr[attr_name]
+            attr_data = data[:, index_range[0] : index_range[1]]
+
+            converted_features[attr_name] = conv.inverse_transform(attr_data)
+
+        # Convert to a list
+        attr_out = [
+            {attr_name: converted_features[attr_name][ii] for attr_name in attr_list}
+            for ii in range(n_data)
+        ]
+        return attr_out
+
 
 class StellarAttributeConverter(ABC):
     """
@@ -373,6 +412,10 @@ class StellarAttributeConverter(ABC):
 
     @abstractmethod
     def transform(self):
+        pass
+
+    @abstractmethod
+    def inverse_transform(self):
         pass
 
 
@@ -435,6 +478,16 @@ class NumericConverter(StellarAttributeConverter):
         data = np.where(np.isfinite(data), data, fill_value)
         return data
 
+    def inverse_transform(self, data):
+        data = np.asanyarray(data)
+
+        # De-normalization
+        if self.normalize == "standard":
+            data = data * self.scale + self.offset
+
+        # We can't un-fill missing values!
+        return np.squeeze(data)
+
 
 class CategoricalConverter(StellarAttributeConverter):
     """
@@ -460,6 +513,7 @@ class CategoricalConverter(StellarAttributeConverter):
         return self.transform(data)
 
     def transform(self, data):
+        # TODO: Checks for data input
         return np.array(
             [
                 self.categories.index(d) if d is not None else self.default_value
@@ -467,6 +521,10 @@ class CategoricalConverter(StellarAttributeConverter):
             ],
             dtype=self.dtype,
         )
+
+    def inverse_transform(self, data):
+        # TODO: Checks for data input
+        return [self.categories[int(ii)] for ii in data]
 
 
 class OneHotCategoricalConverter(StellarAttributeConverter):
@@ -476,17 +534,14 @@ class OneHotCategoricalConverter(StellarAttributeConverter):
 
     Args:
         default_value: (Optional) value to assign to the vector output when the attribute is missing.
-        flatten_binary: (Optional) When there are exactly two categories in the attributes,
-            if True a single value will be returned with either a 0 or a 1 corresponding
-            to the two categories.
-            if False a two-element vector will be returned with either [1,0] or [0,1] corresponding
-            to the two categories (the default).
+        without_first: (Optional) Return a vector that omits the first value, so is zero when
+            the first category is supplied. This can be useful for inputs to DL systems.
         dtype: (Optional) convert to a vector of this numpy data type
     """
 
-    def __init__(self, default_value=0, flatten_binary=False, dtype="float32"):
+    def __init__(self, default_value=0, without_first=False, dtype="float32"):
         self.default_value = default_value
-        self.flatten_binary = flatten_binary
+        self.without_first = without_first
         self.dtype = dtype
         self.categories = []
 
@@ -498,8 +553,8 @@ class OneHotCategoricalConverter(StellarAttributeConverter):
         return self.transform(data)
 
     def __len__(self):
-        if self.flatten_binary and len(self.categories) == 2:
-            size = 1
+        if self.without_first:
+            size = len(self.categories) - 1
         else:
             size = len(self.categories)
         return size
@@ -510,16 +565,25 @@ class OneHotCategoricalConverter(StellarAttributeConverter):
             for d in data
         ]
 
-        # If the 'flatten_binary flag is set, just use the categories directly
-        if self.flatten_binary and len(self.categories) == 2:
-            data_trans = np.asarray(data_cats, dtype=self.dtype)
-
         # Otherwise use the Keras to_categorical function
-        else:
-            data_trans = to_categorical(data_cats, len(self.categories)).astype(
-                self.dtype
-            )
+        data_trans = to_categorical(data_cats, len(self.categories)).astype(self.dtype)
+
+        # If the without_first is set, remove the first value
+        if self.without_first:
+            data_trans = data_trans[:, 1:]
+
         return data_trans
+
+    def inverse_transform(self, data):
+        data = np.asanyarray(data)
+        assert np.ndim(data) == 2
+
+        # Get an integer category, adding one if we have without_first=True
+        category_id = np.argmax(data, axis=1)
+        if self.without_first:
+            category_id = (category_id + 1) * np.any(data, axis=1).astype(int)
+
+        return [self.categories[ii] for ii in category_id]
 
 
 class BinaryConverter(StellarAttributeConverter):
@@ -548,3 +612,6 @@ class BinaryConverter(StellarAttributeConverter):
             bool(d) if d is not None else bool(self.default_value) for d in data
         ]
         return np.asarray(data_bool, dtype=self.dtype)
+
+    def inverse_transform(self, data):
+        return [None if d == 0 else 1 for d in data]

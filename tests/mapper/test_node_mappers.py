@@ -160,9 +160,7 @@ def test_nodemapper_constructor():
         GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
 
     G.fit_attribute_spec()
-    mapper = GraphSAGENodeMapper(
-        G, G.nodes(), batch_size=2, num_samples=[2, 2], targets=False
-    )
+    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
 
     assert mapper.batch_size == 2
     assert mapper.data_size == 4
@@ -177,14 +175,14 @@ def test_nodemapper_1():
     G1 = example_graph_1(n_feat)
     G1.fit_attribute_spec()
     mapper1 = GraphSAGENodeMapper(
-        G1, G1.nodes(), batch_size=n_batch, num_samples=[2, 2], targets=False
+        G1, G1.nodes(), batch_size=n_batch, num_samples=[2, 2]
     )
     assert len(mapper1) == 2
 
     G2 = example_graph_2(n_feat)
     G2.fit_attribute_spec()
     mapper2 = GraphSAGENodeMapper(
-        G2, G2.nodes(), batch_size=n_batch, num_samples=[2, 2], targets=False
+        G2, G2.nodes(), batch_size=n_batch, num_samples=[2, 2]
     )
     assert len(mapper2) == 3
 
@@ -215,9 +213,7 @@ def test_nodemapper_no_samples():
     # test graph
     G = example_graph_1(feature_size=n_feat)
     G.fit_attribute_spec()
-    mapper = GraphSAGENodeMapper(
-        G, G.nodes(), batch_size=n_batch, num_samples=[0], targets=False
-    )
+    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=n_batch, num_samples=[0])
 
     # This is an edge case, are we sure we want this behaviour?
     assert len(mapper) == 2
@@ -241,8 +237,11 @@ def test_nodemapper_with_targets():
         G.node[n]["target"] = np.random.choice([0, 1])
 
     G.fit_attribute_spec()
+
+    nodes = list(G)
+    targets = G.get_target_for_nodes(nodes)
     mapper = GraphSAGENodeMapper(
-        G, list(G), batch_size=n_batch, num_samples=[1], targets=True
+        G, nodes, batch_size=n_batch, num_samples=[1], targets=targets
     )
 
     assert len(mapper) == 2
@@ -254,7 +253,7 @@ def test_nodemapper_with_targets():
         assert type(nl) == np.ndarray
 
 
-def test_nodemapper_no_target():
+def test_nodemapper_incorrect_targets():
     n_feat = 4
     n_batch = 2
 
@@ -262,10 +261,11 @@ def test_nodemapper_no_target():
     G = example_graph_1(feature_size=n_feat)
     G.fit_attribute_spec()
 
-    with pytest.raises(RuntimeError):
-        GraphSAGENodeMapper(
-            G, list(G), batch_size=n_batch, num_samples=[0], targets=True
-        )
+    with pytest.raises(TypeError):
+        GraphSAGENodeMapper(G, list(G), batch_size=n_batch, num_samples=[0], targets=1)
+
+    with pytest.raises(ValueError):
+        GraphSAGENodeMapper(G, list(G), batch_size=n_batch, num_samples=[0], targets=[])
 
 
 def test_hinnodemapper_constructor():
@@ -275,11 +275,9 @@ def test_hinnodemapper_constructor():
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
-        HinSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2], targets=False)
+        HinSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
 
-    mapper = HinSAGENodeMapper(
-        G, [0, 1, 2, 3], batch_size=2, num_samples=[2, 2], targets=False
-    )
+    mapper = HinSAGENodeMapper(G, [0, 1, 2, 3], batch_size=2, num_samples=[2, 2])
     assert mapper.batch_size == 2
     assert mapper.data_size == 4
     assert len(mapper.ids) == 4
@@ -291,7 +289,7 @@ def test_hinnodemapper_constructor_all_options():
     G.fit_attribute_spec()
 
     mapper = HinSAGENodeMapper(
-        G, G.nodes(), node_type="A", batch_size=2, num_samples=[2, 2], targets=False
+        G, G.nodes(), node_type="A", batch_size=2, num_samples=[2, 2]
     )
     assert mapper.batch_size == 2
     assert mapper.data_size == len(G)
@@ -312,12 +310,7 @@ def test_hinnodemapper_level_1():
     G.fit_attribute_spec()
 
     mapper = HinSAGENodeMapper(
-        G,
-        nodes_type_2,
-        node_type="t2",
-        batch_size=batch_size,
-        num_samples=[2],
-        targets=False,
+        G, nodes_type_2, node_type="t2", batch_size=batch_size, num_samples=[2]
     )
 
     schema = G.create_graph_schema()
@@ -344,12 +337,7 @@ def test_hinnodemapper_level_2():
     G.fit_attribute_spec()
 
     mapper = HinSAGENodeMapper(
-        G,
-        nodes_type_2,
-        node_type="t2",
-        batch_size=batch_size,
-        num_samples=[2, 3],
-        targets=False,
+        G, nodes_type_2, node_type="t2", batch_size=batch_size, num_samples=[2, 3]
     )
 
     schema = G.create_graph_schema()
@@ -380,12 +368,7 @@ def test_hinnodemapper_no_neighbors():
     G.fit_attribute_spec()
 
     mapper = HinSAGENodeMapper(
-        G,
-        nodes_type_2,
-        node_type="t2",
-        batch_size=batch_size,
-        num_samples=[2, 1],
-        targets=False,
+        G, nodes_type_2, node_type="t2", batch_size=batch_size, num_samples=[2, 1]
     )
 
     schema = G.create_graph_schema()

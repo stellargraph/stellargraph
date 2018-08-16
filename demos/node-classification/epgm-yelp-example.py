@@ -15,48 +15,16 @@
 # limitations under the License.
 
 """
-Graph node classification using GraphSAGE.
-Requires a EPGM graph as input.
-This currently is only tested on the CORA dataset.
+Graph node classification using HinSAGE.
+Requires the Yelp dataset in EPGM format as input.
 
 Example usage:
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 20 20 -s 20 10 -e 20 -d 0.5 -r 0.02
+python epgm-example.py -g ../../tests/resources/data/yelp/yelp.epgm -e 20
 
-usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
-                       [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
-                       [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
-                       [-f FEATURES] [-t TARGET]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -c [CHECKPOINT], --checkpoint [CHECKPOINT]
-                        Load a saved checkpoint file
-  -n BATCH_SIZE, --batch_size BATCH_SIZE
-                        Batch size for training
-  -e EPOCHS, --epochs EPOCHS
-                        The number of epochs to train the model
-  -d DROPOUT, --dropout DROPOUT
-                        Dropout for the GraphSAGE model, between 0.0 and 1.0
-  -r LEARNINGRATE, --learningrate LEARNINGRATE
-                        Learning rate for training model
-  -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
-                        The number of nodes sampled at each layer
-  -l [LAYER_SIZE [LAYER_SIZE ...]], --layer_size [LAYER_SIZE [LAYER_SIZE ...]]
-                        The number of hidden features at each layer
-  -g GRAPH, --graph GRAPH
-                        The graph stored in EPGM format.
-  -f FEATURES, --features FEATURES
-                        The node features to use, stored as a pickled numpy
-                        array.
-  -t TARGET, --target TARGET
-                        The target node attribute (categorical)
 """
 import os
 import argparse
 import pickle
-
-import numpy as np
-import pandas as pd
 
 import keras
 from keras import optimizers, losses, layers, metrics
@@ -71,13 +39,10 @@ from stellar.mapper.node_mappers import HinSAGENodeMapper
 
 def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dropout):
     """
-    Train the GraphSAGE model on the specified graph G
-    with given parameters.
+    Train a HinSAGE model on the specified graph G with given parameters.
 
     Args:
-        G: StellarGraph graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
+        G: A NetworkX or StellarGraph with the Yelp dataset
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -123,14 +88,14 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
     nfs.add_attribute_list("user", user_attrs, NumericConverter)
     nfs.add_attribute_list("review", review_attrs, NumericConverter)
     nfs.add_attribute("business", "stars", NumericConverter)
-    nfs.add_attribute_list(
-        "business", business_attrs, OneHotCategoricalConverter, flatten_binary=True
-    )
+    nfs.add_attribute_list("business", business_attrs, OneHotCategoricalConverter)
 
     # Convert graph node attributes for target type to target vector
     target_node_type = "user"
     nts = NodeAttributeSpecification()
-    nts.add_attribute_list(target_node_type, ["elite"], OneHotCategoricalConverter)
+    nts.add_attribute_list(
+        target_node_type, ["elite"], OneHotCategoricalConverter, without_first=True
+    )
 
     # Reduce graph to only contain a subset of node types
     node_types_to_keep = ["review", "user", "business"]
@@ -146,11 +111,18 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
     train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
         G, node_type=target_node_type, train_size=0.25, test_size=0.5
     )
-    user_nodes = G.get_nodes_of_type(target_node_type)
+
+    # Get targets for the mapper
+    train_targets = G.get_target_for_nodes(train_nodes)
+    val_targets = G.get_target_for_nodes(val_nodes)
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    train_mapper = HinSAGENodeMapper(G, train_nodes, batch_size, num_samples)
-    val_mapper = HinSAGENodeMapper(G, val_nodes, batch_size, num_samples)
+    train_mapper = HinSAGENodeMapper(
+        G, train_nodes, batch_size, num_samples, targets=train_targets
+    )
+    val_mapper = HinSAGENodeMapper(
+        G, val_nodes, batch_size, num_samples, targets=val_targets
+    )
 
     # GraphSAGE model
     model = HinSAGE(layer_size, num_samples, train_mapper, bias=True, dropout=dropout)
@@ -175,18 +147,26 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
         epochs=num_epochs,
         validation_data=val_mapper,
         verbose=2,
-        shuffle=True,
+        shuffle=True,nts = NodeAttributeSpecification()
+
     )
 
     # Evaluate on test set and print metrics
-    test_mapper = HinSAGENodeMapper(G, test_nodes, batch_size, num_samples)
+    test_targets = G.get_target_for_nodes(test_nodes)
+    test_mapper = HinSAGENodeMapper(
+        G, test_nodes, batch_size, num_samples, targets=test_targets
+    )
     test_metrics = model.evaluate_generator(test_mapper)
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
     # Evaluate over all nodes and print metrics
-    all_mapper = HinSAGENodeMapper(G, user_nodes, batch_size, num_samples)
+    user_nodes = G.get_nodes_of_type(target_node_type)
+    all_targets = G.get_target_for_nodes(user_nodes)
+    all_mapper = HinSAGENodeMapper(
+        G, user_nodes, batch_size, num_samples, targets=all_targets
+    )
     all_nodes_metrics = model.evaluate_generator(all_mapper)
     print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, all_nodes_metrics):

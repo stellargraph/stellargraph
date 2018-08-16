@@ -213,19 +213,19 @@ class HinSAGE:
         self.bias = bias
         self.dropout = dropout
 
-        # Set the target/head node type
-        if target_node_type is None:
-            assert mapper is not None
-            self._head_node_type = mapper.get_head_node_type()
-        else:
-            self._head_node_type = target_node_type
-
         # Get the sampling tree from the graph, if not given
         # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
         if input_neighbor_tree is None:
             assert mapper is not None
+
+            node_type = (
+                mapper.get_head_node_type()
+                if target_node_type is None
+                else target_node_type
+            )
+
             self.subtree_schema = mapper.schema.get_type_adjacency_list(
-                [self._head_node_type], len(n_samples)
+                [node_type], len(n_samples)
             )
         else:
             self.subtree_schema = input_neighbor_tree

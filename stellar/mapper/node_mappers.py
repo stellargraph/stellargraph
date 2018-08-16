@@ -33,6 +33,7 @@ from stellar.data.explorer import (
     SampledHeterogeneousBreadthFirstWalk,
 )
 from stellar.data.stellargraph import StellarGraphBase
+from stellar.data.utils import is_real_iterable
 
 
 class GraphSAGENodeMapper(Sequence):
@@ -70,12 +71,12 @@ class GraphSAGENodeMapper(Sequence):
 
     def __init__(
         self,
-        G: StellarGraphBase,
-        ids: List[Any],
-        batch_size: int,
-        num_samples: List[int],
-        targets: bool = True,
-        name: AnyStr = None,
+        G,
+        ids,
+        batch_size,
+        num_samples,
+        targets=None,
+        name=None,
         # TODO: add a check=True argument, toggling the checks for node ids and features
     ):
         self.graph = G
@@ -84,15 +85,27 @@ class GraphSAGENodeMapper(Sequence):
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
-        self.use_target = targets
+        self.targets = targets
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
+        # Check that ids is an iterable
+        if not is_real_iterable(ids):
+            raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
+
+        # Check targets is iterable & has the correct length
+        if targets is not None:
+            if not is_real_iterable(targets):
+                raise TypeError("Targets must be None or an iterable or numpy array ")
+            if len(ids) != len(targets):
+                raise ValueError(
+                    "The length of the targets must be the same as the length of the ids"
+                )
+
         # We don't know if we need targets here as we could be used for training or inference
-        # TODO: Perhaps we shouldn't do the checks here but somewhere that we know
-        # TODO: will be the entry point for training or inference?
-        G.check_graph_for_ml(features=True, supervised=targets)
+        # TODO: Perhaps we shouldn't do the checks here but somewhere that we know will be the entry point for training or inference?
+        G.check_graph_for_ml(features=True, supervised=False)
 
         # Create sampler for GraphSAGE
         self.sampler = SampledBreadthFirstWalk(G)
@@ -122,10 +135,10 @@ class GraphSAGENodeMapper(Sequence):
         head_nodes = self.ids[start_idx:end_idx]
 
         # Get targets for nodes
-        if self.use_target:
-            batch_targets = self.graph.get_target_for_nodes(head_nodes, self._node_type)
-        else:
+        if self.targets is None:
             batch_targets = None
+        else:
+            batch_targets = self.targets[start_idx:end_idx]
 
         # Get sampled nodes
         node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
@@ -193,20 +206,13 @@ class HinSAGENodeMapper(Sequence):
         num_samples: List of number of samples per layer (hop) to take.
         node_type: The node type of the head-nodes. Currently only a single
                    type is admitted.
-        targets: List of numeric targets for supervised models(optional).
+        targets: List or numpy array of numeric targets for supervised models(optional).
         feature_size_by_type: Node feature size for each node type (optional)
         name: Name of mapper (optional)
     """
 
     def __init__(
-        self,
-        G: StellarGraphBase,
-        ids: List[Any],
-        batch_size: int,
-        num_samples: List[int],
-        node_type: Optional[AnyStr] = None,
-        targets: bool = True,
-        name: Optional[AnyStr] = None,
+        self, G, ids, batch_size, num_samples, targets=None, node_type=None, name=None
     ):
         self.graph = G
         self.num_samples = num_samples
@@ -223,7 +229,7 @@ class HinSAGENodeMapper(Sequence):
         # We don't know if we need targets here as we could be used for training or inference
         # TODO: Perhaps we shouldn't do the checks here but somewhere that we know
         # TODO: will be the entry point for training or inference?
-        G.check_graph_for_ml(features=True, supervised=targets)
+        G.check_graph_for_ml(features=True, supervised=False)
 
         # Create sampler for GraphSAGE
         self.sampler = SampledHeterogeneousBreadthFirstWalk(G)
@@ -273,14 +279,12 @@ class HinSAGENodeMapper(Sequence):
         head_nodes = self.ids[start_idx:end_idx]
 
         # Get batch targets - if given
-        if self.targets:
-            batch_targets = self.graph.get_target_for_nodes(
-                head_nodes, self._head_node_type
-            )
-        else:
+        if self.targets is None:
             batch_targets = None
+        else:
+            batch_targets = self.targets[start_idx:end_idx]
 
-        # Get sampled nodes
+            # Get sampled nodes
         node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
 
         # Reshape node samples to the required format for the HinSAGE model
