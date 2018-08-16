@@ -26,6 +26,7 @@ from stellar.mapper.link_mappers import *
 from stellar.layer.hinsage import *
 from stellar.layer.link_inference import link_regression
 from typing import AnyStr, List, Dict
+import multiprocessing
 
 
 def read_graph(graph_fname, features_fname):
@@ -76,7 +77,7 @@ class LinkInference(object):
         num_samples: List[int],
         batch_size: int = 1000,
         num_epochs: int = 10,
-        learning_rate=0.005,
+        learning_rate=1e-3,
         use_bias=True,
         dropout=0.0,
     ):
@@ -184,12 +185,15 @@ class LinkInference(object):
         )
 
         # Train model
+        print("Training the model for {} epochs with initial learning rate {}".format(num_epochs, learning_rate))
         history = model.fit_generator(
             mapper_train,
             validation_data=mapper_test,
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
+            use_multiprocessing=True,
+            workers=multiprocessing.cpu_count(),
         )
 
         # Evaluate and print metrics
