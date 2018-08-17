@@ -84,6 +84,21 @@ from stellar.layer.link_inference import link_classification
 from stellar.data.stellargraph import *
 
 
+def get_largest_cc(g):
+    """Check if graph is connected; if not, then select the largest subgraph to continue"""
+    if nx.is_connected(g):
+        print("Graph is connected")
+    else:
+        print("Graph is not connected")
+        # take the largest connected component as the data
+        g = max(nx.connected_component_subgraphs(g, copy=True), key=len)
+        print(
+            "Largest subgraph statistics: {} nodes, {} edges".format(
+                g.number_of_nodes(), g.number_of_edges()
+            )
+        )
+    return g
+
 def train(
     G,
     layer_size: List[int],
@@ -107,18 +122,7 @@ def train(
         dropout: The dropout (0->1)
     """
 
-    # Check if graph is connected; if not, then select the largest subgraph to continue
-    if nx.is_connected(G):
-        print("Graph is connected")
-    else:
-        print("Graph is not connected")
-        # take the largest connected component as the data
-        G = max(nx.connected_component_subgraphs(G, copy=True), key=len)
-        print(
-            "Largest subgraph statistics: {} nodes, {} edges".format(
-                G.number_of_nodes(), G.number_of_edges()
-            )
-        )
+    G = get_largest_cc(G)
 
     # Split links into train/test
     print(
@@ -162,7 +166,7 @@ def train(
         G_train, "paper", BinaryConverter, ignored_attributes=["subject"]
     )
 
-    # Learn feature and target conversion for G_train
+    # Learn feature and target conversion for ML for G_train
     G_train.fit_attribute_spec(feature_spec=nfs)
     # Apply feature and target conversion to G_test
     G_test.set_attribute_spec(feature_spec=nfs)
@@ -273,14 +277,35 @@ def test(G, model_file: AnyStr, batch_size: int):
         for ii in range(1, len(model.input_shape) - 1, 2)
     ]
 
+    G = get_largest_cc(G)
+
     edge_splitter_test = EdgeSplitter(G)
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
+    # Convert G_test to StellarGraph objects for ML:
+    if G_test.is_directed():
+        G_test = StellarDiGraph(
+            G_test, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
+        )
+    else:
+        G_test = StellarGraph(
+            G_test, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
+        )
+
+    # Convert node attributes to feature values
+    nfs = NodeAttributeSpecification()
+    nfs.add_all_attributes(
+        G_test, "paper", BinaryConverter, ignored_attributes=["subject"]
+    )
+
+    # Learn feature conversion for G_test
+    G_test.fit_attribute_spec(feature_spec=nfs)
+
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(
-        G, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
+        G_test, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
     )
 
     # Evaluate and print metrics
