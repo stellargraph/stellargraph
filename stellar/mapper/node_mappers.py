@@ -58,15 +58,6 @@ class GraphSAGENodeMapper(Sequence):
     in the downstream task. They should be given in the same order as the
     list of head-node IDs. If they are not specified, None will be returned
     in place of the batch targets.
-
-    Args:
-        G: StellarGraph or NetworkX graph.
-        ids: The head-node IDs to train/inference on.
-        batch_size: Size of batch to return.
-        num_samples: List of number of samples per layer (hop) to take.
-        targets: List of numeric targets for supervised models these will
-            be extracted from the graph if not given.
-        name: Name of mapper (optional)
     """
 
     def __init__(
@@ -79,6 +70,18 @@ class GraphSAGENodeMapper(Sequence):
         name=None,
         # TODO: add a check=True argument, toggling the checks for node ids and features
     ):
+        """
+        Create a GraphSAGENodeMapper object.
+
+        Args:
+            G: StellarGraph graph.
+            ids: The head-node IDs to train/inference on.
+            batch_size: Size of batch to return.
+            num_samples: List of number of samples per layer (hop) to take.
+            targets: List of numeric targets for supervised models these will
+                be extracted from the graph if not given.
+            name: Name of mapper (optional)
+        """
         self.graph = G
         self.num_samples = num_samples
         self.ids = list(ids)
@@ -198,22 +201,25 @@ class HinSAGENodeMapper(Sequence):
     in the downstream task. They should be given in the same order as the
     list of head-node IDs. If they are not specified, None will be returned
     in place of the batch targets.
-
-    Args:
-        G: StellarGraph or NetworkX graph.
-        ids: The head-node IDs to train/inference on.
-        batch_size: Size of batch to return.
-        num_samples: List of number of samples per layer (hop) to take.
-        node_type: The node type of the head-nodes. Currently only a single
-                   type is admitted.
-        targets: List or numpy array of numeric targets for supervised models(optional).
-        feature_size_by_type: Node feature size for each node type (optional)
-        name: Name of mapper (optional)
     """
 
     def __init__(
         self, G, ids, batch_size, num_samples, targets=None, node_type=None, name=None
     ):
+        """
+        Create a HinSAGENodeMapper object.
+
+        Args:
+            G: StellarGraph graph.
+            ids: The head-node IDs to train/inference on.
+            batch_size: Size of batch to return.
+            num_samples: List of number of samples per layer (hop) to take.
+            node_type: The node type of the head-nodes. Currently only a single
+                       type is admitted.
+            targets: List or numpy array of numeric targets for supervised models(optional).
+            feature_size_by_type: Node feature size for each node type (optional)
+            name: Name of mapper (optional)
+        """
         self.graph = G
         self.num_samples = num_samples
         self.ids = list(ids)
