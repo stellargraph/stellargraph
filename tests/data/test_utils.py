@@ -28,7 +28,6 @@ GraphSAGENodeMapper(
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     )
-g
 """
 from stellar.data.stellargraph import *
 from stellar.data.utils import *
@@ -54,7 +53,7 @@ def example_nx_graph_1(feature_size=None):
 
 
 def example_stellar_graph_1(feature_size=None):
-    G = nx.Graph()
+    G = StellarGraph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
 
@@ -67,7 +66,7 @@ def example_stellar_graph_1(feature_size=None):
 
 
 def example_stellar_graph_2():
-    G = nx.Graph()
+    G = StellarGraph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
 
