@@ -163,28 +163,32 @@ class HinSAGE:
 
     def __init__(
         self,
-        output_dims: List[Union[Dict[str, int], int]],
-        n_samples: List[int],
+        layer_sizes,
         mapper=None,
-        target_node_type: AnyStr = None,
-        input_neighbor_tree: List[Tuple[str, List[int]]] = None,
-        input_dim: Dict[str, int] = None,
-        aggregator: Layer = MeanHinAggregator,
-        bias: bool = False,
-        dropout: float = 0.,
+        n_samples=None,
+        input_neighbor_tree=None,
+        input_dim=None,
+        aggregator=None,
+        bias=True,
+        dropout=0.,
+        normalize="l2",
     ):
         """
-        Construct aggregator and other supporting layers for HinSAGE
-
-        :param output_dims:         Output dimension at each layer
-        :param n_samples:           Number of neighbours sampled for each hop/layer
-        :param input_neighbor_tree     Tree structure describing the neighbourhood information of the input
-        :param input_dim:           Feature vector dimension
-        :param aggregator:          Aggregator class
-        :param bias:                Optional bias
-        :param dropout:             Optional dropout
+        Args:
+            layer_sizes: Hidden feature dimensions for each layer
+            mapper: A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
+                input_neighbour_tree and input_dim will be taken from this object.
+            n_samples: (Optional: needs to be specified if no mapper is provided.)
+                The number of samples per layer in the model.
+            input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
+                subtree to be created by the HinSAGE model.
+            input_dim: The input dimensions for each node type as a dictionary of the form
+                {node_type: feature_size}.
+            aggregator: The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
+            bias: If True a bias vector is learnt for each layer in the HinSAGE model
+            dropout: The dropout supplied to each layer in the HinSAGE model.
+            normalize: The normalization used after each layer, defaults to L2 normalization.
         """
-
         # TODO: I feel that this needs refactoring.
         # Does this assume that the adjacency list is ordered?
         # What are the assumptions of this function, and can we move it to the schema?
@@ -207,36 +211,52 @@ class HinSAGE:
                 else [input_tree] + eval_neigh_tree_per_layer(reduced)
             )
 
-        assert len(n_samples) == len(output_dims)
-        self.n_layers = len(n_samples)
-        self.n_samples = n_samples
-        self.bias = bias
-        self.dropout = dropout
+        # Set the aggregator layer used in the model
+        if aggregator is None:
+            self._aggregator = MeanHinAggregator
+        elif issubclass(aggregator, Layer):
+            self._aggregator = aggregator
+        else:
+            raise TypeError("Aggregator should be a subclass of Keras Layer")
 
-        # Get the sampling tree from the graph, if not given
+        # Set the normalization layer used in the model
+        if normalize == "l2":
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
+
+        elif normalize is None or normalize == "none":
+            self._normalization = Lambda(lambda x: x)
+
+        # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
+        # Use both the schema and head node type from the mapper
         # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
-        if input_neighbor_tree is None:
-            assert mapper is not None
-
-            node_type = (
-                mapper.get_head_node_type()
-                if target_node_type is None
-                else target_node_type
-            )
-
+        if mapper is not None:
+            node_type = mapper.get_head_node_type()
             self.subtree_schema = mapper.schema.get_type_adjacency_list(
                 [node_type], len(n_samples)
             )
-        else:
-            self.subtree_schema = input_neighbor_tree
-
-        # Set the input dimensions
-        # TODO: I feel dirty using the graph through the mapper
-        if input_dim is None:
-            assert mapper is not None
+            self.n_samples = mapper.num_samples
+            # TODO: I feel dirty using the graph through the mapper
             self.input_dims = mapper.graph.get_feature_sizes()
-        else:
+
+        elif (
+            input_neighbor_tree is not None
+            and n_samples is not None
+            and input_dim is not None
+        ):
+            self.subtree_schema = input_neighbor_tree
+            self.n_samples = n_samples
             self.input_dims = input_dim
+
+        else:
+            raise RuntimeError(
+                "If mapper is not provided, input_neighbour_tree, n_samples,"
+                " and input_dim must be specified."
+            )
+
+        # Set parameters for the model
+        self.n_layers = len(self.n_samples)
+        self.bias = bias
+        self.dropout = dropout
 
         # Neighbourhood info per layer
         self.neigh_trees = eval_neigh_tree_per_layer(
@@ -256,13 +276,13 @@ class HinSAGE:
             dim
             if isinstance(dim, dict)
             else {k: dim for k, _ in ([self.subtree_schema] + self.neigh_trees)[layer]}
-            for layer, dim in enumerate([self.input_dims] + output_dims)
+            for layer, dim in enumerate([self.input_dims] + layer_sizes)
         ]
 
         # Dict of {node type: aggregator} per layer
         self._aggs = [
             {
-                node_type: aggregator(
+                node_type: self._aggregator(
                     output_dim,
                     bias=self.bias,
                     act="relu" if layer < self.n_layers - 1 else "linear",
@@ -289,8 +309,6 @@ class HinSAGE:
             ]
             for layer in range(self.n_layers)
         ]
-
-        self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
 
     def __call__(self, x: List):
         """
@@ -344,19 +362,18 @@ class HinSAGE:
 
                 """
                 return [
-                    agg[node_type](
+                    Dropout(self.dropout)(agg[node_type](
                         [
-                            Dropout(self.dropout)(x[i]),
+                            x[i],
                             *[
-                                Dropout(self.dropout)(ne)
-                                for ne in neigh_list(i, neigh_indices)
+                                ne for ne in neigh_list(i, neigh_indices)
                             ],
                         ],
                         name="{}_{}".format(node_type, layer),
                     )
                     for i, (node_type, neigh_indices) in enumerate(
                         self.neigh_trees[layer]
-                    )
+                    ))
                 ]
 
             return (
