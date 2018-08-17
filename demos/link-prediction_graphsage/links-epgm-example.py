@@ -219,7 +219,7 @@ def train(
 
     # GraphSAGE model
     graphsage = GraphSAGE(
-        output_dims=layer_size,
+        layer_sizes=layer_size,
         n_samples=num_samples,
         input_dim=G.feature_size,
         bias=True,
