@@ -24,7 +24,7 @@ from keras import Input, Model, optimizers, losses, activations, metrics
 from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda, Reshape
 from keras.utils import Sequence
 
-from stellar.layer.hinsage import Hinsage
+from stellar.layer.hinsage import HinSAGE
 
 
 class LeakyClippedLinear(Layer):
@@ -276,11 +276,11 @@ class MovielensData:
             for i in np.random.randint(len(adj[inx]), size=ns)
         ]
 
-    def create_model(self) -> Hinsage:
-        return Hinsage(
-            output_dims=self.layer_sizes,
+    def create_model(self) -> HinSAGE:
+        return HinSAGE(
+            layer_sizes=self.layer_sizes,
             n_samples=self.node_samples,
-            input_neigh_tree=self.subtree_schema,
+            input_neighbor_tree=self.subtree_schema,
             input_dim={
                 'user': self.input_feature_size,
                 'movie': self.input_feature_size,

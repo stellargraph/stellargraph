@@ -112,40 +112,77 @@ class GraphSAGE:
 
     def __init__(
         self,
-        output_dims: List[int],
-        n_samples: List[int],
-        input_dim: int,
-        aggregator: Layer = MeanAggregator,
-        bias: bool = False,
-        dropout: float = 0.,
+        layer_sizes,
+        mapper=None,
+        n_samples=None,
+        input_dim=None,
+        aggregator=None,
+        bias=True,
+        dropout=0.,
+        normalize="l2",
     ):
         """
-        Construct aggregator and other supporting layers for GraphSAGE
-
-        :param output_dims: Output dimension at each layer
-        :param n_samples:   Number of neighbours sampled for each hop/layer
-        :param input_dim:   Feature vector dimension
-        :param aggregator:  Aggregator class
-        :param bias:        Optional bias
-        :param dropout:     Optional dropout
+        Args:
+            layer_sizes: Hidden feature dimensions for each layer
+            mapper: A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
+                and input_dim will be taken from this object.
+            n_samples: (Optional: needs to be specified if no mapper is provided.)
+                The number of samples per layer in the model.
+            input_dim: The dimensions of the node features used as input to the model.
+            aggregator: The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
+            bias: If True a bias vector is learnt for each layer in the GraphSAGE model
+            dropout: The dropout supplied to each layer in the GraphSAGE model.
+            normalize: The normalization used after each layer, defaults to L2 normalization.
         """
+        # Set the aggregator layer used in the model
+        if aggregator is None:
+            self._aggregator = MeanAggregator
+        elif issubclass(aggregator, Layer):
+            self._aggregator = aggregator
+        else:
+            raise TypeError("Aggregator should be a subclass of Keras Layer")
 
-        assert len(n_samples) == len(output_dims)
-        self.n_layers = len(n_samples)
-        self.n_samples = n_samples
-        self.input_feature_size = input_dim
-        self.dims = [input_dim] + output_dims
+        # Set the normalization layer used in the model
+        if normalize == "l2":
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
+
+        elif normalize is None or normalize == "none":
+            self._normalization = Lambda(lambda x: x)
+
+        # Get the input_dim and num_samples from the mapper if it is given
+        # Use both the schema and head node type from the mapper
+        if mapper is not None:
+            self.n_samples = mapper.num_samples
+            self.input_feature_size = mapper.graph.get_feature_size()
+
+        elif n_samples is not None and input_dim is not None:
+            self.n_samples = n_samples
+            self.input_feature_size = input_dim
+
+        else:
+            raise RuntimeError(
+                "If mapper is not provided, n_samples and input_dim must be specified."
+            )
+
+        # Model parameters
+        self.n_layers = len(self.n_samples)
         self.bias = bias
         self.dropout = dropout
-        # self._dropout = Dropout(dropout)
+
+        # Feature dimensions for each layer
+        self.dims = [self.input_feature_size] + layer_sizes
+
+        # Aggregator functions for each layer
         self._aggs = [
-            aggregator(
+            self._aggregator(
                 output_dim=self.dims[layer + 1],
                 bias=self.bias,
                 act="relu" if layer < self.n_layers - 1 else "linear",
             )
             for layer in range(self.n_layers)
         ]
+
+        # Sizes of the neighbours for each layer
         self._neigh_reshape = [
             [
                 Reshape((-1, max(1, self.n_samples[i]), self.dims[layer]))
@@ -153,6 +190,7 @@ class GraphSAGE:
             ]
             for layer in range(self.n_layers)
         ]
+
         self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
 
     def __call__(self, x: List):

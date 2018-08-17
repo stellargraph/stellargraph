@@ -20,57 +20,32 @@ Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
 Example usage:
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 20 20 -s 20 10 -e 20 -d 0.5 -r 0.02
+python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm
 
-usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-n BATCH_SIZE] [-e EPOCHS]
-                       [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
-                       [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
-                       [-f FEATURES] [-t TARGET]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -c [CHECKPOINT], --checkpoint [CHECKPOINT]
-                        Load a saved checkpoint file
-  -n BATCH_SIZE, --batch_size BATCH_SIZE
-                        Batch size for training
-  -e EPOCHS, --epochs EPOCHS
-                        The number of epochs to train the model
-  -d DROPOUT, --dropout DROPOUT
-                        Dropout for the GraphSAGE model, between 0.0 and 1.0
-  -r LEARNINGRATE, --learningrate LEARNINGRATE
-                        Learning rate for training model
-  -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
-                        The number of nodes sampled at each layer
-  -l [LAYER_SIZE [LAYER_SIZE ...]], --layer_size [LAYER_SIZE [LAYER_SIZE ...]]
-                        The number of hidden features at each layer
-  -g GRAPH, --graph GRAPH
-                        The graph stored in EPGM format.
-  -f FEATURES, --features FEATURES
-                        The node features to use, stored as a pickled numpy
-                        array.
-  -t TARGET, --target TARGET
-                        The target node attribute (categorical)
 """
 import os
 import argparse
+import pickle
+
 import numpy as np
 import pandas as pd
 
 import keras
 from keras import optimizers, losses, layers, metrics
 
-from stellar.data.node_splitter import NodeSplitter
-from stellar.data.explorer import SampledBreadthFirstWalk
+from stellar.data.node_splitter import train_val_test_split
 from stellar.data.loader import from_epgm
-from stellar.data.utils import NodeFeatureConverter, NodeTargetConverter
+from stellar.data.converter import (
+    NodeAttributeSpecification,
+    OneHotCategoricalConverter,
+    BinaryConverter,
+)
 from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.node_mappers import GraphSAGENodeMapper
 
 
 def train(
     G,
-    target_converter,
-    feature_converter,
     layer_size,
     num_samples,
     batch_size=100,
@@ -79,13 +54,10 @@ def train(
     dropout=0.0,
 ):
     """
-    Train the GraphSAGE model on the specified graph G
-    with given parameters.
+    Train a GraphSAGE model on the specified graph G with given parameters.
 
     Args:
         G: NetworkX graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -93,53 +65,47 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # This is very clunky: is there a nicer way?
-    graph_nodes = np.array(target_converter.get_node_label_pairs())
+    # Convert node attribute to target values
+    nts = NodeAttributeSpecification()
+    nts.add_attribute("paper", args.target, OneHotCategoricalConverter)
 
-    # Split head nodes into train/test
-
-    # TODO: a "baby" version for the future:
-    # G = StellarGraph(g_nx)
-    # nfs = NodeFeatureSpecification(G, ...)
-    # nts = NodeTargetSpecification(G, ...)
-    # model = NodeClassification(G, nfs, nts, model="GraphSAGE", classifier="logistic")
-    # predictions = model.predict(node_ids)
-
-    splitter = NodeSplitter()
-    train_nodes, val_nodes, test_nodes, _ = splitter.train_test_split(
-        y=graph_nodes, p=50, test_size=1000
+    # Convert the rest of the node attributes to feature values
+    nfs = NodeAttributeSpecification()
+    nfs.add_all_attributes(
+        G, "paper", BinaryConverter, ignored_attributes=[args.target]
     )
-    train_ids, train_labels = target_converter.convert_node_label_pairs(train_nodes)
-    val_ids, val_labels = target_converter.convert_node_label_pairs(val_nodes)
-    test_ids, test_labels = target_converter.convert_node_label_pairs(test_nodes)
-    all_ids, all_labels = target_converter.convert_node_label_pairs(graph_nodes)
 
-    # The mapper feeds data from sampled subgraph to GraphSAGE model
+    # Learn feature and target conversion
+    G.fit_attribute_spec(feature_spec=nfs, target_spec=nts)
+
+    # Split nodes into train/test using stratification. There are 7 classes so our
+    # training set will have 20 nodes from each class.
+    train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
+        G, train_size=140, test_size=1000, stratify=True
+    )
+
+    # Get targets for the mapper
+    train_targets = G.get_target_for_nodes(train_nodes)
+    val_targets = G.get_target_for_nodes(val_nodes)
+
+    # Create mappers for GraphSAGE that input data from the graph to the model
     train_mapper = GraphSAGENodeMapper(
-        G, train_ids, batch_size, num_samples, train_labels, name="train"
+        G, train_nodes, batch_size, num_samples, targets=train_targets
     )
     val_mapper = GraphSAGENodeMapper(
-        G, val_ids, batch_size, num_samples, val_labels, name="val"
-    )
-    test_mapper = GraphSAGENodeMapper(
-        G, test_ids, batch_size, num_samples, test_labels, name="test"
-    )
-    all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, all_labels, name="all"
+        G, val_nodes, batch_size, num_samples, targets=val_targets
     )
 
     # GraphSAGE model
     model = GraphSAGE(
-        output_dims=layer_size,
-        n_samples=num_samples,
-        input_dim=feature_converter.feature_size,
-        bias=True,
-        dropout=dropout,
+        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
     )
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
-    prediction = layers.Dense(units=len(target_converter), activation="softmax")(x_out)
+    prediction = layers.Dense(units=G.get_target_size("paper"), activation="softmax")(
+        x_out
+    )
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
@@ -158,31 +124,48 @@ def train(
         shuffle=True,
     )
 
-    # Evaluate and print metrics
+    # Evaluate on test set and print metrics
+    test_targets = G.get_target_for_nodes(test_nodes)
+    test_mapper = GraphSAGENodeMapper(
+        G, test_nodes, batch_size, num_samples, targets=test_targets
+    )
     test_metrics = model.evaluate_generator(test_mapper)
-
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    all_nodes_metrics = model.evaluate_generator(all_mapper)
-    print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, all_nodes_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
+    # Get predictions for all nodes
+    all_nodes = list(G)
+    all_mapper = GraphSAGENodeMapper(G, all_nodes, batch_size, num_samples)
+    all_predictions = model.predict_generator(all_mapper)
+
+    # Turn predictions back into the original categories
+    node_predictions = nts.inverse_transform("paper", all_predictions)
+    accuracy = np.mean(
+        [
+            G.node[n]["subject"] == p["subject"]
+            for n, p in zip(all_nodes, node_predictions)
+        ]
+    )
+    print("All-node accuracy: {:3f}".format(accuracy))
 
     # TODO: extract the GraphSAGE embeddings from x_out, and save/plot them
 
     # Save model
-    str_numsamp = "_".join([str(x) for x in num_samples])
-    str_layer = "_".join([str(x) for x in layer_size])
-    model.save(
-        "graphsage_n{}_l{}_d{}_i{}.h5".format(
-            str_numsamp, str_layer, dropout, feature_converter.feature_size
-        )
+    save_str = "_n{}_l{}_d{}_r{}".format(
+        "_".join([str(x) for x in num_samples]),
+        "_".join([str(x) for x in layer_size]),
+        dropout,
+        learning_rate,
     )
+    model.save("epgm_example_model" + save_str + ".h5")
+
+    # We must also save the attribute spec, as it is fitted to the data
+    with open("epgm_example_specs" + save_str + ".pkl", "wb") as f:
+        pickle.dump([nfs, nts], f)
 
 
-def test(G, target_converter, feature_converter, model_file, batch_size):
+def test(G, model_file, batch_size):
     """
     Load the serialized model and evaluate on all nodes in the graph.
 
@@ -193,48 +176,8 @@ def test(G, target_converter, feature_converter, model_file, batch_size):
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
-    model = keras.models.load_model(
-        model_file, custom_objects={"MeanAggregator": MeanAggregator}
-    )
-
-    # Get required input shapes from model
-    num_samples = [
-        int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
-        for ii in range(len(model.input_shape) - 1)
-    ]
-
-    # Mapper feeds data from sampled subgraph to GraphSAGE model
-    all_ids = list(G)
-    all_labels = target_converter.get_targets_for_ids(all_ids)
-    all_mapper = GraphSAGENodeMapper(
-        G, all_ids, batch_size, num_samples, all_labels, name="all"
-    )
-
-    # Evaluate and print metrics
-    all_metrics = model.evaluate_generator(all_mapper)
-
-    print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, all_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
-
-    # Predict on all nodes
-    node_predictions = model.predict_generator(all_mapper)
-    predictions = pd.DataFrame(
-        [
-            {
-                **{"Node": node, "True Class": target_converter(all_labels[ii], True)},
-                **{
-                    target_converter.target_category_values[jj]: node_predictions[ii, jj]
-                    for jj in range(len(target_converter))
-                },
-            }
-            for ii, node in enumerate(all_ids)
-        ]
-    )
-
-    # Save predictions
-    print("Predictions saved to `predictions.csv`")
-    predictions.to_csv("predictions.csv")
+    # TODO: This needs to be written
+    pass
 
 
 if __name__ == "__main__":
@@ -270,7 +213,7 @@ if __name__ == "__main__":
         "-r",
         "--learningrate",
         type=float,
-        default=0.0005,
+        default=0.005,
         help="Learning rate for training model",
     )
     parser.add_argument(
@@ -278,7 +221,7 @@ if __name__ == "__main__":
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[30, 10],
+        default=[20, 10],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
@@ -286,18 +229,11 @@ if __name__ == "__main__":
         "--layer_size",
         type=int,
         nargs="*",
-        default=[50, 50],
+        default=[20, 20],
         help="The number of hidden features at each layer",
     )
     parser.add_argument(
         "-g", "--graph", type=str, default=None, help="The graph stored in EPGM format."
-    )
-    parser.add_argument(
-        "-f",
-        "--features",
-        type=str,
-        default=None,
-        help="The node features to use, stored as a pickled numpy array.",
     )
     parser.add_argument(
         "-t",
@@ -312,19 +248,9 @@ if __name__ == "__main__":
     graph_loc = os.path.expanduser(args.graph)
     G = from_epgm(graph_loc)
 
-    # Convert graph node attributes to feature vectors and target values
-    feature_converter = NodeFeatureConverter(
-        from_graph=G, to_graph=G, ignored_attributes=[args.target, "label"]
-    )
-    target_converter = NodeTargetConverter(
-        from_graph=G, target=args.target, target_type="1hot"
-    )
-
     if args.checkpoint is None:
         train(
             G,
-            target_converter,
-            feature_converter,
             args.layer_size,
             args.neighbour_samples,
             args.batch_size,
@@ -333,4 +259,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(G, target_converter, feature_converter, args.checkpoint, args.batch_size)
+        test(G, args.checkpoint, args.batch_size)

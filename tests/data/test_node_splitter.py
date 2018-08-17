@@ -18,7 +18,10 @@ import unittest
 import uuid
 import os
 import numpy as np
-from stellar.data.node_splitter import NodeSplitter
+import itertools as it
+
+from stellar.data.stellargraph import StellarGraph
+from stellar.data.node_splitter import NodeSplitter, train_val_test_split
 from stellar.data.epgm import EPGM
 from shutil import rmtree
 
@@ -921,3 +924,131 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             5,
             "Incorrect number of graphs {:d} vs expected {:d}".format(len(graphs), 5),
         )
+
+
+##################
+# Test the simple node_splitter interface:
+
+
+def create_example_graph_1():
+    sg = StellarGraph()
+    sg.add_nodes_from([0, 1, 2, 3], label="movie")
+    sg.add_nodes_from([4, 5, 6], label="user")
+    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
+    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
+    sg.add_edges_from([(4, 5)], label="friend")
+    return sg
+
+
+def create_example_graph_2():
+    sg = StellarGraph()
+    sg.add_nodes_from([0, 1, 2, "3", 4, 5, 6], label="default")
+    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, "3")], label="default")
+    return sg
+
+
+def test_split_function():
+    # Example graph:
+    for sg in [create_example_graph_1(), create_example_graph_2()]:
+
+        # We have to have a target value for the nodes
+        for n in sg:
+            sg.node[n][sg._target_attr] = 1
+
+        sg.fit_attribute_spec()
+
+        splits = train_val_test_split(
+            sg, node_type=None, test_size=2, train_size=3, stratify=False, seed=None
+        )
+        assert len(splits[0]) == 3
+        assert len(splits[1]) == 2
+        assert len(splits[2]) == 2
+        assert len(splits[3]) == 0
+
+        # Make sure the nodeIDs can be found in the graph
+        assert all(s in sg for s in it.chain(*splits))
+
+
+def test_split_function_percent():
+    # Example graph:
+    for sg in [create_example_graph_1(), create_example_graph_2()]:
+
+        # We have to have a target value for the nodes
+        for n in sg:
+            sg.node[n][sg._target_attr] = 1
+
+        # Test splits by proportion - note floor of the
+        # number of samples
+        splits = train_val_test_split(
+            sg,
+            node_type=None,
+            test_size=2.8 / 7,
+            train_size=3.2 / 7,
+            stratify=False,
+            seed=None,
+        )
+
+        # Note the length of val is still 2 even though we requested 1
+        assert len(splits[0]) == 3
+        assert len(splits[1]) == 2
+        assert len(splits[2]) == 2
+        assert len(splits[3]) == 0
+
+        # Make sure the nodeIDs can be found in the graph
+        assert all(s in sg for s in it.chain(*splits))
+
+
+def test_split_function_stratify():
+    # Example graph:
+    sg = create_example_graph_2()
+
+    # We have to have a target value for the nodes
+    for ii, n in enumerate(sg):
+        sg.node[n][sg._target_attr] = int(2 * ii / sg.number_of_nodes())
+
+    splits = train_val_test_split(
+        sg, node_type=None, test_size=2, train_size=4, stratify=True, seed=None
+    )
+    # For this number of nodes we should have 50% of the nodes as label 1
+    assert sum(sg.node[s]["target"] for s in splits[0]) == len(splits[0]) // 2
+
+    # This doesn't seem to be true for the test set though:
+    # assert sum(sg.node[s]["target"] for s in splits[2]) == len(splits[2])//2
+
+    # Make sure the nodeIDs can be found in the graph
+    assert all(s in sg for s in it.chain(*splits))
+
+
+def test_split_function_node_type():
+    # Example graph:
+    sg = create_example_graph_1()
+
+    # We have to have a target value for the nodes
+    for ii, n in enumerate(sg):
+        sg.node[n][sg._target_attr] = int(2 * ii / sg.number_of_nodes())
+
+    splits = train_val_test_split(
+        sg, node_type="movie", test_size=1, train_size=2, stratify=False, seed=None
+    )
+    assert all(sg.node[s]["label"] == "movie" for split in splits for s in split)
+
+
+def test_split_function_unlabelled():
+    # Example graph:
+    sg = create_example_graph_1()
+
+    # Leave some of the nodes unlabelled:
+    for ii, n in enumerate(sg):
+        if ii > 2:
+            sg.node[n][sg._target_attr] = 1
+
+    splits = train_val_test_split(
+        sg, node_type=None, test_size=2, train_size=2, stratify=False, seed=None
+    )
+
+    # For this number of nodes we should have 50% of the nodes as label 1
+    # Note the length of val is still 2 even though we requested 1
+    assert len(splits[0]) == 2
+    assert len(splits[1]) == 0
+    assert len(splits[2]) == 2
+    assert len(splits[3]) == 3
