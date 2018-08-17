@@ -847,7 +847,7 @@ class StellarGraphBase:
             The feature size is returned as an integer.
         """
         # TODO: Infer node type
-        self.check_graph_for_ml(features=True)
+        self.check_graph_for_ml(features=True, supervised=False)
 
         # TODO: Check if node type is in schema!
 
