@@ -38,8 +38,7 @@ class GraphSAGELinkMapper(Sequence):
     """Keras-compatible link data mapper for link prediction using Homogeneous GraphSAGE
 
     Args:
-        g: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
-            is used as input to the GraphSAGE model.
+        g: StellarGraph graph.
         ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
             These are the links that are to be used to train or inference, and the embeddings
@@ -56,7 +55,7 @@ class GraphSAGELinkMapper(Sequence):
 
     def __init__(
         self,
-        g: StellarGraphBase or nx.Graph,
+        g: StellarGraphBase,
         ids: List[
             Tuple[Any, Any]
         ],  # allow for node ids to be anything, e.g., str or int
@@ -66,6 +65,13 @@ class GraphSAGELinkMapper(Sequence):
         feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
+        if not isinstance(g, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        # We don't know if we need targets here as we could be used for training or inference
+        # TODO: Perhaps we shouldn't do the checks here but somewhere that we know will be the entry point for training or inference?
+        g.check_graph_for_ml(features=True, supervised=False)
+
         self.g = g
         self.sampler = SampledBreadthFirstWalk(g)
         self.num_samples = num_samples
@@ -75,37 +81,13 @@ class GraphSAGELinkMapper(Sequence):
         self.batch_size = batch_size
         self.name = name
 
-        # Check correct graph sampler is used
-        if not isinstance(self.sampler, SampledBreadthFirstWalk):
-            raise TypeError(
-                "Sampler must be an instance of SampledBreadthFirstWalk class"
+        # We need the node type, to be able to get features from self.g
+        node_types = g.get_node_types()
+        if len(node_types) > 1:
+            print(
+                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
             )
-
-        # Ensure features are available:
-        nodes_have_features = all(
-            ["feature" in vdata for v, vdata in self.g.nodes(data=True)]
-        )
-        if not nodes_have_features:
-            print("Warning: Not all nodes have a 'feature' attribute.")
-            print("Warning: This is required for the GraphSAGE mapper.")
-
-        # Check that all nodes have features of the same size
-        # Note: if there are no features in the nodes this will be 1!
-        feature_sizes = {
-            np.size(vdata.get("feature")) for v, vdata in self.g.nodes(data=True)
-        }
-
-        if feature_size:
-            self.feature_size = feature_size
-        else:
-            self.feature_size = int(max(feature_sizes))
-            if len(feature_sizes) > 1:
-                print("Warning: feature sizes in nodes inconsistent (using max)")
-                print("Found feature sizes: {}".format(feature_sizes))
-
-        if self.feature_size not in feature_sizes:
-            print("Found feature sizes: {}".format(feature_sizes))
-            raise RuntimeWarning("Specified feature size doesn't match graph features")
+        self.node_type = node_types.pop()
 
     def __len__(self):
         "Denotes the number of batches per epoch"
@@ -126,16 +108,15 @@ class GraphSAGELinkMapper(Sequence):
         """
         # Create features and node indices if required
         # Note the if there are no samples for a level, a zero array is returned.
+
         batch_feats = [
-            [self.g.node[v].get("feature") for v in layer_nodes]
-            if len(layer_nodes) > 0
-            else np.zeros((head_size, self.feature_size))
+            self.g.get_feature_for_nodes(layer_nodes, self.node_type)
             for layer_nodes in node_samples
         ]
 
         # Resize features to (batch_size, n_neighbours, feature_size)
         batch_feats = [
-            np.reshape(a, (head_size, -1, self.feature_size)) for a in batch_feats
+            np.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats
         ]
         return batch_feats
 
