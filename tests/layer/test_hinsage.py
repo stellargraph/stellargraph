@@ -89,14 +89,13 @@ def test_mean_hin_agg_apply_2():
     ]
 
     actual = model.predict(x)
-    print(actual)
     expected = [np.array([[[2, 8]]]), np.array([[[3, 9]]])]
     assert actual == pytest.approx(expected)
 
 
 def test_hinsage_constructor():
     hs = HinSAGE(
-        output_dims=[{"1": 2, "2": 2}, {"1": 2}],
+        layer_sizes=[{"1": 2, "2": 2}, {"1": 2}],
         n_samples=[2, 2],
         input_neighbor_tree=[
             ("1", [1, 2]),
@@ -110,12 +109,12 @@ def test_hinsage_constructor():
     )
     assert hs.n_layers == 2
     assert hs.n_samples == [2, 2]
-    assert not hs.bias
+    assert hs.bias
 
 
 def test_hinsage_apply():
     hs = HinSAGE(
-        output_dims=[{"1": 2, "2": 2}, 2],
+        layer_sizes=[{"1": 2, "2": 2}, 2],
         n_samples=[2, 2],
         input_neighbor_tree=[
             ("1", [1, 2]),

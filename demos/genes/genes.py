@@ -50,7 +50,7 @@ class GeneHinSageClassifier(object):
             return weighted_binary_crossentropy
 
         hs = HinSAGE(
-            output_dims=[self.emb_dim] * len(n_samples),
+            layer_sizes=[self.emb_dim]*len(n_samples),
             n_samples=n_samples,
             input_neighbor_tree=[  # TODO: must be simplified, and generalised to work for any number of HinSAGE layers
                 ("gene", [1, 2, 3]),

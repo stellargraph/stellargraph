@@ -94,7 +94,7 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
     target_node_type = "user"
     nts = NodeAttributeSpecification()
     nts.add_attribute_list(
-        target_node_type, ["elite"], OneHotCategoricalConverter, without_first=True
+        target_node_type, ["elite"], OneHotCategoricalConverter
     )
 
     # Reduce graph to only contain a subset of node types
@@ -125,7 +125,7 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
     )
 
     # GraphSAGE model
-    model = HinSAGE(layer_size, num_samples, train_mapper, bias=True, dropout=dropout)
+    model = HinSAGE(layer_size, train_mapper, dropout=dropout)
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
@@ -147,8 +147,7 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
         epochs=num_epochs,
         validation_data=val_mapper,
         verbose=2,
-        shuffle=True,nts = NodeAttributeSpecification()
-
+        shuffle=True
     )
 
     # Evaluate on test set and print metrics

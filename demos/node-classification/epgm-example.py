@@ -78,9 +78,10 @@ def train(
     # Learn feature and target conversion
     G.fit_attribute_spec(feature_spec=nfs, target_spec=nts)
 
-    # Split "user" nodes into train/test
+    # Split nodes into train/test using stratification. There are 7 classes so our
+    # training set will have 20 nodes from each class.
     train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
-        G, train_size=160, test_size=1000, stratify=True
+        G, train_size=140, test_size=1000, stratify=True
     )
 
     # Get targets for the mapper
@@ -97,11 +98,7 @@ def train(
 
     # GraphSAGE model
     model = GraphSAGE(
-        output_dims=layer_size,
-        n_samples=num_samples,
-        mapper=train_mapper,
-        bias=True,
-        dropout=dropout,
+        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
     )
     x_inp, x_out = model.default_model(flatten_output=True)
 
@@ -126,8 +123,6 @@ def train(
         verbose=2,
         shuffle=True,
     )
-    # Get targets for the mapper
-    val_targets = G.get_target_for_nodes(val_nodes)
 
     # Evaluate on test set and print metrics
     test_targets = G.get_target_for_nodes(test_nodes)

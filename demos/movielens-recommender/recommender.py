@@ -278,7 +278,7 @@ class MovielensData:
 
     def create_model(self) -> HinSAGE:
         return HinSAGE(
-            output_dims=self.layer_sizes,
+            layer_sizes=self.layer_sizes,
             n_samples=self.node_samples,
             input_neighbor_tree=self.subtree_schema,
             input_dim={
