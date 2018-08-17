@@ -257,9 +257,9 @@ class HinSAGENodeMapper(Sequence):
             )
 
         # Save head node type and generate sampling schema
-        self._head_node_type = head_node_type
+        self.head_node_types = [head_node_type]
         self._sampling_schema = self.schema.get_sampling_layout(
-            [head_node_type], num_samples
+            self.head_node_types, num_samples
         )
 
     def __len__(self):
@@ -313,11 +313,3 @@ class HinSAGENodeMapper(Sequence):
         ]
 
         return batch_feats, batch_targets
-
-    def get_head_node_type(self):
-        """
-        Get the head node for this mapper.
-        Returns:
-            Node type
-        """
-        return self._head_node_type
