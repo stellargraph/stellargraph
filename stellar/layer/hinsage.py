@@ -230,10 +230,10 @@ class HinSAGE:
         # Use both the schema and head node type from the mapper
         # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
         if mapper is not None:
-            self.subtree_schema = mapper.schema.get_type_adjacency_list(
-                mapper.head_node_types, len(n_samples)
-            )
             self.n_samples = mapper.num_samples
+            self.subtree_schema = mapper.schema.get_type_adjacency_list(
+                mapper.head_node_types, len(self.n_samples)
+            )
             # TODO: I feel dirty using the graph through the mapper
             self.input_dims = mapper.graph.get_feature_sizes()
 
