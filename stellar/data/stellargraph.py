@@ -134,6 +134,7 @@ class GraphSchema:
         return s
 
     def get_node_type(self, node, index=False):
+        # TODO: remove "get_" from the name
         """
         Return the type of the node
         Args:
@@ -196,6 +197,7 @@ class GraphSchema:
         return match
 
     def get_edge_type(self, edge, index=False):
+        # TODO: remove "get_" from the name
         """
         Return the type of the edge as a triple of
             (source_node_type, relation_type, dest_node_type).
@@ -236,6 +238,7 @@ class GraphSchema:
         return edge_type
 
     def edge_types_for_node_type(self, node_type):
+        # TODO: simplify the name of the method, or donsider deleting the method alltogether
         """
         Return all edge types from a specified node type in fixed order.
         Args:
@@ -252,6 +255,7 @@ class GraphSchema:
         return edge_types
 
     def get_sampling_tree(self, head_node_types, n_hops):
+        # TODO: remove "get_" from the name
         """
         Returns a sampling tree for the specified head node types
         for neighbours up to n_hops away.
@@ -279,6 +283,7 @@ class GraphSchema:
         return adjacency_list, pack_tree(range(len(head_node_types)), 0)
 
     def get_sampling_layout(self, head_node_types, num_samples):
+        # TODO: remove "get_" from the name
         """
         For a sampling scheme with a list of head node types and the
         number of samples per hop, return the map from the actual
@@ -346,6 +351,7 @@ class GraphSchema:
         return sample_inverse_layout
 
     def get_type_adjacency_list(self, head_node_types, n_hops):
+        # TODO: remove "get_" from the name
         """
         Creates a BFS sampling tree as an adjacency list from head node types.
 
@@ -396,7 +402,9 @@ class GraphSchema:
 
 
 class StellarGraphBase:
+    # TODO: add doc string
     def __init__(self, incoming_graph_data=None, **attr):
+        # TODO: add doc string
         super().__init__(incoming_graph_data, **attr)
 
         # Names of attributes that store the type of nodes and edges
@@ -581,6 +589,7 @@ class StellarGraphBase:
         self.fit_attribute_spec(feature_spec, target_spec, train=False)
 
     def fit_attribute_spec(self, feature_spec=None, target_spec=None, train=True):
+        # TODO: we need to (gradually) deprecate this in favor of scikit-learn - see issue stellar-ml#177
         """
         Transform the node attributes to feature and target vectors, for use
         with machine learning models.
@@ -649,6 +658,7 @@ class StellarGraphBase:
         # How about checking the schema?
 
     def get_feature_for_nodes(self, nodes, node_type=None):
+        # TODO: change method's name to node_features()
         """
         Get the numeric feature vector for the specified node or nodes.
         If the node type is not specified the type of the first
@@ -711,6 +721,7 @@ class StellarGraphBase:
         return features
 
     def get_target_for_nodes(self, nodes, node_type=None):
+        # TODO: change the method's name to something like node_targets()
         """
         Get the numeric target vector for the specified node or nodes
         Args:
@@ -757,6 +768,7 @@ class StellarGraphBase:
         return targets
 
     def get_nodes_with_target(self, node_type=None):
+        # TODO: is this used anywhere except tests? If not, remove this.
         """
         Get the nodes that have a valid target value
         Args:
@@ -786,6 +798,7 @@ class StellarGraphBase:
         return nodes_with_targets, nodes_without_target
 
     def get_raw_targets(self, nodes, node_type=None, unlabeled_value=None):
+        # TODO: Consider making this method private, and calling from self.get_targets_for_nodes(original=True)
         """
         Get the raw target label for the nodes, currently required for splitting.
 
@@ -812,6 +825,7 @@ class StellarGraphBase:
         return target_values
 
     def get_feature_sizes(self, node_types=None):
+        # TODO: change name to node_feature_sizes()
         """
         Get the feature sizes for the specified node types.
 
@@ -836,6 +850,7 @@ class StellarGraphBase:
         return fsize
 
     def get_feature_size(self, node_type=None):
+        # TODO: redundant? See the get_feature_sizes method above
         """
         Get the feature size for the nodes of the specified type.
 
@@ -861,6 +876,7 @@ class StellarGraphBase:
         return fsize
 
     def get_target_size(self, node_type=None):
+        # TODO: remove "get_" from the name, and update the doc string
         """
         Get the feature size for the nodes of the specified type.
 
@@ -884,6 +900,7 @@ class StellarGraphBase:
         return fsize
 
     def get_nodes_of_type(self, node_type=None):
+        # TODO: remove "get_" from the name
         """
         Get the nodes of the graph with the specified node types.
 
@@ -903,6 +920,7 @@ class StellarGraphBase:
             ]
 
     def get_node_types(self):
+        # TODO: remove "get_" from the name
         """
         Get a list of all node types in the graph.
 
