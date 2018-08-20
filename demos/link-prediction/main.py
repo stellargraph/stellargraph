@@ -22,16 +22,16 @@ import numpy as np
 from stellar.data.edge_splitter import EdgeSplitter
 from utils.node2vec_feature_learning import Node2VecFeatureLearning
 from utils.metapath2vec_feature_learning import Metapath2VecFeatureLearning
+from utils.cl_arguments_parser import parse_args
+from utils.read_graph import read_graph
 from sklearn.pipeline import Pipeline
 from collections import Counter
 import multiprocessing
-import argparse
 
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
-from stellar.data.epgm import EPGM
 
 
 # Default parameters for Node2Vec
@@ -47,186 +47,6 @@ parameters = {
     "weighted": False,  # is graph weighted?
     "directed": False,  # are edges directed?
 }
-
-
-def parse_args():
-    """
-    Parses the command line arguments.
-
-    Returns:
-    """
-    parser = argparse.ArgumentParser(
-        description="Run link prediction on homogeneous and heterogeneous graphs."
-    )
-
-    parser.add_argument(
-        "--dataset_name",
-        nargs="?",
-        default="cora",
-        help="The dataset name as stored in graphs.json",
-    )
-
-    parser.add_argument(
-        "--p",
-        nargs="?",
-        default=0.1,
-        help="Percent of edges to sample for positive and negative examples (valid values 0 < p < 1)",
-    )
-
-    parser.add_argument(
-        "--subgraph_size",
-        nargs="?",
-        default=0.1,
-        help="Percent of nodes for a subgraph of the input data when --subsample is specified (valid values 0 < subgraph_size < 1)",
-    )
-
-    parser.add_argument(
-        "--edge_type", nargs="?", default="friend", help="The edge type to predict"
-    )
-
-    parser.add_argument(
-        "--edge_attribute_label",
-        nargs="?",
-        default="date",
-        help="The attribute label by which to split edges",
-    )
-
-    parser.add_argument(
-        "--edge_attribute_threshold",
-        nargs="?",
-        default=None,
-        help="Any edge with attribute value less that the threshold cannot be removed from graph",
-    )
-
-    parser.add_argument(
-        "--attribute_is_datetime",
-        dest="attribute_is_datetime",
-        action="store_true",
-        help="If specified, the edge attribute to split on is considered datetime in format dd/mm/yyyy",
-    )
-
-    parser.add_argument(
-        "--hin",
-        dest="hin",
-        action="store_true",
-        help="If specified, it indicates that the input graph in a heterogenous network; otherwise, the input graph is assumed homogeneous",
-    )
-
-    parser.add_argument(
-        "--input_graph",
-        nargs="?",
-        default="~/Projects/data/cora/cora.epgm/",
-        help="Input graph filename",
-    )
-
-    parser.add_argument(
-        "--output_node_features",
-        nargs="?",
-        default="~/Projects/data/cora/cora.features/cora.emb",
-        help="Input graph filename",
-    )
-
-    parser.add_argument(
-        "--sampling_method",
-        nargs="?",
-        default="global",
-        help="Negative edge sampling method: local or global",
-    )
-
-    parser.add_argument(
-        "--sampling_probs",
-        nargs="?",
-        default="0.0, 0.25, 0.50, 0.25",
-        help="Negative edge sample probabilities (for local sampling method) with respect to distance from starting node",
-    )
-
-    parser.add_argument(
-        "--show_hist",
-        dest="show_histograms",
-        action="store_true",
-        help="If specified, a histogram of the distances between source and target nodes for \
-                         negative edge samples will be plotted.",
-    )
-
-    parser.add_argument(
-        "--subsample",
-        dest="subsample_graph",
-        action="store_true",
-        help="If specified, then the original graph is randomly subsampled to 10% of the original size, \
-                        with respect to the number of nodes",
-    )
-
-    return parser.parse_args()
-
-
-def read_graph(graph_file, dataset_name):
-    """
-    Reads the input network in networkx.
-
-    Args:
-        graph_file: The directory where graph in EPGM format is stored.
-        dataset_name: The name of the graph selected out of all the graph heads in EPGM file.
-
-    Returns:
-        The graph in networkx format
-    """
-
-    if graph_file.split('.')[-1] == 'gpickle':
-        g = nx.read_gpickle(graph_file)
-        for edge in g.edges():
-            g[edge[0]][edge[1]]["weight"] = 1  # {'weight': 1}
-
-        if not parameters["directed"]:
-            g = g.to_undirected()
-
-        return g
-
-    try:  # assume args.input points to an EPGM graph
-        G_epgm = EPGM(graph_file)
-        graphs = G_epgm.G["graphs"]
-        if (
-            dataset_name is None
-        ):  # if dataset_name is not given, use the name of the 1st graph head
-            dataset_name = graphs[0]["meta"]["label"]
-            print(
-                "WARNING: dataset name not specified, using dataset '{}' in the 1st graph head".format(
-                    dataset_name
-                )
-            )
-        graph_id = None
-        for g in graphs:
-            if g["meta"]["label"] == dataset_name:
-                graph_id = g["id"]
-
-        g = G_epgm.to_nx(graph_id, parameters["directed"])
-        if parameters["weighted"]:
-            raise NotImplementedError
-        else:
-            # This is the correct way to set the edge weight in a MultiGraph.
-            edge_weights = {e: 1 for e in g.edges(keys=True)}
-            nx.set_edge_attributes(g, name="weight", values=edge_weights)
-    except:  # otherwise, assume arg.input points to an edgelist file
-        if parameters["weighted"]:
-            g = nx.read_edgelist(
-                graph_file,
-                nodetype=int,
-                data=(("weight", float),),
-                create_using=nx.DiGraph(),
-            )
-        else:
-            g = nx.read_edgelist(graph_file, nodetype=int, create_using=nx.DiGraph())
-            for edge in g.edges():
-                g[edge[0]][edge[1]]["weight"] = 1  # {'weight': 1}
-
-        if not parameters["directed"]:
-            g = g.to_undirected()
-
-    print(
-        "Graph statistics: {} nodes, {} edges".format(
-            g.number_of_nodes(), g.number_of_edges()
-        )
-    )
-    return g
 
 
 def print_distance_probabilities(node_distances):
@@ -490,22 +310,22 @@ def train_heterogeneous_graph(
     return feature_learner_train, feature_learner_test, clf_edge
 
 
-def get_subgraph_bfs(g, n, d):
-    nodes = []  # the nodes in the subgraph
-    frontier = [n]
-
-    for _ in range(d+1):
-        next_frontier = []
-        while len(frontier) > 0:
-            cn = frontier.pop()
-            nodes.extend([cn])
-            nn = list(nx.neighbors(g, cn))
-            next_frontier.extend(nn)
-        frontier.extend(next_frontier)
-
-    nodes = list(set(nodes))
-
-    return nodes
+# def get_subgraph_bfs(g, n, d):
+#     nodes = []  # the nodes in the subgraph
+#     frontier = [n]
+#
+#     for _ in range(d+1):
+#         next_frontier = []
+#         while len(frontier) > 0:
+#             cn = frontier.pop()
+#             nodes.extend([cn])
+#             nn = list(nx.neighbors(g, cn))
+#             next_frontier.extend(nn)
+#         frontier.extend(next_frontier)
+#
+#     nodes = list(set(nodes))
+#
+#     return nodes
 
 
 if __name__ == "__main__":
@@ -535,7 +355,10 @@ if __name__ == "__main__":
     graph_filename = os.path.expanduser(args.input_graph)
     dataset_name = args.dataset_name
     # Load the graph from disk
-    g_nx = read_graph(graph_file=graph_filename, dataset_name=dataset_name)
+    g_nx = read_graph(graph_file=graph_filename,
+                      dataset_name=dataset_name,
+                      is_directed=parameters["directed"],
+                      is_weighted=parameters["weighted"])
 
     if args.subsample_graph:
         # subsample g_nx
