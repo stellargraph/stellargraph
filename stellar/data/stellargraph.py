@@ -837,7 +837,7 @@ class StellarGraphBase:
             A dictionary of node type and integer feature size.
         """
         # TODO: Infer node type
-        self.check_graph_for_ml(features=True)
+        self.check_graph_for_ml(features=True, supervised=False)
 
         if self._feature_spec is not None:
             node_types = self.get_node_types()
