@@ -224,15 +224,11 @@ def train_heterogeneous_graph(
     edge_data_labels_train,  # train edge data
     edge_data_ids_test,
     edge_data_labels_test,  # test edge data
+    metapaths,
     parameters,
 ):
     # metapaths = [["Person", "Group", "Person"], ["Person", "Group", "Person", "Person"]]
-    metapaths = [
-        ["Group", "Person", "Group"],
-        ["Person", "Group", "Person"],
-        ["Person", "Group", "Person", "Person"],
-        ["Person", "Person"],
-    ]
+
     # Using g_train and edge_data_train train a classifier for edge prediction
     feature_learner_train = Metapath2VecFeatureLearning(
         g_train, embeddings_filename=os.path.expanduser(output_node_features)
