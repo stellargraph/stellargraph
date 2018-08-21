@@ -74,10 +74,10 @@ def get_metapaths_from_str(metapaths_str):
         ]
     else:
         metapaths = []
-        m_tokens = metapaths_str.split(';')
+        m_tokens = metapaths_str.split(";")
 
         for metapath in m_tokens:
-            metapaths.append(list(metapath.split(',')))
+            metapaths.append(list(metapath.split(",")))
 
     return metapaths
 
