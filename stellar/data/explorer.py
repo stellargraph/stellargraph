@@ -18,6 +18,7 @@ import networkx as nx
 import numpy as np
 import random
 from stellar.data.stellargraph import GraphSchema
+from stellar.data.stellargraph import StellarGraphBase
 from collections import defaultdict
 
 
@@ -28,6 +29,12 @@ class GraphWalk(object):
 
     def __init__(self, graph, graph_schema=None):
         self.graph = graph
+        # We require a StellarGraph for this
+        if not isinstance(graph, StellarGraphBase):
+            raise TypeError(
+                "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
+            )
+
         if not graph_schema:
             self.graph_schema = self.graph.create_graph_schema(
                 create_type_maps=True
