@@ -50,7 +50,11 @@ class Metapath2VecFeatureLearning(object):
             walks, size=d, window=k, min_count=0, sg=1, workers=2, iter=1
         )
         self.model.wv.save_word2vec_format(self.embeddings_filename)
-        print("({}) Time to learn embeddings {:.0f} seconds".format(type(self).__name__, time.time()-time_b))
+        print(
+            "({}) Time to learn embeddings {:.0f} seconds".format(
+                type(self).__name__, time.time() - time_b
+            )
+        )
 
     def _assert_positive_int(self, val, msg=""):
         """
@@ -106,7 +110,11 @@ class Metapath2VecFeatureLearning(object):
             node_type_attribute="label",
             seed=None,
         )
-        print("({}) Time for random walks {:.0f} seconds.".format(type(self).__name__, time.time()-time_b))
+        print(
+            "({}) Time for random walks {:.0f} seconds.".format(
+                type(self).__name__, time.time() - time_b
+            )
+        )
         self.learn_embeddings(walks, d, k)
         print("Total time for fit() was {:.0f}".format(time.time() - start_time_fit))
 
