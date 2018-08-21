@@ -188,10 +188,10 @@ class NodeSplitter(object):
         """
         Loads the node data
 
-        :param path: Input filename or directory where graph in EPGM format is stored
-        :param node_type: For HINs, the node type to consider
-        :param target_attribute: For EPGM format, the target node attribute
-        :return: N x 2 numpy arrays where the first column is the node id and the second column is the node label.
+         :param path: Input filename or directory where graph in EPGM format is stored
+         :param node_type: For HINs, the node type to consider
+         :param target_attribute: For EPGM format, the target node attribute
+         :return: N x 2 numpy arrays where the first column is the node id and the second column is the node label.
         """
         if os.path.isdir(path):
             self.format_epgm = True
@@ -492,88 +492,3 @@ class NodeSplitter(object):
         # print("y_val shape:", y_val.shape)
 
         return y_train, y_val, y_test, y_unlabeled
-
-    def write_data(self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled):
-
-        # if output directory does not exist, create it
-        if not os.path.isdir(output_dir):
-            os.mkdir(output_dir)
-
-        if self.format_epgm:
-            return self._write_data_epgm(
-                output_dir=output_dir,
-                dataset_name=dataset_name,
-                y_train=y_train,
-                y_test=y_test,
-                y_val=y_val,
-                y_unlabeled=y_unlabeled,
-            )
-        else:
-            return self._write_data(
-                output_dir=output_dir,
-                dataset_name=dataset_name,
-                y_train=y_train,
-                y_test=y_test,
-                y_val=y_val,
-                y_unlabeled=y_unlabeled,
-            )
-
-    def _write_data_epgm(
-        self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled
-    ):
-
-        G_train = self.g_nx.subgraph(y_train[:, 0]).copy()
-        G_train.id = uuid.uuid4().hex
-        G_train.name = dataset_name + "_train"
-
-        G_val = self.g_nx.subgraph(y_val[:, 0]).copy()
-        G_val.id = uuid.uuid4().hex
-        G_val.name = dataset_name + "_val"
-
-        G_test = self.g_nx.subgraph(y_test[:, 0]).copy()
-        G_test.id = uuid.uuid4().hex
-        G_test.name = dataset_name + "_test"
-
-        G_unlabeled = self.g_nx.subgraph(y_unlabeled[:, 0]).copy()
-        G_unlabeled.id = uuid.uuid4().hex
-        G_unlabeled.name = dataset_name + "_unlabeled"
-
-        # We are not interested in edges of G_train, G_val, and G_test, so remove them:
-        G_train.remove_edges_from(list(G_train.edges()))
-        G_val.remove_edges_from(list(G_val.edges()))
-        G_test.remove_edges_from(list(G_test.edges()))
-        G_unlabeled.remove_edges_from(list(G_unlabeled.edges()))
-
-        self.g_epgm.append(G_train)
-        self.g_epgm.append(G_val)
-        self.g_epgm.append(G_test)
-        self.g_epgm.append(G_unlabeled)
-
-        # Finally write the graph to output_dir
-        self.g_epgm.save(output_dir)
-
-        return {"epgm_directory": output_dir}
-
-    def _write_data(
-        self, output_dir, dataset_name, y_train, y_val, y_test, y_unlabeled
-    ):
-
-        y_train_filename = os.path.join(output_dir, dataset_name + ".idx.train")
-        np.savetxt(y_train_filename, y_train, fmt="%s")  # was fmt=%d
-
-        y_val_filename = os.path.join(output_dir, dataset_name + ".idx.validation")
-        np.savetxt(y_val_filename, y_val, fmt="%s")
-
-        y_test_filename = os.path.join(output_dir, dataset_name + ".idx.test")
-        np.savetxt(y_test_filename, y_test, fmt="%s")
-
-        y_unlabeled_filename = os.path.join(output_dir, dataset_name + ".idx.unlabeled")
-        np.savetxt(y_unlabeled_filename, y_unlabeled, fmt="%s")
-
-        # return y_train_filename, y_val_filename, y_test_filename, y_unlabeled_filename
-        return {
-            "train_data_filename": y_train_filename,
-            "val_data_filename": y_val_filename,
-            "test_data_filename": y_test_filename,
-            "unlabeled_data_filename": y_unlabeled_filename,
-        }
