@@ -99,11 +99,11 @@ class Metapath2VecFeatureLearning(object):
         # walks = self.G.simulate_walks(r, l)
         time_b = time.time()
         walks = metapath_walker.run(
-            nodes=self.nxG.nodes(),
+            nodes=list(self.nxG.nodes()),
             metapaths=metapaths,
             length=l,
             n=r,
-            label="label",
+            node_type_attribute="label",
             seed=None,
         )
         print("({}) Time for random walks {:.0f} seconds.".format(type(self).__name__, time.time()-time_b))
