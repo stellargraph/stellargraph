@@ -156,6 +156,7 @@ class NodeSplitter(object):
         self.format_epgm = False
         self.g_epgm = None
         self.g_id = None
+        self._random = None
 
     def _get_nodes(self, graph_nodes, node_type, target_attribute):
         """
@@ -300,7 +301,8 @@ class NodeSplitter(object):
             seed=seed,
         )
 
-        np.random.seed(seed=seed)
+        if self._random is None:
+            self._random = np.random.RandomState(seed=seed)
 
         if method == "count":
             return self._split_data(y, p, test_size)
@@ -338,7 +340,7 @@ class NodeSplitter(object):
         y_used[ind] = 1
 
         ind = np.nonzero(y_used == 0)  # unused points
-        ind_sampled = np.random.choice(ind[0], train_size, replace=False)
+        ind_sampled = self._random.choice(ind[0], train_size, replace=False)
         y_train = y[ind_sampled]
         # mark these as used to make sure that they are not sampled for the test set
         y_used[ind_sampled] = 1
@@ -351,7 +353,7 @@ class NodeSplitter(object):
                     len(ind[0]), test_size
                 )
             )
-        ind_sampled = np.random.choice(ind[0], test_size, replace=False)
+        ind_sampled = self._random.choice(ind[0], test_size, replace=False)
         y_test = y[ind_sampled]
         y_used[ind_sampled] = 1
         # print("y_test shape: ", y_test.shape)
@@ -402,9 +404,11 @@ class NodeSplitter(object):
             # select nc of these at random for the training set
             if ind[0].size <= nc:
                 # too few labeled examples for class so use half for training and half for testing
-                ind_selected = np.random.choice(ind[0], ind[0].size // 2, replace=False)
+                ind_selected = self._random.choice(
+                    ind[0], ind[0].size // 2, replace=False
+                )
             else:
-                ind_selected = np.random.choice(ind[0], nc, replace=False)
+                ind_selected = self._random.choice(ind[0], nc, replace=False)
             # mark these as used to make sure that they are not sampled for the test set:
             y_used[ind_selected] = 1
             if y_train is None:
@@ -422,7 +426,7 @@ class NodeSplitter(object):
                     len(ind[0]), test_size
                 )
             )
-        ind_selected = np.random.choice(ind[0], test_size, replace=False)
+        ind_selected = self._random.choice(ind[0], test_size, replace=False)
         y_test = y[ind_selected]
         y_used[ind_selected] = 1
         # print("y_test shape: ", y_test.shape)
