@@ -14,13 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import uuid
 import numpy as np
-import pandas as pd
 from stellar.data.stellargraph import StellarGraphBase
-from stellar.data.epgm import EPGM
 from stellar import GLOBALS
+
 
 # Easier functional interface for the splitter:
 def train_val_test_split(
@@ -181,62 +178,6 @@ class NodeSplitter(object):
             for node in graph_nodes
             if node["meta"][GLOBALS.TYPE_ATTR_NAME] == node_type
         ]
-
-        return y
-
-    def load_data(self, path, dataset_name=None, node_type=None, target_attribute=None):
-        """
-        Loads the node data
-
-         :param path: Input filename or directory where graph in EPGM format is stored
-         :param node_type: For HINs, the node type to consider
-         :param target_attribute: For EPGM format, the target node attribute
-         :return: N x 2 numpy arrays where the first column is the node id and the second column is the node label.
-        """
-        if os.path.isdir(path):
-            self.format_epgm = True
-            self.g_epgm = EPGM(path)
-            graphs = self.g_epgm.G["graphs"]
-            for g in graphs:
-                if g["meta"]["label"] == dataset_name:
-                    self.g_id = g["id"]
-
-            self.g_nx = self.g_epgm.to_nx(self.g_id)
-            g_vertices = self.g_epgm.G["vertices"]  # retrieve all graph vertices
-
-            if node_type is None:
-                node_type = self.g_epgm.node_types(self.g_id)
-                if len(node_type) == 1:
-                    node_type = node_type[0]
-                else:
-                    raise Exception(
-                        "Multiple node types detected in graph {}: {}.".format(
-                            self.g_id, node_type
-                        )
-                    )
-
-            if target_attribute is None:
-                target_attribute = self.g_epgm.node_attributes(self.g_id, node_type)
-                if len(target_attribute) == 1:
-                    target_attribute = target_attribute[0]
-                else:
-                    raise Exception(
-                        "Multiple node attributes detected for nodes of type {} in graph {}: {}.".format(
-                            node_type, self.g_id, target_attribute
-                        )
-                    )
-
-            y = np.array(
-                self._get_nodes(
-                    g_vertices, node_type=node_type, target_attribute=target_attribute
-                )
-            )
-
-        else:
-            y_df = pd.read_csv(path, delimiter=" ", header=None, dtype=str)
-            y_df.sort_values(by=[0], inplace=True)
-
-            y = y_df.as_matrix()
 
         return y
 
