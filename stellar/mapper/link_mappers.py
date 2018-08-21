@@ -62,7 +62,6 @@ class GraphSAGELinkMapper(Sequence):
         link_labels: List[Any] or np.ndarray,
         batch_size: int,
         num_samples: List[int],
-        feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
         if not isinstance(g, StellarGraphBase):
@@ -70,6 +69,7 @@ class GraphSAGELinkMapper(Sequence):
 
         # We don't know if we need targets here as we could be used for training or inference
         # TODO: Perhaps we shouldn't do the checks here but somewhere that we know will be the entry point for training or inference?
+        # YT: this check is needed to ensure that _get_features(), which calls self.graph.get_feature_for_nodes(), will work
         g.check_graph_for_ml(features=True, supervised=False)
 
         self.graph = g
@@ -246,6 +246,11 @@ class HinSAGELinkMapper(Sequence):
             raise TypeError(
                 "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
+
+        # We don't know if we need targets here as we could be used for training or inference
+        # TODO: Perhaps we shouldn't do the checks here but somewhere that we know will be the entry point for training or inference?
+        # YT: this check is needed to ensure that _get_features(), which calls self.graph.get_feature_for_nodes(), will work
+        g.check_graph_for_ml(features=True, supervised=False)
 
         # Generate graph schema
         self.schema = self.graph.create_graph_schema(create_type_maps=True)
