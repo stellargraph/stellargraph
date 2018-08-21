@@ -35,6 +35,13 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--metapaths",
+        nargs="?",
+        default="",
+        help="The metapaths to use for random walks in the metapath2vec algorithm on heterogeneous networks",
+    )
+
+    parser.add_argument(
         "--p",
         nargs="?",
         default=0.1,
