@@ -17,7 +17,6 @@ import queue
 import random
 import itertools as it
 
-import networkx as nx
 import numpy as np
 from networkx.classes.multigraph import MultiGraph
 from networkx.classes.multidigraph import MultiDiGraph
@@ -238,7 +237,7 @@ class GraphSchema:
         return edge_type
 
     def edge_types_for_node_type(self, node_type):
-        # TODO: simplify the name of the method, or donsider deleting the method alltogether
+        # TODO: simplify the name of the method, or consider deleting the method alltogether, using self.schema[node_type] instead
         """
         Return all edge types from a specified node type in fixed order.
         Args:
@@ -658,7 +657,7 @@ class StellarGraphBase:
         # How about checking the schema?
 
     def get_feature_for_nodes(self, nodes, node_type=None):
-        # TODO: change method's name to node_features()
+        # TODO: change method's name to node_features(), and add @property decorator
         """
         Get the numeric feature vector for the specified node or nodes.
         If the node type is not specified the type of the first
@@ -721,7 +720,7 @@ class StellarGraphBase:
         return features
 
     def get_target_for_nodes(self, nodes, node_type=None):
-        # TODO: change the method's name to something like node_targets()
+        # TODO: change the method's name to something like node_targets(), and add @property decorator
         """
         Get the numeric target vector for the specified node or nodes
         Args:
@@ -825,7 +824,7 @@ class StellarGraphBase:
         return target_values
 
     def get_feature_sizes(self, node_types=None):
-        # TODO: change name to node_feature_sizes()
+        # TODO: change name to node_feature_sizes(), and add @property decorator
         """
         Get the feature sizes for the specified node types.
 
@@ -878,7 +877,7 @@ class StellarGraphBase:
         return fsize
 
     def get_target_size(self, node_type=None):
-        # TODO: remove "get_" from the name, and update the doc string
+        # TODO: remove "get_" from the name, \update the doc string, and add @property decorator
         """
         Get the feature size for the nodes of the specified type.
 
@@ -922,7 +921,7 @@ class StellarGraphBase:
             ]
 
     def get_node_types(self):
-        # TODO: remove "get_" from the name
+        # TODO: remove "get_" from the name, and add @property decorator
         """
         Get a list of all node types in the graph.
 
