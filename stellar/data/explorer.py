@@ -50,6 +50,7 @@ class GraphWalk(object):
             )
 
         # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
+        # TODO: this could be better placed inside StellarGraph class
         edge_types = self.graph_schema.edge_types
         self.adj = dict()
         for et in edge_types:
