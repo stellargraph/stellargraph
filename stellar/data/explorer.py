@@ -35,6 +35,13 @@ class GraphWalk(object):
         else:
             self.graph_schema = graph_schema
 
+        if self.graph_schema is not None and type(self.graph_schema) is not GraphSchema:
+            raise ValueError(
+                "({}) The parameter graph_schema should be either None or of type GraphSchema.".format(
+                    type(self).__name__
+                )
+            )
+
         # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
         edge_types = self.graph_schema.edge_types
         self.adj = dict()
