@@ -758,7 +758,6 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
 
         random.seed(seed)
 
-        # TODO: parallelize the loop over root nodes (currently it's very slow)
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = list()  # the queue of neighbours
