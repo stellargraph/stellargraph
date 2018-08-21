@@ -55,6 +55,33 @@ def print_distance_probabilities(node_distances):
     )
 
 
+def get_metapaths_from_str(metapaths_str):
+    """
+    Metapaths are given as a string with the following format "p, v, p; a, p, v, p, a" where two metapaths
+    are given separated by ; and each metapath consists of node labels (treated as string) separated by commas.
+    Args:
+        metapaths_str: Metapaths in string format
+
+    Returns: A list of list of node labels where each list specifies a metapath.
+
+    """
+    if len(metapaths_str) == 0:
+        metapaths = [
+            ["Group", "Person", "Group"],
+            ["Person", "Group", "Person"],
+            ["Person", "Group", "Person", "Person"],
+            ["Person", "Person"],
+        ]
+    else:
+        metapaths = []
+        m_tokens = metapaths_str.split(';')
+
+        for metapath in m_tokens:
+            metapaths.append(list(metapath.split(',')))
+
+    return metapaths
+
+
 if __name__ == "__main__":
     args = parse_args()
 
@@ -182,6 +209,9 @@ if __name__ == "__main__":
     g_train = nx.Graph(g_train)
 
     if args.hin:
+        # prepare the metapaths if given in the command line
+        metapaths = get_metapaths_from_str(args.metapaths)
+
         train_heterogeneous_graph(
             g_train=g_train,
             g_test=g_test,
@@ -190,6 +220,7 @@ if __name__ == "__main__":
             edge_data_labels_train=edge_data_labels_train,
             edge_data_ids_test=edge_data_ids_test,
             edge_data_labels_test=edge_data_labels_test,
+            metapaths=metapaths,
             parameters=parameters,
         )
     else:
