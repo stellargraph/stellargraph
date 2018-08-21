@@ -239,7 +239,7 @@ class HinSAGELinkMapper(Sequence):
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
-        self.timeit = True
+        self.timeit = False  # used for timing purposes only
 
         # We require a StellarGraph for this
         if not isinstance(g, StellarGraphBase):
@@ -338,8 +338,14 @@ class HinSAGELinkMapper(Sequence):
                 self.sampler.run(nodes=head_nodes[ii], n=1, n_size=self.num_samples)
             )
         if self.timeit:
-            print("batch {} of size {}: node sampling time per node: {} s, total time {} s"
-                  .format(batch_num, self.batch_size, (time.time() - t_start)/self.batch_size, time.time() - t_start))
+            print(
+                "batch {} of size {}: node sampling time per node: {} s, total time {} s".format(
+                    batch_num,
+                    self.batch_size,
+                    (time.time() - t_start) / self.batch_size,
+                    time.time() - t_start,
+                )
+            )
 
         # Reshape node samples to the required format for the HinSAGE model
         # This requires grouping the sampled nodes by edge type and in order

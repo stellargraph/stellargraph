@@ -20,12 +20,13 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 import argparse
 import pickle
-from keras import Input, Model, optimizers, losses, activations, metrics
+import networkx as nx
+from keras import Model, optimizers, losses, metrics
 from stellar.data.stellargraph import *
 from stellar.mapper.link_mappers import *
 from stellar.layer.hinsage import *
 from stellar.layer.link_inference import link_regression
-from typing import AnyStr, List, Dict
+from typing import AnyStr, List
 import multiprocessing
 
 
@@ -110,13 +111,16 @@ class LinkInference(object):
         edgelist_train = [(min(e), max(e)) for e in edgelist_train]
         edgelist_test = [(min(e), max(e)) for e in edgelist_test]
 
-        # !HACK: node types should normally be in g already! Add node types to self.g:
+        # !HACK: node types should normally be in g already, but in this case they are not! Add node types to self.g:
         movie_nodes = np.unique([e[0] for e in edgelist_train + edgelist_test])
         user_nodes = np.unique([e[1] for e in edgelist_train + edgelist_test])
         node_types = {}
         [node_types.update({v: "movie"}) for v in movie_nodes]
         [node_types.update({v: "user"}) for v in user_nodes]
         nx.set_node_attributes(self.g, name="label", values=node_types)
+
+        # Prepare self.g for ML:
+        self.g.fit_attribute_spec()
 
         labels_train = [e[2]["score"] for e in edges_train]
         labels_test = [e[2]["score"] for e in edges_test]
@@ -150,16 +154,8 @@ class LinkInference(object):
         assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
 
         # Model:
-        hinsage = Hinsage(
-            output_dims=layer_size,
-            n_samples=num_samples,
-            input_neigh_tree=mapper_train.type_adjacency_list,
-            input_dim={
-                "user": self.g.node_feature_size,
-                "movie": self.g.node_feature_size,
-            },
-            bias=use_bias,
-            dropout=dropout,
+        hinsage = HinSAGE(
+            layer_sizes=layer_size, mapper=mapper_train, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
@@ -193,15 +189,19 @@ class LinkInference(object):
         )
 
         # Train model
-        print("Training the model for {} epochs with initial learning rate {}".format(num_epochs, learning_rate))
+        print(
+            "Training the model for {} epochs with initial learning rate {}".format(
+                num_epochs, learning_rate
+            )
+        )
         history = model.fit_generator(
             mapper_train,
             validation_data=mapper_test,
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
-            use_multiprocessing=True,
-            workers=multiprocessing.cpu_count(),
+            use_multiprocessing=False,
+            # workers=multiprocessing.cpu_count(),
         )
 
         # Evaluate and print metrics
