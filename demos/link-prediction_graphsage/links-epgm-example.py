@@ -99,6 +99,7 @@ def get_largest_cc(g):
         )
     return g
 
+
 def train(
     G,
     layer_size: List[int],
@@ -143,22 +144,14 @@ def train(
 
     # Convert G_train and G_test to StellarGraph objects for ML:
     if G_train.is_directed():
-        G_train = StellarDiGraph(
-            G_train, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
-        )
+        G_train = StellarDiGraph(G_train)
     else:
-        G_train = StellarGraph(
-            G_train, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
-        )
+        G_train = StellarGraph(G_train)
 
     if G_test.is_directed():
-        G_test = StellarDiGraph(
-            G_test, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
-        )
+        G_test = StellarDiGraph(G_test)
     else:
-        G_test = StellarGraph(
-            G_test, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
-        )
+        G_test = StellarGraph(G_test)
 
     # Convert node attributes to feature values
     nfs = NodeAttributeSpecification()
@@ -185,10 +178,18 @@ def train(
     )
 
     # GraphSAGE model
+    # Old way to initialise GraphSAGE:
+    # graphsage = GraphSAGE(
+    #     layer_sizes=layer_size,
+    #     n_samples=num_samples,
+    #     input_dim=G_train.get_feature_size(),
+    #     bias=True,
+    #     dropout=dropout,
+    # )
+    # New way to initialise GraphSAGE:
     graphsage = GraphSAGE(
         layer_sizes=layer_size,
-        n_samples=num_samples,
-        input_dim=G_train.get_feature_size(),
+        mapper=train_mapper,
         bias=True,
         dropout=dropout,
     )
@@ -287,11 +288,15 @@ def test(G, model_file: AnyStr, batch_size: int):
     # Convert G_test to StellarGraph objects for ML:
     if G_test.is_directed():
         G_test = StellarDiGraph(
-            G_test, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
+            G_test,
+            node_type_name=GLOBALS.TYPE_ATTR_NAME,
+            edge_type_name=GLOBALS.TYPE_ATTR_NAME,
         )
     else:
         G_test = StellarGraph(
-            G_test, node_type_name=GLOBALS.TYPE_ATTR_NAME, edge_type_name=GLOBALS.TYPE_ATTR_NAME
+            G_test,
+            node_type_name=GLOBALS.TYPE_ATTR_NAME,
+            edge_type_name=GLOBALS.TYPE_ATTR_NAME,
         )
 
     # Convert node attributes to feature values
