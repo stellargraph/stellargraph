@@ -63,7 +63,6 @@ optional arguments:
 """
 import os
 import argparse
-import numpy as np
 import networkx as nx
 from typing import AnyStr, List
 
@@ -74,7 +73,6 @@ from stellar.data.loader import from_epgm
 from stellar.data.edge_splitter import EdgeSplitter
 from stellar.data.converter import (
     NodeAttributeSpecification,
-    OneHotCategoricalConverter,
     BinaryConverter,
 )
 
