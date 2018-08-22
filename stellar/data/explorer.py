@@ -36,9 +36,7 @@ class GraphWalk(object):
             )
 
         if not graph_schema:
-            self.graph_schema = self.graph.create_graph_schema(
-                create_type_maps=True
-            )
+            self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
         else:
             self.graph_schema = graph_schema
 
@@ -62,9 +60,7 @@ class GraphWalk(object):
                     n2
                     for n2, nkeys in nbrdict.items()
                     for k in iter(nkeys)
-                    if self.graph_schema.is_of_edge_type(
-                        (n1, n2, k), et
-                    )
+                    if self.graph_schema.is_of_edge_type((n1, n2, k), et)
                 ]
                 self.adj[et][n1] = neigh_et
 
@@ -633,25 +629,23 @@ class SampledBreadthFirstWalk(GraphWalk):
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = list()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
-                q.extend(
-                    [(node, 0)]
-                )  # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                q.extend([(node, 0)])
 
                 while len(q) > 0:
-                    # remove the top element in the queue and
-                    frontier = q.pop(
-                        0
-                    )  # index 0 pop the item from the front of the list
+                    # remove the top element in the queue
+                    # index 0 pop the item from the front of the list
+                    frontier = q.pop(0)
                     depth = frontier[1] + 1  # the depth of the neighbouring nodes
                     walk.extend([frontier[0]])  # add to the walk
                     if (
                         depth <= d
                     ):  # consider the subgraph up to and including depth d from root node
                         neighbours = self.neighbors(self.graph, frontier[0])
+                        # sample with replacement
+                        neighbours = random.choices(neighbours, k=n_size[depth - 1])
                         if len(neighbours) == 0:
                             break
-                        else:  # sample with replacement
-                            neighbours = random.choices(neighbours, k=n_size[depth - 1])
 
                         # add them to the back of the queue
                         q.extend([(sampled_node, depth) for sampled_node in neighbours])
@@ -819,10 +813,10 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         # if current_node is None:
                         #     neighbours = {}
                         # else:
-                            # neighbours = dict(self.graph.adj[current_node])
-                            # YT: better to use iterator rather than dict(iterator),
-                            # as it takes less memory?
-                            # neighbours = self.graph.adj[current_node]
+                        # neighbours = dict(self.graph.adj[current_node])
+                        # YT: better to use iterator rather than dict(iterator),
+                        # as it takes less memory?
+                        # neighbours = self.graph.adj[current_node]
 
                         # print("sampling:", frontier[0], current_node_type)
                         # Create samples of neigbhours for all edge types
@@ -840,9 +834,12 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
 
                             # If there are no neighbours of this type then we return None
                             # in the place of the nodes that would have been sampled
+                            # YT update: with the new way to get neigh_et from self.adj[et][current_node], len(neigh_et) is always > 0.
+                            # In case of no neighbours of the current node for et, neigh_et == [None],
+                            # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
                                 samples = random.choices(neigh_et, k=n_size[depth - 1])
-                            else:
+                            else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 
                             # print("\t", et, neigh_et, samples)
