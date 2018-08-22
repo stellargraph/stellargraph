@@ -59,6 +59,7 @@ class EdgeSplitter(object):
         self.negative_edge_node_distances = None
         self.minedges = None  # the minimum spanning tree as a list of edges.
         self.minedges_set = None  # lookup dictionary for edges in minimum spanning tree
+        self._random = None
 
     def _train_test_split_homogeneous(self, p, method, **kwargs):
         """
@@ -232,6 +233,7 @@ class EdgeSplitter(object):
             edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
             examples.
             attribute_is_datetime: <boolean> Specifies if edge attribute is datetime or not.
+            seed: <int> seed for random number generator, positive int or 0
 
         Returns:
             The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first Nx2 holding the
@@ -253,6 +255,23 @@ class EdgeSplitter(object):
         edge_attribute_threshold = kwargs.get("edge_attribute_threshold", None)
         attribute_is_datetime = kwargs.get("attribute_is_datetime", None)
         sampling_probs = kwargs.get("probs", None)
+        seed = kwargs.get("seed", None)
+
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+        if self._random is None:  # only do this one
+            self._random = np.random.RandomState(seed=seed)
 
         if edge_label is not None:  # working with a heterogeneous graph
             if (
@@ -400,7 +419,7 @@ class EdgeSplitter(object):
         num_edges_to_remove = int(num_edges_total * p)
 
         # shuffle the edges
-        np.random.shuffle(all_edges)
+        self._random.shuffle(all_edges)
         #
         # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
         # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
@@ -450,7 +469,7 @@ class EdgeSplitter(object):
         # Multiply this number by p to determine the number of positive edge examples to sample
         num_edges_to_remove = int(num_edges_total * p)
         # shuffle the edges
-        np.random.shuffle(all_edges)
+        self._random.shuffle(all_edges)
 
         # iterate over the list of filtered edges and for each edge if the edge is not in minedges, remove it from
         # the graph until num_edges_to_remove edges have been removed and the graph is reduced to p of its original
@@ -503,7 +522,7 @@ class EdgeSplitter(object):
         )
 
         # shuffle the edges
-        np.random.shuffle(all_edges)
+        self._random.shuffle(all_edges)
         # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
         # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
         count = 0
@@ -598,9 +617,11 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
+            self._random.shuffle(start_nodes)
             # sample the distance to the target node using probs
-            target_node_distances = np.random.choice(n, len(start_nodes), p=probs) + 1
+            target_node_distances = (
+                self._random.choice(n, len(start_nodes), p=probs) + 1
+            )
             for u, d in zip(start_nodes, target_node_distances):
                 # perform DFS search up to d distance from the start node u.
                 visited = {
@@ -645,7 +666,7 @@ class EdgeSplitter(object):
                             break
                         elif dv < d:
                             neighbours = list(nx.neighbors(self.g, v))
-                            np.random.shuffle(neighbours)
+                            self._random.shuffle(neighbours)
                             neighbours = [(k, dv + 1) for k in neighbours]
                             nodes_stack.extend(neighbours)
 
@@ -715,9 +736,11 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes))))
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
+            self._random.shuffle(start_nodes)
             # sample the distance to the target node using probs
-            target_node_distances = np.random.choice(n, len(start_nodes), p=probs) + 1
+            target_node_distances = (
+                self._random.choice(n, len(start_nodes), p=probs) + 1
+            )
             for u, d in zip(start_nodes, target_node_distances):
                 # perform DFS search up to d distance from the start node u.
                 visited = {node: False for node in start_nodes}
@@ -753,7 +776,7 @@ class EdgeSplitter(object):
                                 break
                         elif dv < d:
                             neighbours = list(nx.neighbors(self.g, v))
-                            np.random.shuffle(neighbours)
+                            self._random.shuffle(neighbours)
                             neighbours = [(k, dv + 1) for k in neighbours]
                             nodes_stack.extend(neighbours)
                 if count == num_edges_to_sample:
@@ -801,9 +824,11 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes))))
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
+            self._random.shuffle(start_nodes)
 
-            target_node_distances = np.random.choice(n, len(start_nodes), p=probs) + 1
+            target_node_distances = (
+                self._random.choice(n, len(start_nodes), p=probs) + 1
+            )
             for u, d in zip(start_nodes, target_node_distances):
                 # collect all the nodes that are d links away from u
                 nodes_at_frontier = list()
@@ -821,7 +846,7 @@ class EdgeSplitter(object):
                     break
                 # check if u, v where v in nodes_at_frontier have an edge. The first pair that has no edge in the graph
                 # becomes a negative sample
-                np.random.shuffle(nodes_at_frontier)
+                self._random.shuffle(nodes_at_frontier)
                 for v in nodes_at_frontier:
                     if (
                         (u != v)
@@ -884,8 +909,8 @@ class EdgeSplitter(object):
 
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
-            np.random.shuffle(end_nodes)
+            self._random.shuffle(start_nodes)
+            self._random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 if (
                     (u != v)
@@ -955,8 +980,8 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
-            np.random.shuffle(end_nodes)
+            self._random.shuffle(start_nodes)
+            self._random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 u_v_edge_type = (u[1]["label"], v[1]["label"])
                 if (
