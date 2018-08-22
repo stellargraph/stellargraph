@@ -228,9 +228,17 @@ class Test_GraphSAGELinkMapper:
             assert len(nf) == 2 * 2
             for _ in range(len(nf)):
                 if _ < self.batch_size:
-                    assert nf[_].shape == (min(self.batch_size, data_size), 1, self.n_feat)
+                    assert nf[_].shape == (
+                        min(self.batch_size, data_size),
+                        1,
+                        self.n_feat,
+                    )
                 else:
-                    assert nf[_].shape == (min(self.batch_size, data_size), 0, self.n_feat)
+                    assert nf[_].shape == (
+                        min(self.batch_size, data_size),
+                        0,
+                        self.n_feat,
+                    )
             assert nl == [0] * min(self.batch_size, data_size)
 
     def test_GraphSAGELinkMapper_no_samples(self):
