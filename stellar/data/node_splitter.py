@@ -198,9 +198,7 @@ class NodeSplitter(object):
 
         """
         if type(y) is not np.ndarray:
-            raise ValueError(
-                "({}) y should be numpy array".format(type(self).__name__)
-            )
+            raise ValueError("({}) y should be numpy array".format(type(self).__name__))
         if method != "count" and method != "percent" and method != "absolute":
             raise ValueError(
                 "({}) Valid methods are 'count', 'percent', and 'absolute' not {}".format(
