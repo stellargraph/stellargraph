@@ -14,17 +14,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from setuptools import setup
-from setuptools import find_packages
+import setuptools
 
-setup(name='stellar-ml',
-      version='0.4.0b',
-      description='Stellar Machine Learning Library',
-      license='Apache 2.0',
-      install_requires=['keras', 'numpy'],
-      setup_requires=['pytest-runner'],
-      tests_require=['pytest'],
-      extras_require={
-            'testing': [],
-      },
-      packages=find_packages())
+DESCRIPTION = "Python library for machine learning on graphs"
+URL = "https://github.com/stellargraph/stellar-ml"
+VERSION = "0.4b"
+
+# Required packages
+REQUIRES = [
+    "keras",
+    "tensorflow",
+    "numpy",
+    "networkx",
+    "progressbar2",
+    "scikit_learn",
+    "matplotlib",
+    "gensim",
+]
+
+
+EXTRAS_REQURES = {"demos": ["pandas"], "tests": ["pytest", "pytest-pep8", "pandas"]}
+
+# Long description
+with open("README.md", "r") as fh:
+    LONG_DESCRIPTION = fh.read()
+
+setuptools.setup(
+    name="stellar-ml",
+    version=VERSION,
+    description=DESCRIPTION,
+    author="Data61, CSIRO",
+    url=URL,
+    license="Apache 2.0",
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
+    include_package_data=True,
+    install_requires=REQUIRES,
+    extras_require=EXTRAS_REQURES,
+    packages=setuptools.find_packages(exclude=("tests",)),
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    ],
+)

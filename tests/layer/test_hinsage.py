@@ -90,7 +90,7 @@ def test_mean_hin_agg_apply_2():
 
     actual = model.predict(x)
     expected = [np.array([[[2, 8]]]), np.array([[[3, 9]]])]
-    assert actual == pytest.approx(expected)
+    assert all(a == pytest.approx(e) for a,e in zip(actual, expected))
 
 
 def test_hinsage_constructor():
