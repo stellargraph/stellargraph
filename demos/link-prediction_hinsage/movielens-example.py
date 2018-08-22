@@ -21,11 +21,11 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 import argparse
 import pickle
 import networkx as nx
-from keras import Model, optimizers, losses, metrics
 from stellar.data.stellargraph import *
 from stellar.mapper.link_mappers import *
 from stellar.layer.hinsage import *
 from stellar.layer.link_inference import link_regression
+from keras import Input, Model, optimizers, losses, metrics
 from typing import AnyStr, List
 import multiprocessing
 
@@ -79,20 +79,21 @@ class LinkInference(object):
         batch_size: int = 1000,
         num_epochs: int = 10,
         learning_rate=1e-3,
-        use_bias=True,
         dropout=0.0,
+        use_bias=True,
     ):
         """
         Build and train the HinSAGE model for link attribute prediction on the specified graph G
         with given parameters.
 
         Args:
-            layer_size:
-            num_samples:
-            batch_size:
-            num_epochs:
-            learning_rate:
-            dropout:
+            layer_size: a list of number of hidden nodes in each layer
+            num_samples: number of neighbours to sample at each layer
+            batch_size: size of mini batch
+            num_epochs: number of epochs to train the model (epoch = all training batches are streamed through the model once)
+            learning_rate: initial learning rate
+            dropout: dropout probability in the range [0, 1)
+            use_bias: tells whether to use a bias terms in HinSAGE model
 
         Returns:
 
