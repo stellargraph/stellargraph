@@ -107,7 +107,7 @@ class GraphSAGELinkMapper(Sequence):
             node.
         """
         # Create features and node indices if required
-        # Note the if there are no samples for a level, a zero array is returned.
+        # Note the if there are no samples for a level, an empty array is returned.
 
         batch_feats = [
             self.graph.get_feature_for_nodes(layer_nodes, self.node_type)
