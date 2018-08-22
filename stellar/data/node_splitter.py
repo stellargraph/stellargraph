@@ -161,16 +161,20 @@ class NodeSplitter(object):
     def _get_nodes(self, graph_nodes, node_type, target_attribute):
         """
         Returns a list of node IDs for the subset of graph_nodes that have the given node type.
-        :param graph_nodes: <list> List of OrderedDict with vertex data for graph in EPGM format
-        :param node_type: <str> The node type of interest
-        :param target_attribute: <str> The target attribute key
-        :return: <list> List of node IDs that have given node type
+
+        Args:
+            graph_nodes: <list> List of OrderedDict with vertex data for graph in EPGM format
+            node_type: <str> The node type of interest
+            target_attribute: <str> The target attribute key
+
+        Returns:
+            <list> List of node IDs that have given node type
+
         """
         # This code will fail if a node of node_type is missing the target_attribute.
         # We can fix this by using node['data'].get(target_attribute, None) so that at least all nodes of the
         # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
         # from being added to train, test, and validation datasets.
-        # y = [(node['id'], node['data'][target_attribute]) for node in graph_nodes if node['meta']['label'] == node_type]
         y = [
             (
                 node["id"],
@@ -318,6 +322,7 @@ class NodeSplitter(object):
 
     def _split_data_absolute(self, y, test_size, train_size):
         """
+        Splits given data such that the sizes of the test and train sets are fixed to the values given.
 
         Args:
             y: <numpy.ndarray> Array of size N x 2 containing node id + labels.
@@ -369,16 +374,15 @@ class NodeSplitter(object):
         Splits the data according to the scheme in Yang et al, ICML 2016, Revisiting semi-supervised learning with graph
         embeddings.
 
-        :param y: <numpy.ndarray> Array of size N x 2 containing node id + labels.
-        :param nc: <int> number of points from each class in train set.
-        :param test_size: <int> number of points in test set; it should be less than or equal
-        to N - (np.unique(labels) * nc).
-        :return: y_train, y_val, y_test, y_unlabeled
+        Args:
+            y: <numpy.ndarray> Array of size N x 2 containing node id + labels.
+            nc: <int> number of points from each class in train set.
+            test_size: <int> number of points in test set; it should be less than or equal to
+            N - (np.unique(labels) * nc).
+
+        Returns:
+            y_train, y_val, y_test, y_unlabeled
         """
-
-        # The label column in y could include None type, that is point with no ground truth label. These, if any,will
-        # be returned separately in y_unlabeled dataset
-
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
         # indexes of points with no class label:
