@@ -27,7 +27,7 @@ def create_test_graph():
     :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
     networkx format.
     """
-    g = StellarGraph()
+    g = nx.Graph()
     edges = [
         ("0", 1),
         ("0", 2),
