@@ -211,7 +211,7 @@ class Test_GraphSAGELinkMapper:
     #             feature_size=2 * self.n_feat,
     #         )
 
-    def test_GraphSAGELinkMapper_3(self):
+    def test_GraphSAGELinkMapper_zero_samples(self):
 
         G = example_Graph_1(self.n_feat)
         data_size = G.number_of_edges()
@@ -227,7 +227,10 @@ class Test_GraphSAGELinkMapper:
             nf, nl = mapper[ii]
             assert len(nf) == 2 * 2
             for _ in range(len(nf)):
-                assert nf[_].shape == (min(self.batch_size, data_size), 1, self.n_feat)
+                if _ < self.batch_size:
+                    assert nf[_].shape == (min(self.batch_size, data_size), 1, self.n_feat)
+                else:
+                    assert nf[_].shape == (min(self.batch_size, data_size), 0, self.n_feat)
             assert nl == [0] * min(self.batch_size, data_size)
 
     def test_GraphSAGELinkMapper_no_samples(self):
@@ -314,7 +317,6 @@ class Test_HinSAGELinkMapper(object):
                 link_labels,
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
-                feature_size_by_type=self.n_feat,
             )
 
         links = G.edges()  # all edges in G, which have multiple link types
@@ -327,7 +329,6 @@ class Test_HinSAGELinkMapper(object):
                 link_labels,
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
-                feature_size_by_type=self.n_feat,
             )
 
     def test_HinSAGELinkMapper_1(self):
@@ -342,7 +343,6 @@ class Test_HinSAGELinkMapper(object):
             link_labels,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            feature_size_by_type=self.n_feat,
         )
 
         assert len(mapper) == 2

@@ -638,14 +638,14 @@ class SampledBreadthFirstWalk(GraphWalk):
                     frontier = q.pop(0)
                     depth = frontier[1] + 1  # the depth of the neighbouring nodes
                     walk.extend([frontier[0]])  # add to the walk
-                    if (
-                        depth <= d
-                    ):  # consider the subgraph up to and including depth d from root node
+
+                    # consider the subgraph up to and including depth d from root node
+                    if depth <= d:
                         neighbours = self.neighbors(self.graph, frontier[0])
-                        # sample with replacement
-                        neighbours = random.choices(neighbours, k=n_size[depth - 1])
                         if len(neighbours) == 0:
                             break
+                        else:  # sample with replacement
+                            neighbours = random.choices(neighbours, k=n_size[depth - 1])
 
                         # add them to the back of the queue
                         q.extend([(sampled_node, depth) for sampled_node in neighbours])
