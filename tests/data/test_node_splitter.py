@@ -44,7 +44,7 @@ def create_heterogeneous_graph():
     # 50 nodes of type person
     person_node_ids = list(range(0, 50))
     for person in person_node_ids:
-        g.add_node(person, label="user", elite=random.choices(["0", "1", "-1"], k=1)[0])
+        g.add_node(person, label="person", elite=random.choices(["0", "1", "-1"], k=1)[0])
 
     # 200 nodes of type paper
     paper_node_ids = list(range(50, 250))
@@ -210,7 +210,7 @@ def load_data(path, dataset_name=None, node_type=None, target_attribute=None):
 
 class TestEPGMIOHeterogeneous(unittest.TestCase):
     def setUp(self):
-        self.node_type = "user"
+        self.node_type = "person"
         self.target_attribute = "elite"
         self.ds_obj = NodeSplitter()
 
@@ -830,7 +830,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 def create_example_graph_1():
     sg = StellarGraph()
     sg.add_nodes_from([0, 1, 2, 3], label="movie")
-    sg.add_nodes_from([4, 5, 6], label="user")
+    sg.add_nodes_from([4, 5, 6], label="person")
     sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
     sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
     sg.add_edges_from([(4, 5)], label="friend")
