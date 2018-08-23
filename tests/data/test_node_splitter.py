@@ -44,7 +44,9 @@ def create_heterogeneous_graph():
     # 50 nodes of type person
     person_node_ids = list(range(0, 50))
     for person in person_node_ids:
-        g.add_node(person, label="person", elite=random.choices(["0", "1", "-1"], k=1)[0])
+        g.add_node(
+            person, label="person", elite=random.choices(["0", "1", "-1"], k=1)[0]
+        )
 
     # 200 nodes of type paper
     paper_node_ids = list(range(50, 250))
