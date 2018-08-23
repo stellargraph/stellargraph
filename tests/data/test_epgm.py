@@ -146,7 +146,7 @@ class Test_EPGM_IO_Heterogeneous(object):
         labels_all = [v["data"].get(self.target_attribute) for v in nodes]
         labels = list(filter(lambda l: l is not None, labels_all))
         labels_none = list(filter(lambda l: l is None, labels_all))
-        assert len(np.unique(labels)) == 2
+        assert len(np.unique(labels)) == 3
         # assert (
         #     len(labels_none) == 62
         # ), "yelp contains 52 'user' nodes with undefined '{}' attribute; {} such nodes found instead".format(
@@ -161,7 +161,7 @@ class Test_EPGM_IO_Heterogeneous(object):
         # yelp has multiple node types:
         node_types = G_epgm.node_types(graph_id)
 
-        assert len(node_types) == 5
+        assert len(node_types) == 3
         assert "user" in node_types
         assert "paper" in node_types
         assert "venue" in node_types

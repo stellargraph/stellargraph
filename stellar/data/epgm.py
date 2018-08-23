@@ -100,7 +100,7 @@ class EPGM(object):
                 [
                     ("id", G_json["graph"]["id"]),
                     ("data", {}),
-                    ("meta", {"label": G_json["graph"].get("name", 'unnamed')}),
+                    ("meta", {"label": G_json["graph"].get("name", "unnamed")}),
                 ]
             )
         )
