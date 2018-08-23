@@ -424,8 +424,6 @@ class HinSAGE:
             ):
                 input_shapes.update(input_shapes_ii)
 
-        # Sort input_shapes by key:
-        input_shapes = {k: input_shapes[k] for k in sorted(input_shapes)}
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
     def default_model(self, flatten_output=False):
