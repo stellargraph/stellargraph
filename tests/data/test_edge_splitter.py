@@ -222,13 +222,6 @@ class TestEdgeSplitterHomogeneous(object):
 
 class TestEdgeSplitterHeterogeneous(object):
 
-    # if os.getcwd().split("/")[-1] == "tests":
-    #     input_dir = os.path.expanduser("resources/data/yelp/yelp.epgm")
-    # else:
-    #     input_dir = os.path.expanduser("tests/resources/data/yelp/yelp.epgm")
-    #
-    # dataset_name = "small_yelp_example"
-    # g = read_graph(input_dir, dataset_name)
     g = create_heterogeneous_graph()
 
     es_obj = EdgeSplitter(g)
@@ -425,15 +418,6 @@ class TestEdgeSplitterHeterogeneous(object):
 
 
 class TestEdgeSplitterCommon(object):
-
-    # if os.getcwd().split("/")[-1] == "tests":
-    #     input_dir = os.path.expanduser("resources/data/yelp/yelp.epgm")
-    # else:
-    #     input_dir = os.path.expanduser("tests/resources/data/yelp/yelp.epgm")
-    #
-    # dataset_name = "small_yelp_example"
-    #
-    # g = read_graph(input_dir, dataset_name)
 
     g = create_heterogeneous_graph()
 
