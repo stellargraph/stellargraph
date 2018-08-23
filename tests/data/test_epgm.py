@@ -101,7 +101,7 @@ class Test_EPGM_IO_Homogeneous(object):
             )
 
         # passing a non-existent node type should return an empty array of node attributes:
-        assert len(G_epgm.node_attributes(graph_id, "user")) == 0
+        assert len(G_epgm.node_attributes(graph_id, "person")) == 0
 
         # if node_type is not supplied, a TypeError should be raised:
         with pytest.raises(TypeError):
@@ -117,7 +117,7 @@ class Test_EPGM_IO_Heterogeneous(object):
         input_dir = os.path.expanduser("./tests/resources/data/hin_random")
 
     dataset_name = "hin"
-    node_type = "user"
+    node_type = "person"
     target_attribute = "elite"
 
     def test_load_epgm(self):
@@ -156,7 +156,7 @@ class Test_EPGM_IO_Heterogeneous(object):
         node_types = G_epgm.node_types(graph_id)
 
         assert len(node_types) == 3
-        assert "user" in node_types
+        assert "person" in node_types
         assert "paper" in node_types
         assert "venue" in node_types
 
