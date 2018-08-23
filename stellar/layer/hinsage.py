@@ -414,7 +414,18 @@ class HinSAGE:
                 )
             return size_dict
 
-        input_shapes = get_shape(self.subtree_schema, 0)
+        input_shapes = dict()
+        for ii in range(len(self.subtree_schema)):
+            input_shapes_ii = get_shape(self.subtree_schema, ii)
+            # Update input_shapes if input_shapes_ii.keys() are not already in input_shapes.keys():
+            if (
+                len(set(input_shapes_ii.keys()).intersection(set(input_shapes.keys())))
+                == 0
+            ):
+                input_shapes.update(input_shapes_ii)
+
+        # Sort input_shapes by key:
+        input_shapes = {k: input_shapes[k] for k in sorted(input_shapes)}
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
     def default_model(self, flatten_output=False):
