@@ -152,15 +152,6 @@ class LinkInference(object):
         )
 
         # Define input and output sockets of hinsage:
-        mapper_tmp = HinSAGELinkMapper(
-            self.g,
-            [edgelist_train[0]],
-            [labels_train[0]],
-            1,
-            num_samples,
-            name="mapper_tmp",
-        )
-
         x_inp, x_out = hinsage.default_model()
 
         # Final estimator layer
