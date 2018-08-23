@@ -144,14 +144,6 @@ class LinkInference(object):
             name="mapper_test",
         )
 
-        # Another way to create the mappers/generators:
-        # generator = HinSAGELinkGenerator(self.g, batch_size,
-        #     num_samples)
-        # gen_train = generator.flow(edgelist_train,
-        #     labels_train)
-        # gen_test = generator.flow(edgelist_test,
-        #                                     labels_test)
-
         assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
 
         # Model:
@@ -169,12 +161,7 @@ class LinkInference(object):
             name="mapper_tmp",
         )
 
-        feats, l = mapper_tmp.__getitem__(0)  # get features, labels from the mapper
-        input_shapes = []
-        for f in feats:
-            input_shapes.append(f.shape[1:])
-        x_inp = [Input(shape=s) for s in input_shapes]
-        x_out = hinsage(x_inp)
+        x_inp, x_out = hinsage.default_model()
 
         # Final estimator layer
         score_prediction = link_regression(
