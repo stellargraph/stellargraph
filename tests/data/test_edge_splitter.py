@@ -30,45 +30,55 @@ def create_heterogeneous_graph():
 
     random.seed(42)  # produces the same graph every time
 
-    start_date_dt = datetime.strptime('01/01/2015', '%d/%m/%Y')
-    end_date_dt = datetime.strptime('01/01/2017', '%d/%m/%Y')
-    start_end_days = (end_date_dt - start_date_dt).days  # the number of days between start and end dates
+    start_date_dt = datetime.strptime("01/01/2015", "%d/%m/%Y")
+    end_date_dt = datetime.strptime("01/01/2017", "%d/%m/%Y")
+    start_end_days = (
+        end_date_dt - start_date_dt
+    ).days  # the number of days between start and end dates
 
     # 50 nodes of type person
     person_node_ids = list(range(0, 50))
     for person in person_node_ids:
-        g.add_node(person, label='user', elite=random.choices([0, 1], k=1)[0])
+        g.add_node(person, label="user", elite=random.choices([0, 1], k=1)[0])
 
     # 200 nodes of type paper
     paper_node_ids = list(range(50, 250))
-    g.add_nodes_from(paper_node_ids, label='paper')
+    g.add_nodes_from(paper_node_ids, label="paper")
 
     # 10 nodes of type venue
     venue_node_ids = list(range(250, 260))
-    g.add_nodes_from(venue_node_ids, label='venue')
+    g.add_nodes_from(venue_node_ids, label="venue")
 
     # add the person - friend -> person edges
     # each person can be friends with 0 to 5 others; edges include a date
     for person_id in person_node_ids:
         k = random.randrange(5)
-        friend_ids = set(random.sample(person_node_ids, k=k)) - {person_id}  # no self loops
+        friend_ids = set(random.sample(person_node_ids, k=k)) - {
+            person_id
+        }  # no self loops
         for friend in friend_ids:
-            g.add_edge(person_id,
-                       friend,
-                       label='friend',
-                       date=(start_date_dt + timedelta(days=random.randrange(start_end_days))).strftime('%d/%m/%Y'))
+            g.add_edge(
+                person_id,
+                friend,
+                label="friend",
+                date=(
+                    start_date_dt + timedelta(days=random.randrange(start_end_days))
+                ).strftime("%d/%m/%Y"),
+            )
 
     # add the person - writes -> paper edges
     for person_id in person_node_ids:
         k = random.randrange(5)
         paper_ids = random.sample(paper_node_ids, k=k)
         for paper in paper_ids:
-            g.add_edge(person_id, paper, label='writes')
+            g.add_edge(person_id, paper, label="writes")
 
     # add the paper - published-at -> venue edges
     for paper_id in paper_node_ids:
-        venue_id = random.sample(venue_node_ids, k=1)[0]  # paper is published at 1 venue only
-        g.add_edge(paper_id, venue_id, label='published-at')
+        venue_id = random.sample(venue_node_ids, k=1)[
+            0
+        ]  # paper is published at 1 venue only
+        g.add_edge(paper_id, venue_id, label="published-at")
 
     return g
 
