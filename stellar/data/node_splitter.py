@@ -201,8 +201,9 @@ class NodeSplitter(object):
             seed: <int> seed for random number generator, positive int or 0
 
         """
-        if type(y) is not np.ndarray:
+        if not isinstance(y, np.ndarray):
             raise ValueError("({}) y should be numpy array".format(type(self).__name__))
+
         if method != "count" and method != "percent" and method != "absolute":
             raise ValueError(
                 "({}) Valid methods are 'count', 'percent', and 'absolute' not {}".format(
@@ -217,7 +218,7 @@ class NodeSplitter(object):
                         type(self).__name__
                     )
                 )
-            if type(seed) != int:
+            if not isinstance(seed, int):
                 raise ValueError(
                     "({}) The random number generator seed value, seed, should be integer type or None.".format(
                         type(self).__name__
@@ -225,11 +226,11 @@ class NodeSplitter(object):
                 )
 
         if method == "count":
-            if type(p) != int or p <= 0:
+            if not isinstance(p, int) or p <= 0:
                 raise ValueError(
                     "({}) p should be positive integer".format(type(self).__name__)
                 )
-            if test_size is None or type(test_size) != int or test_size <= 0:
+            if test_size is None or not isinstance(test_size, int) or test_size <= 0:
                 raise ValueError(
                     "({}) test_size must be positive integer".format(
                         type(self).__name__
@@ -237,7 +238,7 @@ class NodeSplitter(object):
                 )
 
         elif method == "percent":
-            if type(p) != float or p < 0. or p > 1.:
+            if not isinstance(p, float) or p < 0. or p > 1.:
                 raise ValueError(
                     "({}) p should be float in the range [0,1].".format(
                         type(self).__name__
@@ -245,13 +246,13 @@ class NodeSplitter(object):
                 )
 
         elif method == "absolute":
-            if test_size is None or type(test_size) != int or test_size <= 0:
+            if test_size is None or not isinstance(test_size, int) or test_size <= 0:
                 raise ValueError(
                     "({}) test_size should be positive integer".format(
                         type(self).__name__
                     )
                 )
-            if train_size is None or type(train_size) != int or train_size <= 0:
+            if train_size is None or not isinstance(train_size, int) or train_size <= 0:
                 raise ValueError(
                     "({}) train_size should be positive integer".format(
                         type(self).__name__
