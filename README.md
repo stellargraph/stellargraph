@@ -22,7 +22,7 @@ Stellar-ML supports different machine learning use-cases, including:
 
 * Recommender systems:
   - See the demo in demos/movielens-recommender for an example of how to predict movie ratings between users and movies using a Heterogeneous GraphSAGE model.
-  
+
 The Stellar-ML library currently includes the following algorithms for graph machine learning:
 
 * Node2Vec:
@@ -42,7 +42,7 @@ The machine learning components of Stellar-ML use the Keras machine learning lib
 
 The Stellar-ML library requires Keras you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test Stellar-ML).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Node2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
 
-To install the requirements for Stellar-ML, execute the following command in a your preferred Python 3 environment within the root directory of the Stellar-ML repository (which contains this README.md file): 
+To install the requirements for Stellar-ML, execute the following command in a your preferred Python 3 environment within the root directory of the Stellar-ML repository (which contains this README.md file):
 
 ```
 pip install -r requirements.txt
@@ -52,3 +52,7 @@ Then to install the Stellar-ML libaray, execute the followng command within the 
 ```
 pip install .
 ```
+
+## Getting Help
+
+Documentation for Stellar-ML will be provided ...
