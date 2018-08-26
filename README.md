@@ -6,6 +6,7 @@
 |*master*|[![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=master)|
 |*devel*|[![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=develop)|
 
+Stellar-ML is a Python library for machine learning on graphs and networks. It uses Keras to build models for homogeneous graphs (graphs with a single type of node and edge) and heterogeneous graphs (graphs with multiple types of nodes and/or edges) to predict node or edge properties. 
 
 ## Getting Started
 
