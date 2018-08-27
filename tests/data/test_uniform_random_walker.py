@@ -17,6 +17,7 @@
 import pytest
 import networkx as nx
 from stellar.data.explorer import UniformRandomWalk
+from stellar.data.stellargraph import StellarGraph
 
 
 def create_test_graph():
@@ -54,6 +55,8 @@ def create_test_graph():
     g.add_edges_from(edges)
 
     g.add_node("lonely")  # an isolated node without self link
+
+    g = StellarGraph(g)
 
     return g
 

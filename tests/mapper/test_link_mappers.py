@@ -33,11 +33,12 @@ from stellar.mapper.link_mappers import *
 from stellar.data.stellargraph import *
 
 import numpy as np
+import networkx as nx
 import pytest
 
 
 def example_Graph_1(feature_size=None):
-    G = StellarGraph()
+    G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
 
@@ -45,11 +46,15 @@ def example_Graph_1(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.node[v]["feature"] = np.ones(feature_size)
+
+    G = StellarGraph(G)
+    # Prepare G for ML:
+    G.fit_attribute_spec()
     return G
 
 
 def example_DiGraph_1(feature_size=None):
-    G = StellarDiGraph()
+    G = nx.DiGraph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
 
@@ -57,11 +62,15 @@ def example_DiGraph_1(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.node[v]["feature"] = np.ones(feature_size)
+
+    G = StellarDiGraph(G)
+    # Prepare G for ML:
+    G.fit_attribute_spec()
     return G
 
 
 def example_Graph_2(feature_size=None):
-    G = StellarGraph()
+    G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
     G.add_edges_from(elist)
 
@@ -69,11 +78,15 @@ def example_Graph_2(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.node[v]["feature"] = np.ones(feature_size)
+
+    G = StellarGraph(G)
+    # Prepare G for ML:
+    G.fit_attribute_spec()
     return G
 
 
 def example_HIN_1(feature_size_by_type=None):
-    G = StellarGraph()
+    G = nx.Graph()
     G.add_nodes_from([0, 1, 2, 3], label="movie")
     G.add_nodes_from([4, 5], label="user")
     G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="rating")
@@ -84,11 +97,15 @@ def example_HIN_1(feature_size_by_type=None):
         for v, vdata in G.nodes(data=True):
             nt = vdata["label"]
             vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
+
+    G = StellarGraph(G)
+    # Prepare G for ML:
+    G.fit_attribute_spec()
     return G
 
 
 def example_HIN_homo(feature_size_by_type=None):
-    G = StellarGraph()
+    G = nx.Graph()
     G.add_nodes_from([0, 1, 2, 3, 4, 5], label="user")
     G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="friend")
 
@@ -97,6 +114,10 @@ def example_HIN_homo(feature_size_by_type=None):
         for v, vdata in G.nodes(data=True):
             nt = vdata["label"]
             vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
+
+    G = StellarGraph(G)
+    # Prepare G for ML:
+    G.fit_attribute_spec()
     return G
 
 
@@ -174,23 +195,23 @@ class Test_GraphSAGELinkMapper:
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
 
-    def test_GraphSAGELinkMapper_2(self):
+    # def test_GraphSAGELinkMapper_2(self):
+    #
+    #     G = example_Graph_1(self.n_feat)
+    #     data_size = G.number_of_edges()
+    #     edge_labels = [0] * data_size
+    #
+    #     with pytest.raises(RuntimeWarning):
+    #         GraphSAGELinkMapper(
+    #             G,
+    #             G.edges(),
+    #             edge_labels,
+    #             batch_size=self.batch_size,
+    #             num_samples=self.num_samples,
+    #             feature_size=2 * self.n_feat,
+    #         )
 
-        G = example_Graph_1(self.n_feat)
-        data_size = G.number_of_edges()
-        edge_labels = [0] * data_size
-
-        with pytest.raises(RuntimeWarning):
-            GraphSAGELinkMapper(
-                G,
-                G.edges(),
-                edge_labels,
-                batch_size=self.batch_size,
-                num_samples=self.num_samples,
-                feature_size=2 * self.n_feat,
-            )
-
-    def test_GraphSAGELinkMapper_3(self):
+    def test_GraphSAGELinkMapper_zero_samples(self):
 
         G = example_Graph_1(self.n_feat)
         data_size = G.number_of_edges()
@@ -205,8 +226,19 @@ class Test_GraphSAGELinkMapper:
         for ii in range(1):
             nf, nl = mapper[ii]
             assert len(nf) == 2 * 2
-            for _ in range(len(nf)):
-                assert nf[_].shape == (min(self.batch_size, data_size), 1, self.n_feat)
+            for j in range(len(nf)):
+                if j < self.batch_size:
+                    assert nf[j].shape == (
+                        min(self.batch_size, data_size),
+                        1,
+                        self.n_feat,
+                    )
+                else:
+                    assert nf[j].shape == (
+                        min(self.batch_size, data_size),
+                        0,
+                        self.n_feat,
+                    )
             assert nl == [0] * min(self.batch_size, data_size)
 
     def test_GraphSAGELinkMapper_no_samples(self):
@@ -250,7 +282,6 @@ class Test_HinSAGELinkMapper(object):
             link_labels,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            feature_size_by_type=self.n_feat,
         )
 
         assert mapper.batch_size == self.batch_size
@@ -269,7 +300,6 @@ class Test_HinSAGELinkMapper(object):
             link_labels,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            feature_size_by_type=self.n_feat,
         )
 
         assert mapper.batch_size == self.batch_size
@@ -295,7 +325,6 @@ class Test_HinSAGELinkMapper(object):
                 link_labels,
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
-                feature_size_by_type=self.n_feat,
             )
 
         links = G.edges()  # all edges in G, which have multiple link types
@@ -308,7 +337,6 @@ class Test_HinSAGELinkMapper(object):
                 link_labels,
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
-                feature_size_by_type=self.n_feat,
             )
 
     def test_HinSAGELinkMapper_1(self):
@@ -323,7 +351,6 @@ class Test_HinSAGELinkMapper(object):
             link_labels,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            feature_size_by_type=self.n_feat,
         )
 
         assert len(mapper) == 2

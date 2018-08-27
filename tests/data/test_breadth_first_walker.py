@@ -17,6 +17,7 @@
 import pytest
 import networkx as nx
 from stellar.data.explorer import SampledBreadthFirstWalk
+from stellar.data.stellargraph import StellarGraph
 
 
 def create_test_graph():
@@ -58,6 +59,8 @@ def create_test_graph():
     g.add_node(
         "loner"
     )  # node that is not connected to any other nodes and not having a self loop
+
+    g = StellarGraph(g)
 
     return g
 
