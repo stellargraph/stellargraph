@@ -210,7 +210,11 @@ def train_homogeneous_graph(
 
     print("\n  **** Scores on test set ****\n")
     for score in scores:
-        print("     Operator: {}  Score (ROC AUC): {:.2f}".format(score["op"], score["score"]))
+        print(
+            "     Operator: {}  Score (ROC AUC): {:.2f}".format(
+                score["op"], score["score"]
+            )
+        )
     print("\n  ****************************")
 
     return feature_learner_train, feature_learner_test, clf_edge
@@ -270,7 +274,11 @@ def train_heterogeneous_graph(
 
     print("\n  **** Scores on test set (HIN) ****\n")
     for score in scores:
-        print("     Operator: {}  Score (ROC AUC): {:.2f}".format(score["op"], score["score"]))
+        print(
+            "     Operator: {}  Score (ROC AUC): {:.2f}".format(
+                score["op"], score["score"]
+            )
+        )
     print("\n  ****************************")
 
     return feature_learner_train, feature_learner_test, clf_edge
