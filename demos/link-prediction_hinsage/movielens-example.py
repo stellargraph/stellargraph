@@ -20,12 +20,14 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 import argparse
 import pickle
-from keras import Input, Model, optimizers, losses, activations, metrics
+import networkx as nx
 from stellar.data.stellargraph import *
 from stellar.mapper.link_mappers import *
 from stellar.layer.hinsage import *
 from stellar.layer.link_inference import link_regression
-from typing import AnyStr, List, Dict
+from keras import Input, Model, optimizers, losses, metrics
+from typing import AnyStr, List
+import multiprocessing
 
 
 def read_graph(graph_fname, features_fname):
@@ -76,21 +78,22 @@ class LinkInference(object):
         num_samples: List[int],
         batch_size: int = 1000,
         num_epochs: int = 10,
-        learning_rate=0.005,
-        use_bias=True,
+        learning_rate=1e-3,
         dropout=0.0,
+        use_bias=True,
     ):
         """
         Build and train the HinSAGE model for link attribute prediction on the specified graph G
         with given parameters.
 
         Args:
-            layer_size:
-            num_samples:
-            batch_size:
-            num_epochs:
-            learning_rate:
-            dropout:
+            layer_size: a list of number of hidden nodes in each layer
+            num_samples: number of neighbours to sample at each layer
+            batch_size: size of mini batch
+            num_epochs: number of epochs to train the model (epoch = all training batches are streamed through the model once)
+            learning_rate: initial learning rate
+            dropout: dropout probability in the range [0, 1)
+            use_bias: tells whether to use a bias terms in HinSAGE model
 
         Returns:
 
@@ -109,13 +112,16 @@ class LinkInference(object):
         edgelist_train = [(min(e), max(e)) for e in edgelist_train]
         edgelist_test = [(min(e), max(e)) for e in edgelist_test]
 
-        # !HACK: node types should normally be in g already! Add node types to self.g:
+        # !HACK: node types should normally be in g already, but in this case they are not! Add node types to self.g:
         movie_nodes = np.unique([e[0] for e in edgelist_train + edgelist_test])
         user_nodes = np.unique([e[1] for e in edgelist_train + edgelist_test])
         node_types = {}
         [node_types.update({v: "movie"}) for v in movie_nodes]
         [node_types.update({v: "user"}) for v in user_nodes]
         nx.set_node_attributes(self.g, name="label", values=node_types)
+
+        # Prepare self.g for ML:
+        self.g.fit_attribute_spec()
 
         labels_train = [e[2]["score"] for e in edges_train]
         labels_test = [e[2]["score"] for e in edges_test]
@@ -141,34 +147,12 @@ class LinkInference(object):
         assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
 
         # Model:
-        hinsage = Hinsage(
-            output_dims=layer_size,
-            n_samples=num_samples,
-            input_neigh_tree=mapper_train.type_adjacency_list,
-            input_dim={
-                "user": self.g.node_feature_size,
-                "movie": self.g.node_feature_size,
-            },
-            bias=use_bias,
-            dropout=dropout,
+        hinsage = HinSAGE(
+            layer_sizes=layer_size, mapper=mapper_train, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
-        mapper_tmp = HinSAGELinkMapper(
-            self.g,
-            [edgelist_train[0]],
-            [labels_train[0]],
-            1,
-            num_samples,
-            name="mapper_tmp",
-        )
-
-        feats, l = mapper_tmp.__getitem__(0)  # get features, labels from the mapper
-        input_shapes = []
-        for f in feats:
-            input_shapes.append(f.shape[1:])
-        x_inp = [Input(shape=s) for s in input_shapes]
-        x_out = hinsage(x_inp)
+        x_inp, x_out = hinsage.default_model()
 
         # Final estimator layer
         score_prediction = link_regression(
@@ -184,12 +168,19 @@ class LinkInference(object):
         )
 
         # Train model
+        print(
+            "Training the model for {} epochs with initial learning rate {}".format(
+                num_epochs, learning_rate
+            )
+        )
         history = model.fit_generator(
             mapper_train,
             validation_data=mapper_test,
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
+            use_multiprocessing=False,
+            # workers=multiprocessing.cpu_count(),
         )
 
         # Evaluate and print metrics

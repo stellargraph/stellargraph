@@ -343,7 +343,7 @@ class NodeAttributeSpecification:
         converted_features = {}
         attr_list = self.get_attributes(node_type)
         for attr_name in attr_list:
-            attr_data = [d[attr_name] for d in data]
+            attr_data = [d.get(attr_name) for d in data]
             conv = self.get_converter(node_type, attr_name)
             converted_features[attr_name] = conv.transform(attr_data)
 
