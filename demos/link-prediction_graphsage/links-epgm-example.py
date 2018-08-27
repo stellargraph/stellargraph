@@ -123,15 +123,8 @@ def train(
     )
 
     # Convert G_train and G_test to StellarGraph objects for ML:
-    if G_train.is_directed():
-        G_train = StellarDiGraph(G_train)
-    else:
-        G_train = StellarGraph(G_train)
-
-    if G_test.is_directed():
-        G_test = StellarDiGraph(G_test)
-    else:
-        G_test = StellarGraph(G_test)
+    G_train = StellarGraph(G_train)
+    G_test = StellarGraph(G_test)
 
     # Convert node attributes to feature values
     nfs = NodeAttributeSpecification()
