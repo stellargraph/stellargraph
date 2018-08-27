@@ -83,7 +83,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
             op_best = binary_operator
 
         print(
-            "Operator: {} Score (on test set of edge_data): {}".format(
+            "Operator: {} Score (ROC AUC on test set of edge_data): {}".format(
                 binary_operator, score_auc
             )
         )
@@ -122,7 +122,7 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
 
         # print('Correct labels y {}'.format(y))
         # print('Predictions y_pred {}'.format(y_pred[:, 1]))
-        print("Prediction score:", score_auc)
+        print("Prediction score (ROC AUC):", score_auc)
         scores.append({"op": binary_operator, "score": score_auc})
 
     return scores
@@ -210,7 +210,7 @@ def train_homogeneous_graph(
 
     print("\n  **** Scores on test set ****\n")
     for score in scores:
-        print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
+        print("     Operator: {}  Score (ROC AUC): {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
 
     return feature_learner_train, feature_learner_test, clf_edge
@@ -270,7 +270,7 @@ def train_heterogeneous_graph(
 
     print("\n  **** Scores on test set (HIN) ****\n")
     for score in scores:
-        print("     Operator: {}  Score: {:.2f}".format(score["op"], score["score"]))
+        print("     Operator: {}  Score (ROC AUC): {:.2f}".format(score["op"], score["score"]))
     print("\n  ****************************")
 
     return feature_learner_train, feature_learner_test, clf_edge
