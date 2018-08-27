@@ -151,15 +151,6 @@ def train(
     )
 
     # GraphSAGE model
-    # Old way to initialise GraphSAGE:
-    # graphsage = GraphSAGE(
-    #     layer_sizes=layer_size,
-    #     n_samples=num_samples,
-    #     input_dim=G_train.get_feature_size(),
-    #     bias=True,
-    #     dropout=dropout,
-    # )
-    # New way to initialise GraphSAGE:
     graphsage = GraphSAGE(
         layer_sizes=layer_size,
         mapper=train_mapper,
