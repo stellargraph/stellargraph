@@ -242,8 +242,6 @@ def test(G, model_file: AnyStr, batch_size: int):
         for ii in range(1, len(model.input_shape) - 1, 2)
     ]
 
-    G = get_largest_cc(G)
-
     edge_splitter_test = EdgeSplitter(G)
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
@@ -370,11 +368,6 @@ if __name__ == "__main__":
     args, cmdline_args = parser.parse_known_args()
 
     graph_loc = os.path.expanduser(args.graph)
-    # G = read_epgm_graph(
-    #     graph_loc,
-    #     ignored_attributes=args.ignore_node_attr,
-    #     remove_converted_attrs=False,
-    # )
 
     G = from_epgm(graph_loc)
 
