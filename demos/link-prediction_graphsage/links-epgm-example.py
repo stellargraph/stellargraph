@@ -82,22 +82,6 @@ from stellar.layer.link_inference import link_classification
 from stellar.data.stellargraph import *
 
 
-def get_largest_cc(g):
-    """Check if graph is connected; if not, then select the largest subgraph to continue"""
-    if nx.is_connected(g):
-        print("Graph is connected")
-    else:
-        print("Graph is not connected")
-        # take the largest connected component as the data
-        g = max(nx.connected_component_subgraphs(g, copy=True), key=len)
-        print(
-            "Largest subgraph statistics: {} nodes, {} edges".format(
-                g.number_of_nodes(), g.number_of_edges()
-            )
-        )
-    return g
-
-
 def train(
     G,
     layer_size: List[int],
@@ -120,8 +104,6 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-
-    G = get_largest_cc(G)
 
     # Split links into train/test
     print(
