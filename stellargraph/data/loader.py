@@ -25,6 +25,7 @@ from stellargraph.data.epgm import EPGM
 from stellargraph.data.stellargraph import *
 from stellargraph import globals
 
+
 def from_epgm(
     epgm_location,
     dataset_name=None,
