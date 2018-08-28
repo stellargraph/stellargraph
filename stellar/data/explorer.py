@@ -286,16 +286,16 @@ class BiasedRandomWalk(GraphWalk):
                 )
             )
 
-        if p <= 0. or p > 1.:
+        if p <= 0.:
             raise ValueError(
-                "({}) Parameter p should be in the range (0, 1].".format(
+                "({}) Parameter p should be greater than 0.".format(
                     type(self).__name__
                 )
             )
 
-        if q <= 0. or q > 1.:
+        if q <= 0.:
             raise ValueError(
-                "({}) Parameter q should be in the range (0, 1].".format(
+                "({}) Parameter q should be greater than 0.".format(
                     type(self).__name__
                 )
             )

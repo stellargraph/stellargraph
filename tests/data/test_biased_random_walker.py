@@ -96,27 +96,21 @@ class TestBiasedRandomWalk(object):
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n="2", p=p, q=q, length=length, seed=seed)
 
-        # p has to be in range (0., 1.]
+        # p has to be > 0.
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=0., q=q, length=length, seed=seed)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=-0.25, q=q, length=length, seed=seed)
         with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=1.5, q=q, length=length, seed=seed)
-        with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=4, q=q, length=length, seed=seed)
+            biasedrw.run(nodes=nodes, n=n, p=-1, q=q, length=length, seed=seed)
 
-        # q has to be in range (0., 1.]
+        # q has to be > 0.
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=0., length=length, seed=seed)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=-0.9, length=length, seed=seed)
         with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=p, q=75, length=length, seed=seed)
-        with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=p, q=75., length=length, seed=seed)
-        with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=p, q=1.5, length=length, seed=seed)
+            biasedrw.run(nodes=nodes, n=n, p=p, q=-75, length=length, seed=seed)
 
         # length has to be positive integer
         with pytest.raises(ValueError):
