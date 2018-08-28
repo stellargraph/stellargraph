@@ -63,106 +63,23 @@ optional arguments:
 """
 import os
 import argparse
-import numpy as np
 import networkx as nx
 from typing import AnyStr, List
 
 import keras
 from keras import optimizers, losses, metrics
 
-from stellar.data.epgm import EPGM
+from stellar.data.loader import from_epgm
 from stellar.data.edge_splitter import EdgeSplitter
+from stellar.data.converter import (
+    NodeAttributeSpecification,
+    BinaryConverter,
+)
 
 from stellar.layer.graphsage import GraphSAGE, MeanAggregator
 from stellar.mapper.link_mappers import GraphSAGELinkMapper
 from stellar.layer.link_inference import link_classification
-
-
-def read_epgm_graph(
-    graph_file,
-    dataset_name=None,
-    node_type=None,
-    ignored_attributes=[],
-    remove_converted_attrs=False,
-):
-    G_epgm = EPGM(graph_file)
-    graphs = G_epgm.G["graphs"]
-
-    # if dataset_name is not given, use the name of the 1st graph head
-    if not dataset_name:
-        dataset_name = graphs[0]["meta"]["label"]
-        print(
-            "WARNING: dataset name not specified, using dataset '{}' in the 1st graph head".format(
-                dataset_name
-            )
-        )
-
-    graph_id = None
-    for g in graphs:
-        if g["meta"]["label"] == dataset_name:
-            graph_id = g["id"]
-
-    if node_type is None:
-        node_type = G_epgm.node_types(graph_id)[0]
-
-    g_nx = G_epgm.to_nx(graph_id)
-
-    # Check if graph is connected; if not, then select the largest subgraph to continue
-    if nx.is_connected(g_nx):
-        print("Graph is connected")
-    else:
-        print("Graph is not connected")
-        # take the largest connected component as the data
-        g_nx = max(nx.connected_component_subgraphs(g_nx, copy=True), key=len)
-        print(
-            "Largest subgraph statistics: {} nodes, {} edges".format(
-                g_nx.number_of_nodes(), g_nx.number_of_edges()
-            )
-        )
-
-    # This is the correct way to set the edge weight in a MultiGraph.
-    edge_weights = {e: 1 for e in g_nx.edges(keys=True)}
-    nx.set_edge_attributes(g_nx, name="weight", values=edge_weights)
-
-    # Find target and predicted attributes from attribute set
-    node_attributes = set(G_epgm.node_attributes(graph_id, node_type))
-    pred_attr = node_attributes.difference(set(ignored_attributes))
-    converted_attr = pred_attr
-
-    # sets are unordered, so sort them to ensure reproducible order of node features:
-    pred_attr = sorted(pred_attr)
-    converted_attr = sorted(converted_attr)
-
-    # Enumerate attributes to give numerical index
-    g_nx.pred_map = {a: ii for ii, a in enumerate(pred_attr)}
-
-    # Store feature size in graph [??]
-    g_nx.feature_size = len(g_nx.pred_map)
-
-    # Set the "feature" and encoded "target" attributes for all nodes in the graph.
-    for v, vdata in g_nx.nodes(data=True):
-        # Decode attributes to a feature array
-        attr_array = np.zeros(g_nx.feature_size)
-        for attr_name, attr_value in vdata.items():
-            col = g_nx.pred_map.get(attr_name)
-            if col:
-                attr_array[col] = attr_value
-
-        # Replace with feature array
-        vdata["feature"] = attr_array
-
-        # Remove attributes
-        if remove_converted_attrs:
-            for attr_name in converted_attr:
-                if attr_name in vdata:
-                    del vdata[attr_name]
-
-    print(
-        "Graph statistics: {} nodes, {} edges".format(
-            g_nx.number_of_nodes(), g_nx.number_of_edges()
-        )
-    )
-    return g_nx
+from stellar.data.stellargraph import *
 
 
 def train(
@@ -192,6 +109,7 @@ def train(
     print(
         "Using '{}' method to sample negative links".format(args.edge_sampling_method)
     )
+
     # From the original graph, extract E_test and the reduced graph G_test:
     edge_splitter_test = EdgeSplitter(G)
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
@@ -203,6 +121,21 @@ def train(
     G_train, edge_ids_train, edge_labels_train = edge_splitter_train.train_test_split(
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
+
+    # Convert G_train and G_test to StellarGraph objects for ML:
+    G_train = StellarGraph(G_train)
+    G_test = StellarGraph(G_test)
+
+    # Convert node attributes to feature values
+    nfs = NodeAttributeSpecification()
+    nfs.add_all_attributes(
+        G_train, "paper", BinaryConverter, ignored_attributes=["subject"]
+    )
+
+    # Learn feature and target conversion for ML for G_train
+    G_train.fit_attribute_spec(feature_spec=nfs)
+    # Apply feature and target conversion to G_test
+    G_test.set_attribute_spec(feature_spec=nfs)
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     train_mapper = GraphSAGELinkMapper(
@@ -220,8 +153,7 @@ def train(
     # GraphSAGE model
     graphsage = GraphSAGE(
         layer_sizes=layer_size,
-        n_samples=num_samples,
-        input_dim=G.feature_size,
+        mapper=train_mapper,
         bias=True,
         dropout=dropout,
     )
@@ -282,13 +214,13 @@ def train(
         print("\t{}: {:0.4f}".format(name, val))
 
     # Save model
-    str_numsamp = "_".join([str(x) for x in num_samples])
-    str_layer = "_".join([str(x) for x in layer_size])
-    model.save(
-        "graphsage_n{}_l{}_d{}_i{}.h5".format(
-            str_numsamp, str_layer, dropout, G.feature_size
-        )
+    save_str = "_n{}_l{}_d{}_r{}".format(
+        "_".join([str(x) for x in num_samples]),
+        "_".join([str(x) for x in layer_size]),
+        dropout,
+        learning_rate,
     )
+    model.save("graphsage_link_pred" + save_str + ".h5")
 
 
 def test(G, model_file: AnyStr, batch_size: int):
@@ -315,9 +247,32 @@ def test(G, model_file: AnyStr, batch_size: int):
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
+    # Convert G_test to StellarGraph objects for ML:
+    if G_test.is_directed():
+        G_test = StellarDiGraph(
+            G_test,
+            node_type_name=GLOBALS.TYPE_ATTR_NAME,
+            edge_type_name=GLOBALS.TYPE_ATTR_NAME,
+        )
+    else:
+        G_test = StellarGraph(
+            G_test,
+            node_type_name=GLOBALS.TYPE_ATTR_NAME,
+            edge_type_name=GLOBALS.TYPE_ATTR_NAME,
+        )
+
+    # Convert node attributes to feature values
+    nfs = NodeAttributeSpecification()
+    nfs.add_all_attributes(
+        G_test, "paper", BinaryConverter, ignored_attributes=["subject"]
+    )
+
+    # Learn feature conversion for G_test
+    G_test.fit_attribute_spec(feature_spec=nfs)
+
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(
-        G, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
+        G_test, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
     )
 
     # Evaluate and print metrics
@@ -413,11 +368,8 @@ if __name__ == "__main__":
     args, cmdline_args = parser.parse_known_args()
 
     graph_loc = os.path.expanduser(args.graph)
-    G = read_epgm_graph(
-        graph_loc,
-        ignored_attributes=args.ignore_node_attr,
-        remove_converted_attrs=False,
-    )
+
+    G = from_epgm(graph_loc)
 
     if args.checkpoint is None:
         train(

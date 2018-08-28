@@ -18,6 +18,8 @@ import networkx as nx
 import numpy as np
 import random
 from stellar.data.stellargraph import GraphSchema
+from stellar.data.stellargraph import StellarGraphBase
+from collections import defaultdict
 
 
 class GraphWalk(object):
@@ -27,7 +29,40 @@ class GraphWalk(object):
 
     def __init__(self, graph, graph_schema=None):
         self.graph = graph
-        self.graph_schema = graph_schema
+        # We require a StellarGraph for this
+        if not isinstance(graph, StellarGraphBase):
+            raise TypeError(
+                "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
+            )
+
+        if not graph_schema:
+            self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
+        else:
+            self.graph_schema = graph_schema
+
+        if self.graph_schema is not None and type(self.graph_schema) is not GraphSchema:
+            raise ValueError(
+                "({}) The parameter graph_schema should be either None or of type GraphSchema.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
+        # TODO: this could be better placed inside StellarGraph class
+        edge_types = self.graph_schema.edge_types
+        self.adj = dict()
+        for et in edge_types:
+            self.adj.update({et: defaultdict(lambda: [None])})
+
+        for n1, nbrdict in graph.adjacency():
+            for et in edge_types:
+                neigh_et = [
+                    n2
+                    for n2, nkeys in nbrdict.items()
+                    for k in iter(nkeys)
+                    if self.graph_schema.is_of_edge_type((n1, n2, k), et)
+                ]
+                self.adj[et][n1] = neigh_et
 
     def neighbors(self, graph, node):
         if node not in graph:
@@ -594,20 +629,18 @@ class SampledBreadthFirstWalk(GraphWalk):
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = list()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
-                q.extend(
-                    [(node, 0)]
-                )  # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                q.extend([(node, 0)])
 
                 while len(q) > 0:
-                    # remove the top element in the queue and
-                    frontier = q.pop(
-                        0
-                    )  # index 0 pop the item from the front of the list
+                    # remove the top element in the queue
+                    # index 0 pop the item from the front of the list
+                    frontier = q.pop(0)
                     depth = frontier[1] + 1  # the depth of the neighbouring nodes
                     walk.extend([frontier[0]])  # add to the walk
-                    if (
-                        depth <= d
-                    ):  # consider the subgraph up to and including depth d from root node
+
+                    # consider the subgraph up to and including depth d from root node
+                    if depth <= d:
                         neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
                             break
@@ -725,7 +758,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes=None, n=1, n_size=None, graph_schema=None, seed=None):
+    def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
 
         Args:
@@ -743,29 +776,21 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
             BFW.
         """
         self._check_parameter_values(
-            nodes=nodes, n=n, n_size=n_size, graph_schema=graph_schema, seed=seed
+            nodes=nodes, n=n, n_size=n_size, graph_schema=self.graph_schema, seed=seed
         )
-
-        if graph_schema is None:
-            if self.graph_schema is None:
-                self.graph_schema = self.graph.create_graph_schema(
-                    create_type_maps=True
-                )
-            graph_schema = self.graph_schema
 
         walks = []
         d = len(n_size)  # depth of search
 
         random.seed(seed)
 
-        # TODO: parallelize the loop over root nodes (currently it's very slow)
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = list()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = graph_schema.get_node_type(node)
+                node_type = self.graph_schema.get_node_type(node)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
@@ -779,37 +804,42 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                     # consider the subgraph up to and including depth d from root node
                     if depth <= d:
                         # Find edge types for current node type
-                        current_edge_types = graph_schema.edge_types_for_node_type(
+                        current_edge_types = self.graph_schema.edge_types_for_node_type(
                             current_node_type
                         )
 
                         # The current node can be None for a dummy node inserted when there are
                         # no node neighbours
-                        if current_node is None:
-                            neighbours = {}
-                        else:
-                            # neighbours = dict(self.graph.adj[current_node])
-                            # YT: better to use iterator rather than dict(iterator),
-                            # as it takes less memory?
-                            neighbours = self.graph.adj[current_node]
+                        # if current_node is None:
+                        #     neighbours = {}
+                        # else:
+                        # neighbours = dict(self.graph.adj[current_node])
+                        # YT: better to use iterator rather than dict(iterator),
+                        # as it takes less memory?
+                        # neighbours = self.graph.adj[current_node]
 
                         # print("sampling:", frontier[0], current_node_type)
                         # Create samples of neigbhours for all edge types
                         for et in current_edge_types:
-                            neigh_et = [
-                                n2
-                                for n2, nkeys in neighbours.items()
-                                for k in iter(nkeys)
-                                if graph_schema.is_of_edge_type(
-                                    (current_node, n2, k), et
-                                )
-                            ]
+                            # neigh_et = [
+                            #     n2
+                            #     for n2, nkeys in neighbours.items()
+                            #     for k in iter(nkeys)
+                            #     if self.graph_schema.is_of_edge_type(
+                            #         (current_node, n2, k), et
+                            #     )
+                            # ]
+
+                            neigh_et = self.adj[et][current_node]
 
                             # If there are no neighbours of this type then we return None
                             # in the place of the nodes that would have been sampled
+                            # YT update: with the new way to get neigh_et from self.adj[et][current_node], len(neigh_et) is always > 0.
+                            # In case of no neighbours of the current node for et, neigh_et == [None],
+                            # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
                                 samples = random.choices(neigh_et, k=n_size[depth - 1])
-                            else:
+                            else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 
                             # print("\t", et, neigh_et, samples)

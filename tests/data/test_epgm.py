@@ -101,7 +101,7 @@ class Test_EPGM_IO_Homogeneous(object):
             )
 
         # passing a non-existent node type should return an empty array of node attributes:
-        assert len(G_epgm.node_attributes(graph_id, "user")) == 0
+        assert len(G_epgm.node_attributes(graph_id, "person")) == 0
 
         # if node_type is not supplied, a TypeError should be raised:
         with pytest.raises(TypeError):
@@ -112,12 +112,12 @@ class Test_EPGM_IO_Heterogeneous(object):
     """Test IO operations on heterogeneous EPGM graphs"""
 
     if os.getcwd().split("/")[-1] == "tests":
-        input_dir = os.path.expanduser("./resources/data/yelp/yelp.epgm")
+        input_dir = os.path.expanduser("./resources/data/hin_random/")
     else:
-        input_dir = os.path.expanduser("./tests/resources/data/yelp/yelp.epgm")
+        input_dir = os.path.expanduser("./tests/resources/data/hin_random")
 
-    dataset_name = "small_yelp_example"
-    node_type = "user"
+    dataset_name = "hin"
+    node_type = "person"
     target_attribute = "elite"
 
     def test_load_epgm(self):
@@ -131,42 +131,34 @@ class Test_EPGM_IO_Heterogeneous(object):
         # check that G_epgm.G['graphs] has at least one graph head:
         assert len(G_epgm.G["graphs"]) > 0
 
-        # yelp nodes of self.node_type type should have a self.target_attribute attribute
+        # graph nodes of self.node_type type should have a self.target_attribute attribute
         graph_id = G_epgm.G["graphs"][0]["id"]
         assert self.target_attribute in G_epgm.node_attributes(graph_id, self.node_type)
 
-        # yelp should have 621 vertices
-        n_nodes = 621
+        # graph should have 260 vertices
+        n_nodes = 260
         nodes = G_epgm.G["vertices"]
         assert len(nodes) == n_nodes
 
-        # yelp 'user' nodes should have 2 unique values for 'elite' attribute:
+        # 'user' nodes should have 3 unique values for 'elite' attribute:
         # first make sure that all nodes have 'data' key
         assert sum(["data" in v for v in nodes]) == n_nodes
         labels_all = [v["data"].get(self.target_attribute) for v in nodes]
         labels = list(filter(lambda l: l is not None, labels_all))
-        labels_none = list(filter(lambda l: l is None, labels_all))
-        assert len(np.unique(labels)) == 2
-        assert (
-            len(labels_none) == 62
-        ), "yelp contains 52 'user' nodes with undefined '{}' attribute; {} such nodes found instead".format(
-            self.target_attribute, len(labels_none)
-        )
+        assert len(np.unique(labels)) == 3
 
     def test_node_types(self):
         """Test the .node_types() method"""
         G_epgm = EPGM(self.input_dir)
         graph_id = G_epgm.G["graphs"][0]["id"]
 
-        # yelp has multiple node types:
+        # dataset has multiple node types:
         node_types = G_epgm.node_types(graph_id)
 
-        assert len(node_types) == 5
-        assert "user" in node_types
-        assert "business" in node_types
-        assert "review" in node_types
-        assert "city" in node_types
-        assert "state" in node_types
+        assert len(node_types) == 3
+        assert "person" in node_types
+        assert "paper" in node_types
+        assert "venue" in node_types
 
         with pytest.raises(Exception):
             G_epgm.node_types("invalid_graph_id")
@@ -176,18 +168,18 @@ class Test_EPGM_IO_Heterogeneous(object):
         G_epgm = EPGM(self.input_dir)
         graph_id = G_epgm.G["graphs"][0]["id"]
 
-        # yelp has 19 unique 'user' node attributes, including 'elite'
+        # dataset has 1 unique 'user' node attribute, 'elite'
         node_attributes = G_epgm.node_attributes(graph_id, self.node_type)
 
         assert self.target_attribute in node_attributes
         assert (
-            len(node_attributes) == 19
-        ), "There should be 19 unique node attributes; found {}".format(
+            len(node_attributes) == 1
+        ), "There should be 1 unique node attribute; found {}".format(
             len(node_attributes)
         )
 
         # passing a non-existent node type should return an empty array of node attributes:
-        assert len(G_epgm.node_attributes(graph_id, "paper")) == 0
+        assert len(G_epgm.node_attributes(graph_id, "business")) == 0
 
         # if node_type is not supplied, a TypeError should be raised:
         with pytest.raises(TypeError):
