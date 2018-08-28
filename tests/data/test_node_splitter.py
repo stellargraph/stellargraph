@@ -19,11 +19,75 @@ import uuid
 import os
 import numpy as np
 import itertools as it
+import networkx as nx
+import pandas as pd
 
 from stellar.data.stellargraph import StellarGraph
 from stellar.data.node_splitter import NodeSplitter, train_val_test_split
 from stellar.data.epgm import EPGM
-from shutil import rmtree
+from stellar import GLOBALS
+from datetime import datetime, timedelta
+import random
+
+
+def create_heterogeneous_graph():
+    g = nx.Graph()
+
+    random.seed(42)  # produces the same graph every time
+
+    start_date_dt = datetime.strptime("01/01/2015", "%d/%m/%Y")
+    end_date_dt = datetime.strptime("01/01/2017", "%d/%m/%Y")
+    start_end_days = (
+        end_date_dt - start_date_dt
+    ).days  # the number of days between start and end dates
+
+    # 50 nodes of type person
+    person_node_ids = list(range(0, 50))
+    for person in person_node_ids:
+        g.add_node(
+            person, label="person", elite=random.choices(["0", "1", "-1"], k=1)[0]
+        )
+
+    # 200 nodes of type paper
+    paper_node_ids = list(range(50, 250))
+    g.add_nodes_from(paper_node_ids, label="paper")
+
+    # 10 nodes of type venue
+    venue_node_ids = list(range(250, 260))
+    g.add_nodes_from(venue_node_ids, label="venue")
+
+    # add the person - friend -> person edges
+    # each person can be friends with 0 to 5 others; edges include a date
+    for person_id in person_node_ids:
+        k = random.randrange(5)
+        friend_ids = set(random.sample(person_node_ids, k=k)) - {
+            person_id
+        }  # no self loops
+        for friend in friend_ids:
+            g.add_edge(
+                person_id,
+                friend,
+                label="friend",
+                date=(
+                    start_date_dt + timedelta(days=random.randrange(start_end_days))
+                ).strftime("%d/%m/%Y"),
+            )
+
+    # add the person - writes -> paper edges
+    for person_id in person_node_ids:
+        k = random.randrange(5)
+        paper_ids = random.sample(paper_node_ids, k=k)
+        for paper in paper_ids:
+            g.add_edge(person_id, paper, label="writes")
+
+    # add the paper - published-at -> venue edges
+    for paper_id in paper_node_ids:
+        venue_id = random.sample(venue_node_ids, k=1)[
+            0
+        ]  # paper is published at 1 venue only
+        g.add_edge(paper_id, venue_id, label="published-at")
+
+    return g
 
 
 def delete_files_in_dir(path):
@@ -33,78 +97,137 @@ def delete_files_in_dir(path):
             os.unlink(filename_path)
 
 
+def filter_nodes(nodes, node_type, target_attribute):
+    """
+    Returns a list of node IDs for the subset of graph_nodes that have the given node type.
+
+    Args:
+        nodes: <list> The node data as a list of tuples where for each node the first value is the node ID and the
+        second value is a dictionary holding the node attribute data.
+        node_type: <str> The node type to filter by
+        target_attribute: <str> The target attribute key to filter by
+
+    Returns:
+        <list> List of 2-tuples where the first value is the node ID and the second value is the target attribute
+        value.
+
+    """
+    # This code will fail if a node of node_type is missing the target_attribute.
+    # We can fix this by using node['data'].get(target_attribute, None) so that at least all nodes of the
+    # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
+    # from being added to train, test, and validation datasets.
+    y = [
+        (node[0], node[1].get(target_attribute, GLOBALS.UNKNOWN_TARGET_ATTRIBUTE))
+        for node in nodes
+        if node[1][GLOBALS.TYPE_ATTR_NAME] == node_type
+    ]
+
+    return y
+
+
+def get_nodes(graph_nodes, node_type, target_attribute):
+    """
+    Returns a list of node IDs for the subset of graph_nodes that have the given node type.
+
+    Args:
+        graph_nodes: <list> List of OrderedDict with vertex data for graph in EPGM format
+        node_type: <str> The node type of interest
+        target_attribute: <str> The target attribute key
+
+    Returns:
+        List of 2-tuples where the first value is the node ID and the second value is the target attribute
+        value.
+
+    """
+    # This code will fail if a node of node_type is missing the target_attribute.
+    # We can fix this by using node['data'].get(target_attribute, None) so that at least all nodes of the
+    # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
+    # from being added to train, test, and validation datasets.
+    y = [
+        (
+            node["id"],
+            node["data"].get(target_attribute, GLOBALS.UNKNOWN_TARGET_ATTRIBUTE),
+        )
+        for node in graph_nodes
+        if node["meta"][GLOBALS.TYPE_ATTR_NAME] == node_type
+    ]
+
+    return y
+
+
+def load_data(path, dataset_name=None, node_type=None, target_attribute=None):
+    """
+    Loads the node data
+
+     :param path: Input filename or directory where graph in EPGM format is stored
+     :param node_type: For HINs, the node type to consider
+     :param target_attribute: For EPGM format, the target node attribute
+     :return: N x 2 numpy arrays where the first column is the node id and the second column is the node label.
+    """
+    if os.path.isdir(path):
+        g_epgm = EPGM(path)
+        graphs = g_epgm.G["graphs"]
+        for g in graphs:
+            if g["meta"]["label"] == dataset_name:
+                g_id = g["id"]
+
+        g_vertices = g_epgm.G["vertices"]  # retrieve all graph vertices
+
+        if node_type is None:
+            node_type = g_epgm.node_types(g_id)
+            if len(node_type) == 1:
+                node_type = node_type[0]
+            else:
+                raise Exception(
+                    "Multiple node types detected in graph {}: {}.".format(
+                        g_id, node_type
+                    )
+                )
+
+        if target_attribute is None:
+            target_attribute = g_epgm.node_attributes(g_id, node_type)
+            if len(target_attribute) == 1:
+                target_attribute = target_attribute[0]
+            else:
+                raise Exception(
+                    "Multiple node attributes detected for nodes of type {} in graph {}: {}.".format(
+                        node_type, g_id, target_attribute
+                    )
+                )
+
+        y = np.array(
+            get_nodes(
+                g_vertices, node_type=node_type, target_attribute=target_attribute
+            )
+        )
+
+    else:
+        y_df = pd.read_csv(path, delimiter=" ", header=None, dtype=str)
+        y_df.sort_values(by=[0], inplace=True)
+
+        y = y_df.as_matrix()
+
+    return y
+
+
 class TestEPGMIOHeterogeneous(unittest.TestCase):
     def setUp(self):
-        if os.getcwd().split("/")[-1] == "tests":
-            self.base_output_directory = os.path.expanduser("resources/data_splitter")
-            self.input_dir = os.path.expanduser("resources/data/yelp/yelp.epgm")
-            self.output_dir = os.path.expanduser(
-                "resources/data_splitter/yelp.epgm.out"
-            )
-        else:
-            self.base_output_directory = os.path.expanduser(
-                "tests/resources/data_splitter"
-            )
-            self.input_dir = os.path.expanduser("tests/resources/data/yelp/yelp.epgm")
-            self.output_dir = os.path.expanduser(
-                "tests/resources/data_splitter/yelp.epgm.out"
-            )
-
-        self.dataset_name = "small_yelp_example"
-        self.node_type = "user"
+        self.node_type = "person"
         self.target_attribute = "elite"
         self.ds_obj = NodeSplitter()
-
-        if not os.path.isdir(self.base_output_directory):
-            os.mkdir(self.base_output_directory)
-        if not os.path.isdir(self.output_dir):
-            os.mkdir(self.output_dir)
-
-        # delete the files in the output directory
-        delete_files_in_dir(self.output_dir)
-
-    def tearDown(self):
-        # delete the files in the output directory
-        rmtree(self.base_output_directory)
-
-    def test_load_epgm(self):
-
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-        self.assertEqual(
-            y.shape,
-            (569, 2),
-            "Did not load the correct number of node IDs and corresponding labels",
-        )
-
-        # cora has 7 classes
-        number_of_unique_labels = 3
-        number_of_unique_labels_in_y = len(np.unique(y[:, 1]))
-
-        self.assertEqual(
-            number_of_unique_labels_in_y,
-            number_of_unique_labels,
-            "Incorrect number of unique labels in y {:d} vs expected {:d}".format(
-                number_of_unique_labels_in_y, number_of_unique_labels
-            ),
-        )
 
     def test_train_test_split_invalid_parameters(self):
         nc = 10
         test_size = 100
         method = "count"
 
-        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
-        # I have to load the data again.
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        g = create_heterogeneous_graph()
+        y = np.array(
+            filter_nodes(
+                list(g.nodes(data=True)),
+                node_type=self.node_type,
+                target_attribute=self.target_attribute,
+            )
         )
 
         with self.assertRaises(ValueError):
@@ -195,24 +318,26 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
 
     def test_split_data_epgm(self):
 
-        nc = 10
-        test_size = 100
+        nc = 5
+        test_size = 20
+        num_unlabeled = 14
 
-        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
-        # I have to load the data again.
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        g = create_heterogeneous_graph()
+        y = np.array(
+            filter_nodes(
+                list(g.nodes(data=True)),
+                node_type=self.node_type,
+                target_attribute=self.target_attribute,
+            )
         )
 
         number_of_unique_labels = (
             len(np.unique(y[:, 1])) - 1
         )  # subtract one for missing value (-1) label
 
-        # there are 10 unlabeled point in yelp
-        validation_size = y.shape[0] - test_size - nc * number_of_unique_labels - 10
+        validation_size = (
+            y.shape[0] - test_size - nc * number_of_unique_labels - num_unlabeled
+        )
 
         self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
             y=y, p=nc, test_size=test_size
@@ -241,102 +366,22 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
             ),
         )
 
-    def test_write_data_epgm(self):
-
-        nc = 10
-        test_size = 100
-
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
-
-        self.ds_obj.write_data(
-            self.output_dir,
-            dataset_name=self.dataset_name,
-            y_train=y_train,
-            y_test=y_test,
-            y_val=y_val,
-            y_unlabeled=y_unlabeled,
-        )
-
-        # 3 files with json extension should be written in the output directory
-        # The files are edges.json, graphs.json, vertices.json
-        files_in_dir = os.listdir(self.output_dir)
-
-        self.assertEqual(
-            len(files_in_dir),
-            3,
-            "Incorrect number of .json files {:d} vs expected {:d}".format(
-                len(files_in_dir), 3
-            ),
-        )
-
-        self.assertTrue("edges.json" in files_in_dir, "Missing edges.json")
-        self.assertTrue("vertices.json" in files_in_dir, "Missing vertices.json")
-        self.assertTrue("graphs.json" in files_in_dir, "Missing graphs.json")
-
-        # Load the EPGM and check it
-        g_epgm = EPGM(self.output_dir)
-        graphs = g_epgm.G["graphs"]
-
-        self.assertEqual(
-            len(graphs),
-            5,
-            "Incorrect number of graphs {:d} vs expected {:d}".format(len(graphs), 5),
-        )
-
 
 class TestEPGMIOHomogenous(unittest.TestCase):
     def setUp(self):
         if os.getcwd().split("/")[-1] == "tests":
-            self.base_output_directory = os.path.expanduser("resources/data_splitter")
             self.input_dir = os.path.expanduser("resources/data/cora/cora.epgm")
-            self.output_dir = os.path.expanduser(
-                "resources/data_splitter/cora.epgm.out"
-            )
             self.input_lab = os.path.expanduser("resources/data/cora/cora.lab/cora.lab")
-            self.output_dir_lab = os.path.expanduser("resources/data_splitter/cora.out")
         else:
-            self.base_output_directory = os.path.expanduser(
-                "tests/resources/data_splitter"
-            )
             self.input_dir = os.path.expanduser("tests/resources/data/cora/cora.epgm")
-            self.output_dir = os.path.expanduser(
-                "tests/resources/data_splitter/cora.epgm.out"
-            )
             self.input_lab = os.path.expanduser(
                 "tests/resources/data/cora/cora.lab/cora.lab"
             )
-            self.output_dir_lab = os.path.expanduser(
-                "tests/resources/data_splitter/cora.out"
-            )
-
-        if not os.path.isdir(self.base_output_directory):
-            os.mkdir(self.base_output_directory)
-        if not os.path.isdir(self.output_dir):
-            os.mkdir(self.output_dir)
-        if not os.path.isdir(self.output_dir_lab):
-            os.mkdir(self.output_dir_lab)
 
         self.dataset_name = "cora"
         self.node_type = "paper"
         self.target_attribute = "subject"
         self.ds_obj = NodeSplitter()
-
-        # delete the contents of the output directories
-        delete_files_in_dir(self.output_dir_lab)
-        delete_files_in_dir(self.output_dir)
-
-    def tearDown(self):
-        # delete the contents of the output directories
-        rmtree(self.base_output_directory)
 
     def create_toy_dataset(self):
         # 100 node ids with 40 class 0, 40 class 1, and 20 unknown '-1'
@@ -528,20 +573,6 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             ),
         )
 
-    def test_load_lab(self):
-
-        y = self.ds_obj.load_data(
-            self.input_lab,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-        self.assertEqual(
-            y.shape,
-            (2708, 2),
-            "Did not load the correct number of node IDs and corresponding labels",
-        )
-
     def test_split_data_lab(self):
 
         nc = 20
@@ -549,7 +580,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         method = "count"
         # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
         # I have to load the data again.
-        y = self.ds_obj.load_data(
+        y = load_data(
             self.input_lab,
             dataset_name=self.dataset_name,
             node_type=self.node_type,
@@ -670,93 +701,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             ),
         )
 
-    def test_write_data_lab(self):
-
-        nc = 20
-        test_size = 100
-
-        y = self.ds_obj.load_data(
-            self.input_lab,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
-
-        self.ds_obj.write_data(
-            self.output_dir_lab,
-            dataset_name=self.dataset_name,
-            y_train=y_train,
-            y_test=y_test,
-            y_val=y_val,
-            y_unlabeled=y_unlabeled,
-        )
-
-        # 3 files with json extension should be written in the output directory
-        # The files are edges.json, graphs.json, vertices.json
-        files_in_dir = os.listdir(self.output_dir_lab)
-
-        self.assertEqual(
-            len(files_in_dir),
-            4,
-            "Incorrect number of .idx.* files {:d} vs expected {:d}".format(
-                len(files_in_dir), 4
-            ),
-        )
-
-        self.assertTrue(
-            self.dataset_name + ".idx.train" in files_in_dir, "Missing .idx.train"
-        )
-        self.assertTrue(
-            self.dataset_name + ".idx.test" in files_in_dir, "Missing .idx.test"
-        )
-        self.assertTrue(
-            self.dataset_name + ".idx.validation" in files_in_dir,
-            "Missing .idx.validation",
-        )
-        self.assertTrue(
-            self.dataset_name + ".idx.unlabeled" in files_in_dir,
-            "Missing .idx.unlabeled",
-        )
-
-    # Testing with data I/O in EPGM format
-    def test_load_epgm(self):
-
-        y = self.ds_obj.load_data(
-            self.input_lab,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-        self.assertEqual(
-            y.shape,
-            (2708, 2),
-            "Did not load the correct number of node IDs and corresponding labels",
-        )
-
-        # cora has 7 classes
-        number_of_unique_labels = 7
-        number_of_unique_labels_in_y = len(np.unique(y[:, 1]))
-
-        self.assertEqual(
-            number_of_unique_labels_in_y,
-            number_of_unique_labels,
-            "Incorrect number of unique labels in y {:d} vs expected {:d}".format(
-                number_of_unique_labels_in_y, number_of_unique_labels
-            ),
-        )
-
     def test_split_data_epgm(self):
 
         nc = 20
         test_size = 100
 
-        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
-        # I have to load the data again.
-        y = self.ds_obj.load_data(
+        y = load_data(
             self.input_dir,
             dataset_name=self.dataset_name,
             node_type=self.node_type,
@@ -874,57 +824,6 @@ class TestEPGMIOHomogenous(unittest.TestCase):
             ),
         )
 
-    def test_write_data_epgm(self):
-
-        nc = 20
-        test_size = 1000
-
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
-
-        self.ds_obj.write_data(
-            self.output_dir,
-            dataset_name=self.dataset_name,
-            y_train=y_train,
-            y_test=y_test,
-            y_val=y_val,
-            y_unlabeled=y_unlabeled,
-        )
-
-        # 3 files with json extension should be written in the output directory
-        # The files are edges.json, graphs.json, vertices.json
-        files_in_dir = os.listdir(self.output_dir)
-
-        self.assertEqual(
-            len(files_in_dir),
-            3,
-            "Incorrect number of .json files {:d} vs expected {:d}".format(
-                len(files_in_dir), 3
-            ),
-        )
-
-        self.assertTrue("edges.json" in files_in_dir, "Missing edges.json")
-        self.assertTrue("vertices.json" in files_in_dir, "Missing vertices.json")
-        self.assertTrue("graphs.json" in files_in_dir, "Missing graphs.json")
-
-        # Load the EPGM and check it
-        g_epgm = EPGM(self.output_dir)
-        graphs = g_epgm.G["graphs"]
-
-        self.assertEqual(
-            len(graphs),
-            5,
-            "Incorrect number of graphs {:d} vs expected {:d}".format(len(graphs), 5),
-        )
-
 
 ##################
 # Test the simple node_splitter interface:
@@ -933,7 +832,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 def create_example_graph_1():
     sg = StellarGraph()
     sg.add_nodes_from([0, 1, 2, 3], label="movie")
-    sg.add_nodes_from([4, 5, 6], label="user")
+    sg.add_nodes_from([4, 5, 6], label="person")
     sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
     sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
     sg.add_edges_from([(4, 5)], label="friend")

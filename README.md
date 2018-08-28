@@ -1,5 +1,8 @@
 # Stellar-ML Graph Machine Learning Library
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+
+
 ## Build Status
 |Branch|Build|
 |:-----|:----:|
@@ -57,3 +60,14 @@ pip install .
 ## Getting Help
 
 Documentation for Stellar-ML will be provided ...
+
+## CI
+
+### buildkite integration
+
+Pipeline is defined in `.buildkite/pipeline.yml`
+
+### Docker images
+
+* Tests: Uses the official [python:3.6](https://hub.docker.com/_/python/) image.
+* Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.

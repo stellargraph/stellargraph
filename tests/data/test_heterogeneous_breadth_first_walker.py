@@ -66,8 +66,8 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
     def test_parameter_checking(self):
         g = create_simple_test_graph()
 
-        bfw = SampledHeterogeneousBreadthFirstWalk(g)
         graph_schema = g.create_graph_schema(create_type_maps=True)
+        bfw = SampledHeterogeneousBreadthFirstWalk(g, graph_schema)
 
         nodes = [0, 1]
         n = 1
@@ -76,85 +76,48 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
         with pytest.raises(ValueError):
             # nodes should be a list of node ids even for a single node
-            bfw.run(
-                nodes=None, n=n, n_size=n_size, graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=None, n=n, n_size=n_size, seed=seed)
         with pytest.raises(ValueError):
-            bfw.run(nodes=0, n=n, n_size=n_size, graph_schema=graph_schema, seed=seed)
+            bfw.run(nodes=0, n=n, n_size=n_size, seed=seed)
         with pytest.raises(ValueError):
             # only list is acceptable type for nodes
-            bfw.run(
-                nodes=(1, 2), n=n, n_size=n_size, graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=(1, 2), n=n, n_size=n_size, seed=seed)
             # n has to be positive integer
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=-1, n_size=n_size, graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=nodes, n=-1, n_size=n_size, seed=seed)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=10.1, n_size=n_size, graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=nodes, n=10.1, n_size=n_size, seed=seed)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=0, n_size=n_size, graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=nodes, n=0, n_size=n_size, seed=seed)
             # n_size has to be list of positive integers
         with pytest.raises(ValueError):
-            bfw.run(nodes=nodes, n=n, n_size=0, graph_schema=graph_schema, seed=seed)
+            bfw.run(nodes=nodes, n=n, n_size=0, seed=seed)
         with pytest.raises(ValueError):
-            bfw.run(nodes=nodes, n=n, n_size=[-5], graph_schema=graph_schema, seed=seed)
+            bfw.run(nodes=nodes, n=n, n_size=[-5], seed=seed)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=-1, n_size=[2.4], graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=nodes, n=-1, n_size=[2.4], seed=seed)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=n, n_size=(1, 2), graph_schema=graph_schema, seed=seed
-            )
+            bfw.run(nodes=nodes, n=n, n_size=(1, 2), seed=seed)
             # graph_schema must be None or GraphSchema type
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=n, n_size=n_size, graph_schema="graph schema", seed=seed
-            )
+            SampledHeterogeneousBreadthFirstWalk(g, graph_schema="graph schema")
+
         with pytest.raises(ValueError):
-            bfw.run(nodes=nodes, n=n, n_size=n_size, graph_schema=9092, seed=seed)
-            # seed must be positive integer or 0
+            SampledHeterogeneousBreadthFirstWalk(g, graph_schema=9092)
+
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes, n=n, n_size=n_size, graph_schema=graph_schema, seed=-1235
-            )
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed=-1235)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes,
-                n=n,
-                n_size=n_size,
-                graph_schema=graph_schema,
-                seed=10.987665,
-            )
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed=10.987665)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes,
-                n=n,
-                n_size=n_size,
-                graph_schema=graph_schema,
-                seed=-982.4746,
-            )
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed=-982.4746)
         with pytest.raises(ValueError):
-            bfw.run(
-                nodes=nodes,
-                n=n,
-                n_size=n_size,
-                graph_schema=graph_schema,
-                seed="don't be random",
-            )
+            bfw.run(nodes=nodes, n=n, n_size=n_size, seed="don't be random")
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
         # is the best for checking this behaviour.
         nodes = []
-        subgraph = bfw.run(
-            nodes=nodes, n=n, n_size=n_size, graph_schema=graph_schema, seed=seed
-        )
+        subgraph = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=seed)
         assert len(subgraph) == 0
 
     def test_walk_generation_single_root_node_loner(self):
@@ -498,7 +461,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [None, None],
                 [None, None],
             ],
-            [[4], [1, "5"], [2, 2], [4, 4], [3, 2], [1, 1], [6, 3], [1, 1], [4, 4]],
+            [[4], ["5", "5"], [2, 2], [4, 1], [3, 6], [1, 4], [6, 6], [4, 4], [1, 4]],
         ]
         for a, b in zip(subgraphs, valid_result):
             assert a == b

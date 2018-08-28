@@ -19,14 +19,14 @@ Mappers to provide input data for link prediction/link attribute inference probl
 
 """
 
-import networkx as nx
 from stellar.data.stellargraph import StellarGraphBase
 import numpy as np
 import itertools as it
-from typing import AnyStr, Any, List, Tuple, Optional, Dict
+from typing import AnyStr, Any, List, Tuple, Optional
 from keras.utils import Sequence
 import operator
 from functools import reduce
+import time
 
 from stellar.data.explorer import (
     SampledBreadthFirstWalk,
@@ -38,8 +38,7 @@ class GraphSAGELinkMapper(Sequence):
     """Keras-compatible link data mapper for link prediction using Homogeneous GraphSAGE
 
     Args:
-        g: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
-            is used as input to the GraphSAGE model.
+        g: StellarGraph graph.
         ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
             These are the links that are to be used to train or inference, and the embeddings
@@ -56,17 +55,24 @@ class GraphSAGELinkMapper(Sequence):
 
     def __init__(
         self,
-        g: StellarGraphBase or nx.Graph,
+        g: StellarGraphBase,
         ids: List[
             Tuple[Any, Any]
         ],  # allow for node ids to be anything, e.g., str or int
         link_labels: List[Any] or np.ndarray,
         batch_size: int,
         num_samples: List[int],
-        feature_size: Optional[int] = None,
         name: AnyStr = None,
     ):
-        self.g = g
+        if not isinstance(g, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        # We don't know if we need targets here as we could be used for training or inference
+        # TODO: Perhaps we shouldn't do the checks here but somewhere that we know will be the entry point for training or inference?
+        # YT: this check is needed to ensure that _get_features(), which calls self.graph.get_feature_for_nodes(), will work
+        g.check_graph_for_ml(features=True, supervised=False)
+
+        self.graph = g
         self.sampler = SampledBreadthFirstWalk(g)
         self.num_samples = num_samples
         self.ids = list(ids)
@@ -75,37 +81,13 @@ class GraphSAGELinkMapper(Sequence):
         self.batch_size = batch_size
         self.name = name
 
-        # Check correct graph sampler is used
-        if not isinstance(self.sampler, SampledBreadthFirstWalk):
-            raise TypeError(
-                "Sampler must be an instance of SampledBreadthFirstWalk class"
+        # We need the node type, to be able to get features from self.g
+        node_types = g.get_node_types()
+        if len(node_types) > 1:
+            print(
+                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
             )
-
-        # Ensure features are available:
-        nodes_have_features = all(
-            ["feature" in vdata for v, vdata in self.g.nodes(data=True)]
-        )
-        if not nodes_have_features:
-            print("Warning: Not all nodes have a 'feature' attribute.")
-            print("Warning: This is required for the GraphSAGE mapper.")
-
-        # Check that all nodes have features of the same size
-        # Note: if there are no features in the nodes this will be 1!
-        feature_sizes = {
-            np.size(vdata.get("feature")) for v, vdata in self.g.nodes(data=True)
-        }
-
-        if feature_size:
-            self.feature_size = feature_size
-        else:
-            self.feature_size = int(max(feature_sizes))
-            if len(feature_sizes) > 1:
-                print("Warning: feature sizes in nodes inconsistent (using max)")
-                print("Found feature sizes: {}".format(feature_sizes))
-
-        if self.feature_size not in feature_sizes:
-            print("Found feature sizes: {}".format(feature_sizes))
-            raise RuntimeWarning("Specified feature size doesn't match graph features")
+        self.node_type = node_types.pop()
 
     def __len__(self):
         "Denotes the number of batches per epoch"
@@ -125,18 +107,15 @@ class GraphSAGELinkMapper(Sequence):
             node.
         """
         # Create features and node indices if required
-        # Note the if there are no samples for a level, a zero array is returned.
+        # Note the if there are no samples for a level, an empty array is returned.
+
         batch_feats = [
-            [self.g.node[v].get("feature") for v in layer_nodes]
-            if len(layer_nodes) > 0
-            else np.zeros((head_size, self.feature_size))
+            self.graph.get_feature_for_nodes(layer_nodes, self.node_type)
             for layer_nodes in node_samples
         ]
 
         # Resize features to (batch_size, n_neighbours, feature_size)
-        batch_feats = [
-            np.reshape(a, (head_size, -1, self.feature_size)) for a in batch_feats
-        ]
+        batch_feats = [np.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats]
         return batch_feats
 
     def __getitem__(self, batch_num: int):
@@ -210,8 +189,7 @@ class HinSAGELinkMapper(Sequence):
                 (e.g., "same_as" links in ER)
 
     Args:
-        g: StellarGraph or NetworkX graph. The graph nodes must have a "feature" attribute that
-            is used as input to the HinSAGE model.
+        g: StellarGraph graph.
         ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
             These are the links that are to be used to train or inference, and the embeddings
@@ -241,7 +219,7 @@ class HinSAGELinkMapper(Sequence):
 
         # assert head_node_types[0] != ('',''), "Head node types should not be empty"
 
-        return head_node_types[0]
+        return head_node_types.pop()
 
     def __init__(
         self,
@@ -252,16 +230,16 @@ class HinSAGELinkMapper(Sequence):
         link_labels: List[Any] or np.ndarray,
         batch_size: int,
         num_samples: List[int],
-        feature_size_by_type: Optional[Dict[AnyStr, int]] = None,
         name: AnyStr = None,
     ):
-        self.g = g
+        self.graph = g
         self.num_samples = num_samples
         self.ids = list(ids)
         self.labels = np.array(link_labels)
         self.data_size = len(self.ids)
         self.batch_size = batch_size
         self.name = name
+        self.timeit = False  # used for timing purposes only
 
         # We require a StellarGraph for this
         if not isinstance(g, StellarGraphBase):
@@ -269,8 +247,13 @@ class HinSAGELinkMapper(Sequence):
                 "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
 
+        # We don't know if we need targets here as we could be used for training or inference
+        # TODO: Perhaps we shouldn't do the checks here but somewhere that we know will be the entry point for training or inference?
+        # YT: this check is needed to ensure that _get_features(), which calls self.graph.get_feature_for_nodes(), will work
+        g.check_graph_for_ml(features=True, supervised=False)
+
         # Generate graph schema
-        self.schema = self.g.create_graph_schema(create_type_maps=True)
+        self.schema = self.graph.create_graph_schema(create_type_maps=True)
 
         # Get head node types from all src, dst nodes extracted from all links,
         # and make sure there's only one pair of node types:
@@ -291,33 +274,6 @@ class HinSAGELinkMapper(Sequence):
         if link_labels is not None and len(ids) != len(link_labels):
             raise ValueError("Length of link ids must match length of link labels")
 
-        # If feature size is specified, skip checks
-        if feature_size_by_type is None:
-            self.feature_size_by_type = {}
-            for nt in self.schema.node_types:
-                feature_sizes = {
-                    np.size(vdata["feature"]) if "feature" in vdata else None
-                    for v, vdata in self.g.nodes(data=True)
-                    if self.schema.get_node_type(v) == nt
-                }
-
-                if None in feature_sizes:
-                    raise RuntimeError(
-                        "Not all nodes have a 'feature' attribute: "
-                        "this is required for the HinSAGE mapper."
-                    )
-
-                if len(feature_sizes) > 1:
-                    print("Found feature sizes: {}".format(feature_sizes))
-                    raise ValueError(
-                        "Feature sizes in nodes of type {} is inconsistent".format(nt)
-                    )
-
-                self.feature_size_by_type[nt] = feature_sizes.pop()
-
-        else:
-            self.feature_size_by_type = feature_size_by_type
-
     def __len__(self):
         "Denotes the number of batches per epoch"
         return int(np.ceil(self.data_size / self.batch_size))
@@ -335,23 +291,16 @@ class HinSAGELinkMapper(Sequence):
             A list of numpy arrays that store the features for each head
             node.
         """
-        # Create features and node indices if required
         # Note the if there are no samples for a node a zero array is returned.
-        # TODO: Generalize this to an arbitrary vector?
         # Resize features to (batch_size, n_neighbours, feature_size)
         # for each node type (note that we can have different feature size for each node type)
         batch_feats = [
-            np.reshape(
-                [
-                    np.zeros(self.feature_size_by_type[nt])
-                    if v is None
-                    else self.g.node[v].get("feature")
-                    for v in layer_nodes
-                ],
-                (head_size, -1, self.feature_size_by_type[nt]),
-            )
+            self.graph.get_feature_for_nodes(layer_nodes, nt)
             for nt, layer_nodes in node_samples
         ]
+
+        # Resize features to (batch_size, n_neighbours, feature_size)
+        batch_feats = [np.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats]
 
         return batch_feats
 
@@ -387,9 +336,20 @@ class HinSAGELinkMapper(Sequence):
         # Get sampled nodes for the subgraphs starting from the (src, dst) head nodes
         # nodes_samples is list of two lists: [[samples for src], [samples for dst]]
         node_samples = []
+        if self.timeit:
+            t_start = time.time()
         for ii in range(2):
             node_samples.append(
                 self.sampler.run(nodes=head_nodes[ii], n=1, n_size=self.num_samples)
+            )
+        if self.timeit:
+            print(
+                "batch {} of size {}: node sampling time per node: {} s, total time {} s".format(
+                    batch_num,
+                    self.batch_size,
+                    (time.time() - t_start) / self.batch_size,
+                    time.time() - t_start,
+                )
             )
 
         # Reshape node samples to the required format for the HinSAGE model
