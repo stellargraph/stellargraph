@@ -321,18 +321,14 @@ class BiasedRandomWalk(GraphWalk):
                 )
             )
 
-        if p <= 0. or p > 1.:
+        if p <= 0.:
             raise ValueError(
-                "({}) Parameter p should be in the range (0, 1].".format(
-                    type(self).__name__
-                )
+                "({}) Parameter p should be greater than 0.".format(type(self).__name__)
             )
 
-        if q <= 0. or q > 1.:
+        if q <= 0.:
             raise ValueError(
-                "({}) Parameter q should be in the range (0, 1].".format(
-                    type(self).__name__
-                )
+                "({}) Parameter q should be greater than 0.".format(type(self).__name__)
             )
 
         if type(length) != int:
@@ -446,6 +442,14 @@ class UniformRandomMetaPathWalk(GraphWalk):
                         )  # the next node in the walk
 
                     walks.append(walk)  # store the walk
+                    if len(walks) % 10000 == 0:
+                        print(
+                            "Completed {:.2f}% of walks ({} out of {})".format(
+                                100 * len(walks) / (len(metapaths) * len(nodes) * n),
+                                len(walks),
+                                len(metapaths) * len(nodes) * n,
+                            )
+                        )
 
         return walks
 
