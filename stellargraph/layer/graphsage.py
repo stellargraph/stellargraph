@@ -153,7 +153,13 @@ class GraphSAGE:
         # Use both the schema and head node type from the mapper
         if mapper is not None:
             self.n_samples = mapper.num_samples
-            self.input_feature_size = mapper.graph.get_feature_size()
+            feature_sizes = mapper.graph.get_feature_sizes()
+            if len(feature_sizes) > 1:
+                raise RuntimeError(
+                    "GraphSAGE called on graph with more than one node type."
+                )
+
+            self.input_feature_size = feature_sizes.popitem()[1]
 
         elif n_samples is not None and input_dim is not None:
             self.n_samples = n_samples

@@ -632,7 +632,7 @@ class StellarGraphBase:
 
         # Create graph schema at this point?
 
-    def check_graph_for_ml(self, features=True, supervised=True):
+    def check_graph_for_ml(self, features=True, supervised=False):
         """
         Checks if all properties required for machine learning training/inference are set up.
         An error will be raised if the graph is not correctly setup.
@@ -847,32 +847,6 @@ class StellarGraphBase:
         else:
             # Otherwise directly get nodes with the _target_attr attribute
             fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
-
-        return fsize
-
-    def get_feature_size(self, node_type=None):
-        # TODO: redundant? See the get_feature_sizes method above
-        """
-        Get the feature size for the nodes of the specified type.
-
-        Args:
-            node_type: The type label for the nodes. If None and all nodes are of
-                a single type the feature size for that type is returned.
-
-        Returns:
-            The feature size is returned as an integer.
-        """
-        # TODO: Infer node type
-        self.check_graph_for_ml(features=True, supervised=False)
-
-        # TODO: Check if node type is in schema!
-
-        if self._feature_spec is not None:
-            fsize = self._feature_spec.get_output_size(node_type)
-
-        else:
-            # Otherwise directly get nodes with the _target_attr attribute
-            fsize = self._node_attribute_arrays[node_type].shape[1]
 
         return fsize
 
