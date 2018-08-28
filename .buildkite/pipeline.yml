@@ -15,7 +15,7 @@ steps:
       - --check stellar tests
     plugins:
       docker#v1.3.0:
-        image: "513929068678.dkr.ecr.ap-southeast-2.amazonaws.com/black"
+        image: "stellargraph/black"
         workdir: /app
         entrypoint: /usr/bin/black
         environment:

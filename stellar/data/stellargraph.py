@@ -24,7 +24,7 @@ from networkx.classes.multidigraph import MultiDiGraph
 from collections import namedtuple
 
 # The edge type triple
-from stellar import GLOBALS
+from stellar import globals
 from stellar.data import utils
 
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
@@ -407,8 +407,8 @@ class StellarGraphBase:
         super().__init__(incoming_graph_data, **attr)
 
         # Names of attributes that store the type of nodes and edges
-        self._node_type_attr = attr.get("node_type_name", GLOBALS.TYPE_ATTR_NAME)
-        self._edge_type_attr = attr.get("edge_type_name", GLOBALS.TYPE_ATTR_NAME)
+        self._node_type_attr = attr.get("node_type_name", globals.TYPE_ATTR_NAME)
+        self._edge_type_attr = attr.get("edge_type_name", globals.TYPE_ATTR_NAME)
 
         # Get feature & target specifications, if supplied:
         self._feature_spec = attr.get("feature_spec", None)
@@ -416,8 +416,8 @@ class StellarGraphBase:
 
         # Names for the feature/target type (used if they are supplied and
         #  feature/target spec not supplied"
-        self._feature_attr = attr.get("feature_name", GLOBALS.FEATURE_ATTR_NAME)
-        self._target_attr = attr.get("target_name", GLOBALS.TARGET_ATTR_NAME)
+        self._feature_attr = attr.get("feature_name", globals.FEATURE_ATTR_NAME)
+        self._target_attr = attr.get("target_name", globals.TARGET_ATTR_NAME)
 
         # These are dictionaries that store the actual feature arrays for each node type
         self._node_attribute_arrays = {}

@@ -42,9 +42,11 @@ class Node2VecFeatureLearning(object):
         :param k:
         :return:
         """
+        time_b = time.time()
         walks = [list(map(str, walk)) for walk in walks]
         self.model = Word2Vec(walks, size=d, window=k, min_count=0, sg=1, workers=2, iter=1)
         self.model.wv.save_word2vec_format(self.embeddings_filename)
+        print("({}) Time for learning embeddings {:.0f} seconds.".format(type(self).__name__, time.time()-time_b))
 
         return
 
@@ -89,7 +91,9 @@ class Node2VecFeatureLearning(object):
         start_time_fit = time.time()
         self.G = node2vec.Graph(self.nxG, False, p, q)
         self.G.preprocess_transition_probs()
+        time_b = time.time()
         walks = self.G.simulate_walks(r, l)
+        print("({}) Time for random walks {:.0f} seconds".format(type(self).__name__, time.time()-time_b))
         self.learn_embeddings(walks, d, k)
         print("Total time for fit()", time.time()-start_time_fit, "seconds")
 
