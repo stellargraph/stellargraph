@@ -53,9 +53,11 @@ def read_graph(data_path, config_file):
     feature_names = ["age", "gender", "job"]
 
     feature_encoding = feature_extraction.DictVectorizer(sparse=False, dtype=int)
-    feature_encoding.fit(user_features[feature_names].to_dict('records'))
+    feature_encoding.fit(user_features[feature_names].to_dict("records"))
 
-    user_features_transformed = feature_encoding.transform(user_features[feature_names].to_dict('records'))
+    user_features_transformed = feature_encoding.transform(
+        user_features[feature_names].to_dict("records")
+    )
     user_features = pd.DataFrame(user_features_transformed, index=user_features.index)
 
     # Add the user and movie features to the graph:
@@ -86,7 +88,7 @@ class LinkInference(object):
         self,
         layer_size: List[int],
         num_samples: List[int],
-        train_size = 0.7,
+        train_size=0.7,
         batch_size: int = 1000,
         num_epochs: int = 10,
         learning_rate=1e-3,
@@ -112,7 +114,9 @@ class LinkInference(object):
 
         # Training and test edges
         edges = list(self.g.edges(data=True))
-        edges_train, edges_test = model_selection.train_test_split(edges, train_size=train_size)
+        edges_train, edges_test = model_selection.train_test_split(
+            edges, train_size=train_size
+        )
 
         #  Edgelists:
         edgelist_train = [(e[0], e[1]) for e in edges_train]
@@ -154,7 +158,9 @@ class LinkInference(object):
         assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
 
         # Build the model by stacking a two-layer HinSAGE model and a link regression layer on top.
-        assert len(layer_size) == len(num_samples), "layer_size and num_samples must be of the same length! Stopping."
+        assert len(layer_size) == len(
+            num_samples
+        ), "layer_size and num_samples must be of the same length! Stopping."
         hinsage = HinSAGE(
             layer_sizes=layer_size, mapper=mapper_train, bias=use_bias, dropout=dropout
         )
@@ -207,10 +213,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "--data_path",
-        type=str,
-        default="../data/ml-100k",
-        help="Data path.",
+        "--data_path", type=str, default="../data/ml-100k", help="Data path."
     )
     parser.add_argument(
         "-f",
