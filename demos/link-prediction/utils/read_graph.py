@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import networkx as nx
-from stellar.data.epgm import EPGM
+from stellargraph.data.epgm import EPGM
 
 
 def read_graph(graph_file, dataset_name, is_directed=False, is_weighted=False):
