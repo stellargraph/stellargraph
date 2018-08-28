@@ -36,8 +36,6 @@ The script accepts the following command line arguments:
 for future reference.
 - `subsample` If specified, the graph is subsampled (number of nodes reduced) by a default 0.1 factor, e.g,
 10 percent of the original graph. This option is useful for speeding up testing on large graphs.
-- `subgrap_size <float>` The size of the graph when the `subsample` option is given. It should be a value
-in the intervale (0,1).
 - `subgraph_size <float>` Valid values are in the interval (0, 1]. It reduces the graph size by the given factor. 
 Size reduction is performed by reducing the number of nodes in the graph by the given factor and removing all other
 nodes and edges connecting those nodes.
@@ -56,6 +54,10 @@ edges in the input graph. The default value is 0.1 and valid values are in the r
 - `hin` If specified, it indicates that the input graph is heterogeneous. If not specified, a heterogeneous graph is
 simplified to homogeneous and the options `edge_type`, `edge_attribute_label`, `edge_attribute_threshold`, and
 `attribute_is_datetime` are ignored even if given.
+- `metapaths <str>` For heterogeneous graphs (must specify `hin` option), this option can be used to specify the 
+metapaths for the random walks. A metapath is a `,` separated list of node labels; more than one metapaths can
+be specified separated by a `;`. An example specifying 2 metapaths assuming node labels `author, paper, venue` is
+`"author, paper, author; author, paper, venue, paper, author"`.
 - `edge_type <str>` For heterogeneous graphs, this option is used to specify the type of edge (by its label) to
 predict. 
 - `edge_attribute_label <str>` For heterogeneous graphs, this option is used to specify the edges that should be
@@ -90,3 +92,9 @@ python main.py --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Cata
 ``` 
 python main.py --hin --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Catalog3" --output_node_features=~/data/bc3.emb  --edge_type="friend" --edge_attribute_label="date" --attribute_is_datetime --edge_attribute_threshold="01/01/2005" --sampling_method='global'
 ```
+
+### References
+
+Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016. 
+
+Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017 
