@@ -25,7 +25,7 @@ import pandas as pd
 from stellar.data.stellargraph import StellarGraph
 from stellar.data.node_splitter import NodeSplitter, train_val_test_split
 from stellar.data.epgm import EPGM
-from stellar import GLOBALS
+from stellar import globals
 from datetime import datetime, timedelta
 import random
 
@@ -117,9 +117,9 @@ def filter_nodes(nodes, node_type, target_attribute):
     # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
     # from being added to train, test, and validation datasets.
     y = [
-        (node[0], node[1].get(target_attribute, GLOBALS.UNKNOWN_TARGET_ATTRIBUTE))
+        (node[0], node[1].get(target_attribute, globals.UNKNOWN_TARGET_ATTRIBUTE))
         for node in nodes
-        if node[1][GLOBALS.TYPE_ATTR_NAME] == node_type
+        if node[1][globals.TYPE_ATTR_NAME] == node_type
     ]
 
     return y
@@ -146,10 +146,10 @@ def get_nodes(graph_nodes, node_type, target_attribute):
     y = [
         (
             node["id"],
-            node["data"].get(target_attribute, GLOBALS.UNKNOWN_TARGET_ATTRIBUTE),
+            node["data"].get(target_attribute, globals.UNKNOWN_TARGET_ATTRIBUTE),
         )
         for node in graph_nodes
-        if node["meta"][GLOBALS.TYPE_ATTR_NAME] == node_type
+        if node["meta"][globals.TYPE_ATTR_NAME] == node_type
     ]
 
     return y
@@ -205,7 +205,7 @@ def load_data(path, dataset_name=None, node_type=None, target_attribute=None):
         y_df = pd.read_csv(path, delimiter=" ", header=None, dtype=str)
         y_df.sort_values(by=[0], inplace=True)
 
-        y = y_df.as_matrix()
+        y = y_df.values
 
     return y
 
