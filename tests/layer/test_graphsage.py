@@ -32,7 +32,7 @@ def test_mean_agg_constructor():
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert not agg.has_bias
-    assert agg.act == keras.backend.relu
+    assert agg.act.__name__ == "relu"
 
 
 def test_mean_agg_constructor_1():
@@ -58,17 +58,17 @@ def test_mean_agg_apply():
 
 
 def test_graphsage_constructor():
-    gs = GraphSAGE(output_dims=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2)
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.n_layers == 1
-    assert not gs.bias
+    assert gs.bias
     assert len(gs._aggs) == 1
 
 
 def test_graphsage_constructor_1():
     gs = GraphSAGE(
-        output_dims=[4, 6, 8], n_samples=[2, 4, 6], input_dim=2, bias=True, dropout=0.5
+        layer_sizes=[4, 6, 8], n_samples=[2, 4, 6], input_dim=2, bias=True, dropout=0.5
     )
     assert gs.dims == [2, 4, 6, 8]
     assert gs.n_samples == [2, 4, 6]
@@ -78,7 +78,7 @@ def test_graphsage_constructor_1():
 
 
 def test_graphsage_apply():
-    gs = GraphSAGE(output_dims=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], bias=False, input_dim=2)
     gs._normalization = lambda x: x
     for agg in gs._aggs:
         agg._initializer = "ones"
@@ -97,7 +97,7 @@ def test_graphsage_apply():
 
 
 def test_graphsage_apply_1():
-    gs = GraphSAGE(output_dims=[2, 2, 2], n_samples=[2, 2, 2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[2, 2, 2], n_samples=[2, 2, 2], bias=False, input_dim=2)
     gs._normalization = lambda z: z
     for agg in gs._aggs:
         agg._initializer = "ones"
