@@ -30,8 +30,8 @@ GraphSAGENodeMapper(
     )
 g
 """
-from stellar.data.stellargraph import *
-from stellar.mapper.node_mappers import *
+from stellargraph.data.stellargraph import *
+from stellargraph.mapper.node_mappers import *
 
 import networkx as nx
 import numpy as np

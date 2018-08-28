@@ -20,7 +20,7 @@
 import pytest
 import os
 import numpy as np
-from stellar.data.epgm import EPGM
+from stellargraph.data.epgm import EPGM
 
 
 class Test_EPGM_IO_Homogeneous(object):

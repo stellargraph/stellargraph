@@ -19,7 +19,7 @@ import os
 import numpy as np
 import networkx as nx
 from utils.edge_splitter import EdgeSplitter
-from stellar.data.epgm import EPGM
+from stellargraph.data.epgm import EPGM
 from utils.node2vec_feature_learning import Node2VecFeatureLearning
 
 

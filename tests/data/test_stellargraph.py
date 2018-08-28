@@ -16,8 +16,8 @@
 
 import pytest
 import networkx as nx
-from stellar.data.stellargraph import *
-from stellar.data.converter import *
+from stellargraph.data.stellargraph import *
+from stellargraph.data.converter import *
 
 
 def create_graph_1(sg=StellarGraph()):

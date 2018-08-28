@@ -16,8 +16,8 @@
 
 import pytest
 import networkx as nx
-from stellar.data.explorer import UniformRandomWalk
-from stellar.data.stellargraph import StellarGraph
+from stellargraph.data.explorer import UniformRandomWalk
+from stellargraph.data.stellargraph import StellarGraph
 
 
 def create_test_graph():

@@ -24,8 +24,8 @@ from networkx.classes.multidigraph import MultiDiGraph
 from collections import namedtuple
 
 # The edge type triple
-from stellar import globals
-from stellar.data import utils
+from stellargraph import globals
+from stellargraph.data import utils
 
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
 

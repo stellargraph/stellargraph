@@ -21,7 +21,7 @@ HinSAGE tests
 """
 
 
-from stellar.layer.hinsage import *
+from stellargraph.layer.hinsage import *
 import keras
 import numpy as np
 import pytest

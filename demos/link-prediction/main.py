@@ -19,7 +19,7 @@ from math import isclose
 import os
 import networkx as nx
 import numpy as np
-from stellar.data.edge_splitter import EdgeSplitter
+from stellargraph.data.edge_splitter import EdgeSplitter
 from utils.node2vec_feature_learning import Node2VecFeatureLearning
 from sklearn.pipeline import Pipeline
 from collections import Counter
@@ -30,7 +30,7 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
-from stellar.data.epgm import EPGM
+from stellargraph.data.epgm import EPGM
 
 
 parameters = {

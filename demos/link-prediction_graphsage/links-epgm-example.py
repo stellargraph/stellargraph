@@ -69,17 +69,17 @@ from typing import AnyStr, List
 import keras
 from keras import optimizers, losses, metrics
 
-from stellar.data.loader import from_epgm
-from stellar.data.edge_splitter import EdgeSplitter
-from stellar.data.converter import (
+from stellargraph.data.loader import from_epgm
+from stellargraph.data.edge_splitter import EdgeSplitter
+from stellargraph.data.converter import (
     NodeAttributeSpecification,
     BinaryConverter,
 )
 
-from stellar.layer.graphsage import GraphSAGE, MeanAggregator
-from stellar.mapper.link_mappers import GraphSAGELinkMapper
-from stellar.layer.link_inference import link_classification
-from stellar.data.stellargraph import *
+from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
+from stellargraph.mapper.link_mappers import GraphSAGELinkMapper
+from stellargraph.layer.link_inference import link_classification
+from stellargraph.data.stellargraph import *
 
 
 def train(

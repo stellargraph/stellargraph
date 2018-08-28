@@ -28,12 +28,12 @@ import itertools as it
 from typing import AnyStr, Any, List, Optional
 from keras.utils import Sequence
 
-from stellar.data.explorer import (
+from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
 )
-from stellar.data.stellargraph import StellarGraphBase
-from stellar.data.utils import is_real_iterable
+from stellargraph.data.stellargraph import StellarGraphBase
+from stellargraph.data.utils import is_real_iterable
 
 
 class GraphSAGENodeMapper(Sequence):
