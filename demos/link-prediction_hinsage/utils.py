@@ -33,7 +33,7 @@ def remap_ids(data, uid_map, mid_map, uid_inx=0, mid_inx=1):
     Nm = mid_map.shape[0]
     Nu = uid_map.shape[0]
     for ii in range(data.shape[0]):
-        mid =  data[ii, mid_inx]
+        mid = data[ii, mid_inx]
         uid = data[ii, uid_inx]
 
         new_mid = np.searchsorted(mid_map, mid)
@@ -52,25 +52,27 @@ def remap_ids(data, uid_map, mid_map, uid_inx=0, mid_inx=1):
 
 def ingest_graph(data_path, config):
     """Ingest a graph from user-movie ratings"""
-    edgelist_name = os.path.join(data_path, config['input_files']['ratings'])
+    edgelist_name = os.path.join(data_path, config["input_files"]["ratings"])
 
-    columns = config['ratings_params']['columns']
-    usecols = config['ratings_params']['usecols']
-    sep = config['ratings_params']['sep']
-    header = config['ratings_params'].get('header')
+    columns = config["ratings_params"]["columns"]
+    usecols = config["ratings_params"]["usecols"]
+    sep = config["ratings_params"]["sep"]
+    header = config["ratings_params"].get("header")
 
     # Load the edgelist:
-    ratings = pd.read_csv(edgelist_name,
-                          names=columns,
-                          sep=sep,
-                          header=header,
-                          usecols=usecols,
-                          engine='python',
-                          dtype='int')
+    ratings = pd.read_csv(
+        edgelist_name,
+        names=columns,
+        sep=sep,
+        header=header,
+        usecols=usecols,
+        engine="python",
+        dtype="int",
+    )
 
     # Enumerate movies & users
-    mids = np.unique(ratings['mId'])
-    uids = np.unique(ratings['uId'])
+    mids = np.unique(ratings["mId"])
+    uids = np.unique(ratings["uId"])
     # Filter data and transform
     remap_ids(ratings.values, uids, mids)
 
@@ -81,7 +83,9 @@ def ingest_graph(data_path, config):
     inv_id_map = dict(zip(id_map.values(), id_map.keys()))
 
     # Create networkx graph
-    g = nx.from_pandas_edgelist(ratings, source="uId", target="mId", edge_attr=True, create_using=nx.DiGraph())
+    g = nx.from_pandas_edgelist(
+        ratings, source="uId", target="mId", edge_attr=True, create_using=nx.DiGraph()
+    )
 
     # Add node types:
     node_types = {}
@@ -90,17 +94,20 @@ def ingest_graph(data_path, config):
 
     nx.set_node_attributes(g, name="label", values=node_types)
 
-    print("Graph statistics: {} users, {} movies, {} ratings"
-          .format(sum([v[1]['label'] == 'user' for v in g.nodes(data=True)]),
-                  sum([v[1]['label'] == 'movie' for v in g.nodes(data=True)]),
-                  g.number_of_edges()))
+    print(
+        "Graph statistics: {} users, {} movies, {} ratings".format(
+            sum([v[1]["label"] == "user" for v in g.nodes(data=True)]),
+            sum([v[1]["label"] == "movie" for v in g.nodes(data=True)]),
+            g.number_of_edges(),
+        )
+    )
 
     return g, id_map, inv_id_map
 
 
 def ingest_features(data_path, config, node_type):
     """Ingest fatures for nodes of node_type"""
-    filename = os.path.join(data_path, config['input_files'][node_type])
+    filename = os.path.join(data_path, config["input_files"][node_type])
 
     if node_type == "users":
         parameters = config["user_feature_params"]
@@ -114,17 +121,19 @@ def ingest_features(data_path, config, node_type):
     usecols = parameters.get("usecols")
     sep = parameters.get("sep", ",")
     feature_type = parameters.get("feature_type")
-    dtype = parameters.get("dtype", 'float32')
+    dtype = parameters.get("dtype", "float32")
     header = parameters.get("header")
 
     # Load Data
-    data = pd.read_csv(filename,
-                       index_col=0,
-                       names=columns,
-                       sep=sep,
-                       header=header,
-                       engine='python',
-                       usecols=usecols)
+    data = pd.read_csv(
+        filename,
+        index_col=0,
+        names=columns,
+        sep=sep,
+        header=header,
+        engine="python",
+        usecols=usecols,
+    )
 
     return data
 
@@ -132,12 +141,22 @@ def ingest_features(data_path, config, node_type):
 def add_features_to_nodes(g, inv_id_map, user_features, movie_features):
     """Add user and movie features to graph nodes"""
 
-    movie_features_dict = {k: np.array(movie_features.loc[k]) for k in movie_features.index}
-    user_features_dict = {k: np.array(user_features.loc[k]) for k in user_features.index}
+    movie_features_dict = {
+        k: np.array(movie_features.loc[k]) for k in movie_features.index
+    }
+    user_features_dict = {
+        k: np.array(user_features.loc[k]) for k in user_features.index
+    }
 
     node_features = {}
-    [node_features.update({inv_id_map["m_" + str(v)]: movie_features_dict[v]}) for v in movie_features.index]
-    [node_features.update({inv_id_map["u_" + str(v)]: user_features_dict[v]}) for v in user_features.index]
+    [
+        node_features.update({inv_id_map["m_" + str(v)]: movie_features_dict[v]})
+        for v in movie_features.index
+    ]
+    [
+        node_features.update({inv_id_map["u_" + str(v)]: user_features_dict[v]})
+        for v in user_features.index
+    ]
 
     nx.set_node_attributes(g, name="feature", values=node_features)
 
