@@ -396,18 +396,18 @@ def test_numeric_feature_conversion():
     sg.fit_attribute_spec(nfs, nts)
 
     # Test inferred node type
-    expected = [[1, 1], [0, 0], [1, 0], [0, 1]]
+    expected = np.array([[1, 1], [0, 0], [1, 0], [0, 1]])
     assert sg.get_feature_for_nodes([1, 2, 3, 4]) == pytest.approx(expected)
 
     # Test for None dummy nodes
-    expected = [[0, 0], [1, 1], [0, 0], [0, 1]]
+    expected = np.array([[0, 0], [1, 1], [0, 0], [0, 1]])
     assert sg.get_feature_for_nodes([None, 1, None, 4]) == pytest.approx(expected)
 
     expected = [0, 0, 1, 0]
     assert sg.get_target_for_nodes([1, 2, 3, 4]) == pytest.approx(expected)
 
     # Test explicit node type
-    expected = [[1, 1], [0, 0], [1, 0], [0, 1]]
+    expected = np.array([[1, 1], [0, 0], [1, 0], [0, 1]])
     assert sg.get_feature_for_nodes([1, 2, 3, 4], "default") == pytest.approx(expected)
 
     expected = [0, 0, 1, 0]
