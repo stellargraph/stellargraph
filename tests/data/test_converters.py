@@ -16,12 +16,16 @@
 
 
 from stellar.data.stellargraph import *
-from stellar.data.converter import *
+from stellar.data.converter import (
+    StellarAttributeConverter,
+    CategoricalConverter,
+    BinaryConverter,
+    NumericConverter,
+    OneHotCategoricalConverter,
+    NodeAttributeSpecification,
+)
 
-import networkx as nx
-import random
 import numpy as np
-import itertools as it
 import pytest
 
 
@@ -166,7 +170,7 @@ def test_attribute_spec():
     assert attr_list == ["a1", "a2"]
 
     converted_data = nfs.fit_transform("", data)
-    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+    expected = np.array([[1, 1], [0, 1], [1, 0], [0, 0]])
     assert converted_data == pytest.approx(expected)
 
     orig_data = nfs.inverse_transform("", converted_data)
@@ -185,7 +189,7 @@ def test_attribute_spec_add_list():
     assert attr_list == ["a1", "a2"]
 
     converted_data = nfs.fit_transform("", data)
-    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+    expected = np.array([[1, 1], [0, 1], [1, 0], [0, 0]])
 
     assert converted_data == pytest.approx(expected)
 
@@ -202,7 +206,7 @@ def test_attribute_spec_add_all():
     assert attr_list == ["a1", "a2"]
 
     converted_data = nfs.fit_transform("", data)
-    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+    expected = np.array([[1, 1], [0, 1], [1, 0], [0, 0]])
 
     assert converted_data == pytest.approx(expected)
 
@@ -234,7 +238,7 @@ def test_attribute_spec_binary_conv():
 
     data = [{"a1": 1, "a2": 1}, {"a2": 1}, {"a1": 1}, {}]
     converted_data = nfs.fit_transform("", data)
-    expected = [[1, 1], [0, 1], [1, 0], [0, 0]]
+    expected = np.array([[1, 1], [0, 1], [1, 0], [0, 0]])
     assert converted_data == pytest.approx(expected)
 
     orig_data = nfs.inverse_transform("", converted_data)
@@ -249,7 +253,7 @@ def test_attribute_spec_mixed():
     data = [{"a1": 1, "a2": 0}, {"a1": "a", "a2": 1}, {"a1": 1}, {"a1": "a"}]
 
     converted_data = nfs.fit_transform("", data)
-    expected = [[1, 0, -1], [0, 1, 1], [1, 0, 0], [0, 1, 0]]
+    expected = np.array([[1, 0, -1], [0, 1, 1], [1, 0, 0], [0, 1, 0]])
 
     assert converted_data == pytest.approx(expected)
 

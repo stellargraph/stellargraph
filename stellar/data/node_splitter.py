@@ -16,7 +16,8 @@
 
 import numpy as np
 from stellar.data.stellargraph import StellarGraphBase
-from stellar import GLOBALS
+from stellar.data.epgm import EPGM
+from stellar import globals
 
 
 # Easier functional interface for the splitter:
@@ -31,7 +32,7 @@ def train_val_test_split(
     """
         Splits node data into train, test, validation, and unlabeled sets.
 
-        Any nodes that have a target value equal to GLOBALS.UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
+        Any nodes that have a target value equal to globals.UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
 
         The validation set includes all nodes that remain after the train, test and unlabeled sets have been
         created. As a result, it is possible the the validation set is empty.
@@ -67,12 +68,12 @@ def train_val_test_split(
     # We will need to get the darn labels regardless of if we have stratification
     nodes = G.get_nodes_of_type(node_type)
     labels = G.get_raw_targets(
-        nodes, node_type, unlabeled_value=GLOBALS.UNKNOWN_TARGET_ATTRIBUTE
+        nodes, node_type, unlabeled_value=globals.UNKNOWN_TARGET_ATTRIBUTE
     )
 
     # Number of nodes and number without a label
     n_nodes = len(nodes)
-    n_known = sum(l != GLOBALS.UNKNOWN_TARGET_ATTRIBUTE for l in labels)
+    n_known = sum(l != globals.UNKNOWN_TARGET_ATTRIBUTE for l in labels)
 
     if n_known == 0:
         raise RuntimeError("No nodes with target attribute to split.")
@@ -124,7 +125,7 @@ def train_val_test_split(
         class_set = set(labels)
 
         # Remove the unknown target type
-        class_set.discard(GLOBALS.UNKNOWN_TARGET_ATTRIBUTE)
+        class_set.discard(globals.UNKNOWN_TARGET_ATTRIBUTE)
 
         # The number of classes we have
         n_classes = len(class_set)
@@ -178,10 +179,10 @@ class NodeSplitter(object):
         y = [
             (
                 node["id"],
-                node["data"].get(target_attribute, GLOBALS.UNKNOWN_TARGET_ATTRIBUTE),
+                node["data"].get(target_attribute, globals.UNKNOWN_TARGET_ATTRIBUTE),
             )
             for node in graph_nodes
-            if node["meta"][GLOBALS.TYPE_ATTR_NAME] == node_type
+            if node["meta"][globals.TYPE_ATTR_NAME] == node_type
         ]
 
         return y
@@ -265,7 +266,7 @@ class NodeSplitter(object):
         """
         Splits node data into train, test, validation, and unlabeled sets.
 
-        Any points in y that have value GLOBALS.UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
+        Any points in y that have value globals.UNKNOWN_TARGET_ATTRIBUTE are added to the unlabeled set.
 
         The validation set includes all the point that remain after the train, test and unlabeled sets have been
         created. As a result, it is possible the the validation set is empty, e.g., when method is set to 'percent'.
@@ -310,7 +311,7 @@ class NodeSplitter(object):
         if method == "count":
             return self._split_data(y, p, test_size)
         elif method == "percent":
-            n_unlabelled_points = np.sum(y[:, 1] == GLOBALS.UNKNOWN_TARGET_ATTRIBUTE)
+            n_unlabelled_points = np.sum(y[:, 1] == globals.UNKNOWN_TARGET_ATTRIBUTE)
             train_size = int((y.shape[0] - n_unlabelled_points) * p)
             test_size = y.shape[0] - n_unlabelled_points - train_size
             return self._split_data_absolute(
@@ -339,7 +340,7 @@ class NodeSplitter(object):
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
         # indexes of points with no class label:
-        ind = np.nonzero(y[:, 1] == GLOBALS.UNKNOWN_TARGET_ATTRIBUTE)
+        ind = np.nonzero(y[:, 1] == globals.UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
@@ -387,14 +388,14 @@ class NodeSplitter(object):
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
         # indexes of points with no class label:
-        ind = np.nonzero(y[:, 1] == GLOBALS.UNKNOWN_TARGET_ATTRIBUTE)
+        ind = np.nonzero(y[:, 1] == globals.UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
         y_train = None
 
         class_labels = np.unique(y[:, 1])
-        ind = class_labels == GLOBALS.UNKNOWN_TARGET_ATTRIBUTE
+        ind = class_labels == globals.UNKNOWN_TARGET_ATTRIBUTE
         class_labels = class_labels[np.logical_not(ind)]
 
         if test_size > y.shape[0] - class_labels.size * nc:
