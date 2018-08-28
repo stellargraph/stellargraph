@@ -1,6 +1,6 @@
-# Graphsage Recommender -- Movielens Example
+# Hinsage Recommender -- Movielens Example
 
-This is an example of using Heterogeneous GraphSAGE as a hybrid recommender
+This is an example of using Heterogeneous GraphSAGE (HinSAGE) as a hybrid recommender
 system for the Movielens dataset.
 
 ## Requirements
@@ -19,17 +19,16 @@ between them denoting reviews with scores  ranging from 1 to 5.
 
 ### Getting the data
 
-The data for the movielens example has been pre-processed and stored as pickle
-files to be directly loaded into Python. The input files required are the
-graph file as a networkx graph and the input node features stored as a numpy
-array.
+The data for this example is the MovieLens dataset of movie ratings
+collected from the MovieLens web site (http://movielens.org). 
+The dataset of 100,000 ratings from 943 users on 1682 movies 
+can be downloaded from [this link](https://grouplens.org/datasets/movielens/100k/).
 
-In the examples below the data is expected to be in the current directory.
-To run the examples, copy the relevant files to the directory containing
-the examples folder, or adjust the command line below.
+To run the examples, extract the data into a directory, 
+and adjust the command line below to have `--data_path` pointing
+to the data directory.
 
-There are two movielens datasets that have been preprepared:
-
+<!---
 1. Movelens 100k
 
     This dataset contains a subset of 100,000 ratings. The files for this dataset
@@ -62,24 +61,20 @@ There are two movielens datasets that have been preprepared:
         This is a numpy matrix of size (N_nodes x N_features) containing the
         node2vec embeddings calculated for each node in the graph.
 
+--->
+
 ## Running the script
 
-Run the example for ML-1m with movie & user features using the following command:
+Run the example for ML-100k with movie & user features using the following command:
 ```
-python movielens-example.py --graph=ml-1m_split_graphnx.pkl
-    --features=ml-1m_features.pkl --epochs 10
-```
-
-Run the example for ML-1m with node2vec embeddings using the following command:
-```
-python movielens-example.py --graph=ml-1m_split_graphnx.pkl
-    --features=ml-1m_embeddings.pkl --epochs 10
+python movielens-example.py --data_path=../data/ml-100k --epochs 10
 ```
 
-These examples trains HinSAGE to predict the "score" attribute on links. This
-example runs for 10 epochs and may run for  around 1 hour on a laptop. The
-baseline option is required to perform well in a collaborative filtering
-comparison, this learns a baseline offset for each movie & user.
+
+This examples trains HinSAGE to predict the "score" attribute on links. This
+example runs for 10 epochs, training a heterogeneous GraphSAGE (HinSAGE) model
+with a link regression predictor on top, with default parameters 
+that specify the model architecture.
 
 There are a number of other command line options that affect the training of the
 model.  Use the `--help` option to see the list of these commands.
