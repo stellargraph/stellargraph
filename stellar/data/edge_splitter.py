@@ -59,16 +59,23 @@ class EdgeSplitter(object):
         self.negative_edge_node_distances = None
         self.minedges = None  # the minimum spanning tree as a list of edges.
         self.minedges_set = None  # lookup dictionary for edges in minimum spanning tree
+        self._random = None
 
-    def _train_test_split_homogeneous(self, p, method, **kwargs):
+    def _train_test_split_homogeneous(self, p, method, probs=None):
         """
         Method for edge splitting applied to homogeneous graphs.
-        :param p: <float> Number of positive and negative examples calculated as p*<total number of edges in graph>
-        :param method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
-        :param probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
-        sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
-        :return: 2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
+
+        Args:
+            p: <float> Number of positive and negative examples calculated as p*<total number of edges in graph>
+            method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
+            probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
+            sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
+
+        Returns:
+            2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
         labels, 0 for negative and 1 for positive example.
+
+
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
@@ -85,14 +92,13 @@ class EdgeSplitter(object):
                 p=p, limit_samples=len(positive_edges)
             )
         else:  # method == 'local'
-            probs = kwargs.get(
-                "probs", [0.0, 0.25, 0.50, 0.25]
-            )  # use default values if not given, by warn user
-            print(
-                "WARNING: Using default sampling probabilities (distance from source node): {}".format(
-                    probs
+            if probs is None:  # use default values if not given, by warn user
+                probs = [0.0, 0.25, 0.50, 0.25]
+                print(
+                    "WARNING: Using default sampling probabilities (distance from source node): {}".format(
+                        probs
+                    )
                 )
-            )
             negative_edges = self._sample_negative_examples_local_dfs(
                 p=p, probs=probs, limit_samples=len(positive_edges)
             )
@@ -118,28 +124,37 @@ class EdgeSplitter(object):
 
         return edge_data_ids, edge_data_labels
 
-    def _train_test_split_heterogeneous(self, p, method, edge_label, **kwargs):
+    def _train_test_split_heterogeneous(
+        self,
+        p,
+        method,
+        edge_label,
+        probs=None,
+        edge_attribute_label=None,
+        edge_attribute_threshold=None,
+    ):
         """
         Splitting edge data based on edge type or edge type and edge property. The edge property must be a date in the
         format dd/mm/yyyy. If splitting by date, then a threshold value must also be given such that only edges with
         date larger than the threshold can be in the set of positive examples. The edge property does not effect the
         sampling of negative examples.
 
-        :param p: <float> Number of positive and negative examples calculated as p*<total number of edges in graph>
-        :param method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
-        :param probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
-        sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
-        :param edge_label: <str> The edge type to split on
-        :param edge_attribute_label: <str> The label for the edge attribute to split on
-        :param edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
-        examples
-        :return: 2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
+        Args:
+            p: <float> Number of positive and negative examples calculated as p*<total number of edges in graph>
+            method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
+            edge_label: <str> The edge type to split on
+            probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
+            sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
+            edge_attribute_label: <str> The label for the edge attribute to split on
+            edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
+            examples
+
+        Returns:
+            2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
         labels, 0 for negative and 1 for positive example.
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
-        edge_attribute_label = kwargs.get("edge_attribute_label", None)
-        edge_attribute_threshold = kwargs.get("edge_attribute_threshold", None)
         self.minedges = self._get_minimum_spanning_edges()
 
         # Note: The caller guarantees the edge_label is not None so we don't have to check here again.
@@ -175,12 +190,13 @@ class EdgeSplitter(object):
                 limit_samples=len(positive_edges),
             )
         else:  # method == 'local'
-            probs = kwargs.get("probs", [0.0, 0.25, 0.50, 0.25])
-            print(
-                "WARNING: Using default sampling probabilities (distance from source node): {}".format(
-                    probs
+            if probs is None:
+                probs = [0.0, 0.25, 0.50, 0.25]
+                print(
+                    "WARNING: Using default sampling probabilities (distance from source node): {}".format(
+                        probs
+                    )
                 )
-            )
             negative_edges = self._sample_negative_examples_by_edge_type_local_dfs(
                 p=p,
                 probs=probs,
@@ -210,7 +226,17 @@ class EdgeSplitter(object):
 
         return edge_data_ids, edge_data_labels
 
-    def train_test_split(self, p=0.5, method="global", **kwargs):
+    def train_test_split(
+        self,
+        p=0.5,
+        method="global",
+        probs=None,
+        edge_label=None,
+        edge_attribute_label=None,
+        edge_attribute_threshold=None,
+        attribute_is_datetime=None,
+        seed=None,
+    ):
         """
         Generates positive and negative edges and a graph that has the same nodes as the original but the positive
         edges removed. It can be used to generate data from homogeneous and heterogeneous graphs.
@@ -232,6 +258,7 @@ class EdgeSplitter(object):
             edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
             examples.
             attribute_is_datetime: <boolean> Specifies if edge attribute is datetime or not.
+            seed: <int> seed for random number generator, positive int or 0
 
         Returns:
             The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first Nx2 holding the
@@ -248,11 +275,21 @@ class EdgeSplitter(object):
                 )
             )
 
-        edge_label = kwargs.get("edge_label", None)
-        edge_attribute_label = kwargs.get("edge_attribute_label", None)
-        edge_attribute_threshold = kwargs.get("edge_attribute_threshold", None)
-        attribute_is_datetime = kwargs.get("attribute_is_datetime", None)
-        sampling_probs = kwargs.get("probs", None)
+        if seed is not None:
+            if seed < 0:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(seed) != int:
+                raise ValueError(
+                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
+                        type(self).__name__
+                    )
+                )
+        if self._random is None:  # only do this one
+            self._random = np.random.RandomState(seed=seed)
 
         if edge_label is not None:  # working with a heterogeneous graph
             if (
@@ -271,7 +308,7 @@ class EdgeSplitter(object):
                 )
         else:  # working with a homogeneous graph
             edge_data_ids, edge_data_labels = self._train_test_split_homogeneous(
-                p=p, method=method, probs=sampling_probs
+                p=p, method=method, probs=probs
             )
 
         return self.g_train, edge_data_ids, edge_data_labels
@@ -284,10 +321,14 @@ class EdgeSplitter(object):
         specified by edge_label, or based on edges of edge_label type that have property edge_attribute_label and
         the value of the latter property is larger than the edge_attribute_threshold.
 
-        :param edge_label: <str> The type of edges to filter
-        :param edge_attribute_label: <str> The edge attribute to use for filtering graph edges
-        :param edge_attribute_threshold: <str> The threshold applied to the edge attribute for filtering edges.
-        :return: <list> List of edges that satisfy the filtering criteria.
+        Args:
+            edge_label: <str> The type of edges to filter
+            edge_attribute_label: <str> The edge attribute to use for filtering graph edges
+            edge_attribute_threshold: <str> The threshold applied to the edge attribute for filtering edges.
+
+        Returns:
+            <list> List of edges that satisfy the filtering criteria.
+
         """
         # the graph in networkx format is stored in self.g_train
         if self.g.is_multigraph():
@@ -329,12 +370,16 @@ class EdgeSplitter(object):
         """
         Method that given a list of edges, for each edge it determines the type of the source and target
         nodes and then returns them as a list of tuples.
+
         This routine is necessary because networkx does not provide a direct method for determining the type of nodes
         given an edge.
 
-        :param edges: <list> List of edges as returned by networkx graph method edges()
-        :return: <list> Returns a list of 2-tuples such that each value in the tuple holds the type (as str) of the
+        Args:
+            edges: <list> List of edges as returned by networkx graph method edges()
+
+        Returns: <list> Returns a list of 2-tuples such that each value in the tuple holds the type (as str) of the
         source and target nodes for each element in edges.
+
         """
         # uses self.g_train but any graph object would do since nodes are shared
         all_nodes = self.g_train.nodes(data=True)
@@ -364,14 +409,18 @@ class EdgeSplitter(object):
         the reduced tree remains connected. Edges are removed based on the edge type and the values of a given edge
         attribute and a threshold applied to the latter.
 
-        :param minedges: spanning tree edges that cannot be removed
-        :param p: factor by which to reduce the size of the graph
-        :param edge_label: <str> The edge type to consider
-        :param attribute_label: <str> The edge attribute to consider
-        :param attribute_threshold: <str> The threshold value; only edges with attribute value larger than the
-        threshold can be removed
-        :return: Returns the list of edges removed from the graph (also modifies the graph self.g_train
-        by removing the said edges)
+        Args:
+            minedges: <list> Spanning tree edges that cannot be removed
+            p: <float> Factor by which to reduce the size of the graph
+            edge_label: <str> The edge type to consider
+            edge_attribute_label: <str> The edge attribute to consider
+            edge_attribute_threshold: <str> The threshold value; only edges with attribute value larger than the
+            threshold can be removed
+
+        Returns:
+            Returns the list of edges removed from the graph (also modifies the graph self.g_train
+            by removing the said edges)
+
         """
         # We check that the parameters are given values but we don't check if the graph has edges with label
         # edge_label and edge attributes with label edge_attribute_label. For now, we assume that the given values
@@ -400,7 +449,7 @@ class EdgeSplitter(object):
         num_edges_to_remove = int(num_edges_total * p)
 
         # shuffle the edges
-        np.random.shuffle(all_edges)
+        self._random.shuffle(all_edges)
         #
         # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
         # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
@@ -431,10 +480,14 @@ class EdgeSplitter(object):
         Reduces the graph self.g_train by a factor p by removing existing edges not on minedges list such that
         the reduced tree remains connected. Edges are removed based on the edge type.
 
-        :param minedges: spanning tree edges that cannot be removed
-        :param p: factor by which to reduce the size of the graph
-        :param edge_label: <str> The edge type to consider
-        :return: Returns the list of edges removed from self.g_train (also modifies self.g_train by removing said edges)
+        Args:
+            minedges: <list> Minimum spanning tree edges that cannot be removed
+            p: <float> Factor by which to reduce the size of the graph
+            edge_label: <str> The edge type to consider
+
+        Returns:
+            <list> Returns the list of edges removed from self.g_train (also modifies self.g_train by removing said
+            edges)
         """
         if edge_label is None:
             raise ValueError("edge_label must be specified")
@@ -450,7 +503,7 @@ class EdgeSplitter(object):
         # Multiply this number by p to determine the number of positive edge examples to sample
         num_edges_to_remove = int(num_edges_total * p)
         # shuffle the edges
-        np.random.shuffle(all_edges)
+        self._random.shuffle(all_edges)
 
         # iterate over the list of filtered edges and for each edge if the edge is not in minedges, remove it from
         # the graph until num_edges_to_remove edges have been removed and the graph is reduced to p of its original
@@ -477,10 +530,13 @@ class EdgeSplitter(object):
         Reduces the graph self.g_train by a factor p by removing existing edges not on minedges list such that
         the reduced tree remains connected. Edge type is ignored and all edges are treated equally.
 
-        :param minedges: spanning tree edges that cannot be removed
-        :param p: factor by which to reduce the size of the graph
-        :return: Returns the list of edges removed from self.g_train (also modifies self.g_train by removing the
-        said edges)
+        Args:
+            minedges: <list> Minimum spanning tree edges that cannot be removed
+            p: <float> Factor by which to reduce the size of the graph
+
+        Returns:
+            <list> Returns the list of edges removed from self.g_train (also modifies self.g_train by removing the
+            said edges)
         """
         # copy the original graph and start over in case this is not the first time
         # reduce_graph has been called.
@@ -503,7 +559,7 @@ class EdgeSplitter(object):
         )
 
         # shuffle the edges
-        np.random.shuffle(all_edges)
+        self._random.shuffle(all_edges)
         # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
         # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
         count = 0
@@ -540,13 +596,16 @@ class EdgeSplitter(object):
         neighbourhood of randomly (uniformly) sampled source nodes at distances defined by the probabilities in probs.
         The source graph is not modified.
 
-        :param p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
-        edges to be sampled.
-        :param probs: <list> Probability distribution for the distance between source and target nodes.
-        :param edges: <list> The positive edge examples that have previously been removed from the graph
-        :param edge_label: <str> The edge type to sample negative examples of
-        :param limit_samples: int or None, it limits the maximum number of samples to the given number
-        :return: <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+        Args:
+            p: <float> Factor that multiplies the number of edges in the graph and determines the number of negative
+            edges to be sampled.
+            probs: <list> Probability distribution for the distance between source and target nodes.
+            edges_positive: <list> The positive edge examples that have previously been removed from the graph
+            edge_label: <str> The edge type to sample negative examples of
+            limit_samples: <int or None> It limits the maximum number of samples to the given number, if not None
+
+        Returns:
+            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
@@ -598,9 +657,11 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
+            self._random.shuffle(start_nodes)
             # sample the distance to the target node using probs
-            target_node_distances = np.random.choice(n, len(start_nodes), p=probs) + 1
+            target_node_distances = (
+                self._random.choice(n, len(start_nodes), p=probs) + 1
+            )
             for u, d in zip(start_nodes, target_node_distances):
                 # perform DFS search up to d distance from the start node u.
                 visited = {
@@ -645,7 +706,7 @@ class EdgeSplitter(object):
                             break
                         elif dv < d:
                             neighbours = list(nx.neighbors(self.g, v))
-                            np.random.shuffle(neighbours)
+                            self._random.shuffle(neighbours)
                             neighbours = [(k, dv + 1) for k in neighbours]
                             nodes_stack.extend(neighbours)
 
@@ -666,10 +727,14 @@ class EdgeSplitter(object):
         neighbourhood of randomly (uniformly) sampled source nodes at distances defined by the probabilities in probs.
         The source graph is not modified.
 
-        :param p: factor that multiplies the number of edges in the graph and determines the number of no-edges to
+        Args:
+            p: <float> Factor that multiplies the number of edges in the graph and determines the number of no-edges to
             be sampled.
-        :param limit_samples: int or None, it limits the maximum number of samples to the given number
-        :return: <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+            probs: <list> Probability distribution for the distance between source and target nodes.
+            limit_samples: <int or None> It limits the maximum number of samples to the given number, if not None
+
+        Returns:
+            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
@@ -715,9 +780,11 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes))))
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
+            self._random.shuffle(start_nodes)
             # sample the distance to the target node using probs
-            target_node_distances = np.random.choice(n, len(start_nodes), p=probs) + 1
+            target_node_distances = (
+                self._random.choice(n, len(start_nodes), p=probs) + 1
+            )
             for u, d in zip(start_nodes, target_node_distances):
                 # perform DFS search up to d distance from the start node u.
                 visited = {node: False for node in start_nodes}
@@ -753,7 +820,7 @@ class EdgeSplitter(object):
                                 break
                         elif dv < d:
                             neighbours = list(nx.neighbors(self.g, v))
-                            np.random.shuffle(neighbours)
+                            self._random.shuffle(neighbours)
                             neighbours = [(k, dv + 1) for k in neighbours]
                             nodes_stack.extend(neighbours)
                 if count == num_edges_to_sample:
@@ -771,10 +838,14 @@ class EdgeSplitter(object):
         negative edges produced is equal to the number of edges in the graph times p (that should be in the range (0,1]
         or limited to maximum limit_samples if the latter is not None. The source graph is not modified.
 
-        :param p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
-        edges to be sampled.
-        :param limit_samples: <int or None>, it limits the maximum number of sample to the given number
-        :return: <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+        Args:
+            p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
+            edges to be sampled.
+            probs: <list> Probability distribution for the distance between source and target nodes.
+            limit_samples: <int or None> It limits the maximum number of sample to the given number, if not None
+
+        Returns:
+            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
@@ -801,9 +872,11 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes))))
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
+            self._random.shuffle(start_nodes)
 
-            target_node_distances = np.random.choice(n, len(start_nodes), p=probs) + 1
+            target_node_distances = (
+                self._random.choice(n, len(start_nodes), p=probs) + 1
+            )
             for u, d in zip(start_nodes, target_node_distances):
                 # collect all the nodes that are d links away from u
                 nodes_at_frontier = list()
@@ -821,7 +894,7 @@ class EdgeSplitter(object):
                     break
                 # check if u, v where v in nodes_at_frontier have an edge. The first pair that has no edge in the graph
                 # becomes a negative sample
-                np.random.shuffle(nodes_at_frontier)
+                self._random.shuffle(nodes_at_frontier)
                 for v in nodes_at_frontier:
                     if (
                         (u != v)
@@ -847,10 +920,13 @@ class EdgeSplitter(object):
         This method samples uniformly at random nodes from the graph and, if they don't have an edge in the graph,
         it records the pair as a negative edge.
 
-        :param p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
-        edges to be sampled.
-        :param limit_samples: int or None, it limits the maximum number of samples to the given number
-        :return: <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+        Args:
+            p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
+            edges to be sampled.
+            limit_samples: <int or None> it limits the maximum number of samples to the given number, if not None
+
+        Returns:
+            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         self.negative_edge_node_distances = []
 
@@ -884,8 +960,8 @@ class EdgeSplitter(object):
 
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
-            np.random.shuffle(end_nodes)
+            self._random.shuffle(start_nodes)
+            self._random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 if (
                     (u != v)
@@ -916,12 +992,15 @@ class EdgeSplitter(object):
 
         The source graph is not modified.
 
-        :param p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
-        edges to be sampled.
-        :param edges: <list> The positive edge examples that have previously been removed from the graph
-        :param edge_label: <str> The edge type to sample negative examples of
-        :param limit_samples: int or None, it limits the maximum number of samples to the given number
-        :return: <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+        Args:
+            edges: <list> The positive edge examples that have previously been removed from the graph
+            edge_label: <str> The edge type to sample negative examples of
+            p: <float> Factor that multiplies the number of edges in the graph and determines the number of negative
+            edges to be sampled.
+            limit_samples: <int or None> It limits the maximum number of samples to the given number, if not None
+
+        Returns:
+            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         self.negative_edge_node_distances = []
         # determine the number of edges in the graph that have edge_label type
@@ -955,8 +1034,8 @@ class EdgeSplitter(object):
         num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes)))) + 1
 
         for _ in np.arange(0, num_iter):
-            np.random.shuffle(start_nodes)
-            np.random.shuffle(end_nodes)
+            self._random.shuffle(start_nodes)
+            self._random.shuffle(end_nodes)
             for u, v in zip(start_nodes, end_nodes):
                 u_v_edge_type = (u[1]["label"], v[1]["label"])
                 if (
@@ -980,8 +1059,11 @@ class EdgeSplitter(object):
 
     def _get_minimum_spanning_edges(self):
         """
-        Given an undirected graph, it calculates the minimum set of edges such that graph connectivity is preserved
-        :return: The minimum spanning edges of the undirected graph G
+        Given an undirected graph, it calculates the minimum set of edges such that graph connectivity is preserved.
+
+        Returns:
+            <list> The minimum spanning edges of the undirected graph self.g
+
         """
         mst = nx.minimum_spanning_edges(self.g, data=False)
         edges = list(mst)

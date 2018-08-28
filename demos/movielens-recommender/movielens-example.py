@@ -67,7 +67,7 @@ def train(ml_data: MovielensData, batch_size: int = 1000, num_epochs: int = 10):
 
     # Final estimator layer
     score_prediction = regression_predictor(
-        hidden_1=32, hidden_2=32, method=ml_data.edge_regressor
+        hidden_1=None, hidden_2=None, method=ml_data.edge_regressor
     )(x_out)
 
     # Create Keras model for training
@@ -80,7 +80,7 @@ def train(ml_data: MovielensData, batch_size: int = 1000, num_epochs: int = 10):
 
     # Train model
     history = model.fit_generator(
-        train_iter, epochs=num_epochs, verbose=2, shuffle=True
+        train_iter, epochs=num_epochs, validation_data=test_iter, verbose=2, shuffle=True
     )
 
     # Evaluate and print metrics

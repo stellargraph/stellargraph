@@ -17,6 +17,7 @@
 import pytest
 import networkx as nx
 from stellar.data.explorer import UniformRandomMetaPathWalk
+from stellar.data.stellargraph import StellarGraph
 
 
 def create_test_graph():
@@ -69,6 +70,7 @@ def create_test_graph():
         else:  # make these type n for number
             g.node[node]["label"] = "n"
 
+    g = StellarGraph(g)
     return g
 
 
