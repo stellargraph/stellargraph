@@ -84,6 +84,9 @@ def train(
         G, train_size=140, test_size=1000, stratify=True
     )
 
+    from collections import Counter
+    print(Counter([G.node[n]['subject'] for n in train_nodes]))
+
     # Get targets for the mapper
     train_targets = G.get_target_for_nodes(train_nodes)
     val_targets = G.get_target_for_nodes(val_nodes)
