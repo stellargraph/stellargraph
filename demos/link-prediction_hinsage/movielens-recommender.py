@@ -251,7 +251,7 @@ if __name__ == "__main__":
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[30, 10],
+        default=[2, 5],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
