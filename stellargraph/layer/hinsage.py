@@ -30,7 +30,7 @@ from collections import defaultdict
 import itertools as it
 import operator as op
 
-from stellar.data.stellargraph import StellarGraphBase
+from stellargraph.data.stellargraph import StellarGraphBase
 
 
 class MeanHinAggregator(Layer):

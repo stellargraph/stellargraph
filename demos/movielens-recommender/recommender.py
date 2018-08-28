@@ -24,7 +24,7 @@ from keras import Input, Model, optimizers, losses, activations, metrics
 from keras.layers import Layer, Dense, Concatenate, Multiply, Activation, Lambda, Reshape
 from keras.utils import Sequence
 
-from stellar.layer.hinsage import HinSAGE
+from stellargraph.layer.hinsage import HinSAGE
 
 
 class LeakyClippedLinear(Layer):

@@ -29,8 +29,8 @@ GraphSAGELinkMapper(
     )
 g
 """
-from stellar.mapper.link_mappers import *
-from stellar.data.stellargraph import *
+from stellargraph.mapper.link_mappers import *
+from stellargraph.data.stellargraph import *
 
 import numpy as np
 import networkx as nx

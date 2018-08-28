@@ -18,8 +18,8 @@ import pytest
 import os
 import numpy as np
 import networkx as nx
-from stellar.data.edge_splitter import EdgeSplitter
-from stellar.data.epgm import EPGM
+from stellargraph.data.edge_splitter import EdgeSplitter
+from stellargraph.data.epgm import EPGM
 import random
 import datetime
 from datetime import datetime, timedelta

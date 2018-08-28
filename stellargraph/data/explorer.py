@@ -17,8 +17,8 @@
 import networkx as nx
 import numpy as np
 import random
-from stellar.data.stellargraph import GraphSchema
-from stellar.data.stellargraph import StellarGraphBase
+from stellargraph.data.stellargraph import GraphSchema
+from stellargraph.data.stellargraph import StellarGraphBase
 from collections import defaultdict
 
 
@@ -866,7 +866,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
             given depth d.
             n: <int> Number of walks per node id.
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
-            graph_schema: <GraphSchema> None or a stellar graph schema object
+            graph_schema: <GraphSchema> None or a stellargraph graph schema object
             seed: <int> Random number generator seed; default is None
 
         """

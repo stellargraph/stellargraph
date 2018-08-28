@@ -17,7 +17,7 @@
 import setuptools
 
 DESCRIPTION = "Python library for machine learning on graphs"
-URL = "https://github.com/stellargraph/stellar-ml"
+URL = "https://github.com/stellargraph/stellargraph"
 VERSION = "0.4b"
 
 # Required packages
@@ -40,7 +40,7 @@ with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
 
 setuptools.setup(
-    name="stellar-ml",
+    name="stellargraph",
     version=VERSION,
     description=DESCRIPTION,
     author="Data61, CSIRO",

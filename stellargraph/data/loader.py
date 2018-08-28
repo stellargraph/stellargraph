@@ -21,8 +21,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from stellar.data.epgm import EPGM
-from stellar.data.stellargraph import *
+from stellargraph.data.epgm import EPGM
+from stellargraph.data.stellargraph import *
 
 
 def from_epgm(
