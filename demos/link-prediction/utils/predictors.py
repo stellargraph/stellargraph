@@ -83,7 +83,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
             op_best = binary_operator
 
         print(
-            "Operator: {} Score (ROC AUC on test set of edge_data): {}".format(
+            "Operator: {} Score (ROC AUC on test set of edge_data): {:.3f}".format(
                 binary_operator, score_auc
             )
         )
