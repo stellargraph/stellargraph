@@ -27,37 +27,54 @@ from stellar.layer.hinsage import *
 from stellar.layer.link_inference import link_regression
 from keras import Input, Model, optimizers, losses, metrics
 from typing import AnyStr, List
+import json
+from utils import ingest_graph, ingest_features, add_features_to_nodes
+from sklearn import preprocessing, feature_extraction, model_selection
+import pandas as pd
 import multiprocessing
 
 
-def read_graph(graph_fname, features_fname):
+def read_graph(data_path, config_file):
+
+    # Read the dataset config file:
+    with open(config_file, "r") as f:
+        config = json.load(f)
 
     # Read graph
     print("Reading graph...")
-    gnx = nx.read_gpickle(graph_fname)
+    gnx, id_map, inv_id_map = ingest_graph(data_path, config)
 
     # Read features
     print("Reading features...")
-    with open(features_fname, "rb") as f:
-        features = pickle.load(f)
+    user_features = ingest_features(data_path, config, node_type="users")
+    movie_features = ingest_features(data_path, config, node_type="movies")
 
-    #  Convert to StellarGraph:
-    if gnx.is_directed():
-        g = StellarDiGraph(gnx)
-    else:
-        g = StellarGraph(gnx)
+    # Prepare the user features for ML (movie features are already numeric and hence ML-ready):
+    feature_names = ["age", "gender", "job"]
 
-    # Add features to nodes in g:
-    nx.set_node_attributes(g, values=dict(zip(list(g), features)), name="feature")
-    g.node_feature_size = features.shape[1]
+    feature_encoding = feature_extraction.DictVectorizer(sparse=False, dtype=int)
+    feature_encoding.fit(user_features[feature_names].to_dict("records"))
+
+    user_features_transformed = feature_encoding.transform(
+        user_features[feature_names].to_dict("records")
+    )
+    user_features = pd.DataFrame(
+        user_features_transformed, index=user_features.index, dtype="float64"
+    )
+
+    # Assume that the age can be used as a continuous variable and rescale it
+    user_features[0] = preprocessing.scale(user_features[0])
+
+    # Add the user and movie features to the graph:
+    gnx = add_features_to_nodes(gnx, inv_id_map, user_features, movie_features)
 
     print(
         "Graph statistics: {} nodes, {} edges".format(
-            g.number_of_nodes(), g.number_of_edges()
+            gnx.number_of_nodes(), gnx.number_of_edges()
         )
     )
 
-    return g
+    return gnx
 
 
 def root_mean_square_error(s_true, s_pred):
@@ -69,16 +86,17 @@ class LinkInference(object):
     Link attribute inference class
     """
 
-    def __init__(self, g: StellarGraphBase):
+    def __init__(self, g):
         self.g = g
 
     def train(
         self,
-        layer_size: List[int],
-        num_samples: List[int],
-        batch_size: int = 1000,
-        num_epochs: int = 10,
-        learning_rate=1e-3,
+        layer_size,
+        num_samples,
+        train_size=0.7,
+        batch_size: int = 200,
+        num_epochs: int = 20,
+        learning_rate=5e-3,
         dropout=0.0,
         use_bias=True,
     ):
@@ -100,32 +118,31 @@ class LinkInference(object):
         """
 
         # Training and test edges
-        edges_train = [e for e in self.g.edges(data=True) if e[2]["split"] == 0]
-        edges_test = [e for e in self.g.edges(data=True) if e[2]["split"] == 1]
+        edges = list(self.g.edges(data=True))
+        edges_train, edges_test = model_selection.train_test_split(
+            edges, train_size=train_size
+        )
 
         #  Edgelists:
         edgelist_train = [(e[0], e[1]) for e in edges_train]
         edgelist_test = [(e[0], e[1]) for e in edges_test]
 
-        # Directed ('movie', 'user') edgelists:
-        # Note that this assumes that the movie IDs are lower than the user IDs
-        edgelist_train = [(min(e), max(e)) for e in edgelist_train]
-        edgelist_test = [(min(e), max(e)) for e in edgelist_test]
-
-        # !HACK: node types should normally be in g already, but in this case they are not! Add node types to self.g:
-        movie_nodes = np.unique([e[0] for e in edgelist_train + edgelist_test])
-        user_nodes = np.unique([e[1] for e in edgelist_train + edgelist_test])
-        node_types = {}
-        [node_types.update({v: "movie"}) for v in movie_nodes]
-        [node_types.update({v: "user"}) for v in user_nodes]
-        nx.set_node_attributes(self.g, name="label", values=node_types)
-
-        # Prepare self.g for ML:
-        self.g.fit_attribute_spec()
-
         labels_train = [e[2]["score"] for e in edges_train]
         labels_test = [e[2]["score"] for e in edges_test]
 
+        # Our machine learning task of learning user-movie ratings can be framed as a supervised Link Attribute Inference:
+        # given a graph of user-movie ratings, we train a model for rating prediction using the ratings edges_train,
+        # and evaluate it using the test ratings edges_test. The model also requires the user-movie graph structure.
+        # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
+        # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
+        self.g = StellarGraph(self.g)
+
+        # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
+        self.g.fit_attribute_spec()
+
+        # Next, we create the link mappers for preparing and streaming training and testing data to the model.
+        # The mappers essentially sample k-hop subgraphs of G with randomly selected head nodes, as required by
+        # the HinSAGE algorithm, and generate minibatches of those samples to be fed to the input layer of the HinSAGE model.
         # Link mappers:
         mapper_train = HinSAGELinkMapper(
             self.g,
@@ -146,7 +163,10 @@ class LinkInference(object):
 
         assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
 
-        # Model:
+        # Build the model by stacking a two-layer HinSAGE model and a link regression layer on top.
+        assert len(layer_size) == len(
+            num_samples
+        ), "layer_size and num_samples must be of the same length! Stopping."
         hinsage = HinSAGE(
             layer_sizes=layer_size, mapper=mapper_train, bias=use_bias, dropout=dropout
         )
@@ -179,8 +199,8 @@ class LinkInference(object):
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
-            use_multiprocessing=False,
-            # workers=multiprocessing.cpu_count(),
+            use_multiprocessing=True,
+            workers=multiprocessing.cpu_count() // 2,
         )
 
         # Evaluate and print metrics
@@ -190,7 +210,8 @@ class LinkInference(object):
         for name, val in zip(model.metrics_names, test_metrics):
             print("\t{}: {:0.4f}".format(name, val))
 
-    def test(self, G: StellarGraphBase, model_file: AnyStr):
+    def test(self, model_file: AnyStr):
+        print("test method is not yet implemented")
         pass
 
 
@@ -199,42 +220,38 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "-g",
-        "--graph",
-        type=str,
-        default="data/ml-1m_split_graphnx.pkl",
-        help="The graph stored in networkx pickle format.",
+        "-p", "--data_path", type=str, default="../data/ml-100k", help="Dataset path (directory)"
     )
     parser.add_argument(
         "-f",
-        "--features",
+        "--config",
         type=str,
-        default="data/ml-1m_embeddings.pkl",
-        help="The node features to use, stored as a pickled numpy array.",
+        default="ml-100k-config.json",
+        help="Data config file",
     )
     parser.add_argument(
         "-t",
         "--target",
         type=str,
         default="score",
-        help="The target edge attribute, default is 'score'",
+        help="The target edge attribute to learn/predict, default is 'score'",
     )
     parser.add_argument(
         "-m",
         "--edge_feature_method",
         type=str,
-        default="ip",
-        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', or 'ip",
+        default="concat",
+        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
     )
     parser.add_argument(
         "-r",
         "--learningrate",
         type=float,
-        default=0.0005,
-        help="Learning rate for training model",
+        default=0.005,
+        help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-n", "--batch_size", type=int, default=500, help="Load a save checkpoint file"
+        "-n", "--batch_size", type=int, default=200, help="Minibatch size"
     )
     parser.add_argument(
         "-e", "--epochs", type=int, default=10, help="Number of epochs to train for"
@@ -244,7 +261,7 @@ if __name__ == "__main__":
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[30, 10],
+        default=[8, 4],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
@@ -252,7 +269,7 @@ if __name__ == "__main__":
         "--layer_size",
         type=int,
         nargs="*",
-        default=[50, 50],
+        default=[32, 32],
         help="The number of hidden features at each layer",
     )
     parser.add_argument(
@@ -260,7 +277,7 @@ if __name__ == "__main__":
         "--dropout",
         type=float,
         default=0.0,
-        help="Dropout for the HinSAGE model, between 0.0 and 1.0",
+        help="Dropout rate for the HinSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
         "-c",
@@ -273,12 +290,13 @@ if __name__ == "__main__":
 
     args, cmdline_args = parser.parse_known_args()
 
-    G = read_graph(args.graph, args.features)
+    G = read_graph(args.data_path, args.config)
 
     model = LinkInference(G)
 
     if args.checkpoint is None:
         model.train(
+            train_size=0.7,
             learning_rate=args.learningrate,
             layer_size=args.layer_size,
             num_samples=args.neighbour_samples,
