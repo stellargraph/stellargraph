@@ -18,7 +18,7 @@ from abc import ABC, abstractmethod
 import itertools as it
 import numpy as np
 from keras.utils.np_utils import to_categorical
-from stellar.data.stellargraph import StellarGraphBase
+from stellargraph.data.stellargraph import StellarGraphBase
 
 
 class NodeAttributeSpecification:

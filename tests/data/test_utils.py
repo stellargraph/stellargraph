@@ -29,8 +29,8 @@ GraphSAGENodeMapper(
         name: AnyStr = None,
     )
 """
-from stellar.data.stellargraph import *
-from stellar.data.utils import *
+from stellargraph.data.stellargraph import *
+from stellargraph.data.utils import *
 
 import networkx as nx
 import random

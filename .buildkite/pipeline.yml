@@ -12,7 +12,7 @@ steps:
 
   - label: "style"
     command:
-      - --check stellar tests
+      - --check stellargraph tests
     plugins:
       docker#v1.3.0:
         image: "stellargraph/black"

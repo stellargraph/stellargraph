@@ -22,7 +22,7 @@ This currently is only tested on the CORA dataset.
 Example usage:
 python links-epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -e 10 -l 64 32 -b 10 -s 10 20 -r 0.001 -d 0.5 --ignore_node_attr subject --edge_sampling_method local --edge_feature_method concat
 
-usage: epgm-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
+usage: links-epgm-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
                        [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
                        [-r LEARNING_RATE] [-d DROPOUT]
@@ -69,18 +69,18 @@ from typing import AnyStr, List
 import keras
 from keras import optimizers, losses, metrics
 
-from stellar.data.loader import from_epgm
-from stellar.data.edge_splitter import EdgeSplitter
-from stellar.data.converter import (
+from stellargraph.data.loader import from_epgm
+from stellargraph.data.edge_splitter import EdgeSplitter
+from stellargraph.data.converter import (
     NodeAttributeSpecification,
     BinaryConverter,
 )
 
-from stellar.layer.graphsage import GraphSAGE, MeanAggregator
-from stellar.mapper.link_mappers import GraphSAGELinkMapper
-from stellar.layer.link_inference import link_classification
-from stellar.data.stellargraph import *
-
+from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
+from stellargraph.mapper.link_mappers import GraphSAGELinkMapper
+from stellargraph.layer.link_inference import link_classification
+from stellargraph.data.stellargraph import *
+from stellargraph import globals
 
 def train(
     G,
@@ -251,14 +251,14 @@ def test(G, model_file: AnyStr, batch_size: int):
     if G_test.is_directed():
         G_test = StellarDiGraph(
             G_test,
-            node_type_name=GLOBALS.TYPE_ATTR_NAME,
-            edge_type_name=GLOBALS.TYPE_ATTR_NAME,
+            node_type_name=globals.TYPE_ATTR_NAME,
+            edge_type_name=globals.TYPE_ATTR_NAME,
         )
     else:
         G_test = StellarGraph(
             G_test,
-            node_type_name=GLOBALS.TYPE_ATTR_NAME,
-            edge_type_name=GLOBALS.TYPE_ATTR_NAME,
+            node_type_name=globals.TYPE_ATTR_NAME,
+            edge_type_name=globals.TYPE_ATTR_NAME,
         )
 
     # Convert node attributes to feature values

@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import pytest
-from stellar.data.explorer import SampledHeterogeneousBreadthFirstWalk
-from stellar.data.stellargraph import StellarGraph
+from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
+from stellargraph.data.stellargraph import StellarGraph
 
 
 def create_simple_test_graph():

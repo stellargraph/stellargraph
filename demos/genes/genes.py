@@ -1,4 +1,4 @@
-from stellar.layer.hinsage import HinSAGE
+from stellargraph.layer.hinsage import HinSAGE
 import keras
 from keras import backend as K
 import numpy as np

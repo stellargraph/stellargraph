@@ -19,7 +19,8 @@ from math import isclose
 import os
 import networkx as nx
 import numpy as np
-from stellar.data.edge_splitter import EdgeSplitter
+from stellargraph.data.edge_splitter import EdgeSplitter
+from stellargraph.data.stellargraph import StellarGraph
 from utils.cl_arguments_parser import parse_args
 from utils.read_graph import read_graph
 from utils.predictors import *
@@ -40,6 +41,7 @@ parameters = {
     "weighted": False,  # is graph weighted?
     "directed": False,  # are edges directed?
 }
+
 
 def print_distance_probabilities(node_distances):
     counts = Counter(node_distances)
@@ -212,8 +214,8 @@ if __name__ == "__main__":
         metapaths = get_metapaths_from_str(args.metapaths)
 
         train_heterogeneous_graph(
-            g_train=g_train,
-            g_test=g_test,
+            g_train=StellarGraph(g_train),
+            g_test=StellarGraph(g_test),
             output_node_features=args.output_node_features,
             edge_data_ids_train=edge_data_ids_train,
             edge_data_labels_train=edge_data_labels_train,

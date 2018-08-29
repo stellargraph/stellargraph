@@ -29,12 +29,12 @@ import pickle
 import keras
 from keras import optimizers, losses, layers, metrics
 
-from stellar.data.stellargraph import StellarGraph
-from stellar.data.converter import *
-from stellar.data.node_splitter import train_val_test_split
-from stellar.data.loader import from_epgm
-from stellar.layer.hinsage import HinSAGE, MeanHinAggregator
-from stellar.mapper.node_mappers import HinSAGENodeMapper
+from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.data.converter import *
+from stellargraph.data.node_splitter import train_val_test_split
+from stellargraph.data.loader import from_epgm
+from stellargraph.layer.hinsage import HinSAGE, MeanHinAggregator
+from stellargraph.mapper.node_mappers import HinSAGENodeMapper
 
 
 def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dropout):

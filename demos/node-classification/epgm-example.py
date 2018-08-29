@@ -33,15 +33,15 @@ import pandas as pd
 import keras
 from keras import optimizers, losses, layers, metrics
 
-from stellar.data.node_splitter import train_val_test_split
-from stellar.data.loader import from_epgm
-from stellar.data.converter import (
+from stellargraph.data.node_splitter import train_val_test_split
+from stellargraph.data.loader import from_epgm
+from stellargraph.data.converter import (
     NodeAttributeSpecification,
     OneHotCategoricalConverter,
     BinaryConverter,
 )
-from stellar.layer.graphsage import GraphSAGE, MeanAggregator
-from stellar.mapper.node_mappers import GraphSAGENodeMapper
+from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
+from stellargraph.mapper.node_mappers import GraphSAGENodeMapper
 
 
 def train(
