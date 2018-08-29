@@ -28,48 +28,12 @@ To run the examples, extract the data into a directory,
 and adjust the command line below to have `--data_path` pointing
 to the data directory.
 
-<!---
-1. Movelens 100k
-
-    This dataset contains a subset of 100,000 ratings. The files for this dataset
-    are as follows:
-
-     * ml-100k_split_graphnx.pkl:
-        The networkx graph of the movielens data, this file includes the ratings
-        and the test/train split for all nodes and the index of each node in the
-        features array.  
-
-     * ml-100k_embeddings.pkl:
-        This is a numpy matrix of size (N_nodes x N_features) containing the
-        node2vec embeddings calculated for each node in the graph.
-
-2. Movelens 1m
-
-    This dataset contains a subset of 1 million ratings. The files for this dataset
-    are as follows:
-
-     * ml-1m_split_graphnx.pkl:
-        The networkx graph of the movielens data, this file includes the ratings
-        and the test/train split for all nodes and the index of each node in the
-        features array.  
-
-     * ml-1m_embeddings.pkl:
-        This is a numpy matrix of size (N_nodes x N_features) containing the
-        node2vec embeddings calculated for each node in the graph.
-
-     * ml-1m_features.pkl:
-        This is a numpy matrix of size (N_nodes x N_features) containing the
-        node2vec embeddings calculated for each node in the graph.
-
---->
-
 ## Running the script
 
 Run the example for ML-100k with movie & user features using the following command:
 ```
-python movielens-example.py --data_path=../data/ml-100k --epochs 10
+python movielens-example.py --data_path=../data/ml-100k
 ```
-
 
 This examples trains HinSAGE to predict the "score" attribute on links. This
 example runs for 10 epochs, training a heterogeneous GraphSAGE (HinSAGE) model
