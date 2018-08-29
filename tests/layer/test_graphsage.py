@@ -21,7 +21,7 @@ GraphSAGE tests
 """
 
 
-from stellar.layer.graphsage import *
+from stellargraph.layer.graphsage import *
 import keras
 import numpy as np
 import pytest

@@ -15,8 +15,8 @@
 # limitations under the License.
 
 
-from stellar.data.stellargraph import *
-from stellar.data.converter import (
+from stellargraph.data.stellargraph import *
+from stellargraph.data.converter import (
     StellarAttributeConverter,
     CategoricalConverter,
     BinaryConverter,

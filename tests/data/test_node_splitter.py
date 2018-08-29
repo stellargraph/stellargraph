@@ -22,10 +22,10 @@ import itertools as it
 import networkx as nx
 import pandas as pd
 
-from stellar.data.stellargraph import StellarGraph
-from stellar.data.node_splitter import NodeSplitter, train_val_test_split
-from stellar.data.epgm import EPGM
-from stellar import globals
+from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.data.node_splitter import NodeSplitter, train_val_test_split
+from stellargraph.data.epgm import EPGM
+from stellargraph import globals
 from datetime import datetime, timedelta
 import random
 

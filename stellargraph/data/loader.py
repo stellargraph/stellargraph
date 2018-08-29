@@ -21,16 +21,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from stellar.data.epgm import EPGM
-from stellar.data.stellargraph import *
+from stellargraph.data.epgm import EPGM
+from stellargraph.data.stellargraph import *
+from stellargraph import globals
 
 
 def from_epgm(
     epgm_location,
     dataset_name=None,
     directed=False,
-    node_type_name=GLOBALS.TYPE_ATTR_NAME,
-    edge_type_name=GLOBALS.TYPE_ATTR_NAME,
+    node_type_name=globals.TYPE_ATTR_NAME,
+    edge_type_name=globals.TYPE_ATTR_NAME,
 ):
     """
 

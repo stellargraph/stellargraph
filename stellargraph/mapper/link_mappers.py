@@ -19,7 +19,7 @@ Mappers to provide input data for link prediction/link attribute inference probl
 
 """
 
-from stellar.data.stellargraph import StellarGraphBase
+from stellargraph.data.stellargraph import StellarGraphBase
 import numpy as np
 import itertools as it
 from typing import AnyStr, Any, List, Tuple, Optional
@@ -28,7 +28,7 @@ import operator
 from functools import reduce
 import time
 
-from stellar.data.explorer import (
+from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
 )

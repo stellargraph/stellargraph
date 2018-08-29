@@ -18,7 +18,7 @@
 Tests for link inference functions
 """
 
-from stellar.layer.link_inference import *
+from stellargraph.layer.link_inference import *
 import tensorflow as tf
 import keras
 import numpy as np

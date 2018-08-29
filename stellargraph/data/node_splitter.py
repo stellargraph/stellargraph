@@ -15,9 +15,9 @@
 # limitations under the License.
 
 import numpy as np
-from stellar.data.stellargraph import StellarGraphBase
-from stellar.data.epgm import EPGM
-from stellar import globals
+from stellargraph.data.stellargraph import StellarGraphBase
+from stellargraph.data.epgm import EPGM
+from stellargraph import globals
 
 
 # Easier functional interface for the splitter:
