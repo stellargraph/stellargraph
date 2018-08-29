@@ -23,6 +23,7 @@ from stellargraph.data.stellargraph import *
 from stellargraph.mapper.link_mappers import *
 from stellargraph.layer.hinsage import *
 from stellargraph.layer.link_inference import link_regression
+import keras
 from keras import Model, optimizers, losses, metrics
 from typing import AnyStr
 import json
@@ -133,7 +134,11 @@ class LinkInference(object):
         # and evaluate it using the test ratings edges_test. The model also requires the user-movie graph structure.
         # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
-        self.g = StellarGraph(self.g)
+        self.g = StellarGraph(
+            self.g,
+            node_type_name=globals.TYPE_ATTR_NAME,
+            edge_type_name=globals.TYPE_ATTR_NAME,
+        )
 
         # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
         self.g.fit_attribute_spec()
@@ -208,9 +213,70 @@ class LinkInference(object):
         for name, val in zip(model.metrics_names, test_metrics):
             print("\t{}: {:0.4f}".format(name, val))
 
+        # Save the model
+        save_str = "_n{}_l{}_d{}_r{}".format(
+            "_".join([str(x) for x in num_samples]),
+            "_".join([str(x) for x in layer_size]),
+            dropout,
+            learning_rate,
+        )
+        model.save("hinsage_link_pred" + save_str + ".h5")
+
     def test(self, model_file: AnyStr):
-        print("test method is not yet implemented")
-        pass
+        """
+        Load the serialized model and evaluate on all links in the graph.
+
+        Args:
+            model_file: filename of the saved model
+
+        Returns:
+
+        """
+        # Training and test edges
+        edges = list(self.g.edges(data=True))
+
+        #  Edgelist:
+        edgelist = [(e[0], e[1]) for e in edges]
+
+        labels = [e[2]["score"] for e in edges]
+
+        # Create a StellarGraph object from the ingested graph, for testing the model:
+        # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
+        self.g = StellarGraph(
+            self.g,
+            node_type_name=globals.TYPE_ATTR_NAME,
+            edge_type_name=globals.TYPE_ATTR_NAME,
+        )
+
+        # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
+        self.g.fit_attribute_spec()
+
+        # Load the model:
+        model = keras.models.load_model(
+            model_file, custom_objects={"MeanHinAggregator": MeanHinAggregator}
+        )
+
+        # Get required input shapes from model
+        num_samples = [
+            int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
+            for ii in range(1, len(model.input_shape) - 1, 2)
+        ]
+
+        # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
+        all_mapper = HinSAGELinkMapper(
+            self.g,
+            edgelist,
+            labels,
+            200,
+            num_samples,
+            name="mapper_all",
+        )
+
+        all_metrics = model.evaluate_generator(all_mapper)
+
+        print("\nEvaluation on all edges:")
+        for name, val in zip(model.metrics_names, all_metrics):
+            print("\t{}: {:0.4f}".format(name, val))
 
 
 if __name__ == "__main__":
@@ -218,7 +284,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "-p", "--data_path", type=str, default="../data/ml-100k", help="Dataset path (directory)"
+        "-p",
+        "--data_path",
+        type=str,
+        default="../data/ml-100k",
+        help="Dataset path (directory)",
     )
     parser.add_argument(
         "-f",
