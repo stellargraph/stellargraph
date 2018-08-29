@@ -19,14 +19,12 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 """
 
 import argparse
-import pickle
-import networkx as nx
 from stellargraph.data.stellargraph import *
 from stellargraph.mapper.link_mappers import *
 from stellargraph.layer.hinsage import *
 from stellargraph.layer.link_inference import link_regression
-from keras import Input, Model, optimizers, losses, metrics
-from typing import AnyStr, List
+from keras import Model, optimizers, losses, metrics
+from typing import AnyStr
 import json
 from utils import ingest_graph, ingest_features, add_features_to_nodes
 from sklearn import preprocessing, feature_extraction, model_selection
