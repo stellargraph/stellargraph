@@ -42,6 +42,7 @@ parameters = {
     "directed": False,  # are edges directed?
 }
 
+
 def print_distance_probabilities(node_distances):
     counts = Counter(node_distances)
     d_total = sum(counts.values())
