@@ -148,14 +148,11 @@ def add_features_to_nodes(g, inv_id_map, user_features, movie_features):
     }
 
     node_features = {}
-    [
+    for v in movie_features.index:
         node_features.update({inv_id_map["m_" + str(v)]: movie_features_dict[v]})
-        for v in movie_features.index
-    ]
-    [
+
+    for v in user_features.index:
         node_features.update({inv_id_map["u_" + str(v)]: user_features_dict[v]})
-        for v in user_features.index
-    ]
 
     nx.set_node_attributes(g, name="feature", values=node_features)
 
