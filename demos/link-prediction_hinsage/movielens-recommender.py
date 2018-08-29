@@ -58,7 +58,12 @@ def read_graph(data_path, config_file):
     user_features_transformed = feature_encoding.transform(
         user_features[feature_names].to_dict("records")
     )
-    user_features = pd.DataFrame(user_features_transformed, index=user_features.index)
+    user_features = pd.DataFrame(
+        user_features_transformed, index=user_features.index, dtype="float64"
+    )
+
+    # Assume that the age can be used as a continuous variable and rescale it
+    user_features[0] = preprocessing.scale(user_features[0])
 
     # Add the user and movie features to the graph:
     gnx = add_features_to_nodes(gnx, inv_id_map, user_features, movie_features)
@@ -86,12 +91,12 @@ class LinkInference(object):
 
     def train(
         self,
-        layer_size: List[int],
-        num_samples: List[int],
+        layer_size,
+        num_samples,
         train_size=0.7,
-        batch_size: int = 1000,
-        num_epochs: int = 10,
-        learning_rate=1e-3,
+        batch_size: int = 200,
+        num_epochs: int = 20,
+        learning_rate=5e-3,
         dropout=0.0,
         use_bias=True,
     ):
@@ -131,6 +136,7 @@ class LinkInference(object):
         # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
         self.g = StellarGraph(self.g)
+
         # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
         self.g.fit_attribute_spec()
 
@@ -213,7 +219,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "--data_path", type=str, default="../data/ml-100k", help="Data path."
+        "-p", "--data_path", type=str, default="../data/ml-100k", help="Data path."
     )
     parser.add_argument(
         "-f",
@@ -233,14 +239,14 @@ if __name__ == "__main__":
         "-m",
         "--edge_feature_method",
         type=str,
-        default="ip",
+        default="concat",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', or 'ip",
     )
     parser.add_argument(
         "-r",
         "--learningrate",
         type=float,
-        default=0.0005,
+        default=0.005,
         help="Learning rate for training model",
     )
     parser.add_argument(
@@ -254,7 +260,7 @@ if __name__ == "__main__":
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[2, 5],
+        default=[8, 4],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
@@ -262,7 +268,7 @@ if __name__ == "__main__":
         "--layer_size",
         type=int,
         nargs="*",
-        default=[50, 50],
+        default=[32, 32],
         help="The number of hidden features at each layer",
     )
     parser.add_argument(

@@ -88,9 +88,8 @@ def ingest_graph(data_path, config):
     )
 
     # Add node types:
-    node_types = {}
-    [node_types.update({inv_id_map["m_" + str(v)]: "movie"}) for v in mids]
-    [node_types.update({inv_id_map["u_" + str(v)]: "user"}) for v in uids]
+    node_types = {inv_id_map["m_" + str(v)]: "movie" for v in mids}
+    node_types.update({inv_id_map["u_" + str(v)]: "user" for v in uids})
 
     nx.set_node_attributes(g, name="label", values=node_types)
 
