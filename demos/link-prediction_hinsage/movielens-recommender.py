@@ -199,8 +199,8 @@ class LinkInference(object):
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
-            use_multiprocessing=False,
-            # workers=multiprocessing.cpu_count(),
+            use_multiprocessing=True,
+            workers=multiprocessing.cpu_count() // 2,
         )
 
         # Evaluate and print metrics
@@ -210,7 +210,8 @@ class LinkInference(object):
         for name, val in zip(model.metrics_names, test_metrics):
             print("\t{}: {:0.4f}".format(name, val))
 
-    def test(self, G: StellarGraphBase, model_file: AnyStr):
+    def test(self, model_file: AnyStr):
+        print("test method is not yet implemented")
         pass
 
 
@@ -219,38 +220,38 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "-p", "--data_path", type=str, default="../data/ml-100k", help="Data path."
+        "-p", "--data_path", type=str, default="../data/ml-100k", help="Dataset path (directory)"
     )
     parser.add_argument(
         "-f",
         "--config",
         type=str,
         default="ml-100k-config.json",
-        help="Data config file.",
+        help="Data config file",
     )
     parser.add_argument(
         "-t",
         "--target",
         type=str,
         default="score",
-        help="The target edge attribute, default is 'score'",
+        help="The target edge attribute to learn/predict, default is 'score'",
     )
     parser.add_argument(
         "-m",
         "--edge_feature_method",
         type=str,
         default="concat",
-        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', or 'ip",
+        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
     )
     parser.add_argument(
         "-r",
         "--learningrate",
         type=float,
         default=0.005,
-        help="Learning rate for training model",
+        help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-n", "--batch_size", type=int, default=500, help="Load a save checkpoint file"
+        "-n", "--batch_size", type=int, default=200, help="Minibatch size"
     )
     parser.add_argument(
         "-e", "--epochs", type=int, default=10, help="Number of epochs to train for"
@@ -276,7 +277,7 @@ if __name__ == "__main__":
         "--dropout",
         type=float,
         default=0.0,
-        help="Dropout for the HinSAGE model, between 0.0 and 1.0",
+        help="Dropout rate for the HinSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
         "-c",
