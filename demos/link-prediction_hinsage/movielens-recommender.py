@@ -264,12 +264,7 @@ class LinkInference(object):
 
         # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
         all_mapper = HinSAGELinkMapper(
-            self.g,
-            edgelist,
-            labels,
-            200,
-            num_samples,
-            name="mapper_all",
+            self.g, edgelist, labels, 200, num_samples, name="mapper_all"
         )
 
         all_metrics = model.evaluate_generator(all_mapper)
