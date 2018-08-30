@@ -71,16 +71,16 @@ from keras import optimizers, losses, metrics
 
 from stellargraph.data.loader import from_epgm
 from stellargraph.data.edge_splitter import EdgeSplitter
-from stellargraph.data.converter import (
-    NodeAttributeSpecification,
-    BinaryConverter,
-)
+from stellargraph.data.converter import NodeAttributeSpecification, BinaryConverter
 
 from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
 from stellargraph.mapper.link_mappers import GraphSAGELinkMapper
 from stellargraph.layer.link_inference import link_classification
 from stellargraph.data.stellargraph import *
 from stellargraph import globals
+
+import pickle
+
 
 def train(
     G,
@@ -112,15 +112,22 @@ def train(
 
     # From the original graph, extract E_test and the reduced graph G_test:
     edge_splitter_test = EdgeSplitter(G)
+    # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G, and obtain the
+    # reduced graph G_test with the sampled links removed:
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
     # From G_test, extract E_train and the reduced graph G_train:
     edge_splitter_train = EdgeSplitter(G_test, G)
+    # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G_test, and obtain the
+    # further reduced graph G_train with the sampled links removed:
     G_train, edge_ids_train, edge_labels_train = edge_splitter_train.train_test_split(
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
+
+    # G_train, edge_ds_train, edge_labels_train will be used for model training
+    # G_test, edge_ds_test, edge_labels_test will be used for model testing
 
     # Convert G_train and G_test to StellarGraph objects for ML:
     G_train = StellarGraph(G_train)
@@ -137,7 +144,10 @@ def train(
     # Apply feature and target conversion to G_test
     G_test.set_attribute_spec(feature_spec=nfs)
 
+    # Now G_train and G_test are ready for ML
+
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
+    # We need to create two mappers: for training and testing of the model
     train_mapper = GraphSAGELinkMapper(
         G_train,
         edge_ids_train,
@@ -152,10 +162,7 @@ def train(
 
     # GraphSAGE model
     graphsage = GraphSAGE(
-        layer_sizes=layer_size,
-        mapper=train_mapper,
-        bias=True,
-        dropout=dropout,
+        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
     )
 
     # Expose input and output sockets of the model, for source and destination nodes:
@@ -213,7 +220,7 @@ def train(
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    # Save model
+    # Save the trained model
     save_str = "_n{}_l{}_d{}_r{}".format(
         "_".join([str(x) for x in num_samples]),
         "_".join([str(x) for x in layer_size]),
@@ -222,10 +229,14 @@ def train(
     )
     model.save("graphsage_link_pred" + save_str + ".h5")
 
+    # We must also save the attribute spec, as it is fitted to the training data
+    with open("node_attr_specs" + save_str + ".pkl", "wb") as f:
+        pickle.dump(nfs, f)
 
-def test(G, model_file: AnyStr, batch_size: int):
+
+def test(G, model_file: AnyStr, batch_size: int = 100):
     """
-    Load the serialized model and evaluate on all links in the graph.
+    Load the serialized model and evaluate on a random subset of all links in the graph.
 
     Args:
         G: NetworkX graph file
@@ -243,6 +254,8 @@ def test(G, model_file: AnyStr, batch_size: int):
     ]
 
     edge_splitter_test = EdgeSplitter(G)
+    # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G, and obtain the
+    # reduced graph G_test with the sampled links removed:
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
@@ -261,14 +274,28 @@ def test(G, model_file: AnyStr, batch_size: int):
             edge_type_name=globals.TYPE_ATTR_NAME,
         )
 
-    # Convert node attributes to feature values
-    nfs = NodeAttributeSpecification()
-    nfs.add_all_attributes(
-        G_test, "paper", BinaryConverter, ignored_attributes=["subject"]
-    )
+    # Convert node attributes to feature values using node attribute specification:
+    try:
+        attribute_spec_file = (
+            model_file.replace("graphsage_link_pred", "node_attr_specs", 1).rstrip("h5")
+            + "pkl"
+        )
+    except:
+        attribute_spec_file = None
 
-    # Learn feature conversion for G_test
-    G_test.fit_attribute_spec(feature_spec=nfs)
+    if attribute_spec_file:
+        with open(attribute_spec_file, "rb") as f:
+            nfs = pickle.load(f)
+            # Apply the loaded feature conversion to G_test
+            G_test.set_attribute_spec(feature_spec=nfs)
+
+    else:  # convert node features to numeric values anew
+        nfs = NodeAttributeSpecification()
+        nfs.add_all_attributes(
+            G_test, "paper", BinaryConverter, ignored_attributes=["subject"]
+        )
+        # Learn feature conversion for G_test
+        G_test.fit_attribute_spec(feature_spec=nfs)
 
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(
@@ -276,12 +303,13 @@ def test(G, model_file: AnyStr, batch_size: int):
     )
 
     # Evaluate and print metrics
-    # TODO: add all-links evaluation
     test_metrics = model.evaluate_generator(test_mapper)
 
     print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
+
+    # TODO: also add all-links evaluation on G (e.g., all positive links and an equally sized random sample of negative links)
 
 
 if __name__ == "__main__":
