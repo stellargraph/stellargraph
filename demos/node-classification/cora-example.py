@@ -61,7 +61,7 @@ def train(
     num_epochs=10,
     learning_rate=0.005,
     dropout=0.0,
-    target_name="subject"
+    target_name="subject",
 ):
     """
     Train a GraphSAGE model on the specified graph G with given parameters.
@@ -78,7 +78,9 @@ def train(
     """
     # Extract target and encode as a one-hot vector
     target_encoding = feature_extraction.DictVectorizer(sparse=False)
-    node_targets = target_encoding.fit_transform(node_data[[target_name]].to_dict("records"))
+    node_targets = target_encoding.fit_transform(
+        node_data[[target_name]].to_dict("records")
+    )
 
     # Extract the feature data. These are the feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
@@ -97,19 +99,12 @@ def train(
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
-        node_ids,
-        node_targets,
-        train_size=140,
-        test_size=None,
-        stratify=node_targets
+        node_ids, node_targets, train_size=140, test_size=None, stratify=node_targets
     )
 
     # Split test set into test and validation
     val_nodes, test_nodes, val_targets, test_targets = model_selection.train_test_split(
-        test_nodes,
-        test_targets,
-        train_size=500,
-        test_size=None,
+        test_nodes, test_targets, train_size=500, test_size=None
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
@@ -127,9 +122,7 @@ def train(
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
-    prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(
-        x_out
-    )
+    prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
@@ -162,11 +155,15 @@ def train(
     all_predictions = model.predict_generator(all_mapper)
 
     # Turn predictions back into the original categories
-    node_predictions = pd.DataFrame(target_encoding.inverse_transform(all_predictions), index=node_ids)
+    node_predictions = pd.DataFrame(
+        target_encoding.inverse_transform(all_predictions), index=node_ids
+    )
     accuracy = np.mean(
         [
             "subject=" + gt_subject == p
-            for gt_subject, p in zip(node_data["subject"], node_predictions.idxmax(axis=1))
+            for gt_subject, p in zip(
+                node_data["subject"], node_predictions.idxmax(axis=1)
+            )
         ]
     )
     print("All-node accuracy: {:3f}".format(accuracy))
