@@ -177,14 +177,14 @@ def train(
         dropout,
         learning_rate,
     )
-    model.save("epgm_example_model" + save_str + ".h5")
+    model.save("cora_example_model" + save_str + ".h5")
 
     # We must also save the target encoding to convert model predictions
-    with open("epgm_example_encoding" + save_str + ".pkl", "wb") as f:
+    with open("cora_example_encoding" + save_str + ".pkl", "wb") as f:
         pickle.dump([target_encoding], f)
 
 
-def test(G, model_file, batch_size):
+def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     """
     Load the serialized model and evaluate on all nodes in the graph.
 
@@ -195,8 +195,58 @@ def test(G, model_file, batch_size):
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
-    # TODO: This needs to be written
-    pass
+    # Extract the feature data. These are the feature vectors that the Keras model will use as input.
+    # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
+    node_features = node_data[feature_names].values
+    node_ids = node_data.index
+
+    # Create graph from edgelist and set node features and node type
+    Gnx = nx.from_pandas_edgelist(edgelist)
+    for nid, f in zip(node_data.index, node_features):
+        Gnx.node[nid]["feature"] = f
+        Gnx.node[nid]["label"] = "paper"
+
+    # We must also save the target encoding to convert model predictions
+    encoder_file = model_file.replace(
+        "cora_example_model", "cora_example_encoding"
+    ).replace(".h5", ".pkl")
+    with open(encoder_file, "rb") as f:
+        target_encoding = pickle.load(f)[0]
+
+    # Endode targets with pre-trained encoder
+    node_targets = target_encoding.transform(
+        node_data[[target_name]].to_dict("records")
+    )
+
+    # Convert to StellarGraph and prepare for ML
+    G = StellarGraph(Gnx)
+    G.fit_attribute_spec()
+
+    # Load Keras model
+    model = keras.models.load_model(
+        model_file, custom_objects={"MeanAggregator": MeanAggregator}
+    )
+    print("Loaded model:")
+    model.summary()
+
+    # Get required samples from model
+    # TODO: Can we move this to the library?
+    num_samples = [
+        int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
+        for ii in range(len(model.input_shape) - 1)
+    ]
+
+    # Get predictions for all nodes
+    all_mapper = GraphSAGENodeMapper(
+        G, node_ids, batch_size, num_samples, targets=node_targets
+    )
+
+    # Evaluate and print metrics
+    all_metrics = model.evaluate_generator(all_mapper)
+
+    print("\nAll-node Evaluation:")
+    for name, val in zip(model.metrics_names, all_metrics):
+        print("\t{}: {:0.4f}".format(name, val))
 
 
 if __name__ == "__main__":
@@ -225,7 +275,7 @@ if __name__ == "__main__":
         "-d",
         "--dropout",
         type=float,
-        default=0.0,
+        default=0.3,
         help="Dropout for the GraphSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
@@ -288,4 +338,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(G, args.checkpoint, args.batch_size)
+        test(edgelist, node_data, args.checkpoint, args.batch_size)
