@@ -129,7 +129,7 @@ def train(
     # G_train, edge_ds_train, edge_labels_train will be used for model training
     # G_test, edge_ds_test, edge_labels_test will be used for model testing
 
-    # Convert G_train and G_test to StellarGraph objects for ML:
+    # Convert G_train and G_test to StellarGraph objects (undirected, as required by GraphSAGE) for ML:
     G_train = StellarGraph(G_train)
     G_test = StellarGraph(G_test)
 
@@ -260,19 +260,12 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
         p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
-    # Convert G_test to StellarGraph objects for ML:
-    if G_test.is_directed():
-        G_test = StellarDiGraph(
-            G_test,
-            node_type_name=globals.TYPE_ATTR_NAME,
-            edge_type_name=globals.TYPE_ATTR_NAME,
-        )
-    else:
-        G_test = StellarGraph(
-            G_test,
-            node_type_name=globals.TYPE_ATTR_NAME,
-            edge_type_name=globals.TYPE_ATTR_NAME,
-        )
+    # Convert G_test to StellarGraph object (undirected, as required by GraphSAGE):
+    G_test = StellarGraph(
+        G_test,
+        node_type_name=globals.TYPE_ATTR_NAME,
+        edge_type_name=globals.TYPE_ATTR_NAME,
+    )
 
     # Convert node attributes to feature values using node attribute specification:
     try:
