@@ -269,10 +269,9 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
 
     # Convert node attributes to feature values using node attribute specification:
     try:
-        attribute_spec_file = (
-            model_file.replace("graphsage_link_pred", "node_attr_specs", 1).rstrip("h5")
-            + "pkl"
-        )
+        attribute_spec_file = model_file.replace(
+            "graphsage_link_pred", "node_attr_specs", 1
+        ).replace(".h5", ".pkl")
     except:
         attribute_spec_file = None
 
