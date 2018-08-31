@@ -64,7 +64,7 @@ def train(
     target_name="subject",
 ):
     """
-    Train a GraphSAGE model on the specified graph G with given parameters.
+    Train a GraphSAGE model on the specified graph G with given parameters, evaluate it, and save the model.
 
     Args:
         edgelist: Graph edgelist
@@ -119,9 +119,10 @@ def train(
     model = GraphSAGE(
         layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
     )
+    # Expose the input and output sockets of the model:
     x_inp, x_out = model.default_model(flatten_output=True)
 
-    # Final estimator layer
+    # Snap the final estimator layer to x_out
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
     # Create Keras model for training
@@ -259,7 +260,7 @@ if __name__ == "__main__":
         nargs="?",
         type=str,
         default=None,
-        help="Load a saved checkpoint file",
+        help="Load a saved checkpoint .h5 file",
     )
     parser.add_argument(
         "-n", "--batch_size", type=int, default=20, help="Batch size for training"
@@ -276,14 +277,14 @@ if __name__ == "__main__":
         "--dropout",
         type=float,
         default=0.3,
-        help="Dropout for the GraphSAGE model, between 0.0 and 1.0",
+        help="Dropout rate for the GraphSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
         "-r",
         "--learningrate",
         type=float,
         default=0.005,
-        help="Learning rate for training model",
+        help="Initial learning rate for model training",
     )
     parser.add_argument(
         "-s",
@@ -291,7 +292,7 @@ if __name__ == "__main__":
         type=int,
         nargs="*",
         default=[20, 10],
-        help="The number of nodes sampled at each layer",
+        help="The number of neighbour nodes sampled at each GraphSAGE layer",
     )
     parser.add_argument(
         "-l",
@@ -299,10 +300,10 @@ if __name__ == "__main__":
         type=int,
         nargs="*",
         default=[20, 20],
-        help="The number of hidden features at each layer",
+        help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-g", "--graph", type=str, default=None, help="The graph stored in EPGM format."
+        "-g", "--graph", type=str, default=None, help="Location of the CORA dataset (directory)"
     )
     parser.add_argument(
         "-t",
@@ -313,6 +314,7 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
+    # Load the dataset - this assumes it is the CORA dataset
     # Load graph edgelist
     graph_loc = os.path.expanduser(args.graph)
     edgelist = pd.read_table(
@@ -320,7 +322,10 @@ if __name__ == "__main__":
     )
 
     # Load node features
+    # The CORA dataset contains binary attributes 'w_x' that correspond to whether the corresponding keyword
+    # (out of 1433 keywords) is found in the corresponding publication.
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
+    # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
     node_data = pd.read_table(
         os.path.join(graph_loc, "cora.content"), header=None, names=column_names
