@@ -391,7 +391,7 @@ if __name__ == "__main__":
         "-i",
         "--ignore_node_attr",
         nargs="+",
-        default=[],
+        default=["subject"],
         help="List of node attributes to ignore (e.g., name, id, etc.)",
     )
     parser.add_argument(
