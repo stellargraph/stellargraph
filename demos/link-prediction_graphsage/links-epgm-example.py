@@ -64,6 +64,7 @@ optional arguments:
 import os
 import argparse
 import networkx as nx
+import pandas as pd
 from typing import AnyStr, List
 
 import keras
@@ -82,13 +83,51 @@ from stellargraph import globals
 import pickle
 
 
+def load_data(graph_loc):
+    """
+    Load Cora dataset, and create a NetworkX graph
+    Args:
+        graph_loc: dataset path
+
+    Returns: NetworkX graph
+
+    """
+
+    edgelist = pd.read_table(
+        os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
+    )
+
+    # Load node features
+    # The CORA dataset contains binary attributes 'w_x' that correspond to whether the corresponding keyword
+    # (out of 1433 keywords) is found in the corresponding publication.
+    feature_names = ["w_{}".format(ii) for ii in range(1433)]
+    # Also, there is a "subject" column
+    column_names = feature_names + ["subject"]
+    node_data = pd.read_table(
+        os.path.join(graph_loc, "cora.content"), header=None, names=column_names
+    )
+
+    g = nx.from_pandas_edgelist(edgelist)
+
+    # Extract the feature data. These are the node feature vectors that the Keras model will use as input.
+    # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
+    node_features = node_data[feature_names].values
+    node_ids = node_data.index
+
+    for nid, f in zip(node_ids, node_features):
+        g.node[nid][globals.TYPE_ATTR_NAME] = "paper"
+        g.node[nid][globals.FEATURE_ATTR_NAME] = f
+
+    return g
+
+
 def train(
     G,
     layer_size: List[int],
     num_samples: List[int],
     batch_size: int = 100,
     num_epochs: int = 10,
-    learning_rate: float = 0.005,
+    learning_rate: float = 0.001,
     dropout: float = 0.0,
 ):
     """
@@ -133,16 +172,9 @@ def train(
     G_train = StellarGraph(G_train)
     G_test = StellarGraph(G_test)
 
-    # Convert node attributes to feature values
-    nfs = NodeAttributeSpecification()
-    nfs.add_all_attributes(
-        G_train, "paper", BinaryConverter, ignored_attributes=["subject"]
-    )
-
-    # Learn feature and target conversion for ML for G_train
-    G_train.fit_attribute_spec(feature_spec=nfs)
-    # Apply feature and target conversion to G_test
-    G_test.set_attribute_spec(feature_spec=nfs)
+    # Prepare G_train and G_test for ML:
+    G_train.fit_attribute_spec()
+    G_test.fit_attribute_spec()
 
     # Now G_train and G_test are ready for ML
 
@@ -229,10 +261,6 @@ def train(
     )
     model.save("graphsage_link_pred" + save_str + ".h5")
 
-    # We must also save the attribute spec, as it is fitted to the training data
-    with open("node_attr_specs" + save_str + ".pkl", "wb") as f:
-        pickle.dump(nfs, f)
-
 
 def test(G, model_file: AnyStr, batch_size: int = 100):
     """
@@ -243,6 +271,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
         model_file: Location of Keras model to load
         batch_size: Size of batch for inference
     """
+    print("Loading model from ", model_file)
     model = keras.models.load_model(
         model_file, custom_objects={"MeanAggregator": MeanAggregator}
     )
@@ -261,33 +290,9 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     )
 
     # Convert G_test to StellarGraph object (undirected, as required by GraphSAGE):
-    G_test = StellarGraph(
-        G_test,
-        node_type_name=globals.TYPE_ATTR_NAME,
-        edge_type_name=globals.TYPE_ATTR_NAME,
-    )
-
-    # Convert node attributes to feature values using node attribute specification:
-    try:
-        attribute_spec_file = model_file.replace(
-            "graphsage_link_pred", "node_attr_specs", 1
-        ).replace(".h5", ".pkl")
-    except:
-        attribute_spec_file = None
-
-    if attribute_spec_file:
-        with open(attribute_spec_file, "rb") as f:
-            nfs = pickle.load(f)
-            # Apply the loaded feature conversion to G_test
-            G_test.set_attribute_spec(feature_spec=nfs)
-
-    else:  # convert node features to numeric values anew
-        nfs = NodeAttributeSpecification()
-        nfs.add_all_attributes(
-            G_test, "paper", BinaryConverter, ignored_attributes=["subject"]
-        )
-        # Learn feature conversion for G_test
-        G_test.fit_attribute_spec(feature_spec=nfs)
+    G_test = StellarGraph(G_test)
+    # Prepare G_test for ML:
+    G_test.fit_attribute_spec()
 
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(
@@ -349,7 +354,7 @@ if __name__ == "__main__":
         "-r",
         "--learningrate",
         type=float,
-        default=0.0005,
+        default=0.001,
         help="Learning rate for training model",
     )
     parser.add_argument(
@@ -357,7 +362,7 @@ if __name__ == "__main__":
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[30, 10],
+        default=[20, 10],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
@@ -369,7 +374,11 @@ if __name__ == "__main__":
         help="The number of hidden features at each layer",
     )
     parser.add_argument(
-        "-g", "--graph", type=str, default=None, help="The graph stored in EPGM format."
+        "-g",
+        "--graph",
+        type=str,
+        default=None,
+        help="Location of the CORA dataset (directory)",
     )
     parser.add_argument(
         "-i",
@@ -387,9 +396,11 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
+    # Load the dataset - this assumes it is the CORA dataset
+    # Load graph edgelist
     graph_loc = os.path.expanduser(args.graph)
 
-    G = from_epgm(graph_loc)
+    G = load_data(graph_loc)
 
     if args.checkpoint is None:
         train(
