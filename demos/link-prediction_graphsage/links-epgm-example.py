@@ -16,11 +16,10 @@
 
 """
 Graph link prediction using GraphSAGE.
-Requires a EPGM graph as input.
 This currently is only tested on the CORA dataset.
 
 Example usage:
-python links-epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -e 10 -l 64 32 -b 10 -s 10 20 -r 0.001 -d 0.5 --ignore_node_attr subject --edge_sampling_method local --edge_feature_method concat
+python cora-links-example.py -g ../data/cora -e 10 -d 0.1 --ignore_node_attr subject --edge_sampling_method global --edge_feature_method concat
 
 usage: links-epgm-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
@@ -70,9 +69,7 @@ from typing import AnyStr, List
 import keras
 from keras import optimizers, losses, metrics
 
-from stellargraph.data.loader import from_epgm
 from stellargraph.data.edge_splitter import EdgeSplitter
-from stellargraph.data.converter import NodeAttributeSpecification, BinaryConverter
 
 from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
 from stellargraph.mapper.link_mappers import GraphSAGELinkMapper
@@ -80,10 +77,10 @@ from stellargraph.layer.link_inference import link_classification
 from stellargraph.data.stellargraph import *
 from stellargraph import globals
 
-import pickle
+from sklearn import feature_extraction
 
 
-def load_data(graph_loc):
+def load_data(graph_loc, ignore_attr):
     """
     Load Cora dataset, and create a NetworkX graph
     Args:
@@ -111,7 +108,17 @@ def load_data(graph_loc):
 
     # Extract the feature data. These are the node feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    node_features = node_data[feature_names].values
+    predictor_names = sorted(set(column_names) - set(ignore_attr))
+
+    if "subject" in predictor_names:
+        # Convert node features to numeric vectors
+        feature_encoding = feature_extraction.DictVectorizer(sparse=False)
+        node_features = feature_encoding.fit_transform(
+            node_data[predictor_names].to_dict("records")
+        )
+    else: # node features are already numeric, no further conversion is needed
+        node_features = node_data[predictor_names].values
+
     node_ids = node_data.index
 
     for nid, f in zip(node_ids, node_features):
@@ -400,7 +407,7 @@ if __name__ == "__main__":
     # Load graph edgelist
     graph_loc = os.path.expanduser(args.graph)
 
-    G = load_data(graph_loc)
+    G = load_data(graph_loc, args.ignore_node_attr)
 
     if args.checkpoint is None:
         train(
