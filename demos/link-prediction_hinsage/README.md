@@ -32,7 +32,7 @@ to the data directory.
 
 Run the example for ML-100k with movie & user features using the following command:
 ```
-python movielens-example.py --data_path=../data/ml-100k
+python movielens-recommender.py --data_path=../data/ml-100k
 ```
 
 This examples trains HinSAGE to predict the "score" attribute on links. This
