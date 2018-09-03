@@ -19,9 +19,9 @@ Graph link prediction using GraphSAGE.
 This currently is only tested on the CORA dataset.
 
 Example usage:
-python cora-links-example.py -g ../data/cora -e 10 -d 0.1 --ignore_node_attr subject --edge_sampling_method global --edge_feature_method concat
+python cora-links-example.py -g ../data/cora -e 10 -d 0.1 --ignore_node_attr subject --edge_sampling_method global --edge_feature_method ip
 
-usage: links-epgm-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
+usage: cora-links-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
                        [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
                        [-r LEARNING_RATE] [-d DROPOUT]
@@ -58,7 +58,13 @@ optional arguments:
         Must start with 0 (no negative links to 1-hop neighbours, as these are positive by definition)
   --edge_feature_method
         Method for combining (src, dst) node embeddings into edge embeddings.
-        Can be one of 'ip' (inner product), 'mul' (element-wise multiplication), and 'concat' (concatenation)
+        One of:
+                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
+                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
+                'concat' (concatenation),
+                'l1' (l1(u,v)_i = |u_i-v_i|),
+                'l2' (l2(u,v)_i = (u_i-v_i)^2),
+                'avg' (avg(u,v) = (u+v)/2)
 """
 import os
 import argparse
@@ -86,7 +92,7 @@ def load_data(graph_loc, ignore_attr):
     Args:
         graph_loc: dataset path
 
-    Returns: NetworkX graph
+    Returns: NetworkX graph with numeric node features
 
     """
 
@@ -116,7 +122,7 @@ def load_data(graph_loc, ignore_attr):
         node_features = feature_encoding.fit_transform(
             node_data[predictor_names].to_dict("records")
         )
-    else: # node features are already numeric, no further conversion is needed
+    else:  # node features are already numeric, no further conversion is needed
         node_features = node_data[predictor_names].values
 
     node_ids = node_data.index
@@ -326,7 +332,7 @@ if __name__ == "__main__":
         nargs="?",
         type=str,
         default=None,
-        help="Load a saved checkpoint file",
+        help="Load a saved model checkpoint file",
     )
     parser.add_argument(
         "--edge_sampling_method",
@@ -338,7 +344,8 @@ if __name__ == "__main__":
         "--edge_sampling_probs",
         nargs="?",
         default=[0.0, 0.25, 0.50, 0.25],
-        help="Negative edge sample probabilities (for local sampling method) with respect to distance from starting node",
+        help="Negative edge sample probabilities (for local sampling method only) with respect to distance from starting node. "
+        "This should always start with 0.0",
     )
     parser.add_argument(
         "-b", "--batch_size", type=int, default=500, help="Batch size for training"
@@ -362,7 +369,7 @@ if __name__ == "__main__":
         "--learningrate",
         type=float,
         default=0.001,
-        help="Learning rate for training model",
+        help="Initial learning rate for model training",
     )
     parser.add_argument(
         "-s",
@@ -370,7 +377,7 @@ if __name__ == "__main__":
         type=int,
         nargs="*",
         default=[20, 10],
-        help="The number of nodes sampled at each layer",
+        help="The number of neighbour nodes sampled at each GraphSAGE layer",
     )
     parser.add_argument(
         "-l",
@@ -378,35 +385,34 @@ if __name__ == "__main__":
         type=int,
         nargs="*",
         default=[50, 50],
-        help="The number of hidden features at each layer",
+        help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
         "-g",
         "--graph",
         type=str,
         default=None,
-        help="Location of the CORA dataset (directory)",
+        help="Location of the dataset (directory)",
     )
     parser.add_argument(
         "-i",
         "--ignore_node_attr",
         nargs="+",
-        default=["subject"],
-        help="List of node attributes to ignore (e.g., name, id, etc.)",
+        default=[],
+        help="List of node attributes to ignore (e.g., subject, name, id, etc.)",
     )
     parser.add_argument(
         "-m",
         "--edge_feature_method",
         type=str,
         default="ip",
-        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', or 'ip",
+        help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
     )
+
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
-    # Load graph edgelist
     graph_loc = os.path.expanduser(args.graph)
-
+    # Load the dataset - this assumes it is the CORA dataset
     G = load_data(graph_loc, args.ignore_node_attr)
 
     if args.checkpoint is None:
