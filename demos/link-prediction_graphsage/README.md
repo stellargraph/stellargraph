@@ -39,9 +39,10 @@ The example should be run on supplying the location of the downloaded CORA datas
 python cora-links-example.py -g <path_to_cora_dataset>
 ```
 The above command runs the link prediction on Cora dataset with default
-parameters. For help on how to set parameters of the run and their meaning, run
+parameters. There is a number of other command line options that affect the architecture and training of the
+model. For help on how to set parameters of the run, and on parameter meaning, run
 ```angular2html
-python cora-links-example.py -h
+python cora-links-example.py --help
 ``` 
 
 ## References
