@@ -218,7 +218,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "-p", "--data_path", type=str, default="../data/ml-100k", help="Dataset path (directory)"
+        "-p",
+        "--data_path",
+        type=str,
+        default="../data/ml-100k",
+        help="Dataset path (directory)",
     )
     parser.add_argument(
         "-f",
