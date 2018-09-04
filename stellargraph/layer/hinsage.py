@@ -29,6 +29,7 @@ from typing import List, Callable, Tuple, Dict, Union, AnyStr
 import itertools as it
 import operator as op
 
+
 class MeanHinAggregator(Layer):
     """Mean Aggregator for HinSAGE implemented with Keras base layer
 

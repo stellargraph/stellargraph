@@ -14,8 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ["UniformRandomWalk", "BiasedRandomWalk", "UniformRandomMetaPathWalk", "DepthFirstWalk",
-           "BreadthFirstWalk", "SampledBreadthFirstWalk", "SampledHeterogeneousBreadthFirstWalk"]
+__all__ = [
+    "UniformRandomWalk",
+    "BiasedRandomWalk",
+    "UniformRandomMetaPathWalk",
+    "DepthFirstWalk",
+    "BreadthFirstWalk",
+    "SampledBreadthFirstWalk",
+    "SampledHeterogeneousBreadthFirstWalk",
+]
 
 import networkx as nx
 import numpy as np
@@ -23,6 +30,7 @@ import random
 from stellargraph.data.stellargraph import GraphSchema
 from stellargraph.data.stellargraph import StellarGraphBase
 from collections import defaultdict
+
 
 class GraphWalk(object):
     """
