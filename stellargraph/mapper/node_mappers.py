@@ -18,6 +18,8 @@
 Mappers to provide input data for the graph models in layers.
 
 """
+__all__ = ["GraphSAGENodeMapper", "HinSAGENodeMapper"]
+
 import collections
 import operator
 from functools import reduce
