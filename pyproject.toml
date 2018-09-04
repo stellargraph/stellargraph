@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "stellargraph"
+version = "0.4.0"
+description = "Python library for machine learning on graphs"
+repository = "https://github.com/stellargraph/stellargraph"
+authors = ["Data61, CSIRO"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.6"
+Keras = "^2.1"
+tensorflow = "^1.8"
+numpy = "^1.14"
+networkx = "^2.1"
+scikit-learn = "^0.18"
+gensim = "^3.4"
+matplotlib = "^2.2"
+pandas = "^0.20"
+numba = "^0.39"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.7"
