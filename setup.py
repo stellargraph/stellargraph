@@ -18,7 +18,7 @@ import setuptools
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
-VERSION = "0.4b"
+VERSION = "0.4.0b"
 
 # Required packages
 REQUIRES = [
