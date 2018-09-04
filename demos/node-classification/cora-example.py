@@ -47,9 +47,9 @@ import networkx as nx
 import keras
 from keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
-from stellargraph import StellarGraph
-from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
-from stellargraph.mapper.node_mappers import GraphSAGENodeMapper
+import stellargraph as sg
+from stellargraph.layer import GraphSAGE, MeanAggregator
+from stellargraph.mapper import GraphSAGENodeMapper
 
 
 def train(
@@ -94,7 +94,7 @@ def train(
         Gnx.node[nid]["label"] = "paper"
 
     # Convert to StellarGraph and prepare for ML
-    G = StellarGraph(Gnx)
+    G = sg.StellarGraph(Gnx)
     G.fit_attribute_spec()
 
     # Split nodes into train/test using stratification.
@@ -220,7 +220,7 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     )
 
     # Convert to StellarGraph and prepare for ML
-    G = StellarGraph(Gnx)
+    G = sg.StellarGraph(Gnx)
     G.fit_attribute_spec()
 
     # Load Keras model
