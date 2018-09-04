@@ -27,7 +27,8 @@ import scipy.sparse as sp
 import multiprocessing
 from multiprocessing import Pool
 from functools import partial
-#from progressbar import ProgressBar, SimpleProgress
+
+# from progressbar import ProgressBar, SimpleProgress
 from time import sleep
 
 
@@ -395,9 +396,9 @@ class EPGM(object):
                 pool.join()
 
             else:  # sequential execution
-                    self.G_nx[graph_id] = {
-                        v: [e[1] for e in edges if e[0] == v] for v in nodes
-                    }  # this works ~2.5x faster (for cora dataset) than the above for loop
+                self.G_nx[graph_id] = {
+                    v: [e[1] for e in edges if e[0] == v] for v in nodes
+                }  # this works ~2.5x faster (for cora dataset) than the above for loop
 
             print("...converting the graph to nx format...")
             self.G_nx[graph_id] = nx.from_dict_of_lists(self.G_nx[graph_id])
