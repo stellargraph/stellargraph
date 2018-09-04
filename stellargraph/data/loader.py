@@ -83,7 +83,6 @@ def from_epgm(
 
 def load_dataset_BlogCatalog3(location):
     """
-
     This method loads the BlogCatalog3 network dataset (http://socialcomputing.asu.edu/datasets/BlogCatalog3)
     into a networkx undirected heterogeneous graph.
 
@@ -98,11 +97,13 @@ def load_dataset_BlogCatalog3(location):
     As a result, we convert all IDs to string and append the character 'u' to the integer ID for user nodes and the
     character 'g' to the integer ID for group nodes.
 
-    :param location: The directory where the dataset is located
-    :return: A networkx Graph object.
+    Args:
+        location: <str> The directory where the dataset is located
+
+    Returns:
+        A networkx Graph object.
 
     """
-
     location = os.path.expanduser(location)
     if not os.path.isdir(location):
         print("The location {} is not a directory.".format(location))
