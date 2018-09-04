@@ -4,13 +4,9 @@ This is an example of using Heterogeneous GraphSAGE (HinSAGE) as a hybrid recomm
 system for the Movielens dataset.
 
 ## Requirements
-Install the Stellar ML library.
-
-In top-level stellar-ml directory install using pip:
-
-```
-pip install -e .
-```
+This example assumes the `stellargraph` library and its requirements have been 
+installed by following the installation instructions in the README 
+of the library's root directory.
 
 ## MovieLens Data
 
@@ -28,11 +24,25 @@ To run the examples, extract the data into a directory,
 and adjust the command line below to have `--data_path` pointing
 to the data directory.
 
+## Running the notebook
+The narrated version of this example is available in the `movielens-recommender.ipynb` notebook.
+To run through the notebook, you need to launch jupyter notebook:
+ - Activate the python 3.6 environment in which the 
+`stellargraph` library is installed 
+ - Run the following command `jupyter-notebook`, and note the ip address and port
+ number at which is it listening (normally it should be http://127.0.0.1:8888/)
+   - note: you may need to first install `jupyter` by running `pip install jupyter` in your python environment
+ - Copy-paste the ip address obtained in the previous step into your browser. You should see 
+ a directory structure of the `stellargraph` library.
+ - Navigate to `/demos/link-prediction_hinsage/movielens-recommender.ipynb`, and click on
+ it to launch the notebook.
+
+
 ## Running the script
 
-Run the example for ML-100k with movie & user features using the following command:
+Run the script example for ML-100k with movie & user features using the following command:
 ```
-python movielens-example.py --data_path=../data/ml-100k
+python movielens-recommender.py --data_path=../data/ml-100k
 ```
 
 This examples trains HinSAGE to predict the "score" attribute on links. This

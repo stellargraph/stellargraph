@@ -16,13 +16,22 @@ pip install -e .
 Currently this example is tested on the CORA dataset. The GraphSAGE model assumes that node
 features are available.
 
-For the `epgm-example.py` script, a graph in EPGM format is required.
+The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
+
+The following is the description of the dataset:
+> The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
+> The citation network consists of 5429 links. Each publication in the dataset is described by a
+> 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
+> The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
+
+Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your computer and pass this location
+as a command line argument to this script.
 
 ## Running the script
 
-The example can be run on the cora graph (stored in EPGM format) with the following command:
+The example should be run on supplying the location of the downloaded CORA dataset with the following command:
 ```
-python epgm-example.py -g ../../tests/resources/data/cora/cora.epgm -l 20 20 -s 20 10 -e 20 -d 0.5 -r 0.01
+python cora-example.py -g <path_to_cora_dataset>
 ```
 
 ## References
