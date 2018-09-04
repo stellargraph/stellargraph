@@ -84,8 +84,23 @@ def from_epgm(
 def load_dataset_BlogCatalog3(location):
     """
 
-    :param location:
-    :return:
+    This method loads the BlogCatalog3 network dataset (http://socialcomputing.asu.edu/datasets/BlogCatalog3)
+    into a networkx undirected heterogeneous graph.
+
+    The graph has two types of nodes, 'user' and 'group', and two types of edges, 'friend' and 'belongs'.
+    The 'friend' edges connect two 'user' nodes and the 'belongs' edges connects 'user' and 'group' nodes.
+
+    The node and edge types are not included in the dataset that is a collection of node and group ids along with
+    the list of edges in the graph.
+
+    Important note about the node IDs: The dataset uses integers for node ids. However, the integers from 1 to 39 are
+    used as IDs for both users and groups. This would cause a confusion when constructing the networkx graph object.
+    As a result, we convert all IDs to string and append the character 'u' to the integer ID for user nodes and the
+    character 'g' to the integer ID for group nodes.
+
+    :param location: The directory where the dataset is located
+    :return: A networkx Graph object.
+
     """
 
     location = os.path.expanduser(location)
@@ -109,16 +124,16 @@ def load_dataset_BlogCatalog3(location):
     # groups. This would cause a confusion when constructing the networkx graph object. As a result, we convert all
     # IDs to string and append the character 'p' to the integer ID for user nodes and the character 'g' to the integer
     # ID for group nodes.
-    user_node_ids = ['p'+str(user_node_id) for user_node_id in user_node_ids]
+    user_node_ids = ['u'+str(user_node_id) for user_node_id in user_node_ids]
     group_ids = ['g'+str(group_id) for group_id in group_ids]
-    edges = [('p'+str(from_node), 'p'+str(to_node)) for from_node, to_node in edges]
-    group_edges = [('p'+str(from_node), 'g'+str(to_node)) for from_node, to_node in group_edges]
+    edges = [('u'+str(from_node), 'u'+str(to_node)) for from_node, to_node in edges]
+    group_edges = [('u'+str(from_node), 'g'+str(to_node)) for from_node, to_node in group_edges]
 
     g_nx = nx.Graph()  # create the graph
 
     # add user and group nodes with labels 'Person' and 'Group' respectively.
-    g_nx.add_nodes_from(user_node_ids, label='Person')
-    g_nx.add_nodes_from(group_ids, label='Group')
+    g_nx.add_nodes_from(user_node_ids, label='user')
+    g_nx.add_nodes_from(group_ids, label='group')
 
     # add the user-user edges with label 'friend'
     g_nx.add_edges_from(edges, label='friend')
