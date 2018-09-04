@@ -303,7 +303,11 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-g", "--graph", type=str, default=None, help="Location of the CORA dataset (directory)"
+        "-g",
+        "--graph",
+        type=str,
+        default=None,
+        help="Location of the CORA dataset (directory)",
     )
     parser.add_argument(
         "-t",
