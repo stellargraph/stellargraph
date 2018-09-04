@@ -119,3 +119,5 @@ python main.py --hin --input_graph=~/data/BlogCatalog3.gpickle --output_node_fea
 1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016. 
 
 2. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017 
+
+3. Social Computing Data Repository at ASU [http://socialcomputing.asu.edu]. R. Zafarani and H. Liu, (2009). Tempe, AZ: Arizona State University, School of Computing, Informatics and Decision Systems Engineering.
