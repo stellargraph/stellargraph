@@ -19,7 +19,7 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 """
 
 import argparse
-from stellargraph.data.stellargraph import *
+import stellargraph as sg
 from stellargraph.mapper.link_mappers import *
 from stellargraph.layer.hinsage import *
 from stellargraph.layer.link_inference import link_regression
@@ -133,7 +133,7 @@ class LinkInference(object):
         # and evaluate it using the test ratings edges_test. The model also requires the user-movie graph structure.
         # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
-        self.g = StellarGraph(self.g)
+        self.g = sg.StellarGraph(self.g)
 
         # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
         self.g.fit_attribute_spec()
