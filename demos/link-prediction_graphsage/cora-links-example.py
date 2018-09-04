@@ -96,6 +96,7 @@ def load_data(graph_loc, ignore_attr):
 
     """
 
+    # Load the edge list
     edgelist = pd.read_table(
         os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
     )
@@ -277,7 +278,9 @@ def train(
 
 def test(G, model_file: AnyStr, batch_size: int = 100):
     """
-    Load the serialized model and evaluate on a random subset of all links in the graph.
+    Load the serialized model and evaluate on a random balanced subset of all links in the graph.
+    Note that the set of links the model is evaluated on may contain links from the model's training set.
+    To avoid this, set the seed of the edge splitter to the same seed as used for link splitting in train()
 
     Args:
         G: NetworkX graph file
@@ -318,8 +321,6 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
-
-    # TODO: also add all-links evaluation on G (e.g., all positive links and an equally sized random sample of negative links)
 
 
 if __name__ == "__main__":
