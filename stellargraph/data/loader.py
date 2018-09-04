@@ -124,21 +124,23 @@ def load_dataset_BlogCatalog3(location):
     # groups. This would cause a confusion when constructing the networkx graph object. As a result, we convert all
     # IDs to string and append the character 'p' to the integer ID for user nodes and the character 'g' to the integer
     # ID for group nodes.
-    user_node_ids = ['u'+str(user_node_id) for user_node_id in user_node_ids]
-    group_ids = ['g'+str(group_id) for group_id in group_ids]
-    edges = [('u'+str(from_node), 'u'+str(to_node)) for from_node, to_node in edges]
-    group_edges = [('u'+str(from_node), 'g'+str(to_node)) for from_node, to_node in group_edges]
+    user_node_ids = ["u" + str(user_node_id) for user_node_id in user_node_ids]
+    group_ids = ["g" + str(group_id) for group_id in group_ids]
+    edges = [("u" + str(from_node), "u" + str(to_node)) for from_node, to_node in edges]
+    group_edges = [
+        ("u" + str(from_node), "g" + str(to_node)) for from_node, to_node in group_edges
+    ]
 
     g_nx = nx.Graph()  # create the graph
 
     # add user and group nodes with labels 'Person' and 'Group' respectively.
-    g_nx.add_nodes_from(user_node_ids, label='user')
-    g_nx.add_nodes_from(group_ids, label='group')
+    g_nx.add_nodes_from(user_node_ids, label="user")
+    g_nx.add_nodes_from(group_ids, label="group")
 
     # add the user-user edges with label 'friend'
-    g_nx.add_edges_from(edges, label='friend')
+    g_nx.add_edges_from(edges, label="friend")
 
     # add user-group edges with label 'belongs'
-    g_nx.add_edges_from(group_edges, label='belongs')
+    g_nx.add_edges_from(group_edges, label="belongs")
 
     return g_nx
