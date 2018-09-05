@@ -75,12 +75,10 @@ from typing import AnyStr, List
 import keras
 from keras import optimizers, losses, metrics
 
-from stellargraph.data.edge_splitter import EdgeSplitter
-
-from stellargraph.layer.graphsage import GraphSAGE, MeanAggregator
-from stellargraph.mapper.link_mappers import GraphSAGELinkMapper
-from stellargraph.layer.link_inference import link_classification
-from stellargraph.data.stellargraph import *
+import stellargraph as sg
+from stellargraph.data import EdgeSplitter
+from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
+from stellargraph.mapper import GraphSAGELinkMapper
 from stellargraph import globals
 
 from sklearn import feature_extraction
@@ -183,8 +181,8 @@ def train(
     # G_test, edge_ds_test, edge_labels_test will be used for model testing
 
     # Convert G_train and G_test to StellarGraph objects (undirected, as required by GraphSAGE) for ML:
-    G_train = StellarGraph(G_train)
-    G_test = StellarGraph(G_test)
+    G_train = sg.StellarGraph(G_train)
+    G_test = sg.StellarGraph(G_test)
 
     # Prepare G_train and G_test for ML:
     G_train.fit_attribute_spec()
@@ -306,7 +304,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     )
 
     # Convert G_test to StellarGraph object (undirected, as required by GraphSAGE):
-    G_test = StellarGraph(G_test)
+    G_test = sg.StellarGraph(G_test)
     # Prepare G_test for ML:
     G_test.fit_attribute_spec()
 
