@@ -25,9 +25,6 @@ pip install -r requirements.txt
 
 ### Usage
 
-#### Input Data
-The input data should be in EPGM format and the directory specified on the command line.
-
 #### Command Line Arguments
 The script accepts the following command line arguments:
                
