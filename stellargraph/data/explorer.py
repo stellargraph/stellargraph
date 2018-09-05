@@ -803,29 +803,8 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         current_edge_types = self.graph_schema.edge_types_for_node_type(
                             current_node_type
                         )
-
-                        # The current node can be None for a dummy node inserted when there are
-                        # no node neighbours
-                        # if current_node is None:
-                        #     neighbours = {}
-                        # else:
-                        # neighbours = dict(self.graph.adj[current_node])
-                        # YT: better to use iterator rather than dict(iterator),
-                        # as it takes less memory?
-                        # neighbours = self.graph.adj[current_node]
-
-                        # print("sampling:", frontier[0], current_node_type)
                         # Create samples of neigbhours for all edge types
                         for et in current_edge_types:
-                            # neigh_et = [
-                            #     n2
-                            #     for n2, nkeys in neighbours.items()
-                            #     for k in iter(nkeys)
-                            #     if self.graph_schema.is_of_edge_type(
-                            #         (current_node, n2, k), et
-                            #     )
-                            # ]
-
                             neigh_et = self.adj[et][current_node]
 
                             # If there are no neighbours of this type then we return None
@@ -838,7 +817,6 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 
-                            # print("\t", et, neigh_et, samples)
                             walk.append(samples)
                             q.extend(
                                 [
