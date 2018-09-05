@@ -68,10 +68,10 @@ def get_metapaths_from_str(metapaths_str):
     """
     if len(metapaths_str) == 0:
         metapaths = [
-            ["Group", "Person", "Group"],
-            ["Person", "Group", "Person"],
-            ["Person", "Group", "Person", "Person"],
-            ["Person", "Person"],
+            ["group", "user", "group"],
+            ["user", "group", "user"],
+            ["user", "group", "user", "user"],
+            ["user", "user"],
         ]
     else:
         metapaths = []
