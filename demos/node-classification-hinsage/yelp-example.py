@@ -15,34 +15,66 @@
 # limitations under the License.
 
 """
-Graph node classification using HinSAGE.
-Requires the Yelp dataset in EPGM format as input.
+Example of heterogeneous graph node classification using HinSAGE.
+
+Requires the preprocessed Yelp dataset .. see the script `yelp_preprocessing.py`
+for more details. We assume that the preprocessing script has been run.
 
 Example usage:
-python epgm-example.py -g ../../tests/resources/data/yelp/yelp.epgm -e 20
+python yelp-example.py -l <location_of_preprocessed_data>
+
+Additional command line arguments are available to tune the learned model, to see a
+description of these arguments use the `--help` argument:
+python yelp-example.py --help
 
 """
 import os
 import argparse
-import pickle
-
+import numpy as np
+import pandas as pd
+import networkx as nx
 import keras
 from keras import optimizers, losses, layers, metrics
+import keras.backend as K
 
 from stellargraph.data.stellargraph import StellarGraph
-from stellargraph.data.converter import *
-from stellargraph.data.node_splitter import train_val_test_split
-from stellargraph.data.loader import from_epgm
 from stellargraph.layer.hinsage import HinSAGE, MeanHinAggregator
 from stellargraph.mapper.node_mappers import HinSAGENodeMapper
 
+from sklearn import model_selection
+from sklearn import metrics as sk_metrics
 
-def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dropout):
+def weighted_binary_crossentropy(weights):
+    """
+    Weighted binary cross-entropy loss
+    Args:
+        weights: A list or numpy array of weights per class
+
+    Returns:
+        A Keras loss function
+    """
+    weights = np.asanyarray(weights, dtype="float32")
+    def loss_fn(y_true, y_pred):
+        return K.mean(K.binary_crossentropy(y_true, y_pred)*weights, axis=-1)
+
+    return loss_fn
+
+
+def train(
+    Gnx,
+    user_targets,
+    layer_size,
+    num_samples,
+    batch_size,
+    num_epochs,
+    learning_rate,
+    dropout,
+):
     """
     Train a HinSAGE model on the specified graph G with given parameters.
 
     Args:
-        G: A NetworkX or StellarGraph with the Yelp dataset
+        Gnx: A NetworkX with the Yelp dataset
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -50,78 +82,23 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # Specify node attributes to use to create features
-    user_attrs = [
-        "cool",
-        "useful",
-        "funny",
-        "fans",
-        "average_stars",
-        "compliment_cool",
-        "compliment_hot",
-        "compliment_more",
-        "compliment_profile",
-        "compliment_cute",
-        "compliment_list",
-        "compliment_note",
-        "compliment_plain",
-        "compliment_funny",
-        "compliment_writer",
-        "compliment_photos",
-    ]
+    # Create stellar Graph object
+    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype")
 
-    review_attrs = ["stars", "useful"]
-
-    business_attrs = [
-        "BikeParking",
-        "Alcohol",
-        "RestaurantsPriceRange2",
-        "BusinessAcceptsCreditCards",
-        "WiFi",
-        "DogsAllowed",
-        "GoodForKids",
-        "NoiseLevel",
-    ]
-
-    # Convert graph node attributes to feature vectors
-    nfs = NodeAttributeSpecification()
-    nfs.add_attribute_list("user", user_attrs, NumericConverter)
-    nfs.add_attribute_list("review", review_attrs, NumericConverter)
-    nfs.add_attribute("business", "stars", NumericConverter)
-    nfs.add_attribute_list("business", business_attrs, OneHotCategoricalConverter)
-
-    # Convert graph node attributes for target type to target vector
-    target_node_type = "user"
-    nts = NodeAttributeSpecification()
-    nts.add_attribute_list(
-        target_node_type, ["elite"], OneHotCategoricalConverter
-    )
-
-    # Reduce graph to only contain a subset of node types
-    node_types_to_keep = ["review", "user", "business"]
-    filtered_nodes = [
-        n for n, ndata in G.nodes(data=True) if ndata["label"] in node_types_to_keep
-    ]
-    G = StellarGraph(G.subgraph(filtered_nodes))
+    print(G.info())
 
     # Fit the graph to the attribute converters:
-    G.fit_attribute_spec(feature_spec=nfs, target_spec=nts)
+    G.fit_attribute_spec()
 
     # Split "user" nodes into train/test
-    train_nodes, val_nodes, test_nodes, _ = train_val_test_split(
-        G, node_type=target_node_type, train_size=0.25, test_size=0.5
+    # Split nodes into train/test using stratification.
+    train_targets, test_targets = model_selection.train_test_split(
+        user_targets, train_size=0.25, test_size=None
     )
-
-    # Get targets for the mapper
-    train_targets = G.get_target_for_nodes(train_nodes)
-    val_targets = G.get_target_for_nodes(val_nodes)
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     train_mapper = HinSAGENodeMapper(
-        G, train_nodes, batch_size, num_samples, targets=train_targets
-    )
-    val_mapper = HinSAGENodeMapper(
-        G, val_nodes, batch_size, num_samples, targets=val_targets
+        G, train_targets.index, batch_size, num_samples, targets=train_targets.values
     )
 
     # GraphSAGE model
@@ -129,47 +106,48 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
-    prediction = layers.Dense(
-        units=G.get_target_size(target_node_type), activation="softmax"
-    )(x_out)
+    prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
+
+    # Calculate weights based on empirical count
+    class_count = train_targets.values.sum(axis=0)
+    weights = class_count.sum()/class_count
+
+    print("Weighting loss by: {}".format(weights))
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate),
-        loss=losses.categorical_crossentropy,
-        metrics=[metrics.categorical_accuracy],
+        loss=weighted_binary_crossentropy(weights),
+        metrics=[metrics.binary_accuracy],
     )
 
     # Train model
     history = model.fit_generator(
         train_mapper,
         epochs=num_epochs,
-        validation_data=val_mapper,
         verbose=2,
         shuffle=True
     )
 
     # Evaluate on test set and print metrics
-    test_targets = G.get_target_for_nodes(test_nodes)
     test_mapper = HinSAGENodeMapper(
-        G, test_nodes, batch_size, num_samples, targets=test_targets
+        G, test_targets.index, batch_size, num_samples, targets=test_targets.values
     )
-    test_metrics = model.evaluate_generator(test_mapper)
-    print("\nTest Set Metrics:")
-    for name, val in zip(model.metrics_names, test_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
+    predictions = model.predict_generator(test_mapper)
+    binary_predictions = predictions[:, 1] > 0.5
+    print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
 
-    # Evaluate over all nodes and print metrics
-    user_nodes = G.get_nodes_of_type(target_node_type)
-    all_targets = G.get_target_for_nodes(user_nodes)
-    all_mapper = HinSAGENodeMapper(
-        G, user_nodes, batch_size, num_samples, targets=all_targets
-    )
-    all_nodes_metrics = model.evaluate_generator(all_mapper)
-    print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, all_nodes_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
+    # Calculate metrics using Scikit-Learn
+    cm = sk_metrics.confusion_matrix(test_targets.iloc[:, 1], binary_predictions)
+    print("Confusion matrix:")
+    print(cm)
+
+    precision = sk_metrics.precision_score(test_targets.iloc[:, 1], binary_predictions)
+    recall = sk_metrics.recall_score(test_targets.iloc[:, 1], binary_predictions)
+    f1 = sk_metrics.f1_score(test_targets.iloc[:, 1], binary_predictions)
+
+    print("precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(precision, recall, f1))
 
     # Save model
     save_str = "_n{}_l{}_d{}_r{}".format(
@@ -178,11 +156,7 @@ def train(G, layer_size, num_samples, batch_size, num_epochs, learning_rate, dro
         dropout,
         learning_rate,
     )
-    model.save("epgm_yelp_model" + save_str + ".h5")
-
-    # We must also save the attribute spec, as it is fitted to the data
-    with open("epgm_yelp_specs" + save_str + ".pkl", "wb") as f:
-        pickle.dump([nfs, nts], f)
+    model.save("yelp_model" + save_str + ".h5")
 
 
 def test(G, target_converter, feature_converter, model_file, batch_size, target_attr):
@@ -204,6 +178,13 @@ if __name__ == "__main__":
         description="Graph node classification using GraphSAGE"
     )
     parser.add_argument(
+        "-l",
+        "--location",
+        type=str,
+        default=None,
+        help="The location of the pre-processes Yelp dataset.",
+    )
+    parser.add_argument(
         "-c",
         "--checkpoint",
         nargs="?",
@@ -212,7 +193,7 @@ if __name__ == "__main__":
         help="Load a saved checkpoint file",
     )
     parser.add_argument(
-        "-n", "--batch_size", type=int, default=20, help="Batch size for training"
+        "-b", "--batch_size", type=int, default=200, help="Batch size for training"
     )
     parser.add_argument(
         "-e",
@@ -232,27 +213,24 @@ if __name__ == "__main__":
         "-r",
         "--learningrate",
         type=float,
-        default=0.005,
+        default=0.001,
         help="Learning rate for training model",
     )
     parser.add_argument(
-        "-s",
+        "-n",
         "--neighbour_samples",
         type=int,
         nargs="*",
-        default=[10, 10],
+        default=[10, 5],
         help="The number of nodes sampled at each layer",
     )
     parser.add_argument(
-        "-l",
+        "-s",
         "--layer_size",
         type=int,
         nargs="*",
-        default=[20, 20],
+        default=[80, 80],
         help="The number of hidden features at each layer",
-    )
-    parser.add_argument(
-        "-g", "--graph", type=str, default=None, help="The graph stored in EPGM format."
     )
     parser.add_argument(
         "-f",
@@ -268,17 +246,36 @@ if __name__ == "__main__":
         default="subject",
         help="The target node attribute (categorical)",
     )
-    args, cmdline_args = parser.parse_known_args()
+    args = parser.parse_args()
+
+    # Load graph and data
+    data_loc = os.path.expanduser(args.location)
+
+    # Read the data
+    user_features = pd.read_pickle(os.path.join(data_loc, "user_features_filtered.pkl"))
+    business_features = pd.read_pickle(
+        os.path.join(data_loc, "business_features_filtered.pkl")
+    )
+    user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
 
     # Load graph
-    graph_loc = os.path.expanduser(args.graph)
-    G = from_epgm(graph_loc)
+    Gnx = nx.read_graphml(os.path.join(data_loc, "yelp_graph_filtered.graphml"))
 
-    print(G.info())
+    # Adding node features to graph
+    for user_id, row in user_features.iterrows():
+        if user_id not in Gnx:
+            print("User not found")
+        Gnx.node[user_id]["feature"] = row.values
+
+    for business_id, row in business_features.iterrows():
+        if business_id not in Gnx:
+            print("Business not found")
+        Gnx.node[business_id]["feature"] = row.values
 
     if args.checkpoint is None:
         train(
-            G,
+            Gnx,
+            user_targets,
             args.layer_size,
             args.neighbour_samples,
             args.batch_size,
@@ -287,4 +284,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(G, args.checkpoint, args.batch_size)
+        test(Gnx, args.checkpoint, args.batch_size)
