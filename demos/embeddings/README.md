@@ -1,14 +1,14 @@
 ## Representation Learning Examples
 
-This folder contains two [Jupyter](http://jupyter.org/) python notebooks demonstrating the combined use of the 
-`stellargraph` machine learning on graphs and `Gensim`, [4] libraries for representation learning on homogeneous and 
+This folder contains two [Jupyter](http://jupyter.org/) python notebooks demonstrating the combined use of 
+`stellargraph` (this library) and `Gensim` [4] libraries for representation learning on homogeneous and 
 heterogeneous graphs. The two notebooks demonstrate the following algorithms,
 
-- `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm, [2], for representation learning on homogeneous graphs
-- `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm, [1], for representation learning on heterogeneous graphs.
+- `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [2] for representation learning on homogeneous graphs
+- `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm [1] for representation learning on heterogeneous graphs.
 
 Both examples demonstrate how to calculate embedding vectors for a graph's nodes in just a few lines of Python code. 
-The learned node representations can be used to solve numerous downstream tasks such as node attribute inference, link
+The learned node representations can be used in numerous downstream tasks such as node attribute inference, link
 prediction, and community detection.
 
 

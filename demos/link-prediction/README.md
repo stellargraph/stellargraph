@@ -2,7 +2,7 @@
 
 The main.py script runs link prediction on a homogeneous or heterogeneous graph. When
 the graph is heterogeneous, it can optionally be treated as homogeneous for representation learning; in
-this case, the link prediction script can be thought of us a baseline for more advanced
+this case, the link prediction script can be thought of as a baseline for more advanced
 algorithms that do not simplify the input graph. 
 
 In addition, for heterogeneous graphs, the link prediction script gives the user some control over what edge 
@@ -10,18 +10,20 @@ types to predict including a choice of filtering these edges by one of their att
 allows filtering by a date attribute in the format **dd/mm/yyyy**, e.g., *10/10/2005*. The edge attribute holding the date
 can be given any text label in the graph, e.g., 'date', 'timestamp', 'start date', etc. 
 
-For example, given a heterogeneous network of with **people**, **products**, and links connecting people with products 
+For example, given a heterogeneous network with nodes representing **people** and **products**, and links connecting people with products 
 (**purchased**) and people with people (**friend**), then a user can ask that links of type **friend** be predicted. In addition,
-if edges of type **friend** have a **date** property, for example, in the range *01/01/2000* to *01/01/2010*, then a user
-can ask that edges to be predicted should occur after *01/01/2005*. That is edge data with a date before *01/01/2005* are
-used for training, and data after that same date are put aside for predicting.
+if links of type **friend** have a **date** property, for example, in the range *01/01/2000* to *01/01/2010*, then a user
+can ask that links to be predicted should occur after *01/01/2005*. That is link data with a date before *01/01/2005* are
+used for training, and data after that same date are put aside for predicting/testing.
 
 
 ### Instalation
-To install the requirements for running the script, create a new python v3.6 environment
-and execute,
+To install the requirements for running the script, activate a python 3.6 environment
+where the `stellargraph` library is installed (see the library installation
+[instructions](https://github.com/stellargraph/stellargraph/)), navigate to the directory with this script, 
+and execute
 
-pip install -r requirements.txt
+```pip install -r requirements.txt```
 
 ### Usage
 
