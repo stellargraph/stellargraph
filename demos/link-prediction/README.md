@@ -28,7 +28,7 @@ pip install -r requirements.txt
 #### Command Line Arguments
 The script accepts the following command line arguments:
                
-- `input_graph <str>`  The directory where the graph in EPGM format is stored.
+- `input_graph <str>`  The directory where the graph is stored, either as an edge list or a pickled networkx object.
 - `output_node_features <str>` The file where the node features from representation learning are written 
 for future reference.
 - `subsample` If specified, the graph is subsampled (number of nodes reduced) by a default 0.1 factor, e.g,
