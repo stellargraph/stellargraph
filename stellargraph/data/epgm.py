@@ -27,7 +27,8 @@ import scipy.sparse as sp
 import multiprocessing
 from multiprocessing import Pool
 from functools import partial
-from progressbar import ProgressBar, SimpleProgress
+
+# from progressbar import ProgressBar, SimpleProgress
 from time import sleep
 
 
@@ -359,14 +360,14 @@ class EPGM(object):
                     n = len(nodes)
                     self.G_nx[graph_id] = []
 
-                    pbar = ProgressBar(
-                        widgets=[
-                            SimpleProgress(
-                                format="%(value_s)s of %(max_value_s)s nodes processed (%(percentage)3d%%)"
-                            )
-                        ],
-                        maxval=n,
-                    ).start()
+                    # pbar = ProgressBar(
+                    #     widgets=[
+                    #         SimpleProgress(
+                    #             format="%(value_s)s of %(max_value_s)s nodes processed (%(percentage)3d%%)"
+                    #         )
+                    #     ],
+                    #     maxval=n,
+                    # ).start()
                     # _ = [pool.apply_async(partial(node_neighbours, edges=edges), args=(v,),
                     #                       callback=self.G_nx[graph_id].append) for v in nodes]
                     # it seems that appending results using callback works much slower than either pool.map_async or pool.map
@@ -380,9 +381,9 @@ class EPGM(object):
                     # evaluate batches of imap, as the progress bar is being updated:
                     while len(self.G_nx[graph_id]) != n:
                         self.G_nx[graph_id].append(next(graph))
-                        pbar.update(len(self.G_nx[graph_id]))
+                        # pbar.update(len(self.G_nx[graph_id]))
 
-                    pbar.finish()
+                    # pbar.finish()
 
                     self.G_nx[graph_id] = dict(self.G_nx[graph_id])
 
@@ -395,30 +396,9 @@ class EPGM(object):
                 pool.join()
 
             else:  # sequential execution
-                if progress:
-                    n = len(nodes)
-                    # graph = {self._progress('node', n, progress_step, i, v): [e[1] for e in edges if e[0] == v] for i, v in
-                    #          enumerate(nodes)}  # this works ~2.5x faster (for cora dataset) than the above for loop
-                    pbar = ProgressBar(
-                        widgets=[
-                            SimpleProgress(
-                                format="%(value_s)s of %(max_value_s)s nodes processed"
-                            )
-                        ],
-                        maxval=n,
-                    ).start()
-                    self.G_nx[graph_id] = {
-                        self._progressbarUpdate(pbar, chunksize, v, i): [
-                            e[1] for e in edges if e[0] == v
-                        ]
-                        for i, v in enumerate(nodes)
-                    }  # this works ~2.5x faster (for cora dataset) than the above for loop
-                    pbar.finish()
-
-                else:
-                    self.G_nx[graph_id] = {
-                        v: [e[1] for e in edges if e[0] == v] for v in nodes
-                    }  # this works ~2.5x faster (for cora dataset) than the above for loop
+                self.G_nx[graph_id] = {
+                    v: [e[1] for e in edges if e[0] == v] for v in nodes
+                }  # this works ~2.5x faster (for cora dataset) than the above for loop
 
             print("...converting the graph to nx format...")
             self.G_nx[graph_id] = nx.from_dict_of_lists(self.G_nx[graph_id])
