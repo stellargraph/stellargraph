@@ -349,7 +349,7 @@ if __name__ == "__main__":
         "This should always start with 0.0",
     )
     parser.add_argument(
-        "-b", "--batch_size", type=int, default=500, help="Batch size for training"
+        "-b", "--batch_size", type=int, default=50, help="Batch size for training"
     )
     parser.add_argument(
         "-e",

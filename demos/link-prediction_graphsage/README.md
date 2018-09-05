@@ -32,6 +32,16 @@ The following is the description of the dataset:
 Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your computer and pass this location
 as a command line argument to this script.
 
+## Running the notebook
+The narrated version of this example is available in the `cora-links-example.ipynb` notebook.
+To run the notebook:
+ - Activate the python 3.6 environment in which the 
+`stellargraph` library is installed 
+ - Start `jupyter-notebook`
+   - note: you may need to first install `jupyter` by running `pip install jupyter` in your python environment
+ - Navigate to the notebook (`/demos/link-prediction_hinsage/movielens-recommender.ipynb`), and click on
+ it to launch the notebook.
+
 ## Running the script
 
 The example should be run on supplying the location of the downloaded CORA dataset with the following command:
