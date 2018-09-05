@@ -25,18 +25,10 @@ The following is the description of the dataset:
 > The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
 
 Download and unzip the cora.tgz file to a location on your computer and pass this location
-as a command line argument to this script:
-
-E.G. Assuming the CORA dataset is here:
-```
-    ~/data/cora
-```
-and contains cora.cites and cora.content.
+(which should contain cora.cites and cora.content) as a command line argument to this script.
 
 Run this script as follows:
-```
-    python epgm-example.py -g ~/data/cora
-```
+    python epgm-example.py -l <path_to_cora_dataset>
 """
 import os
 import argparse
@@ -263,7 +255,7 @@ if __name__ == "__main__":
         help="Load a saved checkpoint .h5 file",
     )
     parser.add_argument(
-        "-n", "--batch_size", type=int, default=20, help="Batch size for training"
+        "-b", "--batch_size", type=int, default=20, help="Batch size for training"
     )
     parser.add_argument(
         "-e",
@@ -287,7 +279,7 @@ if __name__ == "__main__":
         help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-s",
+        "-n",
         "--neighbour_samples",
         type=int,
         nargs="*",
@@ -295,7 +287,7 @@ if __name__ == "__main__":
         help="The number of neighbour nodes sampled at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
+        "-s",
         "--layer_size",
         type=int,
         nargs="*",
@@ -303,8 +295,8 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-g",
-        "--graph",
+        "-l",
+        "--location",
         type=str,
         default=None,
         help="Location of the CORA dataset (directory)",
@@ -320,7 +312,7 @@ if __name__ == "__main__":
 
     # Load the dataset - this assumes it is the CORA dataset
     # Load graph edgelist
-    graph_loc = os.path.expanduser(args.graph)
+    graph_loc = os.path.expanduser(args.location)
     edgelist = pd.read_table(
         os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
     )
