@@ -19,18 +19,15 @@
 Heterogeneous GraphSAGE and compatible aggregator layers
 
 """
-import numpy as np
+__all__ = ["HinSAGE", "MeanHinAggregator"]
 
 from keras.engine.topology import Layer
 from keras import backend as K, Input
 from keras.layers import Lambda, Dropout, Reshape
 from keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
-from collections import defaultdict
 import itertools as it
 import operator as op
-
-from stellargraph.data.stellargraph import StellarGraphBase
 
 
 class MeanHinAggregator(Layer):
