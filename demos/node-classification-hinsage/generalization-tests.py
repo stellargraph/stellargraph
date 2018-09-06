@@ -72,7 +72,7 @@ def train(
 
     # GraphSAGE model
     model = GraphSAGE(
-        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=train_mapper, bias=True, dropout=dropout
     )
     x_inp, x_out = model.default_model(flatten_output=True)
 

@@ -228,7 +228,7 @@ class HinSAGE:
         # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
         if mapper is not None:
             self.n_samples = mapper.num_samples
-            self.subtree_schema = mapper.schema.get_type_adjacency_list(
+            self.subtree_schema = mapper.schema.type_adjacency_list(
                 mapper.head_node_types, len(self.n_samples)
             )
             # TODO: I feel dirty using the graph through the mapper

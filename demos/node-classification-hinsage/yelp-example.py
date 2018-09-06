@@ -39,7 +39,7 @@ import keras.backend as K
 
 from stellargraph.data.stellargraph import StellarGraph
 from stellargraph.layer.hinsage import HinSAGE, MeanHinAggregator
-from stellargraph.mapper.node_mappers import HinSAGENodeMapper
+from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
 
 from sklearn import model_selection
 from sklearn import metrics as sk_metrics
@@ -97,7 +97,7 @@ def train(
     )
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    train_mapper = HinSAGENodeMapper(
+    train_mapper = HinSAGENodeGenerator(
         G, train_targets.index, batch_size, num_samples, targets=train_targets.values
     )
 
@@ -131,7 +131,7 @@ def train(
     )
 
     # Evaluate on test set and print metrics
-    test_mapper = HinSAGENodeMapper(
+    test_mapper = HinSAGENodeGenerator(
         G, test_targets.index, batch_size, num_samples, targets=test_targets.values
     )
     predictions = model.predict_generator(test_mapper)

@@ -18,17 +18,6 @@
 """
 Mapper tests:
 
-GraphSAGENodeMapper(
-        G: nx.Graph,
-        ids: List[Any],
-        sampler: Callable[[List[Any]], List[List[Any]]],
-        batch_size: int,
-        num_samples: List[int],
-        target_id: AnyStr = None,
-        feature_size: Optional[int] = None,
-        name: AnyStr = None,
-    )
-g
 """
 from stellargraph.data.stellargraph import *
 from stellargraph.mapper.node_mappers import *
@@ -135,19 +124,25 @@ def example_hin_3(feature_size_by_type=None):
 
 
 def test_nodemapper_constructor_nx():
+    """
+    GraphSAGENodeGenerator requires a StellarGraph object
+    """
     G = nx.Graph()
     G.add_nodes_from(range(4))
 
     with pytest.raises(TypeError):
-        GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
+        GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
 
 def test_nodemapper_constructor_no_feats():
+    """
+    GraphSAGENodeGenerator requires the graph to have features
+    """
     n_feat = 4
 
     G = example_graph_1()
     with pytest.raises(RuntimeError):
-        GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
+        GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
 
 def test_nodemapper_constructor():
@@ -157,12 +152,14 @@ def test_nodemapper_constructor():
 
     # Should raise an error if not set up
     with pytest.raises(RuntimeError):
-        GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
+        GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
     G.fit_attribute_spec()
-    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
+    generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
-    assert mapper.batch_size == 2
+    mapper = generator.flow(list(G))
+
+    assert generator.batch_size == 2
     assert mapper.data_size == 4
     assert len(mapper.ids) == 4
 
@@ -174,16 +171,16 @@ def test_nodemapper_1():
     # test graph
     G1 = example_graph_1(n_feat)
     G1.fit_attribute_spec()
-    mapper1 = GraphSAGENodeMapper(
-        G1, G1.nodes(), batch_size=n_batch, num_samples=[2, 2]
-    )
+    mapper1 = GraphSAGENodeGenerator(
+        G1,  batch_size=n_batch, num_samples=[2, 2]
+    ).flow(G1.nodes())
     assert len(mapper1) == 2
 
     G2 = example_graph_2(n_feat)
     G2.fit_attribute_spec()
-    mapper2 = GraphSAGENodeMapper(
-        G2, G2.nodes(), batch_size=n_batch, num_samples=[2, 2]
-    )
+    mapper2 = GraphSAGENodeGenerator(
+        G2, batch_size=n_batch, num_samples=[2, 2]
+    ).flow(G2.nodes())
     assert len(mapper2) == 3
 
     for mapper in [mapper1, mapper2]:
@@ -213,7 +210,7 @@ def test_nodemapper_no_samples():
     # test graph
     G = example_graph_1(feature_size=n_feat)
     G.fit_attribute_spec()
-    mapper = GraphSAGENodeMapper(G, G.nodes(), batch_size=n_batch, num_samples=[0])
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(G.nodes())
 
     # This is an edge case, are we sure we want this behaviour?
     assert len(mapper) == 2
@@ -240,9 +237,9 @@ def test_nodemapper_with_targets():
 
     nodes = list(G)
     targets = G.get_target_for_nodes(nodes)
-    mapper = GraphSAGENodeMapper(
-        G, nodes, batch_size=n_batch, num_samples=[1], targets=targets
-    )
+    mapper = GraphSAGENodeGenerator(
+        G, batch_size=n_batch, num_samples=[1]
+    ).flow(nodes, targets)
 
     assert len(mapper) == 2
     for ii in range(len(mapper)):
@@ -254,6 +251,9 @@ def test_nodemapper_with_targets():
 
 
 def test_nodemapper_incorrect_targets():
+    """
+    Tests checks on target shape
+    """
     n_feat = 4
     n_batch = 2
 
@@ -262,10 +262,10 @@ def test_nodemapper_incorrect_targets():
     G.fit_attribute_spec()
 
     with pytest.raises(TypeError):
-        GraphSAGENodeMapper(G, list(G), batch_size=n_batch, num_samples=[0], targets=1)
+        GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(list(G),1)
 
     with pytest.raises(ValueError):
-        GraphSAGENodeMapper(G, list(G), batch_size=n_batch, num_samples=[0], targets=[])
+        GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(list(G), targets=[])
 
 
 def test_hinnodemapper_constructor():
@@ -275,10 +275,11 @@ def test_hinnodemapper_constructor():
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
-        HinSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
+        HinSAGENodeGenerator(G,  batch_size=2, num_samples=[2, 2]).flow(G.nodes())
 
-    mapper = HinSAGENodeMapper(G, [0, 1, 2, 3], batch_size=2, num_samples=[2, 2])
-    assert mapper.batch_size == 2
+    gen = HinSAGENodeGenerator(G,  batch_size=2, num_samples=[2, 2])
+    mapper = gen.flow([0, 1, 2, 3])
+    assert gen.batch_size == 2
     assert mapper.data_size == 4
     assert len(mapper.ids) == 4
 
@@ -288,10 +289,11 @@ def test_hinnodemapper_constructor_all_options():
     G = example_hin_1(feature_sizes)
     G.fit_attribute_spec()
 
-    mapper = HinSAGENodeMapper(
-        G, G.nodes(), node_type="A", batch_size=2, num_samples=[2, 2]
+    gen = HinSAGENodeGenerator(
+        G, batch_size=2, num_samples=[2, 2]
     )
-    assert mapper.batch_size == 2
+    mapper = gen.flow(G.nodes(), node_type="A")
+    assert gen.batch_size == 2
     assert mapper.data_size == len(G)
     assert len(mapper.ids) == len(G)
 
@@ -300,7 +302,7 @@ def test_hinnodemapper_constructor_no_features():
     G = example_hin_1(feature_size_by_type=None)
     G.fit_attribute_spec()
     with pytest.raises(RuntimeError):
-        mapper = HinSAGENodeMapper(G, G.nodes(), batch_size=2, num_samples=[2, 2])
+        mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow(G.nodes())
 
 
 def test_hinnodemapper_level_1():
@@ -309,12 +311,12 @@ def test_hinnodemapper_level_1():
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
     G.fit_attribute_spec()
 
-    mapper = HinSAGENodeMapper(
-        G, nodes_type_2, node_type="t2", batch_size=batch_size, num_samples=[2]
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[2]
+    ).flow(nodes_type_2, node_type="t2")
 
     schema = G.create_graph_schema()
-    sampling_adj = schema.get_type_adjacency_list(["t2"], 1)
+    sampling_adj = schema.type_adjacency_list(["t2"], 1)
 
     assert len(mapper) == 1
 
@@ -336,12 +338,12 @@ def test_hinnodemapper_level_2():
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
     G.fit_attribute_spec()
 
-    mapper = HinSAGENodeMapper(
-        G, nodes_type_2, node_type="t2", batch_size=batch_size, num_samples=[2, 3]
-    )
+    mapper = HinSAGENodeGenerator(
+        G,  batch_size=batch_size, num_samples=[2, 3]
+    ).flow(nodes_type_2, node_type="t2")
 
     schema = G.create_graph_schema()
-    sampling_adj = schema.get_type_adjacency_list(["t2"], 2)
+    sampling_adj = schema.type_adjacency_list(["t2"], 2)
 
     assert len(mapper) == 1
 
@@ -367,12 +369,12 @@ def test_hinnodemapper_no_neighbors():
     G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
     G.fit_attribute_spec()
 
-    mapper = HinSAGENodeMapper(
-        G, nodes_type_2, node_type="t2", batch_size=batch_size, num_samples=[2, 1]
-    )
+    mapper = HinSAGENodeGenerator(
+        G,  batch_size=batch_size, num_samples=[2, 1]
+    ).flow(nodes_type_2, node_type="t2")
 
     schema = G.create_graph_schema()
-    sampling_adj = schema.get_type_adjacency_list(["t2"], 2)
+    sampling_adj = schema.type_adjacency_list(["t2"], 2)
 
     assert len(mapper) == 1
 

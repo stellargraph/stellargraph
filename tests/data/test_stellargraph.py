@@ -155,13 +155,6 @@ def test_graph_schema():
             schema.get_edge_type((n1, n2, k))
         )
 
-    # Test edge_types_for_node
-    ets = schema.edge_types_for_node_type("user")
-    assert len(ets) == 1
-
-    ets = schema.edge_types_for_node_type("movie")
-    assert len(ets) == 1
-
     # Test undirected graph types
     assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
     assert schema.get_edge_type((0, 4, 0)) == ("movie", "rating", "user")
@@ -186,12 +179,6 @@ def test_digraph_schema():
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
-
-    ets = schema.edge_types_for_node_type("user")
-    assert len(ets) == 1
-
-    ets = schema.edge_types_for_node_type("movie")
-    assert len(ets) == 0
 
     assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
     assert schema.get_edge_type((0, 4, 0)) == None
@@ -251,7 +238,7 @@ def test_graph_schema_sampling():
         create_graph_2(StellarDiGraph()),
     ]:
         schema = sg.create_graph_schema()
-        type_list = schema.get_type_adjacency_list(["user", "movie"], n_hops=2)
+        type_list = schema.type_adjacency_list(["user", "movie"], n_hops=2)
 
         assert type_list[0][0] == "user"
         assert type_list[1][0] == "movie"
@@ -267,7 +254,7 @@ def test_graph_schema_sampling():
 def test_graph_schema_sampling_layout_1():
     sg = create_graph_1()
     schema = sg.create_graph_schema(create_type_maps=True)
-    sampling_layout = schema.get_sampling_layout(["user"], [2, 2])
+    sampling_layout = schema.sampling_layout(["user"], [2, 2])
 
     assert len(sampling_layout) == 1
 
@@ -277,7 +264,7 @@ def test_graph_schema_sampling_layout_1():
 
     sg = create_graph_2()
     schema = sg.create_graph_schema(create_type_maps=True)
-    sampling_layout = schema.get_sampling_layout(["user"], [1, 2])
+    sampling_layout = schema.sampling_layout(["user"], [1, 2])
 
     assert len(sampling_layout) == 1
 
@@ -299,7 +286,7 @@ def test_graph_schema_sampling_layout_1():
 def test_graph_schema_sampling_layout_multiple():
     sg = create_graph_1()
     schema = sg.create_graph_schema(create_type_maps=True)
-    sampling_layout = schema.get_sampling_layout(["user", "movie"], [1, 2, 2])
+    sampling_layout = schema.sampling_layout(["user", "movie"], [1, 2, 2])
 
     assert len(sampling_layout) == 2
 
