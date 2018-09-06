@@ -24,7 +24,7 @@ The following is the description of the dataset:
 > 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
 > The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
 
-Download and unzip the cora.tgz file to a location on your computer and pass this location
+Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your computer and pass this location
 as a command line argument to this script.
 
 ## Running the script

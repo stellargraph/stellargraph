@@ -19,10 +19,9 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 """
 
 import argparse
-from stellargraph.data.stellargraph import *
-from stellargraph.mapper.link_mappers import *
-from stellargraph.layer.hinsage import *
-from stellargraph.layer.link_inference import link_regression
+import stellargraph as sg
+from stellargraph.mapper import HinSAGELinkMapper
+from stellargraph.layer import HinSAGE, MeanHinAggregator, link_regression
 from keras import Model, optimizers, losses, metrics
 from typing import AnyStr
 import json
@@ -30,6 +29,7 @@ from utils import ingest_graph, ingest_features, add_features_to_nodes
 from sklearn import preprocessing, feature_extraction, model_selection
 import pandas as pd
 import multiprocessing
+import keras.backend as K
 
 
 def read_graph(data_path, config_file):
@@ -133,7 +133,7 @@ class LinkInference(object):
         # and evaluate it using the test ratings edges_test. The model also requires the user-movie graph structure.
         # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
-        self.g = StellarGraph(self.g)
+        self.g = sg.StellarGraph(self.g)
 
         # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
         self.g.fit_attribute_spec()
@@ -218,7 +218,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
 
     parser.add_argument(
-        "-p", "--data_path", type=str, default="../data/ml-100k", help="Dataset path (directory)"
+        "-p",
+        "--data_path",
+        type=str,
+        default="../data/ml-100k",
+        help="Dataset path (directory)",
     )
     parser.add_argument(
         "-f",
