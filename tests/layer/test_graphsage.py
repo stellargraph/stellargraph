@@ -67,7 +67,9 @@ def test_graphsage_constructor():
 
 
 def test_graphsage_constructor_passing_aggregator():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=MeanAggregator)
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=MeanAggregator
+    )
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.n_layers == 1
