@@ -126,8 +126,8 @@ class GraphSAGE:
         """
         Args:
             layer_sizes: Hidden feature dimensions for each layer
-            generator: A NodeGenerator or LinkFGenerator. If specified the n_samples
-                and input_dim will be taken from this object.
+            generator: A NodeSequence or LinkSequence object to be used for training/inference.
+                If specified n_samples and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
                 The number of samples per layer in the model.
             input_dim: The dimensions of the node features used as input to the model.
@@ -153,9 +153,10 @@ class GraphSAGE:
 
         # Get the input_dim and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
+        # TODO: Refactor the horror of generator.generator.graph...
         if generator is not None:
-            self.n_samples = generator.num_samples
-            feature_sizes = generator.graph.get_feature_sizes()
+            self.n_samples = generator.generator.num_samples
+            feature_sizes = generator.generator.graph.get_feature_sizes()
             if len(feature_sizes) > 1:
                 raise RuntimeError(
                     "GraphSAGE called on graph with more than one node type."

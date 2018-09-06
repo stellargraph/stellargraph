@@ -161,7 +161,7 @@ class HinSAGE:
     def __init__(
         self,
         layer_sizes,
-        mapper=None,
+        generator=None,
         n_samples=None,
         input_neighbor_tree=None,
         input_dim=None,
@@ -173,18 +173,17 @@ class HinSAGE:
         """
         Args:
             layer_sizes: Hidden feature dimensions for each layer
-            mapper: A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
-                input_neighbour_tree and input_dim will be taken from this object.
-            n_samples: (Optional: needs to be specified if no mapper is provided.)
-                The number of samples per layer in the model.
-            input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
+            generator: A NodeSequence or LinkSequence object to be used for training/inference.
+                If specified n_samples, input_neighbor_tree, and input_dim will be taken from this object.
+            n_samples: [Optional] The number of samples per layer in the model.
+            input_neighbor_tree: [Optional] A list of (node_type, [children]) tuples that specify the
                 subtree to be created by the HinSAGE model.
-            input_dim: The input dimensions for each node type as a dictionary of the form
+            input_dim: [Optional] The input dimensions for each node type as a dictionary of the form
                 {node_type: feature_size}.
-            aggregator: The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
-            bias: If True a bias vector is learnt for each layer in the HinSAGE model
-            dropout: The dropout supplied to each layer in the HinSAGE model.
-            normalize: The normalization used after each layer, defaults to L2 normalization.
+            aggregator: [Optional] The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
+            bias: [Optional]  If True a bias vector is learnt for each layer in the HinSAGE model
+            dropout: [Optional] The dropout supplied to each layer in the HinSAGE model.
+            normalize: [Optional] The normalization used after each layer, defaults to L2 normalization.
         """
         # TODO: I feel that this needs refactoring.
         # Does this assume that the adjacency list is ordered?
@@ -200,7 +199,6 @@ class HinSAGE:
               List of neighbourhood trees
 
             """
-
             reduced = [li for li in input_tree if li[1][-1] < len(input_tree)]
             return (
                 [input_tree]
@@ -223,16 +221,28 @@ class HinSAGE:
         elif normalize is None or normalize == "none":
             self._normalization = Lambda(lambda x: x)
 
+        # Get the input_dim and num_samples from the mapper if it is given
+        # Use both the schema and head node type from the mapper
+        if generator is not None:
+            self.n_samples = generator.num_samples
+            feature_sizes = generator.graph.get_feature_sizes()
+            if len(feature_sizes) > 1:
+                raise RuntimeError(
+                    "GraphSAGE called on graph with more than one node type."
+                )
+
+            self.input_feature_size = feature_sizes.popitem()[1]
+
         # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
+        # TODO: Refactor the horror of generator.generator.graph...
         # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
-        if mapper is not None:
-            self.n_samples = mapper.num_samples
-            self.subtree_schema = mapper.schema.type_adjacency_list(
-                mapper.head_node_types, len(self.n_samples)
+        if generator is not None:
+            self.n_samples = generator.generator.num_samples
+            self.subtree_schema = generator.generator.schema.type_adjacency_list(
+                generator.head_node_types, len(self.n_samples)
             )
-            # TODO: I feel dirty using the graph through the mapper
-            self.input_dims = mapper.graph.get_feature_sizes()
+            self.input_dims = generator.generator.graph.get_feature_sizes()
 
         elif (
             input_neighbor_tree is not None

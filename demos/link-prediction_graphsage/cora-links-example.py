@@ -78,7 +78,7 @@ from keras import optimizers, losses, metrics
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
-from stellargraph.mapper import GraphSAGELinkMapper
+from stellargraph.mapper import GraphSAGELinkGenerator
 from stellargraph import globals
 
 from sklearn import feature_extraction
@@ -192,21 +192,24 @@ def train(
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
-    train_mapper = GraphSAGELinkMapper(
+    train_generator = GraphSAGELinkGenerator(
         G_train,
-        edge_ids_train,
-        edge_labels_train,
         batch_size,
         num_samples,
         name="train",
     )
-    test_mapper = GraphSAGELinkMapper(
-        G_test, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
-    )
+    train_gen = train_generator.flow(edge_ids_train, edge_labels_train)
+
+    test_gen = GraphSAGELinkGenerator(
+        G_train,
+        batch_size,
+        num_samples,
+        name="train",
+    ).flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
     graphsage = GraphSAGE(
-        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=train_generator, bias=True, dropout=dropout
     )
 
     # Expose input and output sockets of the model, for source and destination nodes:
@@ -231,8 +234,8 @@ def train(
     )
 
     # Evaluate the initial (untrained) model on the train and test set:
-    init_train_metrics = model.evaluate_generator(train_mapper)
-    init_test_metrics = model.evaluate_generator(test_mapper)
+    init_train_metrics = model.evaluate_generator(train_gen)
+    init_test_metrics = model.evaluate_generator(test_gen)
 
     print("\nTrain Set Metrics of the initial (untrained) model:")
     for name, val in zip(model.metrics_names, init_train_metrics):
@@ -245,16 +248,16 @@ def train(
     # Train model
     print("\nTraining the model for {} epochs...".format(num_epochs))
     history = model.fit_generator(
-        train_mapper,
+        train_gen,
         epochs=num_epochs,
-        validation_data=test_mapper,
+        validation_data=test_gen,
         verbose=2,
         shuffle=True,
     )
 
     # Evaluate and print metrics
-    train_metrics = model.evaluate_generator(train_mapper)
-    test_metrics = model.evaluate_generator(test_mapper)
+    train_metrics = model.evaluate_generator(train_gen)
+    test_metrics = model.evaluate_generator(test_gen)
 
     print("\nTrain Set Metrics of the trained model:")
     for name, val in zip(model.metrics_names, train_metrics):
