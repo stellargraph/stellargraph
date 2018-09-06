@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__all__ = ["train_val_test_split", "NodeSplitter"]
+
 import numpy as np
 from stellargraph.data.stellargraph import StellarGraphBase
-from stellargraph.data.epgm import EPGM
 from stellargraph import globals
 
 

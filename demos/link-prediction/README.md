@@ -1,37 +1,36 @@
 # Link Prediction demo
 
 The main.py script runs link prediction on a homogeneous or heterogeneous graph. When
-the graph is heterogeneous, it is treated as homogeneous for representation learning; in
-this case, the link prediction script can be thought of us a baseline for more advanced
+the graph is heterogeneous, it can optionally be treated as homogeneous for representation learning; in
+this case, the link prediction script can be thought of as a baseline for more advanced
 algorithms that do not simplify the input graph. 
 
 In addition, for heterogeneous graphs, the link prediction script gives the user some control over what edge 
 types to predict including a choice of filtering these edges by one of their attributes. Currently, the script only
 allows filtering by a date attribute in the format **dd/mm/yyyy**, e.g., *10/10/2005*. The edge attribute holding the date
-can be given any text label in the graph as stored on disk in EPGM format, e.g., 'date', 'timestamp', 'start date', etc. 
+can be given any text label in the graph, e.g., 'date', 'timestamp', 'start date', etc. 
 
-For example, given a heterogeneous network of with **people**, **products**, and links connecting people with products 
+For example, given a heterogeneous network with nodes representing **people** and **products**, and links connecting people with products 
 (**purchased**) and people with people (**friend**), then a user can ask that links of type **friend** be predicted. In addition,
-if edges of type **friend** have a **date** property, for example, in the range *01/01/2000* to *01/01/2010*, then a user
-can ask that edges to be predicted should occur after *01/01/2005*. That is edge data with a date before *01/01/2005* are
-used for training, and data after that same date are put aside for predicting.
+if links of type **friend** have a **date** property, for example, in the range *01/01/2000* to *01/01/2010*, then a user
+can ask that links to be predicted should occur after *01/01/2005*. That is link data with a date before *01/01/2005* are
+used for training, and data after that same date are put aside for predicting/testing.
 
 
 ### Instalation
-To install the requirements for running the script, create a new python v3.6 environment
-and execute,
+To install the requirements for running the script, activate a python 3.6 environment
+where the `stellargraph` library is installed (see the library installation
+[instructions](https://github.com/stellargraph/stellargraph/)), navigate to the directory with this script, 
+and execute
 
-pip install -r requirements.txt
+```pip install -r requirements.txt```
 
 ### Usage
-
-#### Input Data
-The input data should be in EPGM format and the directory specified on the command line.
 
 #### Command Line Arguments
 The script accepts the following command line arguments:
                
-- `input_graph <str>`  The directory where the graph in EPGM format is stored.
+- `input_graph <str>`  The directory where the graph is stored, either as an edge list or a pickled networkx object.
 - `output_node_features <str>` The file where the node features from representation learning are written 
 for future reference.
 - `subsample` If specified, the graph is subsampled (number of nodes reduced) by a default 0.1 factor, e.g,
@@ -72,29 +71,52 @@ a value (date as only dates are currently supported) for edges to predict.
 - `show_hist` If this flag is specified, then a histogram of the distances between source and target nodes comprising
 negative edge samples is plotted. 
 
+#### Examples
+
+For the examples we use 2 different datasets. The **Cora** dataset that is a homogeneous network and the 
+**BlogCatalog3** dataset that is a heterogeneous network. 
+
+**Cora** can be downloaded from [here.](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz)
+
+**BlogCatalog3** can be downloaded from [here.]( http://socialcomputing.asu.edu/datasets/BlogCatalog3)
+
+The **BlogCatalog3** dataset must be loaded into a `networkx` graph object. The `stellargraph` library provides a 
+utility method, `stellargraph.data.loader.load_dataset_BlogCatalog3(location)`, that loads the dataset, 
+and returns a `networkx` graph object. Assuming that the **BlogCatalog3** dataset has been downloaded and unzipped
+in directory `~/data`, the following 3 lines of code will prepare the dataset for use in the below examples.
+
+```
+import os
+from stellargraph.data.loader import load_dataset_BlogCatalog3
+g = load_dataset_BlogCatalog3(location='~/data/BlogCatalog-dataset/data)
+nx.write_gpickle(g, os.path.expanduser('~/data/BlogCatalog3.gpickle'))
+```
+
 
 **Example 1: Homogeneous graph with global sampling method for negative example** 
 ``` 
-python main.py --input_graph=~/data/cora.epgm/ --output_node_features=~/data/cora.emb --sampling_method='global'
+python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cora.emb --sampling_method='global'
 ```
 
 **Example 2: Homogeneous graph with local sampling method for negative examples** 
 ``` 
-python main.py --input_graph=~/data/cora.epgm/ --output_node_features=~/data/cora.emb --sampling_method='local' --sampling_probs="0.0, 0.5, 0.5" --show_hist
+python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cora.emb --sampling_method='local' --sampling_probs="0.0, 0.5, 0.5" --show_hist
 ```
 
 **Example 3: Heterogeneous graph treated as homogeneous** 
 ``` 
-python main.py --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Catalog3" --output_node_features=~/data/bc3.emb --sampling_method='global'
+python main.py --input_graph=~/data/BlogCatalog3.gpickle --output_node_features=~/data/bc3.emb --sampling_method='global'
 ```
 
-**Example 4: Heterogeneous graph predicting edges based on edge type and property** 
+**Example 4: Heterogeneous graph predicting edges based on edge type** 
 ``` 
-python main.py --hin --input_graph=~/data/BlogCatalog3.epgm/ --dataset_name="Blog Catalog3" --output_node_features=~/data/bc3.emb  --edge_type="friend" --edge_attribute_label="date" --attribute_is_datetime --edge_attribute_threshold="01/01/2005" --sampling_method='global'
+python main.py --hin --input_graph=~/data/BlogCatalog3.gpickle --output_node_features=~/data/bc3.emb  --edge_type="friend" --sampling_method='global'
 ```
 
 ### References
 
-Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016. 
+1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016. 
 
-Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017 
+2. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017 
+
+3. Social Computing Data Repository at ASU [http://socialcomputing.asu.edu]. R. Zafarani and H. Liu, (2009). Tempe, AZ: Arizona State University, School of Computing, Informatics and Decision Systems Engineering.
