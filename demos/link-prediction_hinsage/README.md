@@ -40,9 +40,9 @@ To run through the notebook, you need to launch jupyter notebook:
 
 ## Running the script
 
-Run the script example for ML-100k with movie & user features using the following command:
+Run the script example for ML-100k dataset with movie & user features using the following command:
 ```
-python movielens-recommender.py --data_path=../data/ml-100k
+python movielens-recommender.py --data_path=<path_to_ml-100k_dataset>
 ```
 
 This examples trains HinSAGE to predict the "score" attribute on links. This

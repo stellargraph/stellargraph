@@ -18,7 +18,7 @@ import numpy as np
 from gensim.models import Word2Vec
 import time
 import pandas as pd
-from stellargraph.data.explorer import UniformRandomMetaPathWalk
+from stellargraph.data import UniformRandomMetaPathWalk
 
 
 class Metapath2VecFeatureLearning(object):

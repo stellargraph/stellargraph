@@ -18,6 +18,7 @@
 Mappers to provide input data for link prediction/link attribute inference problems using GraphSAGE and HinSAGE.
 
 """
+__all__ = ["GraphSAGELinkMapper", "HinSAGELinkMapper"]
 
 from stellargraph.data.stellargraph import StellarGraphBase
 import numpy as np

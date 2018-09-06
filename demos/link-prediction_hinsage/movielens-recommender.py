@@ -20,10 +20,8 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 import argparse
 import stellargraph as sg
-from stellargraph.mapper.link_mappers import *
-from stellargraph.layer.hinsage import *
-from stellargraph.layer.link_inference import link_regression
-import keras
+from stellargraph.mapper import HinSAGELinkMapper
+from stellargraph.layer import HinSAGE, MeanHinAggregator, link_regression
 from keras import Model, optimizers, losses, metrics
 from typing import AnyStr
 import json
@@ -31,6 +29,7 @@ from utils import ingest_graph, ingest_features, add_features_to_nodes
 from sklearn import preprocessing, feature_extraction, model_selection
 import pandas as pd
 import multiprocessing
+import keras.backend as K
 
 
 def read_graph(data_path, config_file):

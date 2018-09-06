@@ -19,3 +19,10 @@
 The layer package contains implementations of popular neural network layers for graph ML as Keras layers
 
 """
+
+# __all__ = ["graphsage", "hinsage", "link_inference"]
+
+# Expose the layers
+from .graphsage import *
+from .hinsage import *
+from .link_inference import *
