@@ -41,7 +41,7 @@ from keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GraphSAGE, MeanAggregator
-from stellargraph.mapper import GraphSAGENodeGenerator, HinSAGENodeGenerator
+from stellargraph.mapper import GraphSAGENodeGenerator
 
 
 def train(
@@ -105,21 +105,6 @@ def train(
     )
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
-
-    generator = HinSAGENodeGenerator(
-        G, batch_size, num_samples, seed=42
-    )
-    train_gen_h = generator.flow(train_nodes, train_targets)
-    val_gen_h = generator.flow(val_nodes, val_targets)
-
-
-    for ii in range(10):
-        bf,bt=(train_gen[ii])
-        hf,ht=(train_gen_h[ii])
-        print([s.shape for s in bf])
-        print([s.shape for s in hf])
-        print([np.all(a==b) for a,b in zip(bf,hf)])
-        print([np.all(a==b) for a,b in zip(bt,ht)])
 
     # GraphSAGE model
     model = GraphSAGE(

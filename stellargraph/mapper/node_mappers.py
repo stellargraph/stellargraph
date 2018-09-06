@@ -54,7 +54,7 @@ class NodeSequence(Sequence):
         node_type:
 
     """
-    def __init__(self, generator, ids, targets=None, node_type=None):
+    def __init__(self, generator, ids, targets=None):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -70,28 +70,12 @@ class NodeSequence(Sequence):
 
         # Infer head_node_type
         # TODO: Generalize to multiple head node target types?
-        if node_type is None:
-            head_node_types = set([generator.schema.get_node_type(n) for n in ids])
-            if len(head_node_types) > 1:
-                raise ValueError(
-                    "Only a single head node type is currently supported for HinSAGE models"
-                )
-            head_node_type = head_node_types.pop()
-        elif (
-            isinstance(node_type, collections.Hashable)
-            and node_type in generator.schema.node_types
-        ):
-            head_node_type = node_type
-        else:
+        head_node_types = set([generator.schema.get_node_type(n) for n in ids])
+        if len(head_node_types) > 1:
             raise ValueError(
-                "Target type '{}' not found in graph node types".format(node_type)
+                "Only a single head node type is currently supported for HinSAGE models"
             )
-
-        # Save head node type and generate sampling schema
-        self.head_node_types = [head_node_type]
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
+        head_node_type = head_node_types.pop()
 
         # Store the generator to draw samples from graph
         self.generator = generator
@@ -99,12 +83,29 @@ class NodeSequence(Sequence):
         self.targets = targets
         self.data_size = len(self.ids)
 
+        # Save head node type and generate sampling schema
+        self.head_node_types = [head_node_type]
+        self._sampling_schema = generator.schema.sampling_layout(
+            self.head_node_types, generator.num_samples
+        )
+
     def __len__(self):
         "Denotes the number of batches per epoch"
         return int(np.ceil(self.data_size / self.generator.batch_size))
 
     def __getitem__(self, batch_num):
-        "Generate one batch of data"
+        """
+        Generate one batch of data
+
+        Args:
+            batch_num (int): number of a batch
+
+        Returns:
+            batch_feats (list): Node features for nodes and neighbours sampled from a
+                batch of the supplied IDs
+            batch_targets (list): Targets/labels for the batch.
+
+        """
         start_idx = self.generator.batch_size * batch_num
         end_idx = start_idx + self.generator.batch_size
 
@@ -113,7 +114,7 @@ class NodeSequence(Sequence):
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
         # Get head nodes
-        head_nodes = self.ids[start_idx:end_idx]
+        head_ids = self.ids[start_idx:end_idx]
 
         # Get targets for nodes
         if self.targets is None:
@@ -122,13 +123,13 @@ class NodeSequence(Sequence):
             batch_targets = self.targets[start_idx:end_idx]
 
         # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_nodes, self._sampling_schema)
+        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
 
         return batch_feats, batch_targets
 
 
 class GraphSAGENodeGenerator:
-    """Keras-compatible data mapper for Homogeneous GraphSAGE
+    """A data generator for node prediction with Homogeneous GraphSAGE models
 
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
@@ -143,7 +144,7 @@ class GraphSAGENodeGenerator:
     Example:
 
     ```
-        G_generator = GraphSageNodeGenerator(G, 50, [10,10])
+        G_generator = GraphSAGENodeGenerator(G, 50, [10,10])
         train_data_gen = G_generator.flow(node_ids)
     ```
 
@@ -155,15 +156,13 @@ class GraphSAGENodeGenerator:
     """
 
     def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.num_samples = num_samples
         self.batch_size = batch_size
         self.name = name
-
-
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
 
         # Check if the graph has features
         G.check_graph_for_ml()
@@ -174,7 +173,7 @@ class GraphSAGENodeGenerator:
         # We need a schema for compatibility with HinSAGE
         self.schema = G.create_graph_schema(create_type_maps=True)
 
-        # We need the node types
+        # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
             print(
                 "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
@@ -210,11 +209,11 @@ class GraphSAGENodeGenerator:
             )
 
         nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
-        head_node_type = sampling_schema[0][0][0]
+        node_type = sampling_schema[0][0][0]
 
         # Get features for sampled nodes
         batch_feats = [
-            self.graph.get_feature_for_nodes(layer_nodes, head_node_type)
+            self.graph.get_feature_for_nodes(layer_nodes, node_type)
             for layer_nodes in nodes_per_hop
         ]
 
@@ -286,8 +285,8 @@ class HinSAGENodeGenerator(Sequence):
      Example:
 
      ```
-         G_generator = GraphSageNodeGenerator(G, 50, [10,10])
-         train_data_gen = G_generator.flow(node_ids)
+         G_generator = HinSAGENodeGenerator(G, 50, [10,10])
+         data_gen = G_generator.flow(node_ids)
      ```
 
     Args:

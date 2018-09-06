@@ -29,8 +29,7 @@ import numpy as np
 import random
 from stellargraph.data.stellargraph import GraphSchema
 from stellargraph.data.stellargraph import StellarGraphBase
-from collections import defaultdict
-
+from collections import defaultdict, Iterable
 
 class GraphWalk(object):
     """
@@ -172,8 +171,8 @@ class UniformRandomWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
-            raise ValueError("nodes parameter should be a list of node IDs.")
+        if isinstance(nodes, Iterable):
+            raise ValueError("nodes parameter should be an iterable of node IDs.")
         if (
             len(nodes) == 0
         ):  # this is not an error but maybe a warning should be printed to inform the caller
@@ -333,8 +332,8 @@ class BiasedRandomWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
-            raise ValueError("nodes parameter should be a list of node IDs.")
+        if isinstance(nodes, Iterable):
+            raise ValueError("nodes parameter should be an iterableof node IDs.")
         if (
             len(nodes) == 0
         ):  # this is not an error but maybe a warning should be printed to inform the caller
@@ -516,9 +515,9 @@ class UniformRandomMetaPathWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
+        if isinstance(nodes, Iterable):
             raise ValueError(
-                "({}) The nodes parameter should be a list of node IDs.".format(
+                "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
                 )
             )
@@ -731,9 +730,9 @@ class SampledBreadthFirstWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
+        if not isinstance(nodes, Iterable):
             raise ValueError(
-                "({}) The nodes parameter should be a list of node IDs.".format(
+                "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
                 )
             )
@@ -925,9 +924,9 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
+        if isinstance(nodes, Iterable):
             raise ValueError(
-                "({}) The nodes parameter should be a list of node IDs.".format(
+                "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
                 )
             )

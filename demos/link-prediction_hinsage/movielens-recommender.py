@@ -20,7 +20,7 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 import argparse
 import stellargraph as sg
-from stellargraph.mapper import HinSAGELinkMapper
+from stellargraph.mapper import HinSAGELinkGenerator
 from stellargraph.layer import HinSAGE, MeanHinAggregator, link_regression
 from keras import Model, optimizers, losses, metrics
 from typing import AnyStr
@@ -142,31 +142,20 @@ class LinkInference(object):
         # The mappers essentially sample k-hop subgraphs of G with randomly selected head nodes, as required by
         # the HinSAGE algorithm, and generate minibatches of those samples to be fed to the input layer of the HinSAGE model.
         # Link mappers:
-        mapper_train = HinSAGELinkMapper(
+        generator = HinSAGELinkGenerator(
             self.g,
-            edgelist_train,
-            labels_train,
             batch_size,
             num_samples,
-            name="mapper_train",
         )
-        mapper_test = HinSAGELinkMapper(
-            self.g,
-            edgelist_test,
-            labels_test,
-            batch_size,
-            num_samples,
-            name="mapper_test",
-        )
-
-        assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
+        train_gen = generator.flow(edgelist_train, labels_train)
+        test_gen = generator.flow(edgelist_test, labels_test)
 
         # Build the model by stacking a two-layer HinSAGE model and a link regression layer on top.
         assert len(layer_size) == len(
             num_samples
         ), "layer_size and num_samples must be of the same length! Stopping."
         hinsage = HinSAGE(
-            layer_sizes=layer_size, mapper=mapper_train, bias=use_bias, dropout=dropout
+            layer_sizes=layer_size, generator=generator, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
@@ -192,8 +181,8 @@ class LinkInference(object):
             )
         )
         history = model.fit_generator(
-            mapper_train,
-            validation_data=mapper_test,
+            train_gen,
+            validation_data=test_gen,
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
@@ -202,7 +191,7 @@ class LinkInference(object):
         )
 
         # Evaluate and print metrics
-        test_metrics = model.evaluate_generator(mapper_test)
+        test_metrics = model.evaluate_generator(test_gen)
 
         print("Test Evaluation:")
         for name, val in zip(model.metrics_names, test_metrics):
