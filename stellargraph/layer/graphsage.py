@@ -135,7 +135,7 @@ class GraphSAGE:
         n_samples (list of int): (Optional: needs to be specified if no mapper 
             is provided.) The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
-        aggregator (Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
+        aggregator (class Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
         normalize (str): The normalization used after each layer, defaults to L2 normalization.
