@@ -22,13 +22,14 @@ import argparse
 import stellargraph as sg
 from stellargraph.mapper import HinSAGELinkMapper
 from stellargraph.layer import HinSAGE, MeanHinAggregator, link_regression
-from keras import Model, optimizers, losses, metrics
 from typing import AnyStr
 import json
 from utils import ingest_graph, ingest_features, add_features_to_nodes
 from sklearn import preprocessing, feature_extraction, model_selection
 import pandas as pd
 import multiprocessing
+import keras
+from keras import Model, optimizers, losses, metrics
 import keras.backend as K
 
 

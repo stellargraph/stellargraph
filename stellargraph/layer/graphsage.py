@@ -26,6 +26,7 @@ from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape
+from keras.utils import Sequence
 from keras import activations
 from typing import List, Tuple, Callable, AnyStr
 
@@ -132,7 +133,7 @@ class GraphSAGE:
 
     Args:
         layer_sizes (list of int): Hidden feature dimensions for each layer
-        mapper: A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
+        mapper (Sequence): A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
             and input_dim will be taken from this object.
         n_samples (list of int): (Optional: needs to be specified if no mapper 
             is provided.) The number of samples per layer in the model.
