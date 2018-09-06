@@ -222,8 +222,11 @@ class GraphSAGE:
         """
         Apply aggregator layers
 
-        :param x:       Batch input features
-        :return:        Output tensor
+        Args:
+            x (list of Tensor): Batch input features
+
+        Returns:
+            Output tensor
         """
 
         def compose_layers(_x: List, layer: int):
@@ -231,9 +234,12 @@ class GraphSAGE:
             Function to recursively compose aggregation layers. When current layer is at final layer, then length of _x
             should be 1, and compose_layers(_x, layer) returns _x[0].
 
-            :param _x:       List of feature matrix tensors
-            :param layer:   Current layer index
-            :return:        _x computed from current layer to output layer
+            Args:
+                _x:       List of feature matrix tensors
+                layer:   Current layer index
+
+            Returns:
+                _x computed from current layer to output layer
             """
 
             def x_next(agg):
@@ -295,7 +301,7 @@ class GraphSAGE:
         """
         Return model with default inputs
 
-        Arg:
+        Args:
             flatten_output: The GraphSAGE model will return an output tensor
                 of form (batch_size, 1, feature_size). If this flag
                 is true, the output will be of size
