@@ -80,7 +80,7 @@ class MeanHinAggregator(Layer):
         Builds layer
 
         Args:
-            input_shape (:obj:`list` of :obj:`list` of :obj:`int`): Shape of input per neighbour type.
+            input_shape (list of list of int): Shape of input per neighbour type.
 
         """
         # Weight matrix for each type of neighbour
@@ -172,7 +172,7 @@ class HinSAGE:
     ):
         """
         Args:
-            layer_sizes (:obj:`list` of :obj:`int`): Hidden feature dimensions for each layer
+            layer_sizes (list of int): Hidden feature dimensions for each layer
             mapper (Layer): A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
                 input_neighbour_tree and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
@@ -314,7 +314,7 @@ class HinSAGE:
         Apply aggregator layers
 
         Args:
-            x (:obj:`list`): Batch input features
+            x (list of Tensor): Batch input features
 
         Returns: 
             Output tensor
@@ -326,7 +326,7 @@ class HinSAGE:
             compose_layers(x, layer) returns x.
 
             Args:
-                x (:obj:`list` of Tensor): List of feature matrix tensors
+                x (list of Tensor): List of feature matrix tensors
                 layer (int): Current layer index
 
             Returns:
@@ -340,7 +340,7 @@ class HinSAGE:
 
                 Args:
                     i (int): Tensor index
-                    neigh_indices (:obj:`list` of :obj:`int`): list of indices of the neighbour tensors
+                    neigh_indices (list of int): list of indices of the neighbour tensors
 
                 Returns:
                     List of neighbour tensors

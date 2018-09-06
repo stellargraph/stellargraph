@@ -76,7 +76,7 @@ class MeanAggregator(Layer):
         Builds layer
 
         Args:
-            input_shape (:obj:`list` of :obj:`list` of :obj:`int`): Shape of input tensors for self
+            input_shape (list of list of int): Shape of input tensors for self
             and neighbour
 
         """
@@ -129,10 +129,10 @@ class GraphSAGE:
     Implementation of the GraphSAGE algorithm with Keras layers.
 
     Args:
-        layer_sizes (:obj:`list` of :obj:`int`): Hidden feature dimensions for each layer
+        layer_sizes (list of int): Hidden feature dimensions for each layer
         mapper: A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
             and input_dim will be taken from this object.
-        n_samples (:obj:`list` of :obj:`int`): (Optional: needs to be specified if no mapper 
+        n_samples (list of int): (Optional: needs to be specified if no mapper 
             is provided.) The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
         aggregator (Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
