@@ -16,10 +16,10 @@
 
 """
 Graph link prediction using GraphSAGE.
-This currently is only tested on the CORA dataset.
+This example requires the CORA dataset - see the README for how to obtain the dataset.
 
-Example usage:
-python cora-links-example.py -g ../data/cora -e 10 -d 0.1 --ignore_node_attr subject --edge_sampling_method global --edge_feature_method ip
+Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora:
+python cora-links-example.py -g ~/data/cora -e 10 -d 0.1 --ignore_node_attr subject --edge_sampling_method global --edge_feature_method ip
 
 usage: cora-links-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
                        [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
