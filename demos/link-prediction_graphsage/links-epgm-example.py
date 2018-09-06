@@ -153,7 +153,7 @@ def train(
     # GraphSAGE model
     graphsage = GraphSAGE(
         layer_sizes=layer_size,
-        mapper=train_mapper,
+        generator=train_mapper,
         bias=True,
         dropout=dropout,
     )

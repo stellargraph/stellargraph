@@ -238,25 +238,7 @@ class GraphSchema:
             edge_type = None
         return edge_type
 
-    def edge_types_for_node_type(self, node_type):
-        # TODO: simplify the name of the method, or consider deleting the method alltogether, using self.schema[node_type] instead
-        """
-        Return all edge types from a specified node type in fixed order.
-        Args:
-            node_type: The specified node type.
-
-        Returns:
-            A list of EdgeType instances
-        """
-        try:
-            edge_types = self.schema[node_type]
-        except IndexError:
-            print("Warning: Node type '{}' not found.".format(node_type))
-            edge_types = []
-        return edge_types
-
-    def get_sampling_tree(self, head_node_types, n_hops):
-        # TODO: remove "get_" from the name
+    def sampling_tree(self, head_node_types, n_hops):
         """
         Returns a sampling tree for the specified head node types
         for neighbours up to n_hops away.
@@ -271,7 +253,7 @@ class GraphSchema:
             where children are (type_adjacency_index, node_type, [children])
 
         """
-        adjacency_list = self.get_type_adjacency_list(head_node_types, n_hops)
+        adjacency_list = self.type_adjacency_list(head_node_types, n_hops)
 
         def pack_tree(nodes, level):
             return [
@@ -283,8 +265,7 @@ class GraphSchema:
         # TODO: generalize this?
         return adjacency_list, pack_tree(range(len(head_node_types)), 0)
 
-    def get_sampling_layout(self, head_node_types, num_samples):
-        # TODO: remove "get_" from the name
+    def sampling_layout(self, head_node_types, num_samples):
         """
         For a sampling scheme with a list of head node types and the
         number of samples per hop, return the map from the actual
@@ -298,11 +279,11 @@ class GraphSchema:
         Returns:
             A list containing, for each head node type, a list consisting of
             tuples of (node_type, sampling_index). The list matches the
-            list given by the method `get_type_adjacency_list(...)` and can be
+            list given by the method `type_adjacency_list(...)` and can be
             used to reformat the samples given by `SampledBreadthFirstWalk` to
             that expected by the HinSAGE model.
         """
-        adjacency_list = self.get_type_adjacency_list(head_node_types, len(num_samples))
+        adjacency_list = self.type_adjacency_list(head_node_types, len(num_samples))
         sample_index_layout = []
         sample_inverse_layout = []
 
@@ -325,7 +306,7 @@ class GraphSchema:
                 next_node_groups = []
                 for a_key, nt1 in node_groups:
                     # For each node we sample from all edge types from that node
-                    edge_types = self.edge_types_for_node_type(nt1)
+                    edge_types = self.schema[nt1]
 
                     # We want to place the samples for these edge types in the correct
                     # place in the adjacency list
@@ -351,8 +332,7 @@ class GraphSchema:
             sample_inverse_layout.append(adj_to_samples)
         return sample_inverse_layout
 
-    def get_type_adjacency_list(self, head_node_types, n_hops):
-        # TODO: remove "get_" from the name
+    def type_adjacency_list(self, head_node_types, n_hops):
         """
         Creates a BFS sampling tree as an adjacency list from head node types.
 

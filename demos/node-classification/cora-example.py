@@ -41,7 +41,7 @@ from keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GraphSAGE, MeanAggregator
-from stellargraph.mapper import GraphSAGENodeMapper
+from stellargraph.mapper import GraphSAGENodeGenerator, HinSAGENodeGenerator
 
 
 def train(
@@ -100,16 +100,30 @@ def train(
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    train_mapper = GraphSAGENodeMapper(
-        G, train_nodes, batch_size, num_samples, targets=train_targets
+    generator = GraphSAGENodeGenerator(
+        G, batch_size, num_samples, seed=42
     )
-    val_mapper = GraphSAGENodeMapper(
-        G, val_nodes, batch_size, num_samples, targets=val_targets
+    train_gen = generator.flow(train_nodes, train_targets)
+    val_gen = generator.flow(val_nodes, val_targets)
+
+    generator = HinSAGENodeGenerator(
+        G, batch_size, num_samples, seed=42
     )
+    train_gen_h = generator.flow(train_nodes, train_targets)
+    val_gen_h = generator.flow(val_nodes, val_targets)
+
+
+    for ii in range(10):
+        bf,bt=(train_gen[ii])
+        hf,ht=(train_gen_h[ii])
+        print([s.shape for s in bf])
+        print([s.shape for s in hf])
+        print([np.all(a==b) for a,b in zip(bf,hf)])
+        print([np.all(a==b) for a,b in zip(bt,ht)])
 
     # GraphSAGE model
     model = GraphSAGE(
-        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=generator, bias=True, dropout=dropout
     )
     # Expose the input and output sockets of the model:
     x_inp, x_out = model.default_model(flatten_output=True)
@@ -127,25 +141,21 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_mapper,
+        train_gen,
         epochs=num_epochs,
-        validation_data=val_mapper,
+        validation_data=val_gen,
         verbose=2,
         shuffle=True,
     )
 
     # Evaluate on test set and print metrics
-    test_mapper = GraphSAGENodeMapper(
-        G, test_nodes, batch_size, num_samples, targets=test_targets
-    )
-    test_metrics = model.evaluate_generator(test_mapper)
+    test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
     # Get predictions for all nodes
-    all_mapper = GraphSAGENodeMapper(G, node_ids, batch_size, num_samples)
-    all_predictions = model.predict_generator(all_mapper)
+    all_predictions = model.predict_generator(generator.flow(node_ids))
 
     # Turn predictions back into the original categories
     node_predictions = pd.DataFrame(

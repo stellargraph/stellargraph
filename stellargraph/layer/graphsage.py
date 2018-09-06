@@ -115,7 +115,7 @@ class GraphSAGE:
     def __init__(
         self,
         layer_sizes,
-        mapper=None,
+        generator=None,
         n_samples=None,
         input_dim=None,
         aggregator=None,
@@ -126,7 +126,7 @@ class GraphSAGE:
         """
         Args:
             layer_sizes: Hidden feature dimensions for each layer
-            mapper: A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
+            generator: A NodeGenerator or LinkFGenerator. If specified the n_samples
                 and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
                 The number of samples per layer in the model.
@@ -153,9 +153,9 @@ class GraphSAGE:
 
         # Get the input_dim and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
-        if mapper is not None:
-            self.n_samples = mapper.num_samples
-            feature_sizes = mapper.graph.get_feature_sizes()
+        if generator is not None:
+            self.n_samples = generator.num_samples
+            feature_sizes = generator.graph.get_feature_sizes()
             if len(feature_sizes) > 1:
                 raise RuntimeError(
                     "GraphSAGE called on graph with more than one node type."
