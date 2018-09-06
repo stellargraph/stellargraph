@@ -34,9 +34,10 @@ class MeanHinAggregator(Layer):
     """Mean Aggregator for HinSAGE implemented with Keras base layer
 
     Args:
-        output_dim: (int)
-        bias: (bool) Use bias in layer or not (Default False)
-        act: (Callable) Activation function
+        output_dim (int): Output dimension
+        bias (bool): Use bias in layer or not (Default False)
+        act (Callable or str): name of the activation function to use (must be a Keras 
+            activation function), or alternatively, a TensorFlow operation.
     """
 
     def __init__(
@@ -46,14 +47,6 @@ class MeanHinAggregator(Layer):
         act: Union[Callable, AnyStr] = "relu",
         **kwargs
     ):
-        """
-        Args:
-            output_dim: Output dimension
-            bias: Optional bias
-            act: name of the activation function to use (must be a Keras activation function),
-                or alternatively, a TensorFlow operation.
-        """
-
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
@@ -67,7 +60,10 @@ class MeanHinAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
-        """Gets class configuration for Keras serialization"""
+        """
+        Gets class configuration for Keras serialization
+        
+        """
         config = {
             "output_dim": self.output_dim,
             "bias": self.has_bias,
@@ -78,12 +74,10 @@ class MeanHinAggregator(Layer):
 
     def build(self, input_shape):
         """
-        Creates
+        Builds layer
 
         Args:
-          input_shape:
-
-        Returns:
+            input_shape (list of list of int): Shape of input per neighbour type.
 
         """
         # Weight matrix for each type of neighbour
@@ -123,10 +117,10 @@ class MeanHinAggregator(Layer):
 
         Args:
           x: Keras Tensor
-          **kwargs:
 
         Returns:
             Keras Tensor representing the aggregated embeddings in the input.
+
         """
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
 
@@ -156,7 +150,10 @@ class MeanHinAggregator(Layer):
 
 
 class HinSAGE:
-    """Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers."""
+    """
+    Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
+    
+    """
 
     def __init__(
         self,
@@ -172,8 +169,8 @@ class HinSAGE:
     ):
         """
         Args:
-            layer_sizes: Hidden feature dimensions for each layer
-            mapper: A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
+            layer_sizes (list of int): Hidden feature dimensions for each layer
+            mapper (Layer): A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
                 input_neighbour_tree and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
                 The number of samples per layer in the model.
@@ -186,12 +183,11 @@ class HinSAGE:
             dropout: The dropout supplied to each layer in the HinSAGE model.
             normalize: The normalization used after each layer, defaults to L2 normalization.
         """
-        # TODO: I feel that this needs refactoring.
-        # Does this assume that the adjacency list is ordered?
-        # What are the assumptions of this function, and can we move it to the schema?
+
         def eval_neigh_tree_per_layer(input_tree):
             """
-            Function to evaluate the neighbourhood tree structure for every layer
+            Function to evaluate the neighbourhood tree structure for every layer. The tree 
+            structure at each layer is a truncated version of the previous layer.
 
             Args:
               input_tree: Neighbourhood tree for the input batch
@@ -201,7 +197,11 @@ class HinSAGE:
 
             """
 
-            reduced = [li for li in input_tree if li[1][-1] < len(input_tree)]
+            reduced = [
+                li
+                for li in input_tree
+                if all(li_neigh < len(input_tree) for li_neigh in li[1])
+            ]
             return (
                 [input_tree]
                 if len(reduced) == 0
@@ -310,8 +310,11 @@ class HinSAGE:
         """
         Apply aggregator layers
 
-        :param x:       Batch input features
-        :return:        Output tensor
+        Args:
+            x (list of Tensor): Batch input features
+
+        Returns: 
+            Output tensor
         """
 
         def compose_layers(x: List, layer: int):
@@ -320,25 +323,24 @@ class HinSAGE:
             compose_layers(x, layer) returns x.
 
             Args:
-              x: List of feature matrix tensors
-              layer: Current layer index
-              x: List:
-              layer: int:
+                x (list of Tensor): List of feature matrix tensors
+                layer (int): Current layer index
 
             Returns:
-              x computed from current layer to output layer
+                x computed from current layer to output layer
 
             """
 
             def neigh_list(i, neigh_indices):
                 """
-
+                Get the correctly-shaped list of neighbour tensors for the tensor at index i
 
                 Args:
-                  i:
-                  neigh_indices:
+                    i (int): Tensor index
+                    neigh_indices (list of int): list of indices of the neighbour tensors
 
                 Returns:
+                    List of neighbour tensors
 
                 """
                 return [
@@ -348,13 +350,13 @@ class HinSAGE:
 
             def x_next(agg: Dict[str, Layer]):
                 """
-
+                Compute the list of tensors for the next layer
 
                 Args:
-                  agg: Dict[str:
-                  Layer]:
+                    agg (Dict[str, Layer]): Dict of node type to aggregator layer 
 
-                Returns:
+                Returns: 
+                    Outputs of applying the aggregators as a list of Tensors
 
                 """
                 return [
@@ -428,7 +430,7 @@ class HinSAGE:
         Return model with default inputs
 
         Arg:
-            flatten_output: The HinSAGE model returns an output tensor
+            flatten_output (bool): The HinSAGE model returns an output tensor
                 of form (batch_size, 1, feature_size) -
                 if this flag is True, the output will be resized to
                 (batch_size, feature_size)
