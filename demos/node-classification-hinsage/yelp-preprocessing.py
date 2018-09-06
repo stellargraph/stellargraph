@@ -29,14 +29,14 @@ To use this script, supply the location that you uncompressed the dataset,
 the output directory (-o) and any other optional arguments:
 
 Example usage:
-    python yelp_preprocessing -l <path_to_yelp_dataset> -o .
+    python yelp_preprocessing.py -l <path_to_yelp_dataset> -o .
 
 By default the script will filter the graph to contain only businesses in the state
 of Wisconsin. To change this to another state, or to "false" to use the entire dataset
 (warning: this will make the machine learning example run very slowly).
 
 Example usage to run without filtering:
-    python yelp_preprocessing -l <path_to_yelp_dataset> -o . --filter_state=false
+    python yelp_preprocessing.py -l <path_to_yelp_dataset> -o . --filter_state=false
 
 """
 import os
