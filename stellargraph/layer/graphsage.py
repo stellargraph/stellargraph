@@ -19,6 +19,8 @@
 GraphSAGE and compatible aggregator layers
 
 """
+__all__ = ["GraphSAGE", "MeanAggregator"]
+
 import numpy as np
 from keras.engine.topology import Layer
 from keras import Input
