@@ -34,6 +34,12 @@ class MeanAggregator(Layer):
     """
     Mean Aggregator for GraphSAGE implemented with Keras base layer
 
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a 
+            Keras activation function), or alternatively, a TensorFlow operation.
+
     """
 
     def __init__(
@@ -43,14 +49,6 @@ class MeanAggregator(Layer):
         act: Callable or AnyStr = "relu",
         **kwargs
     ):
-        """
-        Args:
-            output_dim: Output dimension
-            bias: Optional bias
-            act: name of the activation function to use (must be a Keras activation function),
-                or alternatively, a TensorFlow operation.
-        """
-
         self.output_dim = output_dim
         assert output_dim % 2 == 0
         self.half_output_dim = int(output_dim / 2)
@@ -63,6 +61,10 @@ class MeanAggregator(Layer):
         super().__init__(**kwargs)
 
     def get_config(self):
+        """
+        Gets class configuration for Keras serialization
+        
+        """
         config = {
             "output_dim": self.output_dim,
             "bias": self.has_bias,
@@ -72,6 +74,14 @@ class MeanAggregator(Layer):
         return {**base_config, **config}
 
     def build(self, input_shape):
+        """
+        Builds layer
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+            and neighbour
+
+        """
         self.w_neigh = self.add_weight(
             name="w_neigh",
             shape=(input_shape[1][3], self.half_output_dim),
@@ -94,6 +104,16 @@ class MeanAggregator(Layer):
         super().build(input_shape)
 
     def call(self, x, **kwargs):
+        """
+        Apply MeanAggregation on input tensors, x
+
+        Args:
+          x: Keras Tensor
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
         neigh_means = K.mean(x[1], axis=2)
 
         from_self = K.dot(x[0], self.w_self)
@@ -110,6 +130,18 @@ class GraphSAGE:
     """
     Implementation of the GraphSAGE algorithm with Keras layers.
 
+    Args:
+        layer_sizes (list of int): Hidden feature dimensions for each layer
+        mapper: A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
+            and input_dim will be taken from this object.
+        n_samples (list of int): (Optional: needs to be specified if no mapper 
+            is provided.) The number of samples per layer in the model.
+        input_dim (int): The dimensions of the node features used as input to the model.
+        aggregator (class Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
+        bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
+        dropout (float): The dropout supplied to each layer in the GraphSAGE model.
+        normalize (str): The normalization used after each layer, defaults to L2 normalization.
+
     """
 
     def __init__(
@@ -123,19 +155,6 @@ class GraphSAGE:
         dropout=0.,
         normalize="l2",
     ):
-        """
-        Args:
-            layer_sizes: Hidden feature dimensions for each layer
-            mapper: A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
-                and input_dim will be taken from this object.
-            n_samples: (Optional: needs to be specified if no mapper is provided.)
-                The number of samples per layer in the model.
-            input_dim: The dimensions of the node features used as input to the model.
-            aggregator: The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
-            bias: If True a bias vector is learnt for each layer in the GraphSAGE model
-            dropout: The dropout supplied to each layer in the GraphSAGE model.
-            normalize: The normalization used after each layer, defaults to L2 normalization.
-        """
         # Set the aggregator layer used in the model
         if aggregator is None:
             self._aggregator = MeanAggregator
@@ -205,8 +224,11 @@ class GraphSAGE:
         """
         Apply aggregator layers
 
-        :param x:       Batch input features
-        :return:        Output tensor
+        Args:
+            x (list of Tensor): Batch input features
+
+        Returns:
+            Output tensor
         """
 
         def compose_layers(_x: List, layer: int):
@@ -214,12 +236,25 @@ class GraphSAGE:
             Function to recursively compose aggregation layers. When current layer is at final layer, then length of _x
             should be 1, and compose_layers(_x, layer) returns _x[0].
 
-            :param _x:       List of feature matrix tensors
-            :param layer:   Current layer index
-            :return:        _x computed from current layer to output layer
+            Args:
+                _x:       List of feature matrix tensors
+                layer:   Current layer index
+
+            Returns:
+                _x computed from current layer to output layer
             """
 
             def x_next(agg):
+                """
+                Compute the list of tensors for the next layer
+
+                Args:
+                    agg (Layer): Aggregator layer to apply
+
+                Returns: 
+                    Output list of tensors of applying the aggregator to inputs
+
+                """
                 return [
                     agg(
                         [
@@ -246,6 +281,15 @@ class GraphSAGE:
         return self._normalization(compose_layers(x, 0))
 
     def _input_shapes(self) -> List[Tuple[int, int]]:
+        """
+        Returns the input shapes for the tensors at each layer
+
+        Returns:
+            A list of tuples giving the shape (number of nodes, feature size) for
+            the corresponding layer
+
+        """
+
         def shape_at(i: int) -> Tuple[int, int]:
             return (
                 max(1, np.product(self.n_samples[:i], dtype=int)),
@@ -259,7 +303,7 @@ class GraphSAGE:
         """
         Return model with default inputs
 
-        Arg:
+        Args:
             flatten_output: The GraphSAGE model will return an output tensor
                 of form (batch_size, 1, feature_size). If this flag
                 is true, the output will be of size
