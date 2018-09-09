@@ -108,7 +108,7 @@ def train(
 
     # GraphSAGE model
     model = GraphSAGE(
-        layer_sizes=layer_size, generator=generator, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout
     )
     # Expose the input and output sockets of the model:
     x_inp, x_out = model.default_model(flatten_output=True)

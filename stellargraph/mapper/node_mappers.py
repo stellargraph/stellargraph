@@ -269,7 +269,7 @@ class GraphSAGENodeGenerator:
         return NodeSequence(self, node_targets.index, node_targets.values)
 
 
-class HinSAGENodeGenerator(Sequence):
+class HinSAGENodeGenerator:
     """Keras-compatible data mapper for Heterogeneour GraphSAGE (HinSAGE)
 
      At minimum, supply the StellarGraph, the batch size, and the number of
@@ -363,7 +363,7 @@ class HinSAGENodeGenerator(Sequence):
 
         return batch_feats
 
-    def flow(self, node_ids, targets=None, node_type=None):
+    def flow(self, node_ids, targets=None):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -390,9 +390,9 @@ class HinSAGENodeGenerator(Sequence):
                 in Keras methods `fit_generator`, `evaluate_generator`,
                 and `predict_generator`
         """
-        return NodeSequence(self, node_ids, targets, node_type)
+        return NodeSequence(self, node_ids, targets)
 
-    def flow_from_dataframe(self, node_targets, node_type=None):
+    def flow_from_dataframe(self, node_targets):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -409,4 +409,4 @@ class HinSAGENodeGenerator(Sequence):
                  and `predict_generator`
         """
 
-        return NodeSequence(self, node_targets.index, node_targets.values, node_type)
+        return NodeSequence(self, node_targets.index, node_targets.values)

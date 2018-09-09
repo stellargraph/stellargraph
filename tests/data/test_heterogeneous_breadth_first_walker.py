@@ -79,10 +79,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
             bfw.run(nodes=None, n=n, n_size=n_size, seed=seed)
         with pytest.raises(ValueError):
             bfw.run(nodes=0, n=n, n_size=n_size, seed=seed)
-        with pytest.raises(ValueError):
-            # only list is acceptable type for nodes
-            bfw.run(nodes=(1, 2), n=n, n_size=n_size, seed=seed)
-            # n has to be positive integer
+        # n has to be positive integer
         with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=-1, n_size=n_size, seed=seed)
         with pytest.raises(ValueError):

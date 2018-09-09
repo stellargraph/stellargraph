@@ -90,9 +90,6 @@ class TestMetaPathWalk(object):
             mrw.run(nodes=None, n=n, length=length, metapaths=metapaths, seed=seed)
         with pytest.raises(ValueError):
             mrw.run(nodes=0, n=n, length=length, metapaths=metapaths, seed=seed)
-        # only list is acceptable type for nodes
-        with pytest.raises(ValueError):
-            mrw.run(nodes=(1, 2), n=n, length=length, metapaths=metapaths, seed=seed)
         # n has to be positive integer
         with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=-1, length=length, metapaths=metapaths, seed=seed)

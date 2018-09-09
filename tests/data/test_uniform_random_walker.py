@@ -78,10 +78,6 @@ class TestUniformRandomWalk(object):
             urw.run(
                 nodes="0", n=n, length=length, seed=seed
             )  # can't just pass a node id, need list, e.g., ["0"]
-        with pytest.raises(ValueError):
-            urw.run(
-                nodes=(1, 2), n=n, length=length, seed=seed
-            )  # tuple is not accepted, only list
         # n has to be positive integer
         with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=0, length=length, seed=seed)

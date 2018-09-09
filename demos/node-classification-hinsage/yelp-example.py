@@ -97,20 +97,23 @@ def train(
     )
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    train_mapper = HinSAGENodeGenerator(
-        G, train_targets.index, batch_size, num_samples, targets=train_targets.values
+    generator = HinSAGENodeGenerator(
+        G, batch_size, num_samples
     )
+    train_gen = generator.flow_from_dataframe(train_targets)
+    test_gen = generator.flow_from_dataframe(test_targets)
 
     # GraphSAGE model
-    model = HinSAGE(layer_size, train_mapper, dropout=dropout)
+    model = HinSAGE(layer_size, train_gen, dropout=dropout)
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
     # Calculate weights based on empirical count
-    class_count = train_targets.values.sum(axis=0)
-    weights = class_count.sum()/class_count
+    #class_count = train_targets.values.sum(axis=0)
+    #weights = class_count.sum()/class_count
+    weights = [0.01, 1.0]
 
     print("Weighting loss by: {}".format(weights))
 
@@ -124,17 +127,14 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_mapper,
+        train_gen,
         epochs=num_epochs,
         verbose=2,
         shuffle=True
     )
 
     # Evaluate on test set and print metrics
-    test_mapper = HinSAGENodeGenerator(
-        G, test_targets.index, batch_size, num_samples, targets=test_targets.values
-    )
-    predictions = model.predict_generator(test_mapper)
+    predictions = model.predict_generator(test_gen)
     binary_predictions = predictions[:, 1] > 0.5
     print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
 

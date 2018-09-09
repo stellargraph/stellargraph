@@ -155,7 +155,7 @@ class LinkInference(object):
             num_samples
         ), "layer_size and num_samples must be of the same length! Stopping."
         hinsage = HinSAGE(
-            layer_sizes=layer_size, generator=generator, bias=use_bias, dropout=dropout
+            layer_sizes=layer_size, generator=train_gen, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
