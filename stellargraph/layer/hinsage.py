@@ -221,18 +221,6 @@ class HinSAGE:
         elif normalize is None or normalize == "none":
             self._normalization = Lambda(lambda x: x)
 
-        # Get the input_dim and num_samples from the mapper if it is given
-        # Use both the schema and head node type from the mapper
-        if generator is not None:
-            self.n_samples = generator.num_samples
-            feature_sizes = generator.graph.get_feature_sizes()
-            if len(feature_sizes) > 1:
-                raise RuntimeError(
-                    "GraphSAGE called on graph with more than one node type."
-                )
-
-            self.input_feature_size = feature_sizes.popitem()[1]
-
         # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
         # TODO: Refactor the horror of generator.generator.graph...

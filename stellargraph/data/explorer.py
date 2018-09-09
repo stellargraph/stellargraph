@@ -27,9 +27,11 @@ __all__ = [
 import networkx as nx
 import numpy as np
 import random
-from stellargraph.data.stellargraph import GraphSchema
-from stellargraph.data.stellargraph import StellarGraphBase
 from collections import defaultdict, Iterable
+
+from .stellargraph import GraphSchema
+from .stellargraph import StellarGraphBase
+from .utils import is_real_iterable
 
 class GraphWalk(object):
     """
@@ -171,7 +173,7 @@ class UniformRandomWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if isinstance(nodes, Iterable):
+        if not is_real_iterable(nodes):
             raise ValueError("nodes parameter should be an iterable of node IDs.")
         if (
             len(nodes) == 0
@@ -332,7 +334,7 @@ class BiasedRandomWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if isinstance(nodes, Iterable):
+        if not is_real_iterable(nodes):
             raise ValueError("nodes parameter should be an iterableof node IDs.")
         if (
             len(nodes) == 0
@@ -515,7 +517,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if isinstance(nodes, Iterable):
+        if not is_real_iterable(nodes):
             raise ValueError(
                 "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
@@ -730,7 +732,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if not isinstance(nodes, Iterable):
+        if not is_real_iterable(nodes):
             raise ValueError(
                 "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
@@ -924,7 +926,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if isinstance(nodes, Iterable):
+        if not is_real_iterable(nodes):
             raise ValueError(
                 "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__

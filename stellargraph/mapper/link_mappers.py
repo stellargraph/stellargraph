@@ -81,7 +81,7 @@ class LinkSequence(Sequence):
 
         self.generator = generator
         self.ids = list(ids)
-        self.targets = targets
+        self.targets = np.asanyarray(targets)
         self.data_size = len(self.ids)
 
         # Get head node types from all src, dst nodes extracted from all links,
@@ -194,11 +194,6 @@ class GraphSAGELinkGenerator:
         # We need a schema for compatibility with HinSAGE
         self.schema = G.create_graph_schema(create_type_maps=True)
 
-        if len(self.schema.node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
-            )
-
     def sample_features(self, head_links, sampling_schema):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
@@ -283,7 +278,6 @@ class GraphSAGELinkGenerator:
         return LinkSequence(self, link_ids, targets)
 
 
-
 class HinSAGELinkGenerator:
     """A data generator for link prediction with Heterogeneous HinSAGE models
 
@@ -330,16 +324,11 @@ class HinSAGELinkGenerator:
         self.batch_size = batch_size
         self.name = name
 
-        # The sampler used to generate random samples of neighbours
-        self.sampler = SampledBreadthFirstWalk(G)
-
         # We need a schema for compatibility with HinSAGE
         self.schema = G.create_graph_schema(create_type_maps=True)
 
-        if len(self.schema.node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
-            )
+        # The sampler used to generate random samples of neighbours
+        self.sampler = SampledHeterogeneousBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
 
     def _get_features(self, node_samples, head_size):
         """
@@ -405,7 +394,7 @@ class HinSAGELinkGenerator:
                             [],
                         ),
                     )
-                    for nt, indices in self.sampling_schema[ii]
+                    for nt, indices in sampling_schema[ii]
                 ]
             )
 
