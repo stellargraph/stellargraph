@@ -133,15 +133,11 @@ class LinkInference(object):
         # and evaluate it using the test ratings edges_test. The model also requires the user-movie graph structure.
         # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
-        self.g = sg.StellarGraph(self.g)
+        self.g = sg.StellarGraph(self.g, node_features="feature")
 
-        # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
-        self.g.fit_attribute_spec()
-
-        # Next, we create the link mappers for preparing and streaming training and testing data to the model.
+        # Next, we create the link generators for preparing and streaming training and testing data to the model.
         # The mappers essentially sample k-hop subgraphs of G with randomly selected head nodes, as required by
         # the HinSAGE algorithm, and generate minibatches of those samples to be fed to the input layer of the HinSAGE model.
-        # Link mappers:
         generator = HinSAGELinkGenerator(
             self.g,
             batch_size,

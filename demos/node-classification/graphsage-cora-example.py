@@ -73,20 +73,17 @@ def train(
     node_targets = target_encoding.fit_transform(
         node_data[[target_name]].to_dict("records")
     )
+    node_ids = node_data.index
 
     # Extract the feature data. These are the feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    node_features = node_data[feature_names].values
-    node_ids = node_data.index
+    node_features = node_data[feature_names]
 
     # Create graph from edgelist and set node features and node type
     Gnx = nx.from_pandas_edgelist(edgelist)
-    for nid, f in zip(node_data.index, node_features):
-        Gnx.node[nid]["feature"] = f
-        Gnx.node[nid]["label"] = "paper"
 
     # Convert to StellarGraph and prepare for ML
-    G = sg.StellarGraph(Gnx, node_type_name="label", node_features="feature")
+    G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
@@ -184,14 +181,10 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     """
     # Extract the feature data. These are the feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    node_features = node_data[feature_names].values
-    node_ids = node_data.index
+    node_features = node_data[feature_names]
 
     # Create graph from edgelist and set node features and node type
     Gnx = nx.from_pandas_edgelist(edgelist)
-    for nid, f in zip(node_data.index, node_features):
-        Gnx.node[nid]["feature"] = f
-        Gnx.node[nid]["label"] = "paper"
 
     # We must also save the target encoding to convert model predictions
     encoder_file = model_file.replace(
@@ -204,9 +197,10 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     node_targets = target_encoding.transform(
         node_data[[target_name]].to_dict("records")
     )
+    node_ids = node_data.index
 
     # Convert to StellarGraph and prepare for ML
-    G = sg.StellarGraph(Gnx, node_features="feature")
+    G = sg.StellarGraph(Gnx, node_features=node_features)
 
     # Load Keras model
     model = keras.models.load_model(
@@ -222,13 +216,14 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
         for ii in range(len(model.input_shape) - 1)
     ]
 
-    # Get predictions for all nodes
-    all_mapper = GraphSAGENodeMapper(
-        G, node_ids, batch_size, num_samples, targets=node_targets
+    # Create mappers for GraphSAGE that input data from the graph to the model
+    generator = GraphSAGENodeGenerator(
+        G, batch_size, num_samples, seed=42
     )
+    all_gen = generator.flow(node_ids, node_targets)
 
     # Evaluate and print metrics
-    all_metrics = model.evaluate_generator(all_mapper)
+    all_metrics = model.evaluate_generator(all_gen)
 
     print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, all_metrics):

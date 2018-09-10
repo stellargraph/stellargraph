@@ -186,13 +186,12 @@ def train(
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
-    train_generator = GraphSAGELinkGenerator(
+    train_gen = GraphSAGELinkGenerator(
         G_train,
         batch_size,
         num_samples,
         name="train",
-    )
-    train_gen = train_generator.flow(edge_ids_train, edge_labels_train)
+    ).flow(edge_ids_train, edge_labels_train)
 
     test_gen = GraphSAGELinkGenerator(
         G_train,
@@ -203,7 +202,7 @@ def train(
 
     # GraphSAGE model
     graphsage = GraphSAGE(
-        layer_sizes=layer_size, generator=train_generator, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout
     )
 
     # Expose input and output sockets of the model, for source and destination nodes:
