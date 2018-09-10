@@ -149,7 +149,7 @@ def test_homogeneous_graph_schema():
     ]:
         schema = sg.create_graph_schema()
 
-        assert "" in schema.schema
+        assert "default" in schema.schema
         assert len(schema.node_types) == 1
         assert len(schema.edge_types) == 1
 

@@ -328,7 +328,9 @@ class HinSAGELinkGenerator:
         self.schema = G.create_graph_schema(create_type_maps=True)
 
         # The sampler used to generate random samples of neighbours
-        self.sampler = SampledHeterogeneousBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
+        self.sampler = SampledHeterogeneousBreadthFirstWalk(
+            G, graph_schema=self.schema, seed=seed
+        )
 
     def _get_features(self, node_samples, head_size):
         """

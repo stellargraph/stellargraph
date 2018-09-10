@@ -33,6 +33,7 @@ from .stellargraph import GraphSchema
 from .stellargraph import StellarGraphBase
 from .utils import is_real_iterable
 
+
 class GraphWalk(object):
     """
     Base class for exploring graphs.
@@ -885,7 +886,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                                     for _ in range(n_size[depth - 1])
                                 ]
                                 # Choices limits us to Python 3.6+
-                                #samples = random.choices(neigh_et, k=n_size[depth - 1])
+                                # samples = random.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 

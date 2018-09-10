@@ -504,7 +504,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=999)
         assert len(subgraphs) == n * len(nodes)
-        valid_result = [[[1], [4, 4], ['5', 4], [3, 2]], [[6], ['5', '5']]]
+        valid_result = [[[1], [4, 4], ["5", 4], [3, 2]], [[6], ["5", "5"]]]
         assert subgraphs == valid_result
 
         n = 1

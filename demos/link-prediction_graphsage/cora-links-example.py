@@ -194,7 +194,7 @@ def train(
     ).flow(edge_ids_train, edge_labels_train)
 
     test_gen = GraphSAGELinkGenerator(
-        G_train,
+        G_test,
         batch_size,
         num_samples,
         name="train",
