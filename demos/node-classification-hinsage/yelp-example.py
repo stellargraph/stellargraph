@@ -130,6 +130,7 @@ def train(
     )
 
     # Train model
+    print("Training the model...")
     history = model.fit_generator(
         train_mapper, epochs=num_epochs, verbose=2, shuffle=True
     )
@@ -260,16 +261,21 @@ if __name__ == "__main__":
     data_loc = os.path.expanduser(args.location)
 
     # Read the data
+    print("Reading user features and targets...")
     user_features = pd.read_pickle(os.path.join(data_loc, "user_features_filtered.pkl"))
+    user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
+
+    print("Reading business features...")
     business_features = pd.read_pickle(
         os.path.join(data_loc, "business_features_filtered.pkl")
     )
-    user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
 
     # Load graph
+    print("Loading the graph...")
     Gnx = nx.read_graphml(os.path.join(data_loc, "yelp_graph_filtered.graphml"))
 
     # Adding node features to graph
+    print("Adding node features to the graph...")
     for user_id, row in user_features.iterrows():
         if user_id not in Gnx:
             print("User not found")
