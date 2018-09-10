@@ -32,7 +32,10 @@ from stellargraph.data import utils
 
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
 
-def _convert_from_node_attribute(G, attr_name, node_types, node_type_name=None, dtype='f'):
+
+def _convert_from_node_attribute(
+    G, attr_name, node_types, node_type_name=None, dtype="f"
+):
     """
     Transform the node attributes to feature vectors, for use with machine learning models.
 
@@ -51,7 +54,7 @@ def _convert_from_node_attribute(G, attr_name, node_types, node_type_name=None, 
 
     # Enumerate all nodes in graph
     nodes_by_type = {
-        nt: [n for n,ndata in G.nodes(data=True) if ndata[node_type_name] == nt]
+        nt: [n for n, ndata in G.nodes(data=True) if ndata[node_type_name] == nt]
         for nt in node_types
     }
 
@@ -63,19 +66,14 @@ def _convert_from_node_attribute(G, attr_name, node_types, node_type_name=None, 
         nt_node_list.append(None)
 
         # Create map between node id and index (including None)
-        node_index_map[nt] = {nid:ii for ii,nid in enumerate(nt_node_list)}
+        node_index_map[nt] = {nid: ii for ii, nid in enumerate(nt_node_list)}
 
         # The node data
-        attr_data = [
-            v if v is None else G.node[v].get(attr_name)
-            for v in nt_node_list
-        ]
+        attr_data = [v if v is None else G.node[v].get(attr_name) for v in nt_node_list]
 
         # Get the size of the features
         data_sizes = {
-            np.size(G.node[v].get(attr_name, []))
-            for v in nt_node_list
-            if v is not None
+            np.size(G.node[v].get(attr_name, [])) for v in nt_node_list if v is not None
         }
 
         # Warn if nodes don't have the attribute
@@ -115,7 +113,7 @@ def _convert_from_node_attribute(G, attr_name, node_types, node_type_name=None, 
     return node_index_map, attribute_arrays
 
 
-def _convert_from_node_data(data, node_types, dtype='f'):
+def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
     """
     Store the node data as feature vectors, for use with machine learning models.
 
@@ -130,6 +128,9 @@ def _convert_from_node_data(data, node_types, dtype='f'):
         data: dict, list or DataFrame
             The data for the nodes, partitioned by node type
 
+        node_type_map: dict
+            Mapping of node_id to node_type
+
         node_types: list
             List of the node types in the data
 
@@ -143,7 +144,9 @@ def _convert_from_node_data(data, node_types, dtype='f'):
     if isinstance(data, dict):
         # The keys should match the node types
         if not all(k in node_types for k in data.keys()):
-            raise ValueError("All node types in supplied feature dict should be in the graph")
+            raise ValueError(
+                "All node types in supplied feature dict should be in the graph"
+            )
 
         data_arrays = {}
         data_index = {}
@@ -153,7 +156,9 @@ def _convert_from_node_data(data, node_types, dtype='f'):
                 try:
                     data_arr = arr.values.astype(dtype)
                 except ValueError:
-                    raise ValueError("Node data passed as Pandas arrays should contain only numeric values")
+                    raise ValueError(
+                        "Node data passed as Pandas arrays should contain only numeric values"
+                    )
 
             elif isinstance(arr, (Iterable, list)):
                 data_arr = []
@@ -165,7 +170,8 @@ def _convert_from_node_data(data, node_types, dtype='f'):
 
             else:
                 raise TypeError(
-                    "Node data should be a pandas array, an iterable, a list, or name of a node_attribute")
+                    "Node data should be a pandas array, an iterable, a list, or name of a node_attribute"
+                )
 
             # Add default value to end of feature array
             default_value = np.zeros(data_arr.shape[1])
@@ -174,19 +180,37 @@ def _convert_from_node_data(data, node_types, dtype='f'):
             node_index_map[None] = data_arr.shape[0]
             data_index[nt] = node_index_map
 
-    # If data is not a dictionary, try redirection
-    elif isinstance(data, (Iterator, list, pd.DataFrame)):
+    # If data is a pd.Dataframe, try pulling out the type
+    elif isinstance(data, pd.DataFrame):
         if len(node_types) > 1:
-            raise TypeError("When there is more than one node type, pass node features as a dictionary.")
+            raise TypeError(
+                "When there is more than one node type, pass node features as a dictionary."
+            )
         node_type = next(iter(node_types))
-        data_index, data_arrays = _convert_from_node_data({node_type: data}, node_types, dtype)
+        data_index, data_arrays = _convert_from_node_data(
+            {node_type: data}, node_type_map, node_types, dtype
+        )
+
+    # If data an iterator try recreating the nodes by type
+    elif isinstance(data, (Iterator, list)):
+        node_data_by_type = {nt: [] for nt in node_types}
+        for d in data:
+            node_type = node_type_map.get(d[0])
+            if node_type is None:
+                raise TypeError("Node type not found in importing feature vectors!")
+
+            node_data_by_type[node_type].append(d)
+
+        data_index, data_arrays = _convert_from_node_data(
+            node_data_by_type, node_type_map, node_types, dtype
+        )
 
     else:
         raise TypeError(
-            "Node data should be a dictionary, a pandas array, an iterable, or a tuple.")
+            "Node data should be a dictionary, a pandas array, an iterable, or a tuple."
+        )
 
     return data_index, data_arrays
-
 
 
 class GraphSchema:
@@ -540,6 +564,86 @@ class GraphSchema:
 
 
 class StellarGraphBase:
+    """
+    StellarGraph class for undirected graph ML models. It stores both
+    graph information from a NetworkX Graph object as well as features
+    for machine learning.
+
+    To create a StellarGraph object ready for machine learning, at a
+    minimum pass the graph structure to the StellarGraph as a NetworkX
+    graph:
+
+    For undirected models:
+    ```
+    Gs = StellarGraph(nx_graph)
+    ```
+
+    For directed models:
+    ```
+    Gs = StellarDiGraph(nx_graph)
+    ```
+
+    To create a StellarGraph object with node features, supply the features
+    as post-processed numeric vectors for each node.
+
+    To take the feature vectors from a node attribute in the original NetworkX
+    graph, supply the attribute name to the `node_features` argument:
+    ```
+    Gs = StellarGraph(nx_graph, node_features="feature")
+    ```
+
+    where the nx_graph contains nodes that have a "feature" attribute containing
+    the feature vector for the node. All nodes of the same type must have
+    the same size feature vectors.
+
+    Alternatively, supply the node features as Pandas DataFrame objects with
+    the of the DataFrame set to the node IDs. For graphs with a single node
+    type, you can supply the DataFrame object directly to StellarGraph:
+    ```
+    node_data = pd.DataFrame(
+        [feature_vector_1, feature_vector_2, ..],
+        index=[node_id_1, node_id_2, ...]
+        )
+    Gs = StellarGraph(nx_graph, node_features=node_data)
+    ```
+    For graphs with multiple node types, provide the node features as pandas
+    arrays for each type separately, as a dictionary by node type.
+    This allows node features to be different sizes for each node type:
+    ```
+    node_data = {
+        node_type_1: pd.DataFrame(...),
+        node_type_2: pd.DataFrame(...),
+        }
+    Gs = StellarGraph(nx_graph, node_features=node_data)
+    ```
+
+    You can also supply the node feature vectors as an iterator of `node_id`
+    and feature vector pairs, either directly for graphs with a single node type:
+    ```
+    node_data = zip([node_id_1, node_id_2, ...], [feature_vector_1, feature_vector_2, ..])
+    Gs = StellarGraph(nx_graph, node_features=node_data)
+    ```
+
+    Args:
+        node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            This is the name for the node types that StellarGraph uses
+            when processing heterogeneous graphs. StellarGraph will
+            look for this attribute in the nodes of the graph to determine
+            their type.
+
+        edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            This is the name for the edge types that StellarGraph uses
+            when processing heterogeneous graphs. StellarGraph will
+            look for this attribute in the edges of the graph to determine
+            their type.
+
+        node_features: str, dict, list or DataFrame optional (default=None)
+            This tells StellarGraph where to find the node feature information
+            required by some graph models. These are expected to be
+            post-processed numeric feature vectors for each node in the graph.
+
+    """
+
     def __init__(self, incoming_graph_data=None, **attr):
         # TODO: add doc string
         super().__init__(incoming_graph_data, **attr)
@@ -555,16 +659,19 @@ class StellarGraphBase:
 
         # Ensure that the incoming graph data has node & edge types
         # TODO: This requires traversing all nodes and edges. Is there another way?
+        # TODO: Should we add the default values as class arguments for these?
         node_types = set()
+        type_for_node = {}
         for n, ndata in self.nodes(data=True):
             if self._node_type_attr not in ndata:
-                ndata[self._node_type_attr] = ""
+                ndata[self._node_type_attr] = "default"
+            type_for_node[n] = ndata[self._node_type_attr]
             node_types.add(ndata[self._node_type_attr])
 
         edge_types = set()
         for n1, n2, k, edata in self.edges(keys=True, data=True):
             if self._edge_type_attr not in edata:
-                edata[self._edge_type_attr] = ""
+                edata[self._edge_type_attr] = "default"
             edge_types.add(edata[self._edge_type_attr])
 
         # New style: we are passed numpy arrays or pandas arrays of the feature vectors
@@ -574,11 +681,15 @@ class StellarGraphBase:
         # If node_features is a string, load features from this attribute of the nodes in the graph
         if isinstance(node_features, str):
             print("Attribute conversion")
-            data_index_maps, data_arrays = _convert_from_node_attribute(self, node_features, node_types, self._node_type_attr, dtype)
+            data_index_maps, data_arrays = _convert_from_node_attribute(
+                self, node_features, node_types, self._node_type_attr, dtype
+            )
 
         # Otherwise try impotring node_features as a Numpy array or Pandas Dataframe
         elif node_features is not None:
-            data_index_maps, data_arrays = _convert_from_node_data(node_features, node_types, dtype)
+            data_index_maps, data_arrays = _convert_from_node_data(
+                node_features, type_for_node, node_types, dtype
+            )
 
         else:
             data_index_maps = {}
@@ -663,10 +774,11 @@ class StellarGraphBase:
             node_type = node_types.pop()
 
         # Check node_types
-        if node_type not in self._node_attribute_arrays or node_type not in self._node_index_maps:
-            raise ValueError(
-                "Features not found for node type '{}'"
-            )
+        if (
+            node_type not in self._node_attribute_arrays
+            or node_type not in self._node_index_maps
+        ):
+            raise ValueError("Features not found for node type '{}'")
 
         # Edge case: if we are given no nodes, what do we do?
         if len(nodes) == 0:
@@ -678,7 +790,9 @@ class StellarGraphBase:
         node_indices = [nt_id_to_index.get(n) for n in nodes]
 
         if None in node_indices:
-            raise ValueError("Incorrect node specified or nodes of multiple types found.")
+            raise ValueError(
+                "Incorrect node specified or nodes of multiple types found."
+            )
 
         features = self._node_attribute_arrays[node_type][node_indices]
         return features
@@ -917,20 +1031,10 @@ class StellarGraphBase:
 
 
 class StellarGraph(StellarGraphBase, MultiGraph):
-    """
-    Our own class for heterogeneous undirected graphs, inherited from nx.MultiGraph,
-    with extra stuff to be added that's needed by samplers and mappers
-    """
-
     def __init__(self, incoming_graph_data=None, **attr):
         super().__init__(incoming_graph_data, **attr)
 
 
 class StellarDiGraph(StellarGraphBase, MultiDiGraph):
-    """
-    Our own class for heterogeneous directed graphs, inherited from nx.MultiDiGraph,
-    with extra stuff to be added that's needed by samplers and mappers
-    """
-
     def __init__(self, incoming_graph_data=None, **attr):
         super().__init__(incoming_graph_data, **attr)

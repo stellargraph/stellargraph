@@ -54,6 +54,7 @@ class NodeSequence(Sequence):
         node_type:
 
     """
+
     def __init__(self, generator, ids, targets=None):
         # Check that ids is an iterable
         if not is_real_iterable(ids):

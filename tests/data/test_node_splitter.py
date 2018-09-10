@@ -852,7 +852,13 @@ def test_split_function():
     for g in [create_example_graph_1(), create_example_graph_2()]:
 
         splits = train_val_test_split(
-            g, node_type=None, test_size=2, train_size=3, targets=None, split_equally=False, seed=None
+            g,
+            node_type=None,
+            test_size=2,
+            train_size=3,
+            targets=None,
+            split_equally=False,
+            seed=None,
         )
         assert len(splits[0]) == 3
         assert len(splits[1]) == 2
@@ -897,10 +903,16 @@ def test_split_function_split_equally():
     g = create_example_graph_2()
 
     # We have to have a target value for the nodes
-    targets = {n: int(2 * ii / g.number_of_nodes()) for ii,n in enumerate(g)}
+    targets = {n: int(2 * ii / g.number_of_nodes()) for ii, n in enumerate(g)}
 
     splits = train_val_test_split(
-        g, node_type=None, test_size=2, train_size=4, targets=targets, split_equally=True, seed=None
+        g,
+        node_type=None,
+        test_size=2,
+        train_size=4,
+        targets=targets,
+        split_equally=True,
+        seed=None,
     )
     # For this number of nodes we should have 50% of the nodes as label 1
     assert sum(targets[s] for s in splits[0]) == len(splits[0]) // 2
@@ -916,12 +928,24 @@ def test_split_function_node_type():
     # This doesn't work if g is not a StellarGraph
     with pytest.raises(TypeError):
         splits = train_val_test_split(
-            g, node_type="movie", test_size=1, train_size=2, targets=None, split_equally=False, seed=None
+            g,
+            node_type="movie",
+            test_size=1,
+            train_size=2,
+            targets=None,
+            split_equally=False,
+            seed=None,
         )
 
     gs = StellarGraph(g)
     splits = train_val_test_split(
-        gs, node_type="movie", test_size=1, train_size=2, targets=None, split_equally=False, seed=None
+        gs,
+        node_type="movie",
+        test_size=1,
+        train_size=2,
+        targets=None,
+        split_equally=False,
+        seed=None,
     )
     assert all(g.node[s]["label"] == "movie" for split in splits for s in split)
 
@@ -937,7 +961,13 @@ def test_split_function_unlabelled():
             targets[n] = 1
 
     splits = train_val_test_split(
-        sg, node_type=None, test_size=2, train_size=2, targets=targets, split_equally=False, seed=None
+        sg,
+        node_type=None,
+        test_size=2,
+        train_size=2,
+        targets=targets,
+        split_equally=False,
+        seed=None,
     )
 
     # For this number of nodes we should have 50% of the nodes as label 1

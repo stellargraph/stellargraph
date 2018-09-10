@@ -92,13 +92,22 @@ def train_val_test_split(
         # TODO: The equal sampling option will fail if these values are not hashable.
         # Check that split_equally_by_target is the correct type
         if isinstance(targets, pd.DataFrame):
-            target_values = [targets.loc[n] if n in targets.index else globals.UNKNOWN_TARGET_ATTRIBUTE for n in nodes]
+            target_values = [
+                targets.loc[n]
+                if n in targets.index
+                else globals.UNKNOWN_TARGET_ATTRIBUTE
+                for n in nodes
+            ]
 
         elif isinstance(targets, dict):
-            target_values = [targets.get(n, globals.UNKNOWN_TARGET_ATTRIBUTE) for n in nodes]
+            target_values = [
+                targets.get(n, globals.UNKNOWN_TARGET_ATTRIBUTE) for n in nodes
+            ]
 
         else:
-            raise TypeError("The targets are expected to be either a Pandas DataFrame or a dict.")
+            raise TypeError(
+                "The targets are expected to be either a Pandas DataFrame or a dict."
+            )
 
         n_known = sum(t != globals.UNKNOWN_TARGET_ATTRIBUTE for t in targets)
 
@@ -161,11 +170,15 @@ def train_val_test_split(
         # The number of classes we have
         n_classes = len(class_set)
 
-        if n_classes == 0 :
-            raise RuntimeError("Found no usable target classes in split_equally_by_targets.")
+        if n_classes == 0:
+            raise RuntimeError(
+                "Found no usable target classes in split_equally_by_targets."
+            )
 
-        if train_size_n < n_classes :
-            raise RuntimeError("The number of classes must be smaller than the training size.")
+        if train_size_n < n_classes:
+            raise RuntimeError(
+                "The number of classes must be smaller than the training size."
+            )
 
         # The number of nodes we want per class
         p = int(train_size_n / n_classes)
