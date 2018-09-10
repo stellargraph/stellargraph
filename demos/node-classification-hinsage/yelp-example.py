@@ -44,6 +44,7 @@ from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
 from sklearn import model_selection
 from sklearn import metrics as sk_metrics
 
+
 def weighted_binary_crossentropy(weights):
     """
     Weighted binary cross-entropy loss
@@ -54,8 +55,9 @@ def weighted_binary_crossentropy(weights):
         A Keras loss function
     """
     weights = np.asanyarray(weights, dtype="float32")
+
     def loss_fn(y_true, y_pred):
-        return K.mean(K.binary_crossentropy(y_true, y_pred)*weights, axis=-1)
+        return K.mean(K.binary_crossentropy(y_true, y_pred) * weights, axis=-1)
 
     return loss_fn
 
@@ -137,11 +139,18 @@ def train(
     print("Confusion matrix:")
     print(cm)
 
+    accuracy = sk_metrics.accuracy_score(test_targets.iloc[:, 1], binary_predictions)
     precision = sk_metrics.precision_score(test_targets.iloc[:, 1], binary_predictions)
     recall = sk_metrics.recall_score(test_targets.iloc[:, 1], binary_predictions)
     f1 = sk_metrics.f1_score(test_targets.iloc[:, 1], binary_predictions)
+    roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], binary_predictions)
 
-    print("precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(precision, recall, f1))
+    print(
+        "accuracy = {:0.3}, precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(
+            accuracy, precision, recall, f1
+        )
+    )
+    print("ROC AUC = {:0.3}".format(roc_auc))
 
     # Save model
     save_str = "_n{}_l{}_d{}_r{}".format(
@@ -246,16 +255,21 @@ if __name__ == "__main__":
     data_loc = os.path.expanduser(args.location)
 
     # Read the data
+    print("Reading user features and targets...")
     user_features = pd.read_pickle(os.path.join(data_loc, "user_features_filtered.pkl"))
+    user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
+
+    print("Reading business features...")
     business_features = pd.read_pickle(
         os.path.join(data_loc, "business_features_filtered.pkl")
     )
-    user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
 
     # Load graph
+    print("Loading the graph...")
     Gnx = nx.read_graphml(os.path.join(data_loc, "yelp_graph_filtered.graphml"))
 
     # Adding node features to graph
+    print("Adding node features to the graph...")
     for user_id, row in user_features.iterrows():
         if user_id not in Gnx:
             print("User not found")
