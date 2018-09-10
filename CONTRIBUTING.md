@@ -12,7 +12,7 @@ Please follow the following steps to report a bug:
 
 3. Make sure you provide us with useful information about your configuration: what OS are you using?
 
-* 4. Provide a simple script that reproduces the bug. A bug that cannot be reproduced easily will most likely not be investigated.
+4. Provide a simple script that reproduces the bug. A bug that cannot be reproduced easily will most likely not be investigated.
 
 5. Optionally, try and fix the bug and let us know how you go.
 
