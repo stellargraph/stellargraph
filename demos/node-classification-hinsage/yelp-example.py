@@ -44,6 +44,7 @@ from stellargraph.mapper.node_mappers import HinSAGENodeMapper
 from sklearn import model_selection
 from sklearn import metrics as sk_metrics
 
+
 def weighted_binary_crossentropy(weights):
     """
     Weighted binary cross-entropy loss
@@ -54,8 +55,9 @@ def weighted_binary_crossentropy(weights):
         A Keras loss function
     """
     weights = np.asanyarray(weights, dtype="float32")
+
     def loss_fn(y_true, y_pred):
-        return K.mean(K.binary_crossentropy(y_true, y_pred)*weights, axis=-1)
+        return K.mean(K.binary_crossentropy(y_true, y_pred) * weights, axis=-1)
 
     return loss_fn
 
@@ -115,7 +117,7 @@ def train(
 
     # Calculate weights based on empirical count
     class_count = train_targets.values.sum(axis=0)
-    weights = class_count.sum()/class_count
+    weights = class_count.sum() / class_count
 
     print("Weighting loss by: {}".format(weights))
 
@@ -129,10 +131,7 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_mapper,
-        epochs=num_epochs,
-        verbose=2,
-        shuffle=True
+        train_mapper, epochs=num_epochs, verbose=2, shuffle=True
     )
 
     # Evaluate on test set and print metrics
@@ -151,7 +150,11 @@ def train(
     f1 = sk_metrics.f1_score(test_targets.iloc[:, 1], binary_predictions)
     roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], binary_predictions)
 
-    print("accuracy = {:0.3}, precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(accuracy, precision, recall, f1))
+    print(
+        "accuracy = {:0.3}, precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(
+            accuracy, precision, recall, f1
+        )
+    )
     print("ROC AUC = {:0.3}".format(roc_auc))
 
     # Save model
