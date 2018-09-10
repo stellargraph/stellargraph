@@ -97,8 +97,13 @@ def train(
     )
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
+    # Train mapper
     train_mapper = HinSAGENodeMapper(
         G, train_targets.index, batch_size, num_samples, targets=train_targets.values
+    )
+    # Test mapper
+    test_mapper = HinSAGENodeMapper(
+        G, test_targets.index, batch_size, num_samples, targets=test_targets.values
     )
 
     # GraphSAGE model
@@ -131,23 +136,23 @@ def train(
     )
 
     # Evaluate on test set and print metrics
-    test_mapper = HinSAGENodeMapper(
-        G, test_targets.index, batch_size, num_samples, targets=test_targets.values
-    )
     predictions = model.predict_generator(test_mapper)
     binary_predictions = predictions[:, 1] > 0.5
-    print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
+    print("\nTest Set Metrics of trained model (on {} nodes)".format(len(predictions)))
 
     # Calculate metrics using Scikit-Learn
     cm = sk_metrics.confusion_matrix(test_targets.iloc[:, 1], binary_predictions)
     print("Confusion matrix:")
     print(cm)
 
+    accuracy = sk_metrics.accuracy_score(test_targets.iloc[:, 1], binary_predictions)
     precision = sk_metrics.precision_score(test_targets.iloc[:, 1], binary_predictions)
     recall = sk_metrics.recall_score(test_targets.iloc[:, 1], binary_predictions)
     f1 = sk_metrics.f1_score(test_targets.iloc[:, 1], binary_predictions)
+    roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], binary_predictions)
 
-    print("precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(precision, recall, f1))
+    print("accuracy = {:0.3}, precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(accuracy, precision, recall, f1))
+    print("ROC AUC = {:0.3}".format(roc_auc))
 
     # Save model
     save_str = "_n{}_l{}_d{}_r{}".format(
