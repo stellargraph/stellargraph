@@ -19,8 +19,8 @@ from math import isclose
 import os
 import networkx as nx
 import numpy as np
-from stellargraph.data.edge_splitter import EdgeSplitter
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.data import EdgeSplitter
+from stellargraph.data import StellarGraph
 from utils.cl_arguments_parser import parse_args
 from utils.read_graph import read_graph
 from utils.predictors import *
@@ -68,10 +68,10 @@ def get_metapaths_from_str(metapaths_str):
     """
     if len(metapaths_str) == 0:
         metapaths = [
-            ["Group", "Person", "Group"],
-            ["Person", "Group", "Person"],
-            ["Person", "Group", "Person", "Person"],
-            ["Person", "Person"],
+            ["group", "user", "group"],
+            ["user", "group", "user"],
+            ["user", "group", "user", "user"],
+            ["user", "user"],
         ]
     else:
         metapaths = []
