@@ -472,3 +472,19 @@ def test_feature_conversion_from_iterator():
     ab = gs.get_feature_for_nodes([4, None, None], "B")
     assert ab.shape == (3, 10)
     assert ab[:, 0] == pytest.approx([4, 0, 0])
+
+    # Test an iterator over all types
+    g = example_hin_1_nx()
+    nf = [
+            (v, np.ones(5 if vdata["label"]=='A' else 10) * float(v))
+            for v, vdata in g.nodes(data=True)
+        ]
+    gs = StellarGraph(g, node_features=nf)
+
+    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
+    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
+    assert aa.shape == (4, 5)
+
+    ab = gs.get_feature_for_nodes([4, 5], "B")
+    assert ab.shape == (2, 10)
+    assert ab[:, 0] == pytest.approx([4, 5])
