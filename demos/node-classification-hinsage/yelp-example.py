@@ -268,20 +268,15 @@ if __name__ == "__main__":
     print("Loading the graph...")
     Gnx = nx.read_graphml(os.path.join(data_loc, "yelp_graph_filtered.graphml"))
 
-    # Adding node features to graph
-    print("Adding node features to the graph...")
-    for user_id, row in user_features.iterrows():
-        if user_id not in Gnx:
-            print("User not found")
-        Gnx.node[user_id]["feature"] = row.values
-
-    for business_id, row in business_features.iterrows():
-        if business_id not in Gnx:
-            print("Business not found")
-        Gnx.node[business_id]["feature"] = row.values
+    # Features should be supplied as a dictionary of {node_type: DataFrame} for all
+    # node types in the graph
+    features = {
+        "user": user_features,
+        "business": business_features
+    }
 
     # Create stellar Graph object
-    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype", node_features=user_features)
+    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features)
 
     if args.checkpoint is None:
         train(
