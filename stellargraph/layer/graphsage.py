@@ -156,7 +156,7 @@ class GraphSAGE:
         # TODO: Refactor the horror of generator.generator.graph...
         if generator is not None:
             self.n_samples = generator.generator.num_samples
-            feature_sizes = generator.generator.graph.get_feature_sizes()
+            feature_sizes = generator.generator.graph.node_feature_sizes()
             if len(feature_sizes) > 1:
                 raise RuntimeError(
                     "GraphSAGE called on graph with more than one node type."

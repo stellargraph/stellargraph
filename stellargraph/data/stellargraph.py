@@ -683,9 +683,8 @@ class StellarGraphBase:
         features = self._node_attribute_arrays[node_type][node_indices]
         return features
 
-    @property
     def node_feature_sizes(self, node_types=None):
-        # TODO: change name to node_feature_sizes(), and add @property decorator
+        # TODO: unit test!
         """
         Get the feature sizes for the specified node types.
 
@@ -697,22 +696,15 @@ class StellarGraphBase:
             A dictionary of node type and integer feature size.
         """
         if not node_types:
-            node_types = self.node_types()
+            node_types = self.node_types
 
-        self.check_graph_for_ml(features=True, supervised=False)
+        self.check_graph_for_ml(features=True)
 
-        if self._feature_spec is not None:
-            node_types = self.node_types()
-            fsize = {nt: self._feature_spec.get_output_size(nt) for nt in node_types}
-
-        else:
-            # Otherwise directly get nodes with the _target_attr attribute
-            fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
-
+        fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
         return fsize
 
     def nodes_of_type(self, node_type=None):
-        # TODO: remove "get_" from the name
+        # TODO: unit test!
         """
         Get the nodes of the graph with the specified node types.
 
@@ -733,13 +725,13 @@ class StellarGraphBase:
 
     @property
     def node_types(self):
-        # TODO: remove "get_" from the name, and add @property decorator
         """
         Get a list of all node types in the graph.
 
         Returns:
             set of types
         """
+        # TODO: unit test!
         # TODO: create a schmea when we geenrate _node_attribute_arrays and use it?
         if len(self._node_attribute_arrays) > 0:
             return set(self._node_attribute_arrays.keys())

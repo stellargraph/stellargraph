@@ -229,7 +229,7 @@ class HinSAGE:
             self.subtree_schema = generator.generator.schema.type_adjacency_list(
                 generator.head_node_types, len(self.n_samples)
             )
-            self.input_dims = generator.generator.graph.get_feature_sizes()
+            self.input_dims = generator.generator.graph.nodenode_feature_sizes()
 
         elif (
             input_neighbor_tree is not None
