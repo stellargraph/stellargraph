@@ -25,7 +25,8 @@ from keras import backend as K
 
 
 class LeakyClippedLinear(Layer):
-    """Leaky Clipped Linear Unit.
+    """
+    Leaky Clipped Linear Unit.
 
         Args:
             low (float): Lower threshold
@@ -71,6 +72,7 @@ def link_inference(
     Defines an edge inference function that takes source, destination node features as input,
     and returns a numeric vector of output_dim size.
 
+     Args:
         output_dim (int): Number of predictor's output units (desired dimensionality of the output)
         output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
@@ -163,6 +165,7 @@ def link_classification(
     Defines a function that predicts a binary or multi-class edge classification output from
     (source, destination) node features.
 
+    Args:
         output_dim (int): Number of classifier's output units (desired dimensionality of the output)
         output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
@@ -199,6 +202,7 @@ def link_regression(
     Defines a function that predicts a numeric edge regression output vector/scalar from
     (source, destination) node features.
 
+    Args:
         output_dim (int): Dimensionality of the output vector, default is 1 for scalar output
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
