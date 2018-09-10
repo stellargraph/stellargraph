@@ -476,9 +476,9 @@ def test_feature_conversion_from_iterator():
     # Test an iterator over all types
     g = example_hin_1_nx()
     nf = [
-            (v, np.ones(5 if vdata["label"]=='A' else 10) * float(v))
-            for v, vdata in g.nodes(data=True)
-        ]
+        (v, np.ones(5 if vdata["label"] == "A" else 10) * float(v))
+        for v, vdata in g.nodes(data=True)
+    ]
     gs = StellarGraph(g, node_features=nf)
 
     aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
