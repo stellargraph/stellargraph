@@ -1,19 +1,18 @@
-# Graphsage Node Classification
+# GraphSAGE Node Classification
 
-This is an example of using Homogenous GraphSAGE to classify nodes in a graph.
+This is an example of using the Homogenous GraphSAGE algorithm [1] to classify nodes in a graph.
 
 ## Requirements
-Install the Stellar ML library.
+All examples use Python 3.6 and the StellarGraph library. To install the StellarGraph library
+following the instructions at: https://github.com/stellargraph/stellargraph
 
-In top-level stellar-ml directory install using pip:
-
-```
-pip install -e .
-```
+Additional requirements are Pandas, Numpy and Scikit-Learn which are installed as depdendencies
+of the StellarGraph library. In addition Juptyer is required to run the notebook version of
+the example.
 
 ## CORA dataset
 
-Currently this example is tested on the CORA dataset. The GraphSAGE model assumes that node
+Currently the examples in this directory are tested on the CORA dataset. The GraphSAGE model assumes that node
 features are available.
 
 The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
@@ -29,18 +28,28 @@ as a command line argument to this script.
 
 ## Running the script
 
-The example should be run on supplying the location of the downloaded CORA dataset with the following command:
+The example script can be run on supplying the location of the downloaded CORA dataset
+with the following command:
 ```
-python cora-example.py -g <path_to_cora_dataset>
+python cora-example.py -l <path_to_cora_dataset>
 ```
+
+Additional arguments can be specified that change the GraphSAGE model and training parameters, a
+description of these arguments is displayed using the help option to the script:
+```
+python cora-example.py --help
+```
+
+## Running the notebook
+
+The same example is also available as a Juptyer notebook. To use this install Jupyter to the
+same Python 3.6 environment as StellarGraph, following the instructions on the Jupyter project
+website: http://jupyter.org/install.html
+
+After starting the Jupyter server on your computer, load the notebook
+`cora_node_classification_example.ipynb` and follow the instructions inside.
+
 
 ## References
 
-```
- @inproceedings{hamilton2017inductive,
-     author = {Hamilton, William L. and Ying, Rex and Leskovec, Jure},
-     title = {Inductive Representation Learning on Large Graphs},
-     booktitle = {NIPS},
-     year = {2017}
-   }
-```
+[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017.
