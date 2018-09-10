@@ -111,7 +111,7 @@ class NodeSequence(Sequence):
 
         if start_idx >= self.data_size:
             raise IndexError("Mapper: batch_num larger than length of data")
-        # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
+        # print("Fetching batch {} [{}]".format(batch_num, start_idx))
 
         # Get head nodes
         head_ids = self.ids[start_idx:end_idx]

@@ -82,13 +82,7 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # Create stellar Graph object
-    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype")
-
     print(G.info())
-
-    # Fit the graph to the attribute converters:
-    G.fit_attribute_spec()
 
     # Split "user" nodes into train/test
     # Split nodes into train/test using stratification.
@@ -272,9 +266,12 @@ if __name__ == "__main__":
             print("Business not found")
         Gnx.node[business_id]["feature"] = row.values
 
+    # Create stellar Graph object
+    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype", node_features=user_features)
+
     if args.checkpoint is None:
         train(
-            Gnx,
+            G,
             user_targets,
             args.layer_size,
             args.neighbour_samples,
@@ -284,4 +281,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(Gnx, args.checkpoint, args.batch_size)
+        test(G, args.checkpoint, args.batch_size)

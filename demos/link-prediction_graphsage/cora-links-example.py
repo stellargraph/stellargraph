@@ -181,14 +181,8 @@ def train(
     # G_test, edge_ds_test, edge_labels_test will be used for model testing
 
     # Convert G_train and G_test to StellarGraph objects (undirected, as required by GraphSAGE) for ML:
-    G_train = sg.StellarGraph(G_train)
-    G_test = sg.StellarGraph(G_test)
-
-    # Prepare G_train and G_test for ML:
-    G_train.fit_attribute_spec()
-    G_test.fit_attribute_spec()
-
-    # Now G_train and G_test are ready for ML
+    G_train = sg.StellarGraph(G_train, node_features="feature")
+    G_test = sg.StellarGraph(G_test, node_features="feature")
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
@@ -307,9 +301,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     )
 
     # Convert G_test to StellarGraph object (undirected, as required by GraphSAGE):
-    G_test = sg.StellarGraph(G_test)
-    # Prepare G_test for ML:
-    G_test.fit_attribute_spec()
+    G_test = sg.StellarGraph(G_test, node_features="feature")
 
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(

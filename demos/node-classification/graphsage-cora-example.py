@@ -86,8 +86,7 @@ def train(
         Gnx.node[nid]["label"] = "paper"
 
     # Convert to StellarGraph and prepare for ML
-    G = sg.StellarGraph(Gnx)
-    G.fit_attribute_spec()
+    G = sg.StellarGraph(Gnx, node_type_name="label", node_features="feature")
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
@@ -207,8 +206,7 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     )
 
     # Convert to StellarGraph and prepare for ML
-    G = sg.StellarGraph(Gnx)
-    G.fit_attribute_spec()
+    G = sg.StellarGraph(Gnx, node_features="feature")
 
     # Load Keras model
     model = keras.models.load_model(
