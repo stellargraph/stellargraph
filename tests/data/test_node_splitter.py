@@ -21,6 +21,7 @@ import numpy as np
 import itertools as it
 import networkx as nx
 import pandas as pd
+import pytest
 
 from stellargraph.data.stellargraph import StellarGraph
 from stellargraph.data.node_splitter import NodeSplitter, train_val_test_split
@@ -830,60 +831,52 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
 
 def create_example_graph_1():
-    sg = StellarGraph()
-    sg.add_nodes_from([0, 1, 2, 3], label="movie")
-    sg.add_nodes_from([4, 5, 6], label="person")
-    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
-    sg.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
-    sg.add_edges_from([(4, 5)], label="friend")
-    return sg
+    g = nx.Graph()
+    g.add_nodes_from([0, 1, 2, 3], label="movie")
+    g.add_nodes_from([4, 5, 6], label="person")
+    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
+    g.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
+    g.add_edges_from([(4, 5)], label="friend")
+    return g
 
 
 def create_example_graph_2():
-    sg = StellarGraph()
-    sg.add_nodes_from([0, 1, 2, "3", 4, 5, 6], label="default")
-    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, "3")], label="default")
-    return sg
+    g = nx.Graph()
+    g.add_nodes_from([0, 1, 2, "3", 4, 5, 6], label="default")
+    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, "3")], label="default")
+    return g
 
 
 def test_split_function():
     # Example graph:
-    for sg in [create_example_graph_1(), create_example_graph_2()]:
-
-        # We have to have a target value for the nodes
-        for n in sg:
-            sg.node[n][sg._target_attr] = 1
-
-        sg.fit_attribute_spec()
+    for g in [create_example_graph_1(), create_example_graph_2()]:
 
         splits = train_val_test_split(
-            sg, node_type=None, test_size=2, train_size=3, stratify=False, seed=None
+            g, node_type=None, test_size=2, train_size=3, targets=None, split_equally=False, seed=None
         )
         assert len(splits[0]) == 3
         assert len(splits[1]) == 2
         assert len(splits[2]) == 2
         assert len(splits[3]) == 0
 
+        print(splits)
+
         # Make sure the nodeIDs can be found in the graph
-        assert all(s in sg for s in it.chain(*splits))
+        assert all(s in g for s in it.chain(*splits))
 
 
 def test_split_function_percent():
     # Example graph:
-    for sg in [create_example_graph_1(), create_example_graph_2()]:
-
-        # We have to have a target value for the nodes
-        for n in sg:
-            sg.node[n][sg._target_attr] = 1
+    for g in [create_example_graph_1(), create_example_graph_2()]:
 
         # Test splits by proportion - note floor of the
         # number of samples
         splits = train_val_test_split(
-            sg,
+            g,
             node_type=None,
             test_size=2.8 / 7,
             train_size=3.2 / 7,
-            stratify=False,
+            targets=None,
             seed=None,
         )
 
@@ -893,43 +886,44 @@ def test_split_function_percent():
         assert len(splits[2]) == 2
         assert len(splits[3]) == 0
 
+        print(splits)
+
         # Make sure the nodeIDs can be found in the graph
-        assert all(s in sg for s in it.chain(*splits))
+        assert all(s in g for s in it.chain(*splits))
 
 
-def test_split_function_stratify():
+def test_split_function_split_equally():
     # Example graph:
-    sg = create_example_graph_2()
+    g = create_example_graph_2()
 
     # We have to have a target value for the nodes
-    for ii, n in enumerate(sg):
-        sg.node[n][sg._target_attr] = int(2 * ii / sg.number_of_nodes())
+    targets = {n: int(2 * ii / g.number_of_nodes()) for ii,n in enumerate(g)}
 
     splits = train_val_test_split(
-        sg, node_type=None, test_size=2, train_size=4, stratify=True, seed=None
+        g, node_type=None, test_size=2, train_size=4, targets=targets, split_equally=True, seed=None
     )
     # For this number of nodes we should have 50% of the nodes as label 1
-    assert sum(sg.node[s]["target"] for s in splits[0]) == len(splits[0]) // 2
-
-    # This doesn't seem to be true for the test set though:
-    # assert sum(sg.node[s]["target"] for s in splits[2]) == len(splits[2])//2
+    assert sum(targets[s] for s in splits[0]) == len(splits[0]) // 2
 
     # Make sure the nodeIDs can be found in the graph
-    assert all(s in sg for s in it.chain(*splits))
+    assert all(s in g for s in it.chain(*splits))
 
 
 def test_split_function_node_type():
     # Example graph:
-    sg = create_example_graph_1()
+    g = create_example_graph_1()
 
-    # We have to have a target value for the nodes
-    for ii, n in enumerate(sg):
-        sg.node[n][sg._target_attr] = int(2 * ii / sg.number_of_nodes())
+    # This doesn't work if g is not a StellarGraph
+    with pytest.raises(TypeError):
+        splits = train_val_test_split(
+            g, node_type="movie", test_size=1, train_size=2, targets=None, split_equally=False, seed=None
+        )
 
+    gs = StellarGraph(g)
     splits = train_val_test_split(
-        sg, node_type="movie", test_size=1, train_size=2, stratify=False, seed=None
+        gs, node_type="movie", test_size=1, train_size=2, targets=None, split_equally=False, seed=None
     )
-    assert all(sg.node[s]["label"] == "movie" for split in splits for s in split)
+    assert all(g.node[s]["label"] == "movie" for split in splits for s in split)
 
 
 def test_split_function_unlabelled():
@@ -937,12 +931,13 @@ def test_split_function_unlabelled():
     sg = create_example_graph_1()
 
     # Leave some of the nodes unlabelled:
+    targets = {}
     for ii, n in enumerate(sg):
         if ii > 2:
-            sg.node[n][sg._target_attr] = 1
+            targets[n] = 1
 
     splits = train_val_test_split(
-        sg, node_type=None, test_size=2, train_size=2, stratify=False, seed=None
+        sg, node_type=None, test_size=2, train_size=2, targets=targets, split_equally=False, seed=None
     )
 
     # For this number of nodes we should have 50% of the nodes as label 1

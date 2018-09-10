@@ -224,7 +224,6 @@ class HinSAGE:
         # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
         # TODO: Refactor the horror of generator.generator.graph...
-        # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
         if generator is not None:
             self.n_samples = generator.generator.num_samples
             self.subtree_schema = generator.generator.schema.type_adjacency_list(

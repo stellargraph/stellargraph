@@ -19,11 +19,12 @@ import queue
 import random
 import itertools as it
 
+import pandas as pd
 import numpy as np
 from networkx.classes.multigraph import MultiGraph
 from networkx.classes.multidigraph import MultiDiGraph
 
-from collections import namedtuple
+from collections import namedtuple, Iterable, Iterator
 
 # The edge type triple
 from stellargraph import globals
@@ -57,8 +58,14 @@ def _convert_from_node_attribute(G, attr_name, node_types, node_type_name=None, 
     # Get the target values for each node type
     for nt in node_types:
         nt_node_list = nodes_by_type[nt]
+
+        # Add None to node list as ID of unknown nodes
+        nt_node_list.append(None)
+
+        # Create map between node id and index (including None)
         node_index_map[nt] = {nid:ii for ii,nid in enumerate(nt_node_list)}
 
+        # The node data
         attr_data = [
             v if v is None else G.node[v].get(attr_name)
             for v in nt_node_list
@@ -98,17 +105,40 @@ def _convert_from_node_attribute(G, attr_name, node_types, node_type_name=None, 
         # 1. node ID of None (representing sampling for a missing neighbour)
         # 2. node with no attribute
         # TODO: Make these two cases more explicit, allow custom values.
-        dummy_value = np.zeros(data_size)
+        default_value = np.zeros(data_size)
 
         # Convert to numpy array
         attribute_arrays[nt] = np.asarray(
-            [x if x is not None else dummy_value for x in attr_data]
+            [x if x is not None else default_value for x in attr_data]
         )
 
     return node_index_map, attribute_arrays
 
 
 def _convert_from_node_data(data, node_types, dtype='f'):
+    """
+    Store the node data as feature vectors, for use with machine learning models.
+
+    For a single node type, the data can be either:
+     * a Pandas DataFrame with the index being node IDs and the columns the numeric
+        feature values. Note that the features must be numeric.
+     * a list or iterable of `(node_id, node_feature)` pairs where node_feature is
+        a value, a list of values, or a numpy array representing the numbeic feature
+        values.
+
+    Args:
+        data: dict, list or DataFrame
+            The data for the nodes, partitioned by node type
+
+        node_types: list
+            List of the node types in the data
+
+        dtype: Numpy datatype optional (default='float32')
+            The numpy datatype to create the features array.
+
+    Returns:
+        index_map, attribute_arrays
+    """
     # if data is a dict of pandas dataframes or iterators, pull the features for each node type in the dictionary
     if isinstance(data, dict):
         # The keys should match the node types
@@ -125,22 +155,27 @@ def _convert_from_node_data(data, node_types, dtype='f'):
                 except ValueError:
                     raise ValueError("Node data passed as Pandas arrays should contain only numeric values")
 
-            elif isinstance(arr, (collections.Iterable, list)):
+            elif isinstance(arr, (Iterable, list)):
                 data_arr = []
                 node_index_map = {}
                 for ii, (node_id, datum) in enumerate(arr):
                     data_arr.append(datum)
                     node_index_map[node_id] = ii
+                data_arr = np.vstack(data_arr)
 
             else:
                 raise TypeError(
                     "Node data should be a pandas array, an iterable, a list, or name of a node_attribute")
 
-            data_arrays[nt] = np.vstack(data_arr)
+            # Add default value to end of feature array
+            default_value = np.zeros(data_arr.shape[1])
+            data_arrays[nt] = np.vstack([data_arr, default_value])
+
+            node_index_map[None] = data_arr.shape[0]
             data_index[nt] = node_index_map
 
     # If data is not a dictionary, try redirection
-    elif isinstance(data, (collections.Iterator, list, pd.DataFrame)):
+    elif isinstance(data, (Iterator, list, pd.DataFrame)):
         if len(node_types) > 1:
             raise TypeError("When there is more than one node type, pass node features as a dictionary.")
         node_type = next(iter(node_types))
@@ -581,8 +616,8 @@ class StellarGraphBase:
         # Check features on the nodes:
         if features and len(self._node_attribute_arrays) == 0:
             raise RuntimeError(
-                "Run 'fit_attribute_spec' on the graph with numeric feature attributes "
-                "or a feature specification to generate node features for machine learning"
+                "This StellarGraph has no numeric feature attributes for nodes"
+                "Node features are required for machine learning"
             )
 
         # How about checking the schema?
@@ -605,6 +640,7 @@ class StellarGraphBase:
             nodes = [nodes]
 
         # Get the node type
+        # TODO: This is slow, refactor so that self._node_index_maps gives the node type
         if node_type is None:
             node_types = {
                 self.node[n].get(self._node_type_attr) for n in nodes if n is not None
@@ -627,9 +663,9 @@ class StellarGraphBase:
             node_type = node_types.pop()
 
         # Check node_types
-        if node_type not in self._node_attribute_arrays:
+        if node_type not in self._node_attribute_arrays or node_type not in self._node_index_maps:
             raise ValueError(
-                "Features not found for node type '{}', has fit_attribute_specs been run?"
+                "Features not found for node type '{}'"
             )
 
         # Edge case: if we are given no nodes, what do we do?
@@ -638,14 +674,11 @@ class StellarGraphBase:
             return np.empty((0, feature_size))
 
         # Get index for nodes of this type
-        nt_id_to_index, nt_node_list = self._node_index_maps[node_type]
+        nt_id_to_index = self._node_index_maps[node_type]
         node_indices = [nt_id_to_index.get(n) for n in nodes]
 
         if None in node_indices:
-            raise ValueError(
-                "Nodes specified in 'get_feature_for_nodes' "
-                "must all be of the same type."
-            )
+            raise ValueError("Incorrect node specified or nodes of multiple types found.")
 
         features = self._node_attribute_arrays[node_type][node_indices]
         return features

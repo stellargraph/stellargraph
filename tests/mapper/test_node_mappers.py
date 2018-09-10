@@ -29,7 +29,7 @@ import pytest
 
 
 def example_graph_1(feature_size=None):
-    G = StellarGraph()
+    G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_nodes_from([1, 2, 3, 4], label="default")
     G.add_edges_from(elist, label="default")
@@ -38,11 +38,14 @@ def example_graph_1(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.node[v]["feature"] = np.ones(feature_size)
-    return G
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
 
 
 def example_graph_2(feature_size=None):
-    G = StellarGraph()
+    G = nx.Graph()
     elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
     G.add_nodes_from([1, 2, 3, 4, 5], label="default")
     G.add_edges_from(elist, label="default")
@@ -51,11 +54,14 @@ def example_graph_2(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-    return G
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
 
 
 def example_digraph_2(feature_size=None):
-    G = StellarDiGraph()
+    G = nx.DiGraph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_edges_from(elist)
 
@@ -63,11 +69,14 @@ def example_digraph_2(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.node[v]["feature"] = np.ones(feature_size)
-    return G
+        return StellarDiGraph(G, node_features="feature")
+
+    else:
+        return StellarDiGraph(G)
 
 
 def example_hin_1(feature_size_by_type=None):
-    G = StellarGraph()
+    G = nx.Graph()
     G.add_nodes_from([0, 1, 2, 3], label="A")
     G.add_nodes_from([4, 5, 6], label="B")
     G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
@@ -78,7 +87,10 @@ def example_hin_1(feature_size_by_type=None):
         for v, vdata in G.nodes(data=True):
             nt = vdata["label"]
             vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-    return G
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
 
 
 def example_hin_2(feature_size_by_type=None):
@@ -86,7 +98,7 @@ def example_hin_2(feature_size_by_type=None):
     nodes_type_2 = [4, 5]
 
     # Create isolated graphs
-    G = StellarGraph()
+    G = nx.Graph()
     G.add_nodes_from(nodes_type_1, label="t1")
     G.add_nodes_from(nodes_type_2, label="t2")
     G.add_edges_from([(0, 4), (1, 4), (2, 5), (3, 5)], label="e1")
@@ -96,6 +108,12 @@ def example_hin_2(feature_size_by_type=None):
         for v, vdata in G.nodes(data=True):
             nt = vdata["label"]
             vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
+
+        G = StellarGraph(G, node_features="feature")
+
+    else:
+        G = StellarGraph(G)
+
     return G, nodes_type_1, nodes_type_2
 
 
@@ -104,7 +122,7 @@ def example_hin_3(feature_size_by_type=None):
     nodes_type_2 = [4, 5, 6]
 
     # Create isolated graphs
-    G = StellarGraph()
+    G = nx.Graph()
     G.add_nodes_from(nodes_type_1, label="t1")
     G.add_nodes_from(nodes_type_2, label="t2")
     G.add_edges_from([(0, 4), (1, 5)], label="e1")
@@ -120,6 +138,12 @@ def example_hin_3(feature_size_by_type=None):
             vdata["feature"] = (int(v) + 10) * np.ones(
                 feature_size_by_type[nt], dtype="int"
             )
+
+        G = StellarGraph(G, node_features="feature")
+
+    else:
+        G = StellarGraph(G)
+
     return G, nodes_type_1, nodes_type_2
 
 
@@ -150,11 +174,6 @@ def test_nodemapper_constructor():
 
     G = example_graph_1(feature_size=n_feat)
 
-    # Should raise an error if not set up
-    with pytest.raises(RuntimeError):
-        GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
-
-    G.fit_attribute_spec()
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
     mapper = generator.flow(list(G))
@@ -170,14 +189,14 @@ def test_nodemapper_1():
 
     # test graph
     G1 = example_graph_1(n_feat)
-    G1.fit_attribute_spec()
+
     mapper1 = GraphSAGENodeGenerator(
         G1,  batch_size=n_batch, num_samples=[2, 2]
     ).flow(G1.nodes())
     assert len(mapper1) == 2
 
     G2 = example_graph_2(n_feat)
-    G2.fit_attribute_spec()
+
     mapper2 = GraphSAGENodeGenerator(
         G2, batch_size=n_batch, num_samples=[2, 2]
     ).flow(G2.nodes())
@@ -209,7 +228,6 @@ def test_nodemapper_no_samples():
 
     # test graph
     G = example_graph_1(feature_size=n_feat)
-    G.fit_attribute_spec()
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(G.nodes())
 
     # This is an edge case, are we sure we want this behaviour?
@@ -230,13 +248,9 @@ def test_nodemapper_with_targets():
     G = example_graph_1(feature_size=n_feat)
 
     # Set target attribute
-    for n in G:
-        G.node[n]["target"] = np.random.choice([0, 1])
-
-    G.fit_attribute_spec()
+    targets = np.array([np.random.choice([0, 1]) for n in G])
 
     nodes = list(G)
-    targets = G.get_target_for_nodes(nodes)
     mapper = GraphSAGENodeGenerator(
         G, batch_size=n_batch, num_samples=[1]
     ).flow(nodes, targets)
@@ -259,7 +273,6 @@ def test_nodemapper_incorrect_targets():
 
     # test graph
     G = example_graph_1(feature_size=n_feat)
-    G.fit_attribute_spec()
 
     with pytest.raises(TypeError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(list(G),1)
@@ -271,7 +284,6 @@ def test_nodemapper_incorrect_targets():
 def test_hinnodemapper_constructor():
     feature_sizes = {"A": 10, "B": 10}
     G = example_hin_1(feature_sizes)
-    G.fit_attribute_spec()
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
@@ -287,20 +299,19 @@ def test_hinnodemapper_constructor():
 def test_hinnodemapper_constructor_all_options():
     feature_sizes = {"A": 10, "B": 10}
     G = example_hin_1(feature_sizes)
-    G.fit_attribute_spec()
 
     gen = HinSAGENodeGenerator(
         G, batch_size=2, num_samples=[2, 2]
     )
-    mapper = gen.flow(G.nodes(), node_type="A")
+
+    nodes_of_type_a = G.nodes_of_type("A")
+    mapper = gen.flow(nodes_of_type_a)
     assert gen.batch_size == 2
-    assert mapper.data_size == len(G)
-    assert len(mapper.ids) == len(G)
+    assert mapper.data_size == len(nodes_of_type_a)
 
 
 def test_hinnodemapper_constructor_no_features():
     G = example_hin_1(feature_size_by_type=None)
-    G.fit_attribute_spec()
     with pytest.raises(RuntimeError):
         mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow(G.nodes())
 
@@ -309,11 +320,10 @@ def test_hinnodemapper_level_1():
     batch_size = 2
     feature_sizes = {"t1": 1, "t2": 2}
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
-    G.fit_attribute_spec()
 
     mapper = HinSAGENodeGenerator(
         G, batch_size=batch_size, num_samples=[2]
-    ).flow(nodes_type_2, node_type="t2")
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 1)
@@ -336,11 +346,10 @@ def test_hinnodemapper_level_2():
     batch_size = 2
     feature_sizes = {"t1": 1, "t2": 2}
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
-    G.fit_attribute_spec()
 
     mapper = HinSAGENodeGenerator(
         G,  batch_size=batch_size, num_samples=[2, 3]
-    ).flow(nodes_type_2, node_type="t2")
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 2)
@@ -367,11 +376,10 @@ def test_hinnodemapper_no_neighbors():
     batch_size = 3
     feature_sizes = {"t1": 1, "t2": 1}
     G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
-    G.fit_attribute_spec()
 
     mapper = HinSAGENodeGenerator(
         G,  batch_size=batch_size, num_samples=[2, 1]
-    ).flow(nodes_type_2, node_type="t2")
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 2)
