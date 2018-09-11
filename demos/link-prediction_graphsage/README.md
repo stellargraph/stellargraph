@@ -1,7 +1,8 @@
 # Graphsage Link Prediction
 
-This is an example of using Homogenous GraphSAGE [1] model, with a link classifier on top, 
-to predict links in a graph.
+This is an example of using the GraphSAGE, [1], model, with a link classifier on top, 
+to predict links in a homogeneous graph.
+
 The link prediction problem is treated as a supervised binary classification problem for 
 `(src, dst)` node pairs that make up links in the graph, with positive examples
 representing links that do exist in the graph, and negative examples representing
@@ -44,13 +45,14 @@ To run the notebook:
 
 ## Running the script
 
-The example should be run on supplying the location of the downloaded CORA dataset with the following command:
+The example should be run by specifying the location of the downloaded CORA dataset using the `-g` command line 
+argument. You can run the script using the following command:
 ```
 python cora-links-example.py -g <path_to_cora_dataset>
 ```
-The above command runs the link prediction on Cora dataset with default
-parameters. There is a number of other command line options that affect the architecture and training of the
-model. For help on how to set parameters of the run, and on parameter meaning, run
+The above command runs the link prediction on Cora dataset with default parameters. There is a number of other command
+line options that affect the architecture and training of the odel. For help on how to set parameters of the run, and 
+on parameter meaning, run
 ```
 python cora-links-example.py --help
 ``` 
