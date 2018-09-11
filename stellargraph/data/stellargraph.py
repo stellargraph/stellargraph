@@ -607,8 +607,8 @@ class StellarGraphBase:
     Gs = StellarGraph(nx_graph, node_features=node_data)
     ```
     For graphs with multiple node types, provide the node features as pandas
-    arrays for each type separately, as a dictionary by node type.
-    This allows node features to be different sizes for each node type:
+    dataframes for each type separately, as a dictionary by node type.
+    This allows node features to have different sizes for each node type:
     ```
     node_data = {
         node_type_1: pd.DataFrame(...),
