@@ -685,7 +685,7 @@ class StellarGraphBase:
                 self, node_features, node_types, self._node_type_attr, dtype
             )
 
-        # Otherwise try impotring node_features as a Numpy array or Pandas Dataframe
+        # Otherwise try importing node_features as a Numpy array or Pandas Dataframe
         elif node_features is not None:
             data_index_maps, data_arrays = _convert_from_node_data(
                 node_features, type_for_node, node_types, dtype
