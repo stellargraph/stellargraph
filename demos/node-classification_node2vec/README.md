@@ -1,7 +1,7 @@
-## Node classification using Node2Vec
+## Node classification using Node2Vec [1]
 
 This folder contains a [Jupyter](http://jupyter.org/) python notebook demonstrating the combined use of 
-`stellargraph` (this library), `Gensim` [4], and `Scikit-learn` libraries for node classification on a homogeneous 
+`stellargraph` (this library), `Gensim` [4], and `Scikit-learn` [3] libraries for node classification on a homogeneous 
 graph. 
 
 The example demonstrates how to calculate node embedding vectors in just a few lines of Python code.
