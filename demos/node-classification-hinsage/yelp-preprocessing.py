@@ -158,6 +158,8 @@ if __name__ == "__main__":
         review_data_raw = {}
         for line in f:
             d = json.loads(line)
+            d["user_id"] = "u_" + d["user_id"]
+            d["business_id"] = "b_" + d["business_id"]
             d["review_id"] = "r_" + d["review_id"]
             review_data_raw[d["review_id"]] = d
 
@@ -208,9 +210,6 @@ if __name__ == "__main__":
         if u["user_id"] not in users_in_graph:
             continue
 
-        # Add node as type user
-        G.add_node(u["user_id"], ntype="user")
-
         # Connect to friends
         if u["friends"] != "None":
             friend_list = u["friends"].split(", ")
@@ -225,8 +224,14 @@ if __name__ == "__main__":
             G.add_nodes_from(friend_list, ntype="user")
             G.add_edges_from([(u["user_id"], f) for f in friend_list], etype="friend")
 
+    print(
+        "\nNumber of users: {}, number of businesses: {}, number of reviews: {}".format(
+            len(users_in_graph), len(business_in_graph), len(reviews_in_graph)
+        )
+    )
+
     # --- Convert User Features ---
-    print("\nConverting user features")
+    print("Converting user features")
 
     # Extract user data and user_ids
     user_ids = list(users_in_graph)
@@ -284,7 +289,7 @@ if __name__ == "__main__":
     ]
 
     # Preprocess business features using Scikit-Learn
-    # Note we use a nonlinear transform as the user features as mostly counts
+    # Note we use a log transform as the user features as mostly counts
     # which are highly non-normal.
     bf_encoding = feature_extraction.DictVectorizer(sparse=use_sparse)
     bf_transform = preprocessing.FunctionTransformer(np.log1p, np.expm1)
@@ -316,12 +321,6 @@ if __name__ == "__main__":
     del business_category_features
 
     business_features = pd.DataFrame(business_features, index=business_ids)
-
-    print(
-        "Number of users: {}, number of businesses: {}, number of reviews: {}".format(
-            len(users_in_graph), len(business_in_graph), len(reviews_in_graph)
-        )
-    )
 
     # Optional: Save the encoders to apply to different data
     encodings = {
