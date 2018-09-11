@@ -58,7 +58,7 @@ StellarGraph supports different machine learning use-cases, including:
   nodes with node features using the HinSAGE algorithm.
 
 * Recommender systems
-  - See the demo in folder `demos/link-prediction_hinsage/movielens-recommender` for an example of how to predict 
+  - See the demo in folder `demos/link-prediction-hinsage/movielens-recommender` for an example of how to predict 
   movie ratings between users and movies using a Heterogeneous GraphSAGE, [3], model.
 
 The StellarGraph library currently includes the following algorithms for graph machine learning:
