@@ -63,7 +63,7 @@ def weighted_binary_crossentropy(weights):
 
 
 def train(
-    Gnx,
+    G,
     user_targets,
     layer_size,
     num_samples,
@@ -76,7 +76,7 @@ def train(
     Train a HinSAGE model on the specified graph G with given parameters.
 
     Args:
-        Gnx: A NetworkX with the Yelp dataset
+        G: A StellarGraph object ready for machine learning
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -106,11 +106,12 @@ def train(
     # Final estimator layer
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
-    # Calculate weights based on empirical count
+    # The elite label is only true for a small fraction of the total users,
+    # so weight the training loss to ensure that model learns to predict
+    # the positive class.
     #class_count = train_targets.values.sum(axis=0)
     #weights = class_count.sum()/class_count
     weights = [0.01, 1.0]
-
     print("Weighting loss by: {}".format(weights))
 
     # Create Keras model for training

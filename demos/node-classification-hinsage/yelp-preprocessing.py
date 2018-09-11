@@ -47,6 +47,7 @@ import pickle
 import networkx as nx
 import numpy as np
 import pandas as pd
+
 from keras.utils.generic_utils import Progbar
 from sklearn import preprocessing, feature_extraction, pipeline
 
@@ -212,7 +213,8 @@ if __name__ == "__main__":
 
         # Connect to friends
         if u["friends"] != "None":
-            friend_list = u["friends"].split(", ")
+            # Parse friends into list & add "u_" prefix for user ID maps
+            friend_list = ["u_"+f for f in u["friends"].split(", ")]
 
             # optionally include friend nodes not connected to reviews
             if filter_friends:
