@@ -129,11 +129,14 @@ if __name__ == "__main__":
         )
 
     # Load user data from json to a dictionary with the user_id as key
+    # Note we modify user_id to have a prefix 'u_' as there are conflicts
+    # in the IDs between users & businesses
     print("Loading user data")
     with open(os.path.join(yelp_location, "yelp_academic_dataset_user.json"), "r") as f:
         user_data_raw = {}
         for line in f:
             d = json.loads(line)
+            d["user_id"] = "u_" + d["user_id"]
             user_data_raw[d["user_id"]] = d
 
     # Load business data from json to a dictionary with the business_id as key
@@ -144,6 +147,7 @@ if __name__ == "__main__":
         business_data_raw = {}
         for line in f:
             d = json.loads(line)
+            d["business_id"] = "b_" + d["business_id"]
             business_data_raw[d["business_id"]] = d
 
     # Load review data from json to a dictionary with the review_id as key
@@ -154,6 +158,7 @@ if __name__ == "__main__":
         review_data_raw = {}
         for line in f:
             d = json.loads(line)
+            d["review_id"] = "r_" + d["review_id"]
             review_data_raw[d["review_id"]] = d
 
     # Create NX graph
