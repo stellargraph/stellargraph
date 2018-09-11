@@ -14,7 +14,7 @@ Word2Vec [4] algorithm.
 
 The examples folder structure is shown below. 
 
-* [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/masterdemos/embeddings)
+* [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
 
     Examples of unsupervised node representation learning for homogeneous and heterogeneous networks, 
     using the Node2Vec and Metapath2Vec algorithms.

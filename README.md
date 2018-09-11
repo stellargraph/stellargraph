@@ -41,9 +41,9 @@ StellarGraph supports different machine learning use-cases, including:
   random walk-based methods Node2Vec, [1], and Metapath2Vec, [2].
 
 * Node classification and regression
-  - See the demo in folder `demos/node-classification_graphsage` for an example of how to predict attributes of nodes 
+  - See the demo in folder `demos/node-classification-graphsage` for an example of how to predict attributes of nodes 
   using the GraphSAGE, [3], algorithm given node features and training labels.
-  - See the demo in folder `demos/node-classification_node2vec` for an example of how to predict attributes of nodes 
+  - See the demo in folder `demos/node-classification-node2vec` for an example of how to predict attributes of nodes 
   using the Node2Vec, [1], algorithm for nodes without features, unsupervised node representation learning, and 
   supervised classifier training for the downstream task.
   - See the demo in folder `demos/node-classification-hinsage` for examples of how to predict attributes of nodes 
@@ -52,9 +52,9 @@ StellarGraph supports different machine learning use-cases, including:
 * Link prediction
   - See the demo in folder `demos/link-prediction-random-walks` for an example of how to predict the existence of links between nodes 
   without node features, using the Node2Vec, [1], and Metapath2Vec, [2], algorithms.
-  - See the demo in folder `demos/link-prediction_graphsage` for an example of how to predict the existence of links between 
+  - See the demo in folder `demos/link-prediction-graphsage` for an example of how to predict the existence of links between 
   nodes with node features using the GraphSAGE, [3], algorithm.
-  - See the demo in folder `demos/link-prediction_hinsage` for an example of how to predict the existence of links between 
+  - See the demo in folder `demos/link-prediction-hinsage` for an example of how to predict the existence of links between 
   nodes with node features using the HinSAGE algorithm.
 
 * Recommender systems
