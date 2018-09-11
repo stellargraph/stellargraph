@@ -40,7 +40,7 @@ StellarGraph supports different machine learning use-cases, including:
   - See the demos in folder `demos/embeddings` for examples of unsupervised node representation learning using the
   random walk-based methods Node2Vec, [1], and Metapath2Vec, [2].
 
-* Node classification and regression:
+* Node classification and regression
   - See the demos in folder `demos/node-classification` for examples of how to predict attributes of nodes using (a) the
   GraphSAGE, [3], algorithm for given node features and training labels; or (b) the Node2Vec, [1], algorithm for nodes
   without features, unsupervised node representation learning, and supervised classifier training for the downstream
@@ -48,39 +48,39 @@ StellarGraph supports different machine learning use-cases, including:
   - See the demo in folder `demos/node-classification-hinsage` for examples of how to predict attributes of nodes 
   using the HinSAGE algorithm for given node features and training labels.
 
-* Link prediction:
+* Link prediction
   - See the demo in folder `demos/link-prediction-random-walks` for an example of how to predict the existence of links between nodes 
   without node features, using the Node2Vec, [1], and Metapath2Vec, [2], algorithms.
   - See the demo in folder `demos/link-prediction_graphsage` for an example of how to predict the existence of links between 
-  nodes with node features using the GraphSAGE, [3] algorithm.
+  nodes with node features using the GraphSAGE, [3], algorithm.
   - See the demo in folder `demos/link-prediction_hinsage` for an example of how to predict the existence of links between 
   nodes with node features using the HinSAGE algorithm.
 
-* Recommender systems:
+* Recommender systems
   - See the demo in folder `demos/link-prediction_hinsage/movielens-recommender` for an example of how to predict 
   movie ratings between users and movies using a Heterogeneous GraphSAGE, [3], model.
 
 The StellarGraph library currently includes the following algorithms for graph machine learning:
 
-* GraphSAGE, [3]:
+* GraphSAGE [3]
   - Representation learning for homogeneous graphs in a supervised setting. The current implementation supports 
   classification and regression for node and edge attributes. It requires that nodes have numeric features.
 
-* HinSAGE:
+* HinSAGE
   - Representation learning for heterogeneous graphs in a supervised setting. HinSAGE is an extension of GraphSAGE, [3], 
   for heterogeneous networks. The current implementation supports classification and regression for node and edge 
   attributes. It requires that nodes have numeric features.
 
-* Node2Vec, [1]:
+* Node2Vec [1]
   - Representation learning for homogeneous graphs with nodes without features in an unsupervised setting. 
-  StellarGraph much be used in collaboration with [Gensim](https://radimrehurek.com/gensim/) in order to implement 
+  StellarGraph is used together with [Gensim](https://radimrehurek.com/gensim/) in order to implement 
   the Node2Vec algorithm. Learned node representations can be used in downstream classification and regression tasks 
   implemented using [Scikit-learn](http://scikit-learn.org/stable/), [Keras](https://keras.io/), 
   [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
 
-* Metapath2Vec, [2]:
+* Metapath2Vec [2]
   - Representation learning for heterogeneous graphs with nodes without features in an unsupervised setting. 
-  StellarGraph much be used in collaboration with [Gensim](https://radimrehurek.com/gensim/) in order to implement 
+  StellarGraph is used together with [Gensim](https://radimrehurek.com/gensim/) in order to implement 
   the Metapath2Vec algorithm. Learned node representations can be used in downstream classification and regression tasks 
   implemented using [Scikit-learn](http://scikit-learn.org/stable/), [Keras](https://keras.io/), 
   [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
@@ -122,7 +122,7 @@ Pipeline is defined in `.buildkite/pipeline.yml`
 * Tests: Uses the official [python:3.6](https://hub.docker.com/_/python/) image.
 * Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.
 
-### References
+## References
 
 1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on 
 Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
