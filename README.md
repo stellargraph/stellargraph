@@ -40,7 +40,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 
 ## Installation
-Stellar ML is a Python 3 library and requires Python version 3.6 to function (note that the library
+StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library
 uses Tensorflow backend, and thus does not currently work in python 3.7). The required Python version can be downloaded 
 and installed either from [python.org](http://python.org/). Alternatively, use the Anaconda Python environment, available from [anaconda.com](https://www.anaconda.com/download/).
 

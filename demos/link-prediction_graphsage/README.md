@@ -10,9 +10,9 @@ links that don't.
 In this example, we learn to predict citation links between papers in a Cora dataset (see below).
 
 ## Requirements
-Install the Stellar ML library.
+Install the StellarGraph machine learning library.
 
-In top-level stellar-ml directory install using pip:
+In top-level stellargraph directory install using pip:
 
 ```
 pip install -e .
