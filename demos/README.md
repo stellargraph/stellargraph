@@ -26,17 +26,17 @@ The examples folder structure is shown below.
     
 * [`/link-prediction-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-graphsage)
 
-    Example of semi-supervised link prediction for a homogeneous graph with attributed nodes, 
+    Example of semi-supervised link prediction for a homogeneous network with attributed nodes, 
     using the GraphSAGE algorithm.
     
 * [`link-prediction-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-hinsage)
 
-    Example of supervised link attribute prediction for a heterogeneous graph with attributed nodes of different types, 
+    Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types, 
     using the HinSAGE algorithm.
     
 * [`/node-classification-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-graphsage)
 
-    Example of supervised node classification for a homogeneous graph with attributed nodes, using the GraphSAGE algorithm.
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
 
 * [`/node-classification-node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-node2vec)
 
@@ -45,7 +45,7 @@ The examples folder structure is shown below.
 
 * [`/node-classification-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-hinsage)
 
-    Example of semi-supervised node classification for a heterogeneous graph with multiple node and edge types, 
+    Example of semi-supervised node classification for a heterogeneous network with multiple node and link types, 
     using the HinSAGE algorithm.
 
 

@@ -1,7 +1,7 @@
 # Graphsage Link Prediction
 
-This is an example of using the GraphSAGE, [1], model, with a link classifier on top, 
-to predict links in a homogeneous graph.
+This is an example of using the GraphSAGE [1] model, with a link classifier on top, 
+to predict links in a homogeneous citation network.
 
 The link prediction problem is treated as a supervised binary classification problem for 
 `(src, dst)` node pairs that make up links in the graph, with positive examples
@@ -59,5 +59,6 @@ python cora-links-example.py --help
 
 ## References
 
-[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017.
+[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017 
+([arXiv:1706.02216](https://arxiv.org/abs/1706.02216)).
 
