@@ -41,10 +41,11 @@ StellarGraph supports different machine learning use-cases, including:
   random walk-based methods Node2Vec, [1], and Metapath2Vec, [2].
 
 * Node classification and regression
-  - See the demos in folder `demos/node-classification` for examples of how to predict attributes of nodes using (a) the
-  GraphSAGE, [3], algorithm for given node features and training labels; or (b) the Node2Vec, [1], algorithm for nodes
-  without features, unsupervised node representation learning, and supervised classifier training for the downstream
-  task.
+  - See the demo in folder `demos/node-classification_graphsage` for an example of how to predict attributes of nodes 
+  using the GraphSAGE, [3], algorithm given node features and training labels.
+  - See the demo in folder `demos/node-classification_node2vec` for an example of how to predict attributes of nodes 
+  using the Node2Vec, [1], algorithm for nodes without features, unsupervised node representation learning, and 
+  supervised classifier training for the downstream task.
   - See the demo in folder `demos/node-classification-hinsage` for examples of how to predict attributes of nodes 
   using the HinSAGE algorithm for given node features and training labels.
 
