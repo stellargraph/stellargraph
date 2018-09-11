@@ -34,7 +34,7 @@ To run through the notebook, you need to launch jupyter notebook:
    - note: you may need to first install `jupyter` by running `pip install jupyter` in your python environment
  - Copy-paste the ip address obtained in the previous step into your browser. You should see 
  a directory structure of the `stellargraph` library.
- - Navigate to `/demos/link-prediction_hinsage/movielens-recommender.ipynb`, and click on
+ - Navigate to `/demos/link-prediction-hinsage/movielens-recommender.ipynb`, and click on
  it to launch the notebook.
 
 
