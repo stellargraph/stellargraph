@@ -28,10 +28,14 @@ Word2Vec [4] algorithm.
 
     Example for supervised link prediction with node features using the HinSAGE algorithm.
     
-* `node-classification`
+* `node-classification_graphsage`
 
-    Examples for supervised and unsupervised node classification using the GraphSAGE and
-    Node2Vec algorithms respectively.
+    Example for supervised node classification with node features using the GraphSAGE algorithm.
+
+* `node-classification_node2vec`
+
+    Example for unsupervised node representation learning using Node2Vec and supervised classification using 
+    the Scikit-learn library.
 
 * `node-classification-hinsage`
 
