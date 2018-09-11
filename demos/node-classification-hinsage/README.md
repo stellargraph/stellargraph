@@ -1,7 +1,7 @@
 # HinSAGE Node Classification
 
 This is an example of using a Heterogenous extension to the GraphSAGE algorithm [1], called HinSAGE,
-to classify the nodes in a graph.
+to classify the nodes in a heterogeneous network (a network with multiple node and link types).
 
 This example uses the Yelp dataset and aims to predict the 'elite' status of users. It does this
 as a binary classification task predicting if the user has had 'elite' status in any year or has
@@ -60,4 +60,5 @@ python yelp-example.py --help
 
 ## References
 
-[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017.
+[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017
+([arXiv:1706.02216](https://arxiv.org/abs/1706.02216)).

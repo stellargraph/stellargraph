@@ -1,4 +1,4 @@
-# Contributing to Stellar-ML
+# Contributing to StellarGraph
 
 Have you found a bug or have a new feature to suggest? Please read this before you start helping:
 
@@ -6,7 +6,7 @@ Have you found a bug or have a new feature to suggest? Please read this before y
 
 Please follow the following steps to report a bug:
 
-1. First, be confident that the bug lies in Stellar-ML, not in your code or another package. Check the Stellar-ML FAQs.
+1. First, be confident that the bug lies in StellarGraph, not in your code or another package. Check the StellarGraph FAQs.
 
 1. The bug may already be fixed. Try updating to the latest version, and check the current and closed issues in GitHub. Search for similar issues and try and find if someone else has found the same bug already.
 
@@ -22,24 +22,24 @@ Please follow the following steps to report a bug:
 
 2. If this is an implementation of an algorithm in the literature, please give a link to a paper describing the algorithm.
 
-3. If you choose to implement the feature you can do so by forking the Stellar-ML repository and creating a new branch addressing your feature from the `develop` branch. After writing code implementing the feature in this branch make a Pull Request to the main Stellar-ML repository. See below for more details on submitting your pull request.
+3. If you choose to implement the feature you can do so by forking the StellarGraph repository and creating a new branch addressing your feature from the `develop` branch. After writing code implementing the feature in this branch make a Pull Request to the main StellarGraph repository. See below for more details on submitting your pull request.
 
 ## Adding demos
 
-1. We welcome new code that demonstrates the functionality of Stellar-ML on different datasets. To add a demo it is best to give a clear and detailed explanation of the demo. This is best done by creating an issue addressing the new demo.
+1. We welcome new code that demonstrates the functionality of StellarGraph on different datasets. To add a demo it is best to give a clear and detailed explanation of the demo. This is best done by creating an issue addressing the new demo.
 
 3. Describe the dataset that you are using, how it can be downloaded, and the licence conditions. Please don't put the dataset in the GitHub repository.
 
 2. If this demo is replicating an experiment in the literature, please give a link to a paper describing the algorithm.
 
-3. If you choose to implement the demo you can do so by forking the Stellar-ML repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the main Stellar-ML repository. See the next section for more details on submitting your pull request.
+3. If you choose to implement the demo you can do so by forking the StellarGraph repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the main StellarGraph repository. See the next section for more details on submitting your pull request.
 
 
 ## Pull Requests
 
-1. If your pull request will make a large change to the functionality of Stellar-ML it is best that you discuss this first with the developers and the community. Please post a description of the changes to the Stellar-ML as an issue in GitHub.
+1. If your pull request will make a large change to the functionality of StellarGraph it is best that you discuss this first with the developers and the community. Please post a description of the changes to the StellarGraph as an issue in GitHub.
 
-2. Start checking out or updating the develop branch of Stellar-ML on GitHub. Create a new branch for your feature or bugfix named 'feature/XXX' or 'bugfix/XXX' where XXX is a short but descriptive name.
+2. Start checking out or updating the develop branch of StellarGraph on GitHub. Create a new branch for your feature or bugfix named 'feature/XXX' or 'bugfix/XXX' where XXX is a short but descriptive name.
 
 3. Make sure that any new features or bugfixes are tested by creating appropriate scripts in the tests directory. New features without relevant testing will not be approved.
 
@@ -47,7 +47,7 @@ Please follow the following steps to report a bug:
 
 5. Ensure that any new function or class you introduce has proper docstrings and documentation. Make sure any code you have changed also has updated dostrings and documentation. Docstrings should follow the same style as the library, we follow the Google style (https://github.com/google/styleguide/blob/gh-pages/pyguide.md).
 
-6. All code in Stellar-ML is formatted using the Black style engine (https://github.com/ambv/black). The automated tests include checking for Black formatted code, so make sure that you run black on all your code before submitting a pull request.
+6. All code in StellarGraph is formatted using the Black style engine (https://github.com/ambv/black). The automated tests include checking for Black formatted code, so make sure that you run black on all your code before submitting a pull request.
 
 7. When committing, use descriptive commit messages.
 
