@@ -1,12 +1,12 @@
 # Hinsage Recommender -- Movielens Example
 
-This is an example of using Heterogeneous GraphSAGE (HinSAGE) as a hybrid recommender
-system for the Movielens dataset.
+This is an example of using Heterogeneous GraphSAGE [1] (HinSAGE) as a hybrid recommender
+system, predicting user-movie ratings for the Movielens dataset.
 
 ## Requirements
 This example assumes the `stellargraph` library and its requirements have been 
 installed by following the installation instructions in the README 
-of the library's root directory.
+of the library's [root directory](https://github.com/stellargraph/stellargraph).
 
 ## MovieLens Data
 
@@ -34,7 +34,7 @@ To run through the notebook, you need to launch jupyter notebook:
    - note: you may need to first install `jupyter` by running `pip install jupyter` in your python environment
  - Copy-paste the ip address obtained in the previous step into your browser. You should see 
  a directory structure of the `stellargraph` library.
- - Navigate to `/demos/link-prediction_hinsage/movielens-recommender.ipynb`, and click on
+ - Navigate to `/demos/link-prediction-hinsage/movielens-recommender.ipynb`, and click on
  it to launch the notebook.
 
 
@@ -55,11 +55,5 @@ model.  Use the `--help` option to see the list of these commands.
 
 ## References
 
-```
- @inproceedings{hamilton2017inductive,
-     author = {Hamilton, William L. and Ying, Rex and Leskovec, Jure},
-     title = {Inductive Representation Learning on Large Graphs},
-     booktitle = {NIPS},
-     year = {2017}
-   }
-```
+[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017
+([arXiv:1706.02216](https://arxiv.org/abs/1706.02216)).
