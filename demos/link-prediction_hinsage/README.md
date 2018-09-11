@@ -55,11 +55,4 @@ model.  Use the `--help` option to see the list of these commands.
 
 ## References
 
-```
- @inproceedings{hamilton2017inductive,
-     author = {Hamilton, William L. and Ying, Rex and Leskovec, Jure},
-     title = {Inductive Representation Learning on Large Graphs},
-     booktitle = {NIPS},
-     year = {2017}
-   }
-```
+[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017.
