@@ -36,15 +36,25 @@ or [Numpy](http://www.numpy.org/) are used to store the node  features and targe
 
 StellarGraph supports different machine learning use-cases, including:
 
+* Representation learning for nodes
+  - See the demos in folder `demos/embeddings` for examples of unsupervised node representation learning using the
+  random walk-based methods Node2Vec, [1], and Metapath2Vec, [2].
+
 * Node classification and regression:
-  - See the demos in folder `demos/node-classification` for examples of how to predict attributes of nodes, given node 
-  features and training labels.
+  - See the demos in folder `demos/node-classification` for examples of how to predict attributes of nodes using (a) the
+  GraphSAGE, [3], algorithm for given node features and training labels; or (b) the Node2Vec, [1], algorithm for nodes
+  without features, unsupervised node representation learning, and supervised classifier training for the downstream
+  task.
+  - See the demo in folder `demos/node-classification-hinsage` for examples of how to predict attributes of nodes 
+  using the HinSAGE algorithm for given node features and training labels.
 
 * Link prediction:
-  - See the demo in folder `demos/link-prediction` for an example of how to predict the existence of links between nodes 
-  without node features, using the Node2Vec, [1], algorithm.
+  - See the demo in folder `demos/link-prediction-random-walks` for an example of how to predict the existence of links between nodes 
+  without node features, using the Node2Vec, [1], and Metapath2Vec, [2], algorithms.
   - See the demo in folder `demos/link-prediction_graphsage` for an example of how to predict the existence of links between 
   nodes with node features using the GraphSAGE, [3] algorithm.
+  - See the demo in folder `demos/link-prediction_hinsage` for an example of how to predict the existence of links between 
+  nodes with node features using the HinSAGE algorithm.
 
 * Recommender systems:
   - See the demo in folder `demos/link-prediction_hinsage/movielens-recommender` for an example of how to predict 
@@ -78,12 +88,13 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 ## Installation
 StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library
-uses Tensorflow backend, and thus does not currently work in python 3.7). The required Python version can be downloaded 
-and installed either from [python.org](http://python.org/). Alternatively, use the Anaconda Python environment, available from [anaconda.com](https://www.anaconda.com/download/).
+uses Keras with the Tensorflow backend, and thus does not currently work in python 3.7). The required Python version 
+can be downloaded and installed either from [python.org](http://python.org/). Alternatively, use the Anaconda Python 
+environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
 The machine learning components of StellarGraph use the Keras machine learning library, and all models build with StellarGraph can be extended and modified using standard Keras library code.
 
-The StellarGraph library requires Keras, so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Node2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
+The StellarGraph library requires Keras, so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
 
 To install the requirements for StellarGraph, execute the following command in a your preferred Python 3 environment within the root directory of the StellarGraph repository (which contains this README.md file):
 
@@ -91,14 +102,14 @@ To install the requirements for StellarGraph, execute the following command in a
 pip install -r requirements.txt
 ```
 
-Then to install the StellarGraph libaray, execute the followng command within the root directory of this repository:
+Then to install the StellarGraph library, execute the following command within the root directory of this repository:
 ```
 pip install -e .
 ```
 
 ## Getting Help
 
-Documentation for StellarGraph will be provided ...
+API Documentation for StellarGraph can be found [here.](https://stellargraph.readthedocs.io)
 
 ## CI
 
