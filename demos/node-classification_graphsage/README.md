@@ -1,4 +1,4 @@
-# GraphSAGE Node Classification
+# GraphSAGE and Node2Vec Node Classification
 
 This is an example of using the Homogenous GraphSAGE algorithm [1] to classify nodes in a graph.
 
