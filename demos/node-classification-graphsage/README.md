@@ -1,4 +1,4 @@
-# GraphSAGE and Node2Vec Node Classification
+# GraphSAGE Node Classification
 
 This is an example of using the GraphSAGE algorithm [1] for semi-supervised node classification 
 in a homogeneous network.
@@ -48,7 +48,7 @@ same Python 3.6 environment as StellarGraph, following the instructions on the J
 website: http://jupyter.org/install.html
 
 After starting the Jupyter server on your computer, load the notebook
-`cora_node_classification_example.ipynb` and follow the instructions inside.
+`graphsage-cora_node_classification_example.ipynb` and follow the instructions inside.
 
 
 ## References
