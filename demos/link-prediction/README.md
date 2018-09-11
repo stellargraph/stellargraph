@@ -100,7 +100,7 @@ python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cor
 
 **Example 2: Homogeneous graph with local sampling method for negative examples** 
 ``` 
-python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cora.emb --sampling_method='local' --sampling_probs="0.0, 0.5, 0.5" --show_hist
+python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cora.emb --sampling_method='local' --sampling_probs="0.0, 0.0, 0.0, 0.5, 0.5"
 ```
 
 **Example 3: Heterogeneous graph treated as homogeneous** 
