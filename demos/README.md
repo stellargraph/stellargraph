@@ -29,7 +29,7 @@ The examples folder structure is shown below.
     Example of semi-supervised link prediction for a homogeneous network with attributed nodes, 
     using the GraphSAGE algorithm.
     
-* [`link-prediction-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-hinsage)
+* [`/link-prediction-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-hinsage)
 
     Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types, 
     using the HinSAGE algorithm.
