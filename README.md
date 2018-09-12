@@ -36,8 +36,8 @@ such tasks using several real-world datasets.
 StellarGraph uses [Keras](https://keras.io/) library, and adheres to the same guiding principles 
 as Keras: user friendliness, modularity, and easy extendability. Modules and layers 
 of StellarGraph library are designed so that they can be used together with 
-standard Keras layers and modules, if required. This enables flexibility in creating new 
-models and workflows for machine learning on graphs. 
+standard Keras layers and modules, if required. This enables flexibility in using existing, 
+or creating new models and workflows for machine learning on graphs. 
 
 ## Getting Started
 
