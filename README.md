@@ -82,13 +82,14 @@ StellarGraph supports different machine learning use-cases, including:
 ## Installation
 StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library
 uses Keras with the Tensorflow backend, and thus does not currently work in python 3.7). The required Python version 
-can be downloaded and installed either from [python.org](http://python.org/). Alternatively, use the Anaconda Python 
+can be downloaded and installed from [python.org](http://python.org/). Alternatively, use the Anaconda Python 
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
 <!-- 
 The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
 -->
 
+The StellarGraph library can be installed in one of two ways, described next.
 #### Install StellarGraph from PyPy:
 To install StellarGraph library from PyPy using `pip`, run the following command:
 ```
