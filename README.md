@@ -85,20 +85,30 @@ uses Keras with the Tensorflow backend, and thus does not currently work in pyth
 can be downloaded and installed either from [python.org](http://python.org/). Alternatively, use the Anaconda Python 
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
-The machine learning components of StellarGraph use the Keras machine learning library, and all models build with StellarGraph can be extended and modified using standard Keras library code.
+<!-- 
+The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
+-->
 
-The StellarGraph library requires Keras, so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
-
-To install the requirements for StellarGraph, execute the following command in a your preferred Python 3 environment within the root directory of the StellarGraph repository (which contains this README.md file):
+#### Install StellarGraph from PyPy:
+To install StellarGraph library from PyPy using `pip`, run the following command:
+```
+pip install stellargraph
 
 ```
+
+#### Install StellarGraph from Github source:
+First, clone StellarGraph using `git`:
+```
+git clone https://github.com/stellargraph/stellargraph/
+```
+Then, `cd` to StellarGraph folder, install requirements and the library:
+
+```
+cd stellargraph
 pip install -r requirements.txt
-```
-
-Then to install the StellarGraph library, execute the following command within the root directory of this repository:
-```
 pip install -e .
 ```
+
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
