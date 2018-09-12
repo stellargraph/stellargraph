@@ -13,80 +13,68 @@
 
 **StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data. 
 
-Graph-structured data represent entities, e.g., people, as nodes and relationships between entities as links (or
-equivalently edges), e.g., friendship. Nodes and edges may have associated attributes such as age, income, time when
-a friendship was established, etc. StellarGraph supports analysis of both homogeneous (graphs with a single type of node
-and edge) and heterogeneous (graphs with more than one types of nodes and/or edges) graphs.
+Graph-structured data represent entities, e.g., people, as nodes (or equivalently, vertices), 
+and relationships between entities, e.g., friendship, as links (or
+equivalently, edges). Nodes and links may have associated attributes such as age, income, time when
+a friendship was established, etc. StellarGraph supports analysis of both homogeneous networks (with nodes and links of one type) 
+and heterogeneous networks (with more than one type of nodes and/or links).
 
 The StellarGraph library implements several state-of-the-art algorithms for applying machine learning methods to
-discover patterns and answer questions of graph-structured data. For example, StellarGraph provides algorithms for
-representation learning for nodes and edges, node attribute inference, and link prediction. We provide several
-examples of applying these algorithms to solve real-world, e.g., a movie recommender system, and research-oriented, e.g., 
-predicting the topic of a research paper, problems.
+discover patterns and answer questions using graph-structured data. 
 
-Furthermore, StellarGraph is, where possible, using [Keras](https://keras.io/) for efficient computation and extendability. 
+The StellarGraph library can be used to solve tasks using graph-structured data, such as:
+- Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks 
+- Node classification and attribute inference  
+- Link prediction
 
-StellarGraph was originally developed by researchers and engineers working on the Investigative Analytics team at
-[CSIRO's Data61](https://www.data61.csiro.au/) for the purpose of conducting machine learning research on 
-graph-structured data.
+We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve 
+such tasks using several real-world datasets.
+
+
+## Guiding Principles
+
+StellarGraph uses [Keras](https://keras.io/) library, and adheres to the same guiding principles 
+as Keras: user friendliness, modularity, and easy extendability. Modules and layers 
+of StellarGraph library are designed so that they can be used together with 
+standard Keras layers and modules, if required. This enables flexibility in creating new 
+models and workflows for machine learning on graphs. 
 
 ## Getting Started
 
-To get started with StellarGraph you'll need structured data as homogeneous or heterogeneous graph including 
-features for the nodes. [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/) 
+To get started with StellarGraph you'll need data structured as homogeneous or heterogeneous graph, including 
+features for the nodes (that represent entities). [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/) 
 or [Numpy](http://www.numpy.org/) are used to store the node  features and target attributes.
 
+Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of graph machine 
+learning workflows supported by StellarGraph are given in `/demos`. 
+
+<!--
 StellarGraph supports different machine learning use-cases, including:
 
 * Representation learning for nodes
   - See the demos in folder `demos/embeddings` for examples of unsupervised node representation learning using the
-  random walk-based methods Node2Vec, [1], and Metapath2Vec, [2].
+  random walk-based methods Node2Vec [1], and Metapath2Vec [2].
 
 * Node classification and regression
   - See the demo in folder `demos/node-classification-graphsage` for an example of how to predict attributes of nodes 
-  using the GraphSAGE, [3], algorithm given node features and training labels.
+  using the GraphSAGE [3] algorithm given node features and training labels.
   - See the demo in folder `demos/node-classification-node2vec` for an example of how to predict attributes of nodes 
-  using the Node2Vec, [1], algorithm for nodes without features, unsupervised node representation learning, and 
+  using the Node2Vec [1] algorithm for nodes without features, unsupervised node representation learning, and 
   supervised classifier training for the downstream task.
   - See the demo in folder `demos/node-classification-hinsage` for examples of how to predict attributes of nodes 
   using the HinSAGE algorithm for given node features and training labels.
 
 * Link prediction
   - See the demo in folder `demos/link-prediction-random-walks` for an example of how to predict the existence of links between nodes 
-  without node features, using the Node2Vec, [1], and Metapath2Vec, [2], algorithms.
+  without node features, using the Node2Vec [1] and Metapath2Vec [2] algorithms.
   - See the demo in folder `demos/link-prediction-graphsage` for an example of how to predict the existence of links between 
-  nodes with node features using the GraphSAGE, [3], algorithm.
-  - See the demo in folder `demos/link-prediction-hinsage` for an example of how to predict the existence of links between 
-  nodes with node features using the HinSAGE algorithm.
+  nodes with node features using the GraphSAGE [3] algorithm.
 
 * Recommender systems
-  - See the demo in folder `demos/link-prediction-hinsage/movielens-recommender` for an example of how to predict 
-  movie ratings between users and movies using a Heterogeneous GraphSAGE, [3], model.
-
-The StellarGraph library currently includes the following algorithms for graph machine learning:
-
-* GraphSAGE [3]
-  - Representation learning for homogeneous graphs in a supervised setting. The current implementation supports 
-  classification and regression for node and edge attributes. It requires that nodes have numeric features.
-
-* HinSAGE
-  - Representation learning for heterogeneous graphs in a supervised setting. HinSAGE is an extension of GraphSAGE, [3], 
-  for heterogeneous networks. The current implementation supports classification and regression for node and edge 
-  attributes. It requires that nodes have numeric features.
-
-* Node2Vec [1]
-  - Representation learning for homogeneous graphs with nodes without features in an unsupervised setting. 
-  StellarGraph is used together with [Gensim](https://radimrehurek.com/gensim/) in order to implement 
-  the Node2Vec algorithm. Learned node representations can be used in downstream classification and regression tasks 
-  implemented using [Scikit-learn](http://scikit-learn.org/stable/), [Keras](https://keras.io/), 
-  [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
-
-* Metapath2Vec [2]
-  - Representation learning for heterogeneous graphs with nodes without features in an unsupervised setting. 
-  StellarGraph is used together with [Gensim](https://radimrehurek.com/gensim/) in order to implement 
-  the Metapath2Vec algorithm. Learned node representations can be used in downstream classification and regression tasks 
-  implemented using [Scikit-learn](http://scikit-learn.org/stable/), [Keras](https://keras.io/), 
-  [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
+  - See the demo in folder `demos/link-prediction-hinsage` for an example of how to predict 
+  movie ratings between users and movies using a Heterogeneous generalisation of GraphSAGE model, which we call HinSAGE.
+  
+-->
 
 
 ## Installation
@@ -110,6 +98,36 @@ Then to install the StellarGraph library, execute the following command within t
 pip install -e .
 ```
 
+## Algorithms
+The StellarGraph library currently includes the following algorithms for graph machine learning:
+
+* GraphSAGE [1]
+  - Supports representation learning, node classification/regression, and link prediction for homogeneous networks. 
+  The current implementation supports mean aggregation of neighbour nodes only.
+
+* HinSAGE
+  - Extension of GraphSAGE algorithm to heterogeneous networks.
+  Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs. 
+  in a supervised setting.  The current implementation supports mean aggregation of neighbour nodes, 
+  taking into account their types and the types of links between them.
+
+* Node2Vec [2]
+  - Unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring 
+  node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec 
+  algorithm from [Gensim](https://radimrehurek.com/gensim/). 
+  Learned node representations can be used in downstream machine learning models
+  implemented using [Scikit-learn](http://scikit-learn.org/stable/), [Keras](https://keras.io/), 
+  [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
+
+* Metapath2Vec [3]
+  - Unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring 
+  node attributes. The implementation combines StellarGraph's metapath-guided random walk
+  generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm. 
+  As with node2vec, the learned node representations (node embeddings) can be used in 
+  downstream machine learning models to solve tasks such as node classification, link prediction, etc,
+  for heterogeneous networks.
+
+
 ## Getting Help
 
 API Documentation for StellarGraph can be found [here.](https://stellargraph.readthedocs.io)
@@ -127,12 +145,13 @@ Pipeline is defined in `.buildkite/pipeline.yml`
 
 ## References
 
-1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on 
+1. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216 
+[cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
+
+2. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on 
 Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
 
-2. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and 
+3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and 
 Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-3. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216 
-[cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
