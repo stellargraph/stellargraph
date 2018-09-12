@@ -1,3 +1,5 @@
+![StellarGraph Machine Learning library logo](stellar-graph-banner.png)
+
 # Stellar Graph Machine Learning Library
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
