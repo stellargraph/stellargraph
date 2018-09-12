@@ -80,10 +80,6 @@ class TestBiasedRandomWalk(object):
             biasedrw.run(
                 nodes="0", n=n, p=p, q=q, length=length, seed=seed
             )  # can't just pass a node id, need list, e.g., ["0"]
-        with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=(1, 2), n=n, p=p, q=q, length=length, seed=seed
-            )  # tuple is not accepted, only list
 
         # n has to be positive integer
         with pytest.raises(ValueError):

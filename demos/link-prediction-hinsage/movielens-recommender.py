@@ -20,7 +20,7 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 import argparse
 import stellargraph as sg
-from stellargraph.mapper import HinSAGELinkMapper
+from stellargraph.mapper import HinSAGELinkGenerator
 from stellargraph.layer import HinSAGE, MeanHinAggregator, link_regression
 from keras import Model, optimizers, losses, metrics
 from typing import AnyStr
@@ -133,40 +133,25 @@ class LinkInference(object):
         # and evaluate it using the test ratings edges_test. The model also requires the user-movie graph structure.
         # To proceed, we need to create a StellarGraph object from the ingested graph, for training the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
-        self.g = sg.StellarGraph(self.g)
+        self.g = sg.StellarGraph(self.g, node_features="feature")
 
-        # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
-        self.g.fit_attribute_spec()
-
-        # Next, we create the link mappers for preparing and streaming training and testing data to the model.
+        # Next, we create the link generators for preparing and streaming training and testing data to the model.
         # The mappers essentially sample k-hop subgraphs of G with randomly selected head nodes, as required by
         # the HinSAGE algorithm, and generate minibatches of those samples to be fed to the input layer of the HinSAGE model.
-        # Link mappers:
-        mapper_train = HinSAGELinkMapper(
+        generator = HinSAGELinkGenerator(
             self.g,
-            edgelist_train,
-            labels_train,
             batch_size,
             num_samples,
-            name="mapper_train",
         )
-        mapper_test = HinSAGELinkMapper(
-            self.g,
-            edgelist_test,
-            labels_test,
-            batch_size,
-            num_samples,
-            name="mapper_test",
-        )
-
-        assert mapper_train.type_adjacency_list == mapper_test.type_adjacency_list
+        train_gen = generator.flow(edgelist_train, labels_train)
+        test_gen = generator.flow(edgelist_test, labels_test)
 
         # Build the model by stacking a two-layer HinSAGE model and a link regression layer on top.
         assert len(layer_size) == len(
             num_samples
         ), "layer_size and num_samples must be of the same length! Stopping."
         hinsage = HinSAGE(
-            layer_sizes=layer_size, mapper=mapper_train, bias=use_bias, dropout=dropout
+            layer_sizes=layer_size, generator=train_gen, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
@@ -192,8 +177,8 @@ class LinkInference(object):
             )
         )
         history = model.fit_generator(
-            mapper_train,
-            validation_data=mapper_test,
+            train_gen,
+            validation_data=test_gen,
             epochs=num_epochs,
             verbose=2,
             shuffle=True,
@@ -202,7 +187,7 @@ class LinkInference(object):
         )
 
         # Evaluate and print metrics
-        test_metrics = model.evaluate_generator(mapper_test)
+        test_metrics = model.evaluate_generator(test_gen)
 
         print("Test Evaluation:")
         for name, val in zip(model.metrics_names, test_metrics):

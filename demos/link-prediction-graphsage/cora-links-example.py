@@ -78,7 +78,7 @@ from keras import optimizers, losses, metrics
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
-from stellargraph.mapper import GraphSAGELinkMapper
+from stellargraph.mapper import GraphSAGELinkGenerator
 from stellargraph import globals
 
 from sklearn import feature_extraction
@@ -181,32 +181,28 @@ def train(
     # G_test, edge_ds_test, edge_labels_test will be used for model testing
 
     # Convert G_train and G_test to StellarGraph objects (undirected, as required by GraphSAGE) for ML:
-    G_train = sg.StellarGraph(G_train)
-    G_test = sg.StellarGraph(G_test)
-
-    # Prepare G_train and G_test for ML:
-    G_train.fit_attribute_spec()
-    G_test.fit_attribute_spec()
-
-    # Now G_train and G_test are ready for ML
+    G_train = sg.StellarGraph(G_train, node_features="feature")
+    G_test = sg.StellarGraph(G_test, node_features="feature")
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
-    train_mapper = GraphSAGELinkMapper(
+    train_gen = GraphSAGELinkGenerator(
         G_train,
-        edge_ids_train,
-        edge_labels_train,
         batch_size,
         num_samples,
         name="train",
-    )
-    test_mapper = GraphSAGELinkMapper(
-        G_test, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
-    )
+    ).flow(edge_ids_train, edge_labels_train)
+
+    test_gen = GraphSAGELinkGenerator(
+        G_test,
+        batch_size,
+        num_samples,
+        name="train",
+    ).flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
     graphsage = GraphSAGE(
-        layer_sizes=layer_size, mapper=train_mapper, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout
     )
 
     # Expose input and output sockets of the model, for source and destination nodes:
@@ -231,8 +227,8 @@ def train(
     )
 
     # Evaluate the initial (untrained) model on the train and test set:
-    init_train_metrics = model.evaluate_generator(train_mapper)
-    init_test_metrics = model.evaluate_generator(test_mapper)
+    init_train_metrics = model.evaluate_generator(train_gen)
+    init_test_metrics = model.evaluate_generator(test_gen)
 
     print("\nTrain Set Metrics of the initial (untrained) model:")
     for name, val in zip(model.metrics_names, init_train_metrics):
@@ -245,16 +241,16 @@ def train(
     # Train model
     print("\nTraining the model for {} epochs...".format(num_epochs))
     history = model.fit_generator(
-        train_mapper,
+        train_gen,
         epochs=num_epochs,
-        validation_data=test_mapper,
+        validation_data=test_gen,
         verbose=2,
         shuffle=True,
     )
 
     # Evaluate and print metrics
-    train_metrics = model.evaluate_generator(train_mapper)
-    test_metrics = model.evaluate_generator(test_mapper)
+    train_metrics = model.evaluate_generator(train_gen)
+    test_metrics = model.evaluate_generator(test_gen)
 
     print("\nTrain Set Metrics of the trained model:")
     for name, val in zip(model.metrics_names, train_metrics):
@@ -304,9 +300,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     )
 
     # Convert G_test to StellarGraph object (undirected, as required by GraphSAGE):
-    G_test = sg.StellarGraph(G_test)
-    # Prepare G_test for ML:
-    G_test.fit_attribute_spec()
+    G_test = sg.StellarGraph(G_test, node_features="feature")
 
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_mapper = GraphSAGELinkMapper(

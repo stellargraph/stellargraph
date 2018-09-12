@@ -37,7 +37,7 @@ class MeanHinAggregator(Layer):
     Args:
         output_dim (int): Output dimension
         bias (bool): Use bias in layer or not (Default False)
-        act (Callable or str): name of the activation function to use (must be a Keras 
+        act (Callable or str): name of the activation function to use (must be a Keras
             activation function), or alternatively, a TensorFlow operation.
     """
 
@@ -63,7 +63,7 @@ class MeanHinAggregator(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization
-        
+
         """
         config = {
             "output_dim": self.output_dim,
@@ -153,13 +153,13 @@ class MeanHinAggregator(Layer):
 class HinSAGE:
     """
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
-    
+
     """
 
     def __init__(
         self,
         layer_sizes,
-        mapper=None,
+        generator=None,
         n_samples=None,
         input_neighbor_tree=None,
         input_dim=None,
@@ -187,7 +187,7 @@ class HinSAGE:
 
         def eval_neigh_tree_per_layer(input_tree):
             """
-            Function to evaluate the neighbourhood tree structure for every layer. The tree 
+            Function to evaluate the neighbourhood tree structure for every layer. The tree
             structure at each layer is a truncated version of the previous layer.
 
             Args:
@@ -226,14 +226,13 @@ class HinSAGE:
 
         # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
-        # TODO: Let's keep the schema in the graph and fix it when the `fit_attribute_spec` method is called.
-        if mapper is not None:
-            self.n_samples = mapper.num_samples
-            self.subtree_schema = mapper.schema.get_type_adjacency_list(
-                mapper.head_node_types, len(self.n_samples)
+        # TODO: Refactor the horror of generator.generator.graph...
+        if generator is not None:
+            self.n_samples = generator.generator.num_samples
+            self.subtree_schema = generator.generator.schema.type_adjacency_list(
+                generator.head_node_types, len(self.n_samples)
             )
-            # TODO: I feel dirty using the graph through the mapper
-            self.input_dims = mapper.graph.get_feature_sizes()
+            self.input_dims = generator.generator.graph.node_feature_sizes()
 
         elif (
             input_neighbor_tree is not None
@@ -314,7 +313,7 @@ class HinSAGE:
         Args:
             x (list of Tensor): Batch input features
 
-        Returns: 
+        Returns:
             Output tensor
         """
 
@@ -354,9 +353,9 @@ class HinSAGE:
                 Compute the list of tensors for the next layer
 
                 Args:
-                    agg (Dict[str, Layer]): Dict of node type to aggregator layer 
+                    agg (Dict[str, Layer]): Dict of node type to aggregator layer
 
-                Returns: 
+                Returns:
                     Outputs of applying the aggregators as a list of Tensors
 
                 """

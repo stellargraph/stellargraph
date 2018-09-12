@@ -8,13 +8,14 @@
 #
 # http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
+# Unless required by applicable law or agreed to in writing, softwarware
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
 import pytest
+import pandas as pd
 import networkx as nx
 from stellargraph.data.stellargraph import *
 from stellargraph.data.converter import *
@@ -36,45 +37,63 @@ def create_graph_2(sg=StellarGraph()):
     return sg
 
 
-def example_stellar_graph_1(set_numeric=False):
-    G = StellarGraph()
+def example_stellar_graph_1(feature_name=None):
+    G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_nodes_from([1, 2, 3, 4], label="default")
     G.add_edges_from(elist, label="default")
 
     # Add some numeric node attributes
-    if set_numeric:
+    if feature_name:
         for v in G.nodes():
-            G.node[v][set_numeric] = v * np.ones(10)
+            G.node[v][feature_name] = v * np.ones(10)
+
+        return StellarGraph(G, node_features=feature_name)
     else:
-        # Add some node attributes
-        G.node[1]["a1"] = 1
-        G.node[3]["a1"] = 1
-        G.node[1]["a2"] = 1
-        G.node[4]["a2"] = 1
-        G.node[3]["a3"] = 1
-
-    return G
+        return StellarGraph(G)
 
 
-def example_hin_1(set_numeric=False, for_nodes=[]):
-    G = StellarGraph()
+def example_hin_1(feature_name=False, for_nodes=[]):
+    G = nx.Graph()
     G.add_nodes_from([0, 1, 2, 3], label="A")
     G.add_nodes_from([4, 5, 6], label="B")
     G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
     G.add_edges_from([(4, 5)], label="F")
 
     # Add some numeric node attributes
-    if set_numeric:
+    if feature_name:
         for v in for_nodes:
-            G.node[v][set_numeric] = v * np.ones(10)
+            G.node[v][feature_name] = v * np.ones(10)
+
+        return StellarGraph(G, node_features=feature_name)
     else:
-        # Add some node attributes
-        G.node[1]["a"] = 1
-        G.node[2]["a"] = 2
-        G.node[3]["a"] = 2
-        G.node[4]["a"] = 1
-        G.node[5]["a"] = 4
+        return StellarGraph(G)
+
+
+def example_stellar_graph_1_nx(feature_name=None):
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_nodes_from([1, 2, 3, 4], label="default")
+    G.add_edges_from(elist, label="default")
+
+    # Add some numeric node attributes
+    if feature_name:
+        for v in G.nodes():
+            G.node[v][feature_name] = v * np.ones(10)
+
+    return G
+
+
+def example_hin_1_nx(feature_name=False, for_nodes=[]):
+    G = nx.Graph()
+    G.add_nodes_from([0, 1, 2, 3], label="A")
+    G.add_nodes_from([4, 5, 6], label="B")
+    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
+    G.add_edges_from([(4, 5)], label="F")
+
+    if feature_name:
+        for v in for_nodes:
+            G.node[v][feature_name] = v * np.ones(10)
     return G
 
 
@@ -130,7 +149,7 @@ def test_homogeneous_graph_schema():
     ]:
         schema = sg.create_graph_schema()
 
-        assert "" in schema.schema
+        assert "default" in schema.schema
         assert len(schema.node_types) == 1
         assert len(schema.edge_types) == 1
 
@@ -154,13 +173,6 @@ def test_graph_schema():
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
-
-    # Test edge_types_for_node
-    ets = schema.edge_types_for_node_type("user")
-    assert len(ets) == 1
-
-    ets = schema.edge_types_for_node_type("movie")
-    assert len(ets) == 1
 
     # Test undirected graph types
     assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
@@ -186,12 +198,6 @@ def test_digraph_schema():
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
-
-    ets = schema.edge_types_for_node_type("user")
-    assert len(ets) == 1
-
-    ets = schema.edge_types_for_node_type("movie")
-    assert len(ets) == 0
 
     assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
     assert schema.get_edge_type((0, 4, 0)) == None
@@ -251,7 +257,7 @@ def test_graph_schema_sampling():
         create_graph_2(StellarDiGraph()),
     ]:
         schema = sg.create_graph_schema()
-        type_list = schema.get_type_adjacency_list(["user", "movie"], n_hops=2)
+        type_list = schema.type_adjacency_list(["user", "movie"], n_hops=2)
 
         assert type_list[0][0] == "user"
         assert type_list[1][0] == "movie"
@@ -267,7 +273,7 @@ def test_graph_schema_sampling():
 def test_graph_schema_sampling_layout_1():
     sg = create_graph_1()
     schema = sg.create_graph_schema(create_type_maps=True)
-    sampling_layout = schema.get_sampling_layout(["user"], [2, 2])
+    sampling_layout = schema.sampling_layout(["user"], [2, 2])
 
     assert len(sampling_layout) == 1
 
@@ -277,7 +283,7 @@ def test_graph_schema_sampling_layout_1():
 
     sg = create_graph_2()
     schema = sg.create_graph_schema(create_type_maps=True)
-    sampling_layout = schema.get_sampling_layout(["user"], [1, 2])
+    sampling_layout = schema.sampling_layout(["user"], [1, 2])
 
     assert len(sampling_layout) == 1
 
@@ -299,7 +305,7 @@ def test_graph_schema_sampling_layout_1():
 def test_graph_schema_sampling_layout_multiple():
     sg = create_graph_1()
     schema = sg.create_graph_schema(create_type_maps=True)
-    sampling_layout = schema.get_sampling_layout(["user", "movie"], [1, 2, 2])
+    sampling_layout = schema.sampling_layout(["user", "movie"], [1, 2, 2])
 
     assert len(sampling_layout) == 2
 
@@ -325,15 +331,12 @@ def test_graph_schema_sampling_layout_multiple():
     ]
 
 
-def test_numeric_feature_conversion_prefilled():
-    sg = example_stellar_graph_1(set_numeric="feature")
-    sg.fit_attribute_spec()
-
+def test_feature_conversion_from_nodes():
+    sg = example_stellar_graph_1(feature_name="feature")
     aa = sg.get_feature_for_nodes([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
-    sg = example_hin_1(set_numeric="feature", for_nodes=[0, 1, 2, 3, 4, 5])
-    sg.fit_attribute_spec()
+    sg = example_hin_1(feature_name="feature", for_nodes=[0, 1, 2, 3, 4, 5])
     aa = sg.get_feature_for_nodes([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 10)
@@ -355,75 +358,133 @@ def test_numeric_feature_conversion_prefilled():
     assert ab.shape == (3, 10)
     assert ab[:, 0] == pytest.approx([4, 5, 0])
 
+
+def test_default_feature():
+    sg = example_stellar_graph_1(feature_name="feature")
+    aa = sg.get_feature_for_nodes([1, 2, 3, 4])
+    assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
+
+    sg = example_hin_1(feature_name="feature", for_nodes=[0, 1, 2, 3, 4, 5])
+
+    # Test feature for node with no set attributes
+    ab = sg.get_feature_for_nodes([4, 5, 6], "B")
+    assert ab.shape == (3, 10)
+    assert ab[:, 0] == pytest.approx([4, 5, 0])
+
     # Test feature for invalid node, without node type
     ab = sg.get_feature_for_nodes([None, 5, None])
     assert ab.shape == (3, 10)
     assert ab[:, 0] == pytest.approx([0, 5, 0])
 
 
-def test_numeric_target_conversion_prefilled():
-    sg = example_stellar_graph_1(set_numeric="target")
-    sg.fit_attribute_spec()
-    aa = sg.get_target_for_nodes([1, 2, 3, 4])
+def test_feature_conversion_from_dataframe():
+    g = example_stellar_graph_1_nx()
+
+    # Create features for nodes
+    df = pd.DataFrame({v: np.ones(10) * float(v) for v in list(g)}).T
+    gs = StellarGraph(g, node_features=df)
+
+    aa = gs.get_feature_for_nodes([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
-    sg = example_hin_1(set_numeric="target", for_nodes=[0, 1, 2, 3, 4, 5])
-    sg.fit_attribute_spec()
+    # Check None identifier
+    aa = gs.get_feature_for_nodes([1, 2, None, None])
+    assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
-    aa = sg.get_target_for_nodes([0, 1, 2, 3], "A")
+    g = example_hin_1_nx()
+
+    df = {
+        t: pd.DataFrame(
+            {
+                v: np.ones(10) * float(v)
+                for v, vdata in g.nodes(data=True)
+                if vdata["label"] == t
+            }
+        ).T
+        for t in ["A", "B"]
+    }
+    gs = StellarGraph(g, node_features=df)
+
+    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 10)
 
-    ab = sg.get_target_for_nodes([4, 5, 6], "B")
+    ab = gs.get_feature_for_nodes([4, 5], "B")
+    assert ab.shape == (2, 10)
+    assert ab[:, 0] == pytest.approx([4, 5])
+
+    # Test mixed types
+    with pytest.raises(ValueError):
+        ab = gs.get_feature_for_nodes([1, 5])
+
+    # Test incorrect manual node_type
+    with pytest.raises(ValueError):
+        ab = gs.get_feature_for_nodes([4, 5], "A")
+
+    # Test feature for node with no set attributes
+    ab = gs.get_feature_for_nodes([4, None, None], "B")
     assert ab.shape == (3, 10)
-    assert ab[:, 0] == pytest.approx([4, 5, 0])
+    assert ab[:, 0] == pytest.approx([4, 0, 0])
 
 
-def test_numeric_feature_conversion():
-    sg = example_stellar_graph_1()
+def test_feature_conversion_from_iterator():
+    g = example_stellar_graph_1_nx()
 
-    # Try without spec:
-    # TODO: Should we throw an error here?
-    sg.fit_attribute_spec()
+    # Create features for nodes
+    node_features = [(v, np.ones(10) * float(v)) for v in list(g)]
+    gs = StellarGraph(g, node_features=node_features)
 
-    nfs = NodeAttributeSpecification()
-    nfs.add_attribute("default", "a1", BinaryConverter)
-    nfs.add_attribute("default", "a2", BinaryConverter)
+    aa = gs.get_feature_for_nodes([1, 2, 3, 4])
+    assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
-    nts = NodeAttributeSpecification()
-    nts.add_attribute("default", "a3", BinaryConverter)
+    # Check None identifier
+    aa = gs.get_feature_for_nodes([1, 2, None, None])
+    assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
-    sg.fit_attribute_spec(nfs, nts)
+    g = example_hin_1_nx()
+    nf = {
+        t: [
+            (v, np.ones(10) * float(v))
+            for v, vdata in g.nodes(data=True)
+            if vdata["label"] == t
+        ]
+        for t in ["A", "B"]
+    }
+    gs = StellarGraph(g, node_features=nf)
 
-    # Test inferred node type
-    expected = np.array([[1, 1], [0, 0], [1, 0], [0, 1]])
-    assert sg.get_feature_for_nodes([1, 2, 3, 4]) == pytest.approx(expected)
+    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
+    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
+    assert aa.shape == (4, 10)
 
-    # Test for None dummy nodes
-    expected = np.array([[0, 0], [1, 1], [0, 0], [0, 1]])
-    assert sg.get_feature_for_nodes([None, 1, None, 4]) == pytest.approx(expected)
+    ab = gs.get_feature_for_nodes([4, 5], "B")
+    assert ab.shape == (2, 10)
+    assert ab[:, 0] == pytest.approx([4, 5])
 
-    expected = [0, 0, 1, 0]
-    assert sg.get_target_for_nodes([1, 2, 3, 4]) == pytest.approx(expected)
+    # Test mixed types
+    with pytest.raises(ValueError):
+        ab = gs.get_feature_for_nodes([1, 5])
 
-    # Test explicit node type
-    expected = np.array([[1, 1], [0, 0], [1, 0], [0, 1]])
-    assert sg.get_feature_for_nodes([1, 2, 3, 4], "default") == pytest.approx(expected)
+    # Test incorrect manual node_type
+    with pytest.raises(ValueError):
+        ab = gs.get_feature_for_nodes([4, 5], "A")
 
-    expected = [0, 0, 1, 0]
-    assert sg.get_target_for_nodes([1, 2, 3, 4], "default") == pytest.approx(expected)
+    # Test feature for node with no set attributes
+    ab = gs.get_feature_for_nodes([4, None, None], "B")
+    assert ab.shape == (3, 10)
+    assert ab[:, 0] == pytest.approx([4, 0, 0])
 
+    # Test an iterator over all types
+    g = example_hin_1_nx()
+    nf = [
+        (v, np.ones(5 if vdata["label"] == "A" else 10) * float(v))
+        for v, vdata in g.nodes(data=True)
+    ]
+    gs = StellarGraph(g, node_features=nf)
 
-def test_get_nodes_with_targets():
-    sg = StellarGraph(example_stellar_graph_1(), target_name="a2")
-    nwt, nwot = sg.get_nodes_with_target()
-    assert nwt == {1, 4}
-    assert nwot == {2, 3}
+    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
+    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
+    assert aa.shape == (4, 5)
 
-    sg2 = example_stellar_graph_1()
-    nts = NodeAttributeSpecification()
-    nts.add_attribute("default", "a2", BinaryConverter)
-    sg2.fit_attribute_spec(target_spec=nts)
-    nwt, nwot = sg.get_nodes_with_target()
-    assert nwt == {1, 4}
-    assert nwot == {2, 3}
+    ab = gs.get_feature_for_nodes([4, 5], "B")
+    assert ab.shape == (2, 10)
+    assert ab[:, 0] == pytest.approx([4, 5])
