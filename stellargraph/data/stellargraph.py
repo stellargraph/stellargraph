@@ -19,17 +19,212 @@ import queue
 import random
 import itertools as it
 
+import pandas as pd
 import numpy as np
 from networkx.classes.multigraph import MultiGraph
 from networkx.classes.multidigraph import MultiDiGraph
 
-from collections import namedtuple
+from collections import namedtuple, Iterable, Iterator
 
 # The edge type triple
 from stellargraph import globals
 from stellargraph.data import utils
 
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
+
+
+def _convert_from_node_attribute(
+    G, attr_name, node_types, node_type_name=None, dtype="f"
+):
+    """
+    Transform the node attributes to feature vectors, for use with machine learning models.
+
+    Each node is assumed to have a numeric array stored in the attribute_name and
+    which is suitable for use in machine learning models.
+
+    Args:
+        G: NetworkX graph
+        attr_name: Name of node attribute to use for conversion
+        node_types: Node types in graph
+        node_type_name: (optional) The name of the node attribute specifying the type.
+        dtype: (optional) The numpy datatype to create the features array.
+
+    Returns:
+        index_map: a dictionary of node_type -> {node_id: node_index}
+        attribute_arrays: a dictionary of node_type -> numpy array storing the features
+    """
+    attribute_arrays = {}
+    node_index_map = {}
+
+    # Enumerate all nodes in graph
+    nodes_by_type = {
+        nt: [n for n, ndata in G.nodes(data=True) if ndata[node_type_name] == nt]
+        for nt in node_types
+    }
+
+    # Get the target values for each node type
+    for nt in node_types:
+        nt_node_list = nodes_by_type[nt]
+
+        # Add None to node list as ID of unknown nodes
+        nt_node_list.append(None)
+
+        # Create map between node id and index (including None)
+        node_index_map[nt] = {nid: ii for ii, nid in enumerate(nt_node_list)}
+
+        # The node data
+        attr_data = [v if v is None else G.node[v].get(attr_name) for v in nt_node_list]
+
+        # Get the size of the features
+        data_sizes = {
+            np.size(G.node[v].get(attr_name, [])) for v in nt_node_list if v is not None
+        }
+
+        # Warn if nodes don't have the attribute
+        if 0 in data_sizes:
+            print(
+                "Warning: Some nodes have no value for attribute '{}', "
+                "using default value.".format(attr_name)
+            )
+            data_sizes.discard(0)
+
+        # Check all are the same for this node type
+        if len(data_sizes) > 1:
+            raise ValueError(
+                "Data sizes in nodes of type {} are inconsistent "
+                "for the attribute '{}' ".format(nt, attr_name)
+            )
+
+        # If some node_type have no nodes with the attribute, skip them
+        if len(data_sizes) == 0:
+            continue
+
+        # Create zero attribute array
+        data_size = data_sizes.pop()
+
+        # Dummy feature/target value for invalid nodes,
+        # this will be inserted into the array in two cases:
+        # 1. node ID of None (representing sampling for a missing neighbour)
+        # 2. node with no attribute
+        # TODO: Make these two cases more explicit, allow custom values.
+        default_value = np.zeros(data_size)
+
+        # Convert to numpy array
+        attribute_arrays[nt] = np.asarray(
+            [x if x is not None else default_value for x in attr_data]
+        )
+
+    return node_index_map, attribute_arrays
+
+
+def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
+    """
+    Store the node data as feature vectors, for use with machine learning models.
+
+    For a single node type, the data can be either:
+     * a Pandas DataFrame with the index being node IDs and the columns the numeric
+        feature values. Note that the features must be numeric.
+     * a list or iterable of `(node_id, node_feature)` pairs where node_feature is
+        a value, a list of values, or a numpy array representing the numeric feature
+        values.
+
+    For multiple node types, the data can be either:
+     * a dictionary of node_type -> DataFrame with the index of each DataFrame
+        being node IDs and the columns the numeric feature values.
+        Note that the features must be numeric and can be different sizes for each
+        node type.
+     * a list or iterable of `(node_id, node_feature)` pairs where node_feature is
+        a value, a list of values, or a numpy array representing the numeric feature
+        values.
+
+    Args:
+        data: dict, list or DataFrame
+            The data for the nodes, partitioned by node type
+
+        node_type_map: dict
+            Mapping of node_id to node_type
+
+        node_types: list
+            List of the node types in the data
+
+        dtype: Numpy datatype optional (default='float32')
+            The numpy datatype to create the features array.
+
+    Returns:
+        index_map: a dictionary of node_type -> {node_id: node_index}
+        attribute_arrays: a dictionary of node_type -> numpy array storing the features
+    """
+    # if data is a dict of pandas dataframes or iterators, pull the features for each node type in the dictionary
+    if isinstance(data, dict):
+        # The keys should match the node types
+        if not all(k in node_types for k in data.keys()):
+            raise ValueError(
+                "All node types in supplied feature dict should be in the graph"
+            )
+
+        data_arrays = {}
+        data_index = {}
+        for nt, arr in data.items():
+            if isinstance(arr, pd.DataFrame):
+                node_index_map = {nid: nii for nii, nid in enumerate(arr.index)}
+                try:
+                    data_arr = arr.values.astype(dtype)
+                except ValueError:
+                    raise ValueError(
+                        "Node data passed as Pandas arrays should contain only numeric values"
+                    )
+
+            elif isinstance(arr, (Iterable, list)):
+                data_arr = []
+                node_index_map = {}
+                for ii, (node_id, datum) in enumerate(arr):
+                    data_arr.append(datum)
+                    node_index_map[node_id] = ii
+                data_arr = np.vstack(data_arr)
+
+            else:
+                raise TypeError(
+                    "Node data should be a pandas array, an iterable, a list, or name of a node_attribute"
+                )
+
+            # Add default value to end of feature array
+            default_value = np.zeros(data_arr.shape[1])
+            data_arrays[nt] = np.vstack([data_arr, default_value])
+
+            node_index_map[None] = data_arr.shape[0]
+            data_index[nt] = node_index_map
+
+    # If data is a pd.Dataframe, try pulling out the type
+    elif isinstance(data, pd.DataFrame):
+        if len(node_types) > 1:
+            raise TypeError(
+                "When there is more than one node type, pass node features as a dictionary."
+            )
+        node_type = next(iter(node_types))
+        data_index, data_arrays = _convert_from_node_data(
+            {node_type: data}, node_type_map, node_types, dtype
+        )
+
+    # If data an iterator try recreating the nodes by type
+    elif isinstance(data, (Iterator, list)):
+        node_data_by_type = {nt: [] for nt in node_types}
+        for d in data:
+            node_type = node_type_map.get(d[0])
+            if node_type is None:
+                raise TypeError("Node type not found in importing feature vectors!")
+
+            node_data_by_type[node_type].append(d)
+
+        data_index, data_arrays = _convert_from_node_data(
+            node_data_by_type, node_type_map, node_types, dtype
+        )
+
+    else:
+        raise TypeError(
+            "Node data should be a dictionary, a pandas array, an iterable, or a tuple."
+        )
+
+    return data_index, data_arrays
 
 
 class GraphSchema:
@@ -238,25 +433,7 @@ class GraphSchema:
             edge_type = None
         return edge_type
 
-    def edge_types_for_node_type(self, node_type):
-        # TODO: simplify the name of the method, or consider deleting the method alltogether, using self.schema[node_type] instead
-        """
-        Return all edge types from a specified node type in fixed order.
-        Args:
-            node_type: The specified node type.
-
-        Returns:
-            A list of EdgeType instances
-        """
-        try:
-            edge_types = self.schema[node_type]
-        except IndexError:
-            print("Warning: Node type '{}' not found.".format(node_type))
-            edge_types = []
-        return edge_types
-
-    def get_sampling_tree(self, head_node_types, n_hops):
-        # TODO: remove "get_" from the name
+    def sampling_tree(self, head_node_types, n_hops):
         """
         Returns a sampling tree for the specified head node types
         for neighbours up to n_hops away.
@@ -271,7 +448,7 @@ class GraphSchema:
             where children are (type_adjacency_index, node_type, [children])
 
         """
-        adjacency_list = self.get_type_adjacency_list(head_node_types, n_hops)
+        adjacency_list = self.type_adjacency_list(head_node_types, n_hops)
 
         def pack_tree(nodes, level):
             return [
@@ -283,8 +460,7 @@ class GraphSchema:
         # TODO: generalize this?
         return adjacency_list, pack_tree(range(len(head_node_types)), 0)
 
-    def get_sampling_layout(self, head_node_types, num_samples):
-        # TODO: remove "get_" from the name
+    def sampling_layout(self, head_node_types, num_samples):
         """
         For a sampling scheme with a list of head node types and the
         number of samples per hop, return the map from the actual
@@ -298,11 +474,11 @@ class GraphSchema:
         Returns:
             A list containing, for each head node type, a list consisting of
             tuples of (node_type, sampling_index). The list matches the
-            list given by the method `get_type_adjacency_list(...)` and can be
+            list given by the method `type_adjacency_list(...)` and can be
             used to reformat the samples given by `SampledBreadthFirstWalk` to
             that expected by the HinSAGE model.
         """
-        adjacency_list = self.get_type_adjacency_list(head_node_types, len(num_samples))
+        adjacency_list = self.type_adjacency_list(head_node_types, len(num_samples))
         sample_index_layout = []
         sample_inverse_layout = []
 
@@ -325,7 +501,7 @@ class GraphSchema:
                 next_node_groups = []
                 for a_key, nt1 in node_groups:
                     # For each node we sample from all edge types from that node
-                    edge_types = self.edge_types_for_node_type(nt1)
+                    edge_types = self.schema[nt1]
 
                     # We want to place the samples for these edge types in the correct
                     # place in the adjacency list
@@ -351,8 +527,7 @@ class GraphSchema:
             sample_inverse_layout.append(adj_to_samples)
         return sample_inverse_layout
 
-    def get_type_adjacency_list(self, head_node_types, n_hops):
-        # TODO: remove "get_" from the name
+    def type_adjacency_list(self, head_node_types, n_hops):
         """
         Creates a BFS sampling tree as an adjacency list from head node types.
 
@@ -403,7 +578,86 @@ class GraphSchema:
 
 
 class StellarGraphBase:
-    # TODO: add doc string
+    """
+    StellarGraph class for undirected graph ML models. It stores both
+    graph information from a NetworkX Graph object as well as features
+    for machine learning.
+
+    To create a StellarGraph object ready for machine learning, at a
+    minimum pass the graph structure to the StellarGraph as a NetworkX
+    graph:
+
+    For undirected models:
+    ```
+    Gs = StellarGraph(nx_graph)
+    ```
+
+    For directed models:
+    ```
+    Gs = StellarDiGraph(nx_graph)
+    ```
+
+    To create a StellarGraph object with node features, supply the features
+    as a numeric feature vector for each node.
+
+    To take the feature vectors from a node attribute in the original NetworkX
+    graph, supply the attribute name to the `node_features` argument:
+    ```
+    Gs = StellarGraph(nx_graph, node_features="feature")
+    ```
+
+    where the nx_graph contains nodes that have a "feature" attribute containing
+    the feature vector for the node. All nodes of the same type must have
+    the same size feature vectors.
+
+    Alternatively, supply the node features as Pandas DataFrame objects with
+    the of the DataFrame set to the node IDs. For graphs with a single node
+    type, you can supply the DataFrame object directly to StellarGraph:
+    ```
+    node_data = pd.DataFrame(
+        [feature_vector_1, feature_vector_2, ..],
+        index=[node_id_1, node_id_2, ...]
+        )
+    Gs = StellarGraph(nx_graph, node_features=node_data)
+    ```
+    For graphs with multiple node types, provide the node features as pandas
+    dataframes for each type separately, as a dictionary by node type.
+    This allows node features to have different sizes for each node type:
+    ```
+    node_data = {
+        node_type_1: pd.DataFrame(...),
+        node_type_2: pd.DataFrame(...),
+        }
+    Gs = StellarGraph(nx_graph, node_features=node_data)
+    ```
+
+    You can also supply the node feature vectors as an iterator of `node_id`
+    and feature vector pairs, for graphs with single and multiple node types:
+    ```
+    node_data = zip([node_id_1, node_id_2, ...], [feature_vector_1, feature_vector_2, ..])
+    Gs = StellarGraph(nx_graph, node_features=node_data)
+    ```
+
+    Args:
+        node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            This is the name for the node types that StellarGraph uses
+            when processing heterogeneous graphs. StellarGraph will
+            look for this attribute in the nodes of the graph to determine
+            their type.
+
+        edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            This is the name for the edge types that StellarGraph uses
+            when processing heterogeneous graphs. StellarGraph will
+            look for this attribute in the edges of the graph to determine
+            their type.
+
+        node_features: str, dict, list or DataFrame optional (default=None)
+            This tells StellarGraph where to find the node feature information
+            required by some graph models. These are expected to be
+            a numeric feature vector for each node in the graph.
+
+    """
+
     def __init__(self, incoming_graph_data=None, **attr):
         # TODO: add doc string
         super().__init__(incoming_graph_data, **attr)
@@ -412,31 +666,56 @@ class StellarGraphBase:
         self._node_type_attr = attr.get("node_type_name", globals.TYPE_ATTR_NAME)
         self._edge_type_attr = attr.get("edge_type_name", globals.TYPE_ATTR_NAME)
 
-        # Get feature & target specifications, if supplied:
-        self._feature_spec = attr.get("feature_spec", None)
-        self._target_spec = attr.get("target_spec", None)
-
         # Names for the feature/target type (used if they are supplied and
         #  feature/target spec not supplied"
         self._feature_attr = attr.get("feature_name", globals.FEATURE_ATTR_NAME)
         self._target_attr = attr.get("target_name", globals.TARGET_ATTR_NAME)
 
-        # These are dictionaries that store the actual feature arrays for each node type
-        self._node_attribute_arrays = {}
-        self._node_target_arrays = {}
-
-        # This stores the map between node ID and index in the attribute arrays
-        self._node_index_maps = {}
-
         # Ensure that the incoming graph data has node & edge types
         # TODO: This requires traversing all nodes and edges. Is there another way?
+        # TODO: Should we add the default values as class arguments for these?
+        node_types = set()
+        type_for_node = {}
         for n, ndata in self.nodes(data=True):
             if self._node_type_attr not in ndata:
-                ndata[self._node_type_attr] = ""
+                ndata[self._node_type_attr] = "default"
+            type_for_node[n] = ndata[self._node_type_attr]
+            node_types.add(ndata[self._node_type_attr])
 
+        edge_types = set()
         for n1, n2, k, edata in self.edges(keys=True, data=True):
             if self._edge_type_attr not in edata:
-                edata[self._edge_type_attr] = ""
+                edata[self._edge_type_attr] = "default"
+            edge_types.add(edata[self._edge_type_attr])
+
+        # New style: we are passed numpy arrays or pandas arrays of the feature vectors
+        node_features = attr.get("node_features", None)
+        dtype = attr.get("dtype", "float32")
+
+        # If node_features is a string, load features from this attribute of the nodes in the graph
+        if isinstance(node_features, str):
+            data_index_maps, data_arrays = _convert_from_node_attribute(
+                self, node_features, node_types, self._node_type_attr, dtype
+            )
+
+        # Otherwise try importing node_features as a Numpy array or Pandas Dataframe
+        elif node_features is not None:
+            data_index_maps, data_arrays = _convert_from_node_data(
+                node_features, type_for_node, node_types, dtype
+            )
+
+        else:
+            data_index_maps = {}
+            data_arrays = {}
+
+        # TODO: What other convenience attributes do we need?
+        self._nodes_by_type = None
+
+        # This stores the feature vectors per node type as numpy arrays
+        self._node_attribute_arrays = data_arrays
+
+        # This stores the map between node ID and index in the attribute arrays
+        self._node_index_maps = data_index_maps
 
     def __repr__(self):
         directed_str = "Directed" if self.is_directed() else "Undirected"
@@ -446,195 +725,11 @@ class StellarGraphBase:
         )
         return s
 
-    def create_node_index_maps(self, schema=None, include_invalid=True):
-        """
-        A mapping between integer indices and node IDs and the reverse.
-        This mapping is stable for graphs with the same node ids.
+    def fit_attribute_spec(self, *args, **kwargs):
+        print("Fit attribute spec is deprecated")
+        pass
 
-        Each node type has an associated `node_id_to_index` and `node_index_to_id`
-        such that:
-            node_index_to_id[index] = node_id
-            node_id_to_index[node_id] = index
-
-        where:
-            index is an integer from 0 to number_of_nodes_for_type - 1 and is
-            seperate for each node type.
-            node_id is the label of the node in the graph,
-
-        Args:
-            schema: The graph schema object. If none this will be calculated
-                internally.
-            include_invalid: If True an invalid node with ID "None" will also
-                be indexed.
-
-        Returns:
-            a dictionary with an entry for each node type with values
-            being the two index maps described above, namely:
-            {'type_1': (node_id_to_index, node_index_to_id), ... }
-
-        """
-        # Generate schema
-        if schema is None:
-            schema = self.create_graph_schema(create_type_maps=True)
-
-        # Get the features for each node type
-        node_index_maps = {}
-        for nt in schema.node_types:
-            nodes_for_type = [v for v in self.nodes() if schema.get_node_type(v) == nt]
-
-            if include_invalid:
-                nodes_for_type.append(None)
-
-            # Node IDs may be integers, strings or in fact any hashable type.
-            # Convert them to strings to do the sorting.
-            node_index_to_id = sorted(nodes_for_type, key=str)
-            node_id_to_index = {node: ii for ii, node in enumerate(node_index_to_id)}
-            node_index_maps[nt] = (node_id_to_index, node_index_to_id)
-
-        return node_index_maps
-
-    def _convert_attributes(self, spec, node_types, attr_name, train):
-        attribute_arrays = {}
-
-        # Determine if target values will come directly from the target attribute or
-        # through the target_spec converter
-        if spec is None:
-            # Get the target values for each node type
-            for nt in node_types:
-                nt_id_to_index, nt_node_list = self._node_index_maps[nt]
-
-                attr_data = [
-                    v if v is None else self.node[v].get(attr_name)
-                    for v in nt_node_list
-                ]
-
-                # Get the size of the features
-                data_sizes = {
-                    np.size(self.node[v].get(attr_name, []))
-                    for v in nt_node_list
-                    if v is not None
-                }
-
-                # Warn if nodes don't have the attribute
-                if 0 in data_sizes:
-                    print(
-                        "Warning: Some nodes have no value for attribute '{}', "
-                        "using default value.".format(attr_name)
-                    )
-                    data_sizes.discard(0)
-
-                # Check all are the same for this node type
-                if len(data_sizes) > 1:
-                    raise ValueError(
-                        "Data sizes in nodes of type {} are inconsistent "
-                        "for the attribute '{}' ".format(nt, attr_name)
-                    )
-
-                # If some node_type have no nodes with the attribute, skip them
-                if len(data_sizes) == 0:
-                    continue
-
-                # Create zero attribute array
-                data_size = data_sizes.pop()
-
-                # Dummy feature/target value for invalid nodes,
-                # this will be inserted into the array in two cases:
-                # 1. node ID of None (representing sampling for a missing neighbour)
-                # 2. node with no attribute
-                # TODO: Make these two cases more explicit, allow custom values.
-                dummy_value = np.zeros(data_size)
-
-                # Convert to numpy array
-                attribute_arrays[nt] = np.asarray(
-                    [x if x is not None else dummy_value for x in attr_data]
-                )
-
-        else:
-            # Use feature spec to get feature vectors & put them in an array
-            for nt in spec.get_types():
-                nt_id_to_index, nt_node_list = self._node_index_maps[nt]
-
-                # Convert the node attributes to a feature array
-                node_data = [self.node[v] for v in nt_node_list if v is not None]
-                if train:
-                    aa = spec.fit_transform(nt, node_data)
-                else:
-                    aa = spec.transform(nt, node_data)
-
-                # Append dummy value as final row.
-                dummy_value = np.zeros(aa.shape[1], dtype=aa.dtype)
-                # NOTE: This assumes that the dummy value is always the final row
-                # which is how we currently construct things in _node_index_maps,
-                # but is fragile
-                # TODO: improve robustness here, is there a better way to do this?
-                assert nt_node_list[-1] is None
-                assert sum(n is None for n in nt_node_list) == 1
-
-                attribute_arrays[nt] = np.vstack([aa, dummy_value])
-
-        return attribute_arrays
-
-    def set_attribute_spec(self, feature_spec=None, target_spec=None):
-        """
-        Transform the node attributes to feature and target vectors, for use
-        with machine learning models.
-
-        If feature_spec or target_spec are not provided, the corresponding vectors
-        are assumed to be stored in the feature_name (by default "feature") and
-        target_name (by default "target") attributes in the nodes and are additionally
-        assumed to be suitable for use in machine learning models.
-
-        This function is used when the feature_spec and/or target_spec have already
-        been used to train a model.
-        """
-        self.fit_attribute_spec(feature_spec, target_spec, train=False)
-
-    def fit_attribute_spec(self, feature_spec=None, target_spec=None, train=True):
-        # TODO: we need to (gradually) deprecate this in favor of scikit-learn - see issue stellar-ml#177
-        """
-        Transform the node attributes to feature and target vectors, for use
-        with machine learning models.
-
-        If feature_spec or target_spec are not provided, the corresponding vectors
-        are assumed to be stored in the feature_name (by default "feature") and
-        target_name (by default "target") attributes in the nodes and are additionally
-        assumed to be suitable for use in machine learning models.
-
-        If feature_spec or target_spec is provided, the feature/target vectors will
-        be created as per the specification. This is data dependant and the node
-        attributes of the current state of the graph will be used to fit the supplied
-        attribute specification.
-
-        Once a machine learning model is trained, the fitted feature specifications should
-        be used with that model and this function should not be used with train=True.
-        Instead if using a trained machine learning model, supply the attribute
-        specifications used to train that model to the `set_attribute_spec` function
-        or set the flag train=False in this function.
-        """
-        if feature_spec is not None:
-            self._feature_spec = feature_spec
-        if target_spec is not None:
-            self._target_spec = target_spec
-
-        # Generate schema
-        schema = self.create_graph_schema(create_type_maps=True)
-
-        # This will store the maps between node ID and index in the attribute arrays
-        self._node_index_maps = self.create_node_index_maps(schema)
-
-        # Determine if feature attributes will come directly from the feature attribute or
-        # through the feature_spec converter
-        self._node_attribute_arrays = self._convert_attributes(
-            self._feature_spec, schema.node_types, self._feature_attr, train=train
-        )
-
-        self._node_target_arrays = self._convert_attributes(
-            self._target_spec, schema.node_types, self._target_attr, train=train
-        )
-
-        # Create graph schema at this point?
-
-    def check_graph_for_ml(self, features=True, supervised=False):
+    def check_graph_for_ml(self, features=True):
         """
         Checks if all properties required for machine learning training/inference are set up.
         An error will be raised if the graph is not correctly setup.
@@ -645,15 +740,8 @@ class StellarGraphBase:
         # Check features on the nodes:
         if features and len(self._node_attribute_arrays) == 0:
             raise RuntimeError(
-                "Run 'fit_attribute_spec' on the graph with numeric feature attributes "
-                "or a feature specification to generate node features for machine learning"
-            )
-
-        # Check features on the nodes:
-        if supervised and len(self._node_target_arrays) == 0:
-            raise RuntimeError(
-                "Run 'fit_attribute_spec' on the graph with numeric target attributes "
-                "or a target specification to generate node targets for supervised learning"
+                "This StellarGraph has no numeric feature attributes for nodes"
+                "Node features are required for machine learning"
             )
 
         # How about checking the schema?
@@ -676,6 +764,7 @@ class StellarGraphBase:
             nodes = [nodes]
 
         # Get the node type
+        # TODO: This is slow, refactor so that self._node_index_maps gives the node type
         if node_type is None:
             node_types = {
                 self.node[n].get(self._node_type_attr) for n in nodes if n is not None
@@ -698,10 +787,11 @@ class StellarGraphBase:
             node_type = node_types.pop()
 
         # Check node_types
-        if node_type not in self._node_attribute_arrays:
-            raise ValueError(
-                "Features not found for node type '{}', has fit_attribute_specs been run?"
-            )
+        if (
+            node_type not in self._node_attribute_arrays
+            or node_type not in self._node_index_maps
+        ):
+            raise ValueError("Features not found for node type '{}'")
 
         # Edge case: if we are given no nodes, what do we do?
         if len(nodes) == 0:
@@ -709,124 +799,19 @@ class StellarGraphBase:
             return np.empty((0, feature_size))
 
         # Get index for nodes of this type
-        nt_id_to_index, nt_node_list = self._node_index_maps[node_type]
+        nt_id_to_index = self._node_index_maps[node_type]
         node_indices = [nt_id_to_index.get(n) for n in nodes]
 
         if None in node_indices:
             raise ValueError(
-                "Nodes specified in 'get_feature_for_nodes' "
-                "must all be of the same type."
+                "Incorrect node specified or nodes of multiple types found."
             )
 
         features = self._node_attribute_arrays[node_type][node_indices]
         return features
 
-    def get_target_for_nodes(self, nodes, node_type=None):
-        # TODO: change the method's name to something like node_targets(), and add @property decorator
-        """
-        Get the numeric target vector for the specified node or nodes
-        Args:
-            n: Node ID or list of node IDs
-
-        Returns:
-            List containing the node targets, if they are specified for
-             the nodes, or None if the node has no target value.
-        """
-        if not utils.is_real_iterable(nodes):
-            nodes = [nodes]
-
-        # TODO: What if nodes are not all in graph?
-        node_data = [self.node[n] for n in nodes]
-
-        # Get the node type
-        if node_type is None:
-            node_types = {nd.get(self._node_type_attr) for nd in node_data}
-
-            if None in node_types:
-                raise ValueError(
-                    "All nodes must have a type specified as the "
-                    "'{}' attribute.".format(self._node_type_attr)
-                )
-            node_type = node_types.pop()
-
-        # Check node_types
-        if node_type not in self._node_target_arrays:
-            raise ValueError(
-                "Targets not found for node type '{}', has fit_attribute_specs been run?"
-            )
-
-        # Get index for nodes of this type
-        nt_id_to_index, nt_node_list = self._node_index_maps[node_type]
-        node_indices = [nt_id_to_index.get(n) for n in nodes]
-
-        if None in node_indices:
-            raise ValueError(
-                "Nodes specified in 'get_target_for_nodes' "
-                "must all be of the same type."
-            )
-
-        targets = self._node_target_arrays[node_type][node_indices]
-        return targets
-
-    def get_nodes_with_target(self, node_type=None):
-        # TODO: is this used anywhere except tests? If not, remove this.
-        """
-        Get the nodes that have a valid target value
-        Args:
-            node_type: The type label for the nodes. If None, all nodes are used.
-
-        Returns:
-            List containing the nodes that do not have a valid target attribute
-        """
-        nodes = self.get_nodes_of_type(node_type)
-
-        if self._target_spec is not None:
-            # If we have a target spec, find the attributes that are converted and get the nodes that don't have
-            #  get the nodes that don't have one or more of these attrivutes
-            target_attrs = self._target_spec.get_attributes(node_type)
-            nodes_with_targets = set(nodes)
-            for attr_name in target_attrs:
-                nodes_with_targets.intersection_update(
-                    n for n in nodes if attr_name in self.node[n]
-                )
-        else:
-            # Otherwise directly get nodes with the _target_attr attribute
-            nodes_with_targets = {n for n in nodes if self._target_attr in self.node[n]}
-
-        # Nodes without target
-        nodes_without_target = set(nodes).difference(nodes_with_targets)
-
-        return nodes_with_targets, nodes_without_target
-
-    def get_raw_targets(self, nodes, node_type=None, unlabeled_value=None):
-        # TODO: Consider making this method private, and calling from self.get_targets_for_nodes(original=True)
-        """
-        Get the raw target label for the nodes, currently required for splitting.
-
-        Args:
-            node_type: The type label for the nodes. If None, all nodes are used.
-
-        Returns:
-            List containing the nodes that do not have a valid target attribute
-        """
-        if self._target_spec is not None:
-            # If we have a target spec, find the attributes that are converted and
-            #  get the nodes that don't have one or more of these attrivutes
-            target_attrs = self._target_spec.get_attributes(node_type)
-
-            # Let's just use the first one for now.
-            # TODO: What happens if there are multiple targets?
-            target_attr = next(iter(target_attrs))
-        else:
-            # Otherwise directly get nodes with the _target_attr attribute
-            target_attr = self._target_attr
-
-        target_values = [self.node[n].get(target_attr, unlabeled_value) for n in nodes]
-
-        return target_values
-
-    def get_feature_sizes(self, node_types=None):
-        # TODO: change name to node_feature_sizes(), and add @property decorator
+    def node_feature_sizes(self, node_types=None):
+        # TODO: unit test!
         """
         Get the feature sizes for the specified node types.
 
@@ -838,46 +823,15 @@ class StellarGraphBase:
             A dictionary of node type and integer feature size.
         """
         if not node_types:
-            node_types = self.get_node_types()
+            node_types = self.node_types
 
-        self.check_graph_for_ml(features=True, supervised=False)
+        self.check_graph_for_ml(features=True)
 
-        if self._feature_spec is not None:
-            node_types = self.get_node_types()
-            fsize = {nt: self._feature_spec.get_output_size(nt) for nt in node_types}
-
-        else:
-            # Otherwise directly get nodes with the _target_attr attribute
-            fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
-
+        fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
         return fsize
 
-    def get_target_size(self, node_type=None):
-        # TODO: remove "get_" from the name, \update the doc string, and add @property decorator
-        """
-        Get the feature size for the nodes of the specified type.
-
-        Args:
-            node_type: The type label for the nodes. If None and all nodes are of
-                a single type the feature size for that type is returned.
-
-        Returns:
-            The feature size is returned as an integer.
-        """
-        # TODO: Infer node type
-        self.check_graph_for_ml(supervised=True)
-
-        if self._feature_spec is not None:
-            fsize = self._target_spec.get_output_size(node_type)
-
-        else:
-            # Otherwise directly get nodes with the _target_attr attribute
-            fsize = self._node_target_arrays[node_type].shape[1]
-
-        return fsize
-
-    def get_nodes_of_type(self, node_type=None):
-        # TODO: remove "get_" from the name
+    def nodes_of_type(self, node_type=None):
+        # TODO: unit test!
         """
         Get the nodes of the graph with the specified node types.
 
@@ -896,14 +850,15 @@ class StellarGraphBase:
                 if ndata.get(self._node_type_attr) == node_type
             ]
 
-    def get_node_types(self):
-        # TODO: remove "get_" from the name, and add @property decorator
+    @property
+    def node_types(self):
         """
         Get a list of all node types in the graph.
 
         Returns:
             set of types
         """
+        # TODO: unit test!
         # TODO: create a schmea when we geenrate _node_attribute_arrays and use it?
         if len(self._node_attribute_arrays) > 0:
             return set(self._node_attribute_arrays.keys())
@@ -1089,20 +1044,10 @@ class StellarGraphBase:
 
 
 class StellarGraph(StellarGraphBase, MultiGraph):
-    """
-    Our own class for heterogeneous undirected graphs, inherited from nx.MultiGraph,
-    with extra stuff to be added that's needed by samplers and mappers
-    """
-
     def __init__(self, incoming_graph_data=None, **attr):
         super().__init__(incoming_graph_data, **attr)
 
 
 class StellarDiGraph(StellarGraphBase, MultiDiGraph):
-    """
-    Our own class for heterogeneous directed graphs, inherited from nx.MultiDiGraph,
-    with extra stuff to be added that's needed by samplers and mappers
-    """
-
     def __init__(self, incoming_graph_data=None, **attr):
         super().__init__(incoming_graph_data, **attr)

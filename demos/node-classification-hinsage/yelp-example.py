@@ -39,7 +39,7 @@ import keras.backend as K
 
 from stellargraph.data.stellargraph import StellarGraph
 from stellargraph.layer.hinsage import HinSAGE, MeanHinAggregator
-from stellargraph.mapper.node_mappers import HinSAGENodeMapper
+from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
 
 from sklearn import model_selection
 from sklearn import metrics as sk_metrics
@@ -63,7 +63,7 @@ def weighted_binary_crossentropy(weights):
 
 
 def train(
-    Gnx,
+    G,
     user_targets,
     layer_size,
     num_samples,
@@ -76,7 +76,7 @@ def train(
     Train a HinSAGE model on the specified graph G with given parameters.
 
     Args:
-        Gnx: A NetworkX with the Yelp dataset
+        G: A StellarGraph object ready for machine learning
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
@@ -84,13 +84,7 @@ def train(
         learning_rate: Initial Learning rate
         dropout: The dropout (0->1)
     """
-    # Create stellar Graph object
-    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype")
-
     print(G.info())
-
-    # Fit the graph to the attribute converters:
-    G.fit_attribute_spec()
 
     # Split "user" nodes into train/test
     # Split nodes into train/test using stratification.
@@ -99,26 +93,25 @@ def train(
     )
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    # Train mapper
-    train_mapper = HinSAGENodeMapper(
-        G, train_targets.index, batch_size, num_samples, targets=train_targets.values
+    generator = HinSAGENodeGenerator(
+        G, batch_size, num_samples
     )
-    # Test mapper
-    test_mapper = HinSAGENodeMapper(
-        G, test_targets.index, batch_size, num_samples, targets=test_targets.values
-    )
+    train_gen = generator.flow_from_dataframe(train_targets)
+    test_gen = generator.flow_from_dataframe(test_targets)
 
     # GraphSAGE model
-    model = HinSAGE(layer_size, train_mapper, dropout=dropout)
+    model = HinSAGE(layer_size, train_gen, dropout=dropout)
     x_inp, x_out = model.default_model(flatten_output=True)
 
     # Final estimator layer
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
-    # Calculate weights based on empirical count
-    class_count = train_targets.values.sum(axis=0)
-    weights = class_count.sum() / class_count
-
+    # The elite label is only true for a small fraction of the total users,
+    # so weight the training loss to ensure that model learns to predict
+    # the positive class.
+    #class_count = train_targets.values.sum(axis=0)
+    #weights = class_count.sum()/class_count
+    weights = [0.01, 1.0]
     print("Weighting loss by: {}".format(weights))
 
     # Create Keras model for training
@@ -130,15 +123,17 @@ def train(
     )
 
     # Train model
-    print("Training the model...")
     history = model.fit_generator(
-        train_mapper, epochs=num_epochs, verbose=2, shuffle=True
+        train_gen,
+        epochs=num_epochs,
+        verbose=2,
+        shuffle=True
     )
 
     # Evaluate on test set and print metrics
-    predictions = model.predict_generator(test_mapper)
+    predictions = model.predict_generator(test_gen)
     binary_predictions = predictions[:, 1] > 0.5
-    print("\nTest Set Metrics of trained model (on {} nodes)".format(len(predictions)))
+    print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
 
     # Calculate metrics using Scikit-Learn
     cm = sk_metrics.confusion_matrix(test_targets.iloc[:, 1], binary_predictions)
@@ -274,21 +269,19 @@ if __name__ == "__main__":
     print("Loading the graph...")
     Gnx = nx.read_graphml(os.path.join(data_loc, "yelp_graph_filtered.graphml"))
 
-    # Adding node features to graph
-    print("Adding node features to the graph...")
-    for user_id, row in user_features.iterrows():
-        if user_id not in Gnx:
-            print("User not found")
-        Gnx.node[user_id]["feature"] = row.values
+    # Features should be supplied as a dictionary of {node_type: DataFrame} for all
+    # node types in the graph
+    features = {
+        "user": user_features,
+        "business": business_features
+    }
 
-    for business_id, row in business_features.iterrows():
-        if business_id not in Gnx:
-            print("Business not found")
-        Gnx.node[business_id]["feature"] = row.values
+    # Create stellar Graph object
+    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features)
 
     if args.checkpoint is None:
         train(
-            Gnx,
+            G,
             user_targets,
             args.layer_size,
             args.neighbour_samples,
@@ -298,4 +291,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(Gnx, args.checkpoint, args.batch_size)
+        test(G, args.checkpoint, args.batch_size)

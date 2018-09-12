@@ -29,9 +29,10 @@ REQUIRES = [
     "scikit_learn>=0.18",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
+    "pandas>=0.23"
 ]
 
-EXTRAS_REQURES = {"demos": ["pandas", "numba"], "test": ["pytest", "pandas"]}
+EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas"]}
 
 # Long description
 with open("README.md", "r") as fh:

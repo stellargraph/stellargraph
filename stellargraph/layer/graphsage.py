@@ -38,7 +38,7 @@ class MeanAggregator(Layer):
     Args:
         output_dim (int): Output dimension
         bias (bool): Optional bias
-        act (Callable or str): name of the activation function to use (must be a 
+        act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
 
     """
@@ -64,7 +64,7 @@ class MeanAggregator(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization
-        
+
         """
         config = {
             "output_dim": self.output_dim,
@@ -133,9 +133,9 @@ class GraphSAGE:
 
     Args:
         layer_sizes (list of int): Hidden feature dimensions for each layer
-        mapper (Sequence): A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
+        generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
             and input_dim will be taken from this object.
-        n_samples (list of int): (Optional: needs to be specified if no mapper 
+        n_samples (list of int): (Optional: needs to be specified if no mapper
             is provided.) The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
         aggregator (class Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
@@ -148,7 +148,7 @@ class GraphSAGE:
     def __init__(
         self,
         layer_sizes,
-        mapper=None,
+        generator=None,
         n_samples=None,
         input_dim=None,
         aggregator=None,
@@ -173,9 +173,10 @@ class GraphSAGE:
 
         # Get the input_dim and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
-        if mapper is not None:
-            self.n_samples = mapper.num_samples
-            feature_sizes = mapper.graph.get_feature_sizes()
+        # TODO: Refactor the horror of generator.generator.graph...
+        if generator is not None:
+            self.n_samples = generator.generator.num_samples
+            feature_sizes = generator.generator.graph.node_feature_sizes()
             if len(feature_sizes) > 1:
                 raise RuntimeError(
                     "GraphSAGE called on graph with more than one node type."
@@ -252,7 +253,7 @@ class GraphSAGE:
                 Args:
                     agg (Layer): Aggregator layer to apply
 
-                Returns: 
+                Returns:
                     Output list of tensors of applying the aggregator to inputs
 
                 """

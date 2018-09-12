@@ -94,9 +94,6 @@ class TestBreadthFirstWalk(object):
             bfw.run(nodes=None, n=n, n_size=n_size)
         with pytest.raises(ValueError):
             bfw.run(nodes=0, n=n, n_size=n_size)
-        with pytest.raises(ValueError):
-            # only list is acceptable type for nodes
-            bfw.run(nodes=(1, 2), n=n, n_size=n_size)
 
         # n has to be positive integer
         with pytest.raises(ValueError):
