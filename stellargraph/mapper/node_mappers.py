@@ -47,12 +47,21 @@ class NodeSequence(Sequence):
     and should be created using the `.flow(...)` method of
     `GraphSAGENodeGenerator` or `HinSAGENodeGenerator`.
 
-    Args:
-        generator:
-        ids:
-        targets:
-        node_type:
+    These Generators are classes that capture the graph structure
+    and the feature vectors of each node. These generator classes
+    are used within the NodeSequence to generate samples of k-hop
+    neighbourhoods in the graph and to return to this class the
+    features from the sampled neighbourhoods.
 
+    Args:
+        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator
+            The generator object containing the graph information.
+        ids: list
+            A list of the node_ids to be used as head-nodes in the
+            downstream task.
+        targets: list, optional (default=None)
+            A list of targets or labels to be used in the downstream
+            class.
     """
 
     def __init__(self, generator, ids, targets=None):

@@ -48,6 +48,10 @@ def _convert_from_node_attribute(
         node_types: Node types in graph
         node_type_name: (optional) The name of the node attribute specifying the type.
         dtype: (optional) The numpy datatype to create the features array.
+
+    Returns:
+        index_map: a dictionary of node_type -> {node_id: node_index}
+        attribute_arrays: a dictionary of node_type -> numpy array storing the features
     """
     attribute_arrays = {}
     node_index_map = {}
@@ -121,7 +125,16 @@ def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
      * a Pandas DataFrame with the index being node IDs and the columns the numeric
         feature values. Note that the features must be numeric.
      * a list or iterable of `(node_id, node_feature)` pairs where node_feature is
-        a value, a list of values, or a numpy array representing the numbeic feature
+        a value, a list of values, or a numpy array representing the numeric feature
+        values.
+
+    For multiple node types, the data can be either:
+     * a dictionary of node_type -> DataFrame with the index of each DataFrame
+        being node IDs and the columns the numeric feature values.
+        Note that the features must be numeric and can be different sizes for each
+        node type.
+     * a list or iterable of `(node_id, node_feature)` pairs where node_feature is
+        a value, a list of values, or a numpy array representing the numeric feature
         values.
 
     Args:
@@ -138,7 +151,8 @@ def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
             The numpy datatype to create the features array.
 
     Returns:
-        index_map, attribute_arrays
+        index_map: a dictionary of node_type -> {node_id: node_index}
+        attribute_arrays: a dictionary of node_type -> numpy array storing the features
     """
     # if data is a dict of pandas dataframes or iterators, pull the features for each node type in the dictionary
     if isinstance(data, dict):
@@ -584,7 +598,7 @@ class StellarGraphBase:
     ```
 
     To create a StellarGraph object with node features, supply the features
-    as post-processed numeric vectors for each node.
+    as a numeric feature vector for each node.
 
     To take the feature vectors from a node attribute in the original NetworkX
     graph, supply the attribute name to the `node_features` argument:
@@ -618,7 +632,7 @@ class StellarGraphBase:
     ```
 
     You can also supply the node feature vectors as an iterator of `node_id`
-    and feature vector pairs, either directly for graphs with a single node type:
+    and feature vector pairs, for graphs with single and multiple node types:
     ```
     node_data = zip([node_id_1, node_id_2, ...], [feature_vector_1, feature_vector_2, ..])
     Gs = StellarGraph(nx_graph, node_features=node_data)
@@ -640,7 +654,7 @@ class StellarGraphBase:
         node_features: str, dict, list or DataFrame optional (default=None)
             This tells StellarGraph where to find the node feature information
             required by some graph models. These are expected to be
-            post-processed numeric feature vectors for each node in the graph.
+            a numeric feature vector for each node in the graph.
 
     """
 
@@ -680,7 +694,6 @@ class StellarGraphBase:
 
         # If node_features is a string, load features from this attribute of the nodes in the graph
         if isinstance(node_features, str):
-            print("Attribute conversion")
             data_index_maps, data_arrays = _convert_from_node_attribute(
                 self, node_features, node_types, self._node_type_attr, dtype
             )
