@@ -162,6 +162,7 @@ class GraphSAGENodeGenerator:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
+        seed (int): [Optional] Random seed for the node sampler.
         name (str or None): Name of the generator (optional)
     """
 
@@ -303,6 +304,7 @@ class HinSAGENodeGenerator:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
+        seed (int): [Optional] Random seed for the node sampler.
         name (str or None): Name of the generator (optional)
      """
 
