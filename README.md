@@ -42,11 +42,13 @@ models and workflows for machine learning on graphs.
 ## Getting Started
 
 To get started with StellarGraph you'll need data structured as homogeneous or heterogeneous graph, including 
-features for the nodes (that represent entities). [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/) 
-or [Numpy](http://www.numpy.org/) are used to store the node  features and target attributes.
+attributes for the entities represented as graph nodes. 
+[NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/) 
+or [Numpy](http://www.numpy.org/) are used to store node attributes.
 
-Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of graph machine 
-learning workflows supported by StellarGraph are given in `/demos`. 
+Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of various machine 
+learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, 
+are given in `/demos`. 
 
 <!--
 StellarGraph supports different machine learning use-cases, including:
