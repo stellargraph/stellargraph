@@ -287,7 +287,7 @@ class HinSAGENodeGenerator:
      machine learning. Currently the model requires node features for all
      nodes in the graph.
 
-     Use the ``.flow(...)`` method supplying the nodes and (optionally) targets
+     Use the :meth:`flow` method supplying the nodes and (optionally) targets
      to get an object that can be used as a Keras data generator.
 
      Example::
@@ -388,14 +388,14 @@ class HinSAGENodeGenerator:
         Args:
             node_ids (iterable): The head node IDs
             targets (Numpy array): a 2D array of numeric targets with shape
-            ``(len(node_ids), target_size)``
+                ``(len(node_ids), target_size)``
             node_type (str), optional: The target node type, if not given
                 the node type will be inferred from the graph.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods `fit_generator`, `evaluate_generator`,
+            and `predict_generator`.
 
         """
         return NodeSequence(self, node_ids, targets)
@@ -413,8 +413,8 @@ class HinSAGENodeGenerator:
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods `fit_generator`, `evaluate_generator`,
+            and `predict_generator`.
         """
 
         return NodeSequence(self, node_targets.index, node_targets.values)
