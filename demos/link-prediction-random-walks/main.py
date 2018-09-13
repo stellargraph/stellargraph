@@ -20,7 +20,7 @@ import os
 import networkx as nx
 import numpy as np
 from stellargraph.data import EdgeSplitter
-from stellargraph.data import StellarGraph
+from stellargraph import StellarGraph
 from utils.cl_arguments_parser import parse_args
 from utils.read_graph import read_graph
 from utils.predictors import *
