@@ -27,9 +27,11 @@ The following is the description of the dataset:
 Download and unzip the cora.tgz file to a location on your computer and pass this location
 (which should contain cora.cites and cora.content) as a command line argument to this script.
 
-Run this script as follows::
+Run this script as follows:
+    python graphsage-cora-example.py -l <path_to_cora_dataset>
 
-    python cora-example.py -l <path_to_cora_dataset>
+Other optional arguments can be seen by running
+    python graphsage-cora-example.py --help
 
 """
 import os

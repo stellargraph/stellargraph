@@ -18,7 +18,7 @@
 Graph link prediction using GraphSAGE.
 This example requires the CORA dataset - see the README for how to obtain the dataset.
 
-Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora::
+Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora:
 
     python cora-links-example.py -l ~/data/cora
 
@@ -154,7 +154,7 @@ def train(
         G_test,
         batch_size,
         num_samples,
-        name="train",
+        name="test",
     ).flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
@@ -264,6 +264,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
         G_test,
         batch_size,
         num_samples,
+        name="test",
     ).flow(edge_ids_test, edge_labels_test)
 
     # Evaluate and print metrics
@@ -313,7 +314,7 @@ if __name__ == "__main__":
         "-d",
         "--dropout",
         type=float,
-        default=0.2,
+        default=0.0,
         help="Dropout for the GraphSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
