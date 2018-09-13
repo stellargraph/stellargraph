@@ -34,11 +34,11 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import keras
-from keras import optimizers, losses, layers, metrics
+from keras import optimizers, layers, metrics
 import keras.backend as K
 
-from stellargraph.data.stellargraph import StellarGraph
-from stellargraph.layer.hinsage import HinSAGE, MeanHinAggregator
+from stellargraph.core.graph import StellarGraph
+from stellargraph.layer.hinsage import HinSAGE
 from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
 
 from sklearn import model_selection

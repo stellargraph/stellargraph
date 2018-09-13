@@ -19,12 +19,11 @@
 Mapper tests:
 
 """
-from stellargraph.data.stellargraph import *
+from stellargraph.core.graph import *
 from stellargraph.mapper.node_mappers import *
 
 import networkx as nx
 import numpy as np
-import itertools as it
 import pytest
 
 

@@ -27,12 +27,11 @@ __all__ = [
 import networkx as nx
 import numpy as np
 import random
-from collections import defaultdict, Iterable
+from collections import defaultdict
 
-from .stellargraph import GraphSchema
-from .stellargraph import StellarGraphBase
-from .utils import is_real_iterable
-
+from ..core.schema import GraphSchema
+from ..core.graph import StellarGraphBase
+from ..core.utils import is_real_iterable
 
 class GraphWalk(object):
     """
@@ -110,6 +109,7 @@ class UniformRandomWalk(GraphWalk):
 
     def run(self, nodes=None, n=None, length=None, seed=None):
         """
+        Perform a random walk starting from the root nodes.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -234,6 +234,7 @@ class BiasedRandomWalk(GraphWalk):
 
     def run(self, nodes=None, n=None, p=1., q=1., length=None, seed=None):
         """
+        Perform a random walk starting from the root nodes.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -414,7 +415,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
         seed=None,
     ):
         """
-        Method for performing metapath-driven uniform random walks on heterogeneous graphs.
+        Performs metapath-driven uniform random walks on heterogeneous graphs.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -619,17 +620,8 @@ class DepthFirstWalk(GraphWalk):
     Depth First Walk that generates all paths from a starting node to a given depth.
     It can be used to extract, in a memory efficient way, a sub-graph starting from a node and up to a given depth.
     """
-
-    def run(self, **kwargs):
-        """
-
-        :param n: Number of walks. If it is equal to the number of nodes in the graph, then it generates all the
-        sub-graphs with every node as the root and up to the given depth, d.
-        :param d: Depth of walk as in distance (number of edges) from starting node.
-        :return: (The return value might differ when compared to the other walk types with exception to
-        BreadthFirstWalk defined next)
-        """
-        pass
+    #TODO: Implement the run method
+    pass
 
 
 class BreadthFirstWalk(GraphWalk):
@@ -637,7 +629,7 @@ class BreadthFirstWalk(GraphWalk):
     Breadth First Walk that generates all paths from a starting node to a given depth.
     It can be used to extract a sub-graph starting from a node and up to a given depth.
     """
-
+    #TODO: Implement the run method
     pass
 
 
@@ -649,6 +641,7 @@ class SampledBreadthFirstWalk(GraphWalk):
 
     def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
+        Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
             nodes:  <list> A list of root node ids such that from each node n BFWs will be generated up to the
@@ -658,7 +651,6 @@ class SampledBreadthFirstWalk(GraphWalk):
             neighbours with replacement is always used regardless of the node degree and number of neighbours
             requested.
             seed: <int> Random number generator seed; default is None
-
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
@@ -819,6 +811,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
 
     def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
+        Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
             nodes:  <list> A list of root node ids such that from each node n BFWs will be generated

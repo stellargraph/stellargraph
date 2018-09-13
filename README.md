@@ -1,4 +1,4 @@
-![StellarGraph Machine Learning library logo](stellar-graph-banner.png)
+![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
 # Stellar Graph Machine Learning Library
 
@@ -23,9 +23,9 @@ The StellarGraph library implements several state-of-the-art algorithms for appl
 discover patterns and answer questions using graph-structured data. 
 
 The StellarGraph library can be used to solve tasks using graph-structured data, such as:
-- Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks 
-- Node classification and attribute inference  
-- Link prediction
+- Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
+- Classification and attribute inference of nodes or edges;
+- Link prediction.
 
 We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve 
 such tasks using several real-world datasets.
@@ -33,7 +33,7 @@ such tasks using several real-world datasets.
 
 ## Guiding Principles
 
-StellarGraph uses [Keras](https://keras.io/) library, and adheres to the same guiding principles 
+StellarGraph uses the [Keras](https://keras.io/) library, and adheres to the same guiding principles 
 as Keras: user friendliness, modularity, and easy extendability. Modules and layers 
 of StellarGraph library are designed so that they can be used together with 
 standard Keras layers and modules, if required. This enables flexibility in using existing, 
@@ -46,9 +46,7 @@ attributes for the entities represented as graph nodes.
 [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/) 
 or [Numpy](http://www.numpy.org/) are used to store node attributes.
 
-Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of various machine 
-learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, 
-are given in `/demos`. 
+Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of various machine learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, are given in the `demos` directory of this repository.
 
 <!--
 StellarGraph supports different machine learning use-cases, including:
@@ -90,25 +88,35 @@ The StellarGraph library requires [Keras](https://keras.io/), so you'll need to 
 -->
 
 The StellarGraph library can be installed in one of two ways, described next.
-#### Install StellarGraph from PyPy:
-To install StellarGraph library from PyPy using `pip`, run the following command:
+
+#### Install StellarGraph using pip:
+To install StellarGraph library from [PyPi](http://pypi.org) using `pip`, execute the following command:
 ```
 pip install stellargraph
-
 ```
+
+Some of the examples require installing additional dependencies as well as `stellargraph`.
+To install these dependencies using `pip`, execute the following command:
+```
+pip install stellargraph[demos]
+```
+
 
 #### Install StellarGraph from Github source:
-First, clone StellarGraph using `git`:
+First, clone the StellarGraph repository using `git`:
 ```
-git clone https://github.com/stellargraph/stellargraph/
+git clone https://github.com/stellargraph/stellargraph.git
 ```
-Then, `cd` to StellarGraph folder, install requirements and the library:
 
+Then, `cd` to the StellarGraph folder, and install the libraray by executing the following commands:
 ```
 cd stellargraph
 pip install -r requirements.txt
-pip install -e .
+pip install .
 ```
+
+## Running the examples
+
 
 
 ## Algorithms
