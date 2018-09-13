@@ -197,7 +197,7 @@ def train(
         G_test,
         batch_size,
         num_samples,
-        name="train",
+        name="test",
     ).flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
@@ -303,12 +303,15 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     G_test = sg.StellarGraph(G_test, node_features="feature")
 
     # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
-    test_mapper = GraphSAGELinkMapper(
-        G_test, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
-    )
+    test_gen = GraphSAGELinkGenerator(
+        G_test,
+        batch_size,
+        num_samples,
+        name="test",
+    ).flow(edge_ids_test, edge_labels_test)
 
     # Evaluate and print metrics
-    test_metrics = model.evaluate_generator(test_mapper)
+    test_metrics = model.evaluate_generator(test_gen)
 
     print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
