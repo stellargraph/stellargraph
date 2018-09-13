@@ -20,32 +20,30 @@ Mappers to provide input data for the graph models in layers.
 """
 __all__ = ["GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
 
-import collections
 import operator
 from functools import reduce
 
-import networkx as nx
 import numpy as np
 import itertools as it
-from typing import AnyStr, Any, List, Optional
 from keras.utils import Sequence
 
-from stellargraph.data.explorer import (
+from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
 )
-from stellargraph.data.stellargraph import StellarGraphBase
-from stellargraph.data.utils import is_real_iterable
+from ..core.graph import StellarGraphBase
+from ..core.utils import is_real_iterable
+
 
 
 class NodeSequence(Sequence):
-    """Keras-compatible data generator to use with
-    Keras methods `fit_generator`, `evaluate_generator`,
-    and `predict_generator`
+    """Keras-compatible data generator to use with the Keras
+    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
+    and :meth:`keras.Model.predict_generator`.
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    `GraphSAGENodeGenerator` or `HinSAGENodeGenerator`.
+    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator`.
 
     These Generators are classes that capture the graph structure
     and the feature vectors of each node. These generator classes
@@ -148,15 +146,13 @@ class GraphSAGENodeGenerator:
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the `.flow(...)` method supplying the nodes and (optionally) targets
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    Example:
+    Example::
 
-    ```
         G_generator = GraphSAGENodeGenerator(G, 50, [10,10])
         train_data_gen = G_generator.flow(node_ids)
-    ```
 
     Args:
         G (StellarGraph): The machine-learning ready graph.
@@ -201,9 +197,9 @@ class GraphSAGENodeGenerator:
             sampling_schema: The sampling schema for the model
 
         Returns:
-            A list of the same length as `num_samples` of collected features from
+            A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
-                `(len(head_nodes), num_sampled_at_layer, feature_size)`
+            ``(len(head_nodes), num_sampled_at_layer, feature_size)``
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
@@ -257,8 +253,9 @@ class GraphSAGENodeGenerator:
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
-                in Keras methods `fit_generator`, `evaluate_generator`,
-                and `predict_generator`
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
+
         """
         return NodeSequence(self, node_ids, targets)
 
@@ -273,10 +270,10 @@ class GraphSAGENodeGenerator:
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
-                in Keras methods `fit_generator`, `evaluate_generator`,
-                 and `predict_generator`
-        """
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
 
+        """
         return NodeSequence(self, node_targets.index, node_targets.values)
 
 
@@ -290,22 +287,20 @@ class HinSAGENodeGenerator:
      machine learning. Currently the model requires node features for all
      nodes in the graph.
 
-     Use the `.flow(...)` method supplying the nodes and (optionally) targets
+     Use the ``.flow(...)`` method supplying the nodes and (optionally) targets
      to get an object that can be used as a Keras data generator.
 
-     Example:
+     Example::
 
-     ```
          G_generator = HinSAGENodeGenerator(G, 50, [10,10])
          data_gen = G_generator.flow(node_ids)
-     ```
 
     Args:
-        G (StellarGraph): The machine-learning ready graph.
-        batch_size (int): Size of batch to return.
-        num_samples (list): The number of samples per layer (hop) to take.
-        seed (int): [Optional] Random seed for the node sampler.
-        name (str or None): Name of the generator (optional)
+        G (StellarGraph): The machine-learning ready graph
+        batch_size (int): Size of batch to return
+        num_samples (list): The number of samples per layer (hop) to take
+        seed (int), Optional: Random seed for the node sampler
+        name (str), optional: Name of the generator.
      """
 
     def __init__(self, G, batch_size, num_samples, seed=None, name=None):
@@ -336,12 +331,12 @@ class HinSAGENodeGenerator:
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
             node_sampling_schema: The sampling schema for the HinSAGE model,
-                this is can be generated by the `GraphSchema` object.
+                this is can be generated by the ``GraphSchema`` object.
 
         Returns:
-            A list of the same length as `num_samples` of collected features from
+            A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
-                `(len(head_nodes), num_sampled_at_layer, feature_size)`
+            ``(len(head_nodes), num_sampled_at_layer, feature_size)``
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
@@ -393,14 +388,15 @@ class HinSAGENodeGenerator:
         Args:
             node_ids (iterable): The head node IDs
             targets (Numpy array): a 2D array of numeric targets with shape
-                `(len(node_ids), target_size)`
-            node_type (str): [Optional] The target node type, if not given
+            ``(len(node_ids), target_size)``
+            node_type (str), optional: The target node type, if not given
                 the node type will be inferred from the graph.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
-                in Keras methods `fit_generator`, `evaluate_generator`,
-                and `predict_generator`
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
+
         """
         return NodeSequence(self, node_ids, targets)
 
@@ -410,15 +406,15 @@ class HinSAGENodeGenerator:
         with the supplied node ids and numeric targets.
 
         Args:
-            node_targets (Pandas DataFrame): Numeric targets indexed
+            node_targets (DataFrame): Numeric targets indexed
                 by the node ID for that target.
-            node_type (str): [Optional] The target node type, if not given
+            node_type (str), optional: The target node type, if not given
                 the node type will be inferred from the graph.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
-                in Keras methods `fit_generator`, `evaluate_generator`,
-                 and `predict_generator`
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
         """
 
         return NodeSequence(self, node_targets.index, node_targets.values)

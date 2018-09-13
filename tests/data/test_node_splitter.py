@@ -23,7 +23,7 @@ import networkx as nx
 import pandas as pd
 import pytest
 
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.core.graph import StellarGraph
 from stellargraph.data.node_splitter import NodeSplitter, train_val_test_split
 from stellargraph.data.epgm import EPGM
 from stellargraph import globals

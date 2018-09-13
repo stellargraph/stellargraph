@@ -139,13 +139,15 @@ class MeanHinAggregator(Layer):
 
     def compute_output_shape(self, input_shape):
         """
-        The output shape
+        Computes the output shape of the layer.
+        Assumes that the layer will be built to match that input shape provided.
 
         Args:
-          input_shape:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
-            Tuple of the output shape
+            An input shape tuple.
         """
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
@@ -197,7 +199,6 @@ class HinSAGE:
               List of neighbourhood trees
 
             """
-
             reduced = [
                 li
                 for li in input_tree
@@ -316,7 +317,6 @@ class HinSAGE:
         Returns:
             Output tensor
         """
-
         def compose_layers(x: List, layer: int):
             """
             Function to recursively compose aggregation layers. When current layer is at final layer, then
@@ -429,15 +429,16 @@ class HinSAGE:
         """
         Return model with default inputs
 
-        Arg:
+        Args:
             flatten_output (bool): The HinSAGE model returns an output tensor
                 of form (batch_size, 1, feature_size) -
                 if this flag is True, the output will be resized to
                 (batch_size, feature_size)
 
         Returns:
-            x_inp: Keras input tensors for specified HinSAGE model
-            y_out: Keras tensor for GraphSAGE model output
+            tuple: (x_inp, y_out) where x_inp is a list of Keras input tensors
+            for the specified HinSAGE model and y_out is tne Keras tensor
+            for the HinSAGE model output.
 
         """
         # Create tensor inputs
