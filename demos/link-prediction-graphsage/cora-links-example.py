@@ -18,53 +18,10 @@
 Graph link prediction using GraphSAGE.
 This example requires the CORA dataset - see the README for how to obtain the dataset.
 
-Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora:
-python cora-links-example.py -g ~/data/cora -e 10 -d 0.1 --ignore_node_attr subject --edge_sampling_method global --edge_feature_method ip
+Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora::
 
-usage: cora-links-example.py [-h] [-c [CHECKPOINT]] [-e EPOCHS] [-b BATCH_SIZE]
-                       [-s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]]
-                       [-l [LAYER_SIZE [LAYER_SIZE ...]]] [-g GRAPH]
-                       [-r LEARNING_RATE] [-d DROPOUT]
-                       [-i [IGNORE_NODE_ATTR]]
-                       [--edge_sampling_method] [--edge_feature_method]
+    python cora-links-example.py -l ~/data/cora
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -c [CHECKPOINT], --checkpoint [CHECKPOINT]
-                        Load a saved checkpoint file
-  -b BATCH_SIZE, --batch_size BATCH_SIZE
-                        Batch size for training/validation/testing
-  -e EPOCHS, --epochs EPOCHS
-                        The number of epochs to train the model
-  -d DROPOUT, --dropout DROPOUT
-                        Dropout for the GraphSAGE model, between 0.0 and 1.0
-  -r LEARNING_RATE, --learningrate LEARNING_RATE
-                        Learning rate for training model
-  -s [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]], --neighbour_samples [NEIGHBOUR_SAMPLES [NEIGHBOUR_SAMPLES ...]]
-                        The number of nodes sampled at each layer
-  -l [LAYER_SIZE [LAYER_SIZE ...]], --layer_size [LAYER_SIZE [LAYER_SIZE ...]]
-                        The number of hidden features at each layer
-  -g GRAPH, --graph GRAPH
-                        The graph stored in EPGM format.
-  -i IGNORE_NODE_ATTR, --ignore_node_attr FEATURES
-                        List of node attributes to ignore (e.g., names, ids, etc.)
-  --edge_sampling_method
-        method for sampling negative links, either 'local' or 'global'
-        'local': negative links are sampled to have destination nodes that are in the local neighbourhood of a source node,
-                i.e., 2-k hops away, where k is the maximum number of hops specified by --edge_sampling_probs argument
-        'global': negative links are sampled randomly from all negative links in the graph
-  --edge_sampling_probs
-        probabilities for sampling negative links.
-        Must start with 0 (no negative links to 1-hop neighbours, as these are positive by definition)
-  --edge_feature_method
-        Method for combining (src, dst) node embeddings into edge embeddings.
-        One of:
-                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
-                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
-                'concat' (concatenation),
-                'l1' (l1(u,v)_i = |u_i-v_i|),
-                'l2' (l2(u,v)_i = (u_i-v_i)^2),
-                'avg' (avg(u,v) = (u+v)/2)
 """
 import os
 import argparse
@@ -302,13 +259,15 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     # Convert G_test to StellarGraph object (undirected, as required by GraphSAGE):
     G_test = sg.StellarGraph(G_test, node_features="feature")
 
-    # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
-    test_mapper = GraphSAGELinkMapper(
-        G_test, edge_ids_test, edge_labels_test, batch_size, num_samples, name="test"
-    )
+    # Generator feeds data from (source, target) sampled subgraphs to GraphSAGE model
+    test_gen = GraphSAGELinkGenerator(
+        G_test,
+        batch_size,
+        num_samples,
+    ).flow(edge_ids_test, edge_labels_test)
 
     # Evaluate and print metrics
-    test_metrics = model.evaluate_generator(test_mapper)
+    test_metrics = model.evaluate_generator(test_gen)
 
     print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
@@ -347,14 +306,14 @@ if __name__ == "__main__":
         "-e",
         "--epochs",
         type=int,
-        default=10,
+        default=20,
         help="The number of epochs to train the model",
     )
     parser.add_argument(
         "-d",
         "--dropout",
         type=float,
-        default=0.0,
+        default=0.2,
         help="Dropout for the GraphSAGE model, between 0.0 and 1.0",
     )
     parser.add_argument(
@@ -365,7 +324,7 @@ if __name__ == "__main__":
         help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-s",
+        "-n",
         "--neighbour_samples",
         type=int,
         nargs="*",
@@ -373,7 +332,7 @@ if __name__ == "__main__":
         help="The number of neighbour nodes sampled at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
+        "-s",
         "--layer_size",
         type=int,
         nargs="*",
@@ -381,8 +340,8 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-g",
-        "--graph",
+        "-l",
+        "--location",
         type=str,
         default=None,
         help="Location of the dataset (directory)",
@@ -391,21 +350,21 @@ if __name__ == "__main__":
         "-i",
         "--ignore_node_attr",
         nargs="+",
-        default=[],
+        default=["subject"],
         help="List of node attributes to ignore (e.g., subject, name, id, etc.)",
     )
     parser.add_argument(
         "-m",
         "--edge_feature_method",
         type=str,
-        default="ip",
+        default="concat",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
     )
 
     args, cmdline_args = parser.parse_known_args()
 
-    graph_loc = os.path.expanduser(args.graph)
     # Load the dataset - this assumes it is the CORA dataset
+    graph_loc = os.path.expanduser(args.location)
     G = load_data(graph_loc, args.ignore_node_attr)
 
     if args.checkpoint is None:
