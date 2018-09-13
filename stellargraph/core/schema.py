@@ -20,6 +20,7 @@ from ..core.utils import is_real_iterable
 
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
 
+
 class GraphSchema:
     """
     Class to encapsulate the schema information for a heterogeneous graph.

@@ -317,6 +317,7 @@ class HinSAGE:
         Returns:
             Output tensor
         """
+
         def compose_layers(x: List, layer: int):
             """
             Function to recursively compose aggregation layers. When current layer is at final layer, then

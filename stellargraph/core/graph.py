@@ -312,6 +312,7 @@ class StellarGraphBase:
             a numeric feature vector for each node in the graph.
 
     """
+
     def __init__(self, incoming_graph_data=None, **attr):
         # TODO: add doc string
         super().__init__(incoming_graph_data, **attr)

@@ -35,7 +35,6 @@ from ..core.graph import StellarGraphBase
 from ..core.utils import is_real_iterable
 
 
-
 class NodeSequence(Sequence):
     """Keras-compatible data generator to use with the Keras
     methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,

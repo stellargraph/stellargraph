@@ -24,11 +24,7 @@ from stellargraph.core.graph import *
 from stellargraph import globals
 
 
-def from_epgm(
-    epgm_location,
-    dataset_name=None,
-    directed=False
-):
+def from_epgm(epgm_location, dataset_name=None, directed=False):
     """
     Imports a graph stored in EPGM format to a NetworkX object
 
@@ -60,7 +56,6 @@ def from_epgm(
 
     # Convert to StellarGraph (via nx)
     Gnx = G_epgm.to_nx(graph_id, directed=directed)
-
 
     print(
         "Graph statistics: {} nodes, {} edges".format(
