@@ -91,7 +91,7 @@ This dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/c
 Download and unzip the `cora.tgz <https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz>`_ file to a location on your computer and pass this location as a command line argument to the example scripts, as detailed below.
 
 
-Running the Cora Node Classification Example
+Running the GraphSAGE Cora Node Classification Example
 ---------------------------------------------
 * Install the ``stellargraph`` Python library, explained in the previous section.
 
@@ -109,7 +109,28 @@ Running the Cora Node Classification Example
 
     python cora-example.py --help
 
+Running the GraphSAGE Cora Link Prediction Example
+---------------------------------------------
+* Install the ``stellargraph`` Python library, explained in the previous section.
+
+* Download and decompress the CORA dataset (see `Getting the datasets` above).
+
+* Change to the Cora link prediction directory under demos::
+
+    cd /path/to/stellargraph/demos/link-prediction-graphsage
+
+* Run the example script and specify the location of the downloaded CORA dataset with the following command::
+
+    python cora-links-example.py -l <path_to_cora_dataset>
+
+* Additional arguments can be specified that change the GraphSAGE model and training parameters, a description of these arguments is displayed using the help option to the script::
+
+    python cora-links-example.py --help
+
+
+
 
 .. _`Installing Git`: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
 .. _`Python on HomeBrew`: https://docs.brew.sh/Homebrew-and-Python.html
+
