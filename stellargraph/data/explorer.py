@@ -33,6 +33,7 @@ from ..core.schema import GraphSchema
 from ..core.graph import StellarGraphBase
 from ..core.utils import is_real_iterable
 
+
 class GraphWalk(object):
     """
     Base class for exploring graphs.
@@ -620,7 +621,8 @@ class DepthFirstWalk(GraphWalk):
     Depth First Walk that generates all paths from a starting node to a given depth.
     It can be used to extract, in a memory efficient way, a sub-graph starting from a node and up to a given depth.
     """
-    #TODO: Implement the run method
+
+    # TODO: Implement the run method
     pass
 
 
@@ -629,7 +631,8 @@ class BreadthFirstWalk(GraphWalk):
     Breadth First Walk that generates all paths from a starting node to a given depth.
     It can be used to extract a sub-graph starting from a node and up to a given depth.
     """
-    #TODO: Implement the run method
+
+    # TODO: Implement the run method
     pass
 
 
