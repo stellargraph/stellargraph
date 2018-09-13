@@ -11,8 +11,8 @@
     <img src="https://img.shields.io/pypi/v/stellargraph.svg" /></a>
   <a href="https://buildkite.com/stellar/stellar-ml?branch=master/" alt="Build status: master">
     <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/master.svg?label=branch->master"/></a>
-    <a href="https://buildkite.com/stellar/stellar-ml?branch=develop/" alt="Build status: develop">
-      <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch_develop"/></a>
+  <a href="https://buildkite.com/stellar/stellar-ml?branch=develop/" alt="Build status: develop">
+    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch_develop"/></a>
 </p>
 
 <!--
@@ -129,7 +129,7 @@ pip install .
 
 ## Running the examples
 
-
+See the [README](demos/README.md) in the `demos` directory for more information about the examples and how to run them.
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
@@ -163,7 +163,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 ## Getting Help
 
-API Documentation for StellarGraph can be found [here.](https://stellargraph.readthedocs.io)
+Documentation for StellarGraph can be found [here.](https://stellargraph.readthedocs.io)
 
 ## CI
 
