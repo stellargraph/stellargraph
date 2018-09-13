@@ -1,4 +1,4 @@
-![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
+![StellarGraph Machine Learning library logo](stellar-graph-banner.png)
 
 # Stellar Graph Machine Learning Library
 
