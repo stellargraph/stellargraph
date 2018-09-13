@@ -6,7 +6,7 @@ Have you found a bug or have a new feature to suggest? Please read this before y
 
 Please follow these steps to report a bug:
 
-1. First, be confident that the bug lies in StellarGraph, not in your code or another package. Check the StellarGraph FAQs.
+1. First, be confident that the bug lies in StellarGraph, not in your code or another package. <!-- Check the StellarGraph FAQs. -->
 
 1. The bug may already be fixed. Try updating to the latest version, and check the current and closed issues in GitHub. Search for similar issues and try and find if someone else has found the same bug already.
 
