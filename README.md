@@ -2,14 +2,12 @@
 
 # Stellar Graph Machine Learning Library
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-
+[![Code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Docs](https://readthedocs.org/projects/stellargraph/badge/?version=latest)](http://stellargraph.readthedocs.io/)
 
 ## Build Status
-|Branch|Build|
-|:-----|:----:|
-|*master*|[![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=master)|
-|*devel*|[![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=develop)|
+[![Build status on branch **master**](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=master)
+[![Build status on branch **develop**](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=develop)
 
 **StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data. 
 
