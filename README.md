@@ -1,14 +1,26 @@
-![StellarGraph Machine Learning library logo](stellar-graph-banner.png)
+![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
 # Stellar Graph Machine Learning Library
 
-[![Code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![Docs](https://readthedocs.org/projects/stellargraph/badge/?version=latest)](http://stellargraph.readthedocs.io/)
-[![PyPI](https://img.shields.io/pypi/v/stellargraph.svg)](https://pypi.org/project/stellargraph/)
+<p align="center">
+  <a href="https://github.com/ambv/black" alt="Code style">
+    <img src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
+  <a href="http://stellargraph.readthedocs.io/" alt="Docs">
+    <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest" /></a>
+  <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
+    <img src="https://img.shields.io/pypi/v/stellargraph.svg" /></a>
+  <a href="https://buildkite.com/stellar/stellar-ml?branch=master/" alt="Build status: master">
+    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/master.svg?label=branch: master"/></a>
+    <a href="https://buildkite.com/stellar/stellar-ml?branch=master/" alt="Build status: develop">
+      <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch: develop"/></a>
+</p>
 
-[![Build status: master](https://img.shields.io/buildkite/3826789cf8890b426057e6fe1c4e683bdf04fa24d498885489/master.svg?label=branch: master)](https://buildkite.com/stellar/stellar-ml?branch=master)
+<!--
+![Buildkite]()
+Branch: **master** [![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=master)
 
-[![Build status: develop](https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch: develop)](https://buildkite.com/stellar/stellar-ml?branch=develop)
+Branch: **devel** [![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=develop)
+-->
 
 ## Introduction
 **StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data.
