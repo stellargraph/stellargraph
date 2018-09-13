@@ -5,8 +5,10 @@
 [![Code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![Docs](https://readthedocs.org/projects/stellargraph/badge/?version=latest)](http://stellargraph.readthedocs.io/)
 [![PyPI](https://img.shields.io/pypi/v/stellargraph.svg)](https://pypi.org/project/stellargraph/)
-[![Build status](https://img.shields.io/buildkite/3826789cf8890b426057e6fe1c4e683bdf04fa24d498885489/master.svg?label=branch: master)](https://buildkite.com/stellar/stellar-ml?branch=master)
-[![Build status](https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch: develop)](https://buildkite.com/stellar/stellar-ml?branch=develop)
+
+[![Build status: master](https://img.shields.io/buildkite/3826789cf8890b426057e6fe1c4e683bdf04fa24d498885489/master.svg?label=branch: master)](https://buildkite.com/stellar/stellar-ml?branch=master)
+
+[![Build status: develop](https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch: develop)](https://buildkite.com/stellar/stellar-ml?branch=develop)
 
 ## Introduction
 **StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data.
