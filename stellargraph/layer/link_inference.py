@@ -72,18 +72,18 @@ def link_inference(
     Defines an edge inference function that takes source, destination node features as input,
     and returns a numeric vector of output_dim size.
 
-     Args:
-        output_dim (int): Number of predictor's output units (desired dimensionality of the output)
-        output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc.,
+    Args:
+        output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
+        output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
-            One of:
-                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
-                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
-                'concat' (concatenation),
-                'l1' (l1(u,v)_i = |u_i-v_i|),
-                'l2' (l2(u,v)_i = (u_i-v_i)^2),
-                'avg' (avg(u,v) = (u+v)/2)
+        edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
+            One of
+             * 'concat' -- concatenation,
+             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+             * 'l1' -- :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         name (str): optional name of the defined function, used for error logging
@@ -166,17 +166,17 @@ def link_classification(
     (source, destination) node features.
 
     Args:
-        output_dim (int): Number of classifier's output units (desired dimensionality of the output)
-        output_act (str, optional): activation function applied to the output, one of "softmax", "sigmoid", etc.,
+        output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
+        output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
+        edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
             One of:
-                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
-                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
-                'concat' (concatenation),
-                'l1' (l1(u,v)_i = |u_i-v_i|),
-                'l2' (l2(u,v)_i = (u_i-v_i)^2),
-                'avg' (avg(u,v) = (u+v)/2)
+             * 'concat' -- concatenation,
+             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+             * 'l1' -- :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
         Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
@@ -203,17 +203,17 @@ def link_regression(
     (source, destination) node features.
 
     Args:
-        output_dim (int): Dimensionality of the output vector, default is 1 for scalar output
-        clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
+        output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
+        clip_limits (tuple): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
-        edge_feature_method (str, optional): Name of the method of combining (src,dst) node features into edge features.
+        edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
             One of:
-                'ip' or 'dot' (inner product, ip(u,v) = sum_{i=1..d}{u_i*v_i}),
-                'mul' or 'hadamard' (element-wise multiplication, h(u,v)_i = u_i*v_i),
-                'concat' (concatenation),
-                'l1' (l1(u,v)_i = |u_i-v_i|),
-                'l2' (l2(u,v)_i = (u_i-v_i)^2),
-                'avg' (avg(u,v) = (u+v)/2)
+             * 'concat' -- concatenation,
+             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+             * 'l1' -- :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
         Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and

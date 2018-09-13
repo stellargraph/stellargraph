@@ -15,12 +15,9 @@
 # limitations under the License.
 
 """
-The data package contains classes and functions to read, process, and query graph data
+This contains the core objects used by the StellarGraph library.
 
 """
 
-# Expose the stellargraph.data classes:
-from .explorer import *
-from .edge_splitter import *
-from .node_splitter import *
-from .loader import from_epgm, load_dataset_BlogCatalog3
+from .graph import *
+from .schema import *

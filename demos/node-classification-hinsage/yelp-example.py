@@ -34,11 +34,11 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 import keras
-from keras import optimizers, losses, layers, metrics
+from keras import optimizers, layers, metrics
 import keras.backend as K
 
-from stellargraph.data.stellargraph import StellarGraph
-from stellargraph.layer.hinsage import HinSAGE, MeanHinAggregator
+from stellargraph.core.graph import StellarGraph
+from stellargraph.layer.hinsage import HinSAGE
 from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
 
 from sklearn import model_selection
@@ -163,20 +163,6 @@ def train(
     model.save("yelp_model" + save_str + ".h5")
 
 
-def test(G, target_converter, feature_converter, model_file, batch_size, target_attr):
-    """
-    Load the serialized model and evaluate on all nodes in the graph.
-
-    Args:
-        G: NetworkX graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
-        model_file: Location of Keras model to load
-        batch_size: Size of batch for inference
-    """
-    pass
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Graph node classification using GraphSAGE"
@@ -187,14 +173,6 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help="The location of the pre-processes Yelp dataset.",
-    )
-    parser.add_argument(
-        "-c",
-        "--checkpoint",
-        nargs="?",
-        type=str,
-        default=None,
-        help="Load a saved checkpoint file",
     )
     parser.add_argument(
         "-b", "--batch_size", type=int, default=200, help="Batch size for training"
@@ -279,16 +257,13 @@ if __name__ == "__main__":
     # Create stellar Graph object
     G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features)
 
-    if args.checkpoint is None:
-        train(
-            G,
-            user_targets,
-            args.layer_size,
-            args.neighbour_samples,
-            args.batch_size,
-            args.epochs,
-            args.learningrate,
-            args.dropout,
-        )
-    else:
-        test(G, args.checkpoint, args.batch_size)
+    train(
+        G,
+        user_targets,
+        args.layer_size,
+        args.neighbour_samples,
+        args.batch_size,
+        args.epochs,
+        args.learningrate,
+        args.dropout,
+    )

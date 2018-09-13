@@ -16,7 +16,7 @@
 
 import pytest
 from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.core.graph import StellarGraph
 
 
 def create_simple_test_graph():

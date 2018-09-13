@@ -13,14 +13,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import collections
 
-"""
-The data package contains classes and functions to read, process, and query graph data
 
-"""
+def is_real_iterable(x):
+    """
+    Tests if x is an iterable and is not a string.
 
-# Expose the stellargraph.data classes:
-from .explorer import *
-from .edge_splitter import *
-from .node_splitter import *
-from .loader import from_epgm, load_dataset_BlogCatalog3
+    Args:
+        x:
+
+    Returns:
+        True if x is an iterable (but not a string) and False otherwise
+    """
+    return isinstance(x, collections.Iterable) and not isinstance(x, (str, bytes))

@@ -18,7 +18,7 @@ __all__ = ["train_val_test_split", "NodeSplitter"]
 
 import numpy as np
 import pandas as pd
-from stellargraph.data.stellargraph import StellarGraphBase
+from stellargraph.core.graph import StellarGraphBase
 from stellargraph import globals
 
 

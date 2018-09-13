@@ -20,26 +20,22 @@ import pandas as pd
 
 import networkx as nx
 from stellargraph.data.epgm import EPGM
-from stellargraph.data.stellargraph import *
+from stellargraph.core.graph import *
 from stellargraph import globals
 
 
-def from_epgm(
-    epgm_location,
-    dataset_name=None,
-    directed=False,
-    node_type_name=globals.TYPE_ATTR_NAME,
-    edge_type_name=globals.TYPE_ATTR_NAME,
-):
+def from_epgm(epgm_location, dataset_name=None, directed=False):
     """
+    Imports a graph stored in EPGM format to a NetworkX object
 
     Args:
-        epgm_location:
-        dataset_name:
-        graph_id:
+        epgm_location (str): The directory containing the EPGM data
+        dataset_name (str), optional: The name of the dataset to import
+        directed (bool): If True, load as a directed graph, otherwise
+            load as an undirected graph
 
     Returns:
-
+        A NetworkX graph containing the data for the EPGM-stored graph.
     """
     G_epgm = EPGM(epgm_location)
     graphs = G_epgm.G["graphs"]
@@ -61,21 +57,12 @@ def from_epgm(
     # Convert to StellarGraph (via nx)
     Gnx = G_epgm.to_nx(graph_id, directed=directed)
 
-    if directed:
-        G = StellarDiGraph(
-            Gnx, node_type_name=node_type_name, edge_type_name=edge_type_name
-        )
-    else:
-        G = StellarGraph(
-            Gnx, node_type_name=node_type_name, edge_type_name=edge_type_name
-        )
-
     print(
         "Graph statistics: {} nodes, {} edges".format(
-            G.number_of_nodes(), G.number_of_edges()
+            Gnx.number_of_nodes(), Gnx.number_of_edges()
         )
     )
-    return G
+    return Gnx
 
 
 def load_dataset_BlogCatalog3(location):
