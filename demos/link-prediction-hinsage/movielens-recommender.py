@@ -16,6 +16,15 @@
 
 """
 Graph link attribute prediction using HinSAGE, using the movielens data.
+
+See README.md for the description of the dataset.
+
+Run this script as follows:
+    python movielens-recommender.py -l <path_to_movielens_dataset>
+
+Other optional arguments can be seen by running
+    python movielens-recommender.py --help
+
 """
 
 import argparse
