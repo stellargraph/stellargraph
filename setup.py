@@ -43,6 +43,7 @@ setuptools.setup(
     version=VERSION,
     description=DESCRIPTION,
     author="Data61, CSIRO",
+    author_email="stellar.admin@csiro.au",
     url=URL,
     license="Apache 2.0",
     long_description=LONG_DESCRIPTION,

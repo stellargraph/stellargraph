@@ -17,7 +17,7 @@
 import pytest
 import pandas as pd
 import networkx as nx
-from stellargraph.data.stellargraph import *
+from stellargraph.core.graph import *
 from stellargraph.data.converter import *
 
 

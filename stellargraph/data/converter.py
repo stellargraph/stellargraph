@@ -15,10 +15,9 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
-import itertools as it
 import numpy as np
 from keras.utils.np_utils import to_categorical
-from stellargraph.data.stellargraph import StellarGraphBase
+from stellargraph.core.graph import StellarGraphBase
 
 
 class NodeAttributeSpecification:
@@ -31,31 +30,28 @@ class NodeAttributeSpecification:
 
     # Usage
 
-    Instantiation:
-    ```
-    nfs = NodeAttributeSpecification()
-    ```
+    Instantiation::
+
+        nfs = NodeAttributeSpecification()
 
     To add an attribute for a node type, choose an appropriate Converter class
     and use the following methods:
 
-    For a single attribute of node type node_type use `add_attribute`:
-    ```
-    nfs.add_attribute(node_type, attribute_name, Converter, <converter parameters>)
-    ```
+    For a single attribute of node type node_type use `add_attribute`::
+
+        nfs.add_attribute(node_type, attribute_name, Converter, <converter parameters>)
 
     For multiple attributes of a single node type, using a single converter class,
-    use `add_attribute_list`:
-    ```
-    nfs.add_attribute_list(node_type, attribute_name, Converter, <converter paramters>)
-    ```
+    use `add_attribute_list`::
+
+        nfs.add_attribute_list(node_type, attribute_name, Converter, <converter paramters>)
 
     To add all attributes using the same converter class, use `add_all_attributes`,
     you will need to provide a StellarGraph object so that the node attributes can
-    be extracted:
-    ```
-    nfs.add_all_attributes(graph, node_type, Converter, <converter paramters>)
-    ```
+    be extracted::
+
+        nfs.add_all_attributes(graph, node_type, Converter, <converter paramters>)
+
 
     # Converter classes:
 
@@ -63,19 +59,19 @@ class NodeAttributeSpecification:
     attribute values and whether the attribute specification required is for features
     or targets.
 
-    ## BinaryConverter:
+    * BinaryConverter:
         This converter will create a value with a one if the attribute exists in the node
         attributes and zero if it does not.
 
-    ## CategorigalConverter:
+    * CategorigalConverter:
         This converter takes an attribute that has multiple values (categories) and converts
         the categories to integers.
 
-    ## OneHotCategorigalConverter:
+    * OneHotCategorigalConverter:
         This converter takes an attribute that has multiple values (categories) and converts
         the categories to one-hot vectors of length equal to the number of categories.
 
-    ## NumericConverter:
+    * NumericConverter:
         This converter takes an attribute that has integer or floating point values and
         optionally normalizes them by mean and standard deviation.
 

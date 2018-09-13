@@ -17,7 +17,7 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import UniformRandomMetaPathWalk
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.core.graph import StellarGraph
 
 
 def create_test_graph():

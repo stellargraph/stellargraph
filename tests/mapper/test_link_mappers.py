@@ -30,7 +30,7 @@ GraphSAGELinkMapper(
 g
 """
 from stellargraph.mapper.link_mappers import *
-from stellargraph.data.stellargraph import *
+from stellargraph.core.graph import *
 
 import numpy as np
 import networkx as nx

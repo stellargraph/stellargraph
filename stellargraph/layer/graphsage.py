@@ -124,6 +124,17 @@ class MeanAggregator(Layer):
         return self.act(total + self.bias if self.has_bias else total)
 
     def compute_output_shape(self, input_shape):
+        """
+        Computes the output shape of the layer.
+        Assumes that the layer will be built to match that input shape provided.
+
+        Args:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
@@ -132,13 +143,13 @@ class GraphSAGE:
     Implementation of the GraphSAGE algorithm with Keras layers.
 
     Args:
-        layer_sizes (list of int): Hidden feature dimensions for each layer
+        layer_sizes (list): Hidden feature dimensions for each layer
         generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
             and input_dim will be taken from this object.
-        n_samples (list of int): (Optional: needs to be specified if no mapper
+        n_samples (list): (Optional: needs to be specified if no mapper
             is provided.) The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
-        aggregator (class Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
+        aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
         normalize (str): The normalization used after each layer, defaults to L2 normalization.
