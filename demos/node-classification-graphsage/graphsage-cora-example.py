@@ -27,8 +27,10 @@ The following is the description of the dataset:
 Download and unzip the cora.tgz file to a location on your computer and pass this location
 (which should contain cora.cites and cora.content) as a command line argument to this script.
 
-Run this script as follows:
-    python epgm-example.py -l <path_to_cora_dataset>
+Run this script as follows::
+
+    python cora-example.py -l <path_to_cora_dataset>
+
 """
 import os
 import argparse
