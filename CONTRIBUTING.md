@@ -18,11 +18,11 @@ Please follow the following steps to report a bug:
 
 ## Proposing a new feature
 
-1. Give a clear and detailed explanation of the feature and why it should be added. This is best done by creating an issue addressing the new feature. Propose a clear API for using the feature, preferably with a small about of pseudo-code.
+1. Give a clear and detailed explanation of the feature and why it should be added. This is best done by creating an issue on [GitHub](https://github.com/stellargraph/stellargraph/issues) addressing the new feature. Propose a clear API for using the feature, preferably with a small snippet of pseudo-code.
 
 2. If this is an implementation of an algorithm in the literature, please give a link to a paper describing the algorithm.
 
-3. If you choose to implement the feature you can do so by forking the StellarGraph repository and creating a new branch addressing your feature from the `develop` branch. After writing code implementing the feature in this branch make a Pull Request to the main StellarGraph repository. See below for more details on submitting your pull request.
+3. If you choose to implement the feature you can do so by forking the StellarGraph repository and creating a new branch addressing your feature from the `develop` branch. After writing code implementing the feature in this branch make a Pull Request to the `develop` branch of the main StellarGraph repository. See below for more details on submitting your pull request.
 
 ## Adding demos
 
@@ -32,7 +32,7 @@ Please follow the following steps to report a bug:
 
 2. If this demo is replicating an experiment in the literature, please give a link to a paper describing the algorithm.
 
-3. If you choose to implement the demo you can do so by forking the StellarGraph repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the main StellarGraph repository. See the next section for more details on submitting your pull request.
+3. If you choose to implement the demo you can do so by forking the StellarGraph repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the `develop` branch of the main StellarGraph repository. See the next section for more details on submitting your pull request.
 
 
 ## Pull Requests
@@ -45,7 +45,7 @@ Please follow the following steps to report a bug:
 
 4. Run the entire test suite by running `py.test tests/` in the top-level directory and ensure all tests pass. You will need to install the test requirements first: `pip install -e .[tests]`.
 
-5. Ensure that any new function or class you introduce has proper docstrings and documentation. Make sure any code you have changed also has updated dostrings and documentation. Docstrings should follow the same style as the library, we follow the Google style (https://github.com/google/styleguide/blob/gh-pages/pyguide.md).
+5. Ensure that any new function or class you introduce has proper docstrings and documentation. Make sure any code you have changed also has updated dostrings and documentation. Docstrings should follow the same style as the library, we follow the Google style (https://github.com/google/styleguide/blob/gh-pages/pyguide.md), examples of Google style docstrings can be found [here](http://www.sphinx-doc.org/en/master/usage/extensions/example_google.html#example-google).
 
 6. All code in StellarGraph is formatted using the Black style engine (https://github.com/ambv/black). The automated tests include checking for Black formatted code, so make sure that you run black on all your code before submitting a pull request.
 
@@ -53,4 +53,4 @@ Please follow the following steps to report a bug:
 
 8. Update the documentation. If introducing new functionality, make sure you include code snippets demonstrating the usage of your new feature.
 
-9. Create a pull request on GitHub from your branch to devlop. If you have already discussed the new features on GitHub with the developers and they are aware of what the pull request contains, then the developers will endeavour to approve the pull request promptly.
+9. Create a pull request on GitHub from your branch to `develop` branch. If you have already discussed the new features on GitHub with the developers and they are aware of what the pull request contains, then the developers will endeavour to approve the pull request promptly.
