@@ -1,4 +1,0 @@
-"""
-Stellar Machine Learning Library
-
-"""
