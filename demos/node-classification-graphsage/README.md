@@ -5,7 +5,7 @@ in a homogeneous network.
 
 ## Requirements
 All examples use Python 3.6 and the StellarGraph library. To install the StellarGraph library
-following the instructions at: https://github.com/stellargraph/stellargraph
+follow the instructions at: https://github.com/stellargraph/stellargraph
 
 Additional requirements are Pandas, Numpy and Scikit-Learn which are installed as depdendencies
 of the StellarGraph library. In addition Juptyer is required to run the notebook version of
@@ -13,7 +13,7 @@ the example.
 
 ## CORA dataset
 
-Currently the examples in this directory are tested on the CORA dataset. The GraphSAGE model assumes that node
+Currently the examples in this directory are testednano ~/.gnupg/gpg-agent.conf on the CORA dataset. The GraphSAGE model assumes that node
 features are available.
 
 The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
