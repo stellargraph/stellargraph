@@ -21,7 +21,7 @@ import pandas as pd
 import networkx as nx
 from stellargraph.data.epgm import EPGM
 from stellargraph.core.graph import *
-from stellargraph import globals
+from stellargraph import globalvar
 
 
 def from_epgm(epgm_location, dataset_name=None, directed=False):
