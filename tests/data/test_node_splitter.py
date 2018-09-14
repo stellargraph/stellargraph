@@ -26,7 +26,7 @@ import pytest
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.node_splitter import NodeSplitter, train_val_test_split
 from stellargraph.data.epgm import EPGM
-from stellargraph import globals
+from stellargraph import globalvar
 from datetime import datetime, timedelta
 import random
 
@@ -118,9 +118,9 @@ def filter_nodes(nodes, node_type, target_attribute):
     # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
     # from being added to train, test, and validation datasets.
     y = [
-        (node[0], node[1].get(target_attribute, globals.UNKNOWN_TARGET_ATTRIBUTE))
+        (node[0], node[1].get(target_attribute, globalvar.UNKNOWN_TARGET_ATTRIBUTE))
         for node in nodes
-        if node[1][globals.TYPE_ATTR_NAME] == node_type
+        if node[1][globalvar.TYPE_ATTR_NAME] == node_type
     ]
 
     return y
@@ -147,10 +147,10 @@ def get_nodes(graph_nodes, node_type, target_attribute):
     y = [
         (
             node["id"],
-            node["data"].get(target_attribute, globals.UNKNOWN_TARGET_ATTRIBUTE),
+            node["data"].get(target_attribute, globalvar.UNKNOWN_TARGET_ATTRIBUTE),
         )
         for node in graph_nodes
-        if node["meta"][globals.TYPE_ATTR_NAME] == node_type
+        if node["meta"][globalvar.TYPE_ATTR_NAME] == node_type
     ]
 
     return y
