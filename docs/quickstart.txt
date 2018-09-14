@@ -2,12 +2,12 @@
 Introduction
 =============
 
-**StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data. 
+**StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data.
 
-Graph-structured data represent entities, e.g., people, as nodes (or equivalently, vertices), 
+Graph-structured data represent entities, e.g., people, as nodes (or equivalently, vertices),
 and relationships between entities, e.g., friendship, as links (or equivalently, edges). Nodes and links may have associated attributes such as age, income, time when a friendship was established, etc. StellarGraph supports analysis of both homogeneous networks (with nodes and links of one type)  and heterogeneous networks (with more than one type of nodes and/or links).
 
-The StellarGraph library implements several state-of-the-art algorithms for applying machine learning methods to discover patterns and answer questions using graph-structured data. 
+The StellarGraph library implements several state-of-the-art algorithms for applying machine learning methods to discover patterns and answer questions using graph-structured data.
 
 The StellarGraph library can be used to solve tasks using graph-structured data, such as:
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
@@ -21,11 +21,11 @@ Getting Started
 To get started with StellarGraph you'll need data structured as homogeneous or heterogeneous graph, including  attributes for the entities represented as graph nodes.
 `NetworkX <https://networkx.github.io/>`_ is used to represent the graph and `Pandas <https://pandas.pydata.org/>`_, `Scikit-Learn <http://scikit-learn.org/>`_, and/or `Numpy <http://www.numpy.org/>`_ can be used to  are used to store node attributes.
 
-Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of various machine learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, are given in the `demos` directory of this repository.
+Detailed and narrated `examples <https://github.com/stellargraph/stellargraph/tree/master/demos/>`_ of various machine learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, are given in the `demos` directory of this repository.
 
 Requirements
 -------------
-Main requirements (all requirements in requirements.txt)
+Main requirements (all requirements are in ``requirements.txt``)
 
 * Python 3.6 (http://python.org)
 
@@ -38,13 +38,12 @@ Main requirements (all requirements in requirements.txt)
 
 Installation
 -------------
-StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library
-uses Keras with the Tensorflow backend, and thus does not currently work in python 3.7). The required Python version can be downloaded and installed from `python.org <http://python.org/>`_. Alternatively, use the Anaconda Python  environment, available from `anaconda.com <https://www.anaconda.com/download/>`_.
+StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library uses Keras with the Tensorflow backend, and thus does not currently work in python 3.7). The required Python version can be downloaded and installed from `python.org <http://python.org/>`_. Alternatively, use the Anaconda Python  environment, available from `anaconda.com <https://www.anaconda.com/download/>`_.
 
 The StellarGraph library can be installed in one of two ways, described next.
 
-Install StellarGraph using pip:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install StellarGraph using ``pip``:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To install StellarGraph library from `PyPi <http://pypi.org>`_ using ``pip``, execute the following command::
 
   pip install stellargraph
@@ -62,18 +61,15 @@ Install a git client, for example install the XCode git client by typing::
 
   git --install
 
-
 First, clone the StellarGraph repository using ``git``::
 
   git clone https://github.com/stellargraph/stellargraph.git
-
 
 Then, ``cd`` to the StellarGraph folder, and install the libraray by executing the following commands::
 
   cd stellargraph
   pip install -r requirements.txt
   pip install .
-
 
 Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
 
@@ -82,7 +78,7 @@ Examples
 
 Getting the datasets
 ---------------------
-The StellarGraph examples require datasets to work. They are not supplied with stellargraph, and need to be downloaded separately. 
+The StellarGraph examples require datasets to work. They are not supplied with stellargraph, and need to be downloaded separately.
 
 CORA dataset
 ^^^^^^^^^^^^^
@@ -92,8 +88,12 @@ Download and unzip the `cora.tgz <https://linqs-data.soe.ucsc.edu/public/lbc/cor
 
 
 Running the GraphSAGE Cora Node Classification Example
----------------------------------------------
+--------------------------------------------------------
 * Install the ``stellargraph`` Python library, explained in the previous section.
+
+* If you haven't already done so, clone the StellarGraph repository using ``git``::
+
+     git clone https://github.com/stellargraph/stellargraph.git
 
 * Download and decompress the CORA dataset (see `Getting the datasets` above).
 
@@ -109,9 +109,14 @@ Running the GraphSAGE Cora Node Classification Example
 
     python cora-example.py --help
 
+
 Running the GraphSAGE Cora Link Prediction Example
----------------------------------------------
+---------------------------------------------------
 * Install the ``stellargraph`` Python library, explained in the previous section.
+
+* If you haven't already done so, clone the StellarGraph repository using ``git``::
+
+      git clone https://github.com/stellargraph/stellargraph.git
 
 * Download and decompress the CORA dataset (see `Getting the datasets` above).
 
@@ -128,6 +133,10 @@ Running the GraphSAGE Cora Link Prediction Example
     python cora-links-example.py --help
 
 
+Running Other Examples
+------------------------
+
+There are several other examples in the ``demos`` directory. Read the `README.md <https://raw.githubusercontent.com/stellargraph/stellargraph/develop/demos/README.md>`_  in the ``demos`` directory to find out more.
 
 
 .. _`Installing Git`: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
