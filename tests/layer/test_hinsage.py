@@ -21,7 +21,7 @@ HinSAGE tests
 """
 
 
-from stellar.layer.hinsage import *
+from stellargraph.layer.hinsage import *
 import keras
 import numpy as np
 import pytest
@@ -32,7 +32,7 @@ def test_mean_hin_agg_constructor():
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert not agg.has_bias
-    assert agg.act == keras.backend.relu
+    assert agg.act.__name__ == "relu"
 
 
 def test_mean_hin_agg_constructor_1():
@@ -89,16 +89,15 @@ def test_mean_hin_agg_apply_2():
     ]
 
     actual = model.predict(x)
-    print(actual)
-    expected = [np.array([[[2, 8]]]), np.array([[[4, 10]]])]
-    assert actual == pytest.approx(expected)
+    expected = [np.array([[[2, 8]]]), np.array([[[3, 9]]])]
+    assert all(a == pytest.approx(e) for a, e in zip(actual, expected))
 
 
 def test_hinsage_constructor():
-    hs = Hinsage(
-        output_dims=[{"1": 2, "2": 2}, {"1": 2}],
+    hs = HinSAGE(
+        layer_sizes=[{"1": 2, "2": 2}, {"1": 2}],
         n_samples=[2, 2],
-        input_neigh_tree=[
+        input_neighbor_tree=[
             ("1", [1, 2]),
             ("1", [3, 4]),
             ("2", [5]),
@@ -110,14 +109,14 @@ def test_hinsage_constructor():
     )
     assert hs.n_layers == 2
     assert hs.n_samples == [2, 2]
-    assert not hs.bias
+    assert hs.bias
 
 
 def test_hinsage_apply():
-    hs = Hinsage(
-        output_dims=[{"1": 2, "2": 2}, 2],
+    hs = HinSAGE(
+        layer_sizes=[{"1": 2, "2": 2}, 2],
         n_samples=[2, 2],
-        input_neigh_tree=[
+        input_neighbor_tree=[
             ("1", [1, 2]),
             ("1", [3, 4]),
             ("2", [5]),

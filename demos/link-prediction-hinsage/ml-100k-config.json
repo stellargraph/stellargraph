@@ -1,0 +1,35 @@
+{
+  "input_files": {
+    "ratings": "u.data",
+    "users": "u.user",
+    "movies": "u.item"
+  },
+
+  "ratings_params": {
+    "dataset_name": "ml_100k",
+    "columns": ["uId","mId","score"],
+    "usecols": [0, 1, 2],
+    "sep": "\t"
+  },
+
+  "user_feature_params": {
+    "dataset_name": "ml_100k",
+    "feature_type": "user",
+    "columns": ["uId","age","gender","job"],
+    "formats": [null,"B","C","B"],
+    "usecols": [0,1,2,3],
+    "sep": "|"
+  },
+
+  "movie_feature_params": {
+    "dataset_name": "ml_100k",
+    "feature_type": "movie",
+    "columns": ["mId","g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "g9",
+      "g10", "g11", "g12", "g13", "g14", "g15", "g16", "g17", "g18", "g19"],
+    "formats": [null, "C", "C", "C", "C", "C", "C", "C", "C", "C", "C", "C",
+      "C", "C", "C", "C", "C", "C", "C", "C"],
+    "usecols": [0, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+      14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+    "sep": "|"
+  }
+}

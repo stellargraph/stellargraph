@@ -15,11 +15,80 @@
 # limitations under the License.
 
 import unittest
+import uuid
 import os
 import numpy as np
-from stellar.data.node_splitter import NodeSplitter
-from stellar.data.epgm import EPGM
-from shutil import rmtree
+import itertools as it
+import networkx as nx
+import pandas as pd
+import pytest
+
+from stellargraph.core.graph import StellarGraph
+from stellargraph.data.node_splitter import NodeSplitter, train_val_test_split
+from stellargraph.data.epgm import EPGM
+from stellargraph import globalvar
+from datetime import datetime, timedelta
+import random
+
+
+def create_heterogeneous_graph():
+    g = nx.Graph()
+
+    random.seed(42)  # produces the same graph every time
+
+    start_date_dt = datetime.strptime("01/01/2015", "%d/%m/%Y")
+    end_date_dt = datetime.strptime("01/01/2017", "%d/%m/%Y")
+    start_end_days = (
+        end_date_dt - start_date_dt
+    ).days  # the number of days between start and end dates
+
+    # 50 nodes of type person
+    person_node_ids = list(range(0, 50))
+    for person in person_node_ids:
+        g.add_node(
+            person, label="person", elite=random.choices(["0", "1", "-1"], k=1)[0]
+        )
+
+    # 200 nodes of type paper
+    paper_node_ids = list(range(50, 250))
+    g.add_nodes_from(paper_node_ids, label="paper")
+
+    # 10 nodes of type venue
+    venue_node_ids = list(range(250, 260))
+    g.add_nodes_from(venue_node_ids, label="venue")
+
+    # add the person - friend -> person edges
+    # each person can be friends with 0 to 5 others; edges include a date
+    for person_id in person_node_ids:
+        k = random.randrange(5)
+        friend_ids = set(random.sample(person_node_ids, k=k)) - {
+            person_id
+        }  # no self loops
+        for friend in friend_ids:
+            g.add_edge(
+                person_id,
+                friend,
+                label="friend",
+                date=(
+                    start_date_dt + timedelta(days=random.randrange(start_end_days))
+                ).strftime("%d/%m/%Y"),
+            )
+
+    # add the person - writes -> paper edges
+    for person_id in person_node_ids:
+        k = random.randrange(5)
+        paper_ids = random.sample(paper_node_ids, k=k)
+        for paper in paper_ids:
+            g.add_edge(person_id, paper, label="writes")
+
+    # add the paper - published-at -> venue edges
+    for paper_id in paper_node_ids:
+        venue_id = random.sample(venue_node_ids, k=1)[
+            0
+        ]  # paper is published at 1 venue only
+        g.add_edge(paper_id, venue_id, label="published-at")
+
+    return g
 
 
 def delete_files_in_dir(path):
@@ -29,142 +98,247 @@ def delete_files_in_dir(path):
             os.unlink(filename_path)
 
 
+def filter_nodes(nodes, node_type, target_attribute):
+    """
+    Returns a list of node IDs for the subset of graph_nodes that have the given node type.
+
+    Args:
+        nodes: <list> The node data as a list of tuples where for each node the first value is the node ID and the
+        second value is a dictionary holding the node attribute data.
+        node_type: <str> The node type to filter by
+        target_attribute: <str> The target attribute key to filter by
+
+    Returns:
+        <list> List of 2-tuples where the first value is the node ID and the second value is the target attribute
+        value.
+
+    """
+    # This code will fail if a node of node_type is missing the target_attribute.
+    # We can fix this by using node['data'].get(target_attribute, None) so that at least all nodes of the
+    # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
+    # from being added to train, test, and validation datasets.
+    y = [
+        (node[0], node[1].get(target_attribute, globalvar.UNKNOWN_TARGET_ATTRIBUTE))
+        for node in nodes
+        if node[1][globalvar.TYPE_ATTR_NAME] == node_type
+    ]
+
+    return y
+
+
+def get_nodes(graph_nodes, node_type, target_attribute):
+    """
+    Returns a list of node IDs for the subset of graph_nodes that have the given node type.
+
+    Args:
+        graph_nodes: <list> List of OrderedDict with vertex data for graph in EPGM format
+        node_type: <str> The node type of interest
+        target_attribute: <str> The target attribute key
+
+    Returns:
+        List of 2-tuples where the first value is the node ID and the second value is the target attribute
+        value.
+
+    """
+    # This code will fail if a node of node_type is missing the target_attribute.
+    # We can fix this by using node['data'].get(target_attribute, None) so that at least all nodes of the
+    # given type are returned. However, we must check for None in target_attribute later to exclude these nodes
+    # from being added to train, test, and validation datasets.
+    y = [
+        (
+            node["id"],
+            node["data"].get(target_attribute, globalvar.UNKNOWN_TARGET_ATTRIBUTE),
+        )
+        for node in graph_nodes
+        if node["meta"][globalvar.TYPE_ATTR_NAME] == node_type
+    ]
+
+    return y
+
+
+def load_data(path, dataset_name=None, node_type=None, target_attribute=None):
+    """
+    Loads the node data
+
+     :param path: Input filename or directory where graph in EPGM format is stored
+     :param node_type: For HINs, the node type to consider
+     :param target_attribute: For EPGM format, the target node attribute
+     :return: N x 2 numpy arrays where the first column is the node id and the second column is the node label.
+    """
+    if os.path.isdir(path):
+        g_epgm = EPGM(path)
+        graphs = g_epgm.G["graphs"]
+        for g in graphs:
+            if g["meta"]["label"] == dataset_name:
+                g_id = g["id"]
+
+        g_vertices = g_epgm.G["vertices"]  # retrieve all graph vertices
+
+        if node_type is None:
+            node_type = g_epgm.node_types(g_id)
+            if len(node_type) == 1:
+                node_type = node_type[0]
+            else:
+                raise Exception(
+                    "Multiple node types detected in graph {}: {}.".format(
+                        g_id, node_type
+                    )
+                )
+
+        if target_attribute is None:
+            target_attribute = g_epgm.node_attributes(g_id, node_type)
+            if len(target_attribute) == 1:
+                target_attribute = target_attribute[0]
+            else:
+                raise Exception(
+                    "Multiple node attributes detected for nodes of type {} in graph {}: {}.".format(
+                        node_type, g_id, target_attribute
+                    )
+                )
+
+        y = np.array(
+            get_nodes(
+                g_vertices, node_type=node_type, target_attribute=target_attribute
+            )
+        )
+
+    else:
+        y_df = pd.read_csv(path, delimiter=" ", header=None, dtype=str)
+        y_df.sort_values(by=[0], inplace=True)
+
+        y = y_df.values
+
+    return y
+
+
 class TestEPGMIOHeterogeneous(unittest.TestCase):
     def setUp(self):
-        if os.getcwd().split("/")[-1] == "tests":
-            self.base_output_directory = os.path.expanduser("resources/data_splitter")
-            self.input_dir = os.path.expanduser("resources/data/yelp/yelp.epgm")
-            self.output_dir = os.path.expanduser(
-                "resources/data_splitter/yelp.epgm.out"
-            )
-        else:
-            self.base_output_directory = os.path.expanduser(
-                "tests/resources/data_splitter"
-            )
-            self.input_dir = os.path.expanduser("tests/resources/data/yelp/yelp.epgm")
-            self.output_dir = os.path.expanduser(
-                "tests/resources/data_splitter/yelp.epgm.out"
-            )
-
-        self.dataset_name = "small_yelp_example"
-        self.node_type = "user"
+        self.node_type = "person"
         self.target_attribute = "elite"
         self.ds_obj = NodeSplitter()
-
-        if not os.path.isdir(self.base_output_directory):
-            os.mkdir(self.base_output_directory)
-        if not os.path.isdir(self.output_dir):
-            os.mkdir(self.output_dir)
-
-        # delete the files in the output directory
-        delete_files_in_dir(self.output_dir)
-
-    def tearDown(self):
-        # delete the files in the output directory
-        rmtree(self.base_output_directory)
-
-    def test_load_epgm(self):
-
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-        self.assertEqual(
-            y.shape,
-            (569, 2),
-            "Did not load the correct number of node IDs and corresponding labels",
-        )
-
-        # cora has 7 classes
-        number_of_unique_labels = 3
-        number_of_unique_labels_in_y = len(np.unique(y[:, 1]))
-
-        self.assertEqual(
-            number_of_unique_labels_in_y,
-            number_of_unique_labels,
-            "Incorrect number of unique labels in y {:d} vs expected {:d}".format(
-                number_of_unique_labels_in_y, number_of_unique_labels
-            ),
-        )
 
     def test_train_test_split_invalid_parameters(self):
         nc = 10
         test_size = 100
+        method = "count"
 
-        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
-        # I have to load the data again.
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        g = create_heterogeneous_graph()
+        y = np.array(
+            filter_nodes(
+                list(g.nodes(data=True)),
+                node_type=self.node_type,
+                target_attribute=self.target_attribute,
+            )
         )
 
         with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=None,  # this will raise a ValueError exception
                 p=nc,
+                method=method,
                 test_size=test_size,
             )
-
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
-                y=y, p=-1, test_size=test_size  # this will raise a ValueError exception
+                y=y,
+                p=-1,
+                method=method,
+                test_size=test_size,  # this will raise a ValueError exception
             )
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
                 p=1.2,  # this will raise a ValueError exception
+                method=method,
                 test_size=test_size,
             )
-            self.ds_obj.train_test_split(
-                y=y, p=0, test_size=test_size  # this will raise a ValueError exception
-            )
-
-            self.ds_obj.train_test_split(
-                y=y, p=nc, test_size=0
-            )  # this will raise a ValueError exception
-            self.ds_obj.train_test_split(
-                y=y, p=nc, test_size=-100
-            )  # this will raise a ValueError exception
-            self.ds_obj.train_test_split(
-                y=y, p=nc, test_size=99.10101
-            )  # this will raise a ValueError exception
-
+        with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
                 y=y,
-                method="percent",  # this will raise a ValueError exception; only 'count' allowed
+                p=0,
+                method=method,
+                test_size=test_size,  # this will raise a ValueError exception
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=nc, method=method, test_size=0
+            )  # this will raise a ValueError exception
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=nc, method=method, test_size=-100
+            )  # this will raise a ValueError exception
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=nc, method=method, test_size=99.10101
+            )  # this will raise a ValueError exception
+        # check parameter values for 'percent' method
+        method = "percent"
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=1.0, method=method  # must be less than 1.
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=-0.5, method=method  # must be greater than or equalt 0.
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, p=10, method=method  # must be float in range (0, 1)
+            )
+
+        # check parameter values for 'absolute' method
+        method = "absolute"
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, method=method, p=0.25
+            )  # must specify train_size and test_size parameters, p is not used
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, method=method, test_size=0, train_size=1000
+            )
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=y, method=method, test_size=99, train_size=0)
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y, method=method, test_size=0.25, train_size=0.75
+            )  # test_size and train_size should be integers not percentages
+
+        # test invalid method
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(
+                y=y,
+                method="other",  # valid values are 'percent', 'count', and 'absolute'
                 p=nc,
                 test_size=test_size,
             )
-
-            self.ds_obj.train_test_split(
-                y=y,
-                method="any",  # this will raise a ValueError exception
-                p=nc,
-                test_size=test_size,
-            )
+        # testing seed value
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=y, p=nc, test_size=100, seed=-1003)
+        with self.assertRaises(ValueError):
+            self.ds_obj.train_test_split(y=y, p=nc, test_size=100, seed=101.13)
 
     def test_split_data_epgm(self):
 
-        nc = 10
-        test_size = 100
+        nc = 5
+        test_size = 20
+        num_unlabeled = 14
 
-        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
-        # I have to load the data again.
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        g = create_heterogeneous_graph()
+        y = np.array(
+            filter_nodes(
+                list(g.nodes(data=True)),
+                node_type=self.node_type,
+                target_attribute=self.target_attribute,
+            )
         )
 
         number_of_unique_labels = (
             len(np.unique(y[:, 1])) - 1
         )  # subtract one for missing value (-1) label
 
-        # there are 10 unlabeled point in yelp
-        validation_size = y.shape[0] - test_size - nc * number_of_unique_labels - 10
+        validation_size = (
+            y.shape[0] - test_size - nc * number_of_unique_labels - num_unlabeled
+        )
 
         self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
             y=y, p=nc, test_size=test_size
@@ -193,125 +367,221 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
             ),
         )
 
-    def test_write_data_epgm(self):
-
-        nc = 10
-        test_size = 100
-
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
-        )
-
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
-
-        self.ds_obj.write_data(
-            self.output_dir,
-            dataset_name=self.dataset_name,
-            y_train=y_train,
-            y_test=y_test,
-            y_val=y_val,
-            y_unlabeled=y_unlabeled,
-        )
-
-        # 3 files with json extension should be written in the output directory
-        # The files are edges.json, graphs.json, vertices.json
-        files_in_dir = os.listdir(self.output_dir)
-
-        self.assertEqual(
-            len(files_in_dir),
-            3,
-            "Incorrect number of .json files {:d} vs expected {:d}".format(
-                len(files_in_dir), 3
-            ),
-        )
-
-        self.assertTrue("edges.json" in files_in_dir, "Missing edges.json")
-        self.assertTrue("vertices.json" in files_in_dir, "Missing vertices.json")
-        self.assertTrue("graphs.json" in files_in_dir, "Missing graphs.json")
-
-        # Load the EPGM and check it
-        g_epgm = EPGM(self.output_dir)
-        graphs = g_epgm.G["graphs"]
-
-        self.assertEqual(
-            len(graphs),
-            5,
-            "Incorrect number of graphs {:d} vs expected {:d}".format(len(graphs), 5),
-        )
-
 
 class TestEPGMIOHomogenous(unittest.TestCase):
     def setUp(self):
         if os.getcwd().split("/")[-1] == "tests":
-            self.base_output_directory = os.path.expanduser("resources/data_splitter")
             self.input_dir = os.path.expanduser("resources/data/cora/cora.epgm")
-            self.output_dir = os.path.expanduser(
-                "resources/data_splitter/cora.epgm.out"
-            )
             self.input_lab = os.path.expanduser("resources/data/cora/cora.lab/cora.lab")
-            self.output_dir_lab = os.path.expanduser("resources/data_splitter/cora.out")
         else:
-            self.base_output_directory = os.path.expanduser(
-                "tests/resources/data_splitter"
-            )
             self.input_dir = os.path.expanduser("tests/resources/data/cora/cora.epgm")
-            self.output_dir = os.path.expanduser(
-                "tests/resources/data_splitter/cora.epgm.out"
-            )
             self.input_lab = os.path.expanduser(
                 "tests/resources/data/cora/cora.lab/cora.lab"
             )
-            self.output_dir_lab = os.path.expanduser(
-                "tests/resources/data_splitter/cora.out"
-            )
-
-        if not os.path.isdir(self.base_output_directory):
-            os.mkdir(self.base_output_directory)
-        if not os.path.isdir(self.output_dir):
-            os.mkdir(self.output_dir)
-        if not os.path.isdir(self.output_dir_lab):
-            os.mkdir(self.output_dir_lab)
 
         self.dataset_name = "cora"
         self.node_type = "paper"
         self.target_attribute = "subject"
         self.ds_obj = NodeSplitter()
 
-        # delete the contents of the output directories
-        delete_files_in_dir(self.output_dir_lab)
-        delete_files_in_dir(self.output_dir)
+    def create_toy_dataset(self):
+        # 100 node ids with 40 class 0, 40 class 1, and 20 unknown '-1'
+        node_ids = [uuid.uuid4() for i in np.arange(100)]
+        labels = ["-1"] * 100
+        labels[0:40] = [0] * 40
+        labels[40:80] = [1] * 40
 
-    def tearDown(self):
-        # delete the contents of the output directories
-        rmtree(self.base_output_directory)
+        y = np.transpose(np.vstack((node_ids, labels)))
 
-    def test_load_lab(self):
+        return y
 
-        y = self.ds_obj.load_data(
-            self.input_lab,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+    def test_split_with_percent(self):
+        method = "percent"
+        p = 0.5
+
+        y = self.create_toy_dataset()
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (40, 2),
+            "Train set size is incorrect, expected (40, 2) but received {}".format(
+                y_train.shape
+            ),
         )
         self.assertEqual(
-            y.shape,
-            (2708, 2),
-            "Did not load the correct number of node IDs and corresponding labels",
+            y_test.shape,
+            (40, 2),
+            "Test set size is incorrect, expected (40, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.33
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (26, 2),
+            "Train set size is incorrect, expected (26, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (54, 2),
+            "Test set size is incorrect, expected (54, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.75
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (60, 2),
+            "Train set size is incorrect, expected (60, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (20, 2),
+            "Test set size is incorrect, expected (20, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (20, 2),
+            "Unlabeled set size is incorrect, expected (20, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        # remove points with UNKNOWN_TARGET_ATTRIBUTE
+        y[80:, 1] = "2"
+
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (75, 2),
+            "Train set size is incorrect, expected (75, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (25, 2),
+            "Test set size is incorrect, expected (25, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (0, 2),
+            "Unlabeled set size is incorrect, expected (0, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
+        )
+
+        p = 0.33
+        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
+        )
+
+        self.assertEqual(
+            y_train.shape,
+            (33, 2),
+            "Train set size is incorrect, expected (33, 2) but received {}".format(
+                y_train.shape
+            ),
+        )
+        self.assertEqual(
+            y_test.shape,
+            (67, 2),
+            "Test set siz   e is incorrect, expected (67, 2) but received {}".format(
+                y_test.shape
+            ),
+        )
+        self.assertEqual(
+            y_unlabeled.shape,
+            (0, 2),
+            "Unlabeled set size is incorrect, expected (0, 2) but received {}".format(
+                y_unlabeled.shape
+            ),
+        )
+        self.assertEqual(
+            y_val.shape,
+            (0, 2),
+            "Validation set size is incorrect, expected (0, 2) but received {}".format(
+                y_val.shape
+            ),
         )
 
     def test_split_data_lab(self):
 
         nc = 20
         test_size = 100
-
+        method = "count"
         # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
         # I have to load the data again.
-        y = self.ds_obj.load_data(
+        y = load_data(
             self.input_lab,
             dataset_name=self.dataset_name,
             node_type=self.node_type,
@@ -321,7 +591,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         number_of_unique_labels = len(np.unique(y[:, 1]))
 
         validation_size = y.shape[0] - test_size - nc * number_of_unique_labels
-
+        #
+        # Test using method 'count'
+        #
         self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
             y=y, p=nc, test_size=test_size
         )
@@ -348,83 +620,85 @@ class TestEPGMIOHomogenous(unittest.TestCase):
                 self.y_val.shape[0], validation_size
             ),
         )
-
-    def test_write_data_lab(self):
-
-        nc = 20
-        test_size = 100
-
-        y = self.ds_obj.load_data(
-            self.input_lab,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        #
+        # Test using method 'percent'
+        #
+        p = 0.75
+        method = "percent"
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
         )
 
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
-
-        self.ds_obj.write_data(
-            self.output_dir_lab,
-            dataset_name=self.dataset_name,
-            y_train=y_train,
-            y_test=y_test,
-            y_val=y_val,
-            y_unlabeled=y_unlabeled,
-        )
-
-        # 3 files with json extension should be written in the output directory
-        # The files are edges.json, graphs.json, vertices.json
-        files_in_dir = os.listdir(self.output_dir_lab)
-
+        self.assertEqual(len(self.y_val), 0, "Validation set should be empty.")
         self.assertEqual(
-            len(files_in_dir),
-            4,
-            "Incorrect number of .idx.* files {:d} vs expected {:d}".format(
-                len(files_in_dir), 4
+            y.shape[0],
+            self.y_train.shape[0] + self.y_test.shape[0] + self.y_unlabeled.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0],
+                y.shape[0],
             ),
         )
 
-        self.assertTrue(
-            self.dataset_name + ".idx.train" in files_in_dir, "Missing .idx.train"
-        )
-        self.assertTrue(
-            self.dataset_name + ".idx.test" in files_in_dir, "Missing .idx.test"
-        )
-        self.assertTrue(
-            self.dataset_name + ".idx.validation" in files_in_dir,
-            "Missing .idx.validation",
-        )
-        self.assertTrue(
-            self.dataset_name + ".idx.unlabeled" in files_in_dir,
-            "Missing .idx.unlabeled",
-        )
-
-    # Testing with data I/O in EPGM format
-    def test_load_epgm(self):
-
-        y = self.ds_obj.load_data(
-            self.input_lab,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        self.assertEqual(
+            self.y_train.shape[0],
+            int(y.shape[0] * p),
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], int(y.shape[0] * p)
+            ),
         )
         self.assertEqual(
-            y.shape,
-            (2708, 2),
-            "Did not load the correct number of node IDs and corresponding labels",
+            self.y_test.shape[0],
+            int(y.shape[0] * (1. - p)),
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], int(y.shape[0] * (1. - p))
+            ),
         )
 
-        # cora has 7 classes
-        number_of_unique_labels = 7
-        number_of_unique_labels_in_y = len(np.unique(y[:, 1]))
-
+        #
+        # Test using method 'absolute'
+        #
+        method = "absolute"
+        train_size = 1000
+        test_size = 98
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, method=method, test_size=test_size, train_size=train_size
+        )
+        validation_size = y.shape[0] - (
+            train_size + test_size + self.y_unlabeled.shape[0]
+        )
         self.assertEqual(
-            number_of_unique_labels_in_y,
-            number_of_unique_labels,
-            "Incorrect number of unique labels in y {:d} vs expected {:d}".format(
-                number_of_unique_labels_in_y, number_of_unique_labels
+            self.y_val.shape[0], validation_size, "Validation set has incorrect size."
+        )
+        self.assertEqual(
+            y.shape[0],
+            self.y_train.shape[0]
+            + self.y_test.shape[0]
+            + self.y_unlabeled.shape[0]
+            + self.y_val.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0]
+                + self.y_val.shape[0],
+                y.shape[0],
+            ),
+        )
+        self.assertEqual(
+            self.y_train.shape[0],
+            train_size,
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], train_size
+            ),
+        )
+        self.assertEqual(
+            self.y_test.shape[0],
+            test_size,
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], test_size
             ),
         )
 
@@ -433,9 +707,7 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         nc = 20
         test_size = 100
 
-        # this operation is also performed in test_load_epgm() but the call to setUp sets self.y to None so
-        # I have to load the data again.
-        y = self.ds_obj.load_data(
+        y = load_data(
             self.input_dir,
             dataset_name=self.dataset_name,
             node_type=self.node_type,
@@ -472,54 +744,235 @@ class TestEPGMIOHomogenous(unittest.TestCase):
                 self.y_val.shape[0], validation_size
             ),
         )
-
-    def test_write_data_epgm(self):
-
-        nc = 20
-        test_size = 1000
-
-        y = self.ds_obj.load_data(
-            self.input_dir,
-            dataset_name=self.dataset_name,
-            node_type=self.node_type,
-            target_attribute=self.target_attribute,
+        #
+        # Test using method 'percent'
+        #
+        p = 0.5
+        method = "percent"
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, p=p, method=method
         )
 
-        y_train, y_val, y_test, y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
-
-        self.ds_obj.write_data(
-            self.output_dir,
-            dataset_name=self.dataset_name,
-            y_train=y_train,
-            y_test=y_test,
-            y_val=y_val,
-            y_unlabeled=y_unlabeled,
-        )
-
-        # 3 files with json extension should be written in the output directory
-        # The files are edges.json, graphs.json, vertices.json
-        files_in_dir = os.listdir(self.output_dir)
-
+        self.assertEqual(len(self.y_val), 0, "Validation set should be empty.")
         self.assertEqual(
-            len(files_in_dir),
-            3,
-            "Incorrect number of .json files {:d} vs expected {:d}".format(
-                len(files_in_dir), 3
+            y.shape[0],
+            self.y_train.shape[0] + self.y_test.shape[0] + self.y_unlabeled.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0],
+                y.shape[0],
             ),
         )
 
-        self.assertTrue("edges.json" in files_in_dir, "Missing edges.json")
-        self.assertTrue("vertices.json" in files_in_dir, "Missing vertices.json")
-        self.assertTrue("graphs.json" in files_in_dir, "Missing graphs.json")
-
-        # Load the EPGM and check it
-        g_epgm = EPGM(self.output_dir)
-        graphs = g_epgm.G["graphs"]
-
         self.assertEqual(
-            len(graphs),
-            5,
-            "Incorrect number of graphs {:d} vs expected {:d}".format(len(graphs), 5),
+            self.y_train.shape[0],
+            int(y.shape[0] * p),
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], int(y.shape[0] * p)
+            ),
         )
+        self.assertEqual(
+            self.y_test.shape[0],
+            int(y.shape[0] * (1. - p)),
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], int(y.shape[0] * (1. - p))
+            ),
+        )
+        #
+        # Test using method 'absolute'
+        #
+        method = "absolute"
+        train_size = 299
+        test_size = 101
+        # y_val should be empty
+        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+            y=y, method=method, test_size=test_size, train_size=train_size
+        )
+        validation_size = y.shape[0] - (
+            train_size + test_size + self.y_unlabeled.shape[0]
+        )
+        self.assertEqual(
+            self.y_val.shape[0], validation_size, "Validation set has incorrect size."
+        )
+        self.assertEqual(
+            y.shape[0],
+            self.y_train.shape[0]
+            + self.y_test.shape[0]
+            + self.y_unlabeled.shape[0]
+            + self.y_val.shape[0],
+            "The total number of points sampled is not equal to the size of y. Sampled {:d} vs expected {:d}".format(
+                self.y_train.shape[0]
+                + self.y_test.shape[0]
+                + self.y_unlabeled.shape[0]
+                + self.y_val.shape[0],
+                y.shape[0],
+            ),
+        )
+        self.assertEqual(
+            self.y_train.shape[0],
+            train_size,
+            "Train dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_train.shape[0], train_size
+            ),
+        )
+        self.assertEqual(
+            self.y_test.shape[0],
+            test_size,
+            "Test dataset has wrong size {:d} vs expected {:d}".format(
+                self.y_test.shape[0], test_size
+            ),
+        )
+
+
+##################
+# Test the simple node_splitter interface:
+
+
+def create_example_graph_1():
+    g = nx.Graph()
+    g.add_nodes_from([0, 1, 2, 3], label="movie")
+    g.add_nodes_from([4, 5, 6], label="person")
+    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
+    g.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="another")
+    g.add_edges_from([(4, 5)], label="friend")
+    return g
+
+
+def create_example_graph_2():
+    g = nx.Graph()
+    g.add_nodes_from([0, 1, 2, "3", 4, 5, 6], label="default")
+    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, "3")], label="default")
+    return g
+
+
+def test_split_function():
+    # Example graph:
+    for g in [create_example_graph_1(), create_example_graph_2()]:
+
+        splits = train_val_test_split(
+            g,
+            node_type=None,
+            test_size=2,
+            train_size=3,
+            targets=None,
+            split_equally=False,
+            seed=None,
+        )
+        assert len(splits[0]) == 3
+        assert len(splits[1]) == 2
+        assert len(splits[2]) == 2
+        assert len(splits[3]) == 0
+
+        print(splits)
+
+        # Make sure the nodeIDs can be found in the graph
+        assert all(s in g for s in it.chain(*splits))
+
+
+def test_split_function_percent():
+    # Example graph:
+    for g in [create_example_graph_1(), create_example_graph_2()]:
+
+        # Test splits by proportion - note floor of the
+        # number of samples
+        splits = train_val_test_split(
+            g,
+            node_type=None,
+            test_size=2.8 / 7,
+            train_size=3.2 / 7,
+            targets=None,
+            seed=None,
+        )
+
+        # Note the length of val is still 2 even though we requested 1
+        assert len(splits[0]) == 3
+        assert len(splits[1]) == 2
+        assert len(splits[2]) == 2
+        assert len(splits[3]) == 0
+
+        print(splits)
+
+        # Make sure the nodeIDs can be found in the graph
+        assert all(s in g for s in it.chain(*splits))
+
+
+def test_split_function_split_equally():
+    # Example graph:
+    g = create_example_graph_2()
+
+    # We have to have a target value for the nodes
+    targets = {n: int(2 * ii / g.number_of_nodes()) for ii, n in enumerate(g)}
+
+    splits = train_val_test_split(
+        g,
+        node_type=None,
+        test_size=2,
+        train_size=4,
+        targets=targets,
+        split_equally=True,
+        seed=None,
+    )
+    # For this number of nodes we should have 50% of the nodes as label 1
+    assert sum(targets[s] for s in splits[0]) == len(splits[0]) // 2
+
+    # Make sure the nodeIDs can be found in the graph
+    assert all(s in g for s in it.chain(*splits))
+
+
+def test_split_function_node_type():
+    # Example graph:
+    g = create_example_graph_1()
+
+    # This doesn't work if g is not a StellarGraph
+    with pytest.raises(TypeError):
+        splits = train_val_test_split(
+            g,
+            node_type="movie",
+            test_size=1,
+            train_size=2,
+            targets=None,
+            split_equally=False,
+            seed=None,
+        )
+
+    gs = StellarGraph(g)
+    splits = train_val_test_split(
+        gs,
+        node_type="movie",
+        test_size=1,
+        train_size=2,
+        targets=None,
+        split_equally=False,
+        seed=None,
+    )
+    assert all(g.node[s]["label"] == "movie" for split in splits for s in split)
+
+
+def test_split_function_unlabelled():
+    # Example graph:
+    sg = create_example_graph_1()
+
+    # Leave some of the nodes unlabelled:
+    targets = {}
+    for ii, n in enumerate(sg):
+        if ii > 2:
+            targets[n] = 1
+
+    splits = train_val_test_split(
+        sg,
+        node_type=None,
+        test_size=2,
+        train_size=2,
+        targets=targets,
+        split_equally=False,
+        seed=None,
+    )
+
+    # For this number of nodes we should have 50% of the nodes as label 1
+    # Note the length of val is still 2 even though we requested 1
+    assert len(splits[0]) == 2
+    assert len(splits[1]) == 0
+    assert len(splits[2]) == 2
+    assert len(splits[3]) == 3
