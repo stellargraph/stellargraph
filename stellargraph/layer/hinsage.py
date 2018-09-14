@@ -437,8 +437,8 @@ class HinSAGE:
                 (batch_size, feature_size)
 
         Returns:
-            tuple: (x_inp, y_out) where x_inp is a list of Keras input tensors
-            for the specified HinSAGE model and y_out is tne Keras tensor
+            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
+            for the specified HinSAGE model and ``x_out`` is tne Keras tensor
             for the HinSAGE model output.
 
         """

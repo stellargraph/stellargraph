@@ -323,8 +323,9 @@ class GraphSAGE:
                 (batch_size, 1*feature_size)
 
         Returns:
-            x_inp: Keras input tensors for specified graphsage model
-            y_out: Keras tensor for GraphSAGE model output
+            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
+            for the specified GraphSAGE model and ``x_out`` is tne Keras tensor
+            for the GraphSAGE model output.
 
         """
         # Create tensor inputs

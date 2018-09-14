@@ -18,7 +18,7 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
+__all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
 
 import operator
 from functools import reduce
