@@ -19,7 +19,7 @@ __all__ = ["train_val_test_split", "NodeSplitter"]
 import numpy as np
 import pandas as pd
 from stellargraph.core.graph import StellarGraphBase
-from stellargraph import globals
+from stellargraph import globalvar
 
 
 # Easier functional interface for the splitter:
@@ -95,13 +95,13 @@ def train_val_test_split(
             target_values = [
                 targets.loc[n]
                 if n in targets.index
-                else globals.UNKNOWN_TARGET_ATTRIBUTE
+                else globalvar.UNKNOWN_TARGET_ATTRIBUTE
                 for n in nodes
             ]
 
         elif isinstance(targets, dict):
             target_values = [
-                targets.get(n, globals.UNKNOWN_TARGET_ATTRIBUTE) for n in nodes
+                targets.get(n, globalvar.UNKNOWN_TARGET_ATTRIBUTE) for n in nodes
             ]
 
         else:
@@ -109,7 +109,7 @@ def train_val_test_split(
                 "The targets are expected to be either a Pandas DataFrame or a dict."
             )
 
-        n_known = sum(t != globals.UNKNOWN_TARGET_ATTRIBUTE for t in targets)
+        n_known = sum(t != globalvar.UNKNOWN_TARGET_ATTRIBUTE for t in targets)
 
     else:
         n_known = n_nodes
@@ -165,7 +165,7 @@ def train_val_test_split(
         class_set = set(target_values)
 
         # Remove the unknown target type
-        class_set.discard(globals.UNKNOWN_TARGET_ATTRIBUTE)
+        class_set.discard(globalvar.UNKNOWN_TARGET_ATTRIBUTE)
 
         # The number of classes we have
         n_classes = len(class_set)
@@ -229,10 +229,10 @@ class NodeSplitter(object):
         y = [
             (
                 node["id"],
-                node["data"].get(target_attribute, globals.UNKNOWN_TARGET_ATTRIBUTE),
+                node["data"].get(target_attribute, globalvar.UNKNOWN_TARGET_ATTRIBUTE),
             )
             for node in graph_nodes
-            if node["meta"][globals.TYPE_ATTR_NAME] == node_type
+            if node["meta"][globalvar.TYPE_ATTR_NAME] == node_type
         ]
 
         return y
@@ -361,7 +361,7 @@ class NodeSplitter(object):
         if method == "count":
             return self._split_data(y, p, test_size)
         elif method == "percent":
-            n_unlabelled_points = np.sum(y[:, 1] == globals.UNKNOWN_TARGET_ATTRIBUTE)
+            n_unlabelled_points = np.sum(y[:, 1] == globalvar.UNKNOWN_TARGET_ATTRIBUTE)
             train_size = int((y.shape[0] - n_unlabelled_points) * p)
             test_size = y.shape[0] - n_unlabelled_points - train_size
             return self._split_data_absolute(
@@ -390,7 +390,7 @@ class NodeSplitter(object):
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
         # indexes of points with no class label:
-        ind = np.nonzero(y[:, 1] == globals.UNKNOWN_TARGET_ATTRIBUTE)
+        ind = np.nonzero(y[:, 1] == globalvar.UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
@@ -438,14 +438,14 @@ class NodeSplitter(object):
         y_used = np.zeros(y.shape[0])  # initialize all the points are available
 
         # indexes of points with no class label:
-        ind = np.nonzero(y[:, 1] == globals.UNKNOWN_TARGET_ATTRIBUTE)
+        ind = np.nonzero(y[:, 1] == globalvar.UNKNOWN_TARGET_ATTRIBUTE)
         y_unlabeled = y[ind]
         y_used[ind] = 1
 
         y_train = None
 
         class_labels = np.unique(y[:, 1])
-        ind = class_labels == globals.UNKNOWN_TARGET_ATTRIBUTE
+        ind = class_labels == globalvar.UNKNOWN_TARGET_ATTRIBUTE
         class_labels = class_labels[np.logical_not(ind)]
 
         if test_size > y.shape[0] - class_labels.size * nc:
