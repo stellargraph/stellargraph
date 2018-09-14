@@ -33,7 +33,7 @@ from networkx.classes.multidigraph import MultiDiGraph
 
 from collections import Iterable, Iterator
 
-from .. import globals
+from .. import globalvar
 from .schema import GraphSchema
 from .utils import is_real_iterable
 
@@ -318,13 +318,13 @@ class StellarGraphBase:
         super().__init__(incoming_graph_data, **attr)
 
         # Names of attributes that store the type of nodes and edges
-        self._node_type_attr = attr.get("node_type_name", globals.TYPE_ATTR_NAME)
-        self._edge_type_attr = attr.get("edge_type_name", globals.TYPE_ATTR_NAME)
+        self._node_type_attr = attr.get("node_type_name", globalvar.TYPE_ATTR_NAME)
+        self._edge_type_attr = attr.get("edge_type_name", globalvar.TYPE_ATTR_NAME)
 
         # Names for the feature/target type (used if they are supplied and
         #  feature/target spec not supplied"
-        self._feature_attr = attr.get("feature_name", globals.FEATURE_ATTR_NAME)
-        self._target_attr = attr.get("target_name", globals.TARGET_ATTR_NAME)
+        self._feature_attr = attr.get("feature_name", globalvar.FEATURE_ATTR_NAME)
+        self._target_attr = attr.get("target_name", globalvar.TARGET_ATTR_NAME)
 
         # Ensure that the incoming graph data has node & edge types
         # TODO: This requires traversing all nodes and edges. Is there another way?

@@ -36,7 +36,7 @@ import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
 from stellargraph.mapper import GraphSAGELinkGenerator
-from stellargraph import globals
+from stellargraph import globalvar
 
 from sklearn import feature_extraction
 
@@ -84,8 +84,8 @@ def load_data(graph_loc, ignore_attr):
     node_ids = node_data.index
 
     for nid, f in zip(node_ids, node_features):
-        g.node[nid][globals.TYPE_ATTR_NAME] = "paper"
-        g.node[nid][globals.FEATURE_ATTR_NAME] = f
+        g.node[nid][globalvar.TYPE_ATTR_NAME] = "paper"
+        g.node[nid][globalvar.FEATURE_ATTR_NAME] = f
 
     return g
 

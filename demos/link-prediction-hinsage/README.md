@@ -11,7 +11,7 @@ of the library's [root directory](https://github.com/stellargraph/stellargraph).
 ## MovieLens Data
 
 The MovieLens data contains a bipartite graph of Movies and Users, and edges
-between them denoting reviews with scores  ranging from 1 to 5.
+between them denoting reviews with scores ranging from 1 to 5.
 
 ### Getting the data
 
