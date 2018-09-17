@@ -45,9 +45,7 @@ def create_heterogeneous_graph():
     # 50 nodes of type person
     person_node_ids = list(range(0, 50))
     for person in person_node_ids:
-        g.add_node(
-            person, label="person", elite=random.choice(["0", "1", "-1"])
-        )
+        g.add_node(person, label="person", elite=random.choice(["0", "1", "-1"]))
 
     # 200 nodes of type paper
     paper_node_ids = list(range(50, 250))
@@ -330,7 +328,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
                 target_attribute=self.target_attribute,
             )
         )
-        num_unlabeled = sum(l=='-1' for l in y[:, 1])
+        num_unlabeled = sum(l == "-1" for l in y[:, 1])
 
         number_of_unique_labels = (
             len(np.unique(y[:, 1])) - 1

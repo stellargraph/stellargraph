@@ -680,8 +680,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         else:
                             # sample with replacement
                             neighbours = [
-                                rs.choice(neighbours)
-                                for _ in range(n_size[depth - 1])
+                                rs.choice(neighbours) for _ in range(n_size[depth - 1])
                             ]
 
                         # add them to the back of the queue
