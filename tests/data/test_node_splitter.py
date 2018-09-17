@@ -34,7 +34,7 @@ import random
 def create_heterogeneous_graph():
     g = nx.Graph()
 
-    random.seed(42)  # produces the same graph every time
+    random.seed(152)  # produces the same graph every time
 
     start_date_dt = datetime.strptime("01/01/2015", "%d/%m/%Y")
     end_date_dt = datetime.strptime("01/01/2017", "%d/%m/%Y")
@@ -46,7 +46,7 @@ def create_heterogeneous_graph():
     person_node_ids = list(range(0, 50))
     for person in person_node_ids:
         g.add_node(
-            person, label="person", elite=random.choices(["0", "1", "-1"], k=1)[0]
+            person, label="person", elite=random.choice(["0", "1", "-1"])
         )
 
     # 200 nodes of type paper
@@ -321,7 +321,6 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
 
         nc = 5
         test_size = 20
-        num_unlabeled = 14
 
         g = create_heterogeneous_graph()
         y = np.array(
@@ -331,6 +330,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
                 target_attribute=self.target_attribute,
             )
         )
+        num_unlabeled = sum(l=='-1' for l in y[:, 1])
 
         number_of_unique_labels = (
             len(np.unique(y[:, 1])) - 1
@@ -343,6 +343,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
         self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
             y=y, p=nc, test_size=test_size
         )
+        print(self.y_val, self.y_unlabeled)
 
         self.assertEqual(
             self.y_test.shape[0],
@@ -362,7 +363,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
         self.assertEqual(
             self.y_val.shape[0],
             validation_size,
-            "Train dataset has wrong size {:d} vs expected {:d}".format(
+            "Val dataset has wrong size {:d} vs expected {:d}".format(
                 self.y_val.shape[0], validation_size
             ),
         )
