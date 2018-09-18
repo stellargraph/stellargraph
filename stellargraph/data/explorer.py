@@ -287,20 +287,17 @@ class BiasedRandomWalk(GraphWalk):
                             break
                         else:
                             # determine the sampling probabilities for all the nodes
-                            common_neighbours = set(neighbours).intersection(
-                                previous_node_neighbours
-                            )  # nodes that are in common between the previous and current nodes; these get
-                            # 1. transition probabilities
                             probs = [iq] * len(neighbours)
                             for i, nn in enumerate(neighbours):
                                 if nn == previous_node:  # this is the previous node
                                     probs[i] = ip
-                                elif nn in common_neighbours:
+                                elif nn in previous_node_neighbours:
                                     probs[i] = 1.
                             # normalize the probabilities
                             total_prob = sum(probs)
                             probs = [m / total_prob for m in probs]
                             previous_node = current_node
+                            previous_node_neighbours = neighbours
                             # select the next node based on the calculated transition probabilities
                             current_node = neighbours[
                                 nrs.choice(a=len(neighbours), p=probs)

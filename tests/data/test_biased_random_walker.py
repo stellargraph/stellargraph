@@ -290,3 +290,71 @@ class TestBiasedRandomWalk(object):
             assert len(subgraph) == length
             for node in subgraph:
                 assert node == "self lonely"  # all nodes should be the same node
+
+    def test_walk_biases(self):
+        graph = nx.Graph()
+        # a square with a triangle:
+        #   0-3
+        #  /| |
+        # 1-2-4
+        graph.add_edges_from([(0, 1), (0, 2), (0, 3), (1, 2), (2, 4), (3, 4)])
+        graph = StellarGraph(graph)
+        biasedrw = BiasedRandomWalk(graph)
+
+        # there's 18 total walks of length 4 starting at 0 in `graph`,
+        # and the non-tiny transition probabilities are always equal
+        # so with a large enough sample, all the possible paths for a
+        # given p, q should come up.
+        nodes = [0]
+        n = 1000
+        seed = None
+        length = 4
+
+        always = 1e-100
+        never = 1e100
+
+        # always return to the last visited node
+        p = always
+        q = never
+        walks = {
+            tuple(w)
+            for w in biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
+        }
+        assert walks == {(0, 1, 0, 1), (0, 2, 0, 2), (0, 3, 0, 3)}
+
+        # always explore (when possible)
+        p = never
+        q = always
+        walks = {
+            tuple(w)
+            for w in biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
+        }
+        assert walks == {
+            # follow the square
+            (0, 2, 4, 3),
+            (0, 3, 4, 2),
+            # go around the triangle (2 is a neighbour of 0 and so
+            # isn't exploring, but q = never < 1)
+            (0, 1, 2, 4),
+        }
+
+        # always go to a neighbour, if possible, otherwise equal
+        # chance of returning or exploring
+        p = never
+        q = never
+        walks = {
+            tuple(w)
+            for w in biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
+        }
+        assert walks == {
+            # follow the triangle
+            (0, 1, 2, 0),
+            (0, 2, 1, 0),
+            # all explorations around the square should appear (none
+            # are neighbours)
+            (0, 3, 0, 1),
+            (0, 3, 0, 2),
+            (0, 3, 0, 3),
+            (0, 3, 4, 3),
+            (0, 3, 4, 2),
+        }
