@@ -358,3 +358,15 @@ class TestBiasedRandomWalk(object):
             (0, 3, 4, 3),
             (0, 3, 4, 2),
         }
+
+    def test_benchmark_biasedrandomwalk(self, benchmark):
+        g = create_test_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        p = 2
+        q = 3
+        length = 5
+
+        benchmark(lambda: biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length))
