@@ -225,6 +225,40 @@ class UniformRandomWalk(GraphWalk):
                 )
 
 
+def naive_weighted_choices(rs, weights):
+    """
+    Select an index at random, weighted by the iterator `weights` of
+    arbitrary (non-negative) floats. That is, `x` will be returned
+    with probability `weights[x]/sum(weights)`.
+
+    For doing a single sample with arbitrary weights, this is much (5x
+    or more) faster than numpy.random.choice, because the latter
+    requires a lot of preprocessing (normalized probabilties), and
+    does a lot of conversions/checks/preprocessing internally.
+    """
+
+    # divide the interval [0, sum(weights)) into len(weights)
+    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
+    # weights[i]
+    subinterval_ends = []
+    running_total = 0
+    for w in weights:
+        assert w >= 0
+        running_total += w
+        subinterval_ends.append(running_total)
+
+    # pick a place in the overall interval
+    x = rs.random() * running_total
+
+    # find the subinterval that contains the place, by looking for the
+    # first subinterval where the end is (strictly) after it
+    for idx, end in enumerate(subinterval_ends):
+        if x < end:
+            break
+
+    return idx
+
+
 class BiasedRandomWalk(GraphWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
@@ -253,10 +287,10 @@ class BiasedRandomWalk(GraphWalk):
 
         if seed:
             # seed a new random number generator
-            nrs = np.random.RandomState(seed=seed)
+            rs = random.Random(seed)
         else:
             # Restore the random state
-            nrs = self._np_random_state
+            rs = self._random_state
 
         ip = 1. / p
         iq = 1. / q
@@ -272,8 +306,18 @@ class BiasedRandomWalk(GraphWalk):
                 previous_node = node
                 previous_node_neighbours = neighbours
 
+                # calculate the appropriate unnormalized transition
+                # probability, given the history of the walk
+                def transition_probability(nn):
+                    if nn == previous_node:  # d_tx = 0
+                        return ip
+                    elif nn in previous_node_neighbours:  # d_tx = 1
+                        return 1.
+                    else:  # d_tx = 2
+                        return iq
+
                 if neighbours:
-                    current_node = neighbours[nrs.choice(len(neighbours))]
+                    current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
                         neighbours = self.neighbors(self.graph, current_node)
@@ -281,18 +325,11 @@ class BiasedRandomWalk(GraphWalk):
                         if not neighbours:
                             break
 
-                        # determine the sampling probabilities for all the nodes
-                        probs = [iq] * len(neighbours)
-                        for i, nn in enumerate(neighbours):
-                            if nn == previous_node:  # this is the previous node
-                                probs[i] = ip
-                            elif nn in previous_node_neighbours:
-                                probs[i] = 1.
-                        # normalize the probabilities
-                        total_prob = sum(probs)
-                        probs = [m / total_prob for m in probs]
-                        # select the next node based on the calculated transition probabilities
-                        choice = nrs.choice(a=len(neighbours), p=probs)
+                        # select one of the neighbours using the
+                        # appropriate transition probabilities
+                        choice = naive_weighted_choices(
+                            rs, (transition_probability(nn) for nn in neighbours)
+                        )
 
                         previous_node = current_node
                         previous_node_neighbours = neighbours
