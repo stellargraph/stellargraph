@@ -39,14 +39,14 @@ class GraphWalk(object):
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph, seed=None, graph_schema=None):
-        # Initialize the random state
-        rs = random.getstate()
-        random.seed(seed)
-        self._random_state = random.getstate()
-        random.setstate(rs)
-
+    def __init__(self, graph, graph_schema=None, seed=None):
         self.graph = graph
+
+        # Initialize the random state
+        self._random_state = random.Random(seed)
+
+        # Initialize a numpy random state (for numpy random methods)
+        self._np_random_state = np.random.RandomState(seed=seed)
 
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraphBase):
@@ -81,7 +81,10 @@ class GraphWalk(object):
                     for k in iter(nkeys)
                     if self.graph_schema.is_of_edge_type((n1, n2, k), et)
                 ]
-                self.adj[et][n1] = neigh_et
+                # Create adjacency list in lexographical order
+                # Otherwise sampling methods will not be deterministic
+                # even when the seed is set.
+                self.adj[et][n1] = sorted(neigh_et, key=str)
 
     def neighbors(self, graph, node):
         if node not in graph:
@@ -124,13 +127,12 @@ class UniformRandomWalk(GraphWalk):
         """
         self._check_parameter_values(nodes=nodes, n=n, length=length, seed=seed)
 
-        rs = random.getstate()
         if seed:
             # seed the random number generator
-            random.seed(seed)
+            rs = random.Random(seed)
         else:
             # Restore the random state
-            random.setstate(self._random_state)
+            rs = self._random_state
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -145,14 +147,10 @@ class UniformRandomWalk(GraphWalk):
                     ):  # for whatever reason this node has no neighbours so stop
                         break
                     else:
-                        random.shuffle(neighbours)  # shuffles the list in place
+                        rs.shuffle(neighbours)  # shuffles the list in place
                         current_node = neighbours[0]  # select the first node to follow
 
                 walks.append(walk)
-
-        # Store current random state and restore original random state
-        self._random_state = random.getstate()
-        random.setstate(rs)
 
         return walks
 
@@ -253,13 +251,12 @@ class BiasedRandomWalk(GraphWalk):
             nodes=nodes, n=n, p=p, q=q, length=length, seed=seed
         )
 
-        rs = random.getstate()
         if seed:
-            # seed the random number generator
-            random.seed(seed)
+            # seed a new random number generator
+            nrs = np.random.RandomState(seed=seed)
         else:
             # Restore the random state
-            random.setstate(self._random_state)
+            nrs = self._np_random_state
 
         ip = 1. / p
         iq = 1. / q
@@ -279,7 +276,7 @@ class BiasedRandomWalk(GraphWalk):
                 if len(neighbours) > 0:  # special check for isolated root nodes
                     # this is the root node so there is no previous node. The next node
                     # is sampled with equal probability from all the neighbours
-                    current_node = neighbours[np.random.choice(a=len(neighbours))]
+                    current_node = neighbours[nrs.choice(len(neighbours))]
                     for _ in range(length - 1):
                         walk.extend([current_node])
                         # the neighbours of the current node
@@ -306,13 +303,9 @@ class BiasedRandomWalk(GraphWalk):
                             previous_node = current_node
                             # select the next node based on the calculated transition probabilities
                             current_node = neighbours[
-                                np.random.choice(a=len(neighbours), p=probs)
+                                nrs.choice(a=len(neighbours), p=probs)
                             ]
                 walks.append(walk)
-
-        # Store current random state and restore original random state
-        self._random_state = random.getstate()
-        random.setstate(rs)
 
         return walks
 
@@ -440,13 +433,12 @@ class UniformRandomMetaPathWalk(GraphWalk):
             seed=seed,
         )
 
-        rs = random.getstate()
         if seed:
             # seed the random number generator
-            random.seed(seed)
+            rs = random.Random(seed)
         else:
             # Restore the random state
-            random.setstate(self._random_state)
+            rs = self._random_state
 
         walks = []
 
@@ -484,15 +476,11 @@ class UniformRandomMetaPathWalk(GraphWalk):
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
                             break
                         # select one of the neighbours uniformly at random
-                        current_node = random.choice(
+                        current_node = rs.choice(
                             neighbours
                         )  # the next node in the walk
 
                     walks.append(walk)  # store the walk
-
-        # Store current random state and restore original random state
-        self._random_state = random.getstate()
-        random.setstate(rs)
 
         return walks
 
@@ -663,13 +651,12 @@ class SampledBreadthFirstWalk(GraphWalk):
         walks = []
         d = len(n_size)  # depth of search
 
-        rs = random.getstate()
         if seed:
             # seed the random number generator
-            random.seed(seed)
+            rs = random.Random(seed)
         else:
             # Restore the random state
-            random.setstate(self._random_state)
+            rs = self._random_state
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -693,8 +680,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         else:
                             # sample with replacement
                             neighbours = [
-                                random.choice(neighbours)
-                                for _ in range(n_size[depth - 1])
+                                rs.choice(neighbours) for _ in range(n_size[depth - 1])
                             ]
 
                         # add them to the back of the queue
@@ -702,10 +688,6 @@ class SampledBreadthFirstWalk(GraphWalk):
 
                 # finished i-th walk from node so add it to the list of walks as a list
                 walks.append(walk)
-
-        # Store current random state and restore original random state
-        self._random_state = random.getstate()
-        random.setstate(rs)
 
         return walks
 
@@ -837,13 +819,12 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
         walks = []
         d = len(n_size)  # depth of search
 
-        rs = random.getstate()
         if seed:
             # seed the random number generator
-            random.seed(seed)
+            rs = random.Random(seed)
         else:
             # Restore the random state
-            random.setstate(self._random_state)
+            rs = self._random_state
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -878,7 +859,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
                                 samples = [
-                                    random.choice(neigh_et)
+                                    rs.choice(neigh_et)
                                     for _ in range(n_size[depth - 1])
                                 ]
                                 # Choices limits us to Python 3.6+
@@ -896,10 +877,6 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
 
                 # finished i-th walk from node so add it to the list of walks as a list
                 walks.append(walk)
-
-        # Store current random state and restore original random state
-        self._random_state = random.getstate()
-        random.setstate(rs)
 
         return walks
 
