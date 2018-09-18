@@ -264,44 +264,40 @@ class BiasedRandomWalk(GraphWalk):
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                walk = list()
-                current_node = node
-                # add the current node to the walk
-                walk.extend([current_node])
-                # the neighbours of the current node
-                # for isolated nodes the length of neighbours will be 0; we will test for this later
-                neighbours = self.neighbors(self.graph, current_node)
-                previous_node = current_node
+                # the walk starts at the root
+                walk = [node]
+
+                neighbours = self.neighbors(self.graph, node)
+
+                previous_node = node
                 previous_node_neighbours = neighbours
-                if len(neighbours) > 0:  # special check for isolated root nodes
-                    # this is the root node so there is no previous node. The next node
-                    # is sampled with equal probability from all the neighbours
+
+                if neighbours:
                     current_node = neighbours[nrs.choice(len(neighbours))]
                     for _ in range(length - 1):
-                        walk.extend([current_node])
-                        # the neighbours of the current node
+                        walk.append(current_node)
                         neighbours = self.neighbors(self.graph, current_node)
-                        if (
-                            len(neighbours) == 0
-                        ):  # for whatever reason this node has no neighbours so stop
+
+                        if not neighbours:
                             break
-                        else:
-                            # determine the sampling probabilities for all the nodes
-                            probs = [iq] * len(neighbours)
-                            for i, nn in enumerate(neighbours):
-                                if nn == previous_node:  # this is the previous node
-                                    probs[i] = ip
-                                elif nn in previous_node_neighbours:
-                                    probs[i] = 1.
-                            # normalize the probabilities
-                            total_prob = sum(probs)
-                            probs = [m / total_prob for m in probs]
-                            previous_node = current_node
-                            previous_node_neighbours = neighbours
-                            # select the next node based on the calculated transition probabilities
-                            current_node = neighbours[
-                                nrs.choice(a=len(neighbours), p=probs)
-                            ]
+
+                        # determine the sampling probabilities for all the nodes
+                        probs = [iq] * len(neighbours)
+                        for i, nn in enumerate(neighbours):
+                            if nn == previous_node:  # this is the previous node
+                                probs[i] = ip
+                            elif nn in previous_node_neighbours:
+                                probs[i] = 1.
+                        # normalize the probabilities
+                        total_prob = sum(probs)
+                        probs = [m / total_prob for m in probs]
+                        # select the next node based on the calculated transition probabilities
+                        choice = nrs.choice(a=len(neighbours), p=probs)
+
+                        previous_node = current_node
+                        previous_node_neighbours = neighbours
+                        current_node = neighbours[choice]
+
                 walks.append(walk)
 
         return walks
