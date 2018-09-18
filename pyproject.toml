@@ -22,3 +22,4 @@ numba = "^0.39"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.7"
+pytest-benchmark = "^3.1"
