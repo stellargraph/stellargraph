@@ -32,7 +32,7 @@ REQUIRES = [
     "pandas>=0.23"
 ]
 
-EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas"]}
+EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas", "pytest-benchmark"]}
 
 # Long description
 with open("README.md", "r") as fh:
@@ -49,7 +49,7 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    python_requires='>=3.6.0, <3.7.0',
+    python_requires='>=3.5.0, <3.7.0',
     install_requires=REQUIRES,
     extras_require=EXTRAS_REQURES,
     packages=setuptools.find_packages(exclude=("tests",)),
