@@ -44,7 +44,7 @@ To run the notebook:
 The example should be run by specifying the location of the downloaded CORA dataset using the `-g` command line 
 argument. You can run the script using the following command:
 ```
-python cora-links-example.py -g <path_to_cora_dataset>
+python cora-links-example.py -l <path_to_cora_dataset>
 ```
 The above command runs the link prediction on Cora dataset with default parameters. There is a number of other command
 line options that affect the architecture and training of the odel. For help on how to set parameters of the run, and 
