@@ -120,7 +120,7 @@ First, clone the StellarGraph repository using `git`:
 git clone https://github.com/stellargraph/stellargraph.git
 ```
 
-Then, `cd` to the StellarGraph folder, and install the libraray by executing the following commands:
+Then, `cd` to the StellarGraph folder, and install the library by executing the following commands:
 ```
 cd stellargraph
 pip install -r requirements.txt
