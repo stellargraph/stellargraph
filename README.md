@@ -129,7 +129,7 @@ pip install .
 
 ## Running the examples
 
-See the [README](demos/README.md) in the `demos` directory for more information about the examples and how to run them.
+See the [README](https://github.com/stellargraph/stellargraph/tree/master/demos/README.md) in the `demos` directory for more information about the examples and how to run them.
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
