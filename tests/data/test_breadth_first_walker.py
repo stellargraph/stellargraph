@@ -468,3 +468,13 @@ class TestBreadthFirstWalk(object):
 
         assert len(w0) == len(w1)
         assert w0 == w1
+
+    def test_benchmark_sampledbreadthfirstwalk(self, benchmark):
+        g = create_test_graph()
+        bfw = SampledBreadthFirstWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        n_size = [5, 5]
+
+        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))

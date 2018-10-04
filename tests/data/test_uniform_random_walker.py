@@ -263,3 +263,14 @@ class TestUniformRandomWalk(object):
             assert len(subgraph) == length
             for node in subgraph:
                 assert node == "self lonely"  # all nodes should be the same node
+
+    def test_benchmark_uniformrandomwalk(self, benchmark):
+
+        g = create_test_graph()
+        urw = UniformRandomWalk(g)
+
+        nodes = ["0"]  # this node has no edges including itself
+        n = 5
+        length = 5
+
+        benchmark(lambda: urw.run(nodes=nodes, n=n, length=length))

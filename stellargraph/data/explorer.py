@@ -225,6 +225,40 @@ class UniformRandomWalk(GraphWalk):
                 )
 
 
+def naive_weighted_choices(rs, weights):
+    """
+    Select an index at random, weighted by the iterator `weights` of
+    arbitrary (non-negative) floats. That is, `x` will be returned
+    with probability `weights[x]/sum(weights)`.
+
+    For doing a single sample with arbitrary weights, this is much (5x
+    or more) faster than numpy.random.choice, because the latter
+    requires a lot of preprocessing (normalized probabilties), and
+    does a lot of conversions/checks/preprocessing internally.
+    """
+
+    # divide the interval [0, sum(weights)) into len(weights)
+    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
+    # weights[i]
+    subinterval_ends = []
+    running_total = 0
+    for w in weights:
+        assert w >= 0
+        running_total += w
+        subinterval_ends.append(running_total)
+
+    # pick a place in the overall interval
+    x = rs.random() * running_total
+
+    # find the subinterval that contains the place, by looking for the
+    # first subinterval where the end is (strictly) after it
+    for idx, end in enumerate(subinterval_ends):
+        if x < end:
+            break
+
+    return idx
+
+
 class BiasedRandomWalk(GraphWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
@@ -253,10 +287,10 @@ class BiasedRandomWalk(GraphWalk):
 
         if seed:
             # seed a new random number generator
-            nrs = np.random.RandomState(seed=seed)
+            rs = random.Random(seed)
         else:
             # Restore the random state
-            nrs = self._np_random_state
+            rs = self._random_state
 
         ip = 1. / p
         iq = 1. / q
@@ -264,47 +298,43 @@ class BiasedRandomWalk(GraphWalk):
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                walk = list()
-                current_node = node
-                # add the current node to the walk
-                walk.extend([current_node])
-                # the neighbours of the current node
-                # for isolated nodes the length of neighbours will be 0; we will test for this later
-                neighbours = self.neighbors(self.graph, current_node)
-                previous_node = current_node
+                # the walk starts at the root
+                walk = [node]
+
+                neighbours = self.neighbors(self.graph, node)
+
+                previous_node = node
                 previous_node_neighbours = neighbours
-                if len(neighbours) > 0:  # special check for isolated root nodes
-                    # this is the root node so there is no previous node. The next node
-                    # is sampled with equal probability from all the neighbours
-                    current_node = neighbours[nrs.choice(len(neighbours))]
+
+                # calculate the appropriate unnormalized transition
+                # probability, given the history of the walk
+                def transition_probability(nn):
+                    if nn == previous_node:  # d_tx = 0
+                        return ip
+                    elif nn in previous_node_neighbours:  # d_tx = 1
+                        return 1.
+                    else:  # d_tx = 2
+                        return iq
+
+                if neighbours:
+                    current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
-                        walk.extend([current_node])
-                        # the neighbours of the current node
+                        walk.append(current_node)
                         neighbours = self.neighbors(self.graph, current_node)
-                        if (
-                            len(neighbours) == 0
-                        ):  # for whatever reason this node has no neighbours so stop
+
+                        if not neighbours:
                             break
-                        else:
-                            # determine the sampling probabilities for all the nodes
-                            common_neighbours = set(neighbours).intersection(
-                                previous_node_neighbours
-                            )  # nodes that are in common between the previous and current nodes; these get
-                            # 1. transition probabilities
-                            probs = [iq] * len(neighbours)
-                            for i, nn in enumerate(neighbours):
-                                if nn == previous_node:  # this is the previous node
-                                    probs[i] = ip
-                                elif nn in common_neighbours:
-                                    probs[i] = 1.
-                            # normalize the probabilities
-                            total_prob = sum(probs)
-                            probs = [m / total_prob for m in probs]
-                            previous_node = current_node
-                            # select the next node based on the calculated transition probabilities
-                            current_node = neighbours[
-                                nrs.choice(a=len(neighbours), p=probs)
-                            ]
+
+                        # select one of the neighbours using the
+                        # appropriate transition probabilities
+                        choice = naive_weighted_choices(
+                            rs, (transition_probability(nn) for nn in neighbours)
+                        )
+
+                        previous_node = current_node
+                        previous_node_neighbours = neighbours
+                        current_node = neighbours[choice]
+
                 walks.append(walk)
 
         return walks
