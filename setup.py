@@ -18,7 +18,7 @@ import setuptools
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
-VERSION = "0.5.0b"
+VERSION = "0.4.1"
 
 # Required packages
 REQUIRES = [
@@ -32,7 +32,7 @@ REQUIRES = [
     "pandas>=0.23"
 ]
 
-EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas"]}
+EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas", "pytest-benchmark"]}
 
 # Long description
 with open("README.md", "r") as fh:

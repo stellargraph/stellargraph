@@ -536,3 +536,14 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         n = 99
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=999)
         assert len(subgraphs) == n * len(nodes)
+
+    def test_benchmark_sampledheterogeneousbreadthfirstwalk(self, benchmark):
+
+        g = create_simple_test_graph()
+        bfw = SampledHeterogeneousBreadthFirstWalk(g)
+
+        nodes = [0]
+        n = 5
+        n_size = [5, 5]
+
+        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))

@@ -298,3 +298,15 @@ class TestMetaPathWalk(object):
         assert len(walks) == n * 6
         for walk in walks:
             assert len(walk) <= length  # test against maximum walk length
+
+    def test_benchmark_uniformrandommetapathwalk(self, benchmark):
+
+        g = create_test_graph()
+        mrw = UniformRandomMetaPathWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        length = 5
+        metapaths = [["s", "n", "n", "s"], ["n", "s", "n"], ["n", "n"]]
+
+        benchmark(lambda: mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths))
