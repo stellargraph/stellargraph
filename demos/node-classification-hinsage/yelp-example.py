@@ -214,20 +214,7 @@ if __name__ == "__main__":
         default=[80, 80],
         help="The number of hidden features at each layer",
     )
-    parser.add_argument(
-        "-f",
-        "--features",
-        type=str,
-        default=None,
-        help="The node features to use, stored as a pickled numpy array.",
-    )
-    parser.add_argument(
-        "-t",
-        "--target",
-        type=str,
-        default="subject",
-        help="The target node attribute (categorical)",
-    )
+
     args = parser.parse_args()
 
     # Load graph and data

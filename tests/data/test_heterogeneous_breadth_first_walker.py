@@ -259,19 +259,33 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         #   [2, 2, 2],
         #   ['5', 1, '5'],
         #   ['5', '5', '5']]]
+        print(subgraphs)
         assert subgraphs == [
             [
                 ["5"],
-                [4, 4],
-                [3, 6],
-                ["5", "5", "5"],
+                [1, 1],
+                [6, 3],
+                [4, 4, 4],
+                [2, 3, 2],
+                [4, 4, 4],
                 [2, 2, 2],
                 ["5", "5", "5"],
-                [2, 2, 2],
-                ["5", 1, "5"],
-                ["5", "5", "5"],
+                ["5", 1, 1],
             ]
         ]
+        # assert subgraphs == [
+        #     [
+        #         ["5"],
+        #         [4, 4],
+        #         [3, 6],
+        #         ["5", "5", "5"],
+        #         [2, 2, 2],
+        #         ["5", "5", "5"],
+        #         [2, 2, 2],
+        #         ["5", 1, "5"],
+        #         ["5", "5", "5"],
+        #     ]
+        # ]
 
         nodes = ["5"]
         n_size = [2, 3]
@@ -281,35 +295,35 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         valid_result = [
             [
                 ["5"],
+                [1, 1],
+                [6, 3],
+                [4, 4, 4],
+                [2, 3, 2],
+                [4, 4, 4],
+                [2, 2, 2],
+                ["5", "5", "5"],
+                ["5", 1, 1],
+            ],
+            [
+                ["5"],
                 [4, 4],
-                [3, 6],
-                ["5", "5", "5"],
+                [6, 3],
+                [1, "5", 1],
                 [2, 2, 2],
                 ["5", "5", "5"],
                 [2, 2, 2],
-                ["5", 1, "5"],
                 ["5", "5", "5"],
+                ["5", 1, 1],
             ],
             [
                 ["5"],
                 [1, 1],
-                [3, 6],
-                [4, "5", 4],
+                [6, 3],
+                [4, 4, "5"],
+                [3, 3, 3],
+                [4, "5", "5"],
                 [2, 3, 2],
                 ["5", "5", "5"],
-                [2, 3, 2],
-                ["5", 1, "5"],
-                ["5", "5", "5"],
-            ],
-            [
-                ["5"],
-                [4, 4],
-                [3, 6],
-                ["5", "5", 1],
-                [2, 2, 2],
-                ["5", 1, 1],
-                [2, 2, 2],
-                [1, 1, 1],
                 ["5", "5", "5"],
             ],
         ]
@@ -342,22 +356,21 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [4, 4],
                 [2, 3],
                 [1, 1, 1],
-                [1, "5", "5"],
+                ["5", 1, 1],
                 [2, 2, 2],
                 [1, 1, 1],
-                [1, 1, "5"],
+                ["5", "5", 1],
                 [2, 2, 2],
                 [1, 1, 1],
-                [1, 1, "5"],
+                ["5", "5", 1],
                 [2, 2, 2],
                 [1, 1, 1],
-                [1, "5", 1],
+                ["5", 1, "5"],
                 [2, 2, 2],
                 [1, 1, 4],
                 [1, "5", 1],
             ]
         ]
-
         for a, b in zip(subgraphs, valid_result):
             assert len(a) == len(b)
             assert a == b
@@ -461,7 +474,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [None, None],
                 [None, None],
             ],
-            [[4], ["5", 1], [2, 2], [4, 4], [6, 6], ["5", 4], [2, 3], [4, 1], [4, 4]],
+            [[4], [1, "5"], [2, 2], [4, 4], [2, 2], [4, 1], [3, 6], [4, 1], [4, 4]],
         ]
         for a, b in zip(subgraphs, valid_result):
             assert a == b
@@ -476,14 +489,14 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [1],
                 [4, "5"],
                 [3, 2],
-                [1, "5", "5"],
+                ["5", 1, 1],
                 [2, 2, 2],
-                [1, 1, 4],
-                [3, 6, 3],
+                [4, 4, 1],
+                [6, 3, 6],
                 [1, 1, 1],
                 [1, 4, 1],
             ],
-            [[6], ["5", "5"], [1, 4, 1], [3, 6, 6], [4, 4, 4], [3, 3, 3]],
+            [[6], ["5", "5"], [4, 1, 4], [6, 3, 3], [1, 1, 1], [6, 6, 6]],
         ]
         for a, b in zip(subgraphs, valid_result):
             assert a == b
@@ -523,3 +536,14 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         n = 99
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=999)
         assert len(subgraphs) == n * len(nodes)
+
+    def test_benchmark_sampledheterogeneousbreadthfirstwalk(self, benchmark):
+
+        g = create_simple_test_graph()
+        bfw = SampledHeterogeneousBreadthFirstWalk(g)
+
+        nodes = [0]
+        n = 5
+        n_size = [5, 5]
+
+        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))

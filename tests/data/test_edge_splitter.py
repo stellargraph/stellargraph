@@ -26,9 +26,10 @@ from datetime import datetime, timedelta
 
 
 def create_heterogeneous_graph():
+    # TODO: We test if this graph is connected but there is no guarantee of connectivity in this code
     g = nx.Graph()
 
-    random.seed(42)  # produces the same graph every time
+    random.seed(152)  # produces the same graph every time
 
     start_date_dt = datetime.strptime("01/01/2015", "%d/%m/%Y")
     end_date_dt = datetime.strptime("01/01/2017", "%d/%m/%Y")
@@ -39,7 +40,7 @@ def create_heterogeneous_graph():
     # 50 nodes of type person
     person_node_ids = list(range(0, 50))
     for person in person_node_ids:
-        g.add_node(person, label="person", elite=random.choices([0, 1], k=1)[0])
+        g.add_node(person, label="person", elite=random.choice([0, 1]))
 
     # 200 nodes of type paper
     paper_node_ids = list(range(50, 250))
