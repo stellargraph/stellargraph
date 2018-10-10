@@ -32,13 +32,13 @@ as a command line argument to this script.
 The example script can be run on supplying the location of the downloaded CORA dataset
 with the following command:
 ```
-python cora-example.py -l <path_to_cora_dataset>
+python graphsage-cora-example.py -l <path_to_cora_dataset>
 ```
 
 Additional arguments can be specified that change the GraphSAGE model and training parameters, a
 description of these arguments is displayed using the help option to the script:
 ```
-python cora-example.py --help
+python graphsage-cora-example.py --help
 ```
 
 ## Running the notebook
@@ -48,7 +48,7 @@ same Python 3.6 environment as StellarGraph, following the instructions on the J
 website: http://jupyter.org/install.html
 
 After starting the Jupyter server on your computer, load the notebook
-`graphsage-cora_node_classification_example.ipynb` and follow the instructions inside.
+`graphsage-cora-node-classification-example.ipynb` and follow the instructions inside.
 
 
 ## References
