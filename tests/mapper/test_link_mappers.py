@@ -241,6 +241,17 @@ class Test_GraphSAGELinkGenerator:
         with pytest.raises(ValueError):
             nf, nl = mapper[0]
 
+    def test_GraphSAGELinkGenerator_no_targets(self):
+        """
+        This tests link generator's iterator for prediction, i.e., without targets provided
+        """
+        G = example_Graph_2(self.n_feat)
+        iter = GraphSAGELinkGenerator(
+            G, batch_size=self.batch_size, num_samples=self.num_samples
+        ).flow(G.edges())
+        for i in range(len(iter)):
+            assert iter.__getitem__(i)[1] is None
+
 
 class Test_HinSAGELinkGenerator(object):
     """
