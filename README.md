@@ -15,6 +15,8 @@
     <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch:+develop"/></a>
   <a href="https://github.com/stellargraph/stellargraph/issues" alt="contributions welcome">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
+    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/></a>
 </p>
 
 
