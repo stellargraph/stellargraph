@@ -1,8 +1,9 @@
 steps:
   - label: ":python:"
     command:
-      - pip install -q --no-cache-dir -r requirements.txt
-        && python -m pytest tests -p no:cacheprovider
+      - pip install -q --no-cache-dir -r requirements.txt -e .
+        && py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider
+        && coveralls
     plugins:
       docker#v1.3.0:
         image: "python:3.6"
