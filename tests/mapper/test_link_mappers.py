@@ -374,3 +374,17 @@ class Test_HinSAGELinkGenerator(object):
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
+
+    def test_HinSAGELinkGenerator_no_targets(self):
+        """
+        This tests link generator's iterator for prediction, i.e., without targets provided
+        """
+        G = example_HIN_1(self.n_feat)
+        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
+        data_size = len(links)
+
+        gen = HinSAGELinkGenerator(
+            G, batch_size=self.batch_size, num_samples=self.num_samples
+        ).flow(links)
+        for i in range(len(gen)):
+            assert gen[i][1] is None
