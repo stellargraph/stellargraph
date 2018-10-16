@@ -246,11 +246,11 @@ class Test_GraphSAGELinkGenerator:
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
         G = example_Graph_2(self.n_feat)
-        iter = GraphSAGELinkGenerator(
+        gen = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
         ).flow(G.edges())
-        for i in range(len(iter)):
-            assert iter.__getitem__(i)[1] is None
+        for i in range(len(gen)):
+            assert gen[i][1] is None
 
 
 class Test_HinSAGELinkGenerator(object):
