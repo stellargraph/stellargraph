@@ -7,7 +7,7 @@ steps:
     command:
       - pip install -q --no-cache-dir -r requirements.txt -e .
         && py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider
-        && if [ "$BUILDKITE_PULL_REQUEST" != "false" ] ; then ssh-keyscan -H github.com > ~/.ssh/known_hosts && git fetch && checkout $BUILDKITE_BRANCH ; fi ; coveralls
+        && if [ "$BUILDKITE_PULL_REQUEST" != "false" ] ; then mkdir -p ~/.ssh/ && ssh-keyscan -H github.com > ~/.ssh/known_hosts && git fetch && checkout $BUILDKITE_BRANCH ; fi ; coveralls
     plugins:
       <<: *plugins
       docker#v1.4.0:
