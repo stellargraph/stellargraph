@@ -221,6 +221,37 @@ def test_nodemapper_1():
     assert nf[2].shape == (1, 2 * 2, n_feat)
 
 
+def test_nodemapper_with_labels():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G2 = example_graph_2(n_feat)
+    nodes = list(G2)
+    labels = [n * 2 for n in nodes]
+
+    gen = GraphSAGENodeGenerator(G2, batch_size=n_batch, num_samples=[2, 2]).flow(
+        nodes, labels
+    )
+    assert len(gen) == 3
+
+    for ii in range(3):
+        nf, nl = gen[ii]
+
+        # Check sizes - note batch sizes are (2,2,1) for each iteration
+        assert len(nf) == 3
+        assert nf[0].shape[1:] == (1, n_feat)
+        assert nf[1].shape[1:] == (2, n_feat)
+        assert nf[2].shape[1:] == (2 * 2, n_feat)
+
+        # Check labels
+        assert all(int(a) == int(2 * b) for a, b in zip(nl, nf[0][:, 0, 0]))
+
+    # Check beyond the graph lengh
+    with pytest.raises(IndexError):
+        nf, nl = gen[len(gen)]
+
+
 def test_nodemapper_no_samples():
     n_feat = 4
     n_batch = 2
@@ -239,30 +270,6 @@ def test_nodemapper_no_samples():
         assert nf[0].shape == (n_batch, 1, n_feat)
         assert nf[1].shape == (n_batch, 0, n_feat)
         assert nl is None
-
-
-def test_nodemapper_with_targets():
-    n_feat = 4
-    n_batch = 2
-
-    # test graph
-    G = example_graph_1(feature_size=n_feat)
-
-    # Set target attribute
-    targets = np.array([np.random.choice([0, 1]) for n in G])
-
-    nodes = list(G)
-    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[1]).flow(
-        nodes, targets
-    )
-
-    assert len(mapper) == 2
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert len(nf) == 2
-        assert nf[0].shape == (n_batch, 1, n_feat)
-        assert nf[1].shape == (n_batch, 1, n_feat)
-        assert type(nl) == np.ndarray
 
 
 def test_nodemapper_incorrect_targets():
@@ -373,6 +380,35 @@ def test_hinnodemapper_level_2():
 
         assert len(batch_node_types) == 1
         assert nt in batch_node_types
+
+
+def test_hinnodemapper_with_labels():
+    batch_size = 2
+    feature_sizes = {"t1": 1, "t2": 2}
+    G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
+
+    labels = [n * 2 for n in nodes_type_1]
+
+    gen = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2, 3]).flow(
+        nodes_type_1, labels
+    )
+    assert len(gen) == 2
+
+    for ii in range(2):
+        nf, nl = gen[ii]
+
+        # Check sizes of neighbours and features (in bipartite graph)
+        assert len(nf) == 3
+        assert nf[0].shape == (2, 1, 1)
+        assert nf[1].shape == (2, 2, 2)
+        assert nf[2].shape == (2, 2 * 3, 1)
+
+        # Check labels
+        assert all(int(a) == int(2 * b) for a, b in zip(nl, nf[0][:, 0, 0]))
+
+    # Check beyond the graph lengh
+    with pytest.raises(IndexError):
+        nf, nl = gen[len(gen)]
 
 
 def test_hinnodemapper_no_neighbors():
