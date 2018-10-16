@@ -241,6 +241,17 @@ class Test_GraphSAGELinkGenerator:
         with pytest.raises(ValueError):
             nf, nl = mapper[0]
 
+    def test_GraphSAGELinkGenerator_no_targets(self):
+        """
+        This tests link generator's iterator for prediction, i.e., without targets provided
+        """
+        G = example_Graph_2(self.n_feat)
+        gen = GraphSAGELinkGenerator(
+            G, batch_size=self.batch_size, num_samples=self.num_samples
+        ).flow(G.edges())
+        for i in range(len(gen)):
+            assert gen[i][1] is None
+
 
 class Test_HinSAGELinkGenerator(object):
     """
@@ -363,3 +374,17 @@ class Test_HinSAGELinkGenerator(object):
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
+
+    def test_HinSAGELinkGenerator_no_targets(self):
+        """
+        This tests link generator's iterator for prediction, i.e., without targets provided
+        """
+        G = example_HIN_1(self.n_feat)
+        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
+        data_size = len(links)
+
+        gen = HinSAGELinkGenerator(
+            G, batch_size=self.batch_size, num_samples=self.num_samples
+        ).flow(links)
+        for i in range(len(gen)):
+            assert gen[i][1] is None

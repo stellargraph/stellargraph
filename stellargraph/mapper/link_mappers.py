@@ -75,6 +75,9 @@ class LinkSequence(Sequence):
                 raise ValueError(
                     "The length of the targets must be the same as the length of the ids"
                 )
+            self.targets = np.asanyarray(targets)
+        else:
+            self.targets = targets
 
         # Ensure number of labels matches number of ids
         if targets is not None and len(ids) != len(targets):
@@ -82,7 +85,6 @@ class LinkSequence(Sequence):
 
         self.generator = generator
         self.ids = list(ids)
-        self.targets = np.asanyarray(targets)
         self.data_size = len(self.ids)
 
         # Get head node types from all src, dst nodes extracted from all links,
