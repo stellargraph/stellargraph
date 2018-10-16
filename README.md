@@ -17,6 +17,8 @@
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/></a>
   <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
     <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/></a>
+  <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
+    <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/></a>
 </p>
 
 
