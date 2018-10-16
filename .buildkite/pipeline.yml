@@ -1,3 +1,7 @@
+plugins: &plugins
+  stellargraph/github-merged-pr#develop:
+    mode: checkout
+
 steps:
   - label: ":python:"
     command:
@@ -5,7 +9,8 @@ steps:
         && py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider
         && coveralls
     plugins:
-      docker#v1.3.0:
+      <<: *plugins
+      docker#v1.4.0:
         image: "python:3.6"
         workdir: /app
         environment:
@@ -16,7 +21,8 @@ steps:
     command:
       - --check stellargraph tests
     plugins:
-      docker#v1.3.0:
+      <<: *plugins
+      docker#v1.4.0:
         image: "stellargraph/black"
         workdir: /app
         entrypoint: /usr/bin/black
