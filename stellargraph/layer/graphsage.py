@@ -19,7 +19,7 @@
 GraphSAGE and compatible aggregator layers
 
 """
-__all__ = ["GraphSAGE", "MeanAggregator"]
+__all__ = ["GraphSAGE", "MeanAggregator", "MaxPoolAggregator", "MeanPoolAggregator"]
 
 import numpy as np
 from keras.engine.topology import Layer
@@ -119,9 +119,300 @@ class MeanAggregator(Layer):
 
         from_self = K.dot(x[0], self.w_self)
         from_neigh = K.dot(neigh_means, self.w_neigh)
-        total = K.concatenate([from_self, from_neigh], axis=2)
+        h_out = K.concatenate([from_self, from_neigh], axis=2)
 
-        return self.act(total + self.bias if self.has_bias else total)
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+
+        return h_out
+
+    def compute_output_shape(self, input_shape):
+        """
+        Computes the output shape of the layer.
+        Assumes that the layer will be built to match that input shape provided.
+
+        Args:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
+        return input_shape[0][0], input_shape[0][1], self.output_dim
+
+
+class MaxPoolAggregator(Layer):
+    """
+    Max Pool Aggregator for GraphSAGE implemented with Keras base layer
+
+    Implements the aggregator of Eq. (3) in Hamilton et al. (2017)
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def __init__(
+        self,
+        output_dim: int = 0,
+        bias: bool = False,
+        act: Callable or AnyStr = "relu",
+        **kwargs
+    ):
+        self.output_dim = output_dim
+        assert output_dim % 2 == 0
+        self.half_output_dim = int(output_dim / 2)
+
+        # TODO: These should be user parameters
+        self.hidden_dim = output_dim
+        self.hidden_act = activations.get("relu")
+
+        self.has_bias = bias
+        self.act = activations.get(act)
+        self.w_neigh = None
+        self.w_self = None
+        self.w_pool = None
+        self.b_pool = None
+        self.bias = None
+        self._initializer = "glorot_uniform"
+        super().__init__(**kwargs)
+
+    def get_config(self):
+        """
+        Gets class configuration for Keras serialization
+
+        """
+        config = {
+            "output_dim": self.output_dim,
+            "bias": self.has_bias,
+            "act": activations.serialize(self.act),
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
+
+    def build(self, input_shape):
+        """
+        Builds layer
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+            and neighbour
+
+        """
+        self.w_pool = self.add_weight(
+            name="w_pool",
+            shape=(input_shape[1][3], self.hidden_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.b_pool = self.add_weight(
+            name="b_pool",
+            shape=(self.hidden_dim,),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.w_neigh = self.add_weight(
+            name="w_neigh",
+            shape=(self.hidden_dim, self.half_output_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.w_self = self.add_weight(
+            name="w_self",
+            shape=(input_shape[0][2], self.half_output_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        if self.has_bias:
+            self.bias = self.add_weight(
+                name="bias",
+                shape=(self.output_dim,),
+                initializer="zeros",
+                trainable=True,
+            )
+        super().build(input_shape)
+
+    def call(self, x, **kwargs):
+        """
+        Apply max aggregation on input tensors, x
+
+        Args:
+          x: Keras Tensor
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        # x[0]: self vector (batch_size, head size, feature_size)
+        # x[1]: neighbour vector (batch_size, head size, neighobours, feature_size)
+        xw_neigh = K.dot(x[1], self.w_pool) + self.b_pool
+
+        # Take max over neighbour
+        neigh_agg = K.max(self.hidden_act(xw_neigh), axis=2)
+
+        # Apply separate self & neighbour weights and concatenate
+        from_self = K.dot(x[0], self.w_self)
+        from_neigh = K.dot(neigh_agg, self.w_neigh)
+        h_out = K.concatenate([from_self, from_neigh], axis=2)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+
+        return h_out
+
+    def compute_output_shape(self, input_shape):
+        """
+        Computes the output shape of the layer.
+        Assumes that the layer will be built to match that input shape provided.
+
+        Args:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
+        return input_shape[0][0], input_shape[0][1], self.output_dim
+
+
+class MeanPoolAggregator(Layer):
+    """
+    Mean Pool Aggregator for GraphSAGE implemented with Keras base layer
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def __init__(
+        self,
+        output_dim: int = 0,
+        bias: bool = False,
+        act: Callable or AnyStr = "relu",
+        **kwargs
+    ):
+        self.output_dim = output_dim
+        assert output_dim % 2 == 0
+        self.half_output_dim = int(output_dim / 2)
+
+        # TODO: These should be user parameters
+        self.hidden_dim = output_dim
+        self.hidden_act = activations.get("relu")
+
+        self.has_bias = bias
+        self.act = activations.get(act)
+        self.w_neigh = None
+        self.w_self = None
+        self.w_pool = None
+        self.b_pool = None
+        self.bias = None
+        self._initializer = "glorot_uniform"
+        super().__init__(**kwargs)
+
+    def get_config(self):
+        """
+        Gets class configuration for Keras serialization
+
+        """
+        config = {
+            "output_dim": self.output_dim,
+            "bias": self.has_bias,
+            "act": activations.serialize(self.act),
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
+
+    def build(self, input_shape):
+        """
+        Builds layer
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+            and neighbour
+
+        """
+        self.w_pool = self.add_weight(
+            name="w_pool",
+            shape=(input_shape[1][3], self.hidden_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.b_pool = self.add_weight(
+            name="b_pool",
+            shape=(self.hidden_dim,),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.w_self = self.add_weight(
+            name="w_self",
+            shape=(input_shape[0][2], self.hidden_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.b_self = self.add_weight(
+            name="b_self",
+            shape=(self.hidden_dim,),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.w_final = self.add_weight(
+            name="w_final",
+            shape=(2 * self.hidden_dim, self.output_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        if self.has_bias:
+            self.bias = self.add_weight(
+                name="bias",
+                shape=(self.output_dim,),
+                initializer="zeros",
+                trainable=True,
+            )
+        super().build(input_shape)
+
+    def call(self, x, **kwargs):
+        """
+        Apply max aggregation on input tensors, x
+
+        Args:
+          x: Keras Tensor
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        # x[0]: self vector (batch_size, head size, feature_size)
+        # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
+        xw_neigh = K.dot(x[1], self.w_pool) + self.b_pool
+        xw_self = K.dot(x[0], self.w_self) + self.b_self
+
+        # Take mean over neighbour activations
+        # (batch_size, head size, hidden_size)
+        neigh_agg = K.mean(self.hidden_act(xw_neigh), axis=2)
+
+        # Apply NN to self feature
+        # (batch_size, head size, hidden_size)
+        self_nn = self.hidden_act(xw_self)
+
+        # Apply separate self & neighbour weights and concatenate
+        h_out = K.dot(K.concatenate([self_nn, neigh_agg], axis=2), self.w_final)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+
+        return h_out
 
     def compute_output_shape(self, input_shape):
         """
