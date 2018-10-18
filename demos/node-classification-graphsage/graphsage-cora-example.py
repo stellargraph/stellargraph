@@ -100,9 +100,7 @@ def train(
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(
-        G, batch_size, num_samples, seed=42
-    )
+    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
@@ -126,11 +124,7 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_gen,
-        epochs=num_epochs,
-        validation_data=val_gen,
-        verbose=2,
-        shuffle=True,
+        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=True
     )
 
     # Evaluate on test set and print metrics
@@ -221,9 +215,7 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     ]
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(
-        G, batch_size, num_samples, seed=42
-    )
+    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
     all_gen = generator.flow(node_ids, node_targets)
 
     # Evaluate and print metrics
@@ -304,7 +296,13 @@ if __name__ == "__main__":
 
     # Load the dataset - this assumes it is the CORA dataset
     # Load graph edgelist
-    graph_loc = os.path.expanduser(args.location)
+    if args.location is not None:
+        graph_loc = os.path.expanduser(args.location)
+    else:
+        raise ValueError(
+            "Please specify the directory containing the dataset using the '-l' flag"
+        )
+
     edgelist = pd.read_table(
         os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
     )
