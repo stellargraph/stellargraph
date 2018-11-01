@@ -249,10 +249,10 @@ class MaxPoolAggregator(Layer):
 
         """
         # x[0]: self vector (batch_size, head size, feature_size)
-        # x[1]: neighbour vector (batch_size, head size, neighobours, feature_size)
+        # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
         xw_neigh = K.dot(x[1], self.w_pool) + self.b_pool
 
-        # Take max over neighbour
+        # Take max over neighbours
         neigh_agg = K.max(self.hidden_act(xw_neigh), axis=2)
 
         # Apply separate self & neighbour weights and concatenate
@@ -311,7 +311,7 @@ class MeanPoolAggregator(Layer):
 
         self.has_bias = bias
         self.act = activations.get(act)
-        self.w_neigh = None
+        self.w_neigh = None   # YT: is this used?
         self.w_self = None
         self.w_pool = None
         self.b_pool = None
