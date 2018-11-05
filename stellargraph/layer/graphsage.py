@@ -19,7 +19,12 @@
 GraphSAGE and compatible aggregator layers
 
 """
-__all__ = ["GraphSAGE", "MeanAggregator", "MaxPoolingAggregator", "MeanPoolingAggregator"]
+__all__ = [
+    "GraphSAGE",
+    "MeanAggregator",
+    "MaxPoolingAggregator",
+    "MeanPoolingAggregator",
+]
 
 import numpy as np
 from keras.engine.topology import Layer
@@ -315,7 +320,7 @@ class MeanPoolingAggregator(Layer):
 
         self.has_bias = bias
         self.act = activations.get(act)
-        self.w_neigh = None  # YT: is this used?
+        self.w_neigh = None
         self.w_self = None
         self.w_pool = None
         self.b_pool = None
