@@ -286,6 +286,8 @@ class MeanPoolAggregator(Layer):
     """
     Mean Pool Aggregator for GraphSAGE implemented with Keras base layer
 
+    Implements the aggregator of Eq. (3) in Hamilton et al. (2017)
+
     Args:
         output_dim (int): Output dimension
         bias (bool): Optional bias
@@ -353,21 +355,15 @@ class MeanPoolAggregator(Layer):
             initializer=self._initializer,
             trainable=True,
         )
+        self.w_neigh = self.add_weight(
+            name="w_neigh",
+            shape=(self.hidden_dim, self.half_output_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
         self.w_self = self.add_weight(
             name="w_self",
-            shape=(input_shape[0][2], self.hidden_dim),
-            initializer=self._initializer,
-            trainable=True,
-        )
-        self.b_self = self.add_weight(
-            name="b_self",
-            shape=(self.hidden_dim,),
-            initializer=self._initializer,
-            trainable=True,
-        )
-        self.w_final = self.add_weight(
-            name="w_final",
-            shape=(2 * self.hidden_dim, self.output_dim),
+            shape=(input_shape[0][2], self.half_output_dim),
             initializer=self._initializer,
             trainable=True,
         )
@@ -392,20 +388,16 @@ class MeanPoolAggregator(Layer):
 
         """
         # x[0]: self vector (batch_size, head size, feature_size)
-        # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
+        # x[1]: neighbour vector (batch_size, head size, neighobours, feature_size)
         xw_neigh = K.dot(x[1], self.w_pool) + self.b_pool
-        xw_self = K.dot(x[0], self.w_self) + self.b_self
 
-        # Take mean over neighbour activations
-        # (batch_size, head size, hidden_size)
+        # Aggregate over neighbour activations using mean
         neigh_agg = K.mean(self.hidden_act(xw_neigh), axis=2)
 
-        # Apply NN to self feature
-        # (batch_size, head size, hidden_size)
-        self_nn = self.hidden_act(xw_self)
-
         # Apply separate self & neighbour weights and concatenate
-        h_out = K.dot(K.concatenate([self_nn, neigh_agg], axis=2), self.w_final)
+        from_self = K.dot(x[0], self.w_self)
+        from_neigh = K.dot(neigh_agg, self.w_neigh)
+        h_out = K.concatenate([from_self, from_neigh], axis=2)
 
         if self.has_bias:
             h_out = self.act(h_out + self.bias)
