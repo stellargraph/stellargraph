@@ -19,7 +19,7 @@
 GraphSAGE and compatible aggregator layers
 
 """
-__all__ = ["GraphSAGE", "MeanAggregator", "MaxPoolAggregator", "MeanPoolAggregator"]
+__all__ = ["GraphSAGE", "MeanAggregator", "MaxPoolingAggregator", "MeanPoolingAggregator"]
 
 import numpy as np
 from keras.engine.topology import Layer
@@ -143,9 +143,9 @@ class MeanAggregator(Layer):
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
-class MaxPoolAggregator(Layer):
+class MaxPoolingAggregator(Layer):
     """
-    Max Pool Aggregator for GraphSAGE implemented with Keras base layer
+    Max Pooling Aggregator for GraphSAGE implemented with Keras base layer
 
     Implements the aggregator of Eq. (3) in Hamilton et al. (2017)
 
@@ -239,7 +239,7 @@ class MaxPoolAggregator(Layer):
 
     def call(self, x, **kwargs):
         """
-        Apply max aggregation on input tensors, x
+        Apply max pooling aggregation on input tensors, x
 
         Args:
           x: Keras Tensor
@@ -250,10 +250,12 @@ class MaxPoolAggregator(Layer):
         """
         # x[0]: self vector (batch_size, head size, feature_size)
         # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
-        xw_neigh = K.dot(x[1], self.w_pool) + self.b_pool
 
+        # Max-pooling of neighbours:
+        # Pass neighbour features through a dense layer with self.w_pool, self.b_pool
+        xw_neigh = self.hidden_act(K.dot(x[1], self.w_pool) + self.b_pool)
         # Take max over neighbours
-        neigh_agg = K.max(self.hidden_act(xw_neigh), axis=2)
+        neigh_agg = K.max(xw_neigh, axis=2)
 
         # Apply separate self & neighbour weights and concatenate
         from_self = K.dot(x[0], self.w_self)
@@ -282,11 +284,11 @@ class MaxPoolAggregator(Layer):
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
-class MeanPoolAggregator(Layer):
+class MeanPoolingAggregator(Layer):
     """
-    Mean Pool Aggregator for GraphSAGE implemented with Keras base layer
+    Mean Pooling Aggregator for GraphSAGE implemented with Keras base layer
 
-    Implements the aggregator of Eq. (3) in Hamilton et al. (2017)
+    Implements the aggregator of Eq. (3) in Hamilton et al. (2017), with max pooling replaced with mean pooling
 
     Args:
         output_dim (int): Output dimension
@@ -378,7 +380,7 @@ class MeanPoolAggregator(Layer):
 
     def call(self, x, **kwargs):
         """
-        Apply max aggregation on input tensors, x
+        Apply max pooling aggregation on input tensors, x
 
         Args:
           x: Keras Tensor
@@ -389,10 +391,12 @@ class MeanPoolAggregator(Layer):
         """
         # x[0]: self vector (batch_size, head size, feature_size)
         # x[1]: neighbour vector (batch_size, head size, neighobours, feature_size)
-        xw_neigh = K.dot(x[1], self.w_pool) + self.b_pool
 
+        # Mean-pooling of neighbours:
+        # Pass neighbour features through a dense layer with self.hidden_act activations
+        xw_neigh = self.hidden_act(K.dot(x[1], self.w_pool) + self.b_pool)
         # Aggregate over neighbour activations using mean
-        neigh_agg = K.mean(self.hidden_act(xw_neigh), axis=2)
+        neigh_agg = K.mean(xw_neigh, axis=2)
 
         # Apply separate self & neighbour weights and concatenate
         from_self = K.dot(x[0], self.w_self)
