@@ -28,7 +28,7 @@ import pytest
 
 
 def test_maxpool_agg_constructor():
-    agg = MaxPoolAggregator(2, bias=False)
+    agg = MaxPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert agg.hidden_dim == 2
@@ -38,7 +38,7 @@ def test_maxpool_agg_constructor():
 
 
 def test_maxpool_agg_constructor_1():
-    agg = MaxPoolAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
+    agg = MaxPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
     assert agg.half_output_dim == 2
     assert agg.hidden_dim == 4
@@ -47,7 +47,7 @@ def test_maxpool_agg_constructor_1():
 
 
 def test_maxpool_agg_apply():
-    agg = MaxPoolAggregator(2, bias=False, act="linear")
+    agg = MaxPoolingAggregator(2, bias=False, act="linear")
     agg._initializer = "ones"
 
     # Self features
@@ -73,7 +73,7 @@ def test_maxpool_agg_apply():
 
 
 def test_meanpool_agg_constructor():
-    agg = MeanPoolAggregator(2, bias=False)
+    agg = MeanPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert agg.hidden_dim == 2
@@ -83,7 +83,7 @@ def test_meanpool_agg_constructor():
 
 
 def test_meanpool_agg_constructor_1():
-    agg = MeanPoolAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
+    agg = MeanPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
     assert agg.half_output_dim == 2
     assert agg.hidden_dim == 4
@@ -92,7 +92,7 @@ def test_meanpool_agg_constructor_1():
 
 
 def test_meanpool_agg_apply():
-    agg = MeanPoolAggregator(2, bias=False, act="linear")
+    agg = MeanPoolingAggregator(2, bias=False, act="linear")
     agg._initializer = "ones"
 
     # Self features
