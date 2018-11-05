@@ -105,14 +105,14 @@ def test_meanpool_agg_apply():
     x2 = np.array([[[[2, 2], [3, 3]]]])
     # Agg output:
     # neigh_agg = mean(relu(x2 · ones(2x2)) + 1, axis=1)
-    #   = max([[5,5],[7,7]]) = [[6,6]]
-    # self_nn = relu(x1 · ones(2x2)) + 1 = [[3,3]]
-    # h_out = K.dot([self_nn, neigh_agg], ones(4x2)) = [[18,18]]
+    #   = mean([[5,5],[7,7]]) = [[6,6]]
+    # from_self = K.dot(x1, ones) = [[2]]
+    # from_neigh = K.dot(neigh_agg, ones) = [[12]]
 
     out = agg([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
     actual = model.predict([x1, x2])
-    expected = np.array([[[18, 18]]])
+    expected = np.array([[[2, 12]]])
 
     assert expected == pytest.approx(actual)
 
