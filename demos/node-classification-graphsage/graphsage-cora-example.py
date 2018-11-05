@@ -44,7 +44,7 @@ import keras
 from keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
-from stellargraph.layer import GraphSAGE, MeanAggregator, MaxPoolAggregator, MeanPoolAggregator
+from stellargraph.layer import GraphSAGE, MeanAggregator, MaxPoolingAggregator, MeanPoolingAggregator
 from stellargraph.mapper import GraphSAGENodeGenerator
 
 
@@ -108,7 +108,7 @@ def train(
 
     # GraphSAGE model
     model = GraphSAGE(
-        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout, aggregator=MeanPoolAggregator
+        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout, aggregator=MeanAggregator
     )
     # Expose the input and output sockets of the model:
     x_inp, x_out = model.default_model(flatten_output=True)
