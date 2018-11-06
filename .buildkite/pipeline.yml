@@ -1,30 +1,22 @@
-plugins: &plugins
-  stellargraph/github-merged-pr#develop:
-    mode: checkout
-
 steps:
   - label: ":python:"
     command:
       - pip install -q --no-cache-dir -r requirements.txt -e .
         && py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider
-        && if [ "$BUILDKITE_PULL_REQUEST" != "false" ] ; then mkdir -p ~/.ssh/ && ssh-keyscan -H github.com > ~/.ssh/known_hosts && git fetch && checkout $BUILDKITE_BRANCH ; fi ; coveralls
+        && coveralls
     plugins:
-      <<: *plugins
-      docker#v1.4.0:
+      docker#v1.3.0:
         image: "python:3.6"
         workdir: /app
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - COVERALLS_REPO_TOKEN=$COVERALLS_REPO_TOKEN
-          - BUILDKITE_BRANCH=$BUILDKITE_BRANCH
-          - BUILDKITE_PULL_REQUEST=$BUILDKITE_PULL_REQUEST
 
   - label: "style"
     command:
       - --check stellargraph tests
     plugins:
-      <<: *plugins
-      docker#v1.4.0:
+      docker#v1.3.0:
         image: "stellargraph/black"
         workdir: /app
         entrypoint: /usr/bin/black
