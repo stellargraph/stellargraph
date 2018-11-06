@@ -27,6 +27,96 @@ import numpy as np
 import pytest
 
 
+def test_maxpool_agg_constructor():
+    agg = MaxPoolingAggregator(2, bias=False)
+    assert agg.output_dim == 2
+    assert agg.half_output_dim == 1
+    assert agg.hidden_dim == 2
+    assert not agg.has_bias
+    assert agg.act.__name__ == "relu"
+    assert agg.hidden_act.__name__ == "relu"
+
+
+def test_maxpool_agg_constructor_1():
+    agg = MaxPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
+    assert agg.output_dim == 4
+    assert agg.half_output_dim == 2
+    assert agg.hidden_dim == 4
+    assert agg.has_bias
+    assert agg.act(2) == 3
+
+
+def test_maxpool_agg_apply():
+    agg = MaxPoolingAggregator(2, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    # Self features
+    inp1 = keras.Input(shape=(1, 2))
+    # Neighbour features
+    inp2 = keras.Input(shape=(1, 2, 2))
+
+    # Numerical test values
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+    # Agg output:
+    # neigh_agg = max(relu(x2 · ones(2x2)) + 1, axis=1)
+    #   = max([[5,5],[7,7]]) = [[7,7]]
+    # from_self = K.dot(x1, ones) = [[2]]
+    # from_neigh = K.dot(neigh_agg, ones) = [[14]]
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 14]]])
+
+    assert expected == pytest.approx(actual)
+
+
+def test_meanpool_agg_constructor():
+    agg = MeanPoolingAggregator(2, bias=False)
+    assert agg.output_dim == 2
+    assert agg.half_output_dim == 1
+    assert agg.hidden_dim == 2
+    assert not agg.has_bias
+    assert agg.act.__name__ == "relu"
+    assert agg.hidden_act.__name__ == "relu"
+
+
+def test_meanpool_agg_constructor_1():
+    agg = MeanPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
+    assert agg.output_dim == 4
+    assert agg.half_output_dim == 2
+    assert agg.hidden_dim == 4
+    assert agg.has_bias
+    assert agg.act(2) == 3
+
+
+def test_meanpool_agg_apply():
+    agg = MeanPoolingAggregator(2, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    # Self features
+    inp1 = keras.Input(shape=(1, 2))
+    # Neighbour features
+    inp2 = keras.Input(shape=(1, 2, 2))
+
+    # Numerical test values
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+    # Agg output:
+    # neigh_agg = mean(relu(x2 · ones(2x2)) + 1, axis=1)
+    #   = mean([[5,5],[7,7]]) = [[6,6]]
+    # from_self = K.dot(x1, ones) = [[2]]
+    # from_neigh = K.dot(neigh_agg, ones) = [[12]]
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 12]]])
+
+    assert expected == pytest.approx(actual)
+
+
 def test_mean_agg_constructor():
     agg = MeanAggregator(2)
     assert agg.output_dim == 2
