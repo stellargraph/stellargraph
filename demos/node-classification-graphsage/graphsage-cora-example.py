@@ -44,7 +44,7 @@ import keras
 from keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
-from stellargraph.layer import GraphSAGE, MeanAggregator
+from stellargraph.layer import GraphSAGE, MeanAggregator, MaxPoolingAggregator, MeanPoolingAggregator
 from stellargraph.mapper import GraphSAGENodeGenerator
 
 
@@ -91,24 +91,22 @@ def train(
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
-        node_ids, node_targets, train_size=140, test_size=None, stratify=node_targets
+        node_ids, node_targets, train_size=140, test_size=None, stratify=node_targets, random_state=55232
     )
 
     # Split test set into test and validation
     val_nodes, test_nodes, val_targets, test_targets = model_selection.train_test_split(
-        test_nodes, test_targets, train_size=500, test_size=None
+        test_nodes, test_targets, train_size=500, test_size=None, random_state=523214
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(
-        G, batch_size, num_samples, seed=42
-    )
+    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
     # GraphSAGE model
     model = GraphSAGE(
-        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout
+        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout, aggregator=MeanAggregator
     )
     # Expose the input and output sockets of the model:
     x_inp, x_out = model.default_model(flatten_output=True)
@@ -119,18 +117,15 @@ def train(
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=prediction)
     model.compile(
-        optimizer=optimizers.Adam(lr=learning_rate),
+        optimizer=optimizers.Adam(lr=learning_rate, decay=0.001),
         loss=losses.categorical_crossentropy,
         metrics=[metrics.categorical_accuracy],
     )
+    print(model.summary())
 
     # Train model
     history = model.fit_generator(
-        train_gen,
-        epochs=num_epochs,
-        validation_data=val_gen,
-        verbose=2,
-        shuffle=True,
+        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=True
     )
 
     # Evaluate on test set and print metrics
@@ -221,9 +216,7 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     ]
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(
-        G, batch_size, num_samples, seed=42
-    )
+    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
     all_gen = generator.flow(node_ids, node_targets)
 
     # Evaluate and print metrics
@@ -304,7 +297,13 @@ if __name__ == "__main__":
 
     # Load the dataset - this assumes it is the CORA dataset
     # Load graph edgelist
-    graph_loc = os.path.expanduser(args.location)
+    if args.location is not None:
+        graph_loc = os.path.expanduser(args.location)
+    else:
+        raise ValueError(
+            "Please specify the directory containing the dataset using the '-l' flag"
+        )
+
     edgelist = pd.read_table(
         os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
     )

@@ -144,17 +144,11 @@ def train(
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
     train_gen = GraphSAGELinkGenerator(
-        G_train,
-        batch_size,
-        num_samples,
-        name="train",
+        G_train, batch_size, num_samples, name="train"
     ).flow(edge_ids_train, edge_labels_train)
 
     test_gen = GraphSAGELinkGenerator(
-        G_test,
-        batch_size,
-        num_samples,
-        name="test",
+        G_test, batch_size, num_samples, name="test"
     ).flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
@@ -198,11 +192,7 @@ def train(
     # Train model
     print("\nTraining the model for {} epochs...".format(num_epochs))
     history = model.fit_generator(
-        train_gen,
-        epochs=num_epochs,
-        validation_data=test_gen,
-        verbose=2,
-        shuffle=True,
+        train_gen, epochs=num_epochs, validation_data=test_gen, verbose=2, shuffle=True
     )
 
     # Evaluate and print metrics
@@ -261,10 +251,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
 
     # Generator feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_gen = GraphSAGELinkGenerator(
-        G_test,
-        batch_size,
-        num_samples,
-        name="test",
+        G_test, batch_size, num_samples, name="test"
     ).flow(edge_ids_test, edge_labels_test)
 
     # Evaluate and print metrics
@@ -365,7 +352,13 @@ if __name__ == "__main__":
     args, cmdline_args = parser.parse_known_args()
 
     # Load the dataset - this assumes it is the CORA dataset
-    graph_loc = os.path.expanduser(args.location)
+    if args.location is not None:
+        graph_loc = os.path.expanduser(args.location)
+    else:
+        raise ValueError(
+            "Please specify the directory containing the dataset using the '-l' flag"
+        )
+
     G = load_data(graph_loc, args.ignore_node_attr)
 
     if args.checkpoint is None:
