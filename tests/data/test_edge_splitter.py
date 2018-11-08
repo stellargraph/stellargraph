@@ -136,7 +136,8 @@ def read_graph(graph_file, dataset_name, directed=False, weighted=False):
     if not nx.is_connected(g):
         print("Graph is not connected")
         # take the largest connected component as the data
-        g = max(nx.connected_component_subgraphs(g, copy=True), key=len)
+        g_ccs = (g.subgraph(c).copy() for c in nx.connected_components(g))
+        g = max(g_ccs, key=len)
         print(
             "Largest subgraph statistics: {} nodes, {} edges".format(
                 g.number_of_nodes(), g.number_of_edges()
