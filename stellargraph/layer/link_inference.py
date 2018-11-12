@@ -20,7 +20,16 @@ link attribute inference (regression)
 """
 
 from typing import AnyStr, Optional, List, Tuple
-from keras.layers import (Layer, Concatenate, Dense, Lambda, Multiply, Average, Reshape, Activation)
+from keras.layers import (
+    Layer,
+    Concatenate,
+    Dense,
+    Lambda,
+    Multiply,
+    Average,
+    Reshape,
+    Activation,
+)
 from keras import backend as K
 
 
