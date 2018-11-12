@@ -49,7 +49,7 @@ class Test_Link_Inference(object):
         x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
         x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
-        li = link_inference(edge_feature_method="ip")([x_src, x_dst])
+        li = link_inference(edge_feature_method="ip", output_act='linear')([x_src, x_dst])
         print(
             "link inference with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
                 li.eval(), expected
@@ -58,9 +58,16 @@ class Test_Link_Inference(object):
         assert li.eval() == pytest.approx(expected)
         assert li.eval() == pytest.approx(0)
 
-        li = link_inference(edge_feature_method="ip")([x_src, x_src])
+        li = link_inference(edge_feature_method="ip", output_act='linear')([x_src, x_src])
         print("link inference with 'ip' operator on unit vector: ", li.eval())
         assert li.eval() == pytest.approx(1)
+
+        # Test sigmoid activation
+        li = link_classification(edge_feature_method="ip", output_act='sigmoid')([x_src, x_dst])
+        assert li.eval() == pytest.approx(0.5)
+
+        li = link_classification(edge_feature_method="ip", output_act='sigmoid')([x_src, x_src])
+        assert li.eval() == pytest.approx(0.7310586)
 
         sess.close()
 
@@ -116,17 +123,19 @@ class Test_Link_Classification(object):
         x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
         x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
-        li = link_classification(edge_feature_method="ip")([x_src, x_dst])
-        print(
-            "link classification with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
-                li.eval(), expected
-            )
-        )
+        # Test linear activation
+        li = link_classification(edge_feature_method="ip", output_act='linear')([x_src, x_dst])
         assert li.eval() == pytest.approx(0)
 
-        li = link_classification(edge_feature_method="ip")([x_src, x_src])
-        print("link classification with 'ip' operator on unit vector: ", li.eval())
+        li = link_classification(edge_feature_method="ip", output_act='linear')([x_src, x_src])
         assert li.eval() == pytest.approx(1)
+
+        # Test sigmoid activation
+        li = link_classification(edge_feature_method="ip", output_act='sigmoid')([x_src, x_dst])
+        assert li.eval() == pytest.approx(0.5)
+
+        li = link_classification(edge_feature_method="ip", output_act='sigmoid')([x_src, x_src])
+        assert li.eval() == pytest.approx(0.7310586)
 
         sess.close()
 
