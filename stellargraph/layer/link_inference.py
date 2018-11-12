@@ -20,7 +20,7 @@ link attribute inference (regression)
 """
 
 from typing import AnyStr, Optional, List, Tuple
-from keras.layers import Layer, Concatenate, Dense, Lambda, Multiply, Average, Reshape
+from keras.layers import (Layer, Concatenate, Dense, Lambda, Multiply, Average, Reshape, Activation)
 from keras import backend as K
 
 
@@ -101,6 +101,7 @@ def link_inference(
             out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
                 [x0, x1]
             )
+            out = Activation(output_act)(out)
 
         elif edge_feature_method == "l1":
             # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
