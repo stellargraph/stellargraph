@@ -265,7 +265,7 @@ class BiasedRandomWalk(GraphWalk):
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def run(self, nodes=None, n=None, p=1., q=1., length=None, seed=None):
+    def run(self, nodes=None, n=None, p=1., q=1., length=None, seed=None, weighted = False):
         """
         Perform a random walk starting from the root nodes.
 
@@ -276,13 +276,14 @@ class BiasedRandomWalk(GraphWalk):
             q: <float> Defines probability, 1/q, for moving to a node away from the source node
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
+            weight: <False or True> Indicates whether the walk is unweighted or weighted
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
 
         """
         self._check_parameter_values(
-            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = weighted
         )
 
         if seed:
@@ -291,6 +292,32 @@ class BiasedRandomWalk(GraphWalk):
         else:
             # Restore the random state
             rs = self._random_state
+
+
+        if (weighted):
+            different_wts = False  # to check if multigraph have distinct weights between a pair of nodes
+            negative_wts = False   # to check if some edge has negative weight00
+            for node in self.graph.nodes():
+                for neighbor in self.neighbors(self.graph,node):
+                    edges = self.graph[node][neighbor]
+                    wts = set()
+                    for k,v in edges.items():
+                        if (v.get('weight') < 0): # check if edge has a negative weight
+                            negative_wts = True
+                            break
+                        wts.add(v.get('weight'))
+                    if len(wts) > 1:    # multigraph with different weights on edges between same pair of nodes
+                        different_wts = True
+                        break
+                if different_wts:
+                    break
+            if (negative_wts):   # some edge has negative weights which will 
+                print ("Some edges have negative weights. Weighted biased random walk will be ill-defined. ")
+                return
+            if (different_wts):   # ambigous which edge to select for the random walk
+                print ("Multiple edges with different weights between same pair of nodes. Cannot perform the weighted biased random walk as it makes the walk ambigous.")
+                return
+
 
         ip = 1. / p
         iq = 1. / q
@@ -308,13 +335,24 @@ class BiasedRandomWalk(GraphWalk):
 
                 # calculate the appropriate unnormalized transition
                 # probability, given the history of the walk
-                def transition_probability(nn):
-                    if nn == previous_node:  # d_tx = 0
-                        return ip
-                    elif nn in previous_node_neighbours:  # d_tx = 1
-                        return 1.
-                    else:  # d_tx = 2
-                        return iq
+                def transition_probability(nn, weighted):
+                   
+                    if (weighted):
+                        weight_cn = self.graph[current_node][nn][0].get('weight', 1.0)
+                       
+                        if nn == previous_node:  # d_tx = 0
+                            return ip * weight_cn
+                        elif nn in previous_node_neighbours:  # d_tx = 1
+                            return 1. * weight_cn
+                        else:  # d_tx = 2
+                            return iq * weight_cn
+                    else: 
+                        if nn == previous_node:  # d_tx = 0
+                            return ip
+                        elif nn in previous_node_neighbours:  # d_tx = 1
+                            return 1. 
+                        else:  # d_tx = 2
+                            return iq 
 
                 if neighbours:
                     current_node = rs.choice(neighbours)
@@ -328,7 +366,7 @@ class BiasedRandomWalk(GraphWalk):
                         # select one of the neighbours using the
                         # appropriate transition probabilities
                         choice = naive_weighted_choices(
-                            rs, (transition_probability(nn) for nn in neighbours)
+                            rs, (transition_probability(nn, weighted) for nn in neighbours)
                         )
 
                         previous_node = current_node
@@ -339,7 +377,7 @@ class BiasedRandomWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, p, q, length, seed):
+    def _check_parameter_values(self, nodes, n, p, q, length, seed, weighted):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -422,6 +460,14 @@ class BiasedRandomWalk(GraphWalk):
                         type(self).__name__
                     )
                 )
+
+        if (type(weighted) != bool):
+            raise ValueError(
+                "({}) The weighted indicator has to be either False (unweighted random walks) or True (weighted random walks).".format(
+                    type(self).__name__
+                )
+            )
+              
 
 
 class UniformRandomMetaPathWalk(GraphWalk):
