@@ -370,3 +370,333 @@ class TestBiasedRandomWalk(object):
         length = 5
 
         benchmark(lambda: biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length))
+
+
+
+
+def create_test_simple_weighted_graph():
+    """
+    Creates a simple graph for testing the weighted biased random walk class. The node ids are string or integers.
+
+    :return: .
+    """
+    g = nx.Graph()
+    edges = [
+        ("0", 1, 3),
+        ("0", 2, 4),
+        (1, 3, 1),
+        (1, 4, 7),
+        (3, 6, 9),
+        (4, 7, 2),
+        (4, 8, 5),
+        (2, 5, 7),
+        (5, 9, 5),
+        (5, 10, 6),
+        ("0", "0", 7),
+        (1, 1, 8),
+        (3, 3, 8),
+        (6, 6, 9),
+        (4, 4, 1),
+        (7, 7, 2),
+        (8, 8, 3),
+        (2, 2, 4),
+        (5, 5, 5),
+        (9, 9, 6),
+        ("self lonely", "self lonely", 0),  # an isolated node with a self link
+    ]
+
+    g.add_weighted_edges_from(edges)
+
+    g.add_node("lonely")  # an isolated node without self link
+
+    g = StellarGraph(g)
+
+    return g
+
+
+
+
+def create_test_weighted_multigraph():
+    """
+    Creates a weighted multigraph for testing the weighted random biased walk method. The node ids are string or integers.
+
+    :return: .
+    """
+    g = nx.MultiGraph()
+    edges = [
+        ("0", 1, 3),
+        ("0", 1, 3),
+        (1, 3, 1),
+        (1, 4, 5),
+        (2, 5, 7),
+        (2, 5, 7),
+        (3, 6, 9),
+        (3, 6, 9),
+        (4, 7, 2),
+        (4, 8, 5),
+        (5, 9, 5),
+        (5, 10, 6),
+        ("0", "0", 7),
+        (1, 1, 8),
+        (2, 2, 4),
+        (3, 3, 8),
+        (6, 6, 9),
+        (4, 4, 1),
+        (7, 7, 2),
+        (8, 8, 3),
+        (5, 5, 5),
+        (9, 9, 6),
+        ("self lonely", "self lonely", 0),  # an isolated node with a self link
+    ]
+
+    g.add_weighted_edges_from(edges)
+
+    g.add_node("lonely")  # an isolated node without self link
+
+    g = StellarGraph(g)
+
+    return g
+
+
+
+class TestBiasedWeightedRandomWalk(object):
+    def test_parameter_checking(self):
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0"]
+        n = 1
+        length = 2
+        p = 1.
+        q = 1.
+        seed = None
+
+        with pytest.raises(ValueError):
+            # nodes should be a list of node ids even for a single node
+            biasedrw.run(nodes=None, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(
+                nodes="0", n=n, p=p, q=q, length=length, seed=seed, weighted = True
+            )  # can't just pass a node id, need list, e.g., ["0"]
+
+        # n has to be positive integer
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=0, p=p, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=-121, p=p, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=21.4, p=p, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=-0.5, p=p, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=0.0001, p=p, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n="2", p=p, q=q, length=length, seed=seed, weighted = True)
+
+        # p has to be > 0.
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=0., q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=-0.25, q=q, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=-1, q=q, length=length, seed=seed, weighted = True)
+
+        # q has to be > 0.
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=0., length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=-0.9, length=length, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=-75, length=length, seed=seed, weighted = True)
+
+        # length has to be positive integer
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=0, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=-5, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=11.9, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=-9.9, seed=seed, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length="10", seed=seed, weighted = True)
+
+        # seed has to be None, 0,  or positive integer
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=-1, weighted = True)
+        with pytest.raises(ValueError):
+            biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=1010.8, weighted = True)
+            
+        
+        # If no root nodes are given, an empty list is returned which is not an error but I thought this method
+        # is the best for checking this behaviour.
+        nodes = []
+        subgraph = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=None, weighted = True)
+        assert len(subgraph) == 0
+        
+            
+    def test_walk_generation_many_root_nodes(self):
+
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0", 2]
+        n = 1
+        length = 1
+        seed = None
+        p = 1.
+        q = 0.3
+
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n * len(nodes)
+        for i, subgraph in enumerate(subgraphs):
+            assert len(subgraph) == length  # should be 1
+            assert subgraph[0] == nodes[i]  # should equal the root node
+
+        length = 2
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n * len(nodes)
+        for subgraph in subgraphs:
+            assert len(subgraph) <= length
+
+        n = 2
+        length = 2
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n * len(nodes)
+        for subgraph in subgraphs:
+            assert len(subgraph) <= length
+
+        length = 3
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n * len(nodes)
+        for subgraph in subgraphs:
+            assert len(subgraph) <= length
+
+        n = 5
+        length = 10
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n * len(nodes)
+        for subgraph in subgraphs:
+            assert len(subgraph) <= length
+
+    def test_walk_generation_lonely_root_node(self):
+
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["lonely"]  # this node has no edges including itself
+        n = 1
+        length = 1
+        seed = None
+        p = 0.5
+        q = 1.
+
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == 1
+        assert (
+            len(subgraphs[0]) == 1
+        )  # always 1 since only the root node can every be added to the walk
+
+        n = 10
+        length = 1
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert (
+                len(subgraph) == 1
+            )  # always 1 since only the root node can ever be added to the walk
+
+        n = 10
+        length = 10
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert (
+                len(subgraph) == 1
+            )  # always 1 since only the root node can ever be added to the walk
+
+    def test_walk_generation_self_lonely_root_node(self):
+
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["self lonely"]  # this node has link to self but no other edges
+        n = 1
+        length = 1
+        seed = None
+        p = 1.
+        q = 1.
+
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == 1
+        assert len(subgraphs[0]) == 1
+
+        n = 10
+        length = 1
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == length
+            for node in subgraph:
+                assert node == "self lonely"  # all nodes should be the same node
+
+        n = 1
+        length = 99
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == length
+            for node in subgraph:
+                assert node == "self lonely"  # all nodes should be the same node
+
+        n = 10
+        length = 10
+        subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted = True)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == length
+            for node in subgraph:
+                assert node == "self lonely"  # all nodes should be the same node
+
+
+    def test_all_edge_weights_positive(self):
+
+        g = create_test_simple_weighted_graph()
+        positive_edges = [(u,v) for (u,v,d) in g.edges(data=True) if d['weight'] >= 0]
+        assert len(positive_edges) == len(g.edges)
+   
+        g = create_test_weighted_multigraph()
+        positive_edges = [(u,v) for (u,v,d) in g.edges(data=True) if d['weight'] >= 0]
+        assert len(positive_edges) == len(g.edges)
+   
+
+
+    def test_multiedge_weights_same(self):
+
+        g = create_test_weighted_multigraph()
+        biasedrw = BiasedRandomWalk(g)
+    
+        for n in g.nodes():
+            for nn in biasedrw.neighbors(g,n):
+                edges = g[n][nn]
+                if len(edges.keys()) > 1:
+                    wts = set()
+                    for k,v in edges.items():
+                        wts.add(v.get('weight'))
+                    assert len(wts) == 1
+                        
+
+
+    def test_benchmark_biasedweightedrandomwalk(self, benchmark):
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        p = 2
+        q = 3
+        length = 5
+
+        benchmark(lambda: biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, weighted = True))
+        
+        
