@@ -523,8 +523,6 @@ class GraphSAGE:
             for layer in range(self.n_layers)
         ]
 
-        self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
-
     def __call__(self, x: List):
         """
         Apply aggregator layers
