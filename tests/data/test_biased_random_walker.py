@@ -157,38 +157,30 @@ class TestBiasedWeightedRandomWalk(object):
         seed = None
 
         with pytest.raises(ValueError):
-            # nodes should be a list of node ids even for a single node
+            # weighted is boolen which is by default False. It is True if walk has to be weighted.
             biasedrw.run(
-                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted="unknown",
+                edge_weight_label="weight",
             )
 
-    def test_all_edge_weights_positive(self):
-
-        g = create_test_simple_weighted_graph()
-        positive_edges = [
-            (u, v) for (u, v, d) in g.edges(data=True) if d["weight"] >= 0
-        ]
-        assert len(positive_edges) == len(g.edges)
-
-        g = create_test_weighted_multigraph()
-        positive_edges = [
-            (u, v) for (u, v, d) in g.edges(data=True) if d["weight"] >= 0
-        ]
-        assert len(positive_edges) == len(g.edges)
-
-    def test_multiedge_weights_same(self):
-
-        g = create_test_weighted_multigraph()
-        biasedrw = BiasedRandomWalk(g)
-
-        for n in g.nodes():
-            for nn in biasedrw.neighbors(g, n):
-                edges = g[n][nn]
-                if len(edges.keys()) > 1:
-                    wts = set()
-                    for k, v in edges.items():
-                        wts.add(v.get("weight"))
-                    assert len(wts) == 1
+        with pytest.raises(ValueError):
+            # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
+            biasedrw.run(
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted="unknown",
+                edge_weight_label=None,
+            )
 
     def test_weighted_walks(self):
 
@@ -290,15 +282,21 @@ class TestBiasedWeightedRandomWalk(object):
         q = 1.0
 
         biasedrw = BiasedRandomWalk(g)
-        biasedrw.run(
-            nodes=nodes,
-            n=n,
-            p=p,
-            q=q,
-            length=length,
-            seed=seed,
-            weighted=True,
-            weight="w",
+
+        assert (
+            len(
+                biasedrw.run(
+                    nodes=nodes,
+                    n=n,
+                    p=p,
+                    q=q,
+                    length=length,
+                    seed=seed,
+                    weighted=True,
+                    edge_weight_label="w",
+                )
+            )
+            == 4
         )
 
         g = nx.Graph()
@@ -328,7 +326,7 @@ class TestBiasedWeightedRandomWalk(object):
                 length=length,
                 seed=seed,
                 weighted=True,
-                weight="w",
+                edge_weight_label="w",
             )
 
     def test_benchmark_biasedweightedrandomwalk(self, benchmark):
