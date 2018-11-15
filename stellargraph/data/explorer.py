@@ -296,7 +296,7 @@ class BiasedRandomWalk(GraphWalk):
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
             weighted: <False or True> Indicates whether the walk is unweighted or weighted
-            weight: <string> Label of the edge.
+            edge_weight_label: <string> Label of the edge.
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
@@ -444,7 +444,7 @@ class BiasedRandomWalk(GraphWalk):
             length: <int> Maximum length of walk measured as the number of edges followed from root node.
             seed: <int> Random number generator seed.
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
-            weight: <string> Label of the edge.
+            edge_weight_label: <string> Label of the edge.
 
         """
         if nodes is None:
