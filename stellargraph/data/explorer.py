@@ -282,7 +282,7 @@ class BiasedRandomWalk(GraphWalk):
         length=None,
         seed=None,
         weighted=False,
-        weight="weight",
+        edge_weight_label="weight",
     ):
 
         """
@@ -310,7 +310,7 @@ class BiasedRandomWalk(GraphWalk):
             length=length,
             seed=seed,
             weighted=weighted,
-            weight=weight,
+            edge_weight_label=edge_weight_label,
         )
 
         if seed:
@@ -327,29 +327,31 @@ class BiasedRandomWalk(GraphWalk):
                     wts = set()
                     for k, v in self.graph[node][neighbor].items():
                         if (
-                            v.get(weight) == None
-                            or np.isnan(v.get(weight))
-                            or v.get(weight) == np.inf
+                            v.get(edge_weight_label) == None
+                            or np.isnan(v.get(edge_weight_label))
+                            or v.get(edge_weight_label) == np.inf
                         ):
                             raise ValueError(
                                 "Missing edge weight between ({}) and ({}).  Cannot perform a weighted random walk on the graph.".format(
                                     node, neighbor
                                 )
                             )
-                        if not isinstance(v.get(weight), (int, float)):
+                        if not isinstance(v.get(edge_weight_label), (int, float)):
                             raise ValueError(
                                 "Edge weight between ({}) and ({}) is ({}). It should be a numberic value.".format(
-                                    node, neighbor, v.get(weight)
+                                    node, neighbor, v.get(edge_weight_label)
                                 )
                             )
-                        if v.get(weight) < 0:  # check if edge has a negative weight
+                        if (
+                            v.get(edge_weight_label) < 0
+                        ):  # check if edge has a negative weight
                             raise ValueError(
                                 "An edges between ({}) and ({}) has negative weight of ({}). Cannot perform a meaningful random walk on the graph.".format(
-                                    node, neighbor, v.get(weight)
+                                    node, neighbor, v.get(edge_weight_label)
                                 )
                             )
 
-                        wts.add(v.get(weight))
+                        wts.add(v.get(edge_weight_label))
                     if (
                         len(wts) > 1
                     ):  # multigraph with different weights on edges between same pair of nodes
@@ -375,10 +377,14 @@ class BiasedRandomWalk(GraphWalk):
 
                 # calculate the appropriate unnormalized transition
                 # probability, given the history of the walk
-                def transition_probability(nn, current_node, weighted):
+                def transition_probability(
+                    nn, current_node, weighted, edge_weight_label
+                ):
 
                     if weighted:
-                        weight_cn = self.graph[current_node][nn][0].get(weight)
+                        weight_cn = self.graph[current_node][nn][0].get(
+                            edge_weight_label
+                        )
                         if nn == previous_node:  # d_tx = 0
                             return ip * weight_cn
                         elif nn in previous_node_neighbours:  # d_tx = 1
@@ -407,7 +413,9 @@ class BiasedRandomWalk(GraphWalk):
                         choice = naive_weighted_choices(
                             rs,
                             (
-                                transition_probability(nn, current_node, weighted)
+                                transition_probability(
+                                    nn, current_node, weighted, edge_weight_label
+                                )
                                 for nn in neighbours
                             ),
                         )
@@ -420,7 +428,9 @@ class BiasedRandomWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, p, q, length, seed, weighted, weight):
+    def _check_parameter_values(
+        self, nodes, n, p, q, length, seed, weighted, edge_weight_label
+    ):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -513,9 +523,9 @@ class BiasedRandomWalk(GraphWalk):
                 )
             )
 
-        if not weight.isalpha:
+        if not isinstance(edge_weight_label, str):
             raise ValueError(
-                "({}) The label of the edge weight has to be string or none".format(
+                "({}) The label of the edge weight has to be string".format(
                     type(self).__name__
                 )
             )
