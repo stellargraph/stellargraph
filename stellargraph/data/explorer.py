@@ -323,9 +323,9 @@ class BiasedRandomWalk(GraphWalk):
         if weighted:
             for node in self.graph.nodes():
                 for neighbor in self.neighbors(self.graph, node):
-                    edges = self.graph[node][neighbor]
+
                     wts = set()
-                    for k, v in edges.items():
+                    for k, v in self.graph[node][neighbor].items():
                         if (
                             v.get(weight) == None
                             or np.isnan(v.get(weight))
