@@ -296,7 +296,7 @@ class BiasedRandomWalk(GraphWalk):
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
             weighted: <False or True> Indicates whether the walk is unweighted or weighted
-            edge_weight_label: <string> Label of the edge.
+            edge_weight_label: <string> Label of the edge weight property.
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
@@ -321,6 +321,9 @@ class BiasedRandomWalk(GraphWalk):
             rs = self._random_state
 
         if weighted:
+            # Check that all edge weights are greater than or equal to 0.
+            # Also, check that if the given graph is a MultiGraph, then check that there are no two edges between
+            # the same two nodes with different weights.
             for node in self.graph.nodes():
                 for neighbor in self.neighbors(self.graph, node):
 
@@ -332,13 +335,13 @@ class BiasedRandomWalk(GraphWalk):
                             or v.get(edge_weight_label) == np.inf
                         ):
                             raise ValueError(
-                                "Missing edge weight between ({}) and ({}).  Cannot perform a weighted random walk on the graph.".format(
+                                "Missing edge weight between ({}) and ({}).".format(
                                     node, neighbor
                                 )
                             )
                         if not isinstance(v.get(edge_weight_label), (int, float)):
                             raise ValueError(
-                                "Edge weight between ({}) and ({}) is ({}). It should be a numberic value.".format(
+                                "Edge weight between nodes ({}) and ({}) is not numeric ({}).".format(
                                     node, neighbor, v.get(edge_weight_label)
                                 )
                             )
@@ -346,7 +349,7 @@ class BiasedRandomWalk(GraphWalk):
                             v.get(edge_weight_label) < 0
                         ):  # check if edge has a negative weight
                             raise ValueError(
-                                "An edges between ({}) and ({}) has negative weight of ({}). Cannot perform a meaningful random walk on the graph.".format(
+                                "An edge weight between nodes ({}) and ({}) is negative ({}).".format(
                                     node, neighbor, v.get(edge_weight_label)
                                 )
                             )
@@ -356,7 +359,7 @@ class BiasedRandomWalk(GraphWalk):
                         len(wts) > 1
                     ):  # multigraph with different weights on edges between same pair of nodes
                         raise ValueError(
-                            "({}) and ({}) have multiple edges with weights ({}). Ambigous to choose an edge for the random walk.".format(
+                            "({}) and ({}) have multiple edges with weights ({}). Ambiguous to choose an edge for the random walk.".format(
                                 node, neighbor, list(wts)
                             )
                         )
@@ -375,7 +378,7 @@ class BiasedRandomWalk(GraphWalk):
                 previous_node = node
                 previous_node_neighbours = neighbours
 
-                # calculate the appropriate unnormalized transition
+                # calculate the appropriate unnormalised transition
                 # probability, given the history of the walk
                 def transition_probability(
                     nn, current_node, weighted, edge_weight_label
@@ -444,7 +447,7 @@ class BiasedRandomWalk(GraphWalk):
             length: <int> Maximum length of walk measured as the number of edges followed from root node.
             seed: <int> Random number generator seed.
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
-            edge_weight_label: <string> Label of the edge.
+            edge_weight_label: <string> Label of the edge weight property.
 
         """
         if nodes is None:
@@ -518,14 +521,14 @@ class BiasedRandomWalk(GraphWalk):
 
         if type(weighted) != bool:
             raise ValueError(
-                "({}) The weighted indicator has to be either False (unweighted random walks) or True (weighted random walks).".format(
+                "({}) Parameter weighted has to be either False (unweighted random walks) or True (weighted random walks).".format(
                     type(self).__name__
                 )
             )
 
         if not isinstance(edge_weight_label, str):
             raise ValueError(
-                "({}) The label of the edge weight has to be string".format(
+                "({}) The edge weight property label has to be of type string".format(
                     type(self).__name__
                 )
             )
