@@ -145,6 +145,43 @@ def create_test_weighted_multigraph():
 
 
 class TestBiasedWeightedRandomWalk(object):
+    def test_parameter_checking(self):
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0"]
+        n = 1
+        length = 2
+        p = 1.0
+        q = 1.0
+        seed = None
+
+        with pytest.raises(ValueError):
+            # weighted is boolen which is by default False. It is True if walk has to be weighted.
+            biasedrw.run(
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted="unknown",
+                edge_weight_label="weight",
+            )
+
+        with pytest.raises(ValueError):
+            # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
+            biasedrw.run(
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted="unknown",
+                edge_weight_label=None,
+            )
+
     def test_weighted_walks(self):
 
         # all positive walks
@@ -311,7 +348,7 @@ class TestBiasedWeightedRandomWalk(object):
 
 class TestBiasedRandomWalk(object):
     def test_parameter_checking(self):
-        g = create_test_simple_weighted_graph()
+        g = create_test_graph()
         biasedrw = BiasedRandomWalk(g)
 
         nodes = ["0"]
@@ -376,39 +413,6 @@ class TestBiasedRandomWalk(object):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=-1)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=1010.8)
-
-        # weighted has to be boolean True/False
-        with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
-            )
-        with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=None
-            )
-
-        # edge weight label should be a valid string type
-        with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes,
-                n=n,
-                p=p,
-                q=q,
-                length=length,
-                seed=seed,
-                edge_weight_label=None,
-            )
-
-        with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes,
-                n=n,
-                p=p,
-                q=q,
-                length=length,
-                seed=seed,
-                edge_weight_label=123,
-            )
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
         # is the best for checking this behaviour.
