@@ -27,15 +27,14 @@ project = 'StellarGraph'
 copyright = '2018, Data61, CSIRO'
 author = 'Data61, CSIRO'
 
+# The full version, including alpha/beta/rc tags
+release = version['__version__']
+
 # The short X.Y version
 m = re.match('^(\d+.\d+)', version['__version__'])
 if m is None:
     raise RuntimeError("Couldn't parse version")
 version = m.group()
-
-# The full version, including alpha/beta/rc tags
-release = version['__version__']
-
 
 # -- General configuration ---------------------------------------------------
 
