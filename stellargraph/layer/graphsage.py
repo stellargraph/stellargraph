@@ -456,7 +456,7 @@ class GraphSAGE:
         input_dim=None,
         aggregator=None,
         bias=True,
-        dropout=0.,
+        dropout=0.0,
         normalize="l2",
     ):
         # Set the aggregator layer used in the model

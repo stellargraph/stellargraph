@@ -251,7 +251,9 @@ class EPGM(object):
         else:
             raise Exception("G has unknown class ", str(G.__class__))
 
-        self.G_nx = {}  # placeholder for storing graphs in networkx format (populated by calling the .to_nx() method)
+        self.G_nx = (
+            {}
+        )  # placeholder for storing graphs in networkx format (populated by calling the .to_nx() method)
 
     def append(self, G_add):
         """Update self.G by adding a new graph G_json_add"""
