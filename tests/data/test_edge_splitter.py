@@ -170,7 +170,7 @@ class TestEdgeSplitterHomogeneous(object):
         p = 0.1
 
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
-            p=p, method="global"
+            p=p, method="global", keep_connected=True,
         )
 
         # if all goes well, what are the expected return values?
@@ -188,7 +188,7 @@ class TestEdgeSplitterHomogeneous(object):
         p = 0.1
         # using default sampling probabilities
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
-            p=p, method="local"
+            p=p, method="local", keep_connected=True,
         )
 
         # if all goes well, what are the expected return values?
@@ -204,7 +204,7 @@ class TestEdgeSplitterHomogeneous(object):
 
         sampling_probs = [0.0, 0.0, 0.1, 0.2, 0.5, 0.2]
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
-            p=p, method="local", probs=sampling_probs
+            p=p, method="local", probs=sampling_probs, keep_connected=True,
         )
 
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -361,7 +361,7 @@ class TestEdgeSplitterHeterogeneous(object):
     def _test_split_data_by_edge_type(self, method):
         p = 0.1
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
-            p=p, method=method, edge_label="friend"
+            p=p, method=method, edge_label="friend", keep_connected=True,
         )
 
         # if all goes well, what are the expected return values?
@@ -385,7 +385,7 @@ class TestEdgeSplitterHeterogeneous(object):
     def test_split_data_global(self):
         p = 0.1
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
-            p=p, method="global"
+            p=p, method="global", keep_connected=True,
         )
 
         # if all goes well, what are the expected return values?
@@ -404,7 +404,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
         # using default sampling probabilities
         g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
-            p=p, method="local"
+            p=p, method="local", keep_connected=True,
         )
 
         # if all goes well, what are the expected return values?
@@ -424,6 +424,18 @@ class TestEdgeSplitterCommon(object):
     g = create_heterogeneous_graph()
 
     es_obj = EdgeSplitter(g)
+
+    def test_split_data_keep_connected_parameter(self):
+
+        # keep_connected must be bool type.
+        with pytest.raises(ValueError):
+            self.es_obj.train_test_split(keep_connected='Yes')
+
+        with pytest.raises(ValueError):
+            self.es_obj.train_test_split(keep_connected=0)
+
+        with pytest.raises(ValueError):
+            self.es_obj.train_test_split(keep_connected=None)
 
     def test_split_data_p_parameter(self):
         # Test some edge cases for the value of p, e.g., < 0, = 0, > 1, =1

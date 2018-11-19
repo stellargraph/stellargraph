@@ -63,7 +63,9 @@ class EdgeSplitter(object):
         self.minedges_set = None  # lookup dictionary for edges in minimum spanning tree
         self._random = None
 
-    def _train_test_split_homogeneous(self, p, method, probs=None):
+    def _train_test_split_homogeneous(
+        self, p, method, probs=None, keep_connected=False
+    ):
         """
         Method for edge splitting applied to homogeneous graphs.
 
@@ -72,6 +74,8 @@ class EdgeSplitter(object):
             method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
             probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
             sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
+            keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
+            remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
 
         Returns:
             2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
@@ -81,7 +85,11 @@ class EdgeSplitter(object):
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
-        self.minedges = self._get_minimum_spanning_edges()
+        if keep_connected:
+            self.minedges = self._get_minimum_spanning_edges()
+        else:
+            self.minedges = []
+            self.minedges_set = set()
 
         # Sample the positive examples
         positive_edges = self._reduce_graph(minedges=self.minedges_set, p=p)
@@ -132,6 +140,7 @@ class EdgeSplitter(object):
         method,
         edge_label,
         probs=None,
+        keep_connected=False,
         edge_attribute_label=None,
         edge_attribute_threshold=None,
     ):
@@ -147,6 +156,8 @@ class EdgeSplitter(object):
             edge_label: <str> The edge type to split on
             probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
             sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
+            keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
+            remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
             edge_attribute_label: <str> The label for the edge attribute to split on
             edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
             examples
@@ -157,7 +168,11 @@ class EdgeSplitter(object):
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
-        self.minedges = self._get_minimum_spanning_edges()
+        if keep_connected:
+            self.minedges = self._get_minimum_spanning_edges()
+        else:
+            self.minedges = []
+            self.minedges_set = set()
 
         # Note: The caller guarantees the edge_label is not None so we don't have to check here again.
         if edge_attribute_threshold is None:
@@ -233,6 +248,7 @@ class EdgeSplitter(object):
         p=0.5,
         method="global",
         probs=None,
+        keep_connected=False,
         edge_label=None,
         edge_attribute_label=None,
         edge_attribute_threshold=None,
@@ -254,6 +270,8 @@ class EdgeSplitter(object):
             e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
             source node and 0.75 that it will be 2 hops away from the source node. This only affects sampling of
             negative edges if method is set to 'local'.
+            keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
+            remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
             edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
             of edges to split on.
             edge_attribute_label: <str> The label for the edge attribute to split on.
@@ -274,6 +292,13 @@ class EdgeSplitter(object):
             raise ValueError(
                 "Invalid method {}; valid options are 'local' or 'global'".format(
                     method
+                )
+            )
+
+        if not isinstance(keep_connected, (bool,)):
+            raise ValueError(
+                "({}) The flag keep_connected be boolean type.".format(
+                    type(self).__name__
                 )
             )
 
@@ -307,10 +332,11 @@ class EdgeSplitter(object):
                     edge_label=edge_label,
                     edge_attribute_label=edge_attribute_label,
                     edge_attribute_threshold=edge_attribute_threshold,
+                    keep_connected=keep_connected,
                 )
         else:  # working with a homogeneous graph
             edge_data_ids, edge_data_labels = self._train_test_split_homogeneous(
-                p=p, method=method, probs=probs
+                p=p, method=method, probs=probs, keep_connected=keep_connected
             )
 
         return self.g_train, edge_data_ids, edge_data_labels
