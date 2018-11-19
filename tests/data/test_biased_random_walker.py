@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import BiasedRandomWalk
@@ -61,6 +62,290 @@ def create_test_graph():
     return g
 
 
+def create_test_simple_weighted_graph():
+    """
+    Creates a simple graph for testing the weighted biased random walk class. The node ids are string or integers.
+
+    :return: .
+    """
+    g = nx.Graph()
+    edges = [
+        ("0", 1, 3),
+        ("0", 2, 4),
+        (1, 3, 1),
+        (1, 4, 7),
+        (3, 6, 9),
+        (4, 7, 2),
+        (4, 8, 5),
+        (2, 5, 7),
+        (5, 9, 5),
+        (5, 10, 6),
+        ("0", "0", 7),
+        (1, 1, 8),
+        (3, 3, 8),
+        (6, 6, 9),
+        (4, 4, 1),
+        (7, 7, 2),
+        (8, 8, 3),
+        (2, 2, 4),
+        (5, 5, 5),
+        (9, 9, 6),
+        ("self lonely", "self lonely", 0),  # an isolated node with a self link
+    ]
+
+    g.add_weighted_edges_from(edges)
+
+    g.add_node("lonely")  # an isolated node without self link
+
+    g = StellarGraph(g)
+
+    return g
+
+
+def create_test_weighted_multigraph():
+    """
+    Creates a weighted multigraph for testing the weighted random biased walk method. The node ids are string or integers.
+
+    :return: .
+    """
+    g = nx.MultiGraph()
+    edges = [
+        ("0", 1, 3),
+        ("0", 1, 3),
+        (1, 3, 1),
+        (1, 4, 5),
+        (2, 5, 7),
+        (2, 5, 7),
+        (3, 6, 9),
+        (3, 6, 9),
+        (4, 7, 2),
+        (4, 8, 5),
+        (5, 9, 5),
+        (5, 10, 6),
+        ("0", "0", 7),
+        (1, 1, 8),
+        (2, 2, 4),
+        (3, 3, 8),
+        (6, 6, 9),
+        (4, 4, 1),
+        (7, 7, 2),
+        (8, 8, 3),
+        (5, 5, 5),
+        (9, 9, 6),
+        ("self lonely", "self lonely", 0),  # an isolated node with a self link
+    ]
+
+    g.add_weighted_edges_from(edges)
+
+    g.add_node("lonely")  # an isolated node without self link
+
+    g = StellarGraph(g)
+
+    return g
+
+
+class TestBiasedWeightedRandomWalk(object):
+    def test_parameter_checking(self):
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0"]
+        n = 1
+        length = 2
+        p = 1.0
+        q = 1.0
+        seed = None
+
+        with pytest.raises(ValueError):
+            # weighted is boolen which is by default False. It is True if walk has to be weighted.
+            biasedrw.run(
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted="unknown",
+                edge_weight_label="weight",
+            )
+
+        with pytest.raises(ValueError):
+            # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
+            biasedrw.run(
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted="unknown",
+                edge_weight_label=None,
+            )
+
+    def test_weighted_walks(self):
+
+        # all positive walks
+        g = nx.Graph()
+        edges = [(1, 2, 1), (2, 3, 2), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        p = 1.0
+        q = 1.0
+
+        biasedrw = BiasedRandomWalk(g)
+        assert (
+            len(
+                biasedrw.run(
+                    nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+                )
+            )
+            == 4
+        )
+
+        # negative edge
+        g = nx.Graph()
+        edges = [(1, 2, 1), (2, 3, -2), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        biasedrw = BiasedRandomWalk(g)
+
+        with pytest.raises(ValueError):
+            biasedrw.run(
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+            )
+
+        # edge with weight infinity
+        g = nx.Graph()
+        edges = [(1, 2, 1), (2, 3, np.inf), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        biasedrw = BiasedRandomWalk(g)
+
+        with pytest.raises(ValueError):
+            biasedrw.run(
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+            )
+
+        # missing edges
+        g = nx.Graph()
+        edges = [(1, 2, 1), (2, 3, None), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        biasedrw = BiasedRandomWalk(g)
+        with pytest.raises(ValueError):
+            biasedrw.run(
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+            )
+
+        # edges with NaN
+        g = nx.Graph()
+        edges = [(1, 2, 1), (2, 3, np.NaN), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        biasedrw = BiasedRandomWalk(g)
+        with pytest.raises(ValueError):
+            biasedrw.run(
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+            )
+
+    def test_weighted_graph_label(self):
+
+        g = nx.Graph()
+        edges = [(1, 2), (2, 3), (3, 4), (4, 1)]
+        g.add_edges_from(edges)
+        g[1][2]["w"] = 1
+        g[2][3]["w"] = 2
+        g[3][4]["w"] = 3
+        g[4][1]["w"] = 4
+
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        p = 1.0
+        q = 1.0
+
+        biasedrw = BiasedRandomWalk(g)
+
+        assert (
+            len(
+                biasedrw.run(
+                    nodes=nodes,
+                    n=n,
+                    p=p,
+                    q=q,
+                    length=length,
+                    seed=seed,
+                    weighted=True,
+                    edge_weight_label="w",
+                )
+            )
+            == 4
+        )
+
+        g = nx.Graph()
+        edges = [(1, 2), (2, 3), (3, 4), (4, 1)]
+        g.add_edges_from(edges)
+        g[1][2]["wt"] = 1
+        g[2][3]["wt"] = 2
+        g[3][4]["wt"] = 3
+        g[4][1]["wt"] = 4
+
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        p = 1.0
+        q = 1.0
+
+        biasedrw = BiasedRandomWalk(g)
+        with pytest.raises(ValueError):
+            biasedrw.run(
+                nodes=nodes,
+                n=n,
+                p=p,
+                q=q,
+                length=length,
+                seed=seed,
+                weighted=True,
+                edge_weight_label="w",
+            )
+
+    def test_benchmark_biasedweightedrandomwalk(self, benchmark):
+        g = create_test_simple_weighted_graph()
+        biasedrw = BiasedRandomWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        p = 2
+        q = 3
+        length = 5
+
+        benchmark(
+            lambda: biasedrw.run(
+                nodes=nodes, n=n, p=p, q=q, length=length, weighted=True
+            )
+        )
+
+
 class TestBiasedRandomWalk(object):
     def test_parameter_checking(self):
         g = create_test_graph()
@@ -69,8 +354,8 @@ class TestBiasedRandomWalk(object):
         nodes = ["0"]
         n = 1
         length = 2
-        p = 1.
-        q = 1.
+        p = 1.0
+        q = 1.0
         seed = None
 
         with pytest.raises(ValueError):
@@ -97,7 +382,7 @@ class TestBiasedRandomWalk(object):
 
         # p has to be > 0.
         with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=0., q=q, length=length, seed=seed)
+            biasedrw.run(nodes=nodes, n=n, p=0.0, q=q, length=length, seed=seed)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=-0.25, q=q, length=length, seed=seed)
         with pytest.raises(ValueError):
@@ -105,7 +390,7 @@ class TestBiasedRandomWalk(object):
 
         # q has to be > 0.
         with pytest.raises(ValueError):
-            biasedrw.run(nodes=nodes, n=n, p=p, q=0., length=length, seed=seed)
+            biasedrw.run(nodes=nodes, n=n, p=p, q=0.0, length=length, seed=seed)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=-0.9, length=length, seed=seed)
         with pytest.raises(ValueError):
@@ -177,7 +462,7 @@ class TestBiasedRandomWalk(object):
         n = 1
         length = 1
         seed = None
-        p = 1.
+        p = 1.0
         q = 0.3
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
@@ -222,7 +507,7 @@ class TestBiasedRandomWalk(object):
         length = 1
         seed = None
         p = 0.5
-        q = 1.
+        q = 1.0
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
         assert len(subgraphs) == 1
@@ -257,8 +542,8 @@ class TestBiasedRandomWalk(object):
         n = 1
         length = 1
         seed = None
-        p = 1.
-        q = 1.
+        p = 1.0
+        q = 1.0
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
         assert len(subgraphs) == 1
