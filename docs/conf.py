@@ -14,8 +14,12 @@
 #
 import os
 import sys
+import re
 sys.path.insert(0, os.path.abspath('..'))
 
+version = {}
+with open(os.path.abspath("../stellargraph/version.py"), "r") as fh:
+    exec(fh.read(), version)
 
 # -- Project information -----------------------------------------------------
 
@@ -24,9 +28,13 @@ copyright = '2018, Data61, CSIRO'
 author = 'Data61, CSIRO'
 
 # The short X.Y version
-version = '0.4'
+m = re.match('^(\d+.\d+)', version['__version__'])
+if m is None:
+    raise RuntimeError("Couldn't parse version")
+version = m.group()
+
 # The full version, including alpha/beta/rc tags
-release = '0.4.0b'
+release = version['__version__']
 
 
 # -- General configuration ---------------------------------------------------
