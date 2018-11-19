@@ -322,39 +322,40 @@ class BiasedRandomWalk(GraphWalk):
 
         if weighted:
             # Check that all edge weights are greater than or equal to 0.
-            # Also, check that if the given graph is a MultiGraph, then check that there are no two edges between
+            # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 for neighbor in self.neighbors(self.graph, node):
 
                     wts = set()
                     for k, v in self.graph[node][neighbor].items():
+                        weight = v.get(edge_weight_label)
                         if (
-                            v.get(edge_weight_label) == None
-                            or np.isnan(v.get(edge_weight_label))
-                            or v.get(edge_weight_label) == np.inf
+                            weight is None
+                            or np.isnan(weight)
+                            or weight == np.inf
                         ):
                             raise ValueError(
-                                "Missing edge weight between ({}) and ({}).".format(
-                                    node, neighbor
+                                "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
+                                    weight, node, neighbor
                                 )
                             )
-                        if not isinstance(v.get(edge_weight_label), (int, float)):
+                        if not isinstance(weight, (int, float)):
                             raise ValueError(
                                 "Edge weight between nodes ({}) and ({}) is not numeric ({}).".format(
-                                    node, neighbor, v.get(edge_weight_label)
+                                    node, neighbor, weight
                                 )
                             )
                         if (
-                            v.get(edge_weight_label) < 0
+                            weight < 0
                         ):  # check if edge has a negative weight
                             raise ValueError(
                                 "An edge weight between nodes ({}) and ({}) is negative ({}).".format(
-                                    node, neighbor, v.get(edge_weight_label)
+                                    node, neighbor, weight
                                 )
                             )
 
-                        wts.add(v.get(edge_weight_label))
+                        wts.add(weight)
                     if (
                         len(wts) > 1
                     ):  # multigraph with different weights on edges between same pair of nodes
