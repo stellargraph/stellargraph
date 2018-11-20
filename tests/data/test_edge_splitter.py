@@ -240,6 +240,7 @@ class TestEdgeSplitterHeterogeneous(object):
         res = self.es_obj.train_test_split(
             p=p,
             method=method,
+            keep_connected=True,
             edge_label="friend",
             edge_attribute_label="date",
             attribute_is_datetime=True,
@@ -263,6 +264,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="Any",
                 attribute_is_datetime=True,
@@ -273,6 +275,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="published-at",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -284,6 +287,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="date",
                 attribute_is_datetime=False,
@@ -295,6 +299,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -304,6 +309,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -313,6 +319,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -323,6 +330,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -333,6 +341,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="friend",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -345,6 +354,7 @@ class TestEdgeSplitterHeterogeneous(object):
             self.es_obj.train_test_split(
                 p=p,
                 method=method,
+                keep_connected=True,
                 edge_label="writes",
                 edge_attribute_label="date",
                 attribute_is_datetime=True,
@@ -375,12 +385,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
         with pytest.raises(Exception):
             # This call will raise an exception because the graph has no edges of type 'Non Label'
-            self.es_obj.train_test_split(p=p, method=method, edge_label="No Label")
-
-        # with pytest.raises(Exception):
-        #     # This call to train_test_split will raise an exception because all the edges of type 'writes' are
-        #     # on the minimum spanning tree and cannot be removed.
-        #     self.es_obj.train_test_split(p=p, method=method, edge_label="writes")
+            self.es_obj.train_test_split(p=p, method=method, keep_connected=True, edge_label="No Label")
 
     def test_split_data_global(self):
         p = 0.1
