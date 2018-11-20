@@ -41,12 +41,19 @@ class EdgeSplitter(object):
 
     Positive edges can be sampled so that when they are subsequently removed from the graph, the reduced graph is either
     guaranteed, or not guaranteed, to remain connected. In the former case, graph connectivity is maintained by first
-    calculating the minimum spanning tree. The edges that belong to the minimum spanning tree are protected from removal,
-    and therefore cannot be sampled for the training set. The edges that do not belong to the minimum spanning tree are
-    then sampled from uniformly, until the required number of positive edges have been sampled for the training set.
-    In the latter case, when connectedness of the reduced graph is not guaranteed, positive edges are sampled uniformly
-    from all the edges in the graph, regardless of whether they belong to the spanning tree (which is not calculated in
-    this case).
+    calculating the minimum spanning tree. The edges that belong to the minimum spanning tree are protected from
+    removal, and therefore cannot be sampled for the training set. The edges that do not belong to the minimum spanning
+    tree are then sampled uniformly at random, until the required number of positive edges have been sampled for the
+    training set. In the latter case, when connectedness of the reduced graph is not guaranteed, positive edges are
+    sampled uniformly at random from all the edges in the graph, regardless of whether they belong to the spanning tree
+    (which is not calculated in this case).
+
+    Args:
+        g: <StellarGraph or networkx object> The graph to sample edges from.
+        g_master: <StellarGraph or networkx object> The graph representing the original dataset and a superset of the
+        graph g. If it is not None, then when positive and negative edges are sampled, care is taken to make sure
+         that a true positive edge is not sampled as a negative edge.
+
     """
 
     def __init__(self, g, g_master=None):
@@ -293,9 +300,9 @@ class EdgeSplitter(object):
             seed: <int> seed for random number generator, positive int or 0
 
         Returns:
-            The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first Nx2 holding the
-            node ids for the edges and the second Nx1 holding the edge labels, 0 for negative and 1 for positive
-            example.
+            The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first array of
+            dimensionality Nx2 (where N is the number of edges) holding the node ids for the edges and the second of
+            dimensionality Nx1 holding the edge labels, 0 for negative and 1 for positive examples.
         """
         if p <= 0 or p >= 1:
             raise ValueError("The value of p must be in the interval (0,1)")
@@ -513,7 +520,7 @@ class EdgeSplitter(object):
             if count == num_edges_to_remove:
                 return removed_edges
 
-        if len(removed_edges) != num_edges_to_remove:
+        if len(removed_edges) < num_edges_to_remove:
             raise ValueError(
                 "Unable to sample {} positive edges (could only sample {} positive edges). Consider using smaller value for p or set keep_connected=False".format(
                     num_edges_to_remove, len(removed_edges)
@@ -568,7 +575,7 @@ class EdgeSplitter(object):
             if count == num_edges_to_remove:
                 return removed_edges
 
-        if len(removed_edges) != num_edges_to_remove:
+        if len(removed_edges) < num_edges_to_remove:
             raise ValueError(
                 "Unable to sample {} positive edges (could only sample {} positive edges). Consider using smaller value for p or set keep_connected=False".format(
                     num_edges_to_remove, len(removed_edges)
