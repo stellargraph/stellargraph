@@ -768,7 +768,9 @@ class EdgeSplitter(object):
 
         if len(sampled_edges) != num_edges_to_sample:
             raise ValueError(
-                "Unable to sample {} negative edges.".format(num_edges_to_sample)
+                "Unable to sample {} negative edges. Consider using smaller value for p.".format(
+                    num_edges_to_sample
+                )
             )
 
     def _sample_negative_examples_local_dfs(
@@ -877,7 +879,12 @@ class EdgeSplitter(object):
                 if count == num_edges_to_sample:
                     return sampled_edges
 
-        return sampled_edges
+        if len(sampled_edges) != num_edges_to_sample:
+            raise ValueError(
+                "Unable to sample {} negative edges. Consider using smaller value for p.".format(
+                    num_edges_to_sample
+                )
+            )
 
     def _sample_negative_examples_global(self, p=0.5, limit_samples=None):
         """
@@ -937,7 +944,12 @@ class EdgeSplitter(object):
                 if count % 1000 == 0:
                     print("Sampled {} negative examples".format(count))
 
-        return sampled_edges
+        if len(sampled_edges) != num_edges_to_sample:
+            raise ValueError(
+                "Unable to sample {} negative edges. Consider using smaller value for p.".format(
+                    num_edges_to_sample
+                )
+            )
 
     def _sample_negative_examples_by_edge_type_global(
         self, edges, edge_label, p=0.5, limit_samples=None
@@ -1014,7 +1026,12 @@ class EdgeSplitter(object):
                     if count == num_edges_to_sample:
                         return sampled_edges
 
-        return sampled_edges
+        if len(sampled_edges) != num_edges_to_sample:
+            raise ValueError(
+                "Unable to sample {} negative edges. Consider using smaller value for p.".format(
+                    num_edges_to_sample
+                )
+            )
 
     def _get_minimum_spanning_edges(self):
         """
