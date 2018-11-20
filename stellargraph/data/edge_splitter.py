@@ -27,7 +27,7 @@ class EdgeSplitter(object):
     """
     Class for generating training and test data for link prediction in graphs.
 
-    The class requires as input a graph (in netowrkx format) and a percentage as a function of the total number of edges
+    The class requires as input a graph (in networkx format) and a percentage as a function of the total number of edges
     in the given graph of the number of positive and negative edges to sample. For heterogeneous graphs, the caller
     can also specify the type of edge and an edge property to split on. In the latter case, only a date property
     can be used and it must be in the format dd/mm/yyyy. A date to be used as a threshold value such that only
@@ -39,11 +39,14 @@ class EdgeSplitter(object):
     using DFS search at a distance from the source node (selected uniformly at random from all nodes in the graph)
     sampled according to a given set of probabilities.
 
-    Positive edges can be sampled such that the original graph remains connected or not. In the former case,
-    graph connectivity is maintained by first calculating the minimum spanning tree. The edges in the minimum spanning
-    tree cannot be removed, i.e., selected as positive training edges. The remaining edges, not those on the minimum
-    spanning tree are sampled uniformly at random until either the maximum number of edges that can be sampled up to
-    the required number or the required number of edges have been sampled as positive examples.
+    Positive edges can be sampled so that when they are subsequently removed from the graph, the reduced graph is either
+    guaranteed, or not guaranteed, to remain connected. In the former case, graph connectivity is maintained by first
+    calculating the minimum spanning tree. The edges that belong to the minimum spanning tree are protected from removal,
+    and therefore cannot be sampled for the training set. The edges that do not belong to the minimum spanning tree are
+    then sampled from uniformly, until the required number of positive edges have been sampled for the training set.
+    In the latter case, when connectedness of the reduced graph is not guaranteed, positive edges are sampled uniformly
+    from all the edges in the graph, regardless of whether they belong to the spanning tree (which is not calculated in
+    this case).
     """
 
     def __init__(self, g, g_master=None):
@@ -77,13 +80,12 @@ class EdgeSplitter(object):
             method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
             probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
              sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
-            keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
-             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
+            keep_connected: <True or False> If True then when positive edges are removed care is taken that the reduced graph
+             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
 
         Returns:
             2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
         labels, 0 for negative and 1 for positive example.
-
 
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
@@ -162,8 +164,8 @@ class EdgeSplitter(object):
             edge_label: <str> The edge type to split on
             probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
              sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
-            keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
-             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
+            keep_connected: <True or False> If True then when positive edges are removed care is taken that the reduced graph
+             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
             edge_attribute_label: <str> The label for the edge attribute to split on
             edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
              examples
@@ -280,8 +282,8 @@ class EdgeSplitter(object):
              e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
              source node and 0.75 that it will be 2 hops away from the source node. This only affects sampling of
              negative edges if method is set to 'local'.
-            keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
-             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
+            keep_connected: <True or False> If True then when positive edges are removed care is taken that the reduced graph
+             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
             edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
              of edges to split on.
             edge_attribute_label: <str> The label for the edge attribute to split on.
@@ -513,8 +515,8 @@ class EdgeSplitter(object):
 
         if len(removed_edges) != num_edges_to_remove:
             raise ValueError(
-                "Unable to sample {} positive edges. Consider using smaller value for p or set keep_connected=False".format(
-                    num_edges_to_remove
+                "Unable to sample {} positive edges (could only sample {} positive edges). Consider using smaller value for p or set keep_connected=False".format(
+                    num_edges_to_remove, len(removed_edges)
                 )
             )
 
@@ -568,8 +570,8 @@ class EdgeSplitter(object):
 
         if len(removed_edges) != num_edges_to_remove:
             raise ValueError(
-                "Unable to sample {} positive edges. Consider using smaller value for p or set keep_connected=False".format(
-                    num_edges_to_remove
+                "Unable to sample {} positive edges (could only sample {} positive edges). Consider using smaller value for p or set keep_connected=False".format(
+                    num_edges_to_remove, len(removed_edges)
                 )
             )
 
