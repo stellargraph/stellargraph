@@ -273,6 +273,33 @@ class TestEdgeSplitterHeterogeneous(object):
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
+        p = 0.8
+        with pytest.raises(ValueError):
+            # This will raise ValueError because it cannot sample enough positive edges while maintaining graph
+            # connectivity
+            self.es_obj.train_test_split(
+                p=p,
+                method=method,
+                keep_connected=True,
+                edge_label="friend",
+                edge_attribute_label="date",
+                attribute_is_datetime=True,
+                edge_attribute_threshold="01/01/2008",
+            )
+
+        with pytest.raises(ValueError):
+            # This will raise ValueError because it cannot sample enough negative edges of the given edge_label.
+            self.es_obj.train_test_split(
+                p=p,
+                method=method,
+                keep_connected=False,
+                edge_label="friend",
+                edge_attribute_label="date",
+                attribute_is_datetime=True,
+                edge_attribute_threshold="01/01/2008",
+            )
+
+        p = 0.1
         with pytest.raises(KeyError):
             # This call will raise an exception because the edges of type friend don't have attribute of type 'Any'
             self.es_obj.train_test_split(
@@ -401,6 +428,18 @@ class TestEdgeSplitterHeterogeneous(object):
             # This call will raise an exception because the graph has no edges of type 'Non Label'
             self.es_obj.train_test_split(
                 p=p, method=method, keep_connected=True, edge_label="No Label"
+            )
+
+        p = 0.8
+        with pytest.raises(ValueError):
+            self.es_obj.train_test_split(
+                p=p, method=method, edge_label="friend", keep_connected=True
+            )
+
+        p = 0.8
+        with pytest.raises(ValueError):
+            self.es_obj.train_test_split(
+                p=p, method=method, edge_label="friend", keep_connected=False
             )
 
     def test_split_data_global(self):
