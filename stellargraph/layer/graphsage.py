@@ -456,7 +456,7 @@ class GraphSAGE:
         input_dim=None,
         aggregator=None,
         bias=True,
-        dropout=0.,
+        dropout=0.0,
         normalize="l2",
     ):
         # Set the aggregator layer used in the model
@@ -522,8 +522,6 @@ class GraphSAGE:
             ]
             for layer in range(self.n_layers)
         ]
-
-        self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
 
     def __call__(self, x: List):
         """
