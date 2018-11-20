@@ -43,7 +43,7 @@ class EdgeSplitter(object):
     graph connectivity is maintained by first calculating the minimum spanning tree. The edges in the minimum spanning
     tree cannot be removed, i.e., selected as positive training edges. The remaining edges, not those on the minimum
     spanning tree are sampled uniformly at random until either the maximum number of edges that can be sampled up to
-    the required number are sampled or the required number of edges have been sampled as positive examples.
+    the required number or the required number of edges have been sampled as positive examples.
     """
 
     def __init__(self, g, g_master=None):
@@ -71,8 +71,9 @@ class EdgeSplitter(object):
 
         Args:
             p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
-             in the original graph minus the number of edges in the minimum spanning tree if and only if keep_connected
-             is set to True or the total number of edges in the graph if keep_connected is set to False.
+             in the original graph. If the graph is heterogeneous, the percentage is calculated
+             as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
+             edge_attribute_threshold values given.
             method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
             probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
              sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
@@ -154,7 +155,9 @@ class EdgeSplitter(object):
 
         Args:
             p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
-             that satisfy the edge_label, edge_attribute_label and edge_attribute_threshold values given.
+             in the original graph. If the graph is heterogeneous, the percentage is calculated
+             as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
+             edge_attribute_threshold values given.
             method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
             edge_label: <str> The edge type to split on
             probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
@@ -267,8 +270,7 @@ class EdgeSplitter(object):
 
         Args:
             p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
-             in the original graph minus the number of edges in the minimum spanning tree if and only if keep_connected
-             is set to True and the graph is homogeneous. If the graph is heterogeneous, the percent of edges calculated
+             in the original graph. If the graph is heterogeneous, the percentage is calculated
              as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
              edge_attribute_threshold values given.
             method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformly at random.
@@ -411,7 +413,7 @@ class EdgeSplitter(object):
         given an edge.
 
         Args:
-            edges: <list> List of edges as returned by networkx graph method edges()
+            edges: <list> List of edges as returned by networkx graph method edges().
 
         Returns: <list> Returns a list of 2-tuples such that each value in the tuple holds the type (as str) of the
         source and target nodes for each element in edges.
@@ -446,12 +448,12 @@ class EdgeSplitter(object):
         attribute and a threshold applied to the latter.
 
         Args:
-            minedges: <list> Spanning tree edges that cannot be removed
-            p: <float> Factor by which to reduce the size of the graph
-            edge_label: <str> The edge type to consider
-            edge_attribute_label: <str> The edge attribute to consider
+            minedges: <list> Spanning tree edges that cannot be removed.
+            p: <float> Factor by which to reduce the size of the graph.
+            edge_label: <str> The edge type to consider.
+            edge_attribute_label: <str> The edge attribute to consider.
             edge_attribute_threshold: <str> The threshold value; only edges with attribute value larger than the
-            threshold can be removed
+             threshold can be removed.
 
         Returns:
             Returns the list of edges removed from the graph (also modifies the graph self.g_train
@@ -517,9 +519,9 @@ class EdgeSplitter(object):
         the reduced tree remains connected. Edges are removed based on the edge type.
 
         Args:
-            minedges: <list> Minimum spanning tree edges that cannot be removed
-            p: <float> Factor by which to reduce the size of the graph
-            edge_label: <str> The edge type to consider
+            minedges: <list> Minimum spanning tree edges that cannot be removed.
+            p: <float> Factor by which to reduce the size of the graph.
+            edge_label: <str> The edge type to consider.
 
         Returns:
             <list> Returns the list of edges removed from self.g_train (also modifies self.g_train by removing said
@@ -567,8 +569,8 @@ class EdgeSplitter(object):
         the reduced tree remains connected. Edge type is ignored and all edges are treated equally.
 
         Args:
-            minedges: <list> Minimum spanning tree edges that cannot be removed
-            p: <float> Factor by which to reduce the size of the graph
+            minedges: <list> Minimum spanning tree edges that cannot be removed.
+            p: <float> Factor by which to reduce the size of the graph.
 
         Returns:
             <list> Returns the list of edges removed from self.g_train (also modifies self.g_train by removing the
@@ -590,9 +592,14 @@ class EdgeSplitter(object):
         else:
             all_edges = list(self.g_train.edges())
 
-        num_edges_to_remove = int(
-            (self.g_train.number_of_edges() - len(self.minedges)) * p
-        )
+        num_edges_to_remove = int(self.g_train.number_of_edges() * p)
+
+        if num_edges_to_remove > (self.g_train.number_of_edges() - len(self.minedges)):
+            raise ValueError(
+                "Not enough positive edges to sample after reserving {} number of edges for maintaining graph connectivity. Consider setting keep_connected=False.".format(
+                    len(self.minedges)
+                )
+            )
 
         # shuffle the edges
         self._random.shuffle(all_edges)
