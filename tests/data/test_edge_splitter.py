@@ -180,9 +180,16 @@ class TestEdgeSplitterHomogeneous(object):
         assert num_sampled_positives > 0
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 1
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
+
+        with pytest.raises(ValueError):
+            # This should raise ValueError because it is asking for more positive samples that are available
+            # without breaking graph connectivity
+            g_test, edge_data_ids_test, edge_data_labels_test = self.es_obj.train_test_split(
+                p=0.8, method="global", keep_connected=True
+            )
 
     def test_split_data_local(self):
         p = 0.1
@@ -198,7 +205,7 @@ class TestEdgeSplitterHomogeneous(object):
         assert num_sampled_positives > 0
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
@@ -213,9 +220,16 @@ class TestEdgeSplitterHomogeneous(object):
         assert num_sampled_positives > 0
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
+
+        with pytest.raises(ValueError):
+            # This should raise ValueError because it is asking for more positive samples that are available
+            # without breaking graph connectivity
+            self.es_obj.train_test_split(
+                p=0.8, method="local", probs=sampling_probs, keep_connected=True
+            )
 
         sampling_probs = [0.2, 0.1, 0.2, 0.5, 0.2]  # values don't sum to 1
         with pytest.raises(ValueError):
@@ -255,7 +269,7 @@ class TestEdgeSplitterHeterogeneous(object):
         assert num_sampled_positives > 0
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
@@ -379,13 +393,15 @@ class TestEdgeSplitterHeterogeneous(object):
         num_sampled_negatives = np.sum(edge_data_labels_test == 0)
 
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
         with pytest.raises(Exception):
             # This call will raise an exception because the graph has no edges of type 'Non Label'
-            self.es_obj.train_test_split(p=p, method=method, keep_connected=True, edge_label="No Label")
+            self.es_obj.train_test_split(
+                p=p, method=method, keep_connected=True, edge_label="No Label"
+            )
 
     def test_split_data_global(self):
         p = 0.1
@@ -400,7 +416,7 @@ class TestEdgeSplitterHeterogeneous(object):
         assert num_sampled_positives > 0
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
@@ -419,7 +435,7 @@ class TestEdgeSplitterHeterogeneous(object):
         assert num_sampled_positives > 0
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
-        assert (num_sampled_positives - num_sampled_negatives) <= 2
+        assert (num_sampled_positives - num_sampled_negatives) == 0
         assert len(g_test.edges()) < len(self.g.edges())
         assert nx.is_connected(g_test)
 
