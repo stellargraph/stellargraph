@@ -289,7 +289,7 @@ class NodeSplitter(object):
                 )
 
         elif method == "percent":
-            if not isinstance(p, float) or p < 0. or p > 1.:
+            if not isinstance(p, float) or p < 0.0 or p > 1.0:
                 raise ValueError(
                     "({}) p should be float in the range [0,1].".format(
                         type(self).__name__
