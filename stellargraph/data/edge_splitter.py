@@ -39,11 +39,11 @@ class EdgeSplitter(object):
     using DFS search at a distance from the source node (selected uniformly at random from all nodes in the graph)
     sampled according to a given set of probabilities.
 
-    Positive edges are sampled such that the original graph remains connected. This is achieved by first calculating
-    the minimum spanning tree. The edges in the minimum spanning tree cannot be removed, i.e., selected as positive
-    training edges. The remaining edges, not those on the minimum spanning tree are sampled uniformly at random until
-    either the maximum number of edges that can be sampled up to the required number are sampled or the required number
-    of edges have been sampled as positive examples.
+    Positive edges can be sampled such that the original graph remains connected or not. In the former case,
+    graph connectivity is maintained by first calculating the minimum spanning tree. The edges in the minimum spanning
+    tree cannot be removed, i.e., selected as positive training edges. The remaining edges, not those on the minimum
+    spanning tree are sampled uniformly at random until either the maximum number of edges that can be sampled up to
+    the required number are sampled or the required number of edges have been sampled as positive examples.
     """
 
     def __init__(self, g, g_master=None):
@@ -70,12 +70,14 @@ class EdgeSplitter(object):
         Method for edge splitting applied to homogeneous graphs.
 
         Args:
-            p: <float> Number of positive and negative examples calculated as p*<total number of edges in graph>
+            p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
+             in the original graph minus the number of edges in the minimum spanning tree if and only if keep_connected
+             is set to True or the total number of edges in the graph if keep_connected is set to False.
             method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
             probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
-            sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
+             sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
             keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
-            remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
+             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
 
         Returns:
             2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
@@ -151,16 +153,17 @@ class EdgeSplitter(object):
         sampling of negative examples.
 
         Args:
-            p: <float> Number of positive and negative examples calculated as p*<total number of edges in graph>
+            p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
+             that satisfy the edge_label, edge_attribute_label and edge_attribute_threshold values given.
             method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
             edge_label: <str> The edge type to split on
             probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
-            sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
+             sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
             keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
-            remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
+             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
             edge_attribute_label: <str> The label for the edge attribute to split on
             edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
-            examples
+             examples
 
         Returns:
             2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
@@ -258,25 +261,30 @@ class EdgeSplitter(object):
         """
         Generates positive and negative edges and a graph that has the same nodes as the original but the positive
         edges removed. It can be used to generate data from homogeneous and heterogeneous graphs.
+
         For heterogeneous graphs, positive and negative examples can be generated based on specified edge type or
         edge type and edge property given a threshold value for the latter.
 
         Args:
-            p: <float> Percent of edges to be generated as a function of the total number of edges in the original graph
-            method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformaly at random.
-            If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is chosen
-            to be from the former's local neighbourhood.
+            p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
+             in the original graph minus the number of edges in the minimum spanning tree if and only if keep_connected
+             is set to True and the graph is homogeneous. If the graph is heterogeneous, the percent of edges calculated
+             as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
+             edge_attribute_threshold values given.
+            method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformly at random.
+             If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is
+             chosen to be from the former's local neighbourhood.
             probs: <list> list The probabilities for sampling a node that is k-hops from the source node,
-            e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
-            source node and 0.75 that it will be 2 hops away from the source node. This only affects sampling of
-            negative edges if method is set to 'local'.
+             e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
+             source node and 0.75 that it will be 2 hops away from the source node. This only affects sampling of
+             negative edges if method is set to 'local'.
             keep_connected: <True or False> If True then when positive edges are removed care is taken that the graph
-            remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
+             remains connected. If False, positive edges are removed without guaranteeing the connectivity of the graph.
             edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
-            of edges to split on.
+             of edges to split on.
             edge_attribute_label: <str> The label for the edge attribute to split on.
             edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
-            examples.
+             examples.
             attribute_is_datetime: <boolean> Specifies if edge attribute is datetime or not.
             seed: <int> seed for random number generator, positive int or 0
 
