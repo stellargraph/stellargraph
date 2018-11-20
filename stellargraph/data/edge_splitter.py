@@ -511,7 +511,12 @@ class EdgeSplitter(object):
             if count == num_edges_to_remove:
                 return removed_edges
 
-        return removed_edges
+        if len(removed_edges) != num_edges_to_remove:
+            raise ValueError(
+                "Unable to sample {} positive edges. Consider using smaller value for p or set keep_connected=False".format(
+                    num_edges_to_remove
+                )
+            )
 
     def _reduce_graph_by_edge_type(self, minedges, p=0.5, edge_label=None):
         """
@@ -561,7 +566,12 @@ class EdgeSplitter(object):
             if count == num_edges_to_remove:
                 return removed_edges
 
-        return removed_edges
+        if len(removed_edges) != num_edges_to_remove:
+            raise ValueError(
+                "Unable to sample {} positive edges. Consider using smaller value for p or set keep_connected=False".format(
+                    num_edges_to_remove
+                )
+            )
 
     def _reduce_graph(self, minedges, p=0.5):
         """
@@ -756,7 +766,10 @@ class EdgeSplitter(object):
                 if count == num_edges_to_sample:
                     return sampled_edges
 
-        return sampled_edges
+        if len(sampled_edges) != num_edges_to_sample:
+            raise ValueError(
+                "Unable to sample {} negative edges.".format(num_edges_to_sample)
+            )
 
     def _sample_negative_examples_local_dfs(
         self, p=0.5, probs=None, limit_samples=None
@@ -793,12 +806,7 @@ class EdgeSplitter(object):
         self.negative_edge_node_distances = []
         n = len(probs)
 
-        if self.minedges is None:
-            num_edges_to_sample = int(self.g.number_of_edges() * p)
-        else:
-            num_edges_to_sample = int(
-                (self.g.number_of_edges() - len(self.minedges)) * p
-            )
+        num_edges_to_sample = int(self.g.number_of_edges() * p)
 
         if limit_samples is not None:
             if num_edges_to_sample > limit_samples:
@@ -871,93 +879,6 @@ class EdgeSplitter(object):
 
         return sampled_edges
 
-    def _sample_negative_examples_local_bfs(
-        self, p=0.5, probs=None, limit_samples=None
-    ):
-        """
-        Deprecated: Replaced by method that use DFS and are much more efficient in terms of memory usage.
-
-        This method produces a list of edges that don't exist in graph self.g (negative examples). The number of
-        negative edges produced is equal to the number of edges in the graph times p (that should be in the range (0,1]
-        or limited to maximum limit_samples if the latter is not None. The source graph is not modified.
-
-        Args:
-            p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
-            edges to be sampled.
-            probs: <list> Probability distribution for the distance between source and target nodes.
-            limit_samples: <int or None> It limits the maximum number of sample to the given number, if not None
-
-        Returns:
-            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
-        """
-        if probs is None:
-            probs = [0.0, 0.25, 0.50, 0.25]
-            print("Warning: Using default sampling probabilities {}".format(probs))
-
-        self.negative_edge_node_distances = []
-        n = len(probs)
-        num_edges_to_sample = int(self.g.number_of_edges() * p)
-
-        if limit_samples is not None:
-            if num_edges_to_sample > limit_samples:
-                num_edges_to_sample = limit_samples
-
-        if self.g_master is None:
-            edges = list(self.g.edges())
-        else:
-            edges = list(self.g_master.edges())
-
-        start_nodes = list(self.g.nodes(data=False))
-
-        count = 0
-        sampled_edges = list()
-
-        num_iter = int(np.ceil(num_edges_to_sample / (1.0 * len(start_nodes))))
-
-        for _ in np.arange(0, num_iter):
-            self._random.shuffle(start_nodes)
-
-            target_node_distances = (
-                self._random.choice(n, len(start_nodes), p=probs) + 1
-            )
-            for u, d in zip(start_nodes, target_node_distances):
-                # collect all the nodes that are d links away from u
-                nodes_at_frontier = list()
-                nodes_at_frontier.append(u)
-                for _ in np.arange(d):
-                    next_level_nodes = list()
-                    if len(nodes_at_frontier) == 0:
-                        break
-                    [
-                        next_level_nodes.extend(nx.neighbors(self.g, n))
-                        for n in nodes_at_frontier
-                    ]
-                    nodes_at_frontier = next_level_nodes
-                if len(nodes_at_frontier) == 0:
-                    break
-                # check if u, v where v in nodes_at_frontier have an edge. The first pair that has no edge in the graph
-                # becomes a negative sample
-                self._random.shuffle(nodes_at_frontier)
-                for v in nodes_at_frontier:
-                    if (
-                        (u != v)
-                        and ((u, v) not in edges)
-                        and ((v, u) not in edges)
-                        and ((u, v, 0) not in sampled_edges)
-                        and ((v, u, 0) not in sampled_edges)
-                    ):
-                        sampled_edges.append(
-                            (u, v, 0)
-                        )  # the last entry is the class label
-                        count += 1
-                        self.negative_edge_node_distances.append(d)
-                        break
-
-                if count == num_edges_to_sample:
-                    return sampled_edges
-
-        return sampled_edges
-
     def _sample_negative_examples_global(self, p=0.5, limit_samples=None):
         """
         This method samples uniformly at random nodes from the graph and, if they don't have an edge in the graph,
@@ -973,12 +894,7 @@ class EdgeSplitter(object):
         """
         self.negative_edge_node_distances = []
 
-        if self.minedges is None:
-            num_edges_to_sample = int(self.g.number_of_edges() * p)
-        else:
-            num_edges_to_sample = int(
-                (self.g.number_of_edges() - len(self.minedges)) * p
-            )
+        num_edges_to_sample = int(self.g.number_of_edges() * p)
 
         if limit_samples is not None:
             if num_edges_to_sample > limit_samples:
