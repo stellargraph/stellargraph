@@ -27,7 +27,7 @@
 
 Graph-structured data represent entities, e.g., people, as nodes (or equivalently, vertices),
 and relationships between entities, e.g., friendship, as links (or
-equivalently, edges). Nodes and links may have associated attributes such as age, income, time when
+equivalently, edges). Nodes and links may have associated attributes such as age, income, and time when
 a friendship was established, etc. StellarGraph supports analysis of both homogeneous networks (with nodes and links of one type)
 and heterogeneous networks (with more than one type of nodes and/or links).
 
@@ -45,15 +45,15 @@ such tasks using several real-world datasets.
 
 ## Guiding Principles
 
-StellarGraph uses the [Keras](https://keras.io/) library, and adheres to the same guiding principles
-as Keras: user friendliness, modularity, and easy extendability. Modules and layers
+StellarGraph uses the [Keras](https://keras.io/) library and adheres to the same guiding principles
+as Keras: user-friendliness, modularity, and easy extendability. Modules and layers
 of StellarGraph library are designed so that they can be used together with
-standard Keras layers and modules, if required. This enables flexibility in using existing,
+standard Keras layers and modules, if required. This enables flexibility in using existing
 or creating new models and workflows for machine learning on graphs.
 
 ## Getting Started
 
-To get started with StellarGraph you'll need data structured as homogeneous or heterogeneous graph, including
+To get started with StellarGraph you'll need data structured as a homogeneous or heterogeneous graph, including
 attributes for the entities represented as graph nodes.
 [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/)
 or [Numpy](http://www.numpy.org/) are used to store node attributes.
