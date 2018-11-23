@@ -123,7 +123,7 @@ def train(
     # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G, and obtain the
     # reduced graph G_test with the sampled links removed:
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
-        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
+        p=0.1, keep_connected=True, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
     # From G_test, extract E_train and the reduced graph G_train:
@@ -131,7 +131,7 @@ def train(
     # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G_test, and obtain the
     # further reduced graph G_train with the sampled links removed:
     G_train, edge_ids_train, edge_labels_train = edge_splitter_train.train_test_split(
-        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
+        p=0.1, keep_connected=True, method=args.edge_sampling_method, probs=args.edge_sampling_probs
     )
 
     # G_train, edge_ds_train, edge_labels_train will be used for model training
