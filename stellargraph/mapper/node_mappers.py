@@ -31,7 +31,7 @@ from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
 )
-from ..core.graph import StellarGraphBase
+from ..core.graph import StellarGraphBase, GraphSchema
 from ..core.utils import is_real_iterable
 
 
@@ -77,7 +77,10 @@ class NodeSequence(Sequence):
 
         # Infer head_node_type
         # TODO: Generalize to multiple head node target types?
-        head_node_types = set([generator.schema.get_node_type(n) for n in ids])
+        if generator.schema.node_type_map is None:
+            head_node_types = {generator.graph.type_for_node(n) for n in ids}
+        else:
+            head_node_types = {generator.schema.get_node_type(n) for n in ids}
         if len(head_node_types) > 1:
             raise ValueError(
                 "Only a single head node type is currently supported for HinSAGE models"
@@ -157,11 +160,12 @@ class GraphSAGENodeGenerator:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
+        schema (GraphSchema): [Optional] Graph schema for G.
         seed (int): [Optional] Random seed for the node sampler.
         name (str or None): Name of the generator (optional)
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(self, G, batch_size, num_samples, schema=None, seed=None, name=None):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -177,7 +181,12 @@ class GraphSAGENodeGenerator:
         self.sampler = SampledBreadthFirstWalk(G, seed=seed)
 
         # We need a schema for compatibility with HinSAGE
-        self.schema = G.create_graph_schema(create_type_maps=True)
+        if schema is None:
+            self.schema = G.create_graph_schema(create_type_maps=True)
+        elif isinstance(schema, GraphSchema):
+            self.schema = schema
+        else:
+            raise TypeError("Schema must be a GraphSchema object")
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -298,11 +307,12 @@ class HinSAGENodeGenerator:
         G (StellarGraph): The machine-learning ready graph
         batch_size (int): Size of batch to return
         num_samples (list): The number of samples per layer (hop) to take
+        schema (GraphSchema): [Optional] Graph schema for G.
         seed (int), Optional: Random seed for the node sampler
         name (str), optional: Name of the generator.
      """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(self, G, batch_size, num_samples, schema=None, seed=None, name=None):
 
         self.graph = G
         self.num_samples = num_samples
@@ -319,7 +329,13 @@ class HinSAGENodeGenerator:
         self.sampler = SampledHeterogeneousBreadthFirstWalk(G, seed=seed)
 
         # Generate schema
-        self.schema = G.create_graph_schema(create_type_maps=True)
+        # We need a schema for compatibility with HinSAGE
+        if schema is None:
+            self.schema = G.create_graph_schema(create_type_maps=True)
+        elif isinstance(schema, GraphSchema):
+            self.schema = schema
+        else:
+            raise TypeError("Schema must be a GraphSchema object")
 
     def sample_features(self, head_nodes, sampling_schema):
         """

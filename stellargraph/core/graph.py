@@ -506,6 +506,19 @@ class StellarGraphBase:
                 if ndata.get(self._node_type_attr) == node_type
             ]
 
+    def type_for_node(self, node):
+        """
+        Get the type of the node
+
+        Args:
+            node: Node ID
+
+        Returns:
+            Node type
+        """
+        ndata = self.node[node]
+        return ndata.get(self._node_type_attr)
+
     @property
     def node_types(self):
         """
@@ -594,7 +607,7 @@ class StellarGraphBase:
 
         return s
 
-    def create_graph_schema(self, create_type_maps=True, nodes=None, edges=None):
+    def create_graph_schema(self, create_type_maps=False, nodes=None, edges=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -610,15 +623,11 @@ class StellarGraphBase:
         if nodes is None:
             nodes = self.nodes()
         elif create_type_maps is True:
-            raise ValueError(
-                "Creating type mapes for subsampled nodes is not supported"
-            )
+            raise ValueError("Creating type maps for subsampled nodes is not supported")
         if edges is None:
             edges = self.edges(keys=True)
         elif create_type_maps is True:
-            raise ValueError(
-                "Creating type mapes for subsampled edges is not supported"
-            )
+            raise ValueError("Creating type maps for subsampled edges is not supported")
 
         # Create node type index list
         node_types = sorted(
