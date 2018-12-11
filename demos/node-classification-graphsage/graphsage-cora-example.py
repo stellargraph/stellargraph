@@ -99,8 +99,12 @@ def train(
         test_nodes, test_targets, train_size=500, test_size=None, random_state=523214
     )
 
+    # Create graph schema
+    sample_edges = [e for ii,e in enumerate(G.edges(keys=True)) if ii < 5]
+    schema = G.create_graph_schema(nodes=node_ids[:1], edges=sample_edges)
+
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
+    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, schema=schema, seed=42)
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
