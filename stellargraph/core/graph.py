@@ -459,8 +459,11 @@ class StellarGraphBase:
         node_indices = [nt_id_to_index.get(n) for n in nodes]
 
         if None in node_indices:
+            problem_nodes = [
+                node for node, index in zip(nodes, node_indices) if index is None
+            ]
             raise ValueError(
-                "Incorrect node specified or nodes of multiple types found."
+                "Could not find features for nodes with IDs {}.".format(problem_nodes)
             )
 
         features = self._node_attribute_arrays[node_type][node_indices]
@@ -607,7 +610,7 @@ class StellarGraphBase:
 
         return s
 
-    def create_graph_schema(self, create_type_maps=False, nodes=None, edges=None):
+    def create_graph_schema(self, create_type_maps=True, nodes=None, edges=None):
         """
         Create graph schema in dict of dict format from current graph.
 
