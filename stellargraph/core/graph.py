@@ -390,8 +390,6 @@ class StellarGraphBase:
         An error will be raised if the graph is not correctly setup.
         """
         # TODO: This are simple tests and miss many problems that could arise, improve!
-        # TODO: At this point perhaps we should generate features rather than in fit_attribute_spec
-        # TODO: but if so how do we know whether to fit the attribute specs or not?
         # Check features on the nodes:
         if features and len(self._node_attribute_arrays) == 0:
             raise RuntimeError(
@@ -399,7 +397,9 @@ class StellarGraphBase:
                 "Node features are required for machine learning"
             )
 
-        # How about checking the schema?
+        # TODO: check the schema
+
+        # TODO: check the feature node_ids against the graph node ids?
 
     def get_feature_for_nodes(self, nodes, node_type=None):
         """
@@ -419,8 +419,7 @@ class StellarGraphBase:
         if not is_real_iterable(nodes):
             nodes = [nodes]
 
-        # Get the node type
-        # TODO: This is slow, refactor so that self._node_index_maps gives the node type
+        # Get the node type if not specified.
         if node_type is None:
             node_types = {
                 self.node[n].get(self._node_type_attr) for n in nodes if n is not None

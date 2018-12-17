@@ -24,6 +24,7 @@ from stellargraph.mapper.node_mappers import *
 
 import networkx as nx
 import numpy as np
+import random
 import pytest
 
 
@@ -48,6 +49,26 @@ def example_graph_2(feature_size=None):
     elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
     G.add_nodes_from([1, 2, 3, 4, 5], label="default")
     G.add_edges_from(elist, label="default")
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
+
+
+def example_graph_3(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
+    G = nx.Graph()
+    n_noniso = n_nodes - n_isolates
+    edges = [
+        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_nodes_from(range(n_nodes))
+    G.add_edges_from(edges, label="default")
 
     # Add example features
     if feature_size is not None:
@@ -270,6 +291,45 @@ def test_nodemapper_no_samples():
         assert nf[0].shape == (n_batch, 1, n_feat)
         assert nf[1].shape == (n_batch, 0, n_feat)
         assert nl is None
+
+
+def test_nodemapper_isolated_nodes():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+
+    # Check connectedness
+    ccs = list(nx.connected_components(G))
+    assert len(ccs) == 2
+
+    n_isolates = [5]
+    assert nx.degree(G, n_isolates[0]) == 0
+
+    # Check both isolated and non-isolated nodes have same sampled feature shape
+    for head_nodes in [[1], [2], n_isolates]:
+        mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[2, 2]).flow(
+            head_nodes
+        )
+        nf, nl = mapper[0]
+        assert nf[0].shape == (1, 1, n_feat)
+        assert nf[1].shape == (1, 2, n_feat)
+        assert nf[2].shape == (1, 4, n_feat)
+
+    # One isolate and one non-isolate
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[2, 2]).flow(
+        [1, 5]
+    )
+    nf, nl = mapper[0]
+    assert nf[0].shape == (2, 1, n_feat)
+    assert nf[1].shape == (2, 2, n_feat)
+    assert nf[2].shape == (2, 4, n_feat)
+
+    # Isolated nodes have the "dummy node" as neighbours
+    # Currently, the dummy node has zeros for features – this could change
+    assert pytest.approx(nf[1][1]) == 0
+    assert pytest.approx(nf[2][2:]) == 0
 
 
 def test_nodemapper_incorrect_targets():

@@ -76,7 +76,6 @@ class NodeSequence(Sequence):
                 )
 
         # Infer head_node_type
-        # TODO: Generalize to multiple head node target types?
         if generator.schema.node_type_map is None:
             head_node_types = {generator.graph.type_for_node(n) for n in ids}
         else:
@@ -212,6 +211,16 @@ class GraphSAGENodeGenerator:
             for that layer.
         """
         node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
+
+        # The number of samples for each head node (not including itself)
+        num_full_samples = np.sum(np.cumprod(self.num_samples))
+
+        # Isolated nodes will return only themselves in the sample list
+        # let's correct for this by padding with None (the dummy node ID)
+        node_samples = [
+            ns + [None] * num_full_samples if len(ns) == 1 else ns
+            for ns in node_samples
+        ]
 
         # Reshape node samples to sensible format
         def get_levels(loc, lsize, samples_per_hop, walks):
