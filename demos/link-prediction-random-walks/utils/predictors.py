@@ -171,9 +171,19 @@ def train_homogeneous_graph(
     feature_learner_train = Node2VecFeatureLearning(
         g_train, embeddings_filename=os.path.expanduser(output_node_features)
     )
-    print("Learning {}-dimensional node features (embeddings) from g_train using node2vec algorithm with the following parameters:".format(parameters["dimensions"]))
+    print(
+        "Learning {}-dimensional node features (embeddings) from g_train using node2vec algorithm with the following parameters:".format(
+            parameters["dimensions"]
+        )
+    )
     print("\tp = {}, q = {}".format(parameters["p"], parameters["q"]))
-    print("\tnum_walks = {}, walk length = {}, context window size = {}".format(parameters["num_walks"], parameters["walk_length"], parameters["window_size"]))
+    print(
+        "\tnum_walks = {}, walk length = {}, context window size = {}".format(
+            parameters["num_walks"],
+            parameters["walk_length"],
+            parameters["window_size"],
+        )
+    )
     feature_learner_train.fit(
         p=parameters["p"],
         q=parameters["q"],
@@ -184,7 +194,11 @@ def train_homogeneous_graph(
     )
     # Train the classifier
     binary_operators = ["h", "avg", "l1", "l2"]
-    print("Training binary link classifiers (link predictors) using the following binary operators: {}".format(binary_operators))
+    print(
+        "Training binary link classifiers (link predictors) using the following binary operators: {}".format(
+            binary_operators
+        )
+    )
     scores_train, clf_edge, binary_operator = link_prediction_clf(
         feature_learner=feature_learner_train,
         edge_data=(edge_data_ids_train, edge_data_labels_train),
@@ -198,11 +212,17 @@ def train_homogeneous_graph(
     )
     print(
         "Learning {}-dimensional node features (embeddings) from g_test using node2vec algorithm with the following parameters:".format(
-            parameters["dimensions"]))
+            parameters["dimensions"]
+        )
+    )
     print("\tp = {}, q = {}".format(parameters["p"], parameters["q"]))
-    print("\tnum_walks = {}, walk length = {}, context window size = {}".format(parameters["num_walks"],
-                                                                                parameters["walk_length"],
-                                                                                parameters["window_size"]))
+    print(
+        "\tnum_walks = {}, walk length = {}, context window size = {}".format(
+            parameters["num_walks"],
+            parameters["walk_length"],
+            parameters["window_size"],
+        )
+    )
     feature_learner_test.fit(
         p=parameters["p"],
         q=parameters["q"],
@@ -211,7 +231,11 @@ def train_homogeneous_graph(
         l=parameters["walk_length"],
         k=parameters["window_size"],
     )
-    print("Evaluating best link predictor with {} binary operator on test links in g_test".format(binary_operator))
+    print(
+        "Evaluating best link predictor with {} binary operator on test links in g_test".format(
+            binary_operator
+        )
+    )
     scores = predict_links(
         feature_learner=feature_learner_test,
         edge_data=(edge_data_ids_test, edge_data_labels_test),
@@ -250,11 +274,17 @@ def train_heterogeneous_graph(
     )
     print(
         "Learning {}-dimensional node features (embeddings) from g_train using metapath2vec algorithm with the following parameters:".format(
-            parameters["dimensions"]))
+            parameters["dimensions"]
+        )
+    )
     print("metapaths: {}".format(metapaths))
-    print("\tnum_walks = {}, walk length = {}, context window size = {}".format(parameters["num_walks"],
-                                                                                parameters["walk_length"],
-                                                                                parameters["window_size"]))
+    print(
+        "\tnum_walks = {}, walk length = {}, context window size = {}".format(
+            parameters["num_walks"],
+            parameters["walk_length"],
+            parameters["window_size"],
+        )
+    )
     feature_learner_train.fit(
         metapaths=metapaths,
         d=parameters["dimensions"],
@@ -264,8 +294,11 @@ def train_heterogeneous_graph(
     )
     # Train the classifier
     binary_operators = ["h", "avg", "l1", "l2"]
-    print("Training binary link classifiers (link predictors) using the following binary operators: {}".format(
-        binary_operators))
+    print(
+        "Training binary link classifiers (link predictors) using the following binary operators: {}".format(
+            binary_operators
+        )
+    )
     scores_train, clf_edge, binary_operator = link_prediction_clf(
         feature_learner=feature_learner_train,
         edge_data=(edge_data_ids_train, edge_data_labels_train),
@@ -279,11 +312,17 @@ def train_heterogeneous_graph(
     )
     print(
         "Learning {}-dimensional node features (embeddings) from g_test using metapath2vec algorithm with the following parameters:".format(
-            parameters["dimensions"]))
+            parameters["dimensions"]
+        )
+    )
     print("metapaths: {}".format(metapaths))
-    print("\tnum_walks = {}, walk length = {}, context window size = {}".format(parameters["num_walks"],
-                                                                                parameters["walk_length"],
-                                                                                parameters["window_size"]))
+    print(
+        "\tnum_walks = {}, walk length = {}, context window size = {}".format(
+            parameters["num_walks"],
+            parameters["walk_length"],
+            parameters["window_size"],
+        )
+    )
     feature_learner_test.fit(
         metapaths=metapaths,
         d=parameters["dimensions"],
@@ -293,7 +332,10 @@ def train_heterogeneous_graph(
     )
 
     print(
-        "Evaluating best link predictor with {} binary operator on test links in g_test".format(binary_operator))
+        "Evaluating best link predictor with {} binary operator on test links in g_test".format(
+            binary_operator
+        )
+    )
 
     scores = predict_links(
         feature_learner=feature_learner_test,
