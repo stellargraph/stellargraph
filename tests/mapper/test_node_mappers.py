@@ -150,6 +150,7 @@ def example_hin_3(feature_size_by_type=None):
 
     # Node 2 has no edges of type 1
     # Node 1 has no edges of type 2
+    # Node 6 has no edges
 
     # Add example features
     if feature_size_by_type is not None:
