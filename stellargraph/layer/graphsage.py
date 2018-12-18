@@ -474,6 +474,9 @@ class GraphSAGE:
         elif normalize is None or normalize == "none":
             self._normalization = Lambda(lambda x: x)
 
+        else:
+            raise ValueError("Normalization should be either 'l2' or 'none'")
+
         # Get the input_dim and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
         # TODO: Refactor the horror of generator.generator.graph...
