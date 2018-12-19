@@ -333,6 +333,29 @@ def test_nodemapper_isolated_nodes():
     assert pytest.approx(nf[2][2:]) == 0
 
 
+def test_nodemapper_manual_schema():
+    """
+    Tests checks on head nodes
+    """
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = example_graph_1(feature_size=n_feat)
+
+    # Create manual schema
+    schema = G.create_graph_schema(create_type_maps=True)
+    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        list(G)
+    )
+
+    # Create manual schema without type maps
+    schema = G.create_graph_schema(create_type_maps=False)
+    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        list(G)
+    )
+
+
 def test_nodemapper_incorrect_targets():
     """
     Tests checks on target shape
@@ -385,6 +408,15 @@ def test_hinnodemapper_constructor_no_features():
         mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow(
             G.nodes()
         )
+
+
+def test_hinnodemapper_constructor_nx_graph():
+    G = nx.Graph()
+    with pytest.raises(TypeError):
+        HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
+
+    with pytest.raises(TypeError):
+        HinSAGENodeGenerator(None, batch_size=2, num_samples=[2, 2])
 
 
 def test_hinnodemapper_level_1():
@@ -470,6 +502,27 @@ def test_hinnodemapper_with_labels():
     # Check beyond the graph lengh
     with pytest.raises(IndexError):
         nf, nl = gen[len(gen)]
+
+
+def test_hinnodemapper_manual_schema():
+    """
+    Tests checks on head nodes
+    """
+    n_batch = 2
+    feature_sizes = {"t1": 1, "t2": 2}
+    G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
+
+    # Create manual schema
+    schema = G.create_graph_schema(create_type_maps=True)
+    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        nodes_type_1
+    )
+
+    # Create manual schema without type maps
+    schema = G.create_graph_schema(create_type_maps=False)
+    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        nodes_type_1
+    )
 
 
 def test_hinnodemapper_no_neighbors():
