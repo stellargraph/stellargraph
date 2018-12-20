@@ -35,6 +35,7 @@ from stellargraph.core.graph import *
 import numpy as np
 import networkx as nx
 import pytest
+import random
 
 
 def example_Graph_1(feature_size=None):
@@ -109,6 +110,106 @@ def example_HIN_homo(feature_size_by_type=None):
 
     G = StellarGraph(G, node_features="feature")
     return G
+
+
+def example_graph_random(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
+    """
+    Create random homogeneous graph
+
+    Args:
+        feature_size: Size of features for each node
+        n_edges: Number of edges
+        n_nodes: Number of nodes
+        n_isolates: Number of isolated nodes
+
+    Returns:
+        StellarGraph object
+    """
+    connected = False
+    while not connected:
+        G = nx.Graph()
+        n_noniso = n_nodes - n_isolates
+        edges = [
+            (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
+            for _ in range(n_edges)
+        ]
+        G.add_nodes_from(range(n_nodes))
+        G.add_edges_from(edges, label="default")
+
+        # Check connectivity
+        connected = nx.is_connected(G.subgraph(range(n_noniso)))
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
+
+
+def example_hin_random(
+    feature_size_by_type=None, nodes_by_type={}, n_isolates_by_type={}, edges_by_type={}
+):
+    """
+    Create random heterogeneous graph
+
+    Args:
+        feature_size_by_type: Dict of node types to feature size
+        nodes_by_type: Dict of node types to number of nodes
+        n_isolates_by_type: Dict of node types to number of isolates
+        edges_by_type: Dict of edge types to number of edges
+
+    Returns:
+        StellarGraph
+        Dictionary of node type to node labels
+    """
+    check_isolates = False
+    while not check_isolates:
+        G = nx.Graph()
+        node_dict = {}
+        for nt in nodes_by_type:
+            nodes = ["{}_{}".format(nt, ii) for ii in range(nodes_by_type[nt])]
+            node_dict[nt] = nodes
+            G.add_nodes_from(nodes, label=nt)
+
+        for nt1, nt2 in edges_by_type:
+            nodes1 = node_dict[nt1]
+            nodes2 = node_dict[nt2]
+
+            niso1 = n_isolates_by_type.get(nt1, 0)
+            niso2 = n_isolates_by_type.get(nt2, 0)
+            nodes1 = nodes1[:-niso1] if niso1 > 0 else nodes1
+            nodes2 = nodes2[:-niso2] if niso2 > 0 else nodes1
+
+            edges = [
+                (random.choice(nodes1), random.choice(nodes2))
+                for _ in range(edges_by_type[(nt1, nt2)])
+            ]
+            G.add_edges_from(edges, label="{}_{}".format(nt1, nt2))
+
+        check_isolates = all(
+            sum(deg[1] == 0 for deg in nx.degree(G, nodes)) == n_isolates_by_type[nt]
+            for nt, nodes in node_dict.items()
+        )
+
+    # Add example features
+    if feature_size_by_type is not None:
+        nt_jj = 0
+        for nt, nodes in node_dict.items():
+            for ii, n in enumerate(nodes):
+                G.node[n]["feature"] = (ii + 10 * nt_jj) * np.ones(
+                    feature_size_by_type[nt], dtype="int"
+                )
+            nt_jj += 1
+
+        G = StellarGraph(G, node_features="feature")
+
+    else:
+        G = StellarGraph(G)
+
+    return G, node_dict
 
 
 class Test_GraphSAGELinkGenerator:
@@ -252,6 +353,37 @@ class Test_GraphSAGELinkGenerator:
         for i in range(len(gen)):
             assert gen[i][1] is None
 
+    def test_GraphSAGELinkGenerator_isolates(self):
+        """
+        Test for handling of isolated nodes
+        """
+        n_feat = 4
+        n_batch = 2
+        n_samples = [2, 2]
+
+        # test graph
+        G = example_graph_random(
+            feature_size=n_feat, n_nodes=6, n_isolates=2, n_edges=10
+        )
+
+        # Check sizes with one isolated node
+        head_links = [(1, 5)]
+        gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
+            head_links
+        )
+
+        ne, nl = gen[0]
+        assert pytest.approx([1, 1, 2, 2, 4, 4]) == [x.shape[1] for x in ne]
+
+        # Check sizes with two isolated nodes
+        head_links = [(4, 5)]
+        gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
+            head_links
+        )
+
+        ne, nl = gen[0]
+        assert pytest.approx([1, 1, 2, 2, 4, 4]) == [x.shape[1] for x in ne]
+
 
 class Test_HinSAGELinkGenerator(object):
     """
@@ -388,3 +520,41 @@ class Test_HinSAGELinkGenerator(object):
         ).flow(links)
         for i in range(len(gen)):
             assert gen[i][1] is None
+
+    def test_HinSAGELinkGenerator_isolates(self):
+        """
+        This tests link generator's iterator for prediction, i.e., without targets provided
+        """
+        n_batch = 2
+        n_samples = [2, 2]
+
+        feature_size_by_type = {"A": 4, "B": 2}
+        nodes_by_type = {"A": 5, "B": 5}
+        n_isolates_by_type = {"A": 0, "B": 2}
+        edges_by_type = {("A", "A"): 5, ("A", "B"): 10}
+        Gh, hnodes = example_hin_random(
+            feature_size_by_type, nodes_by_type, n_isolates_by_type, edges_by_type
+        )
+
+        # Non-isolate + isolate
+        head_links = [(hnodes["A"][0], hnodes["B"][-1])]
+        gen = HinSAGELinkGenerator(Gh, batch_size=n_batch, num_samples=n_samples).flow(
+            head_links
+        )
+
+        ne, nl = gen[0]
+        assert len(gen._sampling_schema[0]) == len(ne)
+        assert pytest.approx([1, 1, 2, 2, 2, 4, 4, 4, 4, 4]) == [x.shape[1] for x in ne]
+
+        # Two isolates
+        head_links = [(hnodes["B"][-2], hnodes["B"][-1])]
+        gen = HinSAGELinkGenerator(Gh, batch_size=n_batch, num_samples=n_samples).flow(
+            head_links
+        )
+
+        ne, nl = gen[0]
+        assert len(gen._sampling_schema[0]) == len(ne)
+        assert pytest.approx([1, 1, 2, 2, 4, 4, 4, 4]) == [x.shape[1] for x in ne]
+
+        # With two isolates, all features are zero
+        assert all(pytest.approx(0) == x for x in ne[2:])
