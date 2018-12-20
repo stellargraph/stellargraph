@@ -380,10 +380,6 @@ class StellarGraphBase:
         )
         return s
 
-    def fit_attribute_spec(self, *args, **kwargs):
-        print("Fit attribute spec is deprecated")
-        pass
-
     def check_graph_for_ml(self, features=True):
         """
         Checks if all properties required for machine learning training/inference are set up.
@@ -563,19 +559,27 @@ class StellarGraphBase:
         if sample:
             all_nodes = list(self.nodes)
             snodes = random.sample(all_nodes, sample)
-            sedges = self.edges(snodes, keys=True)
         else:
             snodes = None
-            sedges = None
 
-        gs = self.create_graph_schema(create_type_maps=True, nodes=snodes, edges=sedges)
+        gs = self.create_graph_schema(create_type_maps=False, nodes=snodes)
+
+        def is_of_edge_type(e, edge_type):
+            et2 = (
+                self.node[e[0]][self._node_type_attr],
+                self.edges[e][self._edge_type_attr],
+                self.node[e[1]][self._node_type_attr],
+            )
+            return et2 == edge_type
 
         # Go over all node types
         s += "\n Node types:\n"
         for nt in gs.node_types:
             # Filter nodes by type
             nt_nodes = [
-                ndata for n, ndata in self.nodes(data=True) if gs.get_node_type(n) == nt
+                ndata
+                for n, ndata in self.nodes(data=True)
+                if ndata[self._node_type_attr] == nt
             ]
             s += "  {}: [{}]\n".format(nt, len(nt_nodes))
 
@@ -594,7 +598,7 @@ class StellarGraphBase:
             et_edges = [
                 e[3]
                 for e in self.edges(keys=True, data=True)
-                if gs.get_edge_type(e[:3]) == et
+                if is_of_edge_type(e[:3], et)
             ]
             if len(et_edges) > 0:
                 s += "    {et[0]}-{et[1]}->{et[2]}: [{len}]\n".format(
@@ -609,7 +613,7 @@ class StellarGraphBase:
 
         return s
 
-    def create_graph_schema(self, create_type_maps=True, nodes=None, edges=None):
+    def create_graph_schema(self, create_type_maps=True, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -619,17 +623,28 @@ class StellarGraphBase:
         This means that specifying an edge by node0, node1 and edge type
         is unique.
 
+        Arguments:
+            create_type_maps (bool): If True quick lookup of node/edge types is
+                created in the schema. This can be slow.
+
+            nodes (list): A list of node IDs to use to build schema. This must
+                represent all node types and all edge types in the graph.
+                If specified, `create_type_maps` must be False.
+                If not specified, all nodes and edges in the graph are used.
+
         Returns:
             GraphSchema object.
         """
+
         if nodes is None:
             nodes = self.nodes()
-        elif create_type_maps is True:
-            raise ValueError("Creating type maps for subsampled nodes is not supported")
-        if edges is None:
             edges = self.edges(keys=True)
-        elif create_type_maps is True:
-            raise ValueError("Creating type maps for subsampled edges is not supported")
+
+        elif create_type_maps is False:
+            edges = self.edges(nodes, keys=True)
+
+        else:
+            raise ValueError("Creating type maps for subsampled nodes is not supported")
 
         # Create node type index list
         node_types = sorted(

@@ -28,7 +28,7 @@ def create_graph_1(sg=StellarGraph()):
     return sg
 
 
-def example_stellar_graph_1(feature_name=None):
+def example_stellar_graph_1(feature_name=None, feature_size=10):
     G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     G.add_nodes_from([1, 2, 3, 4], label="default")
@@ -37,14 +37,14 @@ def example_stellar_graph_1(feature_name=None):
     # Add some numeric node attributes
     if feature_name:
         for v in G.nodes():
-            G.node[v][feature_name] = v * np.ones(10)
+            G.node[v][feature_name] = v * np.ones(feature_size)
 
         return StellarGraph(G, node_features=feature_name)
     else:
         return StellarGraph(G)
 
 
-def example_hin_1(feature_name=False, for_nodes=[]):
+def example_hin_1(feature_name=False, for_nodes=None, feature_sizes={}):
     G = nx.Graph()
     G.add_nodes_from([0, 1, 2, 3], label="A")
     G.add_nodes_from([4, 5, 6], label="B")
@@ -53,8 +53,12 @@ def example_hin_1(feature_name=False, for_nodes=[]):
 
     # Add some numeric node attributes
     if feature_name:
+        if for_nodes is None:
+            for_nodes = list(G.nodes())
+
         for v in for_nodes:
-            G.node[v][feature_name] = v * np.ones(10)
+            fs = feature_sizes.get(G.node[v]["label"], 10)
+            G.node[v][feature_name] = v * np.ones(fs)
 
         return StellarGraph(G, node_features=feature_name)
     else:
@@ -170,6 +174,28 @@ def test_graph_schema():
     assert schema.get_edge_type((0, 4, 0)) == ("movie", "rating", "user")
 
 
+def test_graph_schema_sampled():
+    sg = create_graph_1()
+
+    # Will fail if create_type_maps=True and nodes/edges specified
+    with pytest.raises(ValueError):
+        sg.create_graph_schema(nodes=[0, 4])
+
+    schema = sg.create_graph_schema(create_type_maps=False, nodes=[0, 4])
+
+    assert "movie" in schema.schema
+    assert "user" in schema.schema
+    assert len(schema.schema["movie"]) == 1
+    assert len(schema.schema["user"]) == 1
+
+    # Node and edge type lookups will fail with no type maps
+    with pytest.raises(RuntimeError):
+        schema.get_node_type(0)
+
+    with pytest.raises(RuntimeError):
+        schema.get_edge_type((4, 0, 0))
+
+
 def test_digraph_schema():
     sg = create_graph_1(StellarDiGraph())
     schema = sg.create_graph_schema()
@@ -196,17 +222,28 @@ def test_digraph_schema():
 
 
 def test_feature_conversion_from_nodes():
-    sg = example_stellar_graph_1(feature_name="feature")
+    sg = example_stellar_graph_1(feature_name="feature", feature_size=8)
     aa = sg.get_feature_for_nodes([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
-    sg = example_hin_1(feature_name="feature", for_nodes=[0, 1, 2, 3, 4, 5])
+    assert aa.shape == (4, 8)
+    assert sg.node_feature_sizes()["default"] == 8
+
+    sg = example_hin_1(
+        feature_name="feature",
+        for_nodes=[0, 1, 2, 3, 4, 5],
+        feature_sizes={"A": 4, "B": 2},
+    )
     aa = sg.get_feature_for_nodes([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
-    assert aa.shape == (4, 10)
+    assert aa.shape == (4, 4)
+
+    fs = sg.node_feature_sizes()
+    assert fs["A"] == 4
+    assert fs["B"] == 2
 
     ab = sg.get_feature_for_nodes([4, 5], "B")
-    assert ab.shape == (2, 10)
+    assert ab.shape == (2, 2)
     assert ab[:, 0] == pytest.approx([4, 5])
 
     # Test mixed types
@@ -219,26 +256,46 @@ def test_feature_conversion_from_nodes():
 
     # Test feature for node with no set attributes
     ab = sg.get_feature_for_nodes([4, 5, 6], "B")
-    assert ab.shape == (3, 10)
+    assert ab.shape == (3, 2)
     assert ab[:, 0] == pytest.approx([4, 5, 0])
 
 
-def test_default_feature():
-    sg = example_stellar_graph_1(feature_name="feature")
-    aa = sg.get_feature_for_nodes([1, 2, 3, 4])
-    assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
+def test_null_node_feature():
+    sg = example_stellar_graph_1(feature_name="feature", feature_size=6)
+    aa = sg.get_feature_for_nodes([1, None, 2, None])
+    assert aa.shape == (4, 6)
+    assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
 
-    sg = example_hin_1(feature_name="feature", for_nodes=[0, 1, 2, 3, 4, 5])
+    sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
 
-    # Test feature for node with no set attributes
-    ab = sg.get_feature_for_nodes([4, 5, 6], "B")
-    assert ab.shape == (3, 10)
-    assert ab[:, 0] == pytest.approx([4, 5, 0])
-
-    # Test feature for invalid node, without node type
+    # Test feature for null node, without node type
     ab = sg.get_feature_for_nodes([None, 5, None])
-    assert ab.shape == (3, 10)
+    assert ab.shape == (3, 2)
     assert ab[:, 0] == pytest.approx([0, 5, 0])
+
+    # Test feature for null node, node type
+    ab = sg.get_feature_for_nodes([None, 6, None], "B")
+    assert ab.shape == (3, 2)
+    assert ab[:, 0] == pytest.approx([0, 6, 0])
+
+    # Test feature for null node, wrong type
+    with pytest.raises(ValueError):
+        sg.get_feature_for_nodes([None, 5, None], "A")
+
+    # Test null-node with no type
+    with pytest.raises(ValueError):
+        sg.get_feature_for_nodes([None, None])
+
+
+def test_node_types():
+    sg = example_stellar_graph_1(feature_name="feature", feature_size=6)
+    assert sg.node_types == {"default"}
+
+    sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
+    assert sg.node_types == {"A", "B"}
+
+    sg = example_hin_1()
+    assert sg.node_types == {"A", "B"}
 
 
 def test_feature_conversion_from_dataframe():
