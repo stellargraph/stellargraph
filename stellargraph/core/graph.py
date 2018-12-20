@@ -390,8 +390,6 @@ class StellarGraphBase:
         An error will be raised if the graph is not correctly setup.
         """
         # TODO: This are simple tests and miss many problems that could arise, improve!
-        # TODO: At this point perhaps we should generate features rather than in fit_attribute_spec
-        # TODO: but if so how do we know whether to fit the attribute specs or not?
         # Check features on the nodes:
         if features and len(self._node_attribute_arrays) == 0:
             raise RuntimeError(
@@ -399,7 +397,9 @@ class StellarGraphBase:
                 "Node features are required for machine learning"
             )
 
-        # How about checking the schema?
+        # TODO: check the schema
+
+        # TODO: check the feature node_ids against the graph node ids?
 
     def get_feature_for_nodes(self, nodes, node_type=None):
         """
@@ -419,8 +419,7 @@ class StellarGraphBase:
         if not is_real_iterable(nodes):
             nodes = [nodes]
 
-        # Get the node type
-        # TODO: This is slow, refactor so that self._node_index_maps gives the node type
+        # Get the node type if not specified.
         if node_type is None:
             node_types = {
                 self.node[n].get(self._node_type_attr) for n in nodes if n is not None
@@ -459,8 +458,11 @@ class StellarGraphBase:
         node_indices = [nt_id_to_index.get(n) for n in nodes]
 
         if None in node_indices:
+            problem_nodes = [
+                node for node, index in zip(nodes, node_indices) if index is None
+            ]
             raise ValueError(
-                "Incorrect node specified or nodes of multiple types found."
+                "Could not find features for nodes with IDs {}.".format(problem_nodes)
             )
 
         features = self._node_attribute_arrays[node_type][node_indices]
@@ -505,6 +507,19 @@ class StellarGraphBase:
                 for n, ndata in self.nodes(data=True)
                 if ndata.get(self._node_type_attr) == node_type
             ]
+
+    def type_for_node(self, node):
+        """
+        Get the type of the node
+
+        Args:
+            node: Node ID
+
+        Returns:
+            Node type
+        """
+        ndata = self.node[node]
+        return ndata.get(self._node_type_attr)
 
     @property
     def node_types(self):
@@ -610,15 +625,11 @@ class StellarGraphBase:
         if nodes is None:
             nodes = self.nodes()
         elif create_type_maps is True:
-            raise ValueError(
-                "Creating type mapes for subsampled nodes is not supported"
-            )
+            raise ValueError("Creating type maps for subsampled nodes is not supported")
         if edges is None:
             edges = self.edges(keys=True)
         elif create_type_maps is True:
-            raise ValueError(
-                "Creating type mapes for subsampled edges is not supported"
-            )
+            raise ValueError("Creating type maps for subsampled edges is not supported")
 
         # Create node type index list
         node_types = sorted(
