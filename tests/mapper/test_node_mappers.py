@@ -242,6 +242,10 @@ def test_nodemapper_1():
     assert nf[1].shape == (1, 2, n_feat)
     assert nf[2].shape == (1, 2 * 2, n_feat)
 
+    # This will fail as the nodes are not in the graph
+    with pytest.raises(KeyError):
+        GraphSAGENodeGenerator(G1, batch_size=2, num_samples=[2, 2]).flow(["A", "B"])
+
 
 def test_nodemapper_with_labels():
     n_feat = 4
