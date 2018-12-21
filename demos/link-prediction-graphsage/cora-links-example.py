@@ -338,14 +338,14 @@ if __name__ == "__main__":
         "-i",
         "--ignore_node_attr",
         nargs="+",
-        default=["subject"],
+        default=[],
         help="List of node attributes to ignore (e.g., subject, name, id, etc.)",
     )
     parser.add_argument(
         "-m",
         "--edge_feature_method",
         type=str,
-        default="concat",
+        default="ip",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
     )
 
