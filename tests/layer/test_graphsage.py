@@ -194,6 +194,9 @@ def test_graphsage_constructor():
     with pytest.raises(ValueError):
         GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize=lambda x: x)
 
+    with pytest.raises(ValueError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="unknown")
+
     # Check requirement for generator or n_samples
     with pytest.raises(RuntimeError):
         GraphSAGE(layer_sizes=[4])
@@ -222,17 +225,6 @@ def test_graphsage_constructor_passing_aggregator():
 
     with pytest.raises(TypeError):
         GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=1)
-
-
-def test_graphsage_constructor_wrong_normalisation():
-    with pytest.raises(ValueError):
-        gs = GraphSAGE(
-            layer_sizes=[4],
-            n_samples=[2],
-            input_dim=2,
-            aggregator=MeanAggregator,
-            normalize="l1",
-        )
 
 
 def test_graphsage_constructor_1():
