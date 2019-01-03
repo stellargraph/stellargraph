@@ -36,6 +36,14 @@ class GraphSchema:
     node_type_map = None
     edge_type_map = None
 
+    def __repr__(self):
+        s = "{}:\n".format(type(self).__name__)
+        for nt in self.schema:
+            s += "node type: {}\n".format(nt)
+            for e in self.schema[nt]:
+                s += "   {} -- {} -> {}\n".format(*e)
+        return s
+
     def is_directed(self):
         return self._is_directed
 
@@ -56,27 +64,6 @@ class GraphSchema:
             index = None
         return index
 
-    def node_index_to_type(self, index):
-        """
-        Return node type key from the numerical index
-
-        Args:
-            index: Numerical index of node type.
-
-        Returns:
-            Node type name
-        """
-        try:
-            key = self.node_types[index]
-        except IndexError:
-            print(
-                "Warning: Node index '{}' invalid. Should be an integer between 0 and {}.".format(
-                    index, len(self.node_types) - 1
-                )
-            )
-            key = None
-        return key
-
     def edge_index(self, edge_type):
         """
         Return edge type index from the type tuple
@@ -87,41 +74,13 @@ class GraphSchema:
         Returns:
             Numerical edge type index
         """
-        try:
+        if edge_type in self.edge_types:
             index = self.edge_types.index(edge_type)
-        except ValueError:
-            print("Warning: Edge key '{}' not found.".format(edge_type))
-            index = None
+
+        else:
+            raise ValueError("Edge key '{}' not found.".format(edge_type))
+
         return index
-
-    def edge_index_to_type(self, index):
-        """
-        Return edge type triple from the numerical index
-
-        Args:
-            index: Numerical index of edge type.
-
-        Returns:
-            Edge type triple
-        """
-        try:
-            key = self.edge_types[index]
-        except IndexError:
-            print(
-                "Warning: Edge index '{}' invalid. Should be an integer between 0 and {}.".format(
-                    index, len(self.edge_types) - 1
-                )
-            )
-            key = None
-        return key
-
-    def __repr__(self):
-        s = "{}:\n".format(type(self).__name__)
-        for nt in self.schema:
-            s += "node type: {}\n".format(nt)
-            for e in self.schema[nt]:
-                s += "   {} -- {} -> {}\n".format(*e)
-        return s
 
     def get_node_type(self, node, index=False):
         """
@@ -136,7 +95,10 @@ class GraphSchema:
         Returns:
             A node type name or index
         """
-        # TODO: remove "get_" from the name
+        # TODO: deprecate this function
+        if self.node_type_map is None:
+            raise RuntimeError("Node type maps not enabled")
+
         try:
             nt = self.node_type_map[node]
             node_type = nt if index else self.node_types[nt]
@@ -163,28 +125,27 @@ class GraphSchema:
         Returns:
             True if the edge is of the given type
         """
-        try:
-            if edge in self.edge_type_map:
-                eindex = self.edge_type_map[edge]
+        # TODO: deprecate this function
+        if self.edge_type_map is None:
+            raise RuntimeError("Edge type maps must be created to use this method")
 
-            elif not self.is_directed():
-                eindex = self.edge_type_map[(edge[1], edge[0], edge[2])]
+        if edge in self.edge_type_map:
+            eindex = self.edge_type_map[edge]
 
-            else:
-                raise IndexError
+        elif not self.is_directed():
+            eindex = self.edge_type_map[(edge[1], edge[0], edge[2])]
 
-            et = self.edge_types[eindex]
+        else:
+            raise IndexError("Warning: Edge '{}' not found in type map.".format(edge))
 
-            if self.is_directed():
-                match = et == edge_type
-            else:
-                match = (et == edge_type) or (
-                    et == (edge_type[2], edge_type[1], edge_type[0])
-                )
+        et = self.edge_types[eindex]
 
-        except IndexError:
-            print("Warning: Edge '{}' not found in type map.".format(edge))
-            match = False
+        if self.is_directed():
+            match = et == edge_type
+        else:
+            match = (et == edge_type) or (
+                et == (edge_type[2], edge_type[1], edge_type[0])
+            )
 
         return match
 
@@ -208,25 +169,24 @@ class GraphSchema:
         Returns:
             A node type triple or index.
         """
-        # TODO: remove "get_" from the name
-        try:
-            if edge in self.edge_type_map:
-                et = self.edge_type_map[edge]
-                edge_type = et if index else self.edge_types[et]
+        # TODO: deprecate this function
+        if self.edge_type_map is None:
+            raise RuntimeError("Edge type maps must be created to use this method")
 
-            elif not self.is_directed():
-                et = self.edge_type_map[(edge[1], edge[0], edge[2])]
-                if index:
-                    edge_type = et
-                else:
-                    et = self.edge_types[et]
-                    edge_type = EdgeType(et[2], et[1], et[0])
+        if edge in self.edge_type_map:
+            et = self.edge_type_map[edge]
+            edge_type = et if index else self.edge_types[et]
+
+        elif not self.is_directed():
+            et = self.edge_type_map[(edge[1], edge[0], edge[2])]
+            if index:
+                edge_type = et
             else:
-                raise IndexError
+                et = self.edge_types[et]
+                edge_type = EdgeType(et[2], et[1], et[0])
+        else:
+            raise IndexError("Edge '{}' not found in type map.".format(edge))
 
-        except IndexError:
-            print("Warning: Edge '{}' not found in type map.".format(edge))
-            edge_type = None
         return edge_type
 
     def sampling_tree(self, head_node_types, n_hops):
@@ -253,7 +213,6 @@ class GraphSchema:
             ]
 
         # The first k nodes will be the head nodes in the adjacency list
-        # TODO: generalize this?
         return adjacency_list, pack_tree(range(len(head_node_types)), 0)
 
     def sampling_layout(self, head_node_types, num_samples):
@@ -346,7 +305,7 @@ class GraphSchema:
             raise TypeError("The head node types should be a list or tuple.")
 
         if not isinstance(n_hops, int):
-            raise ValueError("n_hops should be an integer")
+            raise TypeError("n_hops should be an integer")
 
         to_process = queue.Queue()
 
