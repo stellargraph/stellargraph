@@ -75,6 +75,12 @@ class NodeSequence(Sequence):
                     "The length of the targets must be the same as the length of the ids"
                 )
 
+        # Check all IDs are actually in the graph
+        if any(n not in generator.graph for n in ids):
+            raise KeyError(
+                "Head nodes supplied to generator contain IDs not found in graph"
+            )
+
         # Infer head_node_type
         if generator.schema.node_type_map is None:
             head_node_types = {generator.graph.type_for_node(n) for n in ids}

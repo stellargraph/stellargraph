@@ -19,12 +19,30 @@
 GraphSAGE tests
 
 """
-
-
+from stellargraph.core.graph import StellarGraph
+from stellargraph.mapper.node_mappers import GraphSAGENodeGenerator
 from stellargraph.layer.graphsage import *
+
 import keras
 import numpy as np
+import networkx as nx
 import pytest
+
+
+def example_graph_1(feature_size=None):
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_nodes_from([1, 2, 3, 4], label="default")
+    G.add_edges_from(elist, label="default")
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = np.ones(feature_size)
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
 
 
 def test_maxpool_agg_constructor():
@@ -35,6 +53,12 @@ def test_maxpool_agg_constructor():
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
     assert agg.hidden_act.__name__ == "relu"
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
 
 
 def test_maxpool_agg_constructor_1():
@@ -47,7 +71,7 @@ def test_maxpool_agg_constructor_1():
 
 
 def test_maxpool_agg_apply():
-    agg = MaxPoolingAggregator(2, bias=False, act="linear")
+    agg = MaxPoolingAggregator(2, bias=True, act="linear")
     agg._initializer = "ones"
 
     # Self features
@@ -81,6 +105,12 @@ def test_meanpool_agg_constructor():
     assert agg.act.__name__ == "relu"
     assert agg.hidden_act.__name__ == "relu"
 
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
+
 
 def test_meanpool_agg_constructor_1():
     agg = MeanPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
@@ -92,7 +122,7 @@ def test_meanpool_agg_constructor_1():
 
 
 def test_meanpool_agg_apply():
-    agg = MeanPoolingAggregator(2, bias=False, act="linear")
+    agg = MeanPoolingAggregator(2, bias=True, act="linear")
     agg._initializer = "ones"
 
     # Self features
@@ -122,7 +152,12 @@ def test_mean_agg_constructor():
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert not agg.has_bias
-    assert agg.act.__name__ == "relu"
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
 
 
 def test_mean_agg_constructor_1():
@@ -134,7 +169,7 @@ def test_mean_agg_constructor_1():
 
 
 def test_mean_agg_apply():
-    agg = MeanAggregator(4, act=lambda x: x)
+    agg = MeanAggregator(4, bias=True, act=lambda x: x)
     agg._initializer = "ones"
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 2, 2))
@@ -148,12 +183,31 @@ def test_mean_agg_apply():
 
 
 def test_graphsage_constructor():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="l2")
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.n_layers == 1
     assert gs.bias
     assert len(gs._aggs) == 1
+
+    # Check incorrect normalization flag
+    with pytest.raises(ValueError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize=lambda x: x)
+
+    # Check requirement for generator or n_samples
+    with pytest.raises(RuntimeError):
+        GraphSAGE(layer_sizes=[4])
+
+    # Construction from generator
+    G = example_graph_1(feature_size=3)
+    gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow([1, 2])
+    gs = GraphSAGE(layer_sizes=[4, 8], generator=gen, bias=True)
+
+    assert gs.dims == [3, 4, 8]
+    assert gs.n_samples == [2, 2]
+    assert gs.n_layers == 2
+    assert gs.bias
+    assert len(gs._aggs) == 2
 
 
 def test_graphsage_constructor_passing_aggregator():
@@ -165,6 +219,9 @@ def test_graphsage_constructor_passing_aggregator():
     assert gs.n_layers == 1
     assert gs.bias
     assert len(gs._aggs) == 1
+
+    with pytest.raises(TypeError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=1)
 
 
 def test_graphsage_constructor_wrong_normalisation():
@@ -215,7 +272,7 @@ def test_graphsage_apply_1():
         n_samples=[2, 2, 2],
         bias=False,
         input_dim=2,
-        normalize="none",
+        normalize=None,
     )
     for agg in gs._aggs:
         agg._initializer = "ones"
@@ -234,3 +291,10 @@ def test_graphsage_apply_1():
     actual = model.predict(x)
     expected = np.array([[[16, 25]]])
     assert expected == pytest.approx(actual)
+
+    # Use the default model:
+    xinp, xout = gs.default_model()
+    model2 = keras.Model(inputs=xinp, outputs=xout)
+
+    expected = np.array([[[16, 25]]])
+    assert pytest.approx(expected) == model2.predict(x)
