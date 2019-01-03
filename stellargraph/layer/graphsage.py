@@ -444,7 +444,7 @@ class GraphSAGE:
         aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
-        normalize (str): The normalization used after each layer, defaults to L2 normalization.
+        normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
 
     """
 
