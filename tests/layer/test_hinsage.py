@@ -127,7 +127,6 @@ def test_hinsage_apply():
         input_dim={"1": 2, "2": 4},
         normalize="none",
     )
-    # hs._normalization = lambda z: z
     for aggs in hs._aggs:
         for _, agg in aggs.items():
             agg._initializer = "ones"
