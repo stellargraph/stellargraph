@@ -166,11 +166,15 @@ def test_graphsage_constructor_passing_aggregator():
     assert gs.bias
     assert len(gs._aggs) == 1
 
+
 def test_graphsage_constructor_wrong_normalisation():
     with pytest.raises(ValueError):
         gs = GraphSAGE(
-            layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=MeanAggregator,
-            normalize="l1"
+            layer_sizes=[4],
+            n_samples=[2],
+            input_dim=2,
+            aggregator=MeanAggregator,
+            normalize="l1",
         )
 
 
@@ -186,7 +190,9 @@ def test_graphsage_constructor_1():
 
 
 def test_graphsage_apply():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None)
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+    )
     for agg in gs._aggs:
         agg._initializer = "ones"
 
@@ -204,7 +210,13 @@ def test_graphsage_apply():
 
 
 def test_graphsage_apply_1():
-    gs = GraphSAGE(layer_sizes=[2, 2, 2], n_samples=[2, 2, 2], bias=False, input_dim=2, normalize="none")
+    gs = GraphSAGE(
+        layer_sizes=[2, 2, 2],
+        n_samples=[2, 2, 2],
+        bias=False,
+        input_dim=2,
+        normalize="none",
+    )
     for agg in gs._aggs:
         agg._initializer = "ones"
 

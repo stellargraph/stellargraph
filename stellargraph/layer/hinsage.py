@@ -226,7 +226,11 @@ class HinSAGE:
             self._normalization = Lambda(lambda x: x)
 
         else:
-            raise ValueError("Normalization should be either 'l2' or 'none'; received '{}'".format(normalize))
+            raise ValueError(
+                "Normalization should be either 'l2' or 'none'; received '{}'".format(
+                    normalize
+                )
+            )
 
         # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper

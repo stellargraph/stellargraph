@@ -111,6 +111,7 @@ def test_hinsage_constructor():
     assert hs.n_samples == [2, 2]
     assert hs.bias
 
+
 def test_hinsage_constructor_wrong_normalisation():
     with pytest.raises(ValueError):
         hs = HinSAGE(
@@ -125,7 +126,7 @@ def test_hinsage_constructor_wrong_normalisation():
                 ("2", []),
             ],
             input_dim={"1": 2, "2": 2},
-            normalize='l1'
+            normalize="l1",
         )
 
 
