@@ -166,6 +166,13 @@ def test_graphsage_constructor_passing_aggregator():
     assert gs.bias
     assert len(gs._aggs) == 1
 
+def test_graphsage_constructor_wrong_normalisation():
+    with pytest.raises(ValueError):
+        gs = GraphSAGE(
+            layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=MeanAggregator,
+            normalize="l1"
+        )
+
 
 def test_graphsage_constructor_1():
     gs = GraphSAGE(
