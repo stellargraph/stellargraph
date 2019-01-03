@@ -172,7 +172,7 @@ class HinSAGE:
     ):
         """
         Args:
-            layer_sizes (list of dict): Hidden feature dimensions for each layer
+            layer_sizes (list): Hidden feature dimensions for each layer
             mapper (Sequence): A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
                 input_neighbour_tree and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
