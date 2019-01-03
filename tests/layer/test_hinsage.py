@@ -111,6 +111,23 @@ def test_hinsage_constructor():
     assert hs.n_samples == [2, 2]
     assert hs.bias
 
+def test_hinsage_constructor_wrong_normalisation():
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[{"1": 2, "2": 2}, {"1": 2}],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 2},
+            normalize='l1'
+        )
+
 
 def test_hinsage_apply():
     hs = HinSAGE(
