@@ -42,6 +42,23 @@ def test_mean_hin_agg_constructor_1():
     assert agg.has_bias
     assert agg.act(2) == 3
 
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == True
+    assert config["act"] == "<lambda>"
+
+    agg = MeanHinAggregator(output_dim=2, bias=True, act="relu")
+    assert agg.output_dim == 2
+    assert agg.half_output_dim == 1
+    assert agg.has_bias
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == True
+    assert config["act"] == "relu"
+
 
 def test_mean_hin_agg_apply():
     agg = MeanHinAggregator(2, act=lambda z: z)
@@ -111,6 +128,61 @@ def test_hinsage_constructor():
     assert hs.n_samples == [2, 2]
     assert hs.bias
 
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
+    )
+    assert hs.n_layers == 2
+    assert hs.n_samples == [2, 2]
+    assert hs.bias
+
+
+def test_hinsage_constructor_with_agg():
+    hs = HinSAGE(
+        layer_sizes=[{"1": 2, "2": 2}, {"1": 2}],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
+        aggregator=MeanHinAggregator,
+    )
+    assert hs.n_layers == 2
+    assert hs.n_samples == [2, 2]
+    assert hs.bias
+
+
+def test_hinsage_input_shapes():
+    hs = HinSAGE(
+        layer_sizes=[{"1": 2, "2": 2}, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+    )
+    print(hs._input_shapes())
+    assert hs._input_shapes() == [(1, 2), (2, 2), (2, 4), (4, 2), (4, 4), (4, 4)]
+
 
 def test_hinsage_constructor_wrong_normalisation():
     with pytest.raises(ValueError):
@@ -160,6 +232,81 @@ def test_hinsage_apply():
 
     out = hs(inp)
     model = keras.Model(inputs=inp, outputs=out)
+
+    x = [
+        np.array([[[1, 1]]]),
+        np.array([[[2, 2], [2, 2]]]),
+        np.array([[[4, 4, 4, 4], [4, 4, 4, 4]]]),
+        np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
+        np.array([[[6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6]]]),
+        np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
+    ]
+
+    actual = model.predict(x)
+    expected = np.array([[[12, 35.5]]])
+    assert actual == pytest.approx(expected)
+
+
+def test_hinsage_default_model():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+        normalize="none",
+    )
+
+    for aggs in hs._aggs:
+        for _, agg in aggs.items():
+            agg._initializer = "ones"
+
+    xin, xout = hs.default_model()
+    model = keras.Model(inputs=xin, outputs=xout)
+
+    x = [
+        np.array([[[1, 1]]]),
+        np.array([[[2, 2], [2, 2]]]),
+        np.array([[[4, 4, 4, 4], [4, 4, 4, 4]]]),
+        np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
+        np.array([[[6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6]]]),
+        np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
+    ]
+
+    actual = model.predict(x)
+    expected = np.array([[[12, 35.5]]])
+    assert actual == pytest.approx(expected)
+
+
+def test_hinsage_aggregators():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+        aggregator=MeanHinAggregator,
+        normalize="none",
+    )
+
+    for aggs in hs._aggs:
+        for _, agg in aggs.items():
+            agg._initializer = "ones"
+
+    xin, xout = hs.default_model()
+    model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
         np.array([[[1, 1]]]),
