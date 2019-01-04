@@ -184,6 +184,24 @@ def test_hinsage_input_shapes():
     assert hs._input_shapes() == [(1, 2), (2, 2), (2, 4), (4, 2), (4, 4), (4, 4)]
 
 
+def test_hinsage_constructor_wrong_normalisation():
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[{"1": 2, "2": 2}, {"1": 2}],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 2},
+            normalize="unknown",
+        )
+
+
 def test_hinsage_apply():
     hs = HinSAGE(
         layer_sizes=[{"1": 2, "2": 2}, 2],
@@ -197,8 +215,8 @@ def test_hinsage_apply():
             ("2", []),
         ],
         input_dim={"1": 2, "2": 4},
+        normalize="none",
     )
-    hs._normalization = lambda z: z
     for aggs in hs._aggs:
         for _, agg in aggs.items():
             agg._initializer = "ones"
