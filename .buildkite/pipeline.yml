@@ -7,19 +7,15 @@ steps:
     plugins:
       docker#v2.1.0:
         image: "python:3.6"
-        workdir: /app
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - COVERALLS_REPO_TOKEN=$COVERALLS_REPO_TOKEN
 
   - label: "style"
-    command:
-      - --check stellargraph tests
     plugins:
       docker#v2.1.0:
         image: "stellargraph/black"
-        workdir: /app
-        entrypoint: /usr/bin/black
+        command: ["--check", "stellargraph", "tests"]
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 
