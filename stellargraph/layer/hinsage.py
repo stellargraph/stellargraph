@@ -172,7 +172,7 @@ class HinSAGE:
     ):
         """
         Args:
-            layer_sizes (list of int): Hidden feature dimensions for each layer
+            layer_sizes (list): Hidden feature dimensions for each layer
             mapper (Sequence): A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
                 input_neighbour_tree and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
@@ -222,8 +222,15 @@ class HinSAGE:
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
 
-        elif normalize is None or normalize == "none":
+        elif normalize is None or normalize == "none" or normalize == "None":
             self._normalization = Lambda(lambda x: x)
+
+        else:
+            raise ValueError(
+                "Normalization should be either 'l2' or 'none'; received '{}'".format(
+                    normalize
+                )
+            )
 
         # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper

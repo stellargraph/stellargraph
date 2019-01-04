@@ -194,6 +194,9 @@ def test_graphsage_constructor():
     with pytest.raises(ValueError):
         GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize=lambda x: x)
 
+    with pytest.raises(ValueError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="unknown")
+
     # Check requirement for generator or n_samples
     with pytest.raises(RuntimeError):
         GraphSAGE(layer_sizes=[4])
@@ -237,7 +240,7 @@ def test_graphsage_constructor_1():
 
 def test_graphsage_apply():
     gs = GraphSAGE(
-        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize="none"
+        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
     )
     for agg in gs._aggs:
         agg._initializer = "ones"
