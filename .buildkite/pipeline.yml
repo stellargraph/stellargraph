@@ -10,6 +10,7 @@ steps:
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - COVERALLS_REPO_TOKEN=$COVERALLS_REPO_TOKEN
+          - GIT_BRANCH=$BUILDKITE_BRANCH
 
   - label: "style"
     plugins:
