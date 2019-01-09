@@ -331,7 +331,7 @@ def test_hinsage_zero_neighbours():
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
-        np.array([[[1, 1]]]),
+        np.array([[[1.5, 1]]]),
         np.zeros((1, 0, 2)),
         np.zeros((1, 0, 4)),
         np.zeros((1, 0, 2)),
@@ -340,7 +340,7 @@ def test_hinsage_zero_neighbours():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[2, 0]]])
+    expected = np.array([[[2.5, 0]]])
     assert actual == pytest.approx(expected)
 
 
