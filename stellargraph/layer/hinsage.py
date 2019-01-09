@@ -46,7 +46,7 @@ class MeanHinAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Union[Callable, AnyStr] = "relu",
-        **kwargs
+        **kwargs,
     ):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
@@ -82,6 +82,8 @@ class MeanHinAggregator(Layer):
 
         """
         # Weight matrix for each type of neighbour
+        # If there are no neighbours (input_shape[x][2]) for an input
+        # then do not create weights as they are not used.
         self.nr = len(input_shape) - 1
         self.w_neigh = [
             self.add_weight(
@@ -90,6 +92,8 @@ class MeanHinAggregator(Layer):
                 initializer=self._initializer,
                 trainable=True,
             )
+            if input_shape[1 + r][2] > 0
+            else None
             for r in range(self.nr)
         ]
 
@@ -126,17 +130,29 @@ class MeanHinAggregator(Layer):
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        # Calculate the mean vectors over the neigbours of each relation type
-        neigh_means = [K.mean(z, axis=2) for z in x[1:]]
+        # Calculate the mean vectors over the neigbours of each relation (edge) type
+        neigh_agg_by_relation = []
+        for r in range(self.nr):
+            # The neighbour input tensors for relation r
+            z = x[1 + r]
+
+            # If there are neighbours aggregate over them
+            if z.shape[2] > 0:
+                z_agg = K.dot(K.mean(z, axis=2), self.w_neigh[r])
+
+            # Otherwise add a synthetic zero vector
+            else:
+                z_shape = K.shape(z)
+                w_shape = self.half_output_dim
+                z_agg = K.zeros((z_shape[0], z_shape[1], w_shape))
+
+            neigh_agg_by_relation.append(z_agg)
 
         # Calculate the self vector shape (n_batch, n_head, n_out_self)
         from_self = K.dot(x[0], self.w_self)
 
         # Sum the contributions from all neighbour averages shape (n_batch, n_head, n_out_neigh)
-        from_neigh = (
-            sum([K.dot(neigh_means[r], self.w_neigh[r]) for r in range(self.nr)])
-            / self.nr
-        )
+        from_neigh = sum(neigh_agg_by_relation) / self.nr
 
         # Concatenate self + neighbour features, shape (n_batch, n_head, n_out)
         total = K.concatenate(
@@ -276,8 +292,8 @@ class HinSAGE:
             [li for li in self.subtree_schema if len(li[1]) > 0]
         )
 
-        # Depth of each input i.e. number of hops from root nodes
-        depth = [
+        # Depth of each input tensor i.e. number of hops from root nodes
+        self._depths = [
             self.n_layers
             + 1
             - sum([1 for li in [self.subtree_schema] + self.neigh_trees if i < len(li)])
@@ -305,25 +321,7 @@ class HinSAGE:
             for layer in range(self.n_layers)
         ]
 
-        # Reshape object per neighbour per node per layer
-        self._neigh_reshape = [
-            [
-                [
-                    Reshape(
-                        (
-                            -1 if self.n_samples[depth[i]] > 0 else 0,
-                            self.n_samples[depth[i]],
-                            self.dims[layer][self.subtree_schema[neigh_index][0]],
-                        )
-                    )
-                    for neigh_index in neigh_indices
-                ]
-                for i, (_, neigh_indices) in enumerate(self.neigh_trees[layer])
-            ]
-            for layer in range(self.n_layers)
-        ]
-
-    def __call__(self, x: List):
+    def __call__(self, xin: List):
         """
         Apply aggregator layers
 
@@ -334,75 +332,55 @@ class HinSAGE:
             Output tensor
         """
 
-        def compose_layers(x: List, layer: int):
+        def apply_layer(x: List, layer: int):
             """
-            Function to recursively compose aggregation layers. When current layer is at final layer, then
-            compose_layers(x, layer) returns x.
+            Compute the list of output tensors for a single HinSAGE layer
 
             Args:
-                x (list of Tensor): List of feature matrix tensors
-                layer (int): Current layer index
+                x (List[Tensor]): Inputs to the layer
+                layer (int): Layer index
 
             Returns:
-                x computed from current layer to output layer
+                Outputs of applying the aggregators as a list of Tensors
 
             """
+            layer_out = []
+            for i, (node_type, neigh_indices) in enumerate(self.neigh_trees[layer]):
+                # The shape of the head node is used for reshaping the neighbour inputs
+                head_shape = x[i].shape[1]
 
-            def neigh_list(i, neigh_indices):
-                """
-                Get the correctly-shaped list of neighbour tensors for the tensor at index i
-
-                Args:
-                    i (int): Tensor index
-                    neigh_indices (list of int): list of indices of the neighbour tensors
-
-                Returns:
-                    List of neighbour tensors
-
-                """
-                return [
-                    self._neigh_reshape[layer][i][ni](x[neigh_index])
-                    for ni, neigh_index in enumerate(neigh_indices)
+                # Reshape neighbours per node per layer & apply dropout
+                neigh_list = [
+                    Reshape(
+                        (
+                            head_shape,
+                            self.n_samples[self._depths[i]],
+                            self.dims[layer][self.subtree_schema[neigh_index][0]],
+                        )
+                    )(Dropout(self.dropout)(x[neigh_index]))
+                    for neigh_index in neigh_indices
                 ]
 
-            def x_next(agg: Dict[str, Layer]):
-                """
-                Compute the list of tensors for the next layer
+                # Apply dropout to head inputs
+                x_head = Dropout(self.dropout)(x[i])
 
-                Args:
-                    agg (Dict[str, Layer]): Dict of node type to aggregator layer
+                # Apply aggregator to head node and reshaped neighbour nodes
+                layer_out.append(self._aggs[layer][node_type]([x_head] + neigh_list))
 
-                Returns:
-                    Outputs of applying the aggregators as a list of Tensors
+            return layer_out
 
-                """
-                return [
-                    agg[node_type](
-                        [
-                            Dropout(self.dropout)(x[i]),
-                            *[
-                                Dropout(self.dropout)(ne)
-                                for ne in neigh_list(i, neigh_indices)
-                            ],
-                        ],
-                        name="{}_{}".format(node_type, layer),
-                    )
-                    for i, (node_type, neigh_indices) in enumerate(
-                        self.neigh_trees[layer]
-                    )
-                ]
+        # Form HinSAGE layers iteratively
+        self.layer_tensors = []
+        h_layer = xin
+        for layer in range(0, self.n_layers):
+            h_layer = apply_layer(h_layer, layer)
+            self.layer_tensors.append(h_layer)
 
-            return (
-                compose_layers(x_next(self._aggs[layer]), layer + 1)
-                if layer < self.n_layers
-                else x
-            )
-
-        x = compose_layers(x, 0)
+        # Return final layer output tensor with optional normalization
         return (
-            self._normalization(x[0])
-            if len(x) == 1
-            else [self._normalization(xi) for xi in x]
+            self._normalization(h_layer[0])
+            if len(h_layer) == 1
+            else [self._normalization(xi) for xi in h_layer]
         )
 
     def _input_shapes(self) -> List[Tuple[int, int]]:

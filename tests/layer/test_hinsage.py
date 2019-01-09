@@ -110,6 +110,29 @@ def test_mean_hin_agg_apply_2():
     assert all(a == pytest.approx(e) for a, e in zip(actual, expected))
 
 
+def test_mean_hin_zero_neighbours():
+    agg = MeanHinAggregator(2, bias=False, act=lambda z: z)
+    agg._initializer = "ones"
+    inp = [
+        keras.Input(shape=(1, 2)),
+        keras.Input(shape=(1, 0, 2)),
+        keras.Input(shape=(1, 0, 4)),
+    ]
+    out = agg(inp)
+
+    # Check weights added only for first input
+    assert all(w is None for w in agg.w_neigh)
+
+    model = keras.Model(inputs=inp, outputs=out)
+
+    x = [np.array([[[1, 1]]]), np.zeros((1, 1, 0, 2)), np.zeros((1, 1, 0, 4))]
+
+    actual = model.predict(x)
+    print(actual)
+    expected = np.array([[[2, 0]]])
+    assert actual == pytest.approx(expected)
+
+
 def test_hinsage_constructor():
     hs = HinSAGE(
         layer_sizes=[{"1": 2, "2": 2}, {"1": 2}],
@@ -281,6 +304,43 @@ def test_hinsage_default_model():
 
     actual = model.predict(x)
     expected = np.array([[[12, 35.5]]])
+    assert actual == pytest.approx(expected)
+
+
+def test_hinsage_zero_neighbours():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[0, 0],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+        normalize="none",
+    )
+
+    for aggs in hs._aggs:
+        for _, agg in aggs.items():
+            agg._initializer = "ones"
+
+    xin, xout = hs.default_model()
+    model = keras.Model(inputs=xin, outputs=xout)
+
+    x = [
+        np.array([[[1, 1]]]),
+        np.zeros((1, 0, 2)),
+        np.zeros((1, 0, 4)),
+        np.zeros((1, 0, 2)),
+        np.zeros((1, 0, 4)),
+        np.zeros((1, 0, 4)),
+    ]
+
+    actual = model.predict(x)
+    expected = np.array([[[2, 0]]])
     assert actual == pytest.approx(expected)
 
 
