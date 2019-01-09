@@ -117,19 +117,28 @@ class MeanHinAggregator(Layer):
         Apply MeanAggregation on input tensors, x
 
         Args:
-          x: Keras Tensor
+          x: List of Keras Tensors
+             x[0] = tensor of self features shape (n_batch, n_head, n_feat)
+             x[1+r] = tensors of neighbour features each of shape
+                (n_batch, n_head, n_neighbour[r], n_feat[r])
 
         Returns:
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
+        # Calculate the mean vectors over the neigbours of each relation type
         neigh_means = [K.mean(z, axis=2) for z in x[1:]]
 
+        # Calculate the self vector shape (n_batch, n_head, n_out_self)
         from_self = K.dot(x[0], self.w_self)
+
+        # Sum the contributions from all neighbour averages shape (n_batch, n_head, n_out_neigh)
         from_neigh = (
             sum([K.dot(neigh_means[r], self.w_neigh[r]) for r in range(self.nr)])
             / self.nr
         )
+
+        # Concatenate self + neighbour features, shape (n_batch, n_head, n_out)
         total = K.concatenate(
             [from_self, from_neigh], axis=2
         )  # YT: this corresponds to concat=Partial
@@ -302,7 +311,7 @@ class HinSAGE:
                 [
                     Reshape(
                         (
-                            -1,
+                            -1 if self.n_samples[depth[i]] > 0 else 0,
                             self.n_samples[depth[i]],
                             self.dims[layer][self.subtree_schema[neigh_index][0]],
                         )

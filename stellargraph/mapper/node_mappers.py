@@ -381,6 +381,7 @@ class HinSAGENodeGenerator:
                 reduce(
                     operator.concat,
                     (samples[ks] for samples in node_samples for ks in indices),
+                    [],
                 ),
             )
             for nt, indices in sampling_schema[0]
