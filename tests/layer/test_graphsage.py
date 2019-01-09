@@ -96,6 +96,24 @@ def test_maxpool_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_maxpool_agg_zero_neighbours():
+    agg = MaxPoolingAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 0, 0]]])
+    assert expected == pytest.approx(actual)
+
+
 def test_meanpool_agg_constructor():
     agg = MeanPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
@@ -147,6 +165,24 @@ def test_meanpool_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_meanpool_agg_zero_neighbours():
+    agg = MeanPoolingAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 0, 0]]])
+    assert expected == pytest.approx(actual)
+
+
 def test_mean_agg_constructor():
     agg = MeanAggregator(2)
     assert agg.output_dim == 2
@@ -179,6 +215,24 @@ def test_mean_agg_apply():
     x2 = np.array([[[[2, 2], [3, 3]]]])
     actual = model.predict([x1, x2])
     expected = np.array([[[2, 2, 5, 5]]])
+    assert expected == pytest.approx(actual)
+
+
+def test_mean_agg_zero_neighbours():
+    agg = MeanAggregator(4, bias=False, act=lambda x: x)
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 0, 0]]])
     assert expected == pytest.approx(actual)
 
 
@@ -290,3 +344,22 @@ def test_graphsage_apply_1():
 
     expected = np.array([[[16, 25]]])
     assert pytest.approx(expected) == model2.predict(x)
+
+
+def test_graphsage_zero_neighbours():
+    gs = GraphSAGE(
+        layer_sizes=[2, 2], n_samples=[0, 0], bias=False, input_dim=2, normalize="none"
+    )
+
+    for agg in gs._aggs:
+        agg._initializer = "ones"
+
+    inp = [keras.Input(shape=(i, 2)) for i in [1, 0, 0]]
+    out = gs(inp)
+    model = keras.Model(inputs=inp, outputs=out)
+
+    x = [np.array([[[1, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
+
+    actual = model.predict(x)
+    expected = np.array([[[2, 0]]])
+    assert actual == pytest.approx(expected)
