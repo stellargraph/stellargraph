@@ -358,8 +358,8 @@ def test_graphsage_zero_neighbours():
     out = gs(inp)
     model = keras.Model(inputs=inp, outputs=out)
 
-    x = [np.array([[[1, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
+    x = [np.array([[[1.5, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
 
     actual = model.predict(x)
-    expected = np.array([[[2, 0]]])
+    expected = np.array([[[2.5, 0]]])
     assert actual == pytest.approx(expected)
