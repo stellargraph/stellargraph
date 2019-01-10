@@ -78,7 +78,6 @@ def test_mean_hin_agg_apply():
     ]
 
     actual = model.predict(x)
-    print(actual)
     expected = np.array([[[2, 8]]])
     assert actual == pytest.approx(expected)
 
@@ -128,7 +127,6 @@ def test_mean_hin_zero_neighbours():
     x = [np.array([[[1, 1]]]), np.zeros((1, 1, 0, 2)), np.zeros((1, 1, 0, 4))]
 
     actual = model.predict(x)
-    print(actual)
     expected = np.array([[[2, 0]]])
     assert actual == pytest.approx(expected)
 
@@ -203,7 +201,6 @@ def test_hinsage_input_shapes():
         ],
         input_dim={"1": 2, "2": 4},
     )
-    print(hs._input_shapes())
     assert hs._input_shapes() == [(1, 2), (2, 2), (2, 4), (4, 2), (4, 4), (4, 4)]
 
 
@@ -303,6 +300,51 @@ def test_hinsage_default_model():
     ]
 
     actual = model.predict(x)
+    expected = np.array([[[12, 35.5]]])
+    assert actual == pytest.approx(expected)
+
+
+def test_hinsage_serialize():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+        normalize="none",
+        bias=False,
+    )
+    xin, xout = hs.default_model()
+    model = keras.Model(inputs=xin, outputs=xout)
+
+    # Save model
+    model_json = model.to_json()
+
+    # Set all weights to one
+    model_weights = [np.ones_like(w) for w in model.get_weights()]
+
+    # Load model from json & set all weights
+    model2 = keras.models.model_from_json(
+        model_json, custom_objects={"MeanHinAggregator": MeanHinAggregator}
+    )
+    model2.set_weights(model_weights)
+
+    # Test loaded model
+    x = [
+        np.array([[[1, 1]]]),
+        np.array([[[2, 2], [2, 2]]]),
+        np.array([[[4, 4, 4, 4], [4, 4, 4, 4]]]),
+        np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
+        np.array([[[6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6]]]),
+        np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
+    ]
+    actual = model2.predict(x)
     expected = np.array([[[12, 35.5]]])
     assert actual == pytest.approx(expected)
 

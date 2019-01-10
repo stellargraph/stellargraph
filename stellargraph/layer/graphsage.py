@@ -496,7 +496,8 @@ class GraphSAGE:
             """
             layer_out = []
             for i in range(self.n_layers - layer):
-                head_shape = x[i].shape[1]
+                head_shape = K.int_shape(x[i])[1]
+
                 # Reshape neighbours per node per layer
                 neigh_in = Reshape((head_shape, self.n_samples[i], self.dims[layer]))(
                     Dropout(self.dropout)(x[i + 1])

@@ -347,7 +347,7 @@ class HinSAGE:
             layer_out = []
             for i, (node_type, neigh_indices) in enumerate(self.neigh_trees[layer]):
                 # The shape of the head node is used for reshaping the neighbour inputs
-                head_shape = x[i].shape[1]
+                head_shape = K.int_shape(x[i])[1]
 
                 # Reshape neighbours per node per layer & apply dropout
                 neigh_list = [
