@@ -25,4 +25,5 @@ The layer package contains implementations of popular neural network layers for 
 # Expose the layers
 from .graphsage import *
 from .hinsage import *
+from .graph_attention import *
 from .link_inference import *

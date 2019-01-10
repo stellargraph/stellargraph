@@ -18,7 +18,7 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
+__all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator", "FullBatchNodeGenerator"]
 
 import operator
 from functools import reduce
@@ -26,6 +26,7 @@ from functools import reduce
 import numpy as np
 import itertools as it
 from keras.utils import Sequence
+import networkx as nx
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,
@@ -448,3 +449,60 @@ class HinSAGENodeGenerator:
         """
 
         return NodeSequence(self, node_targets.index, node_targets.values)
+
+
+class FullBatchNodeSequence(Sequence):
+    def __init__(self, features, A, node_indices, targets):
+        self.A = A
+        self.features = features
+        self.node_ind = node_indices
+        self.targets = targets
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, batch_num):
+        return [self.features, self.A, self.node_ind], self.targets
+
+
+class FullBatchNodeGenerator:
+    def __init__(self, G, schema=None, seed=None, name=None):
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # Create sparse adjacency matrix
+        self.node_list = list(G.nodes())
+        self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
+
+        # Get the features for the nodes
+        self.features = G.get_feature_for_nodes(self.node_list)
+
+        # We need a schema for compatibility with HinSAGE
+        if schema is None:
+            self.schema = G.create_graph_schema(create_type_maps=True)
+        elif isinstance(schema, GraphSchema):
+            self.schema = schema
+        else:
+            raise TypeError("Schema must be a GraphSchema object")
+
+        # Check that there is only a single node type for GraphSAGE, or GAT, or GCN
+        if len(self.schema.node_types) > 1:
+            print(
+            "Warning: running homogeneous node generator on a graph with multiple node types"
+            )
+
+    def flow(self, node_ids, targets=None):
+        # The list of indices of the target nodes in self.node_list
+        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+        node_mask = np.zeros(len(self.node_list), dtype=int)
+        node_mask[node_indices] = 1
+        node_mask = np.ma.make_mask(node_mask)
+        # reorder targets to match the node_mask order, since node_mask effectively sorts node_indices
+        targets = targets[np.argsort(node_indices)]
+        return FullBatchNodeSequence(self.features, self.Aadj, node_mask, targets)
