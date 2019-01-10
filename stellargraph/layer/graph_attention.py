@@ -3,10 +3,16 @@
 """
 Definition of Graph Attention Network (GAT) layer and GAT class that is a stack of GAT layers
 """
+__all__ = [
+    "GraphAttention",
+    "GAT",
+]
 
 from keras import activations, constraints, initializers, regularizers
 from keras import backend as K
 from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
+import numpy as np
+import tensorflow as tf
 
 class GraphAttention(Layer):
     """
@@ -93,7 +99,7 @@ class GraphAttention(Layer):
 
     def build(self, input_shape):
         assert len(input_shape) >= 2
-        F = input_shape[0][-1]
+        F = int(input_shape[0][-1])
 
         # Initialize weights for each attention head
         for head in range(self.attn_heads):
@@ -203,7 +209,7 @@ class GAT:
     def __init__(
             self,
             layer_sizes,
-            n_heads=1,
+            attn_heads=1,
             attn_heads_reduction=None,
             activations=None,
             bias=True,
@@ -213,14 +219,14 @@ class GAT:
     ):
         self._gat_layer = GraphAttention
         self.layer_sizes = layer_sizes
-        self.n_heads = n_heads
+        self.attn_heads = attn_heads
         self.bias = bias
         self.dropout = dropout
         self.generator = generator
 
         if attn_heads_reduction is None:
             # default head reductions, see eqs 5-6 of the GAT paper
-            self.attn_heads_reduction = ["concat"]*len(layer_sizes) + "average"
+            self.attn_heads_reduction = ["concat"]*(len(layer_sizes)-1) + ["average"]
         else:
             # user-specified head reductions
             self.attn_heads_reduction = attn_heads_reduction
@@ -233,9 +239,9 @@ class GAT:
 
         # Set the normalization layer used in the model
         if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=1))
 
-        elif normalize is None or normalize == "none" or normalize == "None":
+        elif normalize is None or normalize == "none" or normalize == "None" or normalize == "linear":
             self._normalization = Lambda(lambda x: x)
 
         else:
@@ -244,6 +250,19 @@ class GAT:
                     normalize
                 )
             )
+
+        # Initialize a stack of GAT layers
+        self._layers = []
+        for l, F_ in enumerate(self.layer_sizes):
+            # number of attention heads for layer l:
+            attn_heads = self.attn_heads if l < len(self.layer_sizes) - 1 else 1
+            self._layers.append(self._gat_layer(F_=F_,
+                                                    attn_heads=attn_heads,
+                                                    attn_heads_reduction=self.attn_heads_reduction[l],
+                                                    dropout_rate=self.dropout,
+                                                    activation=self.activations[l],
+                                                    use_bias=self.bias,
+                                                    ))
 
 
     def __call__(self, x_inp):
@@ -259,20 +278,22 @@ class GAT:
 
         assert isinstance(x_inp, list), \
             "input must be a list, got {} instead".format(type(x_inp))
-        assert len(x_inp) == 2, \
-            "input should contain 2 elements (features and adjacency matrix), got {} elements".format(len(x_inp))
-        x = x_inp
+        # assert len(x_inp) == 3, \
+        #     "input should contain 3 elements (features, adjacency matrix, and node mask), got {} elements".format(len(x_inp))
+        x = x_inp[0]
+        A = x_inp[1]
 
-        for l, F_ in enumerate(self.layer_sizes):
-            # number of attention heads for layer l:
-            n_heads = self.n_heads if l < len(self.layer_sizes)-1 else 1
-            x = self._gat_layer(F_,
-                                n_heads,
-                                self.attn_heads_reduction[l],
-                                self.dropout,
-                                self.activations[l],
-                                self.bias,
-                                )(x)
+        # # When using generators (and generator methods to fit and predict, e.g., .fit_generator()),
+        # # x.shape and A.shape contain 3 elements instead of 2, so need to reshape x and A for
+        # # the gat layers to work
+        # if len(x.shape) == 3:
+        #     F = x.shape[-1]
+        #     N = A.shape[-1]
+        #     x = Reshape((F,))(x)
+        #     A = Reshape((N,))(A)
+
+        for layer in self._layers:
+            x = layer([x, A])
 
         return self._normalization(x)
 
@@ -299,13 +320,29 @@ class GAT:
 
         X_in = Input(shape=(F,))
         A_in = Input(shape=(N,))
+        # X_in = Input(shape=(N,F))
+        # A_in = Input(shape=(N,N))
+        # node_mask = Input(shape=(None,), dtype='int64')
+        # x_inp = [X_in, A_in, node_mask]
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
         x_out = self(x_inp)
 
-        # Filter x_out by self.generator.node_indices - is this needed???
-        x_out = x_out[self.generator.node_ind,:]
+        # Filter x_out by node mask
+        # class Select(Layer):
+        #     def __init__(self, **kwargs):
+        #         super(Select, self).__init__(**kwargs)
+        #
+        #     def call(self, x, *kwargs):
+        #         assert isinstance(x, list)
+        #         a, b = x
+        #         # return K.expand_dims(K.gather(a[0], b[0]), axis=0)
+        #         # return K.expand_dims(K.gather(a, b[0]), axis=1)
+        #         return K.gather(a, b)
+        #         # return tf.boolean_mask(a, b[0])
+
+        # x_out = Select()([x_out, node_mask])
 
         if flatten_output:
             x_out = Reshape((-1,))(x_out)
