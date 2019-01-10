@@ -218,7 +218,6 @@ class GAT:
             generator=None,
     ):
         self._gat_layer = GraphAttention
-        self.layer_sizes = layer_sizes
         self.attn_heads = attn_heads
         self.bias = bias
         self.dropout = dropout
@@ -253,9 +252,9 @@ class GAT:
 
         # Initialize a stack of GAT layers
         self._layers = []
-        for l, F_ in enumerate(self.layer_sizes):
+        for l, F_ in enumerate(layer_sizes):
             # number of attention heads for layer l:
-            attn_heads = self.attn_heads if l < len(self.layer_sizes) - 1 else 1
+            attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
             self._layers.append(self._gat_layer(F_=F_,
                                                     attn_heads=attn_heads,
                                                     attn_heads_reduction=self.attn_heads_reduction[l],
