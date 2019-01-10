@@ -563,9 +563,8 @@ def test_hinnodemapper_zero_samples():
     batch_feats, batch_targets = mapper[0]
     assert len(batch_feats) == len(sampling_adj)
 
-    print(sampling_adj)
-
-    print(batch_feats)
+    # print(sampling_adj)
+    # print(batch_feats)
 
 
 def test_hinnodemapper_no_neighbors():

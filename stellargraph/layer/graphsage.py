@@ -484,10 +484,9 @@ class GraphSAGE:
 
         def apply_layer(x: List, layer: int):
             """
-            Compute the list of output tensors for a single HinSAGE layer
+            Compute the list of output tensors for a single GraphSAGE layer
 
             Args:
-                agg (Dict[str, Layer]): Dict of node type to aggregator layer
                 x (List[Tensor]): Inputs to the layer
                 layer (int): Layer index to construct
 
@@ -515,7 +514,7 @@ class GraphSAGE:
 
         if len(xin) != self.n_layers + 1:
             raise ValueError(
-                "Length of input features should match the number of GraphSAGE layers"
+                "Length of input features should equal the number of GraphSAGE layers plus one"
             )
 
         # Form GraphSAGE layers iteratively
