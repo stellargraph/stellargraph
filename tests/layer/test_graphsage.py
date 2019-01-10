@@ -304,13 +304,6 @@ def test_graphsage_apply():
     out = gs([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
 
-    x1 = np.array([[[1, 1]]])
-    x2 = np.array([[[2, 2], [3, 3]]])
-
-    actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 5, 5]]])
-    assert expected == pytest.approx(actual)
-
 
 def test_graphsage_apply_1():
     gs = GraphSAGE(
@@ -344,6 +337,36 @@ def test_graphsage_apply_1():
 
     expected = np.array([[[16, 25]]])
     assert pytest.approx(expected) == model2.predict(x)
+
+
+def test_graphsage_serialize():
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+    )
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(2, 2))
+    out = gs([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    # Save model
+    model_json = model.to_json()
+
+    # Set all weights to one
+    model_weights = [np.ones_like(w) for w in model.get_weights()]
+
+    # Load model from json & set all weights
+    model2 = keras.models.model_from_json(
+        model_json, custom_objects={"MeanAggregator": MeanAggregator}
+    )
+    model2.set_weights(model_weights)
+
+    # Test loaded model
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[2, 2], [3, 3]]])
+    actual = model2.predict([x1, x2])
+    expected = np.array([[[2, 2, 5, 5]]])
+    assert expected == pytest.approx(actual)
 
 
 def test_graphsage_zero_neighbours():
