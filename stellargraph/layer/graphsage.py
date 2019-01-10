@@ -500,11 +500,13 @@ class GraphSAGE:
                 head_shape = x[i].shape[1]
                 # Reshape neighbours per node per layer
                 neigh_in = Reshape((head_shape, self.n_samples[i], self.dims[layer]))(
-                    x[i + 1]
+                    Dropout(self.dropout)(x[i + 1])
                 )
 
                 # Apply aggregator to head node and neighbour nodes
-                layer_out.append(self._aggs[layer]([x[i], neigh_in]))
+                layer_out.append(
+                    self._aggs[layer]([Dropout(self.dropout)(x[i]), neigh_in])
+                )
 
             return layer_out
 
