@@ -266,13 +266,6 @@ class BiasedRandomWalk(GraphWalk):
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None):
-        # TODO: add doc string
-        super().__init__(graph, graph_schema=None, seed=None)
-
-    #        if (graph.weighted):
-    #           print("its a weighted graph!")
-
     def run(
         self,
         nodes=None,
