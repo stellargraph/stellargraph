@@ -24,20 +24,20 @@ __all__ = [
     "MeanAggregator",
     "MaxPoolingAggregator",
     "MeanPoolingAggregator",
+    "AttentionalAggregator",
 ]
 
 import numpy as np
 from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape
+from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from keras.utils import Sequence
 from keras import activations
 from typing import List, Tuple, Callable, AnyStr
-from abc import ABCMeta, abstractmethod
 
 
-class GraphSAGEAggregator(Layer, metaclass=ABCMeta):
+class GraphSAGEAggregator(Layer):
     """
     Base class for GraphSAGE aggregators
 
@@ -56,9 +56,12 @@ class GraphSAGEAggregator(Layer, metaclass=ABCMeta):
         act: Callable or AnyStr = "relu",
         **kwargs
     ):
+        # Ensure the output dimension is divisible by 2
+        if output_dim % 2 != 0:
+            raise ValueError("Output dimension must be divisible by two in aggregator")
+
         self.output_dim = output_dim
-        assert output_dim % 2 == 0
-        self.half_output_dim = int(output_dim / 2)
+        self.half_output_dim = output_dim // 2
         self.has_bias = bias
         self.act = activations.get(act)
         self.w_neigh = None
@@ -91,9 +94,10 @@ class GraphSAGEAggregator(Layer, metaclass=ABCMeta):
         """
         super().build(input_shape)
 
-    @abstractmethod
     def aggregate_neighbours(self, x_neigh):
-        pass
+        raise NotImplementedError(
+            "The GraphSAGEAggregator base class should not be directly instantiated"
+        )
 
     def call(self, x, **kwargs):
         """
@@ -378,6 +382,130 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
         # Final output is the aggregated tensor mutliplied by the weights
         from_neigh = K.dot(neigh_agg, self.w_neigh)
         return from_neigh
+
+
+class AttentionalAggregator(GraphSAGEAggregator):
+    """
+    Attentional Aggregator for GraphSAGE implemented with Keras base layer
+
+    Implements the aggregator of Veličković et al. "Graph Attention Networks" ICLR 2018
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # How can we expose these options to the user?
+        self.attn_act = LeakyReLU(0.2)
+
+    def build(self, input_shape):
+        # Build the full model if non-zero neighbours
+        self._build_full_model = input_shape[1][2] > 0
+
+        self.w_feat = self.add_weight(
+            name="w_feat",
+            shape=(input_shape[0][2], self.output_dim),
+            initializer=self._initializer,
+            trainable=True,
+        )
+        self.a_self = self.add_weight(
+            name="a_self",
+            shape=(self.output_dim, 1),
+            initializer=self._initializer,
+            trainable=True,
+        )
+
+        if self._build_full_model:
+            self.a_neigh = self.add_weight(
+                name="a_neigh",
+                shape=(self.output_dim, 1),
+                initializer=self._initializer,
+                trainable=True,
+            )
+
+        else:
+            self.a_neigh = None
+
+        if self.has_bias:
+            self.bias = self.add_weight(
+                name="bias",
+                shape=(self.output_dim,),
+                initializer="zeros",
+                trainable=True,
+            )
+        super().build(input_shape)
+
+    def create_mlp(self, x, **kwargs):
+        """
+        Create MLP on input self tensor, x[0]
+
+        Args:
+          x (List[Tensor]): Tensors giving self and neighbour features
+                x[0]: self Tensor (batch_size, head size, feature_size)
+                x[1]: neighbour Tensor (batch_size, head size, neighbours, feature_size)
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        h_out = K.dot(x[0], self.w_feat)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+        return h_out
+
+    def call(self, x, **kwargs):
+        """
+        Apply aggregator on input tensors, x
+
+        Args:
+          x (List[Tensor]): Tensors giving self and neighbour features
+                x[0]: self Tensor (batch_size, head size, feature_size)
+                x[1]: neighbour Tensor (batch_size, head size, neighbours, feature_size)
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        if not self._build_full_model:
+            return self.create_mlp(x, **kwargs)
+
+        # Calculate features for self & neighbours
+        xw_self = K.expand_dims(K.dot(x[0], self.w_feat), axis=2)
+        xw_neigh = K.dot(x[1], self.w_feat)
+
+        # Concatenate self vector to neighbour vectors
+        # Shape is (n_b, n_h, n_neigh+1, n_feat)
+        xw_all = K.concatenate([xw_self, xw_neigh], axis=2)
+
+        # Calculate attention
+        attn_self = K.dot(xw_self, self.a_self)  # (n_b, n_h, 1)
+        attn_neigh = K.dot(xw_all, self.a_neigh)  # (n_b, n_h, n_neigh+1, 1)
+
+        # Add self and neighbour attn and apply activation
+        # Note: This broadcasts to (n_b, n_h, n_neigh + 1, 1)
+        attn_u = self.attn_act(attn_self + attn_neigh)
+
+        # Attn coefficients, softmax over the neighbours
+        attn = K.softmax(attn_u, axis=2)
+
+        # Multiply attn coefficients by neighbours (and self) and aggregate
+        h_out = K.sum(attn * xw_all, axis=2)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+
+        return h_out
 
 
 class GraphSAGE:
