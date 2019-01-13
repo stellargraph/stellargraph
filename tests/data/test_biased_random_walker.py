@@ -157,7 +157,7 @@ class TestBiasedWeightedRandomWalk(object):
         seed = None
 
         with pytest.raises(ValueError):
-            # weighted is boolen which is by default False. It is True if walk has to be weighted.
+            # weighted is boolean which is by default False. It is True if walk has to be weighted.
             biasedrw.run(
                 nodes=nodes,
                 n=n,
@@ -181,6 +181,28 @@ class TestBiasedWeightedRandomWalk(object):
                 weighted="unknown",
                 edge_weight_label=None,
             )
+
+    def test_identity_unweighted_weighted_1_walks(self):
+
+        # graph with all edge weights = 1
+        g = nx.Graph()
+        edges = [(1, 2, 1), (2, 3, 1), (3, 4, 1), (4, 1, 1)]
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = g.nodes()
+        n = 4
+        length = 4
+        seed = 42
+        p = 1.0
+        q = 1.0
+
+        biasedrw = BiasedRandomWalk(g)
+        assert biasedrw.run(
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+        ) == biasedrw.run(
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=False
+        )
 
     def test_weighted_walks(self):
 
