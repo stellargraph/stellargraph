@@ -505,4 +505,9 @@ class FullBatchNodeGenerator:
         node_mask = np.ma.make_mask(node_mask)
         # reorder targets to match the node_mask order, since node_mask effectively sorts node_indices
         targets = targets[np.argsort(node_indices)]
-        return FullBatchNodeSequence(self.features, self.Aadj, node_mask, targets)
+        # Reshape y_train to (number of nodes in self.graph, number of classes)
+        N = self.Aadj.shape[0]
+        C = targets.shape[1]
+        targets_rs = np.zeros((N, C))
+        targets_rs[node_mask] = targets
+        return FullBatchNodeSequence(self.features, self.Aadj, node_mask, targets_rs)

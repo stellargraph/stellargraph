@@ -120,24 +120,18 @@ def train(
     )
     print(model.summary())
 
-    # Train model
     # Get the training data
     [X, A, node_mask_train], y_train = train_gen.__getitem__(0)
+    N = A.shape[0]
     A = A + np.eye(A.shape[0])  # Add self-loops
-    # Reshape y_train to (number of nodes, number of classes)
-    N = X.shape[0]
-    C = y_train.shape[1]
-    y_train_rs = np.zeros((N, C))
-    y_train_rs[node_mask_train] = y_train
 
     # Get the validation data
     [_, _, node_mask_val], y_val = val_gen.__getitem__(0)
-    # Reshape y_val to (number of nodes, number of classes)
-    y_val_rs = np.zeros((N, C))
-    y_val_rs[node_mask_val] = y_val
-    history = model.fit(x=[X, A], y=y_train_rs, sample_weight=node_mask_train,
+
+    # Train model
+    history = model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train,
                         batch_size=N, shuffle=False, epochs=num_epochs, verbose=2,
-                        validation_data=([X, A], y_val_rs, node_mask_val))
+                        validation_data=([X, A], y_val, node_mask_val))
     # history = model.fit_generator(
     #     train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
     # )
@@ -145,9 +139,7 @@ def train(
     # Evaluate on test set and print metrics
     # test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
     [_, _, node_mask_test], y_test = generator.flow(test_nodes, test_targets).__getitem__(0)
-    y_test_rs = np.zeros((N, C))
-    y_test_rs[node_mask_test] = y_test
-    test_metrics = model.evaluate(x=[X, A], y=y_test_rs, sample_weight=node_mask_test, batch_size=N)
+    test_metrics = model.evaluate(x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N)
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
@@ -181,7 +173,7 @@ def train(
     model.save("cora_gat_model" + save_str + ".h5")
 
     # We must also save the target encoding to convert model predictions
-    with open("cora_example_encoding" + save_str + ".pkl", "wb") as f:
+    with open("cora_gat_encoding" + save_str + ".pkl", "wb") as f:
         pickle.dump([target_encoding], f)
 
 
