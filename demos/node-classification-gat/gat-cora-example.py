@@ -42,6 +42,7 @@ import pandas as pd
 import networkx as nx
 import keras
 from keras import optimizers, losses, layers, metrics
+from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GAT
@@ -54,6 +55,7 @@ def train(
     layer_sizes,
     num_epochs=10,
     learning_rate=0.005,
+    es_patience=100,
     dropout=0.0,
     target_name="subject",
 ):
@@ -114,9 +116,9 @@ def train(
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=x_out)
     model.compile(
-        optimizer=optimizers.Adam(lr=learning_rate),# decay=0.001),
+        optimizer=optimizers.Adam(lr=learning_rate, decay=0.001),
         loss=losses.categorical_crossentropy,
-        weighted_metrics=[metrics.categorical_accuracy],
+        weighted_metrics=['acc'],
     )
     print(model.summary())
 
@@ -129,20 +131,45 @@ def train(
     [_, _, node_mask_val], y_val = val_gen.__getitem__(0)
 
     # Train model
+    # Callbacks
+    es_callback = EarlyStopping(monitor='val_weighted_acc', patience=es_patience)
+    tb_callback = TensorBoard(batch_size=N)
+    mc_callback = ModelCheckpoint('logs/best_model.h5',
+                                  monitor='val_weighted_acc',
+                                  save_best_only=True,
+                                  save_weights_only=True)
+
     history = model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train,
                         batch_size=N, shuffle=False, epochs=num_epochs, verbose=2,
-                        validation_data=([X, A], y_val, node_mask_val))
+                        validation_data=([X, A], y_val, node_mask_val),
+                        callbacks=[es_callback, tb_callback, mc_callback])
     # history = model.fit_generator(
     #     train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
     # )
+
+    # Load best model
+    model.load_weights('logs/best_model.h5')
+
+    # Evaluate on validation set and print metrics
+    val_metrics = model.evaluate(x=[X, A], y=y_val, sample_weight=node_mask_val, batch_size=N)
+    print("\nBest model's Validation Set Metrics:")
+    for name, val in zip(model.metrics_names, val_metrics):
+        print("\t{}: {:0.4f}".format(name, val))
 
     # Evaluate on test set and print metrics
     # test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
     [_, _, node_mask_test], y_test = generator.flow(test_nodes, test_targets).__getitem__(0)
     test_metrics = model.evaluate(x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N)
-    print("\nTest Set Metrics:")
+    print("\nBest model's Test Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
+
+    # # Evaluate on all nodes and print metrics
+    # [_, _, node_mask_all], y_all = generator.flow(node_ids, node_targets).__getitem__(0)
+    # all_metrics = model.evaluate(x=[X, A], y=y_all, sample_weight=node_mask_all, batch_size=N)
+    # print("\nBest model's All-node Metrics:")
+    # for name, val in zip(model.metrics_names, all_metrics):
+    #     print("\t{}: {:0.4f}".format(name, val))
 
     # Get predictions for all nodes
     # all_predictions = model.predict_generator(generator.flow(node_ids))
@@ -160,7 +187,7 @@ def train(
             )
         ]
     )
-    print("All-node accuracy: {:3f}".format(accuracy))
+    print("All-node accuracy: {:0.4f}".format(accuracy))
 
     # TODO: extract the GAT embeddings from x_out, and save/plot them
 
@@ -271,6 +298,13 @@ if __name__ == "__main__":
         help="Initial learning rate for model training",
     )
     parser.add_argument(
+        "-p",
+        "--patience",
+        type=int,
+        default=100,
+        help="Patience for early stopping",
+    )
+    parser.add_argument(
         "-s",
         "--layer_sizes",
         type=int,
@@ -331,6 +365,7 @@ if __name__ == "__main__":
             args.layer_sizes,
             args.epochs,
             args.learningrate,
+            args.patience,
             args.dropout,
         )
     else:
