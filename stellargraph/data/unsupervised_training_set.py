@@ -14,12 +14,13 @@ import random
 import os
 from collections import defaultdict
 
-from stellargraph.core.graph import StellarGraph 
 from stellargraph.core.schema import GraphSchema
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.core.utils import is_real_iterable
 import stellargraph as sg
 
+
+# Base class for BiasedRandomWalk class. Copied from explorer.py. Did not modify.
 
 
 class GraphWalk(object):
@@ -94,6 +95,8 @@ class GraphWalk(object):
         """
 
 
+## copied this method from explorer.py. No modification done.
+
 
 def naive_weighted_choices(rs, weights):
     """
@@ -129,6 +132,11 @@ def naive_weighted_choices(rs, weights):
     return idx
 
 
+# Modiefied the run method in the following way. For each walk, (target, context) +ive and -ive samples are accumulated after each walk.
+# If a batch size for samples is specified, the method returns the (target,context) pairs of the batch size. In the next call of the run method, the next batch is returned and so on.
+# If no batch size is specified, all the (target,context) pairs  generated for all the walks are returned.
+
+
 class BiasedRandomWalk(GraphWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
@@ -137,14 +145,22 @@ class BiasedRandomWalk(GraphWalk):
 
     # calculate the appropriate unnormalised transition
     # probability, given the history of the walk
-    def transition_probability(self,
-                    nn, current_node, previous_node, previous_node_neighbours, ip,iq, weighted, edge_weight_label
-            ):
+    def transition_probability(
+        self,
+        nn,
+        current_node,
+        previous_node,
+        previous_node_neighbours,
+        ip,
+        iq,
+        weighted,
+        edge_weight_label,
+    ):
 
         if weighted:
             weight_cn = self.graph[current_node][nn][0].get(edge_weight_label)
         else:
-            weight_cn = 1.
+            weight_cn = 1.0
 
             if nn == previous_node:  # d_tx = 0
                 return ip * weight_cn
@@ -163,7 +179,7 @@ class BiasedRandomWalk(GraphWalk):
         seed=None,
         weighted=False,
         edge_weight_label="weight",
-        batch_size = None
+        sample_size=None,
     ):
 
         """
@@ -177,7 +193,9 @@ class BiasedRandomWalk(GraphWalk):
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
             weighted: <False or True> Indicates whether the walk is unweighted or weighted
-            edge_weight_label: <string> Label of the edge weight property.
+            edge_weight_label: <string> Label of the edge weight property
+            sample_size: <int> the number of +ive and -ive training (target, context) pairs to return
+
 
         Returns:
             train_edge_ids, train_edge_labels
@@ -192,6 +210,7 @@ class BiasedRandomWalk(GraphWalk):
             seed=seed,
             weighted=weighted,
             edge_weight_label=edge_weight_label,
+            sample_size=sample_size,
         )
 
         if seed:
@@ -245,10 +264,9 @@ class BiasedRandomWalk(GraphWalk):
                             )
                         )
 
-
         positive_pairs = list()
         negative_pairs = list()
-        
+
         positive_samples_counter = 0
         negative_samples_counter = 0
 
@@ -261,17 +279,19 @@ class BiasedRandomWalk(GraphWalk):
         ip = 1.0 / p
         iq = 1.0 / q
 
-        print ("walking...")
+        print("walking...")
         walks = []
         for node in nodes:  # iterate over root nodes
-            for walk_number in range(n):  # generate n walks per root node. The walk starts at the root.
+            for walk_number in range(
+                n
+            ):  # generate n walks per root node. The walk starts at the root.
                 walk = [node]
 
                 neighbours = self.neighbors(self.graph, node)
 
                 previous_node = node
                 previous_node_neighbours = neighbours
-                
+
                 if neighbours:
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
@@ -286,7 +306,14 @@ class BiasedRandomWalk(GraphWalk):
                             rs,
                             (
                                 self.transition_probability(
-                                    nn, current_node, previous_node, previous_node_neighbours, ip, iq, weighted, edge_weight_label
+                                    nn,
+                                    current_node,
+                                    previous_node,
+                                    previous_node_neighbours,
+                                    ip,
+                                    iq,
+                                    weighted,
+                                    edge_weight_label,
                                 )
                                 for nn in neighbours
                             ),
@@ -295,9 +322,9 @@ class BiasedRandomWalk(GraphWalk):
                         previous_node = current_node
                         previous_node_neighbours = neighbours
                         current_node = neighbours[choice]
-                        
+
                 print(walk)
-                if (len(walk) >1):
+                if len(walk) > 1:
                     target = walk[0]
                     context_window = walk[1:]
 
@@ -310,25 +337,34 @@ class BiasedRandomWalk(GraphWalk):
                             # Negative samples are contexts not in the current walk with respect to the current target(start node of the walk).
                             while negative_samples_counter < positive_samples_counter:
                                 random_sample = random.choices(
-                                        all_nodes, weights=sampling_distribution
-                                        )
+                                    all_nodes, weights=sampling_distribution
+                                )
                                 if not random_sample in context_window:
                                     negative_pairs.append((target, *random_sample))
-                                    negative_samples_counter = negative_samples_counter + 1
+                                    negative_samples_counter = (
+                                        negative_samples_counter + 1
+                                    )
 
                         # If the batch_size number of samples are accumulated, yield.
-                        if positive_samples_counter == batch_size:
-                            print("Sampled {} positive edges".format(len(positive_pairs)))
-                            print("Sampled {} negative edges".format(len(negative_pairs)))
-                            positive_samples_counter = 0
-                            negative_samples_counter = 0
+                        if positive_samples_counter == sample_size:
 
                             all_pairs = positive_pairs + negative_pairs
-                            all_targets = [1] * len(positive_pairs) + [0] * len(negative_pairs)
+                            all_targets = [1] * len(positive_pairs) + [0] * len(
+                                negative_pairs
+                            )
                             edge_ids_labels = list(zip(all_pairs, all_targets))
-                            #random.shuffle(edge_ids_labels)
+                            random.shuffle(edge_ids_labels)
+
+                            print(
+                                "Sampled {} positive edges".format(len(positive_pairs))
+                            )
+                            print(
+                                "Sampled {} negative edges".format(len(negative_pairs))
+                            )
                             positive_pairs.clear()
                             negative_pairs.clear()
+                            positive_samples_counter = 0
+                            negative_samples_counter = 0
 
                             yield edge_ids_labels
 
@@ -337,13 +373,12 @@ class BiasedRandomWalk(GraphWalk):
         all_pairs = positive_pairs + negative_pairs
         all_targets = [1] * len(positive_pairs) + [0] * len(negative_pairs)
         edge_ids_labels = list(zip(all_pairs, all_targets))
-        all_edge_ids, all_edge_labels = zip(*edge_ids_labels) 
-        #random.shuffle(edge_ids_labels)
-        print ("all walks done!")
-        yield walks
+        random.shuffle(edge_ids_labels)
+        print("all walks done!")
+        yield edge_ids_labels
 
     def _check_parameter_values(
-        self, nodes, n, p, q, length, seed, weighted, edge_weight_label
+        self, nodes, n, p, q, length, seed, weighted, edge_weight_label, sample_size
     ):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
@@ -359,6 +394,7 @@ class BiasedRandomWalk(GraphWalk):
             seed: <int> Random number generator seed.
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
             edge_weight_label: <string> Label of the edge weight property.
+            sample_size: <int> the number of +ive and -ive training (target, context) pairs to return.
 
         """
         if nodes is None:
@@ -444,88 +480,81 @@ class BiasedRandomWalk(GraphWalk):
                 )
             )
 
+        if sample_size is not None:
+            if sample_size < 0:
+                raise ValueError(
+                    "({}) The training sample size, sample_size, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
+            if type(sample_size) != int:
+                raise ValueError(
+                    "({}) The training sample size, sample_size, should be positive integer or None.".format(
+                        type(self).__name__
+                    )
+                )
 
 
 ##############################################################################
 
+
 def main():
     print("Testing unsupervised GraphSAGE")
 
-    # read/create a StellarGraph
-    g = nx.Graph()
-    edges = [
-    (1, 3),
-    (1, 4),
-    (3, 6),
-    (4, 7),
-    (4, 8),
-    (2, 5),
-    (5, 9),
-    (5, 10),
-    (1, 1),
-    (3, 3),
-    (6, 6),
-    (4, 4),
-    (7, 7),
-    (8, 8),
-    (2, 2),
-    (5, 5),
-    (9, 9),
-    ]
-    g.add_edges_from(edges)
-    
-    
+    # read/create a StellarGraph. using cora dataset for testing
+
     data_dir = "~/data/cora"
-    
-    edgelist = pd.read_table(os.path.join(data_dir, "cora.cites"), header=None, names=["source", "target"])
+
+    edgelist = pd.read_table(
+        os.path.join(data_dir, "cora.cites"), header=None, names=["source", "target"]
+    )
     edgelist["label"] = "cites"  # set the edge type
 
-    Gnx = nx.from_pandas_edgelist(edgelist, edge_attr="label")    
-    
+    Gnx = nx.from_pandas_edgelist(edgelist, edge_attr="label")
+
     nx.set_node_attributes(Gnx, "paper", "label")
-    
+
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
-    column_names =  feature_names + ["subject"]
-    node_data = pd.read_table(os.path.join(data_dir, "cora.content"), header=None, names=column_names)
-    
+    column_names = feature_names + ["subject"]
+    node_data = pd.read_table(
+        os.path.join(data_dir, "cora.content"), header=None, names=column_names
+    )
+
     node_features = node_data[feature_names]
 
     G = sg.StellarGraph(Gnx, node_features=node_features)
 
     rw = BiasedRandomWalk(G)
 
-    walks = rw.run(nodes=G.nodes(), # root nodes
-               length=5,  # maximum length of a random walk
-               n=1,        # number of random walks per root node 
-               p=0.5,       # Defines (unormalised) probability, 1/p, of returning to source node
-               q=2.0,        # Defines (unormalised) probability, 1/q, for moving away from source node
-               weighted = False,
-               seed=42,
-               batch_size = 5
-              )
+    walks = rw.run(
+        nodes=G.nodes(),  # root nodes
+        length=5,  # maximum length of a random walk
+        n=1,  # number of random walks per root node
+        p=0.5,  # Defines (unormalised) probability, 1/p, of returning to source node
+        q=2.0,  # Defines (unormalised) probability, 1/q, for moving away from source node
+        weighted=False,
+        seed=42,
+        sample_size=500,
+    )
 
-    training_samples = next(walks)    
-    
-    
-    print(*training_samples)
-   
-    
-    ####### The GraphSAGELinkGenerator    
-    epochs = 5
+    training_samples = next(walks)
+    edge_ids_train, edge_labels_train = [
+        [z[i] for z in training_samples] for i in (0, 1)
+    ]
+
+    ####### The GraphSAGELinkGenerator
     num_samples = [10, 5]
-    
-    edge_ids_train,edge_labels_train = [[z[i] for z in training_samples] for i in (0,1)]
+    batch_size = 50
+    train_gen = GraphSAGELinkGenerator(G, batch_size, num_samples).flow(
+        edge_ids_train, edge_labels_train
+    )
 
-    train_gen = GraphSAGELinkGenerator(G, batch_size, num_samples).flow(edge_ids_train,edge_labels_train)
 
-  #  train_gen = GraphSAGELinkGenerator(G, batch_size, num_samples).flow(ut)
-  #  ut.next_batch(G)
+#  train_gen = GraphSAGELinkGenerator(G, batch_size, num_samples).flow(ut)
+#  ut.next_batch(G)
 
-  #  train_gen_2 = GraphSAGELinkGenerator(G, batch_size, num_samples).flow(ut)
- 
-    
+#  train_gen_2 = GraphSAGELinkGenerator(G, batch_size, num_samples).flow(ut)
+
+
 if __name__ == "__main__":
-    main()    
-    
-    
-    
+    main()
