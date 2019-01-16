@@ -452,17 +452,21 @@ class HinSAGENodeGenerator:
 
 
 class FullBatchNodeSequence(Sequence):
-    def __init__(self, features, A, node_indices, targets):
+    def __init__(self, features, A, targets=None, sample_weight=None):
+        # Check targets is iterable & has the correct length
+        if not is_real_iterable(targets):
+            raise TypeError("Targets must be None or an iterable or a numpy array ")
+
         self.A = A
         self.features = features
-        self.node_ind = node_indices
+        self.sample_weight = sample_weight
         self.targets = targets
 
     def __len__(self):
         return 1
 
     def __getitem__(self, batch_num):
-        return [self.features, self.A, self.node_ind], self.targets
+        return [self.features, self.A], self.targets, self.sample_weight
 
 
 class FullBatchNodeGenerator:
@@ -503,16 +507,17 @@ class FullBatchNodeGenerator:
         node_mask = np.zeros(len(self.node_list), dtype=int)
         node_mask[node_indices] = 1
         node_mask = np.ma.make_mask(node_mask)
-        # # reorder targets to match the node_mask order, since node_mask effectively sorts node_indices
-        # targets = targets[np.argsort(node_indices)]
-        # # Reshape targets to (number of nodes in self.graph, number of classes)
-        # N = self.Aadj.shape[0]
-        # C = targets.shape[1]
-        # y = np.zeros((N, C))
-        # y[node_mask] = targets
 
         # Reshape targets to (number of nodes in self.graph, number of classes)
         if targets is not None:
+            # # reorder targets to match the node_mask order, since node_mask effectively sorts node_indices
+            # targets = targets[np.argsort(node_indices)]
+            # # Reshape targets to (number of nodes in self.graph, number of classes)
+            # N = self.Aadj.shape[0]
+            # C = targets.shape[1]
+            # y = np.zeros((N, C))
+            # y[node_mask] = targets
+
             N = self.Aadj.shape[0]
             C = targets.shape[1]
             y = np.zeros((N, C))
@@ -521,4 +526,4 @@ class FullBatchNodeGenerator:
         else:
             y = None
 
-        return FullBatchNodeSequence(self.features, self.Aadj, node_mask, y)
+        return FullBatchNodeSequence(self.features, self.Aadj, y, node_mask)

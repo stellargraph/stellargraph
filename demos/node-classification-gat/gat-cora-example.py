@@ -123,12 +123,12 @@ def train(
     print(model.summary())
 
     # Get the training data
-    [X, A, node_mask_train], y_train = train_gen.__getitem__(0)
+    [X, A], y_train, node_mask_train = train_gen.__getitem__(0)
     N = A.shape[0]
     A = A + np.eye(A.shape[0])  # Add self-loops
 
     # Get the validation data
-    [_, _, node_mask_val], y_val = val_gen.__getitem__(0)
+    [_, _], y_val, node_mask_val = val_gen.__getitem__(0)
 
     # Train model
     # Callbacks
@@ -158,7 +158,7 @@ def train(
 
     # Evaluate on test set and print metrics
     # test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
-    [_, _, node_mask_test], y_test = generator.flow(test_nodes, test_targets).__getitem__(0)
+    [_, _], y_test, node_mask_test = generator.flow(test_nodes, test_targets).__getitem__(0)
     test_metrics = model.evaluate(x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N)
     print("\nBest model's Test Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
