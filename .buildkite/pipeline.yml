@@ -10,6 +10,7 @@ steps:
           - GIT_BRANCH=$BUILDKITE_BRANCH
           - BUILDKITE_BUILD_NUMBER=${BUILDKITE_BUILD_NUMBER?}
           - BUILDKITE_BRANCH=${BUILDKITE_BRANCH?}
+          - AWS_LOGS_BUCKET=${AWS_LOGS_BUCKET}
 
   - label: "style"
     plugins:
