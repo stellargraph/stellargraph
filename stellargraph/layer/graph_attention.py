@@ -148,6 +148,9 @@ class GraphAttention(Layer):
         """
         X = inputs[0]  # Node features (N x F)
         A = inputs[1]  # Adjacency matrix (N x N)
+        # Convert A to dense tensor
+        if K.is_sparse(A):
+            A = tf.sparse_tensor_to_dense(A, validate_indices=False)
 
         outputs = []
         for head in range(self.attn_heads):
@@ -318,7 +321,7 @@ class GAT:
         F = self.generator.features.shape[1]
 
         X_in = Input(shape=(F,))
-        A_in = Input(shape=(N,))
+        A_in = Input(shape=(N,), sparse=True)   # , sparse=True)?
         # X_in = Input(shape=(N,F))
         # A_in = Input(shape=(N,N))
         # node_mask = Input(shape=(None,), dtype='int64')
