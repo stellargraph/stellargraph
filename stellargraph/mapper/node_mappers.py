@@ -475,7 +475,7 @@ class FullBatchNodeSequence(Sequence):
 
 
 class FullBatchNodeGenerator:
-    def __init__(self, G, schema=None, seed=None, name=None):
+    def __init__(self, G, schema=None, seed=None, name=None, *args):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
