@@ -454,8 +454,8 @@ class HinSAGENodeGenerator:
 class FullBatchNodeSequence(Sequence):
     def __init__(self, features, A, targets=None, sample_weight=None):
         # Check targets is iterable & has the correct length
-        if not is_real_iterable(targets):
-            raise TypeError("Targets must be None or an iterable or a numpy array ")
+        if not is_real_iterable(targets) and not targets is None:
+            raise TypeError("Targets must be an iterable or None")
 
         self.A = A
         self.features = features
