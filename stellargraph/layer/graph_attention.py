@@ -329,9 +329,7 @@ class GAT:
         F = self.generator.features.shape[1]
 
         X_in = Input(shape=(F,))
-        A_in = Input(
-            shape=(N,), sparse=True
-        )  # , sparse=True) makes model.fit_generator() method work
+        A_in = Input(shape=(N,), sparse=True)  # , sparse=True) makes model.fit_generator() method work
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
