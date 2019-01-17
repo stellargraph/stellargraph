@@ -148,7 +148,7 @@ class GraphAttention(Layer):
         """
         X = inputs[0]  # Node features (N x F)
         A = inputs[1]  # Adjacency matrix (N x N)
-        # Convert A to dense tensor
+        # Convert A to dense tensor - needed for the mask to work
         if K.is_sparse(A):
             A = tf.sparse_tensor_to_dense(A, validate_indices=False)
 
@@ -280,19 +280,9 @@ class GAT:
 
         assert isinstance(x_inp, list), \
             "input must be a list, got {} instead".format(type(x_inp))
-        # assert len(x_inp) == 3, \
-        #     "input should contain 3 elements (features, adjacency matrix, and node mask), got {} elements".format(len(x_inp))
+
         x = x_inp[0]
         A = x_inp[1]
-
-        # # When using generators (and generator methods to fit and predict, e.g., .fit_generator()),
-        # # x.shape and A.shape contain 3 elements instead of 2, so need to reshape x and A for
-        # # the gat layers to work
-        # if len(x.shape) == 3:
-        #     F = x.shape[-1]
-        #     N = A.shape[-1]
-        #     x = Reshape((F,))(x)
-        #     A = Reshape((N,))(A)
 
         for layer in self._layers:
             x = layer([x, A])
@@ -321,11 +311,7 @@ class GAT:
         F = self.generator.features.shape[1]
 
         X_in = Input(shape=(F,))
-        A_in = Input(shape=(N,), sparse=True)   # , sparse=True)?
-        # X_in = Input(shape=(N,F))
-        # A_in = Input(shape=(N,N))
-        # node_mask = Input(shape=(None,), dtype='int64')
-        # x_inp = [X_in, A_in, node_mask]
+        A_in = Input(shape=(N,), sparse=True)   # , sparse=True) makes model.fit_generator() method work
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
@@ -341,7 +327,7 @@ class GAT:
         #         a, b = x
         #         # return K.expand_dims(K.gather(a[0], b[0]), axis=0)
         #         # return K.expand_dims(K.gather(a, b[0]), axis=1)
-        #         return K.gather(a, b)
+        #         return K.gather(a, b[0])
         #         # return tf.boolean_mask(a, b[0])
 
         # x_out = Select()([x_out, node_mask])
