@@ -39,6 +39,7 @@ import argparse
 import pickle
 import numpy as np
 import pandas as pd
+from scipy import sparse
 import networkx as nx
 import keras
 from keras import optimizers, losses, layers, metrics
@@ -52,6 +53,7 @@ from stellargraph.mapper import FullBatchNodeGenerator
 def train(
     edgelist,
     node_data,
+    attn_heads,
     layer_sizes,
     num_epochs=10,
     learning_rate=0.005,
@@ -65,6 +67,7 @@ def train(
     Args:
         edgelist: Graph edgelist
         node_data: Feature and target data for nodes
+        attn_heads: Number of attention heads in GAT layers
         layer_sizes: A list of number of hidden nodes in each layer
         num_epochs: Number of epochs to train the model
         learning_rate: Initial Learning rate
@@ -104,7 +107,7 @@ def train(
 
     # GAT model
     gat = GAT(
-        layer_sizes=layer_sizes, attn_heads=8, generator=train_gen, bias=True, dropout=dropout, activations=["elu", "elu"],
+        layer_sizes=layer_sizes, attn_heads=attn_heads, generator=train_gen, bias=True, dropout=dropout, activations=["elu", "elu"],
         normalize=None
     )
     # Expose the input and output tensors of the GAT model:
@@ -122,58 +125,65 @@ def train(
     )
     print(model.summary())
 
-    # Get the training data
-    [X, A], y_train, node_mask_train = train_gen.__getitem__(0)
-    N = A.shape[0]
-    A = A + np.eye(A.shape[0])  # Add self-loops
-
-    # Get the validation data
-    [_, _], y_val, node_mask_val = val_gen.__getitem__(0)
-
     # Train model
     # Callbacks
     es_callback = EarlyStopping(monitor='val_weighted_acc', patience=es_patience)
-    tb_callback = TensorBoard(batch_size=N)
     mc_callback = ModelCheckpoint('logs/best_model.h5',
                                   monitor='val_weighted_acc',
                                   save_best_only=True,
                                   save_weights_only=True)
 
-    history = model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train,
+    if args.interface == "fit":
+        print("\nUsing model.fit() to train the model\n")
+        # Get the training data
+        [X, A], y_train, node_mask_train = train_gen.__getitem__(0)
+        N = A.shape[0]
+        # A = sparse.csr_matrix(A + np.eye(A.shape[0]))  # Add self-loops
+
+        # Get the validation data
+        [_, _], y_val, node_mask_val = val_gen.__getitem__(0)
+
+        history = model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train,
                         batch_size=N, shuffle=False, epochs=num_epochs, verbose=2,
                         validation_data=([X, A], y_val, node_mask_val),
-                        callbacks=[es_callback, tb_callback, mc_callback])
-    # history = model.fit_generator(
-    #     train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
-    # )
+                        callbacks=[es_callback, mc_callback]
+                        )
+    else:
+        print("\nUsing model.fit_generator() to train the model\n")
+        history = model.fit_generator(
+            train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False,
+            callbacks=[es_callback, mc_callback]
+    )
 
     # Load best model
     model.load_weights('logs/best_model.h5')
 
     # Evaluate on validation set and print metrics
-    val_metrics = model.evaluate(x=[X, A], y=y_val, sample_weight=node_mask_val, batch_size=N)
+    if args.interface == "fit":
+        val_metrics = model.evaluate(x=[X, A], y=y_val, sample_weight=node_mask_val, batch_size=N)
+    else:
+        val_metrics = model.evaluate_generator(val_gen)
+
     print("\nBest model's Validation Set Metrics:")
     for name, val in zip(model.metrics_names, val_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
     # Evaluate on test set and print metrics
-    # test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
-    [_, _], y_test, node_mask_test = generator.flow(test_nodes, test_targets).__getitem__(0)
-    test_metrics = model.evaluate(x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N)
+    if args.interface == "fit":
+        [_, _], y_test, node_mask_test = generator.flow(test_nodes, test_targets).__getitem__(0)
+        test_metrics = model.evaluate(x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N)
+    else:
+        test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
+
     print("\nBest model's Test Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
-    # # Evaluate on all nodes and print metrics
-    # [_, _, node_mask_all], y_all = generator.flow(node_ids, node_targets).__getitem__(0)
-    # all_metrics = model.evaluate(x=[X, A], y=y_all, sample_weight=node_mask_all, batch_size=N)
-    # print("\nBest model's All-node Metrics:")
-    # for name, val in zip(model.metrics_names, all_metrics):
-    #     print("\t{}: {:0.4f}".format(name, val))
-
     # Get predictions for all nodes
-    # all_predictions = model.predict_generator(generator.flow(node_ids))
-    all_predictions = model.predict(x=[X, A], batch_size=N)
+    if args.interface == "fit":
+        all_predictions = model.predict(x=[X, A], batch_size=N)
+    else:
+        all_predictions = model.predict_generator(generator.flow(node_ids))
 
     # Turn predictions back into the original categories
     node_predictions = pd.DataFrame(
@@ -187,12 +197,13 @@ def train(
             )
         ]
     )
-    print("All-node accuracy: {:0.4f}".format(accuracy))
+    print("\nAll-node accuracy: {:0.4f}".format(accuracy))
 
     # TODO: extract the GAT embeddings from x_out, and save/plot them
 
     # Save the trained model
-    save_str = "_l{}_d{}_r{}".format(
+    save_str = "_h{}_l{}_d{}_r{}".format(
+        attn_heads,
         "_".join([str(x) for x in layer_sizes]),
         dropout,
         learning_rate,
@@ -203,65 +214,8 @@ def train(
     with open("cora_gat_encoding" + save_str + ".pkl", "wb") as f:
         pickle.dump([target_encoding], f)
 
-
-def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
-    """
-    Load the serialized model and evaluate on all nodes in the graph.
-
-    Args:
-        G: NetworkX graph file
-        target_converter: Class to give numeric representations of node targets
-        feature_converter: CLass to give numeric representations of the node features
-        model_file: Location of Keras model to load
-        batch_size: Size of batch for inference
-    """
-    # Extract the feature data. These are the feature vectors that the Keras model will use as input.
-    # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    node_features = node_data[feature_names]
-
-    # Create graph from edgelist and set node features and node type
-    Gnx = nx.from_pandas_edgelist(edgelist)
-
-    # We must also save the target encoding to convert model predictions
-    encoder_file = model_file.replace(
-        "cora_example_model", "cora_example_encoding"
-    ).replace(".h5", ".pkl")
-    with open(encoder_file, "rb") as f:
-        target_encoding = pickle.load(f)[0]
-
-    # Endode targets with pre-trained encoder
-    node_targets = target_encoding.transform(
-        node_data[[target_name]].to_dict("records")
-    )
-    node_ids = node_data.index
-
-    # Convert to StellarGraph and prepare for ML
-    G = sg.StellarGraph(Gnx, node_features=node_features)
-
-    # Load Keras model
-    model = keras.models.load_model(
-        model_file, custom_objects={"MeanAggregator": MeanAggregator}
-    )
-    print("Loaded model:")
-    model.summary()
-
-    # Get required samples from model
-    # TODO: Can we move this to the library?
-    num_samples = [
-        int(model.input_shape[ii + 1][1] / model.input_shape[ii][1])
-        for ii in range(len(model.input_shape) - 1)
-    ]
-
-    # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
-    all_gen = generator.flow(node_ids, node_targets)
-
-    # Evaluate and print metrics
-    all_metrics = model.evaluate_generator(all_gen)
-
-    print("\nAll-node Evaluation:")
-    for name, val in zip(model.metrics_names, all_metrics):
-        print("\t{}: {:0.4f}".format(name, val))
+def test():
+    raise NotImplemented
 
 
 if __name__ == "__main__":
@@ -305,6 +259,13 @@ if __name__ == "__main__":
         help="Patience for early stopping",
     )
     parser.add_argument(
+        "-a",
+        "--attn_heads",
+        type=int,
+        default=1,
+        help="Number of attention heads",
+    )
+    parser.add_argument(
         "-s",
         "--layer_sizes",
         type=int,
@@ -330,8 +291,8 @@ if __name__ == "__main__":
         "-i",
         "--interface",
         type=str,
-        default="fit",
-        help="Defines which method is used for model training (.fit or .fit_generator)"
+        default="fit_generator",
+        help="Defines which method is used for model training (.fit() or .fit_generator())"
     )
     args, cmdline_args = parser.parse_known_args()
 
@@ -362,6 +323,7 @@ if __name__ == "__main__":
         train(
             edgelist,
             node_data,
+            args.attn_heads,
             args.layer_sizes,
             args.epochs,
             args.learningrate,
@@ -369,4 +331,4 @@ if __name__ == "__main__":
             args.dropout,
         )
     else:
-        test(edgelist, node_data, args.checkpoint, args.batch_size)
+        test()
