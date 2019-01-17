@@ -92,7 +92,12 @@ def train(
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
-        node_ids, node_targets, train_size=140, test_size=None, stratify=node_targets, random_state=55232
+        node_ids,
+        node_targets,
+        train_size=140,
+        test_size=None,
+        stratify=node_targets,
+        random_state=55232,
     )
 
     # Split test set into test and validation
@@ -107,8 +112,13 @@ def train(
 
     # GAT model
     gat = GAT(
-        layer_sizes=layer_sizes, attn_heads=attn_heads, generator=train_gen, bias=True, dropout=dropout, activations=["elu", "elu"],
-        normalize=None
+        layer_sizes=layer_sizes,
+        attn_heads=attn_heads,
+        generator=train_gen,
+        bias=True,
+        dropout=dropout,
+        activations=["elu", "elu"],
+        normalize=None,
     )
     # Expose the input and output tensors of the GAT model:
     x_inp, x_out = gat.node_model(flatten_output=False)
@@ -121,17 +131,19 @@ def train(
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate, decay=0.001),
         loss=losses.categorical_crossentropy,
-        weighted_metrics=['acc'],
+        weighted_metrics=["acc"],
     )
     print(model.summary())
 
     # Train model
     # Callbacks
-    es_callback = EarlyStopping(monitor='val_weighted_acc', patience=es_patience)
-    mc_callback = ModelCheckpoint('logs/best_model.h5',
-                                  monitor='val_weighted_acc',
-                                  save_best_only=True,
-                                  save_weights_only=True)
+    es_callback = EarlyStopping(monitor="val_weighted_acc", patience=es_patience)
+    mc_callback = ModelCheckpoint(
+        "logs/best_model.h5",
+        monitor="val_weighted_acc",
+        save_best_only=True,
+        save_weights_only=True,
+    )
 
     if args.interface == "fit":
         print("\nUsing model.fit() to train the model\n")
@@ -143,24 +155,36 @@ def train(
         # Get the validation data
         [_, _], y_val, node_mask_val = val_gen.__getitem__(0)
 
-        history = model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train,
-                        batch_size=N, shuffle=False, epochs=num_epochs, verbose=2,
-                        validation_data=([X, A], y_val, node_mask_val),
-                        callbacks=[es_callback, mc_callback]
-                        )
+        history = model.fit(
+            x=[X, A],
+            y=y_train,
+            sample_weight=node_mask_train,
+            batch_size=N,
+            shuffle=False,
+            epochs=num_epochs,
+            verbose=2,
+            validation_data=([X, A], y_val, node_mask_val),
+            callbacks=[es_callback, mc_callback],
+        )
     else:
         print("\nUsing model.fit_generator() to train the model\n")
         history = model.fit_generator(
-            train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False,
-            callbacks=[es_callback, mc_callback]
-    )
+            train_gen,
+            epochs=num_epochs,
+            validation_data=val_gen,
+            verbose=2,
+            shuffle=False,
+            callbacks=[es_callback, mc_callback],
+        )
 
     # Load best model
-    model.load_weights('logs/best_model.h5')
+    model.load_weights("logs/best_model.h5")
 
     # Evaluate on validation set and print metrics
     if args.interface == "fit":
-        val_metrics = model.evaluate(x=[X, A], y=y_val, sample_weight=node_mask_val, batch_size=N)
+        val_metrics = model.evaluate(
+            x=[X, A], y=y_val, sample_weight=node_mask_val, batch_size=N
+        )
     else:
         val_metrics = model.evaluate_generator(val_gen)
 
@@ -170,10 +194,16 @@ def train(
 
     # Evaluate on test set and print metrics
     if args.interface == "fit":
-        [_, _], y_test, node_mask_test = generator.flow(test_nodes, test_targets).__getitem__(0)
-        test_metrics = model.evaluate(x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N)
+        [_, _], y_test, node_mask_test = generator.flow(
+            test_nodes, test_targets
+        ).__getitem__(0)
+        test_metrics = model.evaluate(
+            x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N
+        )
     else:
-        test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
+        test_metrics = model.evaluate_generator(
+            generator.flow(test_nodes, test_targets)
+        )
 
     print("\nBest model's Test Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
@@ -203,16 +233,14 @@ def train(
 
     # Save the trained model
     save_str = "_h{}_l{}_d{}_r{}".format(
-        attn_heads,
-        "_".join([str(x) for x in layer_sizes]),
-        dropout,
-        learning_rate,
+        attn_heads, "_".join([str(x) for x in layer_sizes]), dropout, learning_rate
     )
     model.save("cora_gat_model" + save_str + ".h5")
 
     # We must also save the target encoding to convert model predictions
     with open("cora_gat_encoding" + save_str + ".pkl", "wb") as f:
         pickle.dump([target_encoding], f)
+
 
 def test():
     raise NotImplemented
@@ -241,7 +269,7 @@ if __name__ == "__main__":
         "-d",
         "--dropout",
         type=float,
-        default=0.3,
+        default=0.5,
         help="Dropout rate for the GAT model, between 0.0 and 1.0",
     )
     parser.add_argument(
@@ -252,18 +280,10 @@ if __name__ == "__main__":
         help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-p",
-        "--patience",
-        type=int,
-        default=100,
-        help="Patience for early stopping",
+        "-p", "--patience", type=int, default=100, help="Patience for early stopping"
     )
     parser.add_argument(
-        "-a",
-        "--attn_heads",
-        type=int,
-        default=1,
-        help="Number of attention heads",
+        "-a", "--attn_heads", type=int, default=1, help="Number of attention heads"
     )
     parser.add_argument(
         "-s",
@@ -292,7 +312,7 @@ if __name__ == "__main__":
         "--interface",
         type=str,
         default="fit_generator",
-        help="Defines which method is used for model training (.fit() or .fit_generator())"
+        help="Defines which method is used for model training (.fit() or .fit_generator())",
     )
     args, cmdline_args = parser.parse_known_args()
 

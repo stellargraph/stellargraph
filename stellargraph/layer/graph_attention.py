@@ -3,10 +3,7 @@
 """
 Definition of Graph Attention Network (GAT) layer and GAT class that is a stack of GAT layers
 """
-__all__ = [
-    "GraphAttention",
-    "GAT",
-]
+__all__ = ["GraphAttention", "GAT"]
 
 from keras import activations, constraints, initializers, regularizers
 from keras import backend as K
@@ -14,28 +11,32 @@ from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 import numpy as np
 import tensorflow as tf
 
+
 class GraphAttention(Layer):
     """
     GAT layer, implementation taken from https://github.com/danielegrattarola/keras-gat
     """
-    def __init__(self,
-                 F_,
-                 attn_heads=1,
-                 attn_heads_reduction='concat',  # {'concat', 'average'}
-                 dropout_rate=0.5,
-                 activation='relu',
-                 use_bias=True,
-                 kernel_initializer='glorot_uniform',
-                 bias_initializer='zeros',
-                 attn_kernel_initializer='glorot_uniform',
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
-                 attn_kernel_regularizer=None,
-                 activity_regularizer=None,
-                 kernel_constraint=None,
-                 bias_constraint=None,
-                 attn_kernel_constraint=None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        F_,
+        attn_heads=1,
+        attn_heads_reduction="concat",  # {'concat', 'average'}
+        dropout_rate=0.5,
+        activation="relu",
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        attn_kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        attn_kernel_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        attn_kernel_constraint=None,
+        **kwargs
+    ):
         """
 
         Args:
@@ -59,8 +60,8 @@ class GraphAttention(Layer):
             **kwargs:
         """
 
-        if attn_heads_reduction not in {'concat', 'average'}:
-            raise ValueError('Possbile reduction methods: concat, average')
+        if attn_heads_reduction not in {"concat", "average"}:
+            raise ValueError("Possbile reduction methods: concat, average")
 
         self.F_ = F_  # Number of output features (F' in the paper)
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
@@ -84,11 +85,11 @@ class GraphAttention(Layer):
         self.supports_masking = False
 
         # Populated by build()
-        self.kernels = []       # Layer kernels for attention heads
-        self.biases = []        # Layer biases for attention heads
+        self.kernels = []  # Layer kernels for attention heads
+        self.biases = []  # Layer biases for attention heads
         self.attn_kernels = []  # Attention kernels for attention heads
 
-        if attn_heads_reduction == 'concat':
+        if attn_heads_reduction == "concat":
             # Output will have shape (..., K * F')
             self.output_dim = self.F_ * self.attn_heads
         else:
@@ -104,33 +105,41 @@ class GraphAttention(Layer):
         # Initialize weights for each attention head
         for head in range(self.attn_heads):
             # Layer kernel
-            kernel = self.add_weight(shape=(F, self.F_),
-                                     initializer=self.kernel_initializer,
-                                     regularizer=self.kernel_regularizer,
-                                     constraint=self.kernel_constraint,
-                                     name='kernel_{}'.format(head))
+            kernel = self.add_weight(
+                shape=(F, self.F_),
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
+                name="kernel_{}".format(head),
+            )
             self.kernels.append(kernel)
 
             # # Layer bias
             if self.use_bias:
-                bias = self.add_weight(shape=(self.F_, ),
-                                       initializer=self.bias_initializer,
-                                       regularizer=self.bias_regularizer,
-                                       constraint=self.bias_constraint,
-                                       name='bias_{}'.format(head))
+                bias = self.add_weight(
+                    shape=(self.F_,),
+                    initializer=self.bias_initializer,
+                    regularizer=self.bias_regularizer,
+                    constraint=self.bias_constraint,
+                    name="bias_{}".format(head),
+                )
                 self.biases.append(bias)
 
             # Attention kernels
-            attn_kernel_self = self.add_weight(shape=(self.F_, 1),
-                                               initializer=self.attn_kernel_initializer,
-                                               regularizer=self.attn_kernel_regularizer,
-                                               constraint=self.attn_kernel_constraint,
-                                               name='attn_kernel_self_{}'.format(head),)
-            attn_kernel_neighs = self.add_weight(shape=(self.F_, 1),
-                                                 initializer=self.attn_kernel_initializer,
-                                                 regularizer=self.attn_kernel_regularizer,
-                                                 constraint=self.attn_kernel_constraint,
-                                                 name='attn_kernel_neigh_{}'.format(head))
+            attn_kernel_self = self.add_weight(
+                shape=(self.F_, 1),
+                initializer=self.attn_kernel_initializer,
+                regularizer=self.attn_kernel_regularizer,
+                constraint=self.attn_kernel_constraint,
+                name="attn_kernel_self_{}".format(head),
+            )
+            attn_kernel_neighs = self.add_weight(
+                shape=(self.F_, 1),
+                initializer=self.attn_kernel_initializer,
+                regularizer=self.attn_kernel_regularizer,
+                constraint=self.attn_kernel_constraint,
+                name="attn_kernel_neigh_{}".format(head),
+            )
             self.attn_kernels.append([attn_kernel_self, attn_kernel_neighs])
         self.built = True
 
@@ -155,24 +164,34 @@ class GraphAttention(Layer):
         outputs = []
         for head in range(self.attn_heads):
             kernel = self.kernels[head]  # W in the paper (F x F')
-            attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
+            attention_kernel = self.attn_kernels[
+                head
+            ]  # Attention kernel a in the paper (2F' x 1)
 
             # Compute inputs to attention network
             features = K.dot(X, kernel)  # (N x F')
 
             # Compute feature combinations
             # Note: [[a_1], [a_2]]^T [[Wh_i], [Wh_2]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
-            attn_for_self = K.dot(features, attention_kernel[0])    # (N x 1), [a_1]^T [Wh_i]
-            attn_for_neighs = K.dot(features, attention_kernel[1])  # (N x 1), [a_2]^T [Wh_j]
+            attn_for_self = K.dot(
+                features, attention_kernel[0]
+            )  # (N x 1), [a_1]^T [Wh_i]
+            attn_for_neighs = K.dot(
+                features, attention_kernel[1]
+            )  # (N x 1), [a_2]^T [Wh_j]
 
             # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
-            dense = attn_for_self + K.transpose(attn_for_neighs)  # (N x N) via broadcasting
+            dense = attn_for_self + K.transpose(
+                attn_for_neighs
+            )  # (N x N) via broadcasting
 
             # Add nonlinearty
             dense = LeakyReLU(alpha=0.2)(dense)
 
             # Mask values before activation (Vaswani et al., 2017)
-            mask = -10e9 * (1.0 - A)   # YT: this only works for 'binary' A, not for 'weighted' A!
+            mask = -10e9 * (
+                1.0 - A
+            )  # YT: this only works for 'binary' A, not for 'weighted' A!
             dense += mask
 
             # Apply softmax to get attention coefficients
@@ -192,7 +211,7 @@ class GraphAttention(Layer):
             outputs.append(node_features)
 
         # Aggregate the heads' output according to the reduction method
-        if self.attn_heads_reduction == 'concat':
+        if self.attn_heads_reduction == "concat":
             output = K.concatenate(outputs)  # (N x KF')
         else:
             output = K.mean(K.stack(outputs), axis=0)  # N x F')
@@ -209,16 +228,17 @@ class GAT:
     """
     A stack of GAT layers with aggregation of multiple attention heads, Eqs 5-6 of GAT paper
     """
+
     def __init__(
-            self,
-            layer_sizes,
-            attn_heads=1,
-            attn_heads_reduction=None,
-            activations=None,
-            bias=True,
-            dropout=0.,
-            normalize="l2",
-            generator=None,
+        self,
+        layer_sizes,
+        attn_heads=1,
+        attn_heads_reduction=None,
+        activations=None,
+        bias=True,
+        dropout=0.,
+        normalize="l2",
+        generator=None,
     ):
         self._gat_layer = GraphAttention
         self.attn_heads = attn_heads
@@ -228,22 +248,35 @@ class GAT:
 
         if attn_heads_reduction is None:
             # default head reductions, see eqs 5-6 of the GAT paper
-            self.attn_heads_reduction = ["concat"]*(len(layer_sizes)-1) + ["average"]
+            self.attn_heads_reduction = ["concat"] * (len(layer_sizes) - 1) + [
+                "average"
+            ]
         else:
             # user-specified head reductions
             self.attn_heads_reduction = attn_heads_reduction
 
-        assert isinstance(activations, list), \
-            "Activation should be a list of activations; received {} instead".format(type(activations))
-        assert len(activations) == len(self.attn_heads_reduction), \
-            "Length of activation list should match the number of GAT layers ({})".format(len(layer_sizes))
+        assert isinstance(
+            activations, list
+        ), "Activation should be a list of activations; received {} instead".format(
+            type(activations)
+        )
+        assert len(activations) == len(
+            self.attn_heads_reduction
+        ), "Length of activation list should match the number of GAT layers ({})".format(
+            len(layer_sizes)
+        )
         self.activations = activations
 
         # Set the normalization layer used in the model
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=1))
 
-        elif normalize is None or normalize == "none" or normalize == "None" or normalize == "linear":
+        elif (
+            normalize is None
+            or normalize == "none"
+            or normalize == "None"
+            or normalize == "linear"
+        ):
             self._normalization = Lambda(lambda x: x)
 
         else:
@@ -258,14 +291,16 @@ class GAT:
         for l, F_ in enumerate(layer_sizes):
             # number of attention heads for layer l:
             attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
-            self._layers.append(self._gat_layer(F_=F_,
-                                                    attn_heads=attn_heads,
-                                                    attn_heads_reduction=self.attn_heads_reduction[l],
-                                                    dropout_rate=self.dropout,
-                                                    activation=self.activations[l],
-                                                    use_bias=self.bias,
-                                                    ))
-
+            self._layers.append(
+                self._gat_layer(
+                    F_=F_,
+                    attn_heads=attn_heads,
+                    attn_heads_reduction=self.attn_heads_reduction[l],
+                    dropout_rate=self.dropout,
+                    activation=self.activations[l],
+                    use_bias=self.bias,
+                )
+            )
 
     def __call__(self, x_inp):
         """
@@ -278,8 +313,9 @@ class GAT:
 
         """
 
-        assert isinstance(x_inp, list), \
-            "input must be a list, got {} instead".format(type(x_inp))
+        assert isinstance(x_inp, list), "input must be a list, got {} instead".format(
+            type(x_inp)
+        )
 
         x = x_inp[0]
         A = x_inp[1]
@@ -288,7 +324,6 @@ class GAT:
             x = layer([x, A])
 
         return self._normalization(x)
-
 
     def node_model(self, flatten_output=False):
         """
@@ -311,7 +346,9 @@ class GAT:
         F = self.generator.features.shape[1]
 
         X_in = Input(shape=(F,))
-        A_in = Input(shape=(N,), sparse=True)   # , sparse=True) makes model.fit_generator() method work
+        A_in = Input(
+            shape=(N,), sparse=True
+        )  # , sparse=True) makes model.fit_generator() method work
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
@@ -321,7 +358,6 @@ class GAT:
             x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
-
 
     def link_model(self, flatten_output=False):
         """
