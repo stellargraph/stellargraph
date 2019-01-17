@@ -317,21 +317,6 @@ class GAT:
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
         x_out = self(x_inp)
 
-        # Filter x_out by node mask
-        # class Select(Layer):
-        #     def __init__(self, **kwargs):
-        #         super(Select, self).__init__(**kwargs)
-        #
-        #     def call(self, x, *kwargs):
-        #         assert isinstance(x, list)
-        #         a, b = x
-        #         # return K.expand_dims(K.gather(a[0], b[0]), axis=0)
-        #         # return K.expand_dims(K.gather(a, b[0]), axis=1)
-        #         return K.gather(a, b[0])
-        #         # return tf.boolean_mask(a, b[0])
-
-        # x_out = Select()([x_out, node_mask])
-
         if flatten_output:
             x_out = Reshape((-1,))(x_out)
 
