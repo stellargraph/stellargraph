@@ -160,7 +160,7 @@ def train(
             y=y_train,
             sample_weight=node_mask_train,
             batch_size=N,
-            shuffle=False,
+            shuffle=False,  # must be False, since shuffling data means shuffling the whole graph
             epochs=num_epochs,
             verbose=2,
             validation_data=([X, A], y_val, node_mask_val),
