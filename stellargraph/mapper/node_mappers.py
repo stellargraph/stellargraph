@@ -18,7 +18,12 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator", "FullBatchNodeGenerator"]
+__all__ = [
+    "NodeSequence",
+    "GraphSAGENodeGenerator",
+    "HinSAGENodeGenerator",
+    "FullBatchNodeGenerator",
+]
 
 import operator
 from functools import reduce
@@ -498,7 +503,7 @@ class FullBatchNodeGenerator:
         # Check that there is only a single node type for GraphSAGE, or GAT, or GCN
         if len(self.schema.node_types) > 1:
             print(
-            "Warning: running homogeneous node generator on a graph with multiple node types"
+                "Warning: running homogeneous node generator on a graph with multiple node types"
             )
 
     def flow(self, node_ids, targets=None):
