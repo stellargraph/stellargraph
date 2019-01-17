@@ -510,13 +510,6 @@ class FullBatchNodeGenerator:
 
         # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
         if targets is not None:
-            # # reorder targets to match the node_mask order, since node_mask effectively sorts node_indices
-            # targets = targets[np.argsort(node_indices)]
-            # N = self.Aadj.shape[0]
-            # C = targets.shape[1]
-            # y = np.zeros((N, C))
-            # y[node_mask] = targets
-
             N = self.Aadj.shape[0]
             C = targets.shape[1]
             y = np.zeros((N, C))
