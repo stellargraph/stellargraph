@@ -257,13 +257,11 @@ class GAT:
 
         assert isinstance(
             activations, list
-        ), "Activation should be a list of activations; received {} instead".format(
-            type(activations)
-        )
+        ), "Activations should be a list; received {} instead".format(type(activations))
         assert len(activations) == len(
             self.attn_heads_reduction
-        ), "Length of activation list should match the number of GAT layers ({})".format(
-            len(layer_sizes)
+        ), "Length of activations list ({}) should match the number of GAT layers ({})".format(
+            len(activations), len(layer_sizes)
         )
         self.activations = activations
 
