@@ -453,7 +453,7 @@ class HinSAGENodeGenerator:
 
 class FullBatchNodeSequence(Sequence):
     def __init__(self, features, A, targets=None, sample_weight=None):
-        # Check targets is iterable & has the correct length
+        # Check targets is an iterable
         if not is_real_iterable(targets) and not targets is None:
             raise TypeError("Targets must be an iterable or None")
 
@@ -508,11 +508,10 @@ class FullBatchNodeGenerator:
         node_mask[node_indices] = 1
         node_mask = np.ma.make_mask(node_mask)
 
-        # Reshape targets to (number of nodes in self.graph, number of classes)
+        # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
         if targets is not None:
             # # reorder targets to match the node_mask order, since node_mask effectively sorts node_indices
             # targets = targets[np.argsort(node_indices)]
-            # # Reshape targets to (number of nodes in self.graph, number of classes)
             # N = self.Aadj.shape[0]
             # C = targets.shape[1]
             # y = np.zeros((N, C))
