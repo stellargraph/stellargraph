@@ -164,34 +164,25 @@ class GraphAttention(Layer):
         outputs = []
         for head in range(self.attn_heads):
             kernel = self.kernels[head]  # W in the paper (F x F')
-            attention_kernel = self.attn_kernels[
-                head
-            ]  # Attention kernel a in the paper (2F' x 1)
+            attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
 
             # Compute inputs to attention network
             features = K.dot(X, kernel)  # (N x F')
 
             # Compute feature combinations
             # Note: [[a_1], [a_2]]^T [[Wh_i], [Wh_2]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
-            attn_for_self = K.dot(
-                features, attention_kernel[0]
-            )  # (N x 1), [a_1]^T [Wh_i]
-            attn_for_neighs = K.dot(
-                features, attention_kernel[1]
-            )  # (N x 1), [a_2]^T [Wh_j]
+            attn_for_self = K.dot(features, attention_kernel[0])  # (N x 1), [a_1]^T [Wh_i]
+            attn_for_neighs = K.dot(features, attention_kernel[1])  # (N x 1), [a_2]^T [Wh_j]
 
             # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
-            dense = attn_for_self + K.transpose(
-                attn_for_neighs
-            )  # (N x N) via broadcasting
+            dense = attn_for_self + K.transpose(attn_for_neighs)  # (N x N) via broadcasting
 
-            # Add nonlinearty
+            # Add nonlinearity
             dense = LeakyReLU(alpha=0.2)(dense)
 
             # Mask values before activation (Vaswani et al., 2017)
-            mask = -10e9 * (
-                1.0 - A
-            )  # YT: this only works for 'binary' A, not for 'weighted' A!
+            # YT: this only works for 'binary' A, not for 'weighted' A!
+            mask = -10e9 * (1.0 - A)
             dense += mask
 
             # Apply softmax to get attention coefficients
@@ -323,15 +314,9 @@ class GAT:
 
         return self._normalization(x)
 
-    def node_model(self, flatten_output=False):
+    def node_model(self):
         """
         Builds a GAT model for node prediction
-
-        Args:
-            flatten_output: The GAT model will return an output tensor
-                of form (batch_size, 1, feature_size). If this flag
-                is true, the output will be of size (batch_size, 1*feature_size).
-                Here batch_size is the size of the dataset in self.generator (e.g., train set)
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
@@ -351,9 +336,6 @@ class GAT:
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
         x_out = self(x_inp)
-
-        if flatten_output:
-            x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
 
