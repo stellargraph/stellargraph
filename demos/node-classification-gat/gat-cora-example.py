@@ -121,7 +121,7 @@ def train(
         normalize=None,
     )
     # Expose the input and output tensors of the GAT model:
-    x_inp, x_out = gat.node_model(flatten_output=False)
+    x_inp, x_out = gat.node_model()
 
     # Snap the final estimator layer to x_out
     x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
@@ -280,7 +280,8 @@ if __name__ == "__main__":
         help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-p", "--patience", type=int, default=100, help="Patience for early stopping"
+        "-p", "--patience", type=int, default=10,
+        help="Patience for early stopping (number of epochs with no improvement after which training should be stopped)"
     )
     parser.add_argument(
         "-a", "--attn_heads", type=int, default=1, help="Number of attention heads"
