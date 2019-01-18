@@ -280,6 +280,7 @@ class GAT:
         for l, F_ in enumerate(layer_sizes):
             # number of attention heads for layer l:
             attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
+            self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 self._gat_layer(
                     F_=F_,
@@ -310,7 +311,10 @@ class GAT:
         A = x_inp[1]
 
         for layer in self._layers:
-            x = layer([x, A])
+            if isinstance(layer, self._gat_layer):  # layer is a GAT layer
+                x = layer([x, A])
+            else: # layer is a Dropout layer
+                x = layer(x)
 
         return self._normalization(x)
 
