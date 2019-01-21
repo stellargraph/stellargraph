@@ -137,6 +137,8 @@ def train(
 
     # Train model
     # Callbacks
+    if not os.path.isdir("logs"):
+        os.makedirs("logs")
     es_callback = EarlyStopping(monitor="val_weighted_acc", patience=es_patience)
     mc_callback = ModelCheckpoint(
         "logs/best_model.h5",

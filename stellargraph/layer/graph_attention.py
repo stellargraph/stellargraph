@@ -280,7 +280,9 @@ class GAT:
         for l, F_ in enumerate(layer_sizes):
             # number of attention heads for layer l:
             attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
+            # Dropout on input node features before each GAT layer
             self._layers.append(Dropout(self.dropout))
+            # GAT layer
             self._layers.append(
                 self._gat_layer(
                     F_=F_,
