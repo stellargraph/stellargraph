@@ -116,15 +116,16 @@ def train(
         attn_heads=attn_heads,
         generator=train_gen,
         bias=True,
-        dropout=dropout,
-        activations=["elu", "elu"],
+        in_dropout=dropout,
+        attn_dropout=dropout,
+        activations=["elu", "softmax"],
         normalize=None,
     )
     # Expose the input and output tensors of the GAT model:
     x_inp, x_out = gat.node_model()
 
     # Snap the final estimator layer to x_out
-    x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
+    # x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=x_out)

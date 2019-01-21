@@ -22,7 +22,8 @@ class GraphAttention(Layer):
         F_,
         attn_heads=1,
         attn_heads_reduction="concat",  # {'concat', 'average'}
-        dropout_rate=0.5,
+        in_dropout_rate=0.,
+        attn_dropout_rate=0.,
         activation="relu",
         use_bias=True,
         kernel_initializer="glorot_uniform",
@@ -44,7 +45,8 @@ class GraphAttention(Layer):
             attn_heads: number of attention heads
             attn_heads_reduction: reduction applied to output features of each attention head, 'concat' or 'average'.
                 'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
-            dropout_rate: dropout rate applied to both features and attention coefficients
+            in_dropout_rate: dropout rate applied to features
+            attn_dropout_rate: dropout rate applied to attention coefficients
             activation: nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
             use_bias: toggles an optional bias
             kernel_initializer (str): name of the initializer for kernel parameters (weights)
@@ -66,7 +68,8 @@ class GraphAttention(Layer):
         self.F_ = F_  # Number of output features (F' in the paper)
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
         self.attn_heads_reduction = attn_heads_reduction  # Eq. 5 and 6 in the paper
-        self.dropout_rate = dropout_rate  # Internal dropout rate
+        self.in_dropout_rate = in_dropout_rate  # dropout rate for node features
+        self.attn_dropout_rate = attn_dropout_rate  # dropout rate for attention coefficients
         self.activation = activations.get(activation)  # Eq. 4 in the paper
         self.use_bias = use_bias
 
@@ -189,8 +192,8 @@ class GraphAttention(Layer):
             dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
 
             # Apply dropout to features and attention coefficients
-            dropout_attn = Dropout(self.dropout_rate)(dense)  # (N x N)
-            dropout_feat = Dropout(self.dropout_rate)(features)  # (N x F')
+            dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')
+            dropout_attn = Dropout(self.attn_dropout_rate)(dense)  # (N x N)
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
             node_features = K.dot(dropout_attn, dropout_feat)  # (N x F')
@@ -227,14 +230,16 @@ class GAT:
         attn_heads_reduction=None,
         activations=None,
         bias=True,
-        dropout=0.,
+        in_dropout=0.,
+        attn_dropout=0.,
         normalize="l2",
         generator=None,
     ):
         self._gat_layer = GraphAttention
         self.attn_heads = attn_heads
         self.bias = bias
-        self.dropout = dropout
+        self.in_dropout = in_dropout
+        self.attn_dropout = attn_dropout
         self.generator = generator
 
         if attn_heads_reduction is None:
@@ -281,14 +286,15 @@ class GAT:
             # number of attention heads for layer l:
             attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
             # Dropout on input node features before each GAT layer
-            self._layers.append(Dropout(self.dropout))
+            self._layers.append(Dropout(self.in_dropout))
             # GAT layer
             self._layers.append(
                 self._gat_layer(
                     F_=F_,
                     attn_heads=attn_heads,
                     attn_heads_reduction=self.attn_heads_reduction[l],
-                    dropout_rate=self.dropout,
+                    in_dropout_rate=self.in_dropout,
+                    attn_dropout_rate=self.attn_dropout,
                     activation=self.activations[l],
                     use_bias=self.bias,
                 )
