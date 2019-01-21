@@ -100,9 +100,9 @@ def train(
         random_state=55232,
     )
 
-    # Split test set into test and validation
+    # Further split test set into validation and test
     val_nodes, test_nodes, val_targets, test_targets = model_selection.train_test_split(
-        test_nodes, test_targets, train_size=500, test_size=None, random_state=523214
+        test_nodes, test_targets, train_size=500, test_size=1000, random_state=523214
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
@@ -118,14 +118,14 @@ def train(
         bias=True,
         in_dropout=dropout,
         attn_dropout=dropout,
-        activations=["elu", "softmax"],
+        activations=["elu", "elu"],
         normalize=None,
     )
     # Expose the input and output tensors of the GAT model:
     x_inp, x_out = gat.node_model()
 
     # Snap the final estimator layer to x_out
-    # x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
+    x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=x_out)
