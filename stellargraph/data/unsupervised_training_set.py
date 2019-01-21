@@ -365,8 +365,9 @@ class BiasedRandomWalk(GraphWalk):
                             negative_pairs.clear()
                             positive_samples_counter = 0
                             negative_samples_counter = 0
+                            edge_ids, edge_labels = [[z[i] for z in edge_ids_labels] for i in (0, 1)]
 
-                            yield edge_ids_labels
+                            yield edge_ids, edge_labels
 
                 walks.append(walk)
         # Return samples when either all the samples are to be pregenerated, i.e. batch_size isn't specified or this is the last batch and may not have batch_size number of samples left.
@@ -374,8 +375,10 @@ class BiasedRandomWalk(GraphWalk):
         all_targets = [1] * len(positive_pairs) + [0] * len(negative_pairs)
         edge_ids_labels = list(zip(all_pairs, all_targets))
         random.shuffle(edge_ids_labels)
+        edge_ids, edge_labels = [[z[i] for z in edge_ids_labels] for i in (0, 1)]
+
         print("all walks done!")
-        yield edge_ids_labels
+        yield edge_ids, edge_labels
 
     def _check_parameter_values(
         self, nodes, n, p, q, length, seed, weighted, edge_weight_label, sample_size
@@ -537,11 +540,7 @@ def main():
         sample_size=500,
     )
 
-    training_samples = next(walks)
-    edge_ids_train, edge_labels_train = [
-        [z[i] for z in training_samples] for i in (0, 1)
-    ]
-
+    edge_ids_train, edge_labels_train = next(walks)
     ####### The GraphSAGELinkGenerator
     num_samples = [10, 5]
     batch_size = 50
