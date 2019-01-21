@@ -16,7 +16,6 @@ def normalize_adj(adj, symmetric=True):
         a_norm = d.dot(adj).tocsr()
     return a_norm
 
-
 def preprocess_adj(adj, symmetric=True):
     adj = adj + sp.eye(adj.shape[0])
     adj = normalize_adj(adj, symmetric)
@@ -55,18 +54,31 @@ def chebyshev_polynomial(X, k):
 
     return T_k
 
+def GCN_A_feats(features, A, **kwargs):
+    # build symmetric adjacency matrix
+    A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
+    filter = kwargs.get('filter', 'localpool')
+
+    if filter == 'localpool':
+        """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
+        print('Using local pooling filters...')
+        A = preprocess_adj(A)
+    elif filter == 'chebyshev':
+        """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
+        print('Using Chebyshev polynomial basis filters...')
+        T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), 2)
+        features = [features]+T_k
+    return features, A
+
 
 class FullBatchNodeSequence(Sequence):
-    def __init__(self, features, A, support, suppG, node_indices, targets=None, sample_weight=None):
+    def __init__(self, features, A, targets=None, sample_weight=None):
         # Check targets is iterable & has the correct length
         if not is_real_iterable(targets):
             raise TypeError("Targets must be None or an iterable or numpy array ")
 
         self.features = features
         self.A = A
-        self.support = support
-        self.suppG = suppG
-        self.node_ind = node_indices
         self.targets = targets
         self.sample_weight = sample_weight
 
@@ -77,7 +89,7 @@ class FullBatchNodeSequence(Sequence):
         return [self.features, self.A], self.targets, self.sample_weight
 
 class FullBatchNodeGenerator:
-    def __init__(self, G, name=None, filter='localpool', max_degree=2):
+    def __init__(self, G, name=None, func_A_feats=None, **kwargs):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -88,36 +100,22 @@ class FullBatchNodeGenerator:
         self.nodes = list(G.nodes())
 
         self.features = G.get_feature_for_nodes(self.nodes)
-        self.max_degree = max_degree
-
         self.A = nx.adjacency_matrix(G, nodelist=self.nodes)
 
-        # build symmetric adjacency matrix
-        self.A = self.A + self.A.T.multiply(self.A.T > self.A) - self.A.multiply(self.A.T > self.A)
+        if func_A_feats:
+            self.features, self.A = func_A_feats(features=self.features, A=self.A, kwargs=kwargs)
 
-        if filter == 'localpool':
-            """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
-            print('Using local pooling filters...')
-            # self.A = preprocess_adj(self.A)
-            self.support = 1
-            self.suppG = [Input(shape=(None,None), batch_shape=(None,None), sparse=True)]
-        elif filter == 'chebyshev':
-            """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
-            print('Using Chebyshev polynomial basis filters...')
-            T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(self.A)), 2)
-            self.features = [self.features]+T_k
-            self.support = self.max_degree + 1
-            self.suppG = [Input(shape=(None,None), batch_shape=(None,None), sparse=True) for _ in range(support)]
+        self.kwargs = kwargs
 
     def flow(self, node_ids, targets=None):
         node_indices = [self.nodes.index(n) for n in node_ids]
+        node_mask = np.zeros(len(self.nodes), dtype=int)
+        node_mask[node_indices] = 1
+        node_mask = np.array(node_mask, dtype=np.bool)
 
         if targets is not None:
-            node_mask = np.zeros(len(self.nodes), dtype=int)
-            node_mask[node_indices] = 1
-            node_mask = np.array(node_mask, dtype=np.bool)
             y = np.zeros( (len(self.nodes),targets.shape[1]), dtype=np.int32)
             for idx, t in zip(node_indices, targets):
                 y[idx] = t
 
-        return FullBatchNodeSequence(self.features, self.A, self.support, self.suppG, node_indices, y, node_mask)
+        return FullBatchNodeSequence(self.features, self.A, y, node_mask)

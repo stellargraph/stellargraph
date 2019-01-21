@@ -1,6 +1,5 @@
 from keras import activations, initializers, constraints
 from keras import regularizers
-from keras.regularizers import l2
 from keras.engine import Layer
 from keras import backend as K
 from keras import Input
@@ -27,7 +26,7 @@ class GraphConvolution(Layer):
                  **kwargs):
 
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
-            kwargs['input_shape'] = (kwargs.pop('input_dim'),)
+            kwargs['input_shape'] = (kwargs.get('input_dim'),)
 
         super(GraphConvolution, self).__init__(**kwargs)
 
@@ -71,17 +70,38 @@ class GraphConvolution(Layer):
 
     def call(self, inputs, mask=None):
         features = inputs[0]
-        basis = inputs[1:]
+        A = inputs[1:]
 
         supports = list()
         for i in range(self.support):
-            supports.append(K.dot(basis[i], features))
+            supports.append(K.dot(A[i], features))
         supports = K.concatenate(supports, axis=1)
         output = K.dot(supports, self.kernel)
 
         if self.bias:
             output += self.bias
         return self.activation(output)
+
+    def get_config(self):
+        """
+        Gets class configuration for Keras serialization
+        """
+        config = {
+            "units": self.units,
+            "use_bias": self.use_bias,
+            "support": self.support,
+            "activation": activations.serialize(self.activation),
+            "kernel_initializer": initializers.serialize(self.kernel_initializer),
+            "bias_initializer": initializers.serialize(self.bias_initializer),
+            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
+            "activity_regularizer": regularizers.serialize(self.activity_regularizer),
+            "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "bias_constraint": constraints.serialize(self.bias_constraint)
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
+
 
 class GCN:
     """
@@ -91,29 +111,32 @@ class GCN:
     def __init__(
         self,
         layer_sizes,
-        generator=None,
+        activations,
+        generator,
         bias=True,
         dropout=0.0,
-        normalize="l2"):
+        normalize=regularizers.l2(5e-4)):
 
-        if isinstance(generator, gm.FullBatchNodeGenerator):
+        if not isinstance(generator, gm.FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
+        assert len(layer_sizes) == len(activations)
+
         self.layer_sizes = layer_sizes
+        self.activations = activations
         self.bias = bias
         self.dropout = dropout
         self.normalize = normalize
 
         self.generator = generator
-        self.X_in = Input(shape=(generator.features.shape[1],))
-        self.support = generator.support
-        self.suppG = generator.suppG
+        filter = self.generator.kwargs.get('filter', 'localpool')
 
-        #FixedMe: Assuming layer_sizes [16,7] for now
-        H = Dropout(self.dropout)(self.X_in)
-        H = GraphConvolution(16, self.support, activation='relu', kernel_regularizer=l2(5e-4))([H]+self.suppG)
-        H = Dropout(self.dropout)(H)
-        self.gcn_layers = GraphConvolution(7, self.support, activation='softmax')([H]+self.suppG)
+        if filter == 'chebyshev':
+            self.support = self.generator.kwargs.get('max_degree', 2)
+            self.suppG = [Input(shape=(None,None), batch_shape=(None,None), sparse=True) for _ in range(self.support)]
+        else:
+            self.suppG = [Input(shape=(None,None), batch_shape=(None,None), sparse=True)]
+            self.support = 1
 
     def __call__(self, x: List):
         """
@@ -126,10 +149,16 @@ class GCN:
             Output tensor
         """
 
-        return self.gcn_layers
+        self.X_in = H = Input(shape=(self.generator.features.shape[1],))
+        for l,a in zip(self.layer_sizes, self.activations):
+            H = Dropout(self.dropout)(H)
+            H = GraphConvolution(l, self.support, activation=a, use_bias=self.bias, kernel_regularizer=self.normalize)([H]+self.suppG)
+
+        return H
 
     def node_model(self):
-        return [self.X_in]+self.suppG, self.gcn_layers
+        x_out = self(None)
+        return [self.X_in]+self.suppG, x_out
 
     def link_model(self, flatten_output=False):
         return None
