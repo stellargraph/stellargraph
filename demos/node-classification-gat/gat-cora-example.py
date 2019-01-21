@@ -140,7 +140,9 @@ def train(
     # Callbacks
     if not os.path.isdir("logs"):
         os.makedirs("logs")
+    N = len(node_ids)
     es_callback = EarlyStopping(monitor="val_weighted_acc", patience=es_patience)
+    tb_callback = TensorBoard(batch_size=N)
     mc_callback = ModelCheckpoint(
         "logs/best_model.h5",
         monitor="val_weighted_acc",
@@ -167,7 +169,7 @@ def train(
             epochs=num_epochs,
             verbose=2,
             validation_data=([X, A], y_val, node_mask_val),
-            callbacks=[es_callback, mc_callback],
+            callbacks=[es_callback, tb_callback, mc_callback],
         )
     else:
         print("\nUsing model.fit_generator() to train the model\n")
@@ -177,7 +179,7 @@ def train(
             validation_data=val_gen,
             verbose=2,
             shuffle=False,
-            callbacks=[es_callback, mc_callback],
+            callbacks=[es_callback, tb_callback, mc_callback],
         )
 
     # Load best model
