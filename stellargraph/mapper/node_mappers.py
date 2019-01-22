@@ -458,10 +458,6 @@ class HinSAGENodeGenerator:
 
 class FullBatchNodeSequence(Sequence):
     def __init__(self, features, A, targets=None, sample_weight=None):
-        # Check targets is an iterable
-        if not is_real_iterable(targets) and not targets is None:
-            raise TypeError("Targets must be an iterable or None")
-
         self.A = A
         self.features = features
         self.sample_weight = sample_weight
@@ -507,6 +503,10 @@ class FullBatchNodeGenerator:
             )
 
     def flow(self, node_ids, targets=None):
+        # Check targets is an iterable
+        if not is_real_iterable(targets) and not targets is None:
+            raise TypeError("Targets must be an iterable or None")
+
         # The list of indices of the target nodes in self.node_list
         node_indices = np.array([self.node_list.index(n) for n in node_ids])
         node_mask = np.zeros(len(self.node_list), dtype=int)
@@ -515,9 +515,14 @@ class FullBatchNodeGenerator:
 
         # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
         if targets is not None:
-            N = self.Aadj.shape[0]
-            C = targets.shape[1]
-            y = np.zeros((N, C))
+            targets = np.array(targets)
+            if len(targets.shape) == 1:
+                c = 1
+            else:
+                c = targets.shape[1]
+
+            n = self.Aadj.shape[0]
+            y = np.zeros((n, c))
             for i, t in zip(node_indices, targets):
                 y[i] = t
         else:
