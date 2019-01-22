@@ -471,7 +471,7 @@ class FullBatchNodeSequence(Sequence):
 
 
 class FullBatchNodeGenerator:
-    def __init__(self, G, schema=None, seed=None, name=None, *args):
+    def __init__(self, G, seed=None, name=None, *args):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -485,22 +485,18 @@ class FullBatchNodeGenerator:
         self.node_list = list(G.nodes())
         self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
 
-        # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
-
-        # We need a schema for compatibility with HinSAGE
-        if schema is None:
-            self.schema = G.create_graph_schema(create_type_maps=True)
-        elif isinstance(schema, GraphSchema):
-            self.schema = schema
-        else:
-            raise TypeError("Schema must be a GraphSchema object")
+        # We need a schema to check compatibility with GraphSAGE, GAT, GCN
+        self.schema = G.create_graph_schema(create_type_maps=True)
 
         # Check that there is only a single node type for GraphSAGE, or GAT, or GCN
         if len(self.schema.node_types) > 1:
-            print(
-                "Warning: running homogeneous node generator on a graph with multiple node types"
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(type(self).__name__)
             )
+
+        # Get the features for the nodes
+        self.features = G.get_feature_for_nodes(self.node_list)
 
     def flow(self, node_ids, targets=None):
         # Check targets is an iterable
