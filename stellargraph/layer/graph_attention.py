@@ -251,6 +251,19 @@ class GAT:
         normalize="l2",
         generator=None,
     ):
+        """
+
+        Args:
+            layer_sizes: list of output sizes of GAT layers in the stack
+            attn_heads: number of attention heads
+            attn_heads_reduction:
+            activations: list of activations applied to each layer's output
+            bias: toggles an optional bias in GAT layers
+            in_dropout: dropout rate applied to input features of each GAT layer
+            attn_dropout: dropout rate applied to attention maps
+            normalize: normalization applied to the final output features of the GAT layers stack
+            generator: an instance of FullBatchNodeGenerator class constructed on the graph of interest
+        """
         self._gat_layer = GraphAttention
         self.attn_heads = attn_heads
         self.bias = bias
@@ -342,7 +355,7 @@ class GAT:
 
         return self._normalization(x)
 
-    def node_model(self):
+    def node_model(self, num_nodes=None, feature_size=None):
         """
         Builds a GAT model for node prediction
 
@@ -352,9 +365,33 @@ class GAT:
 
         """
         # Create input tensor:
-        N = self.generator.A.shape[0]
-        assert self.generator.features.shape[0] == N
-        F = self.generator.features.shape[1]
+        if self.generator is not None:
+            try:
+                N = self.generator.A.shape[0]
+            except:
+                if num_nodes is not None:
+                    N = num_nodes
+                else:
+                    raise RuntimeError(
+                        "node_model: unable to get number of nodes from either generator or the num_nodes argument; stopping."
+                    )
+            assert self.generator.features.shape[0] == N
+            try:
+                F = self.generator.features.shape[1]
+            except:
+                if feature_size is not None:
+                    F = feature_size
+                else:
+                    raise RuntimeError(
+                        "node_model: unable to get input feature size from either generator or the feature_size argument; stopping."
+                    )
+        elif num_nodes is not None and feature_size is not None:
+            N = num_nodes
+            F = feature_size
+        else:
+            raise RuntimeError(
+                "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
+            )
 
         X_in = Input(shape=(F,))
         A_in = Input(shape=(N,), sparse=True)  # , sparse=True) makes model.fit_generator() method work
