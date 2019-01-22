@@ -576,11 +576,22 @@ class Test_FullBatchNodeGenerator:
         assert generator.Aadj.shape == (self.N, self.N)
         assert generator.features.shape == (self.N, self.n_feat)
 
+    def test_generator_constructor_wrong_G_type(self):
+        with pytest.raises(TypeError):
+            generator = FullBatchNodeGenerator(nx.Graph(self.G))
+
+    def test_generator_constructor_hin(self):
+        feature_sizes = {"t1": 1, "t2": 1}
+        Ghin, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+        with pytest.raises(TypeError):
+            generator = FullBatchNodeGenerator(Ghin)
+
     def test_generator_flow_notargets(self):
         generator = FullBatchNodeGenerator(self.G)
         node_ids = self.G.nodes()
         gen = generator.flow(node_ids)
 
+        assert len(gen) == 1
         assert gen.A.shape == (self.N, self.N)
         assert gen.features.shape == (self.N, self.n_feat)
         assert sum(gen.sample_weight) == len(node_ids)
