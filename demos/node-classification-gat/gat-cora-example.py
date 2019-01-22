@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-Graph node classification using GraphSAGE.
+Graph node classification using Graph Attention Network (GAT) model.
 This currently is only tested on the CORA dataset, which can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
 
 The following is the description of the dataset:
@@ -28,10 +28,10 @@ Download and unzip the cora.tgz file to a location on your computer and pass thi
 (which should contain cora.cites and cora.content) as a command line argument to this script.
 
 Run this script as follows:
-    python graphsage-cora-example.py -l <path_to_cora_dataset>
+    python gat-cora-example.py -l <path_to_cora_dataset>
 
 Other optional arguments can be seen by running
-    python graphsage-cora-example.py --help
+    python gat-cora-example.py --help
 
 """
 import os
