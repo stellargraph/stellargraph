@@ -85,7 +85,9 @@ class GraphAttention(Layer):
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
         self.attn_heads_reduction = attn_heads_reduction  # Eq. 5 and 6 in the paper
         self.in_dropout_rate = in_dropout_rate  # dropout rate for node features
-        self.attn_dropout_rate = attn_dropout_rate  # dropout rate for attention coefficients
+        self.attn_dropout_rate = (
+            attn_dropout_rate
+        )  # dropout rate for attention coefficients
         self.activation = activations.get(activation)  # Eq. 4 in the paper
         self.use_bias = use_bias
 
@@ -183,18 +185,26 @@ class GraphAttention(Layer):
         outputs = []
         for head in range(self.attn_heads):
             kernel = self.kernels[head]  # W in the paper (F x F')
-            attention_kernel = self.attn_kernels[head]  # Attention kernel a in the paper (2F' x 1)
+            attention_kernel = self.attn_kernels[
+                head
+            ]  # Attention kernel a in the paper (2F' x 1)
 
             # Compute inputs to attention network
             features = K.dot(X, kernel)  # (N x F')
 
             # Compute feature combinations
             # Note: [[a_1], [a_2]]^T [[Wh_i], [Wh_2]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
-            attn_for_self = K.dot(features, attention_kernel[0])  # (N x 1), [a_1]^T [Wh_i]
-            attn_for_neighs = K.dot(features, attention_kernel[1])  # (N x 1), [a_2]^T [Wh_j]
+            attn_for_self = K.dot(
+                features, attention_kernel[0]
+            )  # (N x 1), [a_1]^T [Wh_i]
+            attn_for_neighs = K.dot(
+                features, attention_kernel[1]
+            )  # (N x 1), [a_2]^T [Wh_j]
 
             # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
-            dense = attn_for_self + K.transpose(attn_for_neighs)  # (N x N) via broadcasting
+            dense = attn_for_self + K.transpose(
+                attn_for_neighs
+            )  # (N x N) via broadcasting
 
             # Add nonlinearity
             dense = LeakyReLU(alpha=0.2)(dense)
@@ -350,7 +360,7 @@ class GAT:
         for layer in self._layers:
             if isinstance(layer, self._gat_layer):  # layer is a GAT layer
                 x = layer([x, A])
-            else: # layer is a Dropout layer
+            else:  # layer is a Dropout layer
                 x = layer(x)
 
         return self._normalization(x)
@@ -367,7 +377,7 @@ class GAT:
         # Create input tensor:
         if self.generator is not None:
             try:
-                N = self.generator.A.shape[0]
+                N = self.generator.Aadj.shape[0]
             except:
                 if num_nodes is not None:
                     N = num_nodes
@@ -394,7 +404,9 @@ class GAT:
             )
 
         X_in = Input(shape=(F,))
-        A_in = Input(shape=(N,), sparse=True)  # , sparse=True) makes model.fit_generator() method work
+        A_in = Input(
+            shape=(N,), sparse=True
+        )  # , sparse=True) makes model.fit_generator() method work
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack

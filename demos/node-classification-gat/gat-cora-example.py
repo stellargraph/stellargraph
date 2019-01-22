@@ -114,7 +114,7 @@ def train(
     gat = GAT(
         layer_sizes=layer_sizes,
         attn_heads=attn_heads,
-        generator=train_gen,
+        generator=generator,
         bias=True,
         in_dropout=dropout,
         attn_dropout=dropout,
