@@ -54,7 +54,6 @@ class GraphSAGEAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Callable or AnyStr = "relu",
-        method: AnyStr = "concat",
         **kwargs
     ):
         # Ensure the output dimension is divisible by 2
@@ -67,7 +66,6 @@ class GraphSAGEAggregator(Layer):
         self.act = activations.get(act)
         self.w_self = None
         self.bias = None
-        self.method = method
         self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
 
@@ -80,7 +78,6 @@ class GraphSAGEAggregator(Layer):
             "output_dim": self.output_dim,
             "bias": self.has_bias,
             "act": activations.serialize(self.act),
-            "method": self.method,
         }
         base_config = super().get_config()
         return {**base_config, **config}
@@ -97,10 +94,8 @@ class GraphSAGEAggregator(Layer):
         """
         if self._build_mlp_only:
             weight_dim = self.output_dim
-        elif self.method == "concat":
-            weight_dim = self.half_output_dim
         else:
-            weight_dim = self.output_dim
+            weight_dim = self.half_output_dim
 
         return weight_dim
 
@@ -185,13 +180,7 @@ class GraphSAGEAggregator(Layer):
         # If there are neighbours aggregate over them
         from_neigh = self.aggregate_neighbours(x_neigh)
 
-        # Combine self features and aggregated neighbours
-        if self.method == "concat":
-            h_out = K.concatenate([from_self, from_neigh], axis=2)
-        elif self.method == "sum":
-            h_out = from_self + from_neigh
-        else:
-            raise ValueError("Invalid aggregation method, should be 'sum' or 'concat'")
+        h_out = K.concatenate([from_self, from_neigh], axis=2)
 
         # Finally, add bias and apply activation
         if self.has_bias:
