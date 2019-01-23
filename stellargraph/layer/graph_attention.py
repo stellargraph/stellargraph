@@ -65,21 +65,21 @@ class GraphAttention(Layer):
             attn_dropout_rate: dropout rate applied to attention coefficients
             activation: nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
             use_bias: toggles an optional bias
-            kernel_initializer (str): name of the initializer for kernel parameters (weights)
+            kernel_initializer (str): name oname of layer bias f the initializer for kernel parameters (weights)
             bias_initializer (str): name of the initializer for bias
             attn_kernel_initializer (str): name of the initializer for attention kernel
-            kernel_regularizer:
-            bias_regularizer:
-            attn_kernel_regularizer:
-            activity_regularizer:
-            kernel_constraint:
-            bias_constraint:
-            attn_kernel_constraint:
+            kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
+            bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
+            attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
+            activity_regularizer (str): not used in the current implementation
+            kernel_constraint (str): constraint applied to layer's kernel
+            bias_constraint (str): constraint applied to layer's bias
+            attn_kernel_constraint (str): constraint applied to attention kernel
             **kwargs:
         """
 
         if attn_heads_reduction not in {"concat", "average"}:
-            raise ValueError("Possbile reduction methods: concat, average")
+            raise ValueError("Possible reduction methods: concat, average")
 
         self.F_ = F_  # Number of output features (F' in the paper)
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
