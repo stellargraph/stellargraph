@@ -119,7 +119,7 @@ def test_maxpool_agg_zero_neighbours():
     x2 = np.zeros((1, 1, 0, 2))
 
     actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 0, 0]]])
+    expected = np.array([[[2, 2, 2, 2]]])
     assert expected == pytest.approx(actual)
 
 
@@ -195,7 +195,7 @@ def test_meanpool_agg_zero_neighbours():
     x2 = np.zeros((1, 1, 0, 2))
 
     actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 0, 0]]])
+    expected = np.array([[[2, 2, 2, 2]]])
     assert expected == pytest.approx(actual)
 
 
@@ -253,7 +253,7 @@ def test_mean_agg_zero_neighbours():
     x2 = np.zeros((1, 1, 0, 2))
 
     actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 0, 0]]])
+    expected = np.array([[[2, 2, 2, 2]]])
     assert expected == pytest.approx(actual)
 
 
@@ -474,5 +474,5 @@ def test_graphsage_zero_neighbours():
     x = [np.array([[[1.5, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
 
     actual = model.predict(x)
-    expected = np.array([[[2.5, 0]]])
+    expected = np.array([[[5, 5]]])
     assert actual == pytest.approx(expected)
