@@ -65,7 +65,7 @@ class GraphAttention(Layer):
             attn_dropout_rate: dropout rate applied to attention coefficients
             activation: nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
             use_bias: toggles an optional bias
-            kernel_initializer (str): name oname of layer bias f the initializer for kernel parameters (weights)
+            kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
             bias_initializer (str): name of the initializer for bias
             attn_kernel_initializer (str): name of the initializer for attention kernel
             kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
@@ -426,6 +426,8 @@ class GAT:
         raise NotImplemented
 
     def default_model(self, flatten_output=False):
-        print("Deprecation warning: the .default_model() method is deprecated. "
-              "Please use .node_model() or .link_model() method instead.")
+        print(
+            "Deprecation warning: the .default_model() method is deprecated. "
+            "Please use .node_model() or .link_model() method instead."
+        )
         self.node_model()

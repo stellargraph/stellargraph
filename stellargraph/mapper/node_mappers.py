@@ -492,7 +492,9 @@ class FullBatchNodeGenerator:
         if len(self.schema.node_types) > 1:
             raise TypeError(
                 "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(type(self).__name__)
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
             )
 
         # Get the features for the nodes

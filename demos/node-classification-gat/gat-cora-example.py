@@ -285,8 +285,11 @@ if __name__ == "__main__":
         help="Initial learning rate for model training",
     )
     parser.add_argument(
-        "-p", "--patience", type=int, default=10,
-        help="Patience for early stopping (number of epochs with no improvement after which training should be stopped)"
+        "-p",
+        "--patience",
+        type=int,
+        default=10,
+        help="Patience for early stopping (number of epochs with no improvement after which training should be stopped)",
     )
     parser.add_argument(
         "-a", "--attn_heads", type=int, default=1, help="Number of attention heads"
