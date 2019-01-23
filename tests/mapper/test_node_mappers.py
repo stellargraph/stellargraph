@@ -278,7 +278,7 @@ def test_nodemapper_with_labels():
         nf, nl = gen[len(gen)]
 
 
-def test_nodemapper_no_samples():
+def test_nodemapper_zero_samples():
     n_feat = 4
     n_batch = 2
 
@@ -294,6 +294,22 @@ def test_nodemapper_no_samples():
         nf, nl = mapper[ii]
         assert len(nf) == 2
         assert nf[0].shape == (n_batch, 1, n_feat)
+        assert nf[1].shape == (n_batch, 0, n_feat)
+        assert nl is None
+
+    # test graph
+    G = example_graph_1(feature_size=n_feat)
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
+        G.nodes()
+    )
+
+    # This is an edge case, are we sure we want this behaviour?
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert len(nf) == 3
+        assert nf[0].shape == (n_batch, 1, n_feat)
+        assert nf[1].shape == (n_batch, 0, n_feat)
         assert nf[1].shape == (n_batch, 0, n_feat)
         assert nl is None
 
@@ -527,6 +543,28 @@ def test_hinnodemapper_manual_schema():
     HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
         nodes_type_1
     )
+
+
+def test_hinnodemapper_zero_samples():
+    batch_size = 3
+    feature_sizes = {"t1": 1, "t2": 1}
+    G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0, 0]).flow(
+        nodes_type_2
+    )
+
+    schema = G.create_graph_schema()
+    sampling_adj = schema.type_adjacency_list(["t2"], 2)
+
+    assert len(mapper) == 1
+
+    # Get a batch!
+    batch_feats, batch_targets = mapper[0]
+    assert len(batch_feats) == len(sampling_adj)
+
+    # print(sampling_adj)
+    # print(batch_feats)
 
 
 def test_hinnodemapper_no_neighbors():
