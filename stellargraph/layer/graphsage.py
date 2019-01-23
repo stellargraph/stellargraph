@@ -54,6 +54,7 @@ class GraphSAGEAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Callable or AnyStr = "relu",
+        method: AnyStr = "concat",
         **kwargs
     ):
         # Ensure the output dimension is divisible by 2
@@ -64,9 +65,9 @@ class GraphSAGEAggregator(Layer):
         self.half_output_dim = output_dim // 2
         self.has_bias = bias
         self.act = activations.get(act)
-        self.w_neigh = None
         self.w_self = None
         self.bias = None
+        self.method = method
         self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
 
@@ -79,9 +80,29 @@ class GraphSAGEAggregator(Layer):
             "output_dim": self.output_dim,
             "bias": self.has_bias,
             "act": activations.serialize(self.act),
+            "method": self.method,
         }
         base_config = super().get_config()
         return {**base_config, **config}
+
+    def weight_output_size(self):
+        """
+        Calculates the output size, according to
+        whether the model is building a MLP and
+        the method (concat or sum).
+
+        Returns:
+            int: size of the weight outputs.
+
+        """
+        if self._build_mlp_only:
+            weight_dim = self.output_dim
+        elif self.method == "concat":
+            weight_dim = self.half_output_dim
+        else:
+            weight_dim = self.output_dim
+
+        return weight_dim
 
     def build(self, input_shape):
         """
@@ -92,9 +113,50 @@ class GraphSAGEAggregator(Layer):
             and neighbour
 
         """
+        # Build a MLP model if zero neighbours
+        self._build_mlp_only = input_shape[1][2] == 0
+
+        self.w_self = self.add_weight(
+            name="w_self",
+            shape=(input_shape[0][2], self.weight_output_size()),
+            initializer=self._initializer,
+            trainable=True,
+        )
+
+        if self.has_bias:
+            self.bias = self.add_weight(
+                name="bias",
+                shape=(self.output_dim,),
+                initializer="zeros",
+                trainable=True,
+            )
+
         super().build(input_shape)
 
+    def build_mlp(self, x, **kwargs):
+        """
+        Create MLP on input self tensor, x[0]
+
+        Args:
+          x (List[Tensor]): Tensor giving the node features
+                shape: (batch_size, head size, feature_size)
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        h_out = K.dot(x, self.w_self)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+        return h_out
+
     def aggregate_neighbours(self, x_neigh):
+        """
+        Override with a method to aggregate tensors over neighbourhood.
+        """
         raise NotImplementedError(
             "The GraphSAGEAggregator base class should not be directly instantiated"
         )
@@ -114,21 +176,24 @@ class GraphSAGEAggregator(Layer):
         # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
         x_self, x_neigh = x
 
+        if self._build_mlp_only:
+            return self.build_mlp(x_self, **kwargs)
+
         # Weight maxtrix multiplied by self features
         from_self = K.dot(x_self, self.w_self)
 
         # If there are neighbours aggregate over them
-        if x_neigh.shape[2] > 0:
-            from_neigh = self.aggregate_neighbours(x_neigh)
+        from_neigh = self.aggregate_neighbours(x_neigh)
 
-        # Otherwise add a synthetic zero vector
+        # Combine self features and aggregated neighbours
+        if self.method == "concat":
+            h_out = K.concatenate([from_self, from_neigh], axis=2)
+        elif self.method == "sum":
+            h_out = from_self + from_neigh
         else:
-            x_shape = K.shape(x_neigh)
-            w_shape = self.half_output_dim
-            from_neigh = K.zeros((x_shape[0], x_shape[1], w_shape))
+            raise ValueError("Invalid aggregation method, should be 'sum' or 'concat'")
 
-        h_out = K.concatenate([from_self, from_neigh], axis=2)
-
+        # Finally, add bias and apply activation
         if self.has_bias:
             h_out = self.act(h_out + self.bias)
         else:
@@ -172,31 +237,18 @@ class MeanAggregator(GraphSAGEAggregator):
             and neighbour
 
         """
-        if input_shape[1][2] > 0:
+        super().build(input_shape)
+
+        if self._build_mlp_only:
+            self.w_neigh = None
+
+        else:
             self.w_neigh = self.add_weight(
                 name="w_neigh",
-                shape=(input_shape[1][3], self.half_output_dim),
+                shape=(input_shape[1][3], self.weight_output_size()),
                 initializer=self._initializer,
                 trainable=True,
             )
-        else:
-            self.w_neigh = None
-
-        self.w_self = self.add_weight(
-            name="w_self",
-            shape=(input_shape[0][2], self.half_output_dim),
-            initializer=self._initializer,
-            trainable=True,
-        )
-
-        if self.has_bias:
-            self.bias = self.add_weight(
-                name="bias",
-                shape=[self.output_dim],
-                initializer="zeros",
-                trainable=True,
-            )
-        super().build(input_shape)
 
     def aggregate_neighbours(self, x_neigh):
         from_neigh = K.dot(K.mean(x_neigh, axis=2), self.w_neigh)
@@ -233,10 +285,17 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             and neighbour
 
         """
-        if input_shape[1][2] > 0:
+        super().build(input_shape)
+
+        if self._build_mlp_only:
+            self.w_neigh = None
+            self.w_pool = None
+            self.b_pool = None
+
+        else:
             self.w_neigh = self.add_weight(
                 name="w_neigh",
-                shape=(self.hidden_dim, self.half_output_dim),
+                shape=(self.hidden_dim, self.weight_output_size()),
                 initializer=self._initializer,
                 trainable=True,
             )
@@ -252,26 +311,6 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
                 initializer=self._initializer,
                 trainable=True,
             )
-        else:
-            self.w_neigh = None
-            self.w_pool = None
-            self.b_pool = None
-
-        self.w_self = self.add_weight(
-            name="w_self",
-            shape=(input_shape[0][2], self.half_output_dim),
-            initializer=self._initializer,
-            trainable=True,
-        )
-
-        if self.has_bias:
-            self.bias = self.add_weight(
-                name="bias",
-                shape=(self.output_dim,),
-                initializer="zeros",
-                trainable=True,
-            )
-        super().build(input_shape)
 
     def aggregate_neighbours(self, x_neigh):
         """
@@ -289,7 +328,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
         # Take max of this tensor over neighbour dimension
         neigh_agg = K.max(xw_neigh, axis=2)
 
-        # Final output is the aggregated tensor mutliplied by the weights
+        # Final output is a dense layer over the aggregated tensor
         from_neigh = K.dot(neigh_agg, self.w_neigh)
         return from_neigh
 
@@ -324,7 +363,20 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
             and neighbour
 
         """
-        if input_shape[1][2] > 0:
+        super().build(input_shape)
+
+        if self._build_mlp_only:
+            self.w_neigh = None
+            self.w_pool = None
+            self.b_pool = None
+
+        else:
+            self.w_neigh = self.add_weight(
+                name="w_neigh",
+                shape=(self.hidden_dim, self.weight_output_size()),
+                initializer=self._initializer,
+                trainable=True,
+            )
             self.w_pool = self.add_weight(
                 name="w_pool",
                 shape=(input_shape[1][3], self.hidden_dim),
@@ -337,31 +389,6 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
                 initializer=self._initializer,
                 trainable=True,
             )
-            self.w_neigh = self.add_weight(
-                name="w_neigh",
-                shape=(self.hidden_dim, self.half_output_dim),
-                initializer=self._initializer,
-                trainable=True,
-            )
-        else:
-            self.w_neigh = None
-            self.w_pool = None
-            self.b_pool = None
-
-        self.w_self = self.add_weight(
-            name="w_self",
-            shape=(input_shape[0][2], self.half_output_dim),
-            initializer=self._initializer,
-            trainable=True,
-        )
-        if self.has_bias:
-            self.bias = self.add_weight(
-                name="bias",
-                shape=(self.output_dim,),
-                initializer="zeros",
-                trainable=True,
-            )
-        super().build(input_shape)
 
     def aggregate_neighbours(self, x_neigh):
         """
@@ -379,7 +406,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
         # Aggregate over neighbour activations using mean
         neigh_agg = K.mean(xw_neigh, axis=2)
 
-        # Final output is the aggregated tensor mutliplied by the weights
+        # Final output is a dense layer over the aggregated tensor
         from_neigh = K.dot(neigh_agg, self.w_neigh)
         return from_neigh
 
@@ -404,16 +431,13 @@ class AttentionalAggregator(GraphSAGEAggregator):
         # How can we expose these options to the user?
         self.attn_act = LeakyReLU(0.2)
 
+    def weight_output_size(self):
+        return self.output_dim
+
     def build(self, input_shape):
         # Build the full model if non-zero neighbours
-        self._build_full_model = input_shape[1][2] > 0
+        super().build(input_shape)
 
-        self.w_feat = self.add_weight(
-            name="w_feat",
-            shape=(input_shape[0][2], self.output_dim),
-            initializer=self._initializer,
-            trainable=True,
-        )
         self.a_self = self.add_weight(
             name="a_self",
             shape=(self.output_dim, 1),
@@ -421,46 +445,15 @@ class AttentionalAggregator(GraphSAGEAggregator):
             trainable=True,
         )
 
-        if self._build_full_model:
+        if self._build_mlp_only:
+            self.a_neigh = None
+        else:
             self.a_neigh = self.add_weight(
                 name="a_neigh",
                 shape=(self.output_dim, 1),
                 initializer=self._initializer,
                 trainable=True,
             )
-
-        else:
-            self.a_neigh = None
-
-        if self.has_bias:
-            self.bias = self.add_weight(
-                name="bias",
-                shape=(self.output_dim,),
-                initializer="zeros",
-                trainable=True,
-            )
-        super().build(input_shape)
-
-    def create_mlp(self, x, **kwargs):
-        """
-        Create MLP on input self tensor, x[0]
-
-        Args:
-          x (List[Tensor]): Tensors giving self and neighbour features
-                x[0]: self Tensor (batch_size, head size, feature_size)
-                x[1]: neighbour Tensor (batch_size, head size, neighbours, feature_size)
-
-        Returns:
-            Keras Tensor representing the aggregated embeddings in the input.
-
-        """
-        h_out = K.dot(x[0], self.w_feat)
-
-        if self.has_bias:
-            h_out = self.act(h_out + self.bias)
-        else:
-            h_out = self.act(h_out)
-        return h_out
 
     def call(self, x, **kwargs):
         """
@@ -475,12 +468,12 @@ class AttentionalAggregator(GraphSAGEAggregator):
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        if not self._build_full_model:
-            return self.create_mlp(x, **kwargs)
+        if self._build_mlp_only:
+            return self.build_mlp(x[0], **kwargs)
 
         # Calculate features for self & neighbours
-        xw_self = K.expand_dims(K.dot(x[0], self.w_feat), axis=2)
-        xw_neigh = K.dot(x[1], self.w_feat)
+        xw_self = K.expand_dims(K.dot(x[0], self.w_self), axis=2)
+        xw_neigh = K.dot(x[1], self.w_self)
 
         # Concatenate self vector to neighbour vectors
         # Shape is (n_b, n_h, n_neigh+1, n_feat)
