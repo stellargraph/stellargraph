@@ -424,3 +424,8 @@ class GAT:
 
         """
         raise NotImplemented
+
+    def default_model(self, flatten_output=False):
+        print("Deprecation warning: the .default_model() method is deprecated. "
+              "Please use .node_model() or .link_model() method instead.")
+        self.node_model()
