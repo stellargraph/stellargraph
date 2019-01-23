@@ -349,15 +349,17 @@ class HinSAGE:
                 # The shape of the head node is used for reshaping the neighbour inputs
                 head_shape = K.int_shape(x[i])[1]
 
-                # Reshape neighbours per node per layer & apply dropout
+                # Aplly dropout and reshape neighbours per node per layer
                 neigh_list = [
-                    Reshape(
-                        (
-                            head_shape,
-                            self.n_samples[self._depths[i]],
-                            self.dims[layer][self.subtree_schema[neigh_index][0]],
-                        )
-                    )(Dropout(self.dropout)(x[neigh_index]))
+                    Dropout(self.dropout)(
+                        Reshape(
+                            (
+                                head_shape,
+                                self.n_samples[self._depths[i]],
+                                self.dims[layer][self.subtree_schema[neigh_index][0]],
+                            )
+                        )(x[neigh_index])
+                    )
                     for neigh_index in neigh_indices
                 ]
 

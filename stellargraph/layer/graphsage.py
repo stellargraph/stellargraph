@@ -499,8 +499,8 @@ class GraphSAGE:
                 head_shape = K.int_shape(x[i])[1]
 
                 # Reshape neighbours per node per layer
-                neigh_in = Reshape((head_shape, self.n_samples[i], self.dims[layer]))(
-                    Dropout(self.dropout)(x[i + 1])
+                neigh_in = Dropout(self.dropout)(
+                    Reshape((head_shape, self.n_samples[i], self.dims[layer]))(x[i + 1])
                 )
 
                 # Apply aggregator to head node and neighbour nodes
