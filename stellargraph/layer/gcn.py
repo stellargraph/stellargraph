@@ -135,21 +135,8 @@ class GCN:
         self.bias = bias
         self.dropout = dropout
         self.normalize = normalize
-
         self.generator = generator
-        filter = self.generator.kwargs.get("filter", "localpool")
-
-        if filter == "chebyshev":
-            self.support = self.generator.kwargs.get("max_degree", 2)
-            self.suppG = [
-                Input(shape=(None, None), batch_shape=(None, None), sparse=True)
-                for _ in range(self.support)
-            ]
-        else:
-            self.suppG = [
-                Input(shape=(None, None), batch_shape=(None, None), sparse=True)
-            ]
-            self.support = 1
+        self.support = 1
 
     def __call__(self, x: List):
         """
@@ -161,8 +148,9 @@ class GCN:
         Returns:
             Output tensor
         """
+        H = x[0]
+        suppG = x[1:]
 
-        self.X_in = H = Input(shape=(self.generator.features.shape[1],))
         for l, a in zip(self.layer_sizes, self.activations):
             H = Dropout(self.dropout)(H)
             H = GraphConvolution(
@@ -171,13 +159,27 @@ class GCN:
                 activation=a,
                 use_bias=self.bias,
                 kernel_regularizer=self.normalize,
-            )([H] + self.suppG)
+            )([H] + suppG)
 
         return H
 
     def node_model(self):
-        x_out = self(None)
-        return [self.X_in] + self.suppG, x_out
+        x_in = Input(shape=(self.generator.features.shape[1],))
+
+        filter = self.generator.kwargs.get("filter", "localpool")
+        if filter == "chebyshev":
+            self.support = self.generator.kwargs.get("max_degree", 2)
+            suppG = [
+                Input(shape=(None, None), batch_shape=(None, None), sparse=True)
+                for _ in range(self.support)
+            ]
+        else:
+            suppG = [
+                Input(shape=(None, None), batch_shape=(None, None), sparse=True)
+            ]
+
+        x_out = self([x_in] + suppG)
+        return [x_in] + suppG, x_out
 
     def link_model(self, flatten_output=False):
         return None
