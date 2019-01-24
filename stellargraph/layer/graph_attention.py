@@ -85,9 +85,7 @@ class GraphAttention(Layer):
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
         self.attn_heads_reduction = attn_heads_reduction  # Eq. 5 and 6 in the paper
         self.in_dropout_rate = in_dropout_rate  # dropout rate for node features
-        self.attn_dropout_rate = (
-            attn_dropout_rate
-        )  # dropout rate for attention coefficients
+        self.attn_dropout_rate = attn_dropout_rate  # dropout rate for attention coefs
         self.activation = activations.get(activation)  # Eq. 4 in the paper
         self.use_bias = use_bias
 
@@ -404,9 +402,8 @@ class GAT:
             )
 
         X_in = Input(shape=(F,))
-        A_in = Input(
-            shape=(N,), sparse=True
-        )  # , sparse=True) makes model.fit_generator() method work
+        # sparse=True makes model.fit_generator() method work:
+        A_in = Input(shape=(N,), sparse=True)
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
