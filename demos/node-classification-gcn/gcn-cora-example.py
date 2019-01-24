@@ -11,7 +11,8 @@ from keras.layers import Dropout
 
 import stellargraph as sg
 from stellargraph.layer import GCN, GraphConvolution
-from stellargraph.mapper import FullBatchNodeGenerator, GCN_A_feats
+from stellargraph.mapper import FullBatchNodeGenerator
+from stellargraph.core.utils import GCN_Aadj_feats_op
 
 
 def train(train_nodes,
@@ -95,7 +96,7 @@ val_nodes, test_nodes, val_targets, test_targets = model_selection.train_test_sp
     test_nodes, test_targets, train_size=300, test_size=None, random_state=523214
 )
 
-generator = FullBatchNodeGenerator(G, func_opt=GCN_A_feats, filter='localpool')
+generator = FullBatchNodeGenerator(G, func_A_feats=GCN_Aadj_feats_op, filter='localpool')
 
 dropout=0.0
 layer_sizes=[16, 7]

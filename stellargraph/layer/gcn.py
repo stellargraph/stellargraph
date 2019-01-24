@@ -4,7 +4,7 @@ from keras.engine import Layer
 from keras import backend as K
 from keras import Input
 from keras.layers import Lambda, Dropout, Reshape
-from ..mapper import gcn_mappers as gm
+from ..mapper.node_mappers import FullBatchNodeGenerator
 
 from typing import List, Tuple, Callable, AnyStr
 
@@ -125,7 +125,7 @@ class GCN:
         normalize=regularizers.l2(5e-4),
     ):
 
-        if not isinstance(generator, gm.FullBatchNodeGenerator):
+        if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
         assert len(layer_sizes) == len(activations)
@@ -174,9 +174,7 @@ class GCN:
                 for _ in range(self.support)
             ]
         else:
-            suppG = [
-                Input(shape=(None, None), batch_shape=(None, None), sparse=True)
-            ]
+            suppG = [Input(shape=(None, None), batch_shape=(None, None), sparse=True)]
 
         x_out = self([x_in] + suppG)
         return [x_in] + suppG, x_out

@@ -18,7 +18,12 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
+__all__ = [
+    "NodeSequence",
+    "GraphSAGENodeGenerator",
+    "HinSAGENodeGenerator",
+    "FullBatchNodeGenerator",
+]
 
 import operator
 from functools import reduce
@@ -26,6 +31,7 @@ from functools import reduce
 import numpy as np
 import itertools as it
 from keras.utils import Sequence
+import networkx as nx
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,
@@ -448,3 +454,87 @@ class HinSAGENodeGenerator:
         """
 
         return NodeSequence(self, node_targets.index, node_targets.values)
+
+
+class FullBatchNodeSequence(Sequence):
+    def __init__(self, features, A, targets=None, sample_weight=None):
+        # Check targets is iterable & has the correct length
+        if not is_real_iterable(targets) and targets is not None:
+            raise TypeError("Targets must be None or an iterable or numpy array ")
+
+        self.features = features
+        self.A = A
+        self.targets = targets
+        self.sample_weight = sample_weight
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        return [self.features, self.A], self.targets, self.sample_weight
+
+
+class FullBatchNodeGenerator:
+    def __init__(self, G, name=None, func_opt=None, **kwargs):
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # Create sparse adjacency matrix
+        self.node_list = list(G.nodes())
+        self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
+
+        # We need a schema to check compatibility with GraphSAGE, GAT, GCN
+        self.schema = G.create_graph_schema(create_type_maps=True)
+
+        # Check that there is only a single node type for GraphSAGE, or GAT, or GCN
+        if len(self.schema.node_types) > 1:
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Get the features for the nodes
+        self.features = G.get_feature_for_nodes(self.node_list)
+
+        if callable(func_opt):
+            self.features, self.Aadj = func_opt(
+                features=self.features, Aadj=self.Aadj, **kwargs
+            )
+
+        self.kwargs = kwargs
+
+    def flow(self, node_ids, targets=None):
+        # Check targets is an iterable
+        if not is_real_iterable(targets) and not targets is None:
+            raise TypeError("Targets must be an iterable or None")
+
+        # The list of indices of the target nodes in self.node_list
+        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+        node_mask = np.zeros(len(self.node_list), dtype=int)
+        node_mask[node_indices] = 1
+        node_mask = np.ma.make_mask(node_mask)
+
+        # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
+        if targets is not None:
+            targets = np.array(targets)
+            if len(targets.shape) == 1:
+                c = 1
+            else:
+                c = targets.shape[1]
+
+            n = self.Aadj.shape[0]
+            y = np.zeros((n, c))
+            for i, t in zip(node_indices, targets):
+                y[i] = t
+        else:
+            y = None
+
+        return FullBatchNodeSequence(self.features, self.Aadj, y, node_mask)

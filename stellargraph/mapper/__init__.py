@@ -25,4 +25,3 @@ The mapper package contains classes and functions to map graph data to neural ne
 # Expose the mappers
 from .node_mappers import *
 from .link_mappers import *
-from .gcn_mappers import *
