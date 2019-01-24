@@ -98,7 +98,7 @@ class FullBatchNodeSequence(Sequence):
 
 
 class FullBatchNodeGenerator:
-    def __init__(self, G, name=None, func_A_feats=None, **kwargs):
+    def __init__(self, G, name=None, func_opt=None, **kwargs):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -111,10 +111,8 @@ class FullBatchNodeGenerator:
         self.features = G.get_feature_for_nodes(self.nodes)
         self.A = nx.adjacency_matrix(G, nodelist=self.nodes)
 
-        if func_A_feats:
-            self.features, self.A = func_A_feats(
-                features=self.features, A=self.A, kwargs=kwargs
-            )
+        if callable(func_opt):
+            self.features, self.A = func_opt(features=self.features, A=self.A, **kwargs)
 
         self.kwargs = kwargs
 
