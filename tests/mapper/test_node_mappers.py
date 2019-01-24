@@ -21,11 +21,13 @@ Mapper tests:
 """
 from stellargraph.core.graph import *
 from stellargraph.mapper.node_mappers import *
+from stellargraph.mapper import FullBatchNodeGenerator
 
 import networkx as nx
 import numpy as np
 import random
 import pytest
+import pandas as pd
 
 
 def example_graph_1(feature_size=None):
@@ -559,3 +561,45 @@ def test_hinnodemapper_no_neighbors():
 
     # Second edge type (e2): Node 0 has 2, node 1 has none, and node 6 sampling has terminated
     assert np.all(batch_feats[3][:, 0, 0] == np.array([12, 0, 0]))
+
+
+def create_graph_features():
+    G = nx.Graph()
+    G.add_nodes_from(["a", "b", "c"])
+    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
+    G = G.to_undirected()
+    return G, np.array([[1, 1], [1, 0], [0, 1]])
+
+class Test_FullBatchNodeGenerator:
+    """
+    Tests of FullBatchNodeGenerator class
+    """
+
+    def test_fullbatch_generater_init_1(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        generator = FullBatchNodeGenerator(G, name='test', func_opt=None, key='value')
+        assert generator.name == 'test'
+        assert np.array_equal(feats, generator.features)
+        assert generator.kwargs['key'] == 'value'
+
+    def test_fullbatch_generater_init_2(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        def func(features, A, **kwargs):
+            return features*features, A
+
+        generator = FullBatchNodeGenerator(G, 'test', func, key='value')
+        assert generator.name == 'test'
+        assert np.array_equal(feats*feats, generator.features)
+        assert generator.kwargs['key'] == 'value'
