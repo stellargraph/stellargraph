@@ -180,17 +180,18 @@ class GraphAttention(Layer):
         if K.is_sparse(A):
             A = tf.sparse_tensor_to_dense(A, validate_indices=False)
 
-        # adding self-loops if requested:
-        if kwargs.get("add_self_loops") is True:
-            N = kwargs.get("num_nodes")
-            if N is not None:
-                A = tf.math.add(A, K.eye(N))  # add self-loops
-            else:
-                raise ValueError(
-                    "{}: need to know number of nodes to add self-loops; obtained None instead".format(
-                        type(self).__name__
-                    )
+        # For the GAT model to match that in the paper, we need to ensure that the graph has self-loops,
+        # since the neighbourhood of node i in eq. (4) includes node i itself.
+        # Adding self-loops to A via setting the diagonal elements of A to 1.0:
+        N = kwargs.get("num_nodes")
+        if N is not None:
+            A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))   # create self-loops
+        else:
+            raise ValueError(
+                "{}: need to know number of nodes to add self-loops; obtained None instead".format(
+                    type(self).__name__
                 )
+            )
 
         outputs = []
         for head in range(self.attn_heads):
@@ -222,7 +223,7 @@ class GraphAttention(Layer):
             # Mask values before activation (Vaswani et al., 2017)
             # YT: this only works for 'binary' A, not for 'weighted' A!
             # YT: if A does not have self-loops, the node itself will be masked, so A should have self-loops
-            # YT: this is controlled via the `add_self_loops` argument (see above)
+            # YT: this is ensured by setting the diagonal elements of A tensor to 1 above
             mask = -10e9 * (1.0 - A)
             dense += mask
 
@@ -272,7 +273,6 @@ class GAT:
         attn_dropout=0.,
         normalize="l2",
         generator=None,
-        add_self_loops=False,
     ):
         """
 
@@ -293,7 +293,6 @@ class GAT:
         self.in_dropout = in_dropout
         self.attn_dropout = attn_dropout
         self.generator = generator
-        self.add_self_loops = add_self_loops
 
         if attn_heads_reduction is None:
             # default head reductions, see eqs 5-6 of the GAT paper
@@ -375,7 +374,6 @@ class GAT:
             if isinstance(layer, self._gat_layer):  # layer is a GAT layer
                 x = layer(
                     [x, A],
-                    add_self_loops=self.add_self_loops,
                     num_nodes=kwargs.get("num_nodes"),
                 )
             else:  # layer is a Dropout layer
