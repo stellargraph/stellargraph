@@ -128,9 +128,9 @@ class GraphSAGEAggregator(Layer):
 
         super().build(input_shape)
 
-    def build_mlp(self, x, **kwargs):
+    def apply_mlp(self, x, **kwargs):
         """
-        Create MLP on input self tensor, x[0]
+        Create MLP on input self tensor, x
 
         Args:
           x (List[Tensor]): Tensor giving the node features
@@ -172,7 +172,7 @@ class GraphSAGEAggregator(Layer):
         x_self, x_neigh = x
 
         if self._build_mlp_only:
-            return self.build_mlp(x_self, **kwargs)
+            return self.apply_mlp(x_self, **kwargs)
 
         # Weight maxtrix multiplied by self features
         from_self = K.dot(x_self, self.w_self)
@@ -458,7 +458,7 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
         """
         if self._build_mlp_only:
-            return self.build_mlp(x[0], **kwargs)
+            return self.apply_mlp(x[0], **kwargs)
 
         # Calculate features for self & neighbours
         xw_self = K.expand_dims(K.dot(x[0], self.w_self), axis=2)
