@@ -180,6 +180,18 @@ class GraphAttention(Layer):
         if K.is_sparse(A):
             A = tf.sparse_tensor_to_dense(A, validate_indices=False)
 
+        # adding self-loops if requested:
+        if kwargs.get("add_self_loops") is True:
+            N = kwargs.get("num_nodes")
+            if N is not None:
+                A = tf.math.add(A, K.eye(N))  # add self-loops
+            else:
+                raise ValueError(
+                    "{}: need to know number of nodes to add self-loops; obtained None instead".format(
+                        type(self).__name__
+                    )
+                )
+
         outputs = []
         for head in range(self.attn_heads):
             kernel = self.kernels[head]  # W in the paper (F x F')
@@ -209,6 +221,8 @@ class GraphAttention(Layer):
 
             # Mask values before activation (Vaswani et al., 2017)
             # YT: this only works for 'binary' A, not for 'weighted' A!
+            # YT: if A does not have self-loops, the node itself will be masked, so A should have self-loops
+            # YT: this is controlled via the `add_self_loops` argument (see above)
             mask = -10e9 * (1.0 - A)
             dense += mask
 
@@ -258,6 +272,7 @@ class GAT:
         attn_dropout=0.,
         normalize="l2",
         generator=None,
+        add_self_loops=False,
     ):
         """
 
@@ -278,6 +293,7 @@ class GAT:
         self.in_dropout = in_dropout
         self.attn_dropout = attn_dropout
         self.generator = generator
+        self.add_self_loops = add_self_loops
 
         if attn_heads_reduction is None:
             # default head reductions, see eqs 5-6 of the GAT paper
@@ -337,7 +353,7 @@ class GAT:
                 )
             )
 
-    def __call__(self, x_inp):
+    def __call__(self, x_inp, **kwargs):
         """
         Apply a stack of GAT layers to the input x_inp
 
@@ -357,7 +373,11 @@ class GAT:
 
         for layer in self._layers:
             if isinstance(layer, self._gat_layer):  # layer is a GAT layer
-                x = layer([x, A])
+                x = layer(
+                    [x, A],
+                    add_self_loops=self.add_self_loops,
+                    num_nodes=kwargs.get("num_nodes"),
+                )
             else:  # layer is a Dropout layer
                 x = layer(x)
 
@@ -404,10 +424,11 @@ class GAT:
         X_in = Input(shape=(F,))
         # sparse=True makes model.fit_generator() method work:
         A_in = Input(shape=(N,), sparse=True)
+
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
-        x_out = self(x_inp)
+        x_out = self(x_inp, num_nodes=N)
 
         return x_inp, x_out
 
