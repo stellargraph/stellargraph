@@ -111,15 +111,6 @@ def train(
     val_gen = generator.flow(val_nodes, val_targets)
 
     # GAT model
-    # For the GAT model to match that in the paper, we need to ensure that the graph has self-loops,
-    # since the neighbourhood of node i in eq. (4) includes node i itself.
-    add_self_loops = False
-    if G.number_of_selfloops() == 0:
-        add_self_loops = True  # G has no self loops, so need to add them in GAT
-    # Alternatively, we could add self-loops to G via G.add_edge(u, u) for u in G.nodes(), and set add_self_loops=False
-    # One needs to be careful not to set add_self_loops to True if G already has self-loops, as this would effectively add
-    # self-loops twice and cause the GAT model to ignore the graph structure, reducing to a Multi_Layer Perceptron on node features.
-
     gat = GAT(
         layer_sizes=layer_sizes,
         attn_heads=attn_heads,
@@ -129,7 +120,6 @@ def train(
         attn_dropout=dropout,
         activations=["elu", "elu"],
         normalize=None,
-        add_self_loops=add_self_loops,
     )
     # Expose the input and output tensors of the GAT model:
     x_inp, x_out = gat.node_model()
