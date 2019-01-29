@@ -130,7 +130,8 @@ if __name__ == "__main__":
     else:
         print("Graph is not connected")
         # take the largest connected component as the data
-        g_nx = max(nx.connected_component_subgraphs(g_nx, copy=True), key=len)
+        g_nx_ccs = (g_nx.subgraph(c).copy() for c in nx.connected_components(g_nx))
+        g_nx = max(g_nx_ccs, key=len)
         print(
             "Largest subgraph statistics: {} nodes, {} edges".format(
                 g_nx.number_of_nodes(), g_nx.number_of_edges()

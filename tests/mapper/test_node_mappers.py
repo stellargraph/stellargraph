@@ -24,6 +24,7 @@ from stellargraph.mapper.node_mappers import *
 
 import networkx as nx
 import numpy as np
+import random
 import pytest
 
 
@@ -48,6 +49,26 @@ def example_graph_2(feature_size=None):
     elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
     G.add_nodes_from([1, 2, 3, 4, 5], label="default")
     G.add_edges_from(elist, label="default")
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
+
+
+def example_graph_3(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
+    G = nx.Graph()
+    n_noniso = n_nodes - n_isolates
+    edges = [
+        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_nodes_from(range(n_nodes))
+    G.add_edges_from(edges, label="default")
 
     # Add example features
     if feature_size is not None:
@@ -129,6 +150,7 @@ def example_hin_3(feature_size_by_type=None):
 
     # Node 2 has no edges of type 1
     # Node 1 has no edges of type 2
+    # Node 6 has no edges
 
     # Add example features
     if feature_size_by_type is not None:
@@ -220,6 +242,10 @@ def test_nodemapper_1():
     assert nf[1].shape == (1, 2, n_feat)
     assert nf[2].shape == (1, 2 * 2, n_feat)
 
+    # This will fail as the nodes are not in the graph
+    with pytest.raises(KeyError):
+        GraphSAGENodeGenerator(G1, batch_size=2, num_samples=[2, 2]).flow(["A", "B"])
+
 
 def test_nodemapper_with_labels():
     n_feat = 4
@@ -252,7 +278,7 @@ def test_nodemapper_with_labels():
         nf, nl = gen[len(gen)]
 
 
-def test_nodemapper_no_samples():
+def test_nodemapper_zero_samples():
     n_feat = 4
     n_batch = 2
 
@@ -270,6 +296,84 @@ def test_nodemapper_no_samples():
         assert nf[0].shape == (n_batch, 1, n_feat)
         assert nf[1].shape == (n_batch, 0, n_feat)
         assert nl is None
+
+    # test graph
+    G = example_graph_1(feature_size=n_feat)
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
+        G.nodes()
+    )
+
+    # This is an edge case, are we sure we want this behaviour?
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert len(nf) == 3
+        assert nf[0].shape == (n_batch, 1, n_feat)
+        assert nf[1].shape == (n_batch, 0, n_feat)
+        assert nf[1].shape == (n_batch, 0, n_feat)
+        assert nl is None
+
+
+def test_nodemapper_isolated_nodes():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+
+    # Check connectedness
+    ccs = list(nx.connected_components(G))
+    assert len(ccs) == 2
+
+    n_isolates = [5]
+    assert nx.degree(G, n_isolates[0]) == 0
+
+    # Check both isolated and non-isolated nodes have same sampled feature shape
+    for head_nodes in [[1], [2], n_isolates]:
+        mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[2, 2]).flow(
+            head_nodes
+        )
+        nf, nl = mapper[0]
+        assert nf[0].shape == (1, 1, n_feat)
+        assert nf[1].shape == (1, 2, n_feat)
+        assert nf[2].shape == (1, 4, n_feat)
+
+    # One isolate and one non-isolate
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[2, 2]).flow(
+        [1, 5]
+    )
+    nf, nl = mapper[0]
+    assert nf[0].shape == (2, 1, n_feat)
+    assert nf[1].shape == (2, 2, n_feat)
+    assert nf[2].shape == (2, 4, n_feat)
+
+    # Isolated nodes have the "dummy node" as neighbours
+    # Currently, the dummy node has zeros for features – this could change
+    assert pytest.approx(nf[1][1]) == 0
+    assert pytest.approx(nf[2][2:]) == 0
+
+
+def test_nodemapper_manual_schema():
+    """
+    Tests checks on head nodes
+    """
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = example_graph_1(feature_size=n_feat)
+
+    # Create manual schema
+    schema = G.create_graph_schema(create_type_maps=True)
+    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        list(G)
+    )
+
+    # Create manual schema without type maps
+    schema = G.create_graph_schema(create_type_maps=False)
+    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        list(G)
+    )
 
 
 def test_nodemapper_incorrect_targets():
@@ -324,6 +428,15 @@ def test_hinnodemapper_constructor_no_features():
         mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow(
             G.nodes()
         )
+
+
+def test_hinnodemapper_constructor_nx_graph():
+    G = nx.Graph()
+    with pytest.raises(TypeError):
+        HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
+
+    with pytest.raises(TypeError):
+        HinSAGENodeGenerator(None, batch_size=2, num_samples=[2, 2])
 
 
 def test_hinnodemapper_level_1():
@@ -409,6 +522,49 @@ def test_hinnodemapper_with_labels():
     # Check beyond the graph lengh
     with pytest.raises(IndexError):
         nf, nl = gen[len(gen)]
+
+
+def test_hinnodemapper_manual_schema():
+    """
+    Tests checks on head nodes
+    """
+    n_batch = 2
+    feature_sizes = {"t1": 1, "t2": 2}
+    G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
+
+    # Create manual schema
+    schema = G.create_graph_schema(create_type_maps=True)
+    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        nodes_type_1
+    )
+
+    # Create manual schema without type maps
+    schema = G.create_graph_schema(create_type_maps=False)
+    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
+        nodes_type_1
+    )
+
+
+def test_hinnodemapper_zero_samples():
+    batch_size = 3
+    feature_sizes = {"t1": 1, "t2": 1}
+    G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0, 0]).flow(
+        nodes_type_2
+    )
+
+    schema = G.create_graph_schema()
+    sampling_adj = schema.type_adjacency_list(["t2"], 2)
+
+    assert len(mapper) == 1
+
+    # Get a batch!
+    batch_feats, batch_targets = mapper[0]
+    assert len(batch_feats) == len(sampling_adj)
+
+    # print(sampling_adj)
+    # print(batch_feats)
 
 
 def test_hinnodemapper_no_neighbors():

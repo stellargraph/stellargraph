@@ -215,21 +215,31 @@ class GraphSAGELinkGenerator:
         node_type = sampling_schema[0][0][0]
         head_size = len(head_links)
 
+        # The number of samples for each head node (not including itself)
+        num_full_samples = np.sum(np.cumprod(self.num_samples))
+
+        # Reshape node samples to sensible format
+        def get_levels(loc, lsize, samples_per_hop, walks):
+            end_loc = loc + lsize
+            walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
+            if len(samples_per_hop) < 1:
+                return [walks_at_level]
+            return [walks_at_level] + get_levels(
+                end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
+            )
+
         # Get sampled nodes for the subgraphs for the edges where each edge is a tuple
         # of 2 nodes, so we are extracting 2 head nodes per edge
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self.sampler.run(nodes=hns, n=1, n_size=self.num_samples)
 
-            # Reshape node samples to sensible format
-            def get_levels(loc, lsize, samples_per_hop, walks):
-                end_loc = loc + lsize
-                walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
-                if len(samples_per_hop) < 1:
-                    return [walks_at_level]
-                return [walks_at_level] + get_levels(
-                    end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
-                )
+            # Isolated nodes will return only themselves in the sample list
+            # let's correct for this by padding with None (the dummy node ID)
+            node_samples = [
+                ns + [None] * num_full_samples if len(ns) == 1 else ns
+                for ns in node_samples
+            ]
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
 

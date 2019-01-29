@@ -19,12 +19,30 @@
 GraphSAGE tests
 
 """
-
-
+from stellargraph.core.graph import StellarGraph
+from stellargraph.mapper.node_mappers import GraphSAGENodeGenerator
 from stellargraph.layer.graphsage import *
+
 import keras
 import numpy as np
+import networkx as nx
 import pytest
+
+
+def example_graph_1(feature_size=None):
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_nodes_from([1, 2, 3, 4], label="default")
+    G.add_edges_from(elist, label="default")
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = np.ones(feature_size)
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
 
 
 def test_maxpool_agg_constructor():
@@ -35,6 +53,12 @@ def test_maxpool_agg_constructor():
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
     assert agg.hidden_act.__name__ == "relu"
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
 
 
 def test_maxpool_agg_constructor_1():
@@ -47,7 +71,7 @@ def test_maxpool_agg_constructor_1():
 
 
 def test_maxpool_agg_apply():
-    agg = MaxPoolingAggregator(2, bias=False, act="linear")
+    agg = MaxPoolingAggregator(2, bias=True, act="linear")
     agg._initializer = "ones"
 
     # Self features
@@ -72,6 +96,24 @@ def test_maxpool_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_maxpool_agg_zero_neighbours():
+    agg = MaxPoolingAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 0, 0]]])
+    assert expected == pytest.approx(actual)
+
+
 def test_meanpool_agg_constructor():
     agg = MeanPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
@@ -80,6 +122,12 @@ def test_meanpool_agg_constructor():
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
     assert agg.hidden_act.__name__ == "relu"
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
 
 
 def test_meanpool_agg_constructor_1():
@@ -92,7 +140,7 @@ def test_meanpool_agg_constructor_1():
 
 
 def test_meanpool_agg_apply():
-    agg = MeanPoolingAggregator(2, bias=False, act="linear")
+    agg = MeanPoolingAggregator(2, bias=True, act="linear")
     agg._initializer = "ones"
 
     # Self features
@@ -117,12 +165,35 @@ def test_meanpool_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_meanpool_agg_zero_neighbours():
+    agg = MeanPoolingAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 0, 0]]])
+    assert expected == pytest.approx(actual)
+
+
 def test_mean_agg_constructor():
     agg = MeanAggregator(2)
     assert agg.output_dim == 2
     assert agg.half_output_dim == 1
     assert not agg.has_bias
-    assert agg.act.__name__ == "relu"
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
 
 
 def test_mean_agg_constructor_1():
@@ -134,7 +205,7 @@ def test_mean_agg_constructor_1():
 
 
 def test_mean_agg_apply():
-    agg = MeanAggregator(4, act=lambda x: x)
+    agg = MeanAggregator(4, bias=True, act=lambda x: x)
     agg._initializer = "ones"
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 2, 2))
@@ -147,13 +218,53 @@ def test_mean_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_mean_agg_zero_neighbours():
+    agg = MeanAggregator(4, bias=False, act=lambda x: x)
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 0, 0]]])
+    assert expected == pytest.approx(actual)
+
+
 def test_graphsage_constructor():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="l2")
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.n_layers == 1
     assert gs.bias
     assert len(gs._aggs) == 1
+
+    # Check incorrect normalization flag
+    with pytest.raises(ValueError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize=lambda x: x)
+
+    with pytest.raises(ValueError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="unknown")
+
+    # Check requirement for generator or n_samples
+    with pytest.raises(RuntimeError):
+        GraphSAGE(layer_sizes=[4])
+
+    # Construction from generator
+    G = example_graph_1(feature_size=3)
+    gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow([1, 2])
+    gs = GraphSAGE(layer_sizes=[4, 8], generator=gen, bias=True)
+
+    assert gs.dims == [3, 4, 8]
+    assert gs.n_samples == [2, 2]
+    assert gs.n_layers == 2
+    assert gs.bias
+    assert len(gs._aggs) == 2
 
 
 def test_graphsage_constructor_passing_aggregator():
@@ -165,6 +276,9 @@ def test_graphsage_constructor_passing_aggregator():
     assert gs.n_layers == 1
     assert gs.bias
     assert len(gs._aggs) == 1
+
+    with pytest.raises(TypeError):
+        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=1)
 
 
 def test_graphsage_constructor_1():
@@ -179,8 +293,9 @@ def test_graphsage_constructor_1():
 
 
 def test_graphsage_apply():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], bias=False, input_dim=2)
-    gs._normalization = lambda x: x
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+    )
     for agg in gs._aggs:
         agg._initializer = "ones"
 
@@ -189,17 +304,15 @@ def test_graphsage_apply():
     out = gs([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
 
-    x1 = np.array([[[1, 1]]])
-    x2 = np.array([[[2, 2], [3, 3]]])
-
-    actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 5, 5]]])
-    assert expected == pytest.approx(actual)
-
 
 def test_graphsage_apply_1():
-    gs = GraphSAGE(layer_sizes=[2, 2, 2], n_samples=[2, 2, 2], bias=False, input_dim=2)
-    gs._normalization = lambda z: z
+    gs = GraphSAGE(
+        layer_sizes=[2, 2, 2],
+        n_samples=[2, 2, 2],
+        bias=False,
+        input_dim=2,
+        normalize=None,
+    )
     for agg in gs._aggs:
         agg._initializer = "ones"
 
@@ -217,3 +330,59 @@ def test_graphsage_apply_1():
     actual = model.predict(x)
     expected = np.array([[[16, 25]]])
     assert expected == pytest.approx(actual)
+
+    # Use the default model:
+    xinp, xout = gs.default_model()
+    model2 = keras.Model(inputs=xinp, outputs=xout)
+
+    expected = np.array([[[16, 25]]])
+    assert pytest.approx(expected) == model2.predict(x)
+
+
+def test_graphsage_serialize():
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+    )
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(2, 2))
+    out = gs([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    # Save model
+    model_json = model.to_json()
+
+    # Set all weights to one
+    model_weights = [np.ones_like(w) for w in model.get_weights()]
+
+    # Load model from json & set all weights
+    model2 = keras.models.model_from_json(
+        model_json, custom_objects={"MeanAggregator": MeanAggregator}
+    )
+    model2.set_weights(model_weights)
+
+    # Test loaded model
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[2, 2], [3, 3]]])
+    actual = model2.predict([x1, x2])
+    expected = np.array([[[2, 2, 5, 5]]])
+    assert expected == pytest.approx(actual)
+
+
+def test_graphsage_zero_neighbours():
+    gs = GraphSAGE(
+        layer_sizes=[2, 2], n_samples=[0, 0], bias=False, input_dim=2, normalize="none"
+    )
+
+    for agg in gs._aggs:
+        agg._initializer = "ones"
+
+    inp = [keras.Input(shape=(i, 2)) for i in [1, 0, 0]]
+    out = gs(inp)
+    model = keras.Model(inputs=inp, outputs=out)
+
+    x = [np.array([[[1.5, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
+
+    actual = model.predict(x)
+    expected = np.array([[[2.5, 0]]])
+    assert actual == pytest.approx(expected)
