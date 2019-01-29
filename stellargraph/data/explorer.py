@@ -266,13 +266,6 @@ class BiasedRandomWalk(GraphWalk):
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None):
-        # TODO: add doc string
-        super().__init__(graph, graph_schema=None, seed=None)
-
-    #        if (graph.weighted):
-    #           print("its a weighted graph!")
-
     def run(
         self,
         nodes=None,
@@ -383,19 +376,15 @@ class BiasedRandomWalk(GraphWalk):
                         weight_cn = self.graph[current_node][nn][0].get(
                             edge_weight_label
                         )
-                        if nn == previous_node:  # d_tx = 0
-                            return ip * weight_cn
-                        elif nn in previous_node_neighbours:  # d_tx = 1
-                            return 1.0 * weight_cn
-                        else:  # d_tx = 2
-                            return iq * weight_cn
                     else:
-                        if nn == previous_node:  # d_tx = 0
-                            return ip
-                        elif nn in previous_node_neighbours:  # d_tx = 1
-                            return 1.0
-                        else:  # d_tx = 2
-                            return iq
+                        weight_cn = 1.0
+
+                    if nn == previous_node:  # d_tx = 0
+                        return ip * weight_cn
+                    elif nn in previous_node_neighbours:  # d_tx = 1
+                        return 1.0 * weight_cn
+                    else:  # d_tx = 2
+                        return iq * weight_cn
 
                 if neighbours:
                     current_node = rs.choice(neighbours)
