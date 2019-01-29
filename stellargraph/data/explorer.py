@@ -377,7 +377,7 @@ class BiasedRandomWalk(GraphWalk):
                             edge_weight_label
                         )
                     else:
-                        weight_cn = 1.
+                        weight_cn = 1.0
 
                     if nn == previous_node:  # d_tx = 0
                         return ip * weight_cn
