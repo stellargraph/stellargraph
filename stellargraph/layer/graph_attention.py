@@ -183,9 +183,12 @@ class GraphAttention(Layer):
         # For the GAT model to match that in the paper, we need to ensure that the graph has self-loops,
         # since the neighbourhood of node i in eq. (4) includes node i itself.
         # Adding self-loops to A via setting the diagonal elements of A to 1.0:
-        N = kwargs.get("num_nodes")
+        # N = kwargs.get("num_nodes")
+        # get the number of nodes from inputs[1] directly, rather than passing it via kwargs
+        N = inputs[1]._keras_shape[-1]
         if N is not None:
-            A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))   # create self-loops
+            # create self-loops
+            A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))
         else:
             raise ValueError(
                 "{}: need to know number of nodes to add self-loops; obtained None instead".format(
@@ -372,10 +375,7 @@ class GAT:
 
         for layer in self._layers:
             if isinstance(layer, self._gat_layer):  # layer is a GAT layer
-                x = layer(
-                    [x, A],
-                    num_nodes=kwargs.get("num_nodes"),
-                )
+                x = layer([x, A], num_nodes=kwargs.get("num_nodes"))
             else:  # layer is a Dropout layer
                 x = layer(x)
 
@@ -426,7 +426,7 @@ class GAT:
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
-        x_out = self(x_inp, num_nodes=N)
+        x_out = self(x_inp)
 
         return x_inp, x_out
 
