@@ -38,8 +38,8 @@ class GraphAttention(Layer):
         F_,
         attn_heads=1,
         attn_heads_reduction="concat",  # {'concat', 'average'}
-        in_dropout_rate=0.,
-        attn_dropout_rate=0.,
+        in_dropout_rate=0.0,
+        attn_dropout_rate=0.0,
         activation="relu",
         use_bias=True,
         kernel_initializer="glorot_uniform",
@@ -272,8 +272,8 @@ class GAT:
         attn_heads_reduction=None,
         activations=None,
         bias=True,
-        in_dropout=0.,
-        attn_dropout=0.,
+        in_dropout=0.0,
+        attn_dropout=0.0,
         normalize="l2",
         generator=None,
     ):
