@@ -86,9 +86,10 @@ and returns a `networkx` graph object. Assuming that the **BlogCatalog3** datase
 in directory `~/data`, the following 3 lines of code will prepare the dataset for use in the below examples.
 
 ```
+import networkx as nx
 import os
 from stellargraph.data.loader import load_dataset_BlogCatalog3
-g = load_dataset_BlogCatalog3(location='~/data/BlogCatalog-dataset/data)
+g = load_dataset_BlogCatalog3(location='~/data/BlogCatalog-dataset/data/')
 nx.write_gpickle(g, os.path.expanduser('~/data/BlogCatalog3.gpickle'))
 ```
 
