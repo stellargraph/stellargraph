@@ -27,6 +27,7 @@ import numpy as np
 import networkx as nx
 import pytest
 
+
 def example_graph_1(feature_size=None):
     G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
@@ -52,36 +53,54 @@ class Test_GraphAttention_layer:
     """
     Tests of GraphAttention layer
     """
+
     def test_constructor(self):
         # attn_heads_reduction = "concat":
-        layer = GraphAttention(F_=self.F_, attn_heads=self.attn_heads, attn_heads_reduction="concat",
-                               activation=self.activation)
+        layer = GraphAttention(
+            F_=self.F_,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction="concat",
+            activation=self.activation,
+        )
         assert layer.F_ == self.F_
         assert layer.attn_heads == self.attn_heads
-        assert layer.output_dim == self.F_ *self.attn_heads
+        assert layer.output_dim == self.F_ * self.attn_heads
         assert layer.activation == keras.activations.get(self.activation)
 
         # attn_heads_reduction = "average":
-        layer = GraphAttention(F_=self.F_, attn_heads=self.attn_heads, attn_heads_reduction="average",
-                               activation=self.activation)
+        layer = GraphAttention(
+            F_=self.F_,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction="average",
+            activation=self.activation,
+        )
         assert layer.output_dim == self.F_
 
         # attn_heads_reduction = "ave":
         with pytest.raises(ValueError):
-            GraphAttention(F_=self.F_, attn_heads=self.attn_heads, attn_heads_reduction="ave",
-                           activation=self.activation)
+            GraphAttention(
+                F_=self.F_,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction="ave",
+                activation=self.activation,
+            )
 
     def test_apply(self):
-        gat = GraphAttention(F_=self.F_, attn_heads=self.attn_heads, attn_heads_reduction="concat",
-                             activation=self.activation, kernel_initializer="ones")
+        gat = GraphAttention(
+            F_=self.F_,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction="concat",
+            activation=self.activation,
+            kernel_initializer="ones",
+        )
         x_inp = [Input(shape=(self.F,)), Input(shape=(self.N,))]
         x_out = gat(x_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
-        assert model.output_shape[-1] == self.F_ *self.attn_heads
+        assert model.output_shape[-1] == self.F_ * self.attn_heads
 
         X = np.ones((self.N, self.F))  # features
-        A = np.eye(self.N)   # adjacency matrix with self-loops only
-        expected = np.ones((self.N, self.F_ *self.attn_heads) ) *self.F
+        A = np.eye(self.N)  # adjacency matrix with self-loops only
+        expected = np.ones((self.N, self.F_ * self.attn_heads)) * self.F
         actual = model.predict([X, A])
         assert expected == pytest.approx(actual)
