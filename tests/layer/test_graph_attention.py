@@ -46,8 +46,8 @@ def example_graph_1(feature_size=None):
 
 class Test_GraphAttention_layer:
     N = 10
-    F = 5
-    F_ = 2
+    F_in = 5
+    F_out = 2
     attn_heads = 8
     activation = "relu"
     """
@@ -57,50 +57,93 @@ class Test_GraphAttention_layer:
     def test_constructor(self):
         # attn_heads_reduction = "concat":
         layer = GraphAttention(
-            F_=self.F_,
+            F_out=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
             activation=self.activation,
         )
-        assert layer.F_ == self.F_
+        assert layer.F_out == self.F_out
         assert layer.attn_heads == self.attn_heads
-        assert layer.output_dim == self.F_ * self.attn_heads
+        assert layer.output_dim == self.F_out * self.attn_heads
         assert layer.activation == keras.activations.get(self.activation)
 
         # attn_heads_reduction = "average":
         layer = GraphAttention(
-            F_=self.F_,
+            F_out=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
             activation=self.activation,
         )
-        assert layer.output_dim == self.F_
+        assert layer.output_dim == self.F_out
 
         # attn_heads_reduction = "ave":
         with pytest.raises(ValueError):
             GraphAttention(
-                F_=self.F_,
+                F_out=self.F_out,
                 attn_heads=self.attn_heads,
                 attn_heads_reduction="ave",
                 activation=self.activation,
             )
 
-    def test_apply(self):
+    def test_apply_concat(self):
         gat = GraphAttention(
-            F_=self.F_,
+            F_out=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
             activation=self.activation,
             kernel_initializer="ones",
         )
-        x_inp = [Input(shape=(self.F,)), Input(shape=(self.N,))]
+        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
         x_out = gat(x_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
-        assert model.output_shape[-1] == self.F_ * self.attn_heads
+        assert model.output_shape[-1] == self.F_out * self.attn_heads
 
-        X = np.ones((self.N, self.F))  # features
+        X = np.ones((self.N, self.F_in))  # features
         A = np.eye(self.N)  # adjacency matrix with self-loops only
-        expected = np.ones((self.N, self.F_ * self.attn_heads)) * self.F
+        expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
         actual = model.predict([X, A])
         assert expected == pytest.approx(actual)
+
+    def test_apply_average(self):
+        gat = GraphAttention(
+            F_out=self.F_out,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction="average",
+            activation=self.activation,
+            kernel_initializer="ones",
+        )
+        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
+        x_out = gat(x_inp)
+
+        model = keras.Model(inputs=x_inp, outputs=x_out)
+        assert model.output_shape[-1] == self.F_out
+
+        X = np.ones((self.N, self.F_in))  # features
+        A = np.eye(self.N)  # adjacency matrix with self-loops only
+        expected = np.ones((self.N, self.F_out)) * self.F_in
+        actual = model.predict([X, A])
+        assert expected == pytest.approx(actual)
+
+    def test_layer_config(self):
+        layer = GraphAttention(
+            F_out=self.F_out,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction="concat",
+            activation=self.activation,
+        )
+        conf = layer.get_config()
+
+        assert conf["F_out"] == self.F_out
+        assert conf["attn_heads"] == self.attn_heads
+        assert conf["attn_heads_reduction"] == "concat"
+        assert conf["activation"] == self.activation
+        assert conf["output_dim"] == self.F_out*self.attn_heads
+        assert conf["use_bias"] == True
+        assert conf["kernel_initializer"]["class_name"] == "VarianceScaling"
+        assert conf["kernel_initializer"]["config"]["distribution"] == "uniform"
+        assert conf["bias_initializer"]["class_name"] == "Zeros"
+        assert conf["kernel_regularizer"] == None
+        assert conf["bias_regularizer"] == None
+        assert conf["kernel_constraint"] == None
+        assert conf["bias_constraint"] == None
