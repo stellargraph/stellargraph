@@ -138,7 +138,6 @@ class Test_GraphAttention_layer:
         assert conf["attn_heads"] == self.attn_heads
         assert conf["attn_heads_reduction"] == "concat"
         assert conf["activation"] == self.activation
-        assert conf["output_dim"] == self.F_out*self.attn_heads
         assert conf["use_bias"] == True
         assert conf["kernel_initializer"]["class_name"] == "VarianceScaling"
         assert conf["kernel_initializer"]["config"]["distribution"] == "uniform"
@@ -147,3 +146,117 @@ class Test_GraphAttention_layer:
         assert conf["bias_regularizer"] == None
         assert conf["kernel_constraint"] == None
         assert conf["bias_constraint"] == None
+
+
+class Test_GAT:
+    N = 10
+    F_in = 5
+    F_out = 2
+    attn_heads = 8
+    layer_sizes = [4, 16]
+    activations = ["relu", "elu"]
+    """
+    Tests of GAT class
+    """
+
+    def test_constructor(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G)
+        with pytest.raises(AssertionError):
+            gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
+
+        with pytest.raises(AssertionError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations="relu",
+                generator=gen,
+                bias=True,
+            )
+
+        with pytest.raises(AssertionError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=["relu"],
+                generator=gen,
+                bias=True,
+            )
+
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+            bias=True,
+        )
+
+        assert gat.activations == self.activations
+        assert gat.attn_heads_reduction == ["concat", "average"]
+        assert gat.generator == gen
+
+    def test_gat_node_model(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+            bias=True,
+        )
+
+        gat._layers[1].kernel_initializer = keras.initializers.get("ones")
+        gat._layers[1].attn_kernel_initializer = keras.initializers.get("ones")
+        gat._layers[3].kernel_initializer = keras.initializers.get("ones")
+        gat._layers[3].attn_kernel_initializer = keras.initializers.get("ones")
+
+        assert len(gat.node_model()) == 2
+        x_in, x_out = gat.node_model()
+        assert len(x_in) == 2
+        assert int(x_in[0].shape[-1]) == self.F_in
+        assert x_in[1]._keras_shape == (None, G.number_of_nodes())
+        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
+
+        model = keras.Model(inputs=x_in, outputs=x_out)
+
+        X = gen.features
+        A = gen.Aadj
+        actual = model.predict([X, A])
+        expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
+            1.0 / G.number_of_nodes()
+        )
+        assert expected == pytest.approx(actual)
+
+    def test_gat_serialize(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+            bias=True,
+        )
+
+        x_in, x_out = gat.node_model()
+        model = keras.Model(inputs=x_in, outputs=x_out)
+
+        # Save model
+        model_json = model.to_json()
+
+        # Set all weights to one
+        model_weights = [np.ones_like(w) for w in model.get_weights()]
+
+        # Load model from json & set all weights
+        model2 = keras.models.model_from_json(
+            model_json, custom_objects={"GraphAttention": GraphAttention}
+        )
+        model2.set_weights(model_weights)
+
+        # Test loaded model
+        X = gen.features
+        A = gen.Aadj
+        actual = model2.predict([X, A])
+        expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
+            1.0 / G.number_of_nodes()
+        )
+        assert expected == pytest.approx(actual)
