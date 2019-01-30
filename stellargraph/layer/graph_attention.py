@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO:  check license
-
 """
 Definition of Graph Attention Network (GAT) layer and GAT class that is a stack of GAT layers
 """
@@ -35,6 +33,7 @@ warnings.simplefilter("default")
 class GraphAttention(Layer):
     """
     GAT layer, base implementation taken from https://github.com/danielegrattarola/keras-gat
+    and some modifications added
     """
 
     def __init__(
