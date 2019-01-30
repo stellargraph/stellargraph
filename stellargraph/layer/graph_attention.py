@@ -26,7 +26,8 @@ from keras import backend as K
 from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 import numpy as np
 import tensorflow as tf
-
+import warnings
+warnings.simplefilter('default')
 
 class GraphAttention(Layer):
     """
@@ -478,8 +479,9 @@ class GAT:
         raise NotImplemented
 
     def default_model(self, flatten_output=False):
-        print(
-            "Deprecation warning: the .default_model() method is deprecated. "
-            "Please use .node_model() or .link_model() method instead."
+        warnings.warn(
+            "The .default_model() method will be deprecated soon. "
+            "Please use .node_model() or .link_model() methods instead.",
+            PendingDeprecationWarning
         )
-        self.node_model()
+        return self.node_model()
