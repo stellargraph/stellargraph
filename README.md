@@ -143,6 +143,9 @@ The StellarGraph library currently includes the following algorithms for graph m
   Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs.
   The current implementation supports mean aggregation of neighbour nodes,
   taking into account their types and the types of links between them.
+  
+* GAT
+  - Graph ATtention Network algorithm [4] for homogeneous networks.
 
 * Node2Vec [2]
   - Unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring
@@ -187,3 +190,5 @@ Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.e
 3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
 Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
+
+4. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))

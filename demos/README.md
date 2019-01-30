@@ -37,6 +37,10 @@ The examples folder structure is shown below.
 * [`/node-classification-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-graphsage)
 
     Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
+    
+* [`/node-classification-gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-gat)
+
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
 
 * [`/node-classification-node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-node2vec)
 
@@ -67,3 +71,5 @@ I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Informa
 
 5. Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling. 
 ICLR 2017. arXiv:1609.02907 [link](https://arxiv.org/abs/1609.02907)
+
+6. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
