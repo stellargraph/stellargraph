@@ -136,7 +136,8 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 * GraphSAGE [1]
   - Supports representation learning, node classification/regression, and link prediction for homogeneous networks.
-  The current implementation supports mean aggregation of neighbour nodes only.
+  The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and
+  attentional aggregators.
 
 * HinSAGE
   - Extension of GraphSAGE algorithm to heterogeneous networks.
