@@ -149,7 +149,6 @@ class GraphAttention(Layer):
             "attn_kernel_constraint": constraints.serialize(
                 self.attn_kernel_constraint
             ),
-            "output_dim": self.output_dim,
         }
         base_config = super().get_config()
         return {**base_config, **config}
