@@ -492,7 +492,16 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
 class GraphSAGE:
     """
-    Implementation of the GraphSAGE algorithm with Keras layers.
+    Implementation of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
+    see: http://snap.stanford.edu/graphsage/
+
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer and a generator object.
+
+    Different aggregators can also be specified with the `aggregator` argument, which
+    should be the aggregator class, either :class:`MeanAggregator`,
+    :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`,
+    or :class:`AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
