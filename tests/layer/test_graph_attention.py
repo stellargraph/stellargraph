@@ -18,7 +18,10 @@
 GAT tests
 """
 from stellargraph.core.graph import StellarGraph
-from stellargraph.mapper.node_mappers import FullBatchNodeGenerator, GraphSAGENodeGenerator
+from stellargraph.mapper.node_mappers import (
+    FullBatchNodeGenerator,
+    GraphSAGENodeGenerator,
+)
 from stellargraph.layer.graph_attention import *
 
 import keras
@@ -317,7 +320,9 @@ class Test_GAT:
         X = gen.features
         A = gen.Aadj
         actual = model.predict([X, A])
-        expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (self.F_in*self.layer_sizes[0]*self.attn_heads)
+        expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
+            self.F_in * self.layer_sizes[0] * self.attn_heads
+        )
         assert expected == pytest.approx(actual)
 
     def test_gat_node_model_wrong_norm(self):
