@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 """
 Graph node classification using Graph Attention Network (GAT) model.
-This currently is only tested on the CORA dataset, which can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
+This example uses the CORA dataset, which can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
 
 The following is the description of the dataset:
 > The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
@@ -39,7 +39,6 @@ import argparse
 import pickle
 import numpy as np
 import pandas as pd
-from scipy import sparse
 import networkx as nx
 import keras
 from keras import optimizers, losses, layers, metrics
