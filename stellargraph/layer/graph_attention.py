@@ -26,8 +26,11 @@ from keras import backend as K
 from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 import numpy as np
 import tensorflow as tf
+from stellargraph.mapper import FullBatchNodeGenerator
 import warnings
-warnings.simplefilter('default')
+
+warnings.simplefilter("default")
+
 
 class GraphAttention(Layer):
     """
@@ -333,6 +336,13 @@ class GAT:
         self.attn_dropout = attn_dropout
         self.generator = generator
 
+        if generator is not None:
+            assert isinstance(
+                generator, FullBatchNodeGenerator
+            ), "{}: generator must be of type FullBatchNodeGenerator or None; received object of type {} instead".format(
+                type(self).__name__, type(generator).__name__
+            )
+
         if attn_heads_reduction is None:
             # default head reductions, see eqs 5-6 of the GAT paper
             self.attn_heads_reduction = ["concat"] * (len(layer_sizes) - 1) + [
@@ -366,7 +376,7 @@ class GAT:
 
         else:
             raise ValueError(
-                "Normalization should be either 'l2' or 'none'; received '{}'".format(
+                "Normalization should be either 'l2' or None (also allowed as 'none'); received '{}'".format(
                     normalize
                 )
             )
@@ -428,25 +438,11 @@ class GAT:
         """
         # Create input tensor:
         if self.generator is not None:
-            try:
-                N = self.generator.Aadj.shape[0]
-            except:
-                if num_nodes is not None:
-                    N = num_nodes
-                else:
-                    raise RuntimeError(
-                        "node_model: unable to get number of nodes from either generator or the num_nodes argument; stopping."
-                    )
+            N = self.generator.Aadj.shape[0]
+
             assert self.generator.features.shape[0] == N
-            try:
-                F = self.generator.features.shape[1]
-            except:
-                if feature_size is not None:
-                    F = feature_size
-                else:
-                    raise RuntimeError(
-                        "node_model: unable to get input feature size from either generator or the feature_size argument; stopping."
-                    )
+            F = self.generator.features.shape[1]
+
         elif num_nodes is not None and feature_size is not None:
             N = num_nodes
             F = feature_size
@@ -481,6 +477,6 @@ class GAT:
         warnings.warn(
             "The .default_model() method will be deprecated soon. "
             "Please use .node_model() or .link_model() methods instead.",
-            PendingDeprecationWarning
+            PendingDeprecationWarning,
         )
         return self.node_model()

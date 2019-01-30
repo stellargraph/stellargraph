@@ -18,7 +18,7 @@
 GAT tests
 """
 from stellargraph.core.graph import StellarGraph
-from stellargraph.mapper.node_mappers import FullBatchNodeGenerator
+from stellargraph.mapper.node_mappers import FullBatchNodeGenerator, GraphSAGENodeGenerator
 from stellargraph.layer.graph_attention import *
 
 import keras
@@ -154,7 +154,7 @@ class Test_GAT:
     F_out = 2
     attn_heads = 8
     layer_sizes = [4, 16]
-    activations = ["relu", "elu"]
+    activations = ["relu", "linear"]
     """
     Tests of GAT class
     """
@@ -181,6 +181,7 @@ class Test_GAT:
                 bias=True,
             )
 
+        # Default attention heads reductions:
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -193,7 +194,19 @@ class Test_GAT:
         assert gat.attn_heads_reduction == ["concat", "average"]
         assert gat.generator == gen
 
-    def test_gat_node_model(self):
+        # User-specified attention heads reductions:
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction=["concat", "concat"],
+            generator=gen,
+            bias=True,
+        )
+
+        assert gat.attn_heads_reduction == ["concat", "concat"]
+
+    def test_gat_node_model_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G)
         gat = GAT(
@@ -202,6 +215,55 @@ class Test_GAT:
             attn_heads=self.attn_heads,
             generator=gen,
             bias=True,
+        )
+
+        assert len(gat.node_model()) == 2
+        x_in, x_out = gat.node_model()
+        assert len(x_in) == 2
+        assert int(x_in[0].shape[-1]) == self.F_in
+        assert x_in[1]._keras_shape == (None, G.number_of_nodes())
+        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
+
+    def test_gat_node_model_constructor_no_generator(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            bias=True,
+        )
+
+        with pytest.raises(RuntimeError):
+            x_in, x_out = gat.node_model()
+
+        x_in, x_out = gat.node_model(num_nodes=1000, feature_size=self.F_in)
+        assert len(x_in) == 2
+        assert int(x_in[0].shape[-1]) == self.F_in
+        assert x_in[1]._keras_shape == (None, 1000)
+        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
+
+    def test_gat_node_model_constructor_wrong_generator(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = GraphSAGENodeGenerator(G, self.N, [5, 10])
+        with pytest.raises(AssertionError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                bias=True,
+                generator=gen,
+            )
+
+    def test_gat_node_model_l2norm(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+            bias=True,
+            normalize="l2",
         )
 
         gat._layers[1].kernel_initializer = keras.initializers.get("ones")
@@ -226,6 +288,51 @@ class Test_GAT:
         )
         assert expected == pytest.approx(actual)
 
+    def test_gat_node_model_no_norm(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+            bias=True,
+            normalize=None,
+        )
+
+        gat._layers[1].kernel_initializer = keras.initializers.get("ones")
+        gat._layers[1].attn_kernel_initializer = keras.initializers.get("ones")
+        gat._layers[3].kernel_initializer = keras.initializers.get("ones")
+        gat._layers[3].attn_kernel_initializer = keras.initializers.get("ones")
+
+        assert len(gat.node_model()) == 2
+        x_in, x_out = gat.node_model()
+        assert len(x_in) == 2
+        assert int(x_in[0].shape[-1]) == self.F_in
+        assert x_in[1]._keras_shape == (None, G.number_of_nodes())
+        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
+
+        model = keras.Model(inputs=x_in, outputs=x_out)
+
+        X = gen.features
+        A = gen.Aadj
+        actual = model.predict([X, A])
+        expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (self.F_in*self.layer_sizes[0]*self.attn_heads)
+        assert expected == pytest.approx(actual)
+
+    def test_gat_node_model_wrong_norm(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G)
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                generator=gen,
+                bias=True,
+                normalize="whatever",
+            )
+
     def test_gat_serialize(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G)
@@ -235,6 +342,7 @@ class Test_GAT:
             attn_heads=self.attn_heads,
             generator=gen,
             bias=True,
+            normalize="l2",
         )
 
         x_in, x_out = gat.node_model()
