@@ -35,7 +35,7 @@ class GraphAttention(Layer):
 
     def __init__(
         self,
-        F_,
+        F_out,
         attn_heads=1,
         attn_heads_reduction="concat",  # {'concat', 'average'}
         in_dropout_rate=0.0,
@@ -57,7 +57,7 @@ class GraphAttention(Layer):
         """
 
         Args:
-            F_: dimensionality of output feature vectors
+            F_out: dimensionality of output feature vectors
             attn_heads: number of attention heads
             attn_heads_reduction: reduction applied to output features of each attention head, 'concat' or 'average'.
                 'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
@@ -79,9 +79,13 @@ class GraphAttention(Layer):
         """
 
         if attn_heads_reduction not in {"concat", "average"}:
-            raise ValueError("Possible reduction methods: concat, average")
+            raise ValueError(
+                "{}: Possible heads reduction methods: concat, average; received {}".format(
+                    type(self).__name__, attn_heads_reduction
+                )
+            )
 
-        self.F_ = F_  # Number of output features (F' in the paper)
+        self.F_out = F_out  # Number of output features (F' in the paper)
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
         self.attn_heads_reduction = attn_heads_reduction  # Eq. 5 and 6 in the paper
         self.in_dropout_rate = in_dropout_rate  # dropout rate for node features
@@ -101,7 +105,6 @@ class GraphAttention(Layer):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         self.attn_kernel_constraint = constraints.get(attn_kernel_constraint)
-        self.supports_masking = False
 
         # Populated by build()
         self.kernels = []  # Layer kernels for attention heads
@@ -110,22 +113,55 @@ class GraphAttention(Layer):
 
         if attn_heads_reduction == "concat":
             # Output will have shape (..., K * F')
-            self.output_dim = self.F_ * self.attn_heads
+            self.output_dim = self.F_out * self.attn_heads
         else:
             # Output will have shape (..., F')
-            self.output_dim = self.F_
+            self.output_dim = self.F_out
 
         super(GraphAttention, self).__init__(**kwargs)
 
+    def get_config(self):
+        """
+        Gets class configuration for Keras serialization
+
+        """
+        config = {
+            "F_out": self.F_out,
+            "attn_heads": self.attn_heads,
+            "attn_heads_reduction": self.attn_heads_reduction,
+            "in_dropout_rate": self.in_dropout_rate,
+            "attn_dropout_rate": self.attn_dropout_rate,
+            "activation": activations.serialize(self.activation),
+            "use_bias": self.use_bias,
+            "kernel_initializer": initializers.serialize(self.kernel_initializer),
+            "bias_initializer": initializers.serialize(self.bias_initializer),
+            "attn_kernel_initializer": initializers.serialize(
+                self.attn_kernel_initializer
+            ),
+            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
+            "attn_kernel_regularizer": regularizers.serialize(
+                self.attn_kernel_regularizer
+            ),
+            "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "bias_constraint": constraints.serialize(self.bias_constraint),
+            "attn_kernel_constraint": constraints.serialize(
+                self.attn_kernel_constraint
+            ),
+            "output_dim": self.output_dim,
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
+
     def build(self, input_shape):
         assert len(input_shape) >= 2
-        F = int(input_shape[0][-1])
+        F_in = int(input_shape[0][-1])
 
         # Initialize weights for each attention head
         for head in range(self.attn_heads):
             # Layer kernel
             kernel = self.add_weight(
-                shape=(F, self.F_),
+                shape=(F_in, self.F_out),
                 initializer=self.kernel_initializer,
                 regularizer=self.kernel_regularizer,
                 constraint=self.kernel_constraint,
@@ -136,7 +172,7 @@ class GraphAttention(Layer):
             # # Layer bias
             if self.use_bias:
                 bias = self.add_weight(
-                    shape=(self.F_,),
+                    shape=(self.F_out,),
                     initializer=self.bias_initializer,
                     regularizer=self.bias_regularizer,
                     constraint=self.bias_constraint,
@@ -146,14 +182,14 @@ class GraphAttention(Layer):
 
             # Attention kernels
             attn_kernel_self = self.add_weight(
-                shape=(self.F_, 1),
+                shape=(self.F_out, 1),
                 initializer=self.attn_kernel_initializer,
                 regularizer=self.attn_kernel_regularizer,
                 constraint=self.attn_kernel_constraint,
                 name="attn_kernel_self_{}".format(head),
             )
             attn_kernel_neighs = self.add_weight(
-                shape=(self.F_, 1),
+                shape=(self.F_out, 1),
                 initializer=self.attn_kernel_initializer,
                 regularizer=self.attn_kernel_regularizer,
                 constraint=self.attn_kernel_constraint,
@@ -337,7 +373,7 @@ class GAT:
 
         # Initialize a stack of GAT layers
         self._layers = []
-        for l, F_ in enumerate(layer_sizes):
+        for l, F_out in enumerate(layer_sizes):
             # number of attention heads for layer l:
             attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
             # Dropout on input node features before each GAT layer
@@ -345,7 +381,7 @@ class GAT:
             # GAT layer
             self._layers.append(
                 self._gat_layer(
-                    F_=F_,
+                    F_out=F_out,
                     attn_heads=attn_heads,
                     attn_heads_reduction=self.attn_heads_reduction[l],
                     in_dropout_rate=self.in_dropout,
