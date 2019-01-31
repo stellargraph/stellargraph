@@ -176,6 +176,19 @@ Pipeline is defined in `.buildkite/pipeline.yml`
 * Tests: Uses the official [python:3.6](https://hub.docker.com/_/python/) image.
 * Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.
 
+## Citing
+If you use any part of this library in your research, please cite it using the following BibTex entry
+```latex
+@misc{stellargraph,
+  author = {Data61},
+  title = {Stellar Graph Machine Learning Library},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/stellargraph/stellargraph}},
+}
+```  
+
 ## References
 
 1. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
