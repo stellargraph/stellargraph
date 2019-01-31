@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2018-2019 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import argparse
 import pickle
@@ -23,7 +39,22 @@ def train(train_nodes,
             dropout=0.0,
             layer_sizes=[16, 7],
             learning_rate = 0.01,
-            activations = ['relu', 'softmax']):
+            activations = ['relu', 'softmax']
+    ):
+    """
+
+    Train a GCN model on the specified graph G with given parameters, evaluate it, and save the model.
+    Args:
+        train_nodes: A list of train nodes
+        train_targets: Labels of train nodes
+        val_nodes: A list of validation nodes
+        val_targets: Labels of validation nodes
+        generator: A FullBatchNodeGenerator
+        dropout: The dropout (0->1) Initial Learning rate
+        layer_sizes: A list of number of hidden nodes in each layer
+        learning_rate: Initial Learning rate
+        activations: A list of number of activation functions in each layer
+    """
 
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
@@ -45,7 +76,18 @@ def train(train_nodes,
 
 
 
-def test(test_nodes, test_targets, generator, model_file, model):
+def test(test_nodes, test_targets, generator, model_file):
+    """
+    
+    Test a GCN model on the specified graph G with given parameters, evaluate it.
+    Args:
+        test_nodes: A list of test nodes
+        test_targets: Labels of test nodes
+        generator: A FullBatchNodeGenerator
+        val_targets: Labels of validation nodes
+        model_file: A path to the saved model file after training
+    """
+
     test_gen = generator.flow(test_nodes, test_targets)
 
     model = keras.models.load_model(model_file, custom_objects={"GraphConvolution": GraphConvolution})
