@@ -191,13 +191,15 @@ class GCN:
         self._layers = []
         for l, a in zip(self.layer_sizes, self.activations):
             self._layers.append(Dropout(self.dropout))
-            self._layers.append(GraphConvolution(
-                l,
-                self.support,
-                activation=a,
-                use_bias=self.bias,
-                kernel_regularizer=self.normalize,
-            ))
+            self._layers.append(
+                GraphConvolution(
+                    l,
+                    self.support,
+                    activation=a,
+                    use_bias=self.bias,
+                    kernel_regularizer=self.normalize,
+                )
+            )
 
     def __call__(self, x: List):
         """
