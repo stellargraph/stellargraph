@@ -46,7 +46,7 @@ class MeanHinAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Union[Callable, AnyStr] = "relu",
-        **kwargs,
+        **kwargs
     ):
         self.output_dim = output_dim
         assert output_dim % 2 == 0
@@ -122,9 +122,9 @@ class MeanHinAggregator(Layer):
 
         Args:
           x: List of Keras Tensors
-             x[0] = tensor of self features shape (n_batch, n_head, n_feat)
-             x[1+r] = tensors of neighbour features each of shape
-                (n_batch, n_head, n_neighbour[r], n_feat[r])
+            x[0] = tensor of self features shape (n_batch, n_head, n_feat)
+            x[1+r] = tensors of neighbour features each of shape
+            (n_batch, n_head, n_neighbour[r], n_feat[r])
 
         Returns:
             Keras Tensor representing the aggregated embeddings in the input.
