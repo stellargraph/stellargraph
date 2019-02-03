@@ -86,7 +86,7 @@ def link_inference(
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
-            One of
+            One of:
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
