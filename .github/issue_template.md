@@ -16,6 +16,7 @@ so that:
 - [ ] Code well commented
 - [ ] Documentation on Google Docs
 - [ ] Documentation in repo
+- [ ] CHANGELOG.md updated
 - [ ] Team demo
 - [ ] Mini-meetup talk
 - [ ] Stakeholder sign-off
@@ -35,3 +36,5 @@ so that:
 - [ ] Version number reflects new status
 - [ ] Peer Code Review Performed
 - [ ] Code well commented
+- [ ] CHANGELOG.md updated
+
