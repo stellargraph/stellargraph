@@ -18,7 +18,12 @@
 Calibration for classification, binary and multi-class, models.
 """
 
-__all__ = ["IsotonicCalibration", "TemperatureCalibration", "expected_calibration_error", "plot_reliability_diagram"]
+__all__ = [
+    "IsotonicCalibration",
+    "TemperatureCalibration",
+    "expected_calibration_error",
+    "plot_reliability_diagram",
+]
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,7 +47,9 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     """
     n_bins = len(accuracy)  # the number of bins
     n = len(prediction_probabilities)  # number of points
-    h = np.histogram(a=prediction_probabilities, range=(0, 1), bins=n_bins)[0]  # just the counts
+    h = np.histogram(a=prediction_probabilities, range=(0, 1), bins=n_bins)[
+        0
+    ]  # just the counts
     ece = 0
     for m in np.arange(n_bins):
         ece = ece + (h[m] / n) * np.abs(accuracy[m] - confidence[m])
@@ -76,12 +83,12 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
                 ax1.set_title("Calibration Curve (ECE={})".format(calibration_error))
             ax1.set_xlabel("Mean Predicted Value", fontsize=16)
             ax1.set_ylabel("Fraction of Positives", fontsize=16)
-        ax1.plot([0, 1], [0, 1], 'g--')
+        ax1.plot([0, 1], [0, 1], "g--")
         ax2.hist(predictions[:, i], range=(0, 1), bins=10, histtype="step", lw=2)
         ax2.set_xlabel("Bin", fontsize=16)
         ax2.set_ylabel("Count", fontsize=16)
         if filename is not None:
-            fig.savefig(filename, bbox_inches='tight')
+            fig.savefig(filename, bbox_inches="tight")
 
 
 class TemperatureCalibration(object):
@@ -100,7 +107,7 @@ class TemperatureCalibration(object):
     def __init__(self, epochs=1000):
         self.epochs = epochs
         self.n_classes = None
-        self.temperature = 1.  # default is no scaling
+        self.temperature = 1.0  # default is no scaling
         self.history = []
 
     def fit(self, x_train, y_train, x_val=None, y_val=None):
@@ -117,27 +124,43 @@ class TemperatureCalibration(object):
 
         """
         early_stopping = False
-        if (x_val is not None and y_val is None) or (x_val is None and y_val is not None):
-            raise ValueError("Either both x_val and y_val should be None or both should be numpy arrays.")
+        if (x_val is not None and y_val is None) or (
+            x_val is None and y_val is not None
+        ):
+            raise ValueError(
+                "Either both x_val and y_val should be None or both should be numpy arrays."
+            )
 
         if x_val is not None and y_val is not None:
             early_stopping = True
-            print("Using Early Stopping based on performance evaluated on given validation set.")
+            print(
+                "Using Early Stopping based on performance evaluated on given validation set."
+            )
 
         self.n_classes = x_train.shape[1]
         # Specify the tensorflow program.
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-            x = tf.placeholder(tf.float32, [None, self.n_classes], name='x')  # input are the model logits
-            y = tf.placeholder(tf.float32, [None, self.n_classes],
-                               name='y')  # output is one-hot encoded true class labels
+            x = tf.placeholder(
+                tf.float32, [None, self.n_classes], name="x"
+            )  # input are the model logits
+            y = tf.placeholder(
+                tf.float32, [None, self.n_classes], name="y"
+            )  # output is one-hot encoded true class labels
 
-            T = tf.get_variable('T', [1], initializer=tf.ones_initializer)  # the temperature
+            T = tf.get_variable(
+                "T", [1], initializer=tf.ones_initializer
+            )  # the temperature
 
-            scaled_logits = tf.multiply(name='z', x=x, y=1. / T)  # logits scaled by inverse T
+            scaled_logits = tf.multiply(
+                name="z", x=x, y=1.0 / T
+            )  # logits scaled by inverse T
 
             # cost function to optimise
-            cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=scaled_logits,
-                                                                             labels=y))
+            cost = tf.reduce_mean(
+                tf.nn.softmax_cross_entropy_with_logits_v2(
+                    logits=scaled_logits, labels=y
+                )
+            )
 
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
 
@@ -169,7 +192,7 @@ class TemperatureCalibration(object):
         ax1.set_title("Cost")
         ax1.set_xlabel("Epoch")
         ax1.set_ylabel("Cost")
-        ax1.legend(loc='upper right')
+        ax1.legend(loc="upper right")
         ax2.plot(self.history[:, -1])
         ax2.set_title("Temperature")
         ax2.set_xlabel("Epoch")
@@ -188,12 +211,15 @@ class TemperatureCalibration(object):
         """
         if x.shape[1] != self.n_classes:
             raise ValueError(
-                "Expecting input vector of dimensionality {} but received {}".format(self.n_classes, len(x)))
+                "Expecting input vector of dimensionality {} but received {}".format(
+                    self.n_classes, len(x)
+                )
+            )
 
         scaled_prediction = x / self.temperature
-        return np.exp(scaled_prediction) / np.sum(np.exp(scaled_prediction),
-                                                  axis=-1,
-                                                  keepdims=True)
+        return np.exp(scaled_prediction) / np.sum(
+            np.exp(scaled_prediction), axis=-1, keepdims=True
+        )
 
 
 class IsotonicCalibration(object):
@@ -216,7 +242,7 @@ class IsotonicCalibration(object):
         self.n_classes = x_train.shape[1]
 
         for n in range(self.n_classes):
-            self.regressors.append(IsotonicRegression(out_of_bounds='clip'))
+            self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
 
             self.regressors[-1].fit(X=x_train[:, n], y=y_train[:, n])
 
@@ -232,7 +258,10 @@ class IsotonicCalibration(object):
         """
         if x.shape[1] != self.n_classes:
             raise ValueError(
-                "Expecting input vector of dimensionality {} but received {}".format(self.n_classes, len(x)))
+                "Expecting input vector of dimensionality {} but received {}".format(
+                    self.n_classes, len(x)
+                )
+            )
 
         predictions = []
         for n in range(self.n_classes):
