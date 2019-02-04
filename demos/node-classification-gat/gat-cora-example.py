@@ -233,8 +233,6 @@ def train(
     )
     print("\nAll-node accuracy: {:0.4f}".format(accuracy))
 
-    # TODO: extract the GAT embeddings from x_out, and save/plot them
-
     # Save the trained model
     save_str = "_h{}_l{}_d{}_r{}".format(
         attn_heads, "_".join([str(x) for x in layer_sizes]), dropout, learning_rate
