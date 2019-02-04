@@ -115,14 +115,17 @@ class TemperatureCalibration(object):
         Train the model. If validation data is given, then training stops when the
         validation accuracy starts increasing. This prevent overfitting.
         Args:
-            x_train: The training data that should be the classifier's non-probabilistic outputs.
-            y_train: The training data class labels as one hot encoded vectors
-            x_val: The validation data that should be the classifier's non-probabilistic outputs.
-            y_val: The validation data class labels as one hot encoded vectors
+            x_train: <numpy array> The training data that should be the classifier's non-probabilistic outputs.
+            y_train: <numpy array> The training data class labels as one hot encoded vectors
+            x_val: <numpy array or None> The validation data that should be the classifier's non-probabilistic outputs.
+            y_val: <numpy array or None> The validation data class labels as one hot encoded vectors
 
-        Returns: Nothing
+        Returns: <float> The estimate temperature
 
         """
+        if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
+            raise ValueError("x_train and y_train must be numpy arrays")
+
         early_stopping = False
         if (x_val is not None and y_val is None) or (
             x_val is None and y_val is not None
@@ -132,6 +135,9 @@ class TemperatureCalibration(object):
             )
 
         if x_val is not None and y_val is not None:
+            if not isinstance(x_val, np.ndarray) or not isinstance(y_val, np.ndarray):
+                raise ValueError("x_train and y_train must be numpy arrays")
+
             early_stopping = True
             print(
                 "Using Early Stopping based on performance evaluated on given validation set."
@@ -181,6 +187,8 @@ class TemperatureCalibration(object):
         self.history = np.array(self.history)
         self.temperature = self.history[-1, -1]
 
+        return self.temperature
+
     def plot_training_history(self):
         """
         Helper function for plotting the training history.
@@ -204,11 +212,16 @@ class TemperatureCalibration(object):
         scales each logit by the temperature, exponentiates the results, and finally
         normalizes the scaled values such that their sum is 1.
         Args:
-            x: The classifier's non-probabilistic outputs to calibrate.
+            x: <numpy.ndarray> The classifier's non-probabilistic outputs to calibrate.
 
         Returns: The calibrated probabilities.
 
         """
+        if not isinstance(x, np.ndarray):
+            raise ValueError(
+                "x should be numpy.ndarray but received {}".format(type(x))
+            )
+
         if x.shape[1] != self.n_classes:
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(
@@ -239,6 +252,13 @@ class IsotonicCalibration(object):
             y_train: The training class labels as one hot encoded vectors.
 
         """
+        if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
+            raise ValueError(
+                "x_train and y_train should be type numpy.ndarray but received {} and {}".format(
+                    type(x_train), type(y_train)
+                )
+            )
+
         self.n_classes = x_train.shape[1]
 
         for n in range(self.n_classes):
@@ -252,10 +272,15 @@ class IsotonicCalibration(object):
         probabilities for each class are first scaled using the corresponding regression model
         and then normalized to sum to 1.
         Args:
-            x: The classifier's probabilistic outputs to calibrate.
+            x: <numpy array> The classifier's probabilistic outputs to calibrate.
 
-        Returns: The calibrated probabilities.
+        Returns: <numpy array> The calibrated probabilities.
         """
+        if not isinstance(x, np.ndarray):
+            raise ValueError(
+                "x should be numpy.ndarray but received {}".format(type(x))
+            )
+
         if x.shape[1] != self.n_classes:
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(
