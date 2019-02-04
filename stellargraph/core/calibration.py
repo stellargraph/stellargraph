@@ -122,6 +122,7 @@ class TemperatureCalibration(object):
 
         if x_val is not None and y_val is not None:
             early_stopping = True
+            print("Using Early Stopping based on performance evaluated on given validation set.")
 
         self.n_classes = x_train.shape[1]
         # Specify the tensorflow program.
@@ -147,14 +148,13 @@ class TemperatureCalibration(object):
         for epoch in range(self.epochs):
             _, c, t = sess.run([optimizer, cost, T], feed_dict={x: x_train, y: y_train})
             if early_stopping:
-                _, c_val = sess.run([cost], feed_dict={x: x_val, y: y_val})
-                if c_val > self.history[-1][1]:
+                c_val = sess.run([cost], feed_dict={x: x_val, y: y_val})
+                if len(self.history) > 10 and c_val > self.history[-1][1]:
                     break
                 else:  # keep going
-                    self.history.append((c, c_val, t))
+                    self.history.append([c, c_val[0], t[0]])
             else:
-                self.history.append((c, t))
-
+                self.history.append([c, t[0]])
         self.history = np.array(self.history)
         self.temperature = self.history[-1, -1]
 
