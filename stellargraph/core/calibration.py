@@ -162,13 +162,14 @@ class TemperatureCalibration(object):
         """
         Helper function for plotting the training history.
         """
-        fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, figsize=(10, 5))
-        ax1.plot(self.history[:, 0])
+        fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, figsize=(12, 5))
+        ax1.plot(self.history[:, 0], label="Training")
         if self.history.shape[1] == 3:  # has validation cost
-            ax1.plot(self.history[:, 1])
+            ax1.plot(self.history[:, 1], label="Validation")
         ax1.set_title("Cost")
         ax1.set_xlabel("Epoch")
         ax1.set_ylabel("Cost")
+        ax1.legend(loc='upper right')
         ax2.plot(self.history[:, -1])
         ax2.set_title("Temperature")
         ax2.set_xlabel("Epoch")
