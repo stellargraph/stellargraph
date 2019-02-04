@@ -18,6 +18,8 @@
 Calibration for classification, binary and multi-class, models.
 """
 
+__all__ = ["IsotonicCalibration", "TemperatureCalibration", "expected_calibration_error", "plot_reliability_diagram"]
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -71,7 +73,7 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
             # print(fraction_of_positives, mean_predicted_value)
             ax1.plot(mean_predicted_value, fraction_of_positives, "s-", alpha=1.0)
             if ece is not None:
-                ax1.set_title("Calibration Curve (ECE={})".format(calibration_data))
+                ax1.set_title("Calibration Curve (ECE={})".format(calibration_error))
             ax1.set_xlabel("Mean Predicted Value", fontsize=16)
             ax1.set_ylabel("Fraction of Positives", fontsize=16)
         ax1.plot([0, 1], [0, 1], 'g--')
@@ -162,7 +164,7 @@ class TemperatureCalibration(object):
         """
         fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, figsize=(10, 5))
         ax1.plot(self.history[:, 0])
-        if self.historyshape[1] == 3:  # has validation cost
+        if self.history.shape[1] == 3:  # has validation cost
             ax1.plot(self.history[:, 1])
         ax1.set_title("Cost")
         ax1.set_xlabel("Epoch")
@@ -183,7 +185,7 @@ class TemperatureCalibration(object):
         Returns: The calibrated probabilities.
 
         """
-        if len(x) != self.n_classes:
+        if x.shape[1] != self.n_classes:
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(self.n_classes, len(x)))
 
@@ -227,7 +229,7 @@ class IsotonicCalibration(object):
 
         Returns: The calibrated probabilities.
         """
-        if len(x) != self.n_classes:
+        if x.shape[1] != self.n_classes:
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(self.n_classes, len(x)))
 
