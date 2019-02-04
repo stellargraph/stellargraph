@@ -470,6 +470,7 @@ class FullBatchNodeSequence(Sequence):
     and the feature vectors of each node.
 
     """
+
     def __init__(self, features, A, targets=None, sample_weight=None):
         """
 
