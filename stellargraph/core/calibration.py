@@ -101,6 +101,7 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
                 type(calibration_data)
             )
         )
+
     if not isinstance(predictions, np.ndarray):
         raise ValueError(
             "Parameter predictions should be of type numpy.ndarray but received type {}".format(
