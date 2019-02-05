@@ -127,14 +127,14 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
     if ece is not None:
         calibration_error = ",".join(format(e, " 0.4f") for e in ece)
 
-    for i, calibration_data in enumerate(calibration_data):
-        for fraction_of_positives, mean_predicted_value in calibration_data:
-            # print(fraction_of_positives, mean_predicted_value)
-            ax1.plot(mean_predicted_value, fraction_of_positives, "s-", alpha=1.0)
-            if ece is not None:
-                ax1.set_title("Calibration Curve (ECE={})".format(calibration_error))
-            ax1.set_xlabel("Mean Predicted Value", fontsize=16)
-            ax1.set_ylabel("Fraction of Positives", fontsize=16)
+    for i, data in enumerate(calibration_data):
+        fraction_of_positives, mean_predicted_value = data
+        # print(fraction_of_positives, mean_predicted_value)
+        ax1.plot(mean_predicted_value, fraction_of_positives, "s-", alpha=1.0)
+        if ece is not None:
+            ax1.set_title("Calibration Curve (ECE={})".format(calibration_error))
+        ax1.set_xlabel("Mean Predicted Value", fontsize=16)
+        ax1.set_ylabel("Fraction of Positives", fontsize=16)
         ax1.plot([0, 1], [0, 1], "g--")
         ax2.hist(predictions[:, i], range=(0, 1), bins=10, histtype="step", lw=2)
         ax2.set_xlabel("Bin", fontsize=16)
