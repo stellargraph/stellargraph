@@ -206,34 +206,38 @@ def test_expected_calibration_error():
 
     # Test passing invalid parameter values, e.g., type.
     with pytest.raises(ValueError):
-        expected_calibration_error(prediction_probabilities=pp,
-                                   accuracy=ac,
-                                   confidence=co)
+        expected_calibration_error(
+            prediction_probabilities=pp, accuracy=ac, confidence=co
+        )
 
     with pytest.raises(ValueError):
-        expected_calibration_error(prediction_probabilities=pp,
-                                   accuracy=np.array(ac),
-                                   confidence=np.array(co))
+        expected_calibration_error(
+            prediction_probabilities=pp, accuracy=np.array(ac), confidence=np.array(co)
+        )
 
     with pytest.raises(ValueError):
-        expected_calibration_error(prediction_probabilities=np.array(pp),
-                                   accuracy=ac,
-                                   confidence=np.array(co))
+        expected_calibration_error(
+            prediction_probabilities=np.array(pp), accuracy=ac, confidence=np.array(co)
+        )
 
     with pytest.raises(ValueError):
-        expected_calibration_error(prediction_probabilities=np.array(pp),
-                                   accuracy=np.array(ac),
-                                   confidence=co)
+        expected_calibration_error(
+            prediction_probabilities=np.array(pp), accuracy=np.array(ac), confidence=co
+        )
 
     # test different length for accuracy and confidence parameter
     with pytest.raises(ValueError):
-        expected_calibration_error(prediction_probabilities=np.array(pp),
-                                   accuracy=np.array([0.2, 0.5]),
-                                   confidence=np.array([0.3, 0.5, 0.8]))
+        expected_calibration_error(
+            prediction_probabilities=np.array(pp),
+            accuracy=np.array([0.2, 0.5]),
+            confidence=np.array([0.3, 0.5, 0.8]),
+        )
 
-    ece = expected_calibration_error(prediction_probabilities=np.array(pp),
-                                     accuracy=np.array(ac),
-                                     confidence=np.array(co))
+    ece = expected_calibration_error(
+        prediction_probabilities=np.array(pp),
+        accuracy=np.array(ac),
+        confidence=np.array(co),
+    )
 
     assert ece > 0
 
@@ -243,34 +247,32 @@ def test_expected_calibration_error():
 #
 def test_plot_reliability_diagram():
 
-    cd = ((0.1, 0.5,), (0.8, 0.2,))
-    cd_valid = [(np.array([0.1]), np.array([0.5]),),
-                (np.array([0.8]), np.array([0.2]),)]
+    cd = ((0.1, 0.5), (0.8, 0.2))
+    cd_valid = [(np.array([0.1]), np.array([0.5])), (np.array([0.8]), np.array([0.2]))]
     pr = [0.1, 0.3, 0.5, 0.8, 0.9]
     ece = None
     filename = None
 
     # Test passing invalid parameter values, e.g., type.
     with pytest.raises(ValueError):
-        plot_reliability_diagram(calibration_data=cd,
-                                 predictions=np.array(pr),
-                                 ece=ece,
-                                 filename=filename)
+        plot_reliability_diagram(
+            calibration_data=cd, predictions=np.array(pr), ece=ece, filename=filename
+        )
 
     with pytest.raises(ValueError):
-        plot_reliability_diagram(calibration_data=cd_valid,
-                                 predictions=pr,
-                                 ece=ece,
-                                 filename=filename)
+        plot_reliability_diagram(
+            calibration_data=cd_valid, predictions=pr, ece=ece, filename=filename
+        )
 
     with pytest.raises(ValueError):
-        plot_reliability_diagram(calibration_data=cd_valid,
-                                 predictions=np.array(pr),
-                                 ece=0.5,  # should be list of floats or None
-                                 filename=filename)
+        plot_reliability_diagram(
+            calibration_data=cd_valid,
+            predictions=np.array(pr),
+            ece=0.5,  # should be list of floats or None
+            filename=filename,
+        )
 
     with pytest.raises(ValueError):
-        plot_reliability_diagram(calibration_data=cd_valid,
-                                 predictions=np.array(pr),
-                                 ece=ece,
-                                 filename=10)  # should be string or None
+        plot_reliability_diagram(
+            calibration_data=cd_valid, predictions=np.array(pr), ece=ece, filename=10
+        )  # should be string or None
