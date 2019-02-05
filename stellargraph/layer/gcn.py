@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -143,6 +143,7 @@ class GraphConvolution(Layer):
             "kernel_constraint": constraints.serialize(self.kernel_constraint),
             "bias_constraint": constraints.serialize(self.bias_constraint),
         }
+
         base_config = super().get_config()
         return {**base_config, **config}
 
@@ -160,7 +161,8 @@ class GCN:
         generator,
         bias=True,
         dropout=0.0,
-        normalize=regularizers.l2(5e-4),
+        normalize=None,
+        **kwargs
     ):
 
         """
@@ -172,6 +174,7 @@ class GCN:
             bias: toggles an optional bias in GCN layers
             dropout: dropout rate applied to input features of each GCN layer
             normalize: normalization applied to the final output features of the GCN layers stack
+            kwargs: additional parameters for chebyshev or localpool filters
         """
 
         if not isinstance(generator, FullBatchNodeGenerator):
@@ -186,6 +189,7 @@ class GCN:
         self.normalize = normalize
         self.generator = generator
         self.support = 1
+        self.kwargs = kwargs
 
         # Initialize a stack of GCN layers
         self._layers = []
@@ -235,9 +239,9 @@ class GCN:
 
         x_in = Input(shape=(self.generator.features.shape[1],))
 
-        filter = self.generator.kwargs.get("filter", "localpool")
+        filter = self.kwargs.get("filter", "localpool")
         if filter == "chebyshev":
-            self.support = self.generator.kwargs.get("max_degree", 2)
+            self.support = self.kwargs.get("max_degree", 2)
             suppG = [
                 Input(shape=(None, None), batch_shape=(None, None), sparse=True)
                 for _ in range(self.support)

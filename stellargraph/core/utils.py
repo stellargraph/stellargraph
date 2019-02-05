@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import collections
+import scipy.sparse as sp
 
 
 def is_real_iterable(x):
@@ -29,13 +30,55 @@ def is_real_iterable(x):
     return isinstance(x, collections.Iterable) and not isinstance(x, (str, bytes))
 
 
+def normalize_adj(adj, symmetric=True):
+    """
+    Normalize adjacency matrix.
+
+    Args:
+        adj: adjacency matrix
+        symmetric: True if symmetric normalization or False if left-only normalization
+
+    Returns:
+        Return a sparse adjacency matrix.
+    """
+
+    if symmetric:
+        d = sp.diags(np.power(np.array(adj.sum(1)), -0.5).flatten(), 0)
+        a_norm = adj.dot(d).transpose().dot(d).tocsr()
+    else:
+        d = sp.diags(np.power(np.array(adj.sum(1)), -1).flatten(), 0)
+        a_norm = d.dot(adj).tocsr()
+    return a_norm
+
+
 def normalized_laplacian(adj, symmetric=True):
+    """
+    Normalize graph Laplacian.
+
+    Args:
+        adj: adjacency matrix
+        symmetric: True if symmetric normalization
+
+    Returns:
+        Return sparse laplacian matrices.
+    """
+
     adj_normalized = normalize_adj(adj, symmetric)
     laplacian = sp.eye(adj.shape[0]) - adj_normalized
     return laplacian
 
 
 def rescale_laplacian(laplacian):
+    """
+    Calculate largest eigenvalue of normalized graph Laplacian.
+
+    Args:
+        laplacian: laplacian matrix
+
+    Returns:
+        Return sparse laplacian matrices.
+    """
+
     try:
         print("Calculating largest eigenvalue of normalized graph Laplacian...")
         largest_eigval = eigsh(laplacian, 1, which="LM", return_eigenvectors=False)[0]
@@ -50,7 +93,17 @@ def rescale_laplacian(laplacian):
 
 
 def chebyshev_polynomial(X, k):
-    """Calculate Chebyshev polynomials up to order k. Return a list of sparse matrices."""
+    """
+    Calculate Chebyshev polynomials up to order k.
+
+    Args:
+        x: adjacency matrix
+        k: maximum polynomial degree
+
+    Returns:
+        Return a list of sparse matrices.
+    """
+
     print("Calculating Chebyshev polynomials up to order {}...".format(k))
 
     T_k = list()
@@ -68,14 +121,20 @@ def chebyshev_polynomial(X, k):
 
 
 def GCN_Aadj_feats_op(features, A, **kwargs):
-    def normalize_adj(adj, symmetric=True):
-        if symmetric:
-            d = sp.diags(np.power(np.array(adj.sum(1)), -0.5).flatten(), 0)
-            a_norm = adj.dot(d).transpose().dot(d).tocsr()
-        else:
-            d = sp.diags(np.power(np.array(adj.sum(1)), -1).flatten(), 0)
-            a_norm = d.dot(adj).tocsr()
-        return a_norm
+    """
+    This function applys the matrix transformations on the adjacency matrix because
+    GCN requests that the input adjacency matrix should be symmetric, self-loop and normalization.
+    This function performs . It also provides an additional filter: 'chebyshev'.
+
+    Args:
+        features: node features in the graph
+        A: adjacency matrix
+        kwargs: additional arguments for choosing filter: localpool, or chebyshev
+                (For example, {"filter": "localpool"})
+
+    Returns:
+        features, adjacency matrix
+    """
 
     def preprocess_adj(adj, symmetric=True):
         adj = adj + sp.eye(adj.shape[0])
