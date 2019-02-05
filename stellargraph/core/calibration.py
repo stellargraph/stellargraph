@@ -86,14 +86,40 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
     """
     Helper function for plotting a reliability diagram.
     Args:
-        calibration_data: The calibration data
-        predictions: The predictions
-        ece: The expected calibration error
-        filename: If not None, the figure is saved on disk in the given filename
-
-    Returns:
-
+        calibration_data: <list> The calibration data as list where each entry in the
+        list is a 2-tuple of type numpy.ndarray. Each entry in the tuple holds the
+        fraction of positives and the mean predicted values for the true and predicted
+        class labels.
+        predictions: <np.ndarray> The probabilistic predictions for the data used in
+        diagnosing miscalibration.
+        ece: <None or list of floats> The expected calibration error for each class
+        filename: <string or None> If not None, the figure is saved on disk in the given filename.
     """
+    if not isinstance(calibration_data, list):
+        raise ValueError(
+            "Parameter calibration_data should be list of 2-tuples but received type {}".format(
+                type(calibration_data)
+            )
+        )
+    if not isinstance(predictions, np.ndarray):
+        raise ValueError(
+            "Parameter predictions should be of type numpy.ndarray but received type {}".format(
+                type(predictions)
+            )
+        )
+    if ece is not None and not isinstance(ece, list):
+        raise ValueError(
+            "Parameter ece should be None or list of floating point numbers but received type {}".format(
+                type(ece)
+            )
+        )
+    if filename is not None and not isinstance(filename, str):
+        raise ValueError(
+            "Parameter filename should be None or str type but received type {}".format(
+                type(filename)
+            )
+        )
+
     fig = plt.figure(figsize=(12, 8))
     ax1 = plt.subplot2grid((6, 1), (0, 0), rowspan=3)
     ax2 = plt.subplot2grid((6, 1), (4, 0))
