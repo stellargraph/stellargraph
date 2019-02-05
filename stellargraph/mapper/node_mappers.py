@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -457,8 +457,27 @@ class HinSAGENodeGenerator:
 
 
 class FullBatchNodeSequence(Sequence):
+    """
+    Keras-compatible data generator to use with the Keras
+    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
+    and :meth:`keras.Model.predict_generator`, for models that require full-batch training (e.g., GCN, GAT).
+    This class generated data samples for node inference models
+    and should be created using the `.flow(...)` method of
+    :class:`FullBatchNodeGenerator`.
+    These Generators are classes that capture the graph structure
+    and the feature vectors of each node.
+    """
+
     def __init__(self, features, A, targets=None, sample_weight=None):
-        # Check targets is iterable & has the correct length
+        """
+
+        Args:
+            features: a matrix of node features of size (N x F), where N is the number of nodes in the graph, F is the node feature size
+            A: an adjacency matrix of the graph
+            targets: an optional array of node targets of size (N x C), where C is the target size (e.g., number of classes for one-hot class targets)
+            sample_weight: Optional Numpy array of weights for the node samples, used for weighting the loss function during training or evaluation.
+                You can either pass a flat (1D) Numpy array with the same length as the input features (1:1 mapping between weights and rows in features)
+        """
         if not is_real_iterable(targets) and targets is not None:
             raise TypeError("Targets must be None or an iterable or numpy array ")
 
@@ -476,6 +495,22 @@ class FullBatchNodeSequence(Sequence):
 
 class FullBatchNodeGenerator:
     def __init__(self, G, name=None, func_opt=None, **kwargs):
+        """
+        A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT
+        The supplied graph G should be a StellarGraph object that is ready for
+        machine learning. Currently the model requires node features for all
+        nodes in the graph.
+        Use the :meth:`flow` method supplying the nodes and (optionally) targets
+        to get an object that can be used as a Keras data generator.
+        Example::
+            G_generator = FullBatchNodeGenerator(G)
+            train_data_gen = G_generator.flow(node_ids, node_targets)
+        Args:
+            G (StellarGraphBase): a machine-learning StellarGraph-type graph
+            name (str): an optional name of the generator
+            func_opt: an optional function to apply on features and adjacency matrix (declared func_opt(features, Aadj, **kwargs))
+            kwargs: additional parameters for func_opt function
+        """
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -508,8 +543,6 @@ class FullBatchNodeGenerator:
             self.features, self.Aadj = func_opt(
                 features=self.features, Aadj=self.Aadj, **kwargs
             )
-
-        self.kwargs = kwargs
 
     def flow(self, node_ids, targets=None):
         # Check targets is an iterable
