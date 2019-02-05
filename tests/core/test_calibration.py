@@ -244,8 +244,8 @@ def test_expected_calibration_error():
 def test_plot_reliability_diagram():
 
     cd = ((0.1, 0.5,), (0.8, 0.2,))
-    cd_valid = [(np.array(0.1), np.array(0.5),),
-                (np.array(0.8), np.array(0.2),)]
+    cd_valid = [(np.array([0.1]), np.array([0.5]),),
+                (np.array([0.8]), np.array([0.2]),)]
     pr = [0.1, 0.3, 0.5, 0.8, 0.9]
     ece = None
     filename = None
