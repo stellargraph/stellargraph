@@ -38,13 +38,39 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     the paper On Calibration of Modern Neural Networks, C. Guo, et. al., ICML, 2017
 
     Args:
-        prediction_probabilities: The predicted probabilities
-        accuracy: the accuracy
-        confidence: the confidence
+        prediction_probabilities: <numpy array>  The predicted probabilities
+        accuracy: <numpy array> The accuracy
+        confidence: <numpy array> The confidence
 
     Returns: <Float> The expected calibration error.
 
     """
+    if not isinstance(prediction_probabilities, np.ndarray):
+        raise ValueError(
+            "Parameter prediction_probabilities must be type numpy.ndarray but given object of type {}".format(
+                type(prediction_probabilities)
+            )
+        )
+    if not isinstance(accuracy, np.ndarray):
+        raise ValueError(
+            "Parameter accuracy must be type numpy.ndarray but given object of type {}".format(
+                type(accuracy)
+            )
+        )
+    if not isinstance(confidence, np.ndarray):
+        raise ValueError(
+            "Parameter confidence must be type numpy.ndarray but given object of type {}".format(
+                type(confidence)
+            )
+        )
+
+    if len(accuracy) != len(confidence):
+        raise ValueError(
+            "Arrays accuracy and confidence should have the same size but instead received {} and {} respectively.".format(
+                len(accuracy), len(confidence)
+            )
+        )
+
     n_bins = len(accuracy)  # the number of bins
     n = len(prediction_probabilities)  # number of points
     h = np.histogram(a=prediction_probabilities, range=(0, 1), bins=n_bins)[
