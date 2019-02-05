@@ -193,3 +193,46 @@ def test_isotonic_calibration_fit_transform():
 
     assert y_pred.shape == (1, 2)
     assert np.sum(y_pred) == pytest.approx(1.0)
+
+
+#
+# Tests for method expected_calibration_error
+#
+def test_expected_calibration_error():
+
+    pp = [0.1, 0.5, 0.8, 0.2]
+    ac = [0.1, 0.3, 0.5, 0.8, 0.9]
+    co = [0.15, 0.3, 0.55, 0.75, 0.92]
+
+    # Test passing invalid parameter values, e.g., type.
+    with pytest.raises(ValueError):
+        expected_calibration_error(prediction_probabilities=pp,
+                                   accuracy=ac,
+                                   confidence=co)
+
+    with pytest.raises(ValueError):
+        expected_calibration_error(prediction_probabilities=pp,
+                                   accuracy=np.array(ac),
+                                   confidence=np.array(co))
+
+    with pytest.raises(ValueError):
+        expected_calibration_error(prediction_probabilities=np.array(pp),
+                                   accuracy=ac,
+                                   confidence=np.array(co))
+
+    with pytest.raises(ValueError):
+        expected_calibration_error(prediction_probabilities=np.array(pp),
+                                   accuracy=np.array(ac),
+                                   confidence=co)
+
+    # test different length for accuracy and confidence parameter
+    with pytest.raises(ValueError):
+        expected_calibration_error(prediction_probabilities=np.array(pp),
+                                   accuracy=np.array([0.2, 0.5]),
+                                   confidence=np.array([0.3, 0.5, 0.8]))
+
+    ece = expected_calibration_error(prediction_probabilities=np.array(pp),
+                                     accuracy=np.array(ac),
+                                     confidence=np.array(co))
+
+    assert ece > 0
