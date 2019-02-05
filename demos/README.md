@@ -70,6 +70,6 @@ I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Informa
  Systems (NIPS), pp. 3111-3119, 2013. ([link](https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf))
 
 5. Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling. 
-ICLR 2017. arXiv:1609.02907 [link](https://arxiv.org/abs/1609.02907)
+ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
 
 6. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
