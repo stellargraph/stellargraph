@@ -158,9 +158,14 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
 
 class TemperatureCalibration(object):
     """
-    A class for temperature calibration for multi-class classification problems. Temperature
-    Calibration is an extension of Platt Scaling and it was proposed in the paper
-    On Calibration of Modern Neural Networks, C. Guo et. al., ICML, 2017.
+    A class for temperature calibration for binary and multi-class classification problems.
+
+    For binary classification, Platt Scaling is used for calibration. Platt Scaling was
+    proposed in the paper Probabilistic outputs for support vector machines and comparisons to regularized
+    likelihood methods, J. C. Platt, Advances in large margin classifiers, 10(3): 61-74, 1999.
+
+    For multi-class classification, Temperature Calibration is used. It is an extension of Platt Scaling
+    and it was proposed in the paper On Calibration of Modern Neural Networks, C. Guo et. al., ICML, 2017.
 
     In Temperature Calibration, a classifier's non-probabilistic outputs, i.e., logits, are
     scaled by a trainable parameter called Temperature. The softmax is applied to the rescaled
@@ -179,14 +184,20 @@ class TemperatureCalibration(object):
 
     def _fit_temperature_scaling(self, x_train, y_train, x_val=None, y_val=None):
         """
-        Train the model. If validation data is given, then training stops when the
-        validation accuracy starts increasing.
-        Args:
-            x_train: <numpy array> The training data that should be the classifier's non-probabilistic outputs.
-            y_train: <numpy array> The training data class labels as one hot encoded vectors
-            x_val: <numpy array or None> The validation data that should be the classifier's non-probabilistic outputs.
-            y_val: <numpy array or None> The validation data class labels as one hot encoded vectors
+        Train the calibration model using Temperature Scaling.
 
+        If validation data is given, then training stops when the validation accuracy starts increasing.
+
+        Args:
+            x_train: <numpy array> The training data that should be a classifier's non-probabilistic outputs.
+            It should have shape (N, C) where N is the number of samples and C is the number of classes.
+            y_train: <numpy array> The training data class labels. It should have shape (N, C) where N is the number of
+            samples and C is the number of classes and the class labels are one-hot encoded.
+            x_val: <numpy array or None> The validation data used for early stopping. It should have shape (M, C)
+            where M is the number of validation samples and C is the number of classes and the class labels are one-hot
+            encoded.
+            y_val: <numpy array or None> The validation data class labels. It should have shape (M, C) where M is the
+             number of validation samples and C is the number of classes and the class labels are one-hot encoded.
         """
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
             x = tf.placeholder(
@@ -232,12 +243,12 @@ class TemperatureCalibration(object):
 
     def _fit_platt_scaling(self, x_train, y_train):
         """
-
+        Helper method for calibration of a binary classifier using Platt Scaling.
         Args:
-            x_train:
-            y_train:
-
-        Returns:
+            x_train: <numpy array> The training data that should be a classifier's non-probabilistic outputs. It should
+            have shape (N,) where N is the number of training samples.
+            y_train: <numpy array> The training data class labels. It should have shape (N,) where N is the
+            number of training samples.
 
         """
 
@@ -247,14 +258,27 @@ class TemperatureCalibration(object):
 
     def fit(self, x_train, y_train, x_val=None, y_val=None):
         """
-        Train the model. For temperature scaling of a multi-class classifier, If validation data is given, then
-        training stops when the validation accuracy starts increasing. Validation data are ignored for Platt scaling
-        Args:
-            x_train: <numpy array> The training data that should be the classifier's non-probabilistic outputs.
-            y_train: <numpy array> The training data class labels as one hot encoded vectors
-            x_val: <numpy array or None> The validation data that should be the classifier's non-probabilistic outputs.
-            y_val: <numpy array or None> The validation data class labels as one hot encoded vectors
+        Train the calibration model.
 
+        For temperature scaling of a multi-class classifier, If validation data is given, then
+        training stops when the validation accuracy starts increasing. Validation data are ignored for Platt scaling
+
+        Args:
+            x_train: <numpy array> The training data that should be a classifier's non-probabilistic outputs. For
+            calibrating a binary classifier it should have shape (N,) where N is the number of training samples.
+            For calibrating a multi-class classifier, it should have shape (N, C) where N is the number of samples
+            and C is the number of classes.
+            y_train: <numpy array> The training data class labels. For
+            calibrating a binary classifier it should have shape (N,) where N is the number of training samples.
+            For calibrating a multi-class classifier, it should have shape (N, C) where N is the number of samples
+            and C is the number of classes and the class labels are one-hot encoded.
+            x_val: <numpy array or None> The validation data used only for calibrating multi-class classification
+            models. It should have shape (M, C) where M is the number of validation samples and C is the number of
+            classes and the class labels are one-hot encoded.
+             that should be the classifier's non-probabilistic outputs.
+            y_val: <numpy array or None> The validation data class labels used only for calibrating multi-class
+             classification models. It should have shape (M, C) where M is the number of validation samples and C
+             is the number of classes and the class labels are one-hot encoded.
         """
         if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
             raise ValueError("x_train and y_train must be numpy arrays")
@@ -340,7 +364,7 @@ class TemperatureCalibration(object):
 
 class IsotonicCalibration(object):
     """
-    A class for applying Isotonic Calibration to the outputs of a multi-class classifier.
+    A class for applying Isotonic Calibration to the outputs of a binary or multi-class classifier.
     """
 
     def __init__(self):
@@ -349,10 +373,14 @@ class IsotonicCalibration(object):
 
     def fit(self, x_train, y_train):
         """
-        Train the model using the provided data.
+        Train a calibration model using the provided data.
+
         Args:
-            x_train: The training data that should be the classifier's probabilistic outputs
-            y_train: The training class labels as one hot encoded vectors.
+            x_train: <numpy array> The training data that should be the classifier's probabilistic outputs. It should
+            have shape NxC where N is the number of training samples and C is the number of classes.
+            y_train: <numpy array> The training class labels. For binary problems y_train has shape (N,)
+            when N is the number of samples. For multi-class classification, y_train has shape (N,C) where
+            C is the number of classes and y_train is using one-hot encoding.
 
         """
         if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
@@ -366,7 +394,7 @@ class IsotonicCalibration(object):
 
         if self.n_classes == 1:
             self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
-            self.regressors[-1].fit(X=x_train, y=y_train)
+            self.regressors[-1].fit(X=x_train[:, 0], y=y_train)
         else:
             for n in range(self.n_classes):
                 self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
@@ -374,13 +402,17 @@ class IsotonicCalibration(object):
 
     def predict(self, x):
         """
-        This method calibrates the classifier's output using the trained regressors. The
-        probabilities for each class are first scaled using the corresponding regression model
-        and then normalized to sum to 1.
-        Args:
-            x: <numpy array> The classifier's probabilistic outputs to calibrate.
+        This method calibrates the given data assumed the output of a classification model.
 
-        Returns: <numpy array> The calibrated probabilities.
+        For multi-class classification, the probabilities for each class are first scaled using the corresponding
+        isotonic regression model and then normalized to sum to 1.
+
+        Args:
+            x: <numpy array> The values to calibrate. It should have shape (N, C) where N is the number of samples
+            and C is the number of classes.
+
+        Returns: <numpy array> The calibrated probabilities. It has shape (N, C) where N is the number of samples and
+        C is the number of classes.
         """
         if not isinstance(x, np.ndarray):
             raise ValueError(
