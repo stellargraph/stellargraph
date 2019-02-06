@@ -37,10 +37,18 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     Helper function for calculating the expected calibration error as defined in
     the paper On Calibration of Modern Neural Networks, C. Guo, et. al., ICML, 2017
 
+    It is assumed that for a validation dataset, the prediction probabilities have
+    been calculated for each point in the dataset and given in the array
+    prediction_probabilities.
+
     Args:
         prediction_probabilities: <numpy array>  The predicted probabilities
-        accuracy: <numpy array> The accuracy
-        confidence: <numpy array> The confidence
+        accuracy: <numpy array> The accuracy such that the i-th entry in the array
+        holds the proportion of correctly classified samples that fall in the i-th
+        bin.
+        confidence: <numpy array> The confidence such that the i-th entry in the
+        array is the average prediction probability over all the samples assigned
+        to this bin.
 
     Returns: <Float> The expected calibration error.
 
@@ -72,7 +80,7 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
         )
 
     n_bins = len(accuracy)  # the number of bins
-    n = len(prediction_probabilities)  # number of points
+    n = len(prediction_probabilities)  # number of samples
     h = np.histogram(a=prediction_probabilities, range=(0, 1), bins=n_bins)[
         0
     ]  # just the counts
@@ -86,14 +94,16 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
     """
     Helper function for plotting a reliability diagram.
     Args:
-        calibration_data: <list> The calibration data as list where each entry in the
+        calibration_data: <list> The calibration data as a list where each entry in the
         list is a 2-tuple of type numpy.ndarray. Each entry in the tuple holds the
         fraction of positives and the mean predicted values for the true and predicted
         class labels.
-        predictions: <np.ndarray> The probabilistic predictions for the data used in
-        diagnosing miscalibration.
-        ece: <None or list of floats> The expected calibration error for each class
-        filename: <string or None> If not None, the figure is saved on disk in the given filename.
+        predictions: <np.ndarray> The probabilistic predictions of the classifier for
+         each sample in the dataset used for diagnosing miscalibration.
+        ece: <None or list of floats> If not None, this list stores the expected calibration
+        error for each class.
+        filename: <string or None> If not None, the figure is saved on disk in the
+        given filename.
     """
     if not isinstance(calibration_data, list):
         raise ValueError(
@@ -166,14 +176,14 @@ class TemperatureCalibration(object):
     def fit(self, x_train, y_train, x_val=None, y_val=None):
         """
         Train the model. If validation data is given, then training stops when the
-        validation accuracy starts increasing. This prevent overfitting.
+        validation accuracy starts increasing.
         Args:
             x_train: <numpy array> The training data that should be the classifier's non-probabilistic outputs.
             y_train: <numpy array> The training data class labels as one hot encoded vectors
             x_val: <numpy array or None> The validation data that should be the classifier's non-probabilistic outputs.
             y_val: <numpy array or None> The validation data class labels as one hot encoded vectors
 
-        Returns: <float> The estimate temperature
+        Returns: <float> The estimated temperature
 
         """
         if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
@@ -197,7 +207,7 @@ class TemperatureCalibration(object):
             )
 
         self.n_classes = x_train.shape[1]
-        # Specify the tensorflow program.
+
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
             x = tf.placeholder(
                 tf.float32, [None, self.n_classes], name="x"
@@ -231,7 +241,7 @@ class TemperatureCalibration(object):
             _, c, t = sess.run([optimizer, cost, T], feed_dict={x: x_train, y: y_train})
             if early_stopping:
                 c_val = sess.run([cost], feed_dict={x: x_val, y: y_val})
-                if len(self.history) > 10 and c_val > self.history[-1][1]:
+                if len(self.history) > 0 and c_val > self.history[-1][1]:
                     break
                 else:  # keep going
                     self.history.append([c, c_val[0], t[0]])
@@ -299,7 +309,7 @@ class IsotonicCalibration(object):
 
     def fit(self, x_train, y_train):
         """
-        Train the model.
+        Train the model using the provided data.
         Args:
             x_train: The training data that should be the classifier's probabilistic outputs
             y_train: The training class labels as one hot encoded vectors.
@@ -346,6 +356,8 @@ class IsotonicCalibration(object):
             predictions.append(self.regressors[n].transform(T=x[:, n]))
 
         predictions = np.transpose(np.array(predictions))
-        predictions = predictions / np.sum(predictions, axis=-1, keepdims=True)
+
+        if self.n_classes > 1:
+            predictions = predictions / np.sum(predictions, axis=-1, keepdims=True)
 
         return predictions
