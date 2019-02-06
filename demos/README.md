@@ -48,6 +48,11 @@ The examples folder structure is shown below.
     Example of semi-supervised node classification for a heterogeneous network with multiple node and link types, 
     using the HinSAGE algorithm.
 
+* [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
+
+    Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
+    multi-class classification problems.
+
 
 ## References
 
@@ -67,3 +72,6 @@ I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Informa
 
 5. Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling. 
 ICLR 2017. arXiv:1609.02907 [link](https://arxiv.org/abs/1609.02907)
+
+5. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. 
+ICML 2017. [link](https://geoffpleiss.com/nn_calibration)
