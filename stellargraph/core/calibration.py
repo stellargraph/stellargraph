@@ -328,11 +328,13 @@ class TemperatureCalibration(object):
 
     def predict(self, x):
         """
-        This method calibrates the classifier's output using the learned temperature. It
+        This method calibrates the given data using the learned temperature. It
         scales each logit by the temperature, exponentiates the results, and finally
         normalizes the scaled values such that their sum is 1.
         Args:
-            x: <numpy.ndarray> The classifier's non-probabilistic outputs to calibrate.
+            x: <numpy.ndarray> The logits. For binary classification problems, it should have dimensionality (N,) where
+            N is the number of samples to calibrate. For multi-class problems, it should have dimensionality (N, C)
+            where C is the number of classes.
 
         Returns: The calibrated probabilities.
 
@@ -349,8 +351,6 @@ class TemperatureCalibration(object):
                 )
             )
         x_ = x
-        if len(x) > 1:
-            x_ = x.reshape(-1, 1)
 
         if self.n_classes == 1:
             return self.lr.predict_proba(X=x)[:, 1].reshape(-1, 1)
