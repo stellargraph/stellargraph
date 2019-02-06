@@ -31,6 +31,8 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.isotonic import IsotonicRegression
 
+from sklearn.linear_model import LogisticRegression
+
 
 def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     """
@@ -172,8 +174,10 @@ class TemperatureCalibration(object):
         self.n_classes = None
         self.temperature = 1.0  # default is no scaling
         self.history = []
+        self.early_stopping = False
+        self.lr = None  # The logistic regression model for Platt scaling
 
-    def fit(self, x_train, y_train, x_val=None, y_val=None):
+    def _fit_temperature_scaling(self, x_train, y_train, x_val=None, y_val=None):
         """
         Train the model. If validation data is given, then training stops when the
         validation accuracy starts increasing.
@@ -183,31 +187,7 @@ class TemperatureCalibration(object):
             x_val: <numpy array or None> The validation data that should be the classifier's non-probabilistic outputs.
             y_val: <numpy array or None> The validation data class labels as one hot encoded vectors
 
-        Returns: <float> The estimated temperature
-
         """
-        if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
-            raise ValueError("x_train and y_train must be numpy arrays")
-
-        early_stopping = False
-        if (x_val is not None and y_val is None) or (
-            x_val is None and y_val is not None
-        ):
-            raise ValueError(
-                "Either both x_val and y_val should be None or both should be numpy arrays."
-            )
-
-        if x_val is not None and y_val is not None:
-            if not isinstance(x_val, np.ndarray) or not isinstance(y_val, np.ndarray):
-                raise ValueError("x_train and y_train must be numpy arrays")
-
-            early_stopping = True
-            print(
-                "Using Early Stopping based on performance evaluated on given validation set."
-            )
-
-        self.n_classes = x_train.shape[1]
-
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
             x = tf.placeholder(
                 tf.float32, [None, self.n_classes], name="x"
@@ -239,7 +219,7 @@ class TemperatureCalibration(object):
         self.history = []
         for epoch in range(self.epochs):
             _, c, t = sess.run([optimizer, cost, T], feed_dict={x: x_train, y: y_train})
-            if early_stopping:
+            if self.early_stopping:
                 c_val = sess.run([cost], feed_dict={x: x_val, y: y_val})
                 if len(self.history) > 0 and c_val > self.history[-1][1]:
                     break
@@ -250,7 +230,60 @@ class TemperatureCalibration(object):
         self.history = np.array(self.history)
         self.temperature = self.history[-1, -1]
 
-        return self.temperature
+    def _fit_platt_scaling(self, x_train, y_train):
+        """
+
+        Args:
+            x_train:
+            y_train:
+
+        Returns:
+
+        """
+
+        self.lr = LogisticRegression(fit_intercept=True, verbose=False)
+
+        self.lr.fit(x_train, y_train)
+
+    def fit(self, x_train, y_train, x_val=None, y_val=None):
+        """
+        Train the model. For temperature scaling of a multi-class classifier, If validation data is given, then
+        training stops when the validation accuracy starts increasing. Validation data are ignored for Platt scaling
+        Args:
+            x_train: <numpy array> The training data that should be the classifier's non-probabilistic outputs.
+            y_train: <numpy array> The training data class labels as one hot encoded vectors
+            x_val: <numpy array or None> The validation data that should be the classifier's non-probabilistic outputs.
+            y_val: <numpy array or None> The validation data class labels as one hot encoded vectors
+
+        """
+        if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
+            raise ValueError("x_train and y_train must be numpy arrays")
+
+        if (x_val is not None and y_val is None) or (
+            x_val is None and y_val is not None
+        ):
+            raise ValueError(
+                "Either both x_val and y_val should be None or both should be numpy arrays."
+            )
+
+        if x_val is not None and y_val is not None:
+            if not isinstance(x_val, np.ndarray) or not isinstance(y_val, np.ndarray):
+                raise ValueError("x_train and y_train must be numpy arrays")
+
+            self.early_stopping = True
+            print(
+                "Using Early Stopping based on performance evaluated on given validation set."
+            )
+
+        if len(x_train.shape) == 1:
+            self.n_classes = 1
+        else:
+            self.n_classes = x_train.shape[1]
+
+        if self.n_classes > 1:
+            self._fit_temperature_scaling(x_train, y_train, x_val, y_val)
+        else:
+            self._fit_platt_scaling(x_train.reshape(-1, 1), y_train.reshape(-1, 1))
 
     def plot_training_history(self):
         """
@@ -269,7 +302,7 @@ class TemperatureCalibration(object):
         ax2.set_xlabel("Epoch")
         ax2.set_ylabel("Temperature")
 
-    def transform(self, x):
+    def predict(self, x):
         """
         This method calibrates the classifier's output using the learned temperature. It
         scales each logit by the temperature, exponentiates the results, and finally
@@ -285,17 +318,24 @@ class TemperatureCalibration(object):
                 "x should be numpy.ndarray but received {}".format(type(x))
             )
 
-        if x.shape[1] != self.n_classes:
+        if len(x.shape) > 1 and x.shape[1] != self.n_classes:
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(
                     self.n_classes, len(x)
                 )
             )
+        x_ = x
+        if len(x) > 1:
+            x_ = x.reshape(-1, 1)
 
-        scaled_prediction = x / self.temperature
-        return np.exp(scaled_prediction) / np.sum(
-            np.exp(scaled_prediction), axis=-1, keepdims=True
-        )
+        if self.n_classes == 1:
+            return self.lr.predict_proba(X=x)[:, 1].reshape(-1, 1)
+        else:
+            scaled_prediction = x_ / self.temperature
+
+            return np.exp(scaled_prediction) / np.sum(
+                np.exp(scaled_prediction), axis=-1, keepdims=True
+            )
 
 
 class IsotonicCalibration(object):
@@ -324,12 +364,15 @@ class IsotonicCalibration(object):
 
         self.n_classes = x_train.shape[1]
 
-        for n in range(self.n_classes):
+        if self.n_classes == 1:
             self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
+            self.regressors[-1].fit(X=x_train, y=y_train)
+        else:
+            for n in range(self.n_classes):
+                self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
+                self.regressors[-1].fit(X=x_train[:, n], y=y_train[:, n])
 
-            self.regressors[-1].fit(X=x_train[:, n], y=y_train[:, n])
-
-    def transform(self, x):
+    def predict(self, x):
         """
         This method calibrates the classifier's output using the trained regressors. The
         probabilities for each class are first scaled using the corresponding regression model
