@@ -390,11 +390,14 @@ class IsotonicCalibration(object):
                 )
             )
 
-        self.n_classes = x_train.shape[1]
+        if len(x_train.shape) == 1:
+            self.n_classes = 1
+        else:
+            self.n_classes = x_train.shape[1]
 
         if self.n_classes == 1:
             self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
-            self.regressors[-1].fit(X=x_train[:, 0], y=y_train)
+            self.regressors[-1].fit(X=x_train, y=y_train)
         else:
             for n in range(self.n_classes):
                 self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
@@ -408,8 +411,9 @@ class IsotonicCalibration(object):
         isotonic regression model and then normalized to sum to 1.
 
         Args:
-            x: <numpy array> The values to calibrate. It should have shape (N, C) where N is the number of samples
-            and C is the number of classes.
+            x: <numpy array> The values to calibrate. For binary classificatio problems it should have shape (N,) where
+            N is the number of samples to calibrate. For multi-class classification probelsm, it should have shape
+            (N, C) where C is the number of classes.
 
         Returns: <numpy array> The calibrated probabilities. It has shape (N, C) where N is the number of samples and
         C is the number of classes.
@@ -419,12 +423,17 @@ class IsotonicCalibration(object):
                 "x should be numpy.ndarray but received {}".format(type(x))
             )
 
-        if x.shape[1] != self.n_classes:
+        if (self.n_classes == 1 and len(x.shape) != 1) or (
+            self.n_classes > 1 and x.shape[1] != self.n_classes
+        ):
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(
                     self.n_classes, len(x)
                 )
             )
+
+        if self.n_classes == 1:
+            x = x.reshape(-1, 1)
 
         predictions = []
         for n in range(self.n_classes):

@@ -76,21 +76,21 @@ def test_temperature_scaling_bad_input_type():
             y_val=np.array(y_val),
         )
 
-    # some tests for the transform method where the input data have the wrong
+    # some tests for the predict method where the input data have the wrong
     # dimensionality or type
     # first call fit
     ts.fit(x_train=np.array(x_train), y_train=np.array(y_train))
-    # Now transform a new point
+    # Now predict a new point
     x_test = [[1]]
 
     with pytest.raises(ValueError):
-        ts.transform(x=x_test)  # wrong type
+        ts.predict(x=x_test)  # wrong type
 
     with pytest.raises(ValueError):
-        ts.transform(x=np.array(x_test))  # wrong dimensionality
+        ts.predict(x=np.array(x_test))  # wrong dimensionality
 
 
-def test_temperature_scaling_fit_transform():
+def test_temperature_scaling_fit_predict():
     x_train = np.array([[1, 1], [2, 3.5]])
     y_train = np.array([[0.9, 0.1], [0.2, 0.8]])
 
@@ -121,22 +121,40 @@ def test_temperature_scaling_fit_transform():
     assert len(ts.history) < 5000
     assert ts.n_classes == 2
 
-    # Check that transform returns data of the same dimensionality as
+    # Check that predict returns data of the same dimensionality as
     # the training data.
     x_test = np.array([[0, 1]])
-    y_pred = ts.transform(x=x_test)
+    y_pred = ts.predict(x=x_test)
 
     assert y_pred.shape == (1, 2)
     assert np.sum(y_pred) == pytest.approx(1.0)
     # Temperature scaling does not change the predicted class
     assert y_pred[0, 1] > y_pred[0, 0]
 
+    #
+    # Test for binary classification
+    #
+    x_train = np.array([1, 3.5])
+    y_train = np.array([1, 0])
+
+    ts = TemperatureCalibration()
+
+    #
+    ts.fit(x_train=x_train, y_train=y_train)
+
+    assert ts.n_classes == 1
+
+    # Check that predict returns data of the same dimensionality as
+    # the training data.
+    x_test = np.array([[0.7]])
+    y_pred = ts.predict(x=x_test)
+
+    assert y_pred.shape == (1, 1)
+
 
 #
 # Test for class IsotonicCalibration
 #
-
-
 def test_isotonic_calibration_bad_input_type():
     ic = IsotonicCalibration()
 
@@ -160,21 +178,23 @@ def test_isotonic_calibration_bad_input_type():
     with pytest.raises(ValueError):  # x_train should be np.ndarray not list
         ic.fit(x_train=x_train, y_train=np.array(y_train))
 
-    # some tests for the transform method where the input data have the wrong
+    # some tests for the predict method where the input data have the wrong
     # dimensionality or type
     # first call fit
     ic.fit(x_train=np.array(x_train), y_train=np.array(y_train))
-    # Now transform a new point
+    # Now predict a new point
     x_test = [[1]]
 
     with pytest.raises(ValueError):
-        ic.transform(x=x_test)  # wrong type
+        ic.predict(x=x_test)  # wrong type
 
     with pytest.raises(ValueError):
-        ic.transform(x=np.array(x_test))  # wrong dimensionality
+        ic.predict(x=np.array(x_test))  # wrong dimensionality
 
 
-def test_isotonic_calibration_fit_transform():
+def test_isotonic_calibration_fit_predict():
+
+    # Some tests for the multi-class case
     x_train = np.array([[1, 1], [2, 3.5]])
     y_train = np.array([[0.9, 0.1], [0.2, 0.8]])
 
@@ -186,13 +206,32 @@ def test_isotonic_calibration_fit_transform():
 
     assert ic.n_classes == 2
 
-    # Check that transform returns data of the same dimensionality as
+    # Check that predict returns data of the same dimensionality as
     # the training data.
     x_test = np.array([[0, 1]])
-    y_pred = ic.transform(x=x_test)
+    y_pred = ic.predict(x=x_test)
 
     assert y_pred.shape == (1, 2)
     assert np.sum(y_pred) == pytest.approx(1.0)
+
+    # Some tests for the binary classification case.
+    x_train = np.array([0.1, 0.5, 0.2])
+    y_train = np.array([0.2, 0.55, 0.3])
+
+    ic = IsotonicCalibration()
+
+    assert len(ic.regressors) == 0
+
+    ic.fit(x_train=x_train, y_train=y_train)
+
+    assert ic.n_classes == 1
+
+    # Check that predict returns data of the same dimensionality as
+    # the training data.
+    x_test = np.array([0.5, 0.1])
+    y_pred = ic.predict(x=x_test)
+
+    assert y_pred.shape == (2, 1)
 
 
 #
