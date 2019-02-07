@@ -173,7 +173,7 @@ class GCN:
             generator: an instance of FullBatchNodeGenerator class constructed on the graph of interest
             bias: toggles an optional bias in GCN layers
             dropout: dropout rate applied to input features of each GCN layer
-            normalize: normalization applied to the final output features of the GCN layers stack
+            normalize: normalization applied to the kernels of GCN layers
             kwargs: additional parameters for chebyshev or localpool filters
         """
 
@@ -243,14 +243,15 @@ class GCN:
         if filter == "chebyshev":
             self.support = self.kwargs.get("max_degree", 2)
             suppG = [
-                Input(shape=(None, None), batch_shape=(None, None), sparse=True)
+                Input(batch_shape=(None, None), sparse=True)
                 for _ in range(self.support)
             ]
         else:
-            suppG = [Input(shape=(None, None), batch_shape=(None, None), sparse=True)]
+            suppG = [Input(batch_shape=(None, None), sparse=True)]
 
-        x_out = self([x_in] + suppG)
-        return [x_in] + suppG, x_out
+        x_inp = [x_in] + suppG
+        x_out = self(x_inp)
+        return x_inp, x_out
 
     def link_model(self, flatten_output=False):
         """

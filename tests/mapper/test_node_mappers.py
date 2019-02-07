@@ -665,7 +665,6 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, name="test", func_opt=None, key="value")
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
-        assert generator.kwargs["key"] == "value"
 
     def test_fullbatch_generater_init_2(self):
         G, feats = create_graph_features()
@@ -681,4 +680,3 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, "test", func, key="value")
         assert generator.name == "test"
         assert np.array_equal(feats * feats, generator.features)
-        assert generator.kwargs["key"] == "value"
