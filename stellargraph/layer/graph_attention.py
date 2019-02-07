@@ -452,7 +452,7 @@ class GAT:
 
         X_in = Input(shape=(F,))
         # sparse=True makes model.fit_generator() method work:
-        A_in = Input(shape=(N,), sparse=True)
+        A_in = Input(shape=(N,), sparse=self.generator.sparse)
 
         x_inp = [X_in, A_in]
 
