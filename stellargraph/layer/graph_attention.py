@@ -33,7 +33,9 @@ warnings.simplefilter("default")
 class GraphAttention(Layer):
     """
     GAT layer, base implementation taken from https://github.com/danielegrattarola/keras-gat
-    and some modifications added
+    with some modifications added
+
+    GAT paper: https://arxiv.org/abs/1803.07294
     """
 
     def __init__(
@@ -300,7 +302,7 @@ class GraphAttention(Layer):
 
 class GAT:
     """
-    A stack of GAT layers with aggregation of multiple attention heads, Eqs 5-6 of GAT paper
+    A stack of GAT layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1803.07294
     """
 
     def __init__(
@@ -320,7 +322,8 @@ class GAT:
         Args:
             layer_sizes: list of output sizes of GAT layers in the stack
             attn_heads: number of attention heads
-            attn_heads_reduction:
+            attn_heads_reduction: ('concat' or 'average') reduction applied to output features of each attention head
+                in all layers in the stack. The final layer of the stack has 'average' reduction applied (Eq. 6 of the paper).
             activations: list of activations applied to each layer's output
             bias: toggles an optional bias in GAT layers
             in_dropout: dropout rate applied to input features of each GAT layer
