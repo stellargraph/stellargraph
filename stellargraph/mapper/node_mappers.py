@@ -529,10 +529,9 @@ class FullBatchNodeGenerator:
 
         # Power-user feature: make the generator yield dense adjacency matrix instead of the default sparse one.
         # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency maps
-        self.sparse = True
-        if kwargs.get("sparse", True) == False:
+        self.sparse = kwargs.get("sparse", True)
+        if not self.sparse:
             self.Aadj = self.Aadj.todense()
-            self.sparse = False
 
         # We need a schema to check compatibility with GraphSAGE, GAT, GCN
         self.schema = G.create_graph_schema(create_type_maps=True)

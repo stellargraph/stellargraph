@@ -444,18 +444,19 @@ class GAT:
 
             assert self.generator.features.shape[0] == N
             F = self.generator.features.shape[1]
+            is_adj_sparse = self.generator.sparse
 
         elif num_nodes is not None and feature_size is not None:
             N = num_nodes
             F = feature_size
+            is_adj_sparse = True
         else:
             raise RuntimeError(
                 "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
             )
 
         X_in = Input(shape=(F,))
-        # sparse=True makes model.fit_generator() method work:
-        A_in = Input(shape=(N,), sparse=self.generator.sparse)
+        A_in = Input(shape=(N,), sparse=is_adj_sparse)
 
         x_inp = [X_in, A_in]
 
