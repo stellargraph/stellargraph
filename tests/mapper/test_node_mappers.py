@@ -693,4 +693,3 @@ class Test_FullBatchNodeGenerator:
 
         with pytest.raises(ValueError):
             generator = FullBatchNodeGenerator(G, "test", func, key="value")
-
