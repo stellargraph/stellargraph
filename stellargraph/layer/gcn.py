@@ -59,7 +59,6 @@ class GraphConvolution(Layer):
             attn_kernel_initializer (str): name of the initializer for attention kernel
             kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
             bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
-            attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
             activity_regularizer (str): not used in the current implementation
             kernel_constraint (str): constraint applied to layer's kernel
             bias_constraint (str): constraint applied to layer's bias
@@ -161,7 +160,7 @@ class GCN:
         generator,
         bias=True,
         dropout=0.0,
-        normalize=None,
+        kernel_regularizer=None,
         **kwargs
     ):
 
@@ -186,7 +185,7 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.normalize = normalize
+        self.normalize = kernel_regularizer
         self.generator = generator
         self.support = 1
         self.kwargs = kwargs
