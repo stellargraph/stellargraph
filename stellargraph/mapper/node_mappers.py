@@ -539,10 +539,13 @@ class FullBatchNodeGenerator:
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
-        if callable(func_opt):
-            self.features, self.Aadj = func_opt(
-                features=self.features, Aadj=self.Aadj, **kwargs
-            )
+        if func_opt is not None:
+            if callable(func_opt):
+                self.features, self.Aadj = func_opt(
+                    features=self.features, Aadj=self.Aadj, **kwargs
+                )
+            else:
+                raise ValueError('parameter "func_opt" function is not callable.')
 
     def flow(self, node_ids, targets=None):
         # Check targets is an iterable
