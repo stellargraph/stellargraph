@@ -691,9 +691,6 @@ class Test_FullBatchNodeGenerator:
 
         func = "Not callable"
 
-        try:
+        with pytest.raises(ValueError):
             generator = FullBatchNodeGenerator(G, "test", func, key="value")
-        except ValueError:
-            assert True
-        else:
-            assert False
+
