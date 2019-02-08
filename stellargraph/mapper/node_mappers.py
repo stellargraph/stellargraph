@@ -545,7 +545,7 @@ class FullBatchNodeGenerator:
                     features=self.features, Aadj=self.Aadj, **kwargs
                 )
             else:
-                raise ValueError('parameter "func_opt" function is not callable.')
+                raise ValueError("argument 'func_opt' must be a callable.")
 
     def flow(self, node_ids, targets=None):
         # Check targets is an iterable
