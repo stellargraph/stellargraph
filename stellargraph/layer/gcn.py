@@ -172,7 +172,7 @@ class GCN:
             generator: an instance of FullBatchNodeGenerator class constructed on the graph of interest
             bias: toggles an optional bias in GCN layers
             dropout: dropout rate applied to input features of each GCN layer
-            normalize: normalization applied to the kernels of GCN layers
+            kernel_regularizer: normalization applied to the kernels of GCN layers
             kwargs: additional parameters for chebyshev or localpool filters
         """
 
@@ -185,7 +185,7 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.normalize = kernel_regularizer
+        self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
         self.kwargs = kwargs
@@ -200,7 +200,7 @@ class GCN:
                     self.support,
                     activation=a,
                     use_bias=self.bias,
-                    kernel_regularizer=self.normalize,
+                    kernel_regularizer=self.kernel_regularizer,
                 )
             )
 
