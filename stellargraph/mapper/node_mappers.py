@@ -21,10 +21,10 @@ Mappers to provide input data for the graph models in layers.
 __all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
 
 import operator
-from functools import reduce
-
+import random
 import numpy as np
 import itertools as it
+from functools import reduce
 from keras.utils import Sequence
 
 from ..data.explorer import (
@@ -59,9 +59,12 @@ class NodeSequence(Sequence):
         targets: list, optional (default=None)
             A list of targets or labels to be used in the downstream
             class.
+
+        shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
+
     """
 
-    def __init__(self, generator, ids, targets=None):
+    def __init__(self, generator, ids, targets=None, shuffle=True):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -74,6 +77,9 @@ class NodeSequence(Sequence):
                 raise ValueError(
                     "The length of the targets must be the same as the length of the ids"
                 )
+            self.targets = np.asanyarray(targets)
+        else:
+            self.targets = None
 
         # Check all IDs are actually in the graph
         if any(n not in generator.graph for n in ids):
@@ -95,8 +101,11 @@ class NodeSequence(Sequence):
         # Store the generator to draw samples from graph
         self.generator = generator
         self.ids = list(ids)
-        self.targets = targets
         self.data_size = len(self.ids)
+        self.shuffle = shuffle
+
+        # Shuffle IDs to start
+        self.on_epoch_end()
 
         # Save head node type and generate sampling schema
         self.head_node_types = [head_node_type]
@@ -123,24 +132,31 @@ class NodeSequence(Sequence):
         """
         start_idx = self.generator.batch_size * batch_num
         end_idx = start_idx + self.generator.batch_size
-
         if start_idx >= self.data_size:
             raise IndexError("Mapper: batch_num larger than length of data")
         # print("Fetching batch {} [{}]".format(batch_num, start_idx))
 
-        # Get head nodes
-        head_ids = self.ids[start_idx:end_idx]
+        # The ID indices for this batch
+        batch_indices = self.indices[start_idx:end_idx]
 
-        # Get targets for nodes
-        if self.targets is None:
-            batch_targets = None
-        else:
-            batch_targets = self.targets[start_idx:end_idx]
+        # Get head (root) nodes
+        head_ids = [self.ids[ii] for ii in batch_indices]
+
+        # Get corresponding targets
+        batch_targets = None if self.targets is None else self.targets[batch_indices]
 
         # Get sampled nodes
         batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
 
         return batch_feats, batch_targets
+
+    def on_epoch_end(self):
+        """
+        Shuffle all head (root) nodes at the end of each epoch
+        """
+        self.indices = list(range(self.data_size))
+        if self.shuffle:
+            random.shuffle(self.indices)
 
 
 class GraphSAGENodeGenerator:
@@ -254,7 +270,7 @@ class GraphSAGENodeGenerator:
         ]
         return batch_feats
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, shuffle=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -269,10 +285,15 @@ class GraphSAGENodeGenerator:
         If they are not specified (for example, for use in prediction),
         the targets will not be available to the downsteam task.
 
+        Note that the shuffle argument should be True for training and
+        False for prediction.
+
         Args:
             node_ids: an iterable of node IDs
             targets: a 2D array of numeric targets with shape
                 `(len(node_ids), target_size)`
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
@@ -280,9 +301,9 @@ class GraphSAGENodeGenerator:
             and ``predict_generator``
 
         """
-        return NodeSequence(self, node_ids, targets)
+        return NodeSequence(self, node_ids, targets, shuffle=shuffle)
 
-    def flow_from_dataframe(self, node_targets):
+    def flow_from_dataframe(self, node_targets, shuffle=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -290,6 +311,8 @@ class GraphSAGENodeGenerator:
         Args:
             node_targets: a Pandas DataFrame of numeric targets indexed
                 by the node ID for that target.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
@@ -297,7 +320,9 @@ class GraphSAGENodeGenerator:
             and ``predict_generator``
 
         """
-        return NodeSequence(self, node_targets.index, node_targets.values)
+        return NodeSequence(
+            self, node_targets.index, node_targets.values, shuffle=shuffle
+        )
 
 
 class HinSAGENodeGenerator:
@@ -312,6 +337,9 @@ class HinSAGENodeGenerator:
 
      Use the :meth:`flow` method supplying the nodes and (optionally) targets
      to get an object that can be used as a Keras data generator.
+
+     Note that the shuffle argument should be True for training and
+     False for prediction.
 
      Example::
 
@@ -401,7 +429,7 @@ class HinSAGENodeGenerator:
 
         return batch_feats
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, shuffle=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -416,12 +444,17 @@ class HinSAGENodeGenerator:
         If they are not specified (for example, for use in prediction),
         the targets will not be available to the downsteam task.
 
+        Note that the shuffle argument should be True for training and
+        False for prediction.
+
         Args:
             node_ids (iterable): The head node IDs
             targets (Numpy array): a 2D array of numeric targets with shape
                 ``(len(node_ids), target_size)``
             node_type (str), optional: The target node type, if not given
                 the node type will be inferred from the graph.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
@@ -429,18 +462,23 @@ class HinSAGENodeGenerator:
             and `predict_generator`.
 
         """
-        return NodeSequence(self, node_ids, targets)
+        return NodeSequence(self, node_ids, targets, shuffle=shuffle)
 
-    def flow_from_dataframe(self, node_targets):
+    def flow_from_dataframe(self, node_targets, shuffle=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
+
+        Note that the shuffle argument should be True for training and
+        False for prediction.
 
         Args:
             node_targets (DataFrame): Numeric targets indexed
                 by the node ID for that target.
             node_type (str), optional: The target node type, if not given
                 the node type will be inferred from the graph.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
 
         Returns:
             A NodeSequence object to use with the GraphSAGE model
@@ -448,4 +486,6 @@ class HinSAGENodeGenerator:
             and `predict_generator`.
         """
 
-        return NodeSequence(self, node_targets.index, node_targets.values)
+        return NodeSequence(
+            self, node_targets.index, node_targets.values, shuffle=shuffle
+        )
