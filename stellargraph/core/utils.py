@@ -60,7 +60,7 @@ def normalized_laplacian(adj, symmetric=True):
         symmetric: True if symmetric normalization
 
     Returns:
-        Return sparse laplacian matrices.
+        Return a sparse laplacian matrix.
     """
 
     adj_normalized = normalize_adj(adj, symmetric)
@@ -70,7 +70,7 @@ def normalized_laplacian(adj, symmetric=True):
 
 def rescale_laplacian(laplacian):
     """
-    Calculate largest eigenvalue of normalized graph Laplacian.
+    Scale graph Laplacian by the largest eigenvalue of normalized graph Laplacian.
 
     Args:
         laplacian: laplacian matrix
@@ -97,7 +97,7 @@ def chebyshev_polynomial(X, k):
     Calculate Chebyshev polynomials up to order k.
 
     Args:
-        x: adjacency matrix
+        X: adjacency matrix
         k: maximum polynomial degree
 
     Returns:
@@ -124,7 +124,10 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
     """
     This function applys the matrix transformations on the adjacency matrix because
     GCN requests that the input adjacency matrix should be symmetric, self-loop and normalization.
-    This function performs . It also provides an additional filter: 'chebyshev'.
+    The features and adjacency matrix will be manuplated by either 'localpool' or 'chebyshev' filters.
+    For more information about 'localpool' or 'chebyshev' filters, please read details:
+        [1] https://en.wikipedia.org/wiki/Chebyshev_filter
+        [2] https://arxiv.org/abs/1609.02907
 
     Args:
         features: node features in the graph
