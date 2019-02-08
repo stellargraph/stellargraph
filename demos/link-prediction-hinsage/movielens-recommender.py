@@ -168,7 +168,7 @@ class LinkInference(object):
 
         # Final estimator layer
         score_prediction = link_regression(
-            edge_feature_method=args.edge_feature_method
+            edge_embedding_method=args.edge_feature_method
         )(x_out)
 
         # Create Keras model for training

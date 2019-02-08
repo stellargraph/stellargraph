@@ -166,7 +166,7 @@ def train(
 
     # Final estimator layer
     prediction = link_classification(
-        output_dim=1, output_act="sigmoid", edge_feature_method=args.edge_feature_method
+        output_dim=1, output_act="sigmoid", edge_embedding_method=args.edge_feature_method
     )(x_out)
 
     # Stack the GraphSAGE and prediction layers into a Keras model, and specify the loss

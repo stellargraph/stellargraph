@@ -73,19 +73,19 @@ class LeakyClippedLinear(Layer):
 def link_inference(
     output_dim: int = 1,
     output_act: AnyStr = "linear",
-    edge_feature_method: AnyStr = "ip",
+    edge_embedding_method: AnyStr = "ip",
     clip_limits: Optional[Tuple[float]] = None,
     name: AnyStr = "link_inference",
 ):
     """
-    Defines an edge inference function that takes source, destination node features as input,
+    Defines an edge inference function that takes source, destination node embeddings (node features) as input,
     and returns a numeric vector of output_dim size.
 
     Args:
         output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
+        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
             One of:
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
@@ -98,7 +98,7 @@ def link_inference(
         name (str): optional name of the defined function, used for error logging
 
     Returns:
-        Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
         returning a vector of output_dim length (e.g., edge class probabilities, edge attribute prediction, etc.).
     """
 
@@ -106,39 +106,39 @@ def link_inference(
         x0 = x[0]
         x1 = x[1]
 
-        if edge_feature_method == "ip" or edge_feature_method == "dot":
+        if edge_embedding_method == "ip" or edge_embedding_method == "dot":
             out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
                 [x0, x1]
             )
             out = Activation(output_act)(out)
 
-        elif edge_feature_method == "l1":
+        elif edge_embedding_method == "l1":
             # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
             le = Lambda(lambda x: K.abs(x[0] - x[1]))([x0, x1])
             # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
-        elif edge_feature_method == "l2":
+        elif edge_embedding_method == "l2":
             # l2(u,v)_i = (u_i - v_i)^2 - vector of the same size as u,v
             le = Lambda(lambda x: K.square(x[0] - x[1]))([x0, x1])
             # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
-        elif edge_feature_method == "mul" or edge_feature_method == "hadamard":
+        elif edge_embedding_method == "mul" or edge_embedding_method == "hadamard":
             le = Multiply()([x0, x1])
             # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
-        elif edge_feature_method == "concat":
+        elif edge_embedding_method == "concat":
             le = Concatenate()([x0, x1])
             # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
             out = Reshape((output_dim,))(out)
 
-        elif edge_feature_method == "avg":
+        elif edge_embedding_method == "avg":
             le = Average()([x0, x1])
             # add dense layer to convert le to the desired output:
             out = Dense(output_dim, activation=output_act)(le)
@@ -147,7 +147,7 @@ def link_inference(
         else:
             raise NotImplementedError(
                 "{}: the requested method '{}' is not known/not implemented".format(
-                    name, edge_feature_method
+                    name, edge_embedding_method
                 )
             )
 
@@ -160,7 +160,7 @@ def link_inference(
 
     print(
         "{}: using '{}' method to combine node embeddings into edge embeddings".format(
-            name, edge_feature_method
+            name, edge_embedding_method
         )
     )
     return edge_function
@@ -169,17 +169,17 @@ def link_inference(
 def link_classification(
     output_dim: int = 1,
     output_act: AnyStr = "sigmoid",
-    edge_feature_method: AnyStr = "ip",
+    edge_embedding_method: AnyStr = "ip",
 ):
     """
     Defines a function that predicts a binary or multi-class edge classification output from
-    (source, destination) node features.
+    (source, destination) node embeddings (node features).
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
+        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
             One of:
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
@@ -189,14 +189,14 @@ def link_classification(
              * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
-        Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
         returning logits of output_dim length (e.g., edge class probabilities).
     """
 
     edge_function = link_inference(
         output_dim=output_dim,
         output_act=output_act,
-        edge_feature_method=edge_feature_method,
+        edge_embedding_method=edge_embedding_method,
         name="link_classification",
     )
 
@@ -206,17 +206,17 @@ def link_classification(
 def link_regression(
     output_dim: int = 1,
     clip_limits: Optional[Tuple[float]] = None,
-    edge_feature_method: AnyStr = "ip",
+    edge_embedding_method: AnyStr = "ip",
 ):
     """
     Defines a function that predicts a numeric edge regression output vector/scalar from
-    (source, destination) node features.
+    (source, destination) node embeddings (node features).
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         clip_limits (tuple): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
-        edge_feature_method (str), optional: Name of the method of combining (src,dst) node features into edge features.
+        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
             One of:
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
@@ -226,14 +226,14 @@ def link_regression(
              * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
-        Function taking edge tensors with src, dst node features (i.e., pairs of (node_src, node_dst) tensors) and
-        returning a numeric value (e.g., edge attribute being predicted) constructed according to edge_feature_method.
+        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        returning a numeric value (e.g., edge attribute being predicted) constructed according to edge_embedding_method.
     """
 
     edge_function = link_inference(
         output_dim=output_dim,
         output_act="linear",
-        edge_feature_method=edge_feature_method,
+        edge_embedding_method=edge_embedding_method,
         clip_limits=clip_limits,
         name="link_regression",
     )
