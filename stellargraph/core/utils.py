@@ -40,7 +40,7 @@ def normalize_adj(adj, symmetric=True):
         symmetric: True if symmetric normalization or False if left-only normalization
 
     Returns:
-        Return a sparse adjacency matrix.
+        Return a sparse normalized adjacency matrix.
     """
 
     if symmetric:
@@ -61,7 +61,7 @@ def normalized_laplacian(adj, symmetric=True):
         symmetric: True if symmetric normalization
 
     Returns:
-        Return a sparse laplacian matrix.
+        Return a normalized graph Laplacian matrix.
     """
 
     adj_normalized = normalize_adj(adj, symmetric)
@@ -71,13 +71,14 @@ def normalized_laplacian(adj, symmetric=True):
 
 def rescale_laplacian(laplacian):
     """
-    Scale graph Laplacian by the largest eigenvalue of normalized graph Laplacian.
+    Scale graph Laplacian by the largest eigenvalue of normalized graph Laplacian,
+    so that the eigenvalues of the scaled Laplacian are <= 1.
 
     Args:
-        laplacian: laplacian matrix
+        laplacian: Laplacian matrix of the graph
 
     Returns:
-        Return a sparse laplacian matrix.
+        Return a scaled Laplacian matrix.
     """
 
     try:
@@ -95,7 +96,7 @@ def rescale_laplacian(laplacian):
 
 def chebyshev_polynomial(X, k):
     """
-    Calculate Chebyshev polynomials up to order k.
+    Calculate Chebyshev polynomials up to order k. For more info, see https://en.wikipedia.org/wiki/Chebyshev_filter
 
     Args:
         X: adjacency matrix
