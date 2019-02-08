@@ -15,6 +15,7 @@
 # limitations under the License.
 import collections
 import scipy.sparse as sp
+from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 import numpy as np
 
 
@@ -47,7 +48,7 @@ def normalize_adj(adj, symmetric=True):
         d = sp.diags(np.power(np.array(adj.sum(1)), -0.5).flatten(), 0)
         a_norm = adj.dot(d).transpose().dot(d).tocsr()
     else:
-        d = sp.diags(np.power(np.array(adj.sum(1)), -1).flatten(), 0)
+        d = sp.diags(np.float_power(np.array(adj.sum(1)), -1).flatten(), 0)
         a_norm = d.dot(adj).tocsr()
     return a_norm
 
