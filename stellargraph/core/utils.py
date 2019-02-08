@@ -123,7 +123,7 @@ def chebyshev_polynomial(X, k):
 
 def GCN_Aadj_feats_op(features, A, **kwargs):
     """
-    This function applies the matrix transformations on the adjacency matrix required by GCN.
+    This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
     The features and adjacency matrix will be manipulated by either 'localpool' or 'chebyshev' filters.
     For more information about 'localpool' or 'chebyshev' filters, please read details:
