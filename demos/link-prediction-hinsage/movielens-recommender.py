@@ -168,7 +168,7 @@ class LinkInference(object):
 
         # Final estimator layer
         score_prediction = link_regression(
-            edge_embedding_method=args.edge_feature_method
+            edge_embedding_method=args.edge_embedding_method
         )(x_out)
 
         # Create Keras model for training
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-m",
-        "--edge_feature_method",
+        "--edge_embedding_method",
         type=str,
         default="concat",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
