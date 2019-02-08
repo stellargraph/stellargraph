@@ -15,6 +15,7 @@
 # limitations under the License.
 import collections
 import scipy.sparse as sp
+import numpy as np
 
 
 def is_real_iterable(x):
@@ -76,7 +77,7 @@ def rescale_laplacian(laplacian):
         laplacian: laplacian matrix
 
     Returns:
-        Return sparse laplacian matrices.
+        Return a sparse laplacian matrix.
     """
 
     try:
@@ -122,9 +123,9 @@ def chebyshev_polynomial(X, k):
 
 def GCN_Aadj_feats_op(features, A, **kwargs):
     """
-    This function applys the matrix transformations on the adjacency matrix because
-    GCN requests that the input adjacency matrix should be symmetric, self-loop and normalization.
-    The features and adjacency matrix will be manuplated by either 'localpool' or 'chebyshev' filters.
+    This function applies the matrix transformations on the adjacency matrix required by GCN.
+    GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
+    The features and adjacency matrix will be manipulated by either 'localpool' or 'chebyshev' filters.
     For more information about 'localpool' or 'chebyshev' filters, please read details:
         [1] https://en.wikipedia.org/wiki/Chebyshev_filter
         [2] https://arxiv.org/abs/1609.02907
@@ -133,10 +134,10 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
         features: node features in the graph
         A: adjacency matrix
         kwargs: additional arguments for choosing filter: localpool, or chebyshev
-                (For example, {"filter": "localpool"})
+                (For example, pass filter=localpool as an additional argument to apply the localpool filter)
 
     Returns:
-        features, adjacency matrix
+        features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
     """
 
     def preprocess_adj(adj, symmetric=True):
