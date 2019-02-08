@@ -166,7 +166,7 @@ def train(
 
     # Final estimator layer
     prediction = link_classification(
-        output_dim=1, output_act="sigmoid", edge_embedding_method=args.edge_feature_method
+        output_dim=1, output_act="sigmoid", edge_embedding_method=args.edge_embedding_method
     )(x_out)
 
     # Stack the GraphSAGE and prediction layers into a Keras model, and specify the loss
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-m",
-        "--edge_feature_method",
+        "--edge_embedding_method",
         type=str,
         default="ip",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
