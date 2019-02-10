@@ -397,6 +397,8 @@ class IsotonicCalibration(object):
 
         if self.n_classes == 1:
             self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
+            if len(x_train.shape) > 1:
+                x_train = x_train.reshape(-1)
             self.regressors[-1].fit(X=x_train, y=y_train)
         else:
             for n in range(self.n_classes):
@@ -411,8 +413,8 @@ class IsotonicCalibration(object):
         isotonic regression model and then normalized to sum to 1.
 
         Args:
-            x: <numpy array> The values to calibrate. For binary classificatio problems it should have shape (N,) where
-            N is the number of samples to calibrate. For multi-class classification probelsm, it should have shape
+            x: <numpy array> The values to calibrate. For binary classification problems it should have shape (N,) where
+            N is the number of samples to calibrate. For multi-class classification problems, it should have shape
             (N, C) where C is the number of classes.
 
         Returns: <numpy array> The calibrated probabilities. It has shape (N, C) where N is the number of samples and
@@ -423,9 +425,7 @@ class IsotonicCalibration(object):
                 "x should be numpy.ndarray but received {}".format(type(x))
             )
 
-        if (self.n_classes == 1 and len(x.shape) != 1) or (
-            self.n_classes > 1 and x.shape[1] != self.n_classes
-        ):
+        if self.n_classes > 1 and x.shape[1] != self.n_classes:
             raise ValueError(
                 "Expecting input vector of dimensionality {} but received {}".format(
                     self.n_classes, len(x)
