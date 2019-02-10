@@ -21,4 +21,3 @@ This contains the core objects used by the StellarGraph library.
 
 from .graph import *
 from .schema import *
-from .calibration import *
