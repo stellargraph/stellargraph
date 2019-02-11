@@ -58,19 +58,19 @@ def read_graph(data_path, config_file):
 
     # Prepare the user features for ML (movie features are already numeric and hence ML-ready):
     feature_names = ["age", "gender", "job"]
-
     feature_encoding = feature_extraction.DictVectorizer(sparse=False, dtype=int)
     feature_encoding.fit(user_features[feature_names].to_dict("records"))
 
     user_features_transformed = feature_encoding.transform(
         user_features[feature_names].to_dict("records")
     )
+    # Assume that the age can be used as a continuous variable and rescale it
+    user_features_transformed[:, 0] = preprocessing.scale(user_features_transformed[:, 0])
+
+    # Put features back in DataFrame
     user_features = pd.DataFrame(
         user_features_transformed, index=user_features.index, dtype="float64"
     )
-
-    # Assume that the age can be used as a continuous variable and rescale it
-    user_features[0] = preprocessing.scale(user_features[0])
 
     # Add the user and movie features to the graph:
     gnx = add_features_to_nodes(gnx, inv_id_map, user_features, movie_features)
@@ -168,7 +168,7 @@ class LinkInference(object):
 
         # Final estimator layer
         score_prediction = link_regression(
-            edge_feature_method=args.edge_feature_method
+            edge_embedding_method=args.edge_embedding_method
         )(x_out)
 
         # Create Keras model for training
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-m",
-        "--edge_feature_method",
+        "--edge_embedding_method",
         type=str,
         default="concat",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",

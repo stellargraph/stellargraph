@@ -18,14 +18,13 @@ import setuptools
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
-VERSION = "0.4.1"
 
 # Required packages
 REQUIRES = [
     "keras>=2.2.0",
     "tensorflow>=1.8",
-    "numpy>=1.14, <1.15",
-    "networkx>=2.1",
+    "numpy>=1.14",
+    "networkx>=2.2",
     "scikit_learn>=0.18",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
@@ -37,6 +36,13 @@ EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas", "pytest-bench
 # Long description
 with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
+
+# Get global version
+# see: https://packaging.python.org/guides/single-sourcing-package-version/
+version = {}
+with open("stellargraph/version.py", "r") as fh:
+    exec(fh.read(), version)
+VERSION = version['__version__']
 
 setuptools.setup(
     name="stellargraph",

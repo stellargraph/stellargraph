@@ -93,10 +93,8 @@ def train(
     )
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    generator = HinSAGENodeGenerator(
-        G, batch_size, num_samples
-    )
-    train_gen = generator.flow_from_dataframe(train_targets)
+    generator = HinSAGENodeGenerator(G, batch_size, num_samples)
+    train_gen = generator.flow_from_dataframe(train_targets, shuffle=True)
     test_gen = generator.flow_from_dataframe(test_targets)
 
     # GraphSAGE model
@@ -109,8 +107,8 @@ def train(
     # The elite label is only true for a small fraction of the total users,
     # so weight the training loss to ensure that model learns to predict
     # the positive class.
-    #class_count = train_targets.values.sum(axis=0)
-    #weights = class_count.sum()/class_count
+    # class_count = train_targets.values.sum(axis=0)
+    # weights = class_count.sum()/class_count
     weights = [0.01, 1.0]
     print("Weighting loss by: {}".format(weights))
 
@@ -123,12 +121,7 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(
-        train_gen,
-        epochs=num_epochs,
-        verbose=2,
-        shuffle=True
-    )
+    history = model.fit_generator(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
 
     # Evaluate on test set and print metrics
     predictions = model.predict_generator(test_gen)
@@ -218,7 +211,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load graph and data
-    data_loc = os.path.expanduser(args.location)
+    if args.location is not None:
+        data_loc = os.path.expanduser(args.location)
+    else:
+        raise ValueError(
+            "Please specify the directory containing the dataset using the '-l' flag"
+        )
 
     # Read the data
     print("Reading user features and targets...")
@@ -236,13 +234,12 @@ if __name__ == "__main__":
 
     # Features should be supplied as a dictionary of {node_type: DataFrame} for all
     # node types in the graph
-    features = {
-        "user": user_features,
-        "business": business_features
-    }
+    features = {"user": user_features, "business": business_features}
 
     # Create stellar Graph object
-    G = StellarGraph(Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features)
+    G = StellarGraph(
+        Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features
+    )
 
     train(
         G,

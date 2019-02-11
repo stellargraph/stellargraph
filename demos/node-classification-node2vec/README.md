@@ -16,7 +16,7 @@ treated as undirected.
 
 The example in this directory uses the CORA dataset. 
 
-The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
+The dataset can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz).
 
 The following is the description of the dataset:
 > The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
