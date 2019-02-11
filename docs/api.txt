@@ -15,14 +15,36 @@ Data
   :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
 
 
-Layers
-------------
-
-.. automodule:: stellargraph.layer
-  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator, HinSAGE, MeanHinAggregator, link_inference, link_classification, link_regression
-
 Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: NodeSequence, LinkSequence, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator
+  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator
+
+
+GraphSAGE model
+----------------
+
+.. automodule:: stellargraph.layer.graphsage
+  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+
+
+HinSAGE model
+----------------
+
+.. automodule:: stellargraph.layer.hinsage
+  :members: HinSAGE, MeanHinAggregator
+
+
+GCN model
+-------------
+
+.. automodule:: stellargraph.layer.gcn
+  :members: GraphConvolution, GCN
+
+
+Link prediction layers
+------------------------
+
+.. automodule:: stellargraph.layer.link_inference
+  :members: link_classification, link_regression, link_inference
