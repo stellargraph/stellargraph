@@ -17,6 +17,8 @@
 """
 Definition of Graph Attention Network (GAT) layer and GAT class that is a stack of GAT layers
 """
+import collections
+
 __all__ = ["GraphAttention", "GAT"]
 
 from keras import activations, constraints, initializers, regularizers
@@ -57,7 +59,7 @@ class GraphAttention(Layer):
         kernel_constraint=None,
         bias_constraint=None,
         attn_kernel_constraint=None,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -215,26 +217,14 @@ class GraphAttention(Layer):
 
         """
         X = inputs[0]  # Node features (N x F)
-        A = inputs[1]  # Adjacency matrix (N x N)
-        # Convert A to dense tensor - needed for the mask to work
-        if K.is_sparse(A):
-            A = tf.sparse_tensor_to_dense(A, validate_indices=False)
+        indices = inputs[1].indices  # Undirected graph edges (N x 2)
 
         # For the GAT model to match that in the paper, we need to ensure that the graph has self-loops,
         # since the neighbourhood of node i in eq. (4) includes node i itself.
         # Adding self-loops to A via setting the diagonal elements of A to 1.0:
         # N = kwargs.get("num_nodes")
         # get the number of nodes from inputs[1] directly, rather than passing it via kwargs
-        N = inputs[1]._keras_shape[-1]
-        if N is not None:
-            # create self-loops
-            A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))
-        else:
-            raise ValueError(
-                "{}: need to know number of nodes to add self-loops; obtained None instead".format(
-                    type(self).__name__
-                )
-            )
+        N = tf.shape(X)[0]
 
         outputs = []
         for head in range(self.attn_heads):
@@ -260,25 +250,32 @@ class GraphAttention(Layer):
                 attn_for_neighs
             )  # (N x N) via broadcasting
 
+            # Create sparse attention vector (All non-zero values of the matrix)
+            sparse_attn_self = tf.gather(
+                tf.reshape(attn_for_self, [-1]), indices[:, 0], axis=0
+            )
+            sparse_attn_neighs = tf.gather(
+                tf.reshape(attn_for_neighs, [-1]), indices[:, 1], axis=0
+            )
+            attn_values = sparse_attn_self + sparse_attn_neighs
+
             # Add nonlinearity
-            dense = LeakyReLU(alpha=0.2)(dense)
-
-            # Mask values before activation (Vaswani et al., 2017)
-            # YT: this only works for 'binary' A, not for 'weighted' A!
-            # YT: if A does not have self-loops, the node itself will be masked, so A should have self-loops
-            # YT: this is ensured by setting the diagonal elements of A tensor to 1 above
-            mask = -10e9 * (1.0 - A)
-            dense += mask
-
-            # Apply softmax to get attention coefficients
-            dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
+            attn_values = LeakyReLU(alpha=0.2)(attn_values)
 
             # Apply dropout to features and attention coefficients
             dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')
-            dropout_attn = Dropout(self.attn_dropout_rate)(dense)  # (N x N)
+            dropout_attn = Dropout(self.attn_dropout_rate)(attn_values)  # (N x N)
+
+            # Convert to sparse matrix
+            sparse_attn = tf.sparse.SparseTensor(
+                indices, values=dropout_attn, dense_shape=[N, N]
+            )
+
+            # Apply softmax to get attention coefficients
+            sparse_attn = tf.sparse.softmax(sparse_attn)  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
-            node_features = K.dot(dropout_attn, dropout_feat)  # (N x F')
+            node_features = tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
 
             if self.use_bias:
                 node_features = K.bias_add(node_features, self.biases[head])
@@ -337,6 +334,7 @@ class GAT:
         self.in_dropout = in_dropout
         self.attn_dropout = attn_dropout
         self.generator = generator
+        self.n_layers = len(layer_sizes)
 
         if generator is not None:
             assert isinstance(
@@ -365,15 +363,11 @@ class GAT:
         self.activations = activations
 
         # Set the normalization layer used in the model
+        normalize = normalize.lower() if isinstance(normalize, str) else None
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=1))
 
-        elif (
-            normalize is None
-            or normalize == "none"
-            or normalize == "None"
-            or normalize == "linear"
-        ):
+        elif normalize is None or normalize == "none" or normalize == "linear":
             self._normalization = Lambda(lambda x: x)
 
         else:
@@ -383,11 +377,24 @@ class GAT:
                 )
             )
 
+        # Set the number of attention heads as a list if in the arguments
+        if (
+            isinstance(attn_heads, collections.Iterable)
+            and len(attn_heads) == self.n_layers
+        ):
+            self.attn_heads = attn_heads
+
+        # If the attn_heads is an integer, all layers except the final
+        # have this many attention heads. The final layer size is 1.
+        elif isinstance(attn_heads, int):
+            self.attn_heads = [attn_heads] * (self.n_layers - 1) + [1]
+
         # Initialize a stack of GAT layers
         self._layers = []
         for l, F_out in enumerate(layer_sizes):
-            # number of attention heads for layer l:
-            attn_heads = self.attn_heads if l < len(layer_sizes) - 1 else 1
+            # number of attention heads for layer l
+            attn_heads = self.attn_heads[l]
+            print(f"attn_heads for layer {l}: {attn_heads}")
             # Dropout on input node features before each GAT layer
             self._layers.append(Dropout(self.in_dropout))
             # GAT layer
