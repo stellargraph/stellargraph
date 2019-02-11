@@ -1,8 +1,6 @@
 # Change Log
 
-## [Unreleased](https://github.com/stellargraph/stellargraph/tree/HEAD)
-
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/0.4.1...HEAD)
+## [0.5.0](https://github.com/stellargraph/stellargraph/tree/0.5.0) (11 Feb 2019)
 
 **Implemented new features and enhancements:**
 
@@ -30,3 +28,4 @@ and `FullBatchNodeGenerator` class for feeding data into `GCN` models [\#318](ht
 
 **Refactoring:**
 - Refactored link inference classes to use `edge_embedding_method` instead of `edge_feature_method` [\#327](https://github.com/stellargraph/stellargraph/pull/327)
+
