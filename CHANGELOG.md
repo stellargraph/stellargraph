@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.5.0](https://github.com/stellargraph/stellargraph/tree/0.5.0) (11 Feb 2019)
+## [0.5.0](https://github.com/stellargraph/stellargraph/tree/v0.5.0) (11 Feb 2019)
 
 **Implemented new features and enhancements:**
 
