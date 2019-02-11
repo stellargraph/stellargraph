@@ -123,7 +123,10 @@ def train(
     # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G, and obtain the
     # reduced graph G_test with the sampled links removed:
     G_test, edge_ids_test, edge_labels_test = edge_splitter_test.train_test_split(
-        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
+        p=0.1,
+        keep_connected=True,
+        method=args.edge_sampling_method,
+        probs=args.edge_sampling_probs,
     )
 
     # From G_test, extract E_train and the reduced graph G_train:
@@ -131,7 +134,10 @@ def train(
     # Randomly sample a fraction p=0.1 of all positive links, and same number of negative links, from G_test, and obtain the
     # further reduced graph G_train with the sampled links removed:
     G_train, edge_ids_train, edge_labels_train = edge_splitter_train.train_test_split(
-        p=0.1, method=args.edge_sampling_method, probs=args.edge_sampling_probs
+        p=0.1,
+        keep_connected=True,
+        method=args.edge_sampling_method,
+        probs=args.edge_sampling_probs,
     )
 
     # G_train, edge_ds_train, edge_labels_train will be used for model training
@@ -144,17 +150,11 @@ def train(
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
     train_gen = GraphSAGELinkGenerator(
-        G_train,
-        batch_size,
-        num_samples,
-        name="train",
-    ).flow(edge_ids_train, edge_labels_train)
+        G_train, batch_size, num_samples, name="train"
+    ).flow(edge_ids_train, edge_labels_train, shuffle=True)
 
     test_gen = GraphSAGELinkGenerator(
-        G_test,
-        batch_size,
-        num_samples,
-        name="test",
+        G_test, batch_size, num_samples, name="test"
     ).flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
@@ -172,7 +172,7 @@ def train(
 
     # Final estimator layer
     prediction = link_classification(
-        output_dim=1, output_act="sigmoid", edge_feature_method=args.edge_feature_method
+        output_dim=1, output_act="sigmoid", edge_embedding_method=args.edge_embedding_method
     )(x_out)
 
     # Stack the GraphSAGE and prediction layers into a Keras model, and specify the loss
@@ -198,11 +198,7 @@ def train(
     # Train model
     print("\nTraining the model for {} epochs...".format(num_epochs))
     history = model.fit_generator(
-        train_gen,
-        epochs=num_epochs,
-        validation_data=test_gen,
-        verbose=2,
-        shuffle=True,
+        train_gen, epochs=num_epochs, validation_data=test_gen, verbose=2, shuffle=False
     )
 
     # Evaluate and print metrics
@@ -261,10 +257,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
 
     # Generator feeds data from (source, target) sampled subgraphs to GraphSAGE model
     test_gen = GraphSAGELinkGenerator(
-        G_test,
-        batch_size,
-        num_samples,
-        name="test",
+        G_test, batch_size, num_samples, name="test"
     ).flow(edge_ids_test, edge_labels_test)
 
     # Evaluate and print metrics
@@ -351,21 +344,27 @@ if __name__ == "__main__":
         "-i",
         "--ignore_node_attr",
         nargs="+",
-        default=["subject"],
+        default=[],
         help="List of node attributes to ignore (e.g., subject, name, id, etc.)",
     )
     parser.add_argument(
         "-m",
-        "--edge_feature_method",
+        "--edge_embedding_method",
         type=str,
-        default="concat",
+        default="ip",
         help="The method for combining node embeddings into edge embeddings: 'concat', 'mul', 'ip', 'l1', 'l2', or 'avg'",
     )
 
     args, cmdline_args = parser.parse_known_args()
 
     # Load the dataset - this assumes it is the CORA dataset
-    graph_loc = os.path.expanduser(args.location)
+    if args.location is not None:
+        graph_loc = os.path.expanduser(args.location)
+    else:
+        raise ValueError(
+            "Please specify the directory containing the dataset using the '-l' flag"
+        )
+
     G = load_data(graph_loc, args.ignore_node_attr)
 
     if args.checkpoint is None:

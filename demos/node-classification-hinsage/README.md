@@ -30,7 +30,7 @@ and the output directory (-o):
 
 Example usage:
 ```
-python yelp_preprocessing.py -l <path_to_yelp_dataset> -o .
+python yelp-preprocessing.py -l <path_to_yelp_dataset> -o .
 ```
 
 By default the script will filter the graph to contain only businesses in the state
@@ -40,7 +40,7 @@ memory as the entire graph will be loaded).
 
 Example usage to run without filtering:
 ```
-python yelp_preprocessing.py -l <path_to_yelp_dataset> -o . --filter_state=false
+python yelp-preprocessing.py -l <path_to_yelp_dataset> -o . --filter_state=false
 ```
 
 ## Running the example

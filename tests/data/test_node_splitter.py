@@ -273,7 +273,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
         method = "percent"
         with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
-                y=y, p=1.0, method=method  # must be less than 1.
+                y=y, p=1.1, method=method  # must be less than 1.
             )
         with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
@@ -650,9 +650,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         )
         self.assertEqual(
             self.y_test.shape[0],
-            int(y.shape[0] * (1. - p)),
+            int(y.shape[0] * (1.0 - p)),
             "Test dataset has wrong size {:d} vs expected {:d}".format(
-                self.y_test.shape[0], int(y.shape[0] * (1. - p))
+                self.y_test.shape[0], int(y.shape[0] * (1.0 - p))
             ),
         )
 
@@ -774,9 +774,9 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         )
         self.assertEqual(
             self.y_test.shape[0],
-            int(y.shape[0] * (1. - p)),
+            int(y.shape[0] * (1.0 - p)),
             "Test dataset has wrong size {:d} vs expected {:d}".format(
-                self.y_test.shape[0], int(y.shape[0] * (1. - p))
+                self.y_test.shape[0], int(y.shape[0] * (1.0 - p))
             ),
         )
         #

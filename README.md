@@ -11,23 +11,23 @@
     <img src="https://img.shields.io/pypi/v/stellargraph.svg" /></a>
   <a href="https://buildkite.com/stellar/stellar-ml?branch=master/" alt="Build status: master">
     <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/master.svg?label=branch:+master"/></a>
-    <a href="https://buildkite.com/stellar/stellar-ml?branch=develop/" alt="Build status: develop">
-      <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch:+develop"/></a>
+  <a href="https://buildkite.com/stellar/stellar-ml?branch=develop/" alt="Build status: develop">
+    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch:+develop"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
+    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
+    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/></a>
+  <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
+    <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/></a>
 </p>
 
-<!--
-![Buildkite]()
-Branch: **master** [![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=master)
-
-Branch: **devel** [![Build status](https://badge.buildkite.com/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64.svg)](https://buildkite.com/stellar/stellar-ml?branch=develop)
--->
 
 ## Introduction
 **StellarGraph** is a Python library for machine learning on graph-structured (or equivalently, network-structured) data.
 
 Graph-structured data represent entities, e.g., people, as nodes (or equivalently, vertices),
 and relationships between entities, e.g., friendship, as links (or
-equivalently, edges). Nodes and links may have associated attributes such as age, income, time when
+equivalently, edges). Nodes and links may have associated attributes such as age, income, and time when
 a friendship was established, etc. StellarGraph supports analysis of both homogeneous networks (with nodes and links of one type)
 and heterogeneous networks (with more than one type of nodes and/or links).
 
@@ -45,15 +45,15 @@ such tasks using several real-world datasets.
 
 ## Guiding Principles
 
-StellarGraph uses the [Keras](https://keras.io/) library, and adheres to the same guiding principles
-as Keras: user friendliness, modularity, and easy extendability. Modules and layers
+StellarGraph uses the [Keras](https://keras.io/) library and adheres to the same guiding principles
+as Keras: user-friendliness, modularity, and easy extendability. Modules and layers
 of StellarGraph library are designed so that they can be used together with
-standard Keras layers and modules, if required. This enables flexibility in using existing,
+standard Keras layers and modules, if required. This enables flexibility in using existing
 or creating new models and workflows for machine learning on graphs.
 
 ## Getting Started
 
-To get started with StellarGraph you'll need data structured as homogeneous or heterogeneous graph, including
+To get started with StellarGraph you'll need data structured as a homogeneous or heterogeneous graph, including
 attributes for the entities represented as graph nodes.
 [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/)
 or [Numpy](http://www.numpy.org/) are used to store node attributes.
@@ -136,7 +136,8 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 * GraphSAGE [1]
   - Supports representation learning, node classification/regression, and link prediction for homogeneous networks.
-  The current implementation supports mean aggregation of neighbour nodes only.
+  The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and
+  attentional aggregators.
 
 * HinSAGE
   - Extension of GraphSAGE algorithm to heterogeneous networks.
@@ -160,6 +161,8 @@ The StellarGraph library currently includes the following algorithms for graph m
   downstream machine learning models to solve tasks such as node classification, link prediction, etc,
   for heterogeneous networks.
 
+* Graph Convolutional Networks (GCN) [4]
+  - An implementation supports representation learning, node classification for homogeneous graphs.
 
 ## Getting Help
 
@@ -187,3 +190,7 @@ Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.e
 3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
 Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
+
+4. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
+International Conference on Learning Representations (ICLR), 2017
+([link](https://github.com/tkipf/gcn))
