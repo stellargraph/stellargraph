@@ -2,19 +2,19 @@ steps:
   - label: ":python:"
     command: ".buildkite/script.sh"
     plugins:
-      docker#v2.1.0:
+      docker#v3.0.1:
         image: "python:3.6"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
-          - COVERALLS_REPO_TOKEN=$COVERALLS_REPO_TOKEN
           - GIT_BRANCH=$BUILDKITE_BRANCH
-          - BUILDKITE_BUILD_NUMBER=${BUILDKITE_BUILD_NUMBER?}
-          - BUILDKITE_BRANCH=${BUILDKITE_BRANCH?}
-          - AWS_LOGS_BUCKET=${AWS_LOGS_BUCKET}
+          - COVERALLS_REPO_TOKEN
+          - BUILDKITE_BUILD_NUMBER
+          - BUILDKITE_BRANCH
+          - AWS_LOGS_BUCKET
 
   - label: "style"
     plugins:
-      docker#v2.1.0:
+      docker#v3.0.1:
         image: "stellargraph/black"
         command: ["--check", "stellargraph", "tests"]
         environment:
