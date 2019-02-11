@@ -248,6 +248,47 @@ def test_nodemapper_1():
         GraphSAGENodeGenerator(G1, batch_size=2, num_samples=[2, 2]).flow(["A", "B"])
 
 
+def test_nodemapper_shuffle():
+    n_feat = 1
+    n_batch = 2
+
+    G = example_graph_2(feature_size=n_feat)
+    nodes = list(G.nodes())
+
+    # With shuffle
+    random.seed(15)
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+        nodes, nodes, shuffle=True
+    )
+
+    expected_node_batches = [[5, 4], [3, 1], [2]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # This should re-shuffle the IDs
+    mapper.on_epoch_end()
+    expected_node_batches = [[4, 3], [1, 5], [2]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # With no shuffle
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+        nodes, nodes, shuffle=False
+    )
+    expected_node_batches = [[1, 2], [3, 4], [5]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+
 def test_nodemapper_with_labels():
     n_feat = 4
     n_batch = 2
@@ -496,6 +537,45 @@ def test_hinnodemapper_level_2():
         assert nt in batch_node_types
 
 
+def test_hinnodemapper_shuffle():
+    random.seed(10)
+
+    batch_size = 2
+    feature_sizes = {"t1": 1, "t2": 4}
+    G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
+
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0]).flow(
+        nodes_type_1, nodes_type_1, shuffle=True
+    )
+
+    expected_node_batches = [[3, 2], [1, 0]]
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # This should re-shuffle the IDs
+    mapper.on_epoch_end()
+    expected_node_batches = [[2, 1], [3, 0]]
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # With no shuffle
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0]).flow(
+        nodes_type_1, nodes_type_1, shuffle=False
+    )
+    expected_node_batches = [[0, 1], [2, 3]]
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+
 def test_hinnodemapper_with_labels():
     batch_size = 2
     feature_sizes = {"t1": 1, "t2": 2}
@@ -504,7 +584,7 @@ def test_hinnodemapper_with_labels():
     labels = [n * 2 for n in nodes_type_1]
 
     gen = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2, 3]).flow(
-        nodes_type_1, labels
+        nodes_type_1, labels, shuffle=False
     )
     assert len(gen) == 2
 
