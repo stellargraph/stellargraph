@@ -273,7 +273,7 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
         method = "percent"
         with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
-                y=y, p=1.0, method=method  # must be less than 1.
+                y=y, p=1.1, method=method  # must be less than 1.
             )
         with self.assertRaises(ValueError):
             self.ds_obj.train_test_split(
