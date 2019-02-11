@@ -317,19 +317,19 @@ class HinSAGELinkGenerator:
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    Example:
+    Note that you don't need to pass link_type (target link type) to the link mapper, considering that:
 
-    ```
+    * The mapper actually only cares about (src,dst) node types, and these can be inferred from the passed
+      link ids (although this might be expensive, as it requires parsing the links ids passed - yet only once)
+
+    * It's possible to do link prediction on a graph where that link type is completely removed from the graph
+      (e.g., "same_as" links in ER)
+
+
+    Example::
+
         G_generator = HinSAGELinkGenerator(G, 50, [10,10])
         data_gen = G_generator.flow(edge_ids)
-    ```
-
-    Notes:
-         We don't need to pass link_type (target link type) to the link mapper, considering that:
-            1. The mapper actually only cares about (src,dst) node types, and these can be inferred from the passed
-                link ids (although this might be expensive, as it requires parsing the links ids passed - yet only once)
-            2. It's possible to do link prediction on a graph where that link type is completely removed from the graph
-                (e.g., "same_as" links in ER)
 
     Args:
         g (StellarGraph): A machine-learning ready graph.

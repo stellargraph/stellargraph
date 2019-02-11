@@ -166,7 +166,8 @@ class NodeSequence(Sequence):
 
 
 class GraphSAGENodeGenerator:
-    """A data generator for node prediction with Homogeneous GraphSAGE models
+    """
+    A data generator for node prediction with Homogeneous GraphSAGE models
 
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
@@ -334,18 +335,18 @@ class GraphSAGENodeGenerator:
 class HinSAGENodeGenerator:
     """Keras-compatible data mapper for Heterogeneous GraphSAGE (HinSAGE)
 
-     At minimum, supply the StellarGraph, the batch size, and the number of
-     node samples for each layer of the HinSAGE model.
+    At minimum, supply the StellarGraph, the batch size, and the number of
+    node samples for each layer of the HinSAGE model.
 
-     The supplied graph should be a StellarGraph object that is ready for
-     machine learning. Currently the model requires node features for all
-     nodes in the graph.
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
 
-     Use the :meth:`flow` method supplying the nodes and (optionally) targets
-     to get an object that can be used as a Keras data generator.
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
 
-     Note that the shuffle argument should be True for training and
-     False for prediction.
+    Note that the shuffle argument should be True for training and
+    False for prediction.
 
      Example::
 
