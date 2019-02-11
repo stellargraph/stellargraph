@@ -26,6 +26,7 @@ import networkx as nx
 import numpy as np
 import random
 import pytest
+import pandas as pd
 
 
 def example_graph_1(feature_size=None):
@@ -597,3 +598,136 @@ def test_hinnodemapper_no_neighbors():
 
     # Second edge type (e2): Node 0 has 2, node 1 has none, and node 6 sampling has terminated
     assert np.all(batch_feats[3][:, 0, 0] == np.array([12, 0, 0]))
+
+
+def create_graph_features():
+    G = nx.Graph()
+    G.add_nodes_from(["a", "b", "c"])
+    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
+    G = G.to_undirected()
+    return G, np.array([[1, 1], [1, 0], [0, 1]])
+
+
+class Test_FullBatchNodeGenerator:
+    """
+    Tests of FullBatchNodeGenerator class
+    """
+
+    n_feat = 4
+    target_dim = 5
+
+    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    N = len(G.nodes())
+
+    def test_generator_constructor(self):
+        generator = FullBatchNodeGenerator(self.G)
+
+        assert generator.Aadj.shape == (self.N, self.N)
+        assert generator.features.shape == (self.N, self.n_feat)
+
+    def test_generator_constructor_wrong_G_type(self):
+        with pytest.raises(TypeError):
+            generator = FullBatchNodeGenerator(nx.Graph(self.G))
+
+    def test_generator_constructor_hin(self):
+        feature_sizes = {"t1": 1, "t2": 1}
+        Ghin, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+        with pytest.raises(TypeError):
+            generator = FullBatchNodeGenerator(Ghin)
+
+    def test_generator_flow_notargets(self):
+        generator = FullBatchNodeGenerator(self.G)
+        node_ids = self.G.nodes()
+        gen = generator.flow(node_ids)
+
+        assert len(gen) == 1
+        assert gen.A.shape == (self.N, self.N)
+        assert gen.features.shape == (self.N, self.n_feat)
+        assert sum(gen.sample_weight) == len(node_ids)
+        assert gen.targets is None
+
+        [X, A], y, sample_weights = gen.__getitem__(0)
+        assert np.array_equal(X, gen.features)  # X should be equal to gen.features
+        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert y is None
+        assert sum(sample_weights) == len(node_ids)
+
+    def test_generator_flow_withtargets(self):
+        generator = FullBatchNodeGenerator(self.G)
+        node_ids = list(self.G.nodes())[:3]
+        node_targets = np.ones((len(node_ids), self.target_dim))
+        gen = generator.flow(node_ids, node_targets)
+
+        assert gen.A.shape == (self.N, self.N)
+        assert gen.features.shape == (self.N, self.n_feat)
+        assert sum(gen.sample_weight) == len(node_ids)
+        assert gen.targets.shape == (self.N, self.target_dim)
+
+        [X, A], y, sample_weights = gen.__getitem__(0)
+        assert np.array_equal(X, gen.features)  # X should be equal to gen.features
+        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+
+        assert y.shape == (self.N, self.target_dim)
+        assert np.array_equal(
+            y[sample_weights, :], np.ones((len(node_ids), self.target_dim))
+        )
+
+        assert sum(sample_weights) == len(node_ids)
+
+    def test_generator_flow_targets_as_list(self):
+        generator = FullBatchNodeGenerator(self.G)
+        node_ids = list(self.G.nodes())[:3]
+        node_targets = [1] * len(node_ids)
+        gen = generator.flow(node_ids, node_targets)
+        assert gen.targets.shape == (self.N, 1)
+
+        [X, A], y, sample_weights = gen.__getitem__(0)
+        assert y.shape == (self.N, 1)
+        assert sum(y) == len(node_ids)
+
+    def test_generator_flow_targets_not_iterator(self):
+        generator = FullBatchNodeGenerator(self.G)
+        node_ids = list(self.G.nodes())[:3]
+        node_targets = 1
+        with pytest.raises(TypeError):
+            generator.flow(node_ids, node_targets)
+
+    def test_fullbatch_generater_init_1(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        generator = FullBatchNodeGenerator(G, name="test", func_opt=None, key="value")
+        assert generator.name == "test"
+        assert np.array_equal(feats, generator.features)
+
+    def test_fullbatch_generater_init_2(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        def func(features, Aadj, **kwargs):
+            return features * features, Aadj
+
+        generator = FullBatchNodeGenerator(G, "test", func, key="value")
+        assert generator.name == "test"
+        assert np.array_equal(feats * feats, generator.features)
+
+    def test_fullbatch_generater_init_3(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        func = "Not callable"
+
+        with pytest.raises(ValueError):
+            generator = FullBatchNodeGenerator(G, "test", func, key="value")

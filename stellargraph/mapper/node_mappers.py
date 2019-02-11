@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,12 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["NodeSequence", "GraphSAGENodeGenerator", "HinSAGENodeGenerator"]
+__all__ = [
+    "NodeSequence",
+    "GraphSAGENodeGenerator",
+    "HinSAGENodeGenerator",
+    "FullBatchNodeGenerator",
+]
 
 import operator
 from functools import reduce
@@ -26,6 +31,7 @@ from functools import reduce
 import numpy as np
 import itertools as it
 from keras.utils import Sequence
+import networkx as nx
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,
@@ -449,3 +455,123 @@ class HinSAGENodeGenerator:
         """
 
         return NodeSequence(self, node_targets.index, node_targets.values)
+
+
+class FullBatchNodeSequence(Sequence):
+    """
+    Keras-compatible data generator to use with the Keras
+    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
+    and :meth:`keras.Model.predict_generator`, for models that require full-batch training (e.g., GCN, GAT).
+    This class generated data samples for node inference models
+    and should be created using the `.flow(...)` method of
+    :class:`FullBatchNodeGenerator`.
+    These Generators are classes that capture the graph structure
+    and the feature vectors of each node.
+    """
+
+    def __init__(self, features, A, targets=None, sample_weight=None):
+        """
+
+        Args:
+            features: a matrix of node features of size (N x F), where N is the number of nodes in the graph, F is the node feature size
+            A: an adjacency matrix of the graph
+            targets: an optional array of node targets of size (N x C), where C is the target size (e.g., number of classes for one-hot class targets)
+            sample_weight: Optional Numpy array of weights for the node samples, used for weighting the loss function during training or evaluation.
+                You can either pass a flat (1D) Numpy array with the same length as the input features (1:1 mapping between weights and rows in features)
+        """
+        if not is_real_iterable(targets) and targets is not None:
+            raise TypeError("Targets must be None or an iterable or numpy array ")
+
+        self.features = features
+        self.A = A
+        self.targets = targets
+        self.sample_weight = sample_weight
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        return [self.features, self.A], self.targets, self.sample_weight
+
+
+class FullBatchNodeGenerator:
+    def __init__(self, G, name=None, func_opt=None, **kwargs):
+        """
+        A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT
+        The supplied graph G should be a StellarGraph object that is ready for
+        machine learning. Currently the model requires node features for all
+        nodes in the graph.
+        Use the :meth:`flow` method supplying the nodes and (optionally) targets
+        to get an object that can be used as a Keras data generator.
+        Example::
+            G_generator = FullBatchNodeGenerator(G)
+            train_data_gen = G_generator.flow(node_ids, node_targets)
+        Args:
+            G (StellarGraphBase): a machine-learning StellarGraph-type graph
+            name (str): an optional name of the generator
+            func_opt: an optional function to apply on features and adjacency matrix (declared func_opt(features, Aadj, **kwargs))
+            kwargs: additional parameters for func_opt function
+        """
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # Create sparse adjacency matrix
+        self.node_list = list(G.nodes())
+        self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
+
+        # We need a schema to check compatibility with GraphSAGE, GAT, GCN
+        self.schema = G.create_graph_schema(create_type_maps=True)
+
+        # Check that there is only a single node type for GraphSAGE, or GAT, or GCN
+        if len(self.schema.node_types) > 1:
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Get the features for the nodes
+        self.features = G.get_feature_for_nodes(self.node_list)
+
+        if func_opt is not None:
+            if callable(func_opt):
+                self.features, self.Aadj = func_opt(
+                    features=self.features, Aadj=self.Aadj, **kwargs
+                )
+            else:
+                raise ValueError("argument 'func_opt' must be a callable.")
+
+    def flow(self, node_ids, targets=None):
+        # Check targets is an iterable
+        if not is_real_iterable(targets) and not targets is None:
+            raise TypeError("Targets must be an iterable or None")
+
+        # The list of indices of the target nodes in self.node_list
+        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+        node_mask = np.zeros(len(self.node_list), dtype=int)
+        node_mask[node_indices] = 1
+        node_mask = np.ma.make_mask(node_mask)
+
+        # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
+        if targets is not None:
+            targets = np.array(targets)
+            if len(targets.shape) == 1:
+                c = 1
+            else:
+                c = targets.shape[1]
+
+            n = self.Aadj.shape[0]
+            y = np.zeros((n, c))
+            for i, t in zip(node_indices, targets):
+                y[i] = t
+        else:
+            y = None
+
+        return FullBatchNodeSequence(self.features, self.Aadj, y, node_mask)

@@ -19,7 +19,7 @@ Layers
 ------------
 
 .. automodule:: stellargraph.layer
-  :members: GraphSAGE, MeanAggregator, HinSAGE, MeanHinAggregator, link_inference, link_classification, link_regression
+  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator, HinSAGE, MeanHinAggregator, link_inference, link_classification, link_regression
 
 Generators
 -----------
