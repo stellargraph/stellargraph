@@ -1,56 +1,65 @@
 ## Table of Contents
 
 This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
-data to solve several common problems including node attribute inference (inferring 
+data to solve several common problems including node attribute inference (inferring
 entity properties) and link prediction (predicting relations and/or their properties). The
-examples demonstrate using the `StellarGraph` library to build machine learning 
+examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, GraphSAGE [3], HinSAGE, Node2Vec [1], and Metapath2Vec [2]. 
-GraphSAGE and HinSAGE are variants of Graph Convolutional Neural networks [5]. Node2Vec and
+state-of-the-art algorithms, GraphSAGE [3], HinSAGE, GCN [5], GAT [6], Node2Vec [1], and Metapath2Vec [2]. 
+GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [5]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
 Word2Vec [4] algorithm.
 
-The examples folder structure is shown below. 
+The examples folder structure is shown below.
 
 * [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
 
-    Examples of unsupervised node representation learning for homogeneous and heterogeneous networks, 
+    Examples of unsupervised node representation learning for homogeneous and heterogeneous networks,
     using the Node2Vec and Metapath2Vec algorithms.
 
 * [`/link-prediction-random-walks`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-random-walks)
 
-    Examples of semi-supervised link prediction for homogeneous and heterogeneous networks, 
+    Examples of semi-supervised link prediction for homogeneous and heterogeneous networks,
     using the Node2Vec and Metapath2vec algorithms.
-    
+
 * [`/link-prediction-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-graphsage)
 
-    Example of semi-supervised link prediction for a homogeneous network with attributed nodes, 
+    Example of semi-supervised link prediction for a homogeneous network with attributed nodes,
     using the GraphSAGE algorithm.
-    
+
 * [`/link-prediction-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-hinsage)
 
-    Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types, 
+    Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types,
     using the HinSAGE algorithm.
-    
+
 * [`/node-classification-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-graphsage)
 
     Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
     
+* [`/node-classification-gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-gcn)
+
+    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm.
+
 * [`/node-classification-gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-gat)
 
     Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
 
 * [`/node-classification-node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-node2vec)
 
-    Example of unsupervised node representation learning using Node2Vec and supervised classification using 
+    Example of unsupervised node representation learning using Node2Vec and supervised classification using
     the Scikit-learn library.
 
 * [`/node-classification-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-hinsage)
 
-    Example of semi-supervised node classification for a heterogeneous network with multiple node and link types, 
+    Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
     using the HinSAGE algorithm.
+
+* [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
+
+    Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
+    multi-class classification problems.
 
 
 ## References
@@ -73,3 +82,6 @@ I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Informa
 ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
 
 6. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
+
+7. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. 
+ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))

@@ -28,6 +28,8 @@ import numpy as np
 import networkx as nx
 import pytest
 
+from keras.engine import saving
+
 
 def example_graph_1(feature_size=None):
     G = nx.Graph()
@@ -43,6 +45,9 @@ def example_graph_1(feature_size=None):
 
     else:
         return StellarGraph(G)
+
+
+# MaxPooling aggregator tests
 
 
 def test_maxpool_agg_constructor():
@@ -68,6 +73,10 @@ def test_maxpool_agg_constructor_1():
     assert agg.hidden_dim == 4
     assert agg.has_bias
     assert agg.act(2) == 3
+
+    # Test for output dim not divisible by 2
+    with pytest.raises(ValueError):
+        MaxPoolingAggregator(output_dim=3)
 
 
 def test_maxpool_agg_apply():
@@ -96,6 +105,27 @@ def test_maxpool_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_maxpool_agg_zero_neighbours():
+    agg = MaxPoolingAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 2, 2]]])
+    assert expected == pytest.approx(actual)
+
+
+# MeanPooling aggregator tests
+
+
 def test_meanpool_agg_constructor():
     agg = MeanPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
@@ -119,6 +149,10 @@ def test_meanpool_agg_constructor_1():
     assert agg.hidden_dim == 4
     assert agg.has_bias
     assert agg.act(2) == 3
+
+    # Test for output dim not divisible by 2
+    with pytest.raises(ValueError):
+        MeanPoolingAggregator(output_dim=3)
 
 
 def test_meanpool_agg_apply():
@@ -147,6 +181,25 @@ def test_meanpool_agg_apply():
     assert expected == pytest.approx(actual)
 
 
+def test_meanpool_agg_zero_neighbours():
+    agg = MeanPoolingAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 2, 2]]])
+    assert expected == pytest.approx(actual)
+
+
+# Mean aggregator tests
 def test_mean_agg_constructor():
     agg = MeanAggregator(2)
     assert agg.output_dim == 2
@@ -167,6 +220,10 @@ def test_mean_agg_constructor_1():
     assert agg.has_bias
     assert agg.act(2) == 3
 
+    # Test for output dim not divisible by 2
+    with pytest.raises(ValueError):
+        MeanAggregator(output_dim=3)
+
 
 def test_mean_agg_apply():
     agg = MeanAggregator(4, bias=True, act=lambda x: x)
@@ -179,6 +236,93 @@ def test_mean_agg_apply():
     x2 = np.array([[[[2, 2], [3, 3]]]])
     actual = model.predict([x1, x2])
     expected = np.array([[[2, 2, 5, 5]]])
+    assert expected == pytest.approx(actual)
+
+
+def test_mean_agg_zero_neighbours():
+    agg = MeanAggregator(4, bias=False, act=lambda x: x)
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 2, 2]]])
+    assert expected == pytest.approx(actual)
+
+
+# Attentional aggregator tests
+def test_attn_agg_constructor():
+    agg = AttentionalAggregator(2, bias=False)
+    assert agg.output_dim == 2
+    assert not agg.has_bias
+    assert agg.act.__name__ == "relu"
+    # assert agg.attn_act.__name__ == "relu"
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] == False
+    assert config["act"] == "relu"
+
+
+def test_attn_agg_constructor_1():
+    agg = AttentionalAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
+    assert agg.output_dim == 4
+    assert agg.has_bias
+    assert agg.act(2) == 3
+
+
+def test_attn_agg_apply():
+    agg = AttentionalAggregator(2, bias=True, act="linear")
+    agg._initializer = "ones"
+    agg.attn_act = keras.activations.get("relu")
+
+    # Self features
+    inp1 = keras.Input(shape=(1, 2))
+    # Neighbour features
+    inp2 = keras.Input(shape=(1, 2, 2))
+
+    # Numerical test values
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+
+    # Agg output:
+    # hs = relu(x1 · ones(2x2)) = [2,2]
+    # hn = relu(x2 · ones(2x2)) =  [[2,2], [4,4],[6,6]]
+    # attn_u = ones(2) · hs +  ones(2) · hn = [8, 12, 16]
+    # attn = softmax(attn_u) = [3.3e-4, 1.8e-4, 9.81e-1]
+    # hout =  attn · hn = [5.96, 5.96]
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+    actual = model.predict([x1, x2])
+    expected = np.array([[[5.963, 5.963]]])
+
+    assert expected == pytest.approx(actual, rel=1e-4)
+
+
+def test_attn_agg_zero_neighbours():
+    agg = AttentionalAggregator(4, bias=False, act="linear")
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 2, 2]]])
     assert expected == pytest.approx(actual)
 
 
@@ -250,13 +394,6 @@ def test_graphsage_apply():
     out = gs([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
 
-    x1 = np.array([[[1, 1]]])
-    x2 = np.array([[[2, 2], [3, 3]]])
-
-    actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 5, 5]]])
-    assert expected == pytest.approx(actual)
-
 
 def test_graphsage_apply_1():
     gs = GraphSAGE(
@@ -290,3 +427,52 @@ def test_graphsage_apply_1():
 
     expected = np.array([[[16, 25]]])
     assert pytest.approx(expected) == model2.predict(x)
+
+
+def test_graphsage_serialize():
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+    )
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(2, 2))
+    out = gs([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    # Save model
+    model_json = model.to_json()
+
+    # Set all weights to one
+    model_weights = [np.ones_like(w) for w in model.get_weights()]
+
+    # Load model from json & set all weights
+    model2 = keras.models.model_from_json(
+        model_json, custom_objects={"MeanAggregator": MeanAggregator}
+    )
+    model2.set_weights(model_weights)
+
+    # Test loaded model
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[2, 2], [3, 3]]])
+    actual = model2.predict([x1, x2])
+    expected = np.array([[[2, 2, 5, 5]]])
+    assert expected == pytest.approx(actual)
+
+
+def test_graphsage_zero_neighbours():
+    gs = GraphSAGE(
+        layer_sizes=[2, 2], n_samples=[0, 0], bias=False, input_dim=2, normalize="none"
+    )
+
+    for agg in gs._aggs:
+        agg._initializer = "ones"
+
+    inp = [keras.Input(shape=(i, 2)) for i in [1, 0, 0]]
+    out = gs(inp)
+    model = keras.Model(inputs=inp, outputs=out)
+
+    x = [np.array([[[1.5, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
+
+    actual = model.predict(x)
+    expected = np.array([[[5, 5]]])
+    assert actual == pytest.approx(expected)
