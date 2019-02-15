@@ -1,2 +1,2 @@
 # Global version information
-__version__ = "0.5.0b"
+__version__ = "0.6.0b"

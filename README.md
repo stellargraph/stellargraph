@@ -136,7 +136,8 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 * GraphSAGE [1]
   - Supports representation learning, node classification/regression, and link prediction for homogeneous networks.
-  The current implementation supports mean aggregation of neighbour nodes only.
+  The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and
+  attentional aggregators.
 
 * HinSAGE
   - Extension of GraphSAGE algorithm to heterogeneous networks.
@@ -160,6 +161,8 @@ The StellarGraph library currently includes the following algorithms for graph m
   downstream machine learning models to solve tasks such as node classification, link prediction, etc,
   for heterogeneous networks.
 
+* Graph Convolutional Networks (GCN) [4]
+  - An implementation supports representation learning, node classification for homogeneous graphs.
 
 ## Getting Help
 
@@ -187,3 +190,7 @@ Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.e
 3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
 Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
+
+4. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
+International Conference on Learning Representations (ICLR), 2017
+([link](https://github.com/tkipf/gcn))
