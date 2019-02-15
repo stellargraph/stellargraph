@@ -308,9 +308,9 @@ class GAT:
     def __init__(
         self,
         layer_sizes,
+        activations,
         attn_heads=1,
         attn_heads_reduction=None,
-        activations=None,
         bias=True,
         in_dropout=0.0,
         attn_dropout=0.0,
