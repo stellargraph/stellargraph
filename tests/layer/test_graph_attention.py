@@ -165,10 +165,12 @@ class Test_GAT:
     def test_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G)
-        with pytest.raises(AssertionError):
+        # test error if no activations are passed:
+        with pytest.raises(TypeError):
             gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
 
-        with pytest.raises(AssertionError):
+        # test error where activations is not a list:
+        with pytest.raises(TypeError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations="relu",
@@ -176,7 +178,8 @@ class Test_GAT:
                 bias=True,
             )
 
-        with pytest.raises(AssertionError):
+        # test error where len(activations) is not equal to len(layer_sizes):
+        with pytest.raises(ValueError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations=["relu"],
@@ -248,7 +251,9 @@ class Test_GAT:
     def test_gat_node_model_constructor_wrong_generator(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = GraphSAGENodeGenerator(G, self.N, [5, 10])
-        with pytest.raises(AssertionError):
+
+        # test error where generator is of the wrong type for GAT:
+        with pytest.raises(ValueError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations=self.activations,
