@@ -452,8 +452,9 @@ class HinSAGENodeGenerator:
             in Keras methods `fit_generator`, `evaluate_generator`,
             and `predict_generator`.
         """
-
-        return NodeSequence(self, node_targets.index, node_targets.values)
+        return NodeSequence(
+            self, node_targets.index, node_targets.values, shuffle=shuffle
+        )
 
 
 class FullBatchNodeSequence(Sequence):
