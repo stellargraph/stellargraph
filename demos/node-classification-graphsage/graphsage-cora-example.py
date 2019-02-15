@@ -44,7 +44,12 @@ import keras
 from keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
-from stellargraph.layer import GraphSAGE, MeanAggregator, MaxPoolingAggregator, MeanPoolingAggregator
+from stellargraph.layer import (
+    GraphSAGE,
+    MeanAggregator,
+    MaxPoolingAggregator,
+    MeanPoolingAggregator,
+)
 from stellargraph.mapper import GraphSAGENodeGenerator
 
 
@@ -91,22 +96,31 @@ def train(
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
-        node_ids, node_targets, train_size=140, test_size=None, stratify=node_targets, random_state=55232
+        node_ids,
+        node_targets,
+        train_size=140,
+        test_size=None,
+        stratify=node_targets,
+        random_state=5232,
     )
 
     # Split test set into test and validation
     val_nodes, test_nodes, val_targets, test_targets = model_selection.train_test_split(
-        test_nodes, test_targets, train_size=500, test_size=None, random_state=523214
+        test_nodes, test_targets, train_size=500, test_size=None, random_state=5214
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=42)
-    train_gen = generator.flow(train_nodes, train_targets)
+    generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=5312)
+    train_gen = generator.flow(train_nodes, train_targets, shuffle=True)
     val_gen = generator.flow(val_nodes, val_targets)
 
     # GraphSAGE model
     model = GraphSAGE(
-        layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout, aggregator=MeanAggregator
+        layer_sizes=layer_size,
+        generator=train_gen,
+        bias=True,
+        dropout=dropout,
+        aggregator=MeanAggregator,
     )
     # Expose the input and output sockets of the model:
     x_inp, x_out = model.default_model(flatten_output=True)
@@ -125,7 +139,7 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=True
+        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
     )
 
     # Evaluate on test set and print metrics

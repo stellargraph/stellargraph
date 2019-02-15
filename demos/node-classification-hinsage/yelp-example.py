@@ -94,7 +94,7 @@ def train(
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     generator = HinSAGENodeGenerator(G, batch_size, num_samples)
-    train_gen = generator.flow_from_dataframe(train_targets)
+    train_gen = generator.flow_from_dataframe(train_targets, shuffle=True)
     test_gen = generator.flow_from_dataframe(test_targets)
 
     # GraphSAGE model
@@ -121,7 +121,7 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(train_gen, epochs=num_epochs, verbose=2, shuffle=True)
+    history = model.fit_generator(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
 
     # Evaluate on test set and print metrics
     predictions = model.predict_generator(test_gen)

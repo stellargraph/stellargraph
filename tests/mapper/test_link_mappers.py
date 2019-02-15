@@ -74,7 +74,7 @@ def example_Graph_2(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.node[v]["feature"] = int(v) * np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G
@@ -276,6 +276,30 @@ class Test_GraphSAGELinkGenerator:
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
+
+    def test_GraphSAGELinkGenerator_shuffle(self):
+        def test_edge_consistency(shuffle):
+            G = example_Graph_2(1)
+            edges = list(G.edges())
+            edge_labels = list(range(len(edges)))
+
+            mapper = GraphSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
+                edges, edge_labels, shuffle=shuffle
+            )
+
+            assert len(mapper) == 2
+
+            for batch in range(len(mapper)):
+                nf, nl = mapper[batch]
+                e1 = edges[nl[0]]
+                e2 = edges[nl[1]]
+                assert nf[0][0, 0, 0] == e1[0]
+                assert nf[1][0, 0, 0] == e1[1]
+                assert nf[0][1, 0, 0] == e2[0]
+                assert nf[1][1, 0, 0] == e2[1]
+
+        test_edge_consistency(True)
+        test_edge_consistency(False)
 
     # def test_GraphSAGELinkGenerator_2(self):
     #
@@ -506,6 +530,30 @@ class Test_HinSAGELinkGenerator(object):
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
+
+    def test_HinSAGELinkGenerator_shuffle(self):
+        def test_edge_consistency(shuffle):
+            G = example_HIN_1({"user": 1, "movie": 1})
+            edges = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
+            data_size = len(edges)
+            edge_labels = np.arange(data_size)
+
+            mapper = HinSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
+                edges, edge_labels, shuffle=shuffle
+            )
+
+            assert len(mapper) == 2
+            for batch in range(len(mapper)):
+                nf, nl = mapper[batch]
+                e1 = edges[nl[0]]
+                e2 = edges[nl[1]]
+                assert nf[0][0, 0, 0] == e1[0]
+                assert nf[1][0, 0, 0] == e1[1]
+                assert nf[0][1, 0, 0] == e2[0]
+                assert nf[1][1, 0, 0] == e2[1]
+
+        test_edge_consistency(True)
+        test_edge_consistency(False)
 
     def test_HinSAGELinkGenerator_no_targets(self):
         """
