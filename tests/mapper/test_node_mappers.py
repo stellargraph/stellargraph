@@ -687,6 +687,7 @@ def create_graph_features():
     G = G.to_undirected()
     return G, np.array([[1, 1], [1, 0], [0, 1]])
 
+
 class Test_FullBatchNodeGenerator:
     """
     Tests of FullBatchNodeGenerator class
