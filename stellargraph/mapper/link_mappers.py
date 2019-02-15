@@ -19,17 +19,19 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE and HinSAGE.
 
 """
-__all__ = ["LinkSequence", "GraphSAGELinkGenerator", "HinSAGELinkGenerator"]
+__all__ = ["OnDemandLinkSequence", "GraphSAGELinkGenerator", "HinSAGELinkGenerator"]
 
-from stellargraph.core.graph import StellarGraphBase
+import random
+import operator
 import numpy as np
 import itertools as it
 import operator
+import collections
 from functools import reduce
 
 import keras
 from keras.utils import Sequence
-
+from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
@@ -42,32 +44,26 @@ from stellargraph.data.unsupervisedSampler import UnsupervisedSampler
 from stellargraph.core.utils import is_real_iterable
 
 
-class PregeneratedLinkSequence(Sequence):
+class LinkSequence(Sequence):
     """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
-
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
     :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` .
-
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator`.
-
-        ids: Link IDs to batch, each link id being a tuple of (src, dst) node ids.
+        ids (list or iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
             These are the links that are to be used to train or inference, and the embeddings
             calculated for these links via a binary operator applied to their source and destination nodes,
             are passed to the downstream task of link prediction or link attribute inference.
             The source and target nodes of the links are used as head nodes for which subgraphs are sampled.
             The subgraphs are sampled from all nodes.
-
-        targets: Labels corresponding to the above links, e.g., 0 or 1 for the link prediction problem.
-
-        node_types: Node types of the target edges
-
+        targets (list or iterable): Labels corresponding to the above links, e.g., 0 or 1 for the link prediction problem.
+        shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
     """
 
-    def __init__(self, generator, ids, targets=None):
+    def __init__(self, generator, ids, targets=None, shuffle=True):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -82,7 +78,7 @@ class PregeneratedLinkSequence(Sequence):
                 )
             self.targets = np.asanyarray(targets)
         else:
-            self.targets = targets
+            self.targets = None
 
         # Ensure number of labels matches number of ids
         if targets is not None and len(ids) != len(targets):
@@ -91,6 +87,10 @@ class PregeneratedLinkSequence(Sequence):
         self.generator = generator
         self.ids = list(ids)
         self.data_size = len(self.ids)
+        self.shuffle = shuffle
+
+        # Shuffle the IDs to begin
+        self.on_epoch_end()
 
         # Get head node types from all src, dst nodes extracted from all links,
         # and make sure there's only one pair of node types:
@@ -125,15 +125,12 @@ class PregeneratedLinkSequence(Sequence):
     def __getitem__(self, batch_num):
         """
         Generate one batch of data
-
         Args:
             batch_num (int): number of a batch
-
         Returns:
             batch_feats (list): Node features for nodes and neighbours sampled from a
                 batch of the supplied IDs
             batch_targets (list): Targets/labels for the batch.
-
         """
         start_idx = self.generator.batch_size * batch_num
         end_idx = start_idx + self.generator.batch_size
@@ -142,22 +139,30 @@ class PregeneratedLinkSequence(Sequence):
             raise IndexError("Mapper: batch_num larger than length of data")
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
-        # Get head nodes
-        head_ids = self.ids[start_idx:end_idx]
+        # The ID indices for this batch
+        batch_indices = self.indices[start_idx:end_idx]
+
+        # Get head (root) nodes for links
+        head_ids = [self.ids[ii] for ii in batch_indices]
 
         # Get targets for nodes
-        if self.targets is None:
-            batch_targets = None
-        else:
-            batch_targets = self.targets[start_idx:end_idx]
+        batch_targets = None if self.targets is None else self.targets[batch_indices]
 
         # Get sampled nodes
         batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
 
         return batch_feats, batch_targets
 
+    def on_epoch_end(self):
+        """
+        Shuffle all link IDs at the end of each epoch
+        """
+        self.indices = list(range(self.data_size))
+        if self.shuffle:
+            random.shuffle(self.indices)
 
-class LinkSequence(object):
+
+class OnDemandLinkSequence(object):
     """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
 
@@ -168,8 +173,8 @@ class LinkSequence(object):
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator`.
                    (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
-        
-        walker: A walker object that indicates how the neighborhood of graph are sampled (uniform random walks, biased random walks etc. Currently only Uniform Random walks are enabled). 
+
+        walker: A walker object that indicates how the neighborhood of graph are sampled (uniform random walks, biased random walks etc. Currently only Uniform Random walks are enabled).
                 This class is responsible for calling the right type of walk generator and then return batch_size of sample source and target pairs  from those walks.
                 These (target, context) pairs are to be used to train or inference, and the embeddings
                 calculated for the links created by a binary operator applied to the target and context nodes,
@@ -177,7 +182,6 @@ class LinkSequence(object):
                 The target and context nodes of the links are used as head nodes for which subgraphs are sampled.
                 The subgraphs are sampled from all nodes.
 
-            
   """
 
     def __init__(self, generator, walker):
@@ -375,7 +379,7 @@ class GraphSAGELinkGenerator:
         ]
         return batch_feats
 
-    def flow(self, *args):
+    def flow(self, link_ids, targets=None, shuffle=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied edge IDs and numeric targets.
@@ -389,33 +393,34 @@ class GraphSAGELinkGenerator:
         If they are not specified (for example, for use in prediction),
         the targets will not be available to the downsteam task.
 
-        Args:
-            link_ids: an iterable of (src_id, dst_id) tuples specifying the
-                edges.
-            targets: a 2D array of numeric targets with shape
-                `(len(link_ids), target_size)`
+        Note that the shuffle argument should be True for training and
+        False for prediction.
 
-            Or,
-                UnsupervisedSampler object that has the generator method to generate samples on the fly.
-        
+        Args:
+            link_ids (list or UnsupervisedSampler): an iterable of (src_id, dst_id) tuples
+                specifying the edges or an UnsupervisedSampler object that has a generator
+                method to generate samples on the fly.
+            targets (optional, array): a 2D array of numeric targets with shape
+                `(len(link_ids), target_size)`
+            shuffle (optional, bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
         Returns:
             A LinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
+        # Pass sampler to on-demand link sequence generation
+        if isinstance(link_ids, UnsupervisedSampler):
+            return OnDemandLinkSequence(self, link_ids)
 
-        if args:
-            if isinstance(args[0], UnsupervisedSampler):
-                return LinkSequence(self, *args)
-            else:
-                print(
-                    "Running GraphSAGELinkGenerator with pregenerated {} batches in each epoch.".format(
-                        round(len(args[0]) / self.batch_size)
-                    )
-                )
-                return PregeneratedLinkSequence(self, *args)
+        # Otherwise pass iterable (check?) to standard LinkSequence
+        elif isinstance(link_ids, collections.Iterable):
+            return LinkSequence(self, link_ids, targets, shuffle)
+
         else:
-            raise ValueError(
-                "Nothing is passed to the flow method. Either a list of samples to train on should be provided or an object of UnsupervisedSampler class."
+            raise TypeError(
+                "Argument to .flow not recognised. "
+                "Please pass a list of samples or a UnsupervisedSampler object."
             )
 
 
@@ -432,19 +437,19 @@ class HinSAGELinkGenerator:
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    Example:
+    Note that you don't need to pass link_type (target link type) to the link mapper, considering that:
 
-    ```
+    * The mapper actually only cares about (src,dst) node types, and these can be inferred from the passed
+      link ids (although this might be expensive, as it requires parsing the links ids passed - yet only once)
+
+    * It's possible to do link prediction on a graph where that link type is completely removed from the graph
+      (e.g., "same_as" links in ER)
+
+
+    Example::
+
         G_generator = HinSAGELinkGenerator(G, 50, [10,10])
         data_gen = G_generator.flow(edge_ids)
-    ```
-
-    Notes:
-         We don't need to pass link_type (target link type) to the link mapper, considering that:
-            1. The mapper actually only cares about (src,dst) node types, and these can be inferred from the passed
-                link ids (although this might be expensive, as it requires parsing the links ids passed - yet only once)
-            2. It's possible to do link prediction on a graph where that link type is completely removed from the graph
-                (e.g., "same_as" links in ER)
 
     Args:
         g (StellarGraph): A machine-learning ready graph.
@@ -551,7 +556,7 @@ class HinSAGELinkGenerator:
 
         return batch_feats
 
-    def flow(self, link_ids, targets=None):
+    def flow(self, link_ids, targets=None, shuffle=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied edge IDs and numeric targets.
@@ -565,11 +570,16 @@ class HinSAGELinkGenerator:
         If they are not specified (for example, for use in prediction),
         the targets will not be available to the downsteam task.
 
+        Note that the shuffle argument should be True for training and
+        False for prediction.
+
         Args:
             link_ids: an iterable of (src_id, dst_id) tuples specifying the
                 edges.
             targets: a 2D array of numeric targets with shape
                 ``(len(link_ids), target_size)``
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
 
         Returns:
             A LinkSequence object to use with the GraphSAGE model
@@ -577,4 +587,4 @@ class HinSAGELinkGenerator:
         """
         # The LinkSequence method is renamed to PregeneratedLinkSequence
         # return LinkSequence(self, link_ids, targets)
-        return PregeneratedLinkSequence(self, link_ids, targets)
+        return LinkSequence(self, link_ids, targets, shuffle)
