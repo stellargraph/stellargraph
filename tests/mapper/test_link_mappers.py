@@ -31,6 +31,9 @@ g
 """
 from stellargraph.mapper.link_mappers import *
 from stellargraph.core.graph import *
+from stellargraph.data.explorer import *
+from stellargraph.data.unsupervisedSampler import *
+
 
 import numpy as np
 import networkx as nx
@@ -383,6 +386,35 @@ class Test_GraphSAGELinkGenerator:
 
         ne, nl = gen[0]
         assert pytest.approx([1, 1, 2, 2, 4, 4]) == [x.shape[1] for x in ne]
+
+    def test_GraphSAGELinkGenerator_unsupervisedSampler(self):
+        """
+        This tests link generator's iterator for real time link generation i.e. there is no pregenerated list of samples provided to it.
+        """
+        n_feat = 4
+        n_batch = 2
+        n_samples = [2, 2]
+
+        # test graph
+        G = example_graph_random(
+            feature_size=n_feat, n_nodes=6, n_isolates=2, n_edges=10
+        )
+
+        rw = UniformRandomWalk(G)
+
+        unsupervisedSamples = UnsupervisedSampler(
+            G, nodes=G.nodes, batch_size=n_batch, walker=rw
+        )
+
+        gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
+            unsupervisedSamples
+        )
+
+        # UnsupervisedSampler object or a list of samples is not passed
+        with pytest.raises(ValueError):
+            gen = GraphSAGELinkGenerator(
+                G, batch_size=n_batch, num_samples=n_samples
+            ).flow()
 
 
 class Test_HinSAGELinkGenerator(object):
