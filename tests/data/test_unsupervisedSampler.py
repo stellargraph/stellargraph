@@ -56,6 +56,20 @@ def create_test_graph():
     return g
 
 
+def example_Graph_1(feature_size=None):
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    G.add_edges_from(elist)
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = np.ones(feature_size)
+
+    G = StellarGraph(G, node_features="feature")
+    return G
+
+
 class TestUnsupervisedSampler(object):
     def test_parameter_checking(self):
 
@@ -90,4 +104,4 @@ class TestUnsupervisedSampler(object):
         g = StellarGraph(g)
         rw = UniformRandomWalk(g)
 
-        UnsupervisedSampler(G=g, walker=rw, batch_size=10)
+        sampler = UnsupervisedSampler(G=g, walker=rw, batch_size=10)
