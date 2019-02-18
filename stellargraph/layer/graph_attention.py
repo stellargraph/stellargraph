@@ -377,7 +377,7 @@ class GAT:
                     )
                 )
 
-            self.attn_heads = attn_heads  # (list of int)
+            self.attn_heads = attn_heads  # (list of int as passed by the user)
         elif isinstance(attn_heads, int):
             self.attn_heads = list()
             for l, _ in enumerate(layer_sizes):

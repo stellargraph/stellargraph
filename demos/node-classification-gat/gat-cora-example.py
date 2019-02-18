@@ -214,6 +214,9 @@ def train(
         print("\t{}: {:0.4f}".format(name, val))
 
     # Get predictions for all nodes
+    # Note that the `predict` or `predict_generator` function now operates differently to the `GraphSAGE` or `HinSAGE` models
+    # in that if you give it less than the complete set of nodes, it will still return all predictions and in a fixed order
+    # defined by the order of nodes in X and A (which is defined by the order of G.nodes()).
     if args.interface == "fit":
         all_predictions = model.predict(x=[X, A], batch_size=N)
     else:
