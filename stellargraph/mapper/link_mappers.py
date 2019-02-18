@@ -162,7 +162,7 @@ class LinkSequence(Sequence):
             random.shuffle(self.indices)
 
 
-class OnDemandLinkSequence(object):
+class OnDemandLinkSequence(Sequence):
     """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
 
@@ -203,7 +203,7 @@ class OnDemandLinkSequence(object):
             )  # an estimate of the  upper bound on how many samples are generated in each epoch
 
             print(
-                "Running GraphSAGELinkGenerator with an estimated {} batches that will be generated on the fly.".format(
+                "Running GraphSAGELinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
                     round(self.data_size / self.generator.batch_size)
                 )
             )
