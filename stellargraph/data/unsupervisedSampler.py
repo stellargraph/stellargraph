@@ -25,7 +25,7 @@ class UnsupervisedSampler:
         nodes=None,
         batch_size=None,
         walker=None,
-        length=1,
+        length=2,
         number_of_walks=1,
         seed=None,
     ):
@@ -86,9 +86,26 @@ class UnsupervisedSampler:
                 )
             )
 
-        self.length = length
-        self.number_of_walks = number_of_walks
-        self.seed = seed
+        if length < 2:
+            raise ValueError(
+                "({}) For generating (target,context) samples, walk length has to be at least 2".format(
+                    type(self).__name__
+                )
+            )
+        else:
+            self.length = length
+
+        if number_of_walks < 1:
+            raise ValueError(
+                "({}) At least 1 walk from each head node has to be done".format(
+                    type(self).__name__
+                )
+            )
+        else:
+            self.number_of_walks = number_of_walks
+
+        if seed is not None:
+            self.seed = seed
 
     def generator(self):
 
@@ -114,6 +131,7 @@ class UnsupervisedSampler:
                     n=1,  # number of random walks per root node
                     seed=None,
                 )
+                print(walk)
                 # (target,contect) pair sampling - GraphSAGE way
                 target = walk[0][0]
                 context_window = walk[0][1:]
