@@ -217,6 +217,7 @@ class GraphAttention(Layer):
         X = inputs[0]  # Node features (N x F)
         A = inputs[1]  # Adjacency matrix (N x N)
         # Convert A to dense tensor - needed for the mask to work
+        # TODO: replace this dense implementation of GraphAttention layer with a sparse implementation
         if K.is_sparse(A):
             A = tf.sparse_tensor_to_dense(A, validate_indices=False)
 
