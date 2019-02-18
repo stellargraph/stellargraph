@@ -169,11 +169,90 @@ class Test_GAT:
         with pytest.raises(TypeError):
             gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
 
+        # test error where layer_sizes is not a list:
+        with pytest.raises(TypeError):
+            gat = GAT(
+                layer_sizes=10,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                generator=gen,
+                bias=True,
+            )
+
+        # test error where layer_sizes values are not valid
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=[4, 0],
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                generator=gen,
+                bias=True,
+            )
+
+        # test for incorrect length of att_heads list:
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=[8, 8, 1],
+                generator=gen,
+                bias=True,
+            )
+
+        # test for invalid values in att_heads list:
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=[8, 0],
+                generator=gen,
+                bias=True,
+            )
+
+        # test for invalid type of att_heads argument:
+        with pytest.raises(TypeError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=8.0,
+                generator=gen,
+                bias=True,
+            )
+
         # test error where activations is not a list:
         with pytest.raises(TypeError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations="relu",
+                generator=gen,
+                bias=True,
+            )
+
+        # test attn_heads_reduction errors:
+        with pytest.raises(TypeError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction="concat",
+                generator=gen,
+                bias=True,
+            )
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction=["concat", "concat", "average"],
+                generator=gen,
+                bias=True,
+            )
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction=["concat", "sum"],
                 generator=gen,
                 bias=True,
             )

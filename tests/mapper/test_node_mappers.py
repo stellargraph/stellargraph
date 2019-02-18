@@ -728,7 +728,7 @@ class Test_FullBatchNodeGenerator:
 
         [X, A], y, sample_weights = gen.__getitem__(0)
         assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
         assert y is None
         assert sum(sample_weights) == len(node_ids)
 
@@ -745,7 +745,7 @@ class Test_FullBatchNodeGenerator:
 
         [X, A], y, sample_weights = gen.__getitem__(0)
         assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
 
         assert y.shape == (self.N, self.target_dim)
         assert np.array_equal(
