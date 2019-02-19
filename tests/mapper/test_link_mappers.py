@@ -426,9 +426,7 @@ class Test_GraphSAGELinkGenerator:
 
         rw = UniformRandomWalk(G)
 
-        unsupervisedSamples = UnsupervisedSampler(
-            G, nodes=G.nodes, batch_size=n_batch, walker=rw
-        )
+        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes, walker=rw)
 
         gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
             unsupervisedSamples
