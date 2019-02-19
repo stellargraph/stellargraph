@@ -20,14 +20,7 @@ from stellargraph.data.explorer import UniformRandomWalk
 
 class UnsupervisedSampler:
     def __init__(
-        self,
-        G,
-        nodes=None,
-        batch_size=None,
-        walker=None,
-        length=2,
-        number_of_walks=1,
-        seed=None,
+        self, G, walker=None, nodes=None, length=2, number_of_walks=1, seed=None
     ):
 
         # Initialize the random state
@@ -44,49 +37,32 @@ class UnsupervisedSampler:
             self.graph = G
 
         # walker
-        if walker is None:
-            walker = UniformRandomWalk(G)
-        elif not isinstance(
-            walker, UniformRandomWalk
-        ):  # only work with Uniform Random Walker at the moment
-            raise TypeError(
-                "({}) Only Uniform Random Walks are possible".format(
-                    type(self).__name__
-                )
-            )
-        else:
-            self.walker = walker
-
-        if nodes is None:
-            self.nodes = G.nodes()  # assuming all nodes are used as root nodes.
-        elif not is_real_iterable(nodes):  # check whether the nodes value are valid
-            raise ValueError("nodes parameter should be an iterableof node IDs.")
-        else:
-            self.nodes = nodes
-
-        if batch_size is not None:
-            if type(batch_size) != int:
-                raise ValueError(
-                    "({}) The batch_size must be positive integer.".format(
-                        type(self).__name__
-                    )
-                )
-            elif batch_size < 0:
-                raise ValueError(
-                    "({}) The batch_size must be positive integer.".format(
+        if walker is not None:
+            if not isinstance(
+                walker, UniformRandomWalk
+            ):  # only work with Uniform Random Walker at the moment
+                raise TypeError(
+                    "({}) Only Uniform Random Walks are possible".format(
                         type(self).__name__
                     )
                 )
             else:
-                self.batch_size = batch_size
+                self.walker = UniformRandomWalk(G)
         else:
-            raise ValueError(
-                "({}) The batch_size must be provided to generate samples for each batch in the epoch".format(
-                    type(self).__name__
-                )
-            )
+            self.walker = UniformRandomWalk(G)
 
-        if length < 2:
+        if nodes is None:
+            self.nodes = (
+                G.nodes()
+            )  # if no root nodes are provided for sampling defaulting to using all nodes as root nodes.
+        elif not is_real_iterable(nodes):  # check whether the nodes provided are valid.
+            raise ValueError("nodes parameter should be an iterableof node IDs.")
+        else:
+            self.nodes = nodes
+
+        if (
+            length < 2
+        ):  # for a  sample pair need at least one neighbor beyond the root node.
             raise ValueError(
                 "({}) For generating (target,context) samples, walk length has to be at least 2".format(
                     type(self).__name__
@@ -107,7 +83,9 @@ class UnsupervisedSampler:
         if seed is not None:
             self.seed = seed
 
-    def generator(self):
+    def generator(self, batch_size=None):
+
+        self._check_parameter_values(batch_size=batch_size)
 
         positive_pairs = list()
         negative_pairs = list()
@@ -131,7 +109,6 @@ class UnsupervisedSampler:
                     n=1,  # number of random walks per root node
                     seed=None,
                 )
-                print(walk)
                 # (target,contect) pair sampling - GraphSAGE way
                 target = walk[0][0]
                 context_window = walk[0][1:]
@@ -141,7 +118,11 @@ class UnsupervisedSampler:
                         positive_pairs.append((target, context))
                         positive_samples_counter += 1
                         # For each positive sample, add a negative sample.
-                        # Negative samples are contexts not in the current walk with respect to the current target(start node of the walk).
+                        # Negative samples are contexts not in the current walk with respect to the current target(start node of the walk). And can't be the target itself.
+                        # The Hmailton's Stellargraph does not has this check, any randmly selected node from the sampling distribution can be the target.
+                        # There are strong arguments in favor of this strategy. Although hard to say if out strategy is any worse than Hamilton's.
+                        # One issue with our implmentation is that incase of sparse graphs and large context window, the sampling of negative context will be challenging.
+                        # And the following while loop may not terminate! Need to fix this!
                         while negative_samples_counter < positive_samples_counter:
                             random_sample = random.choices(
                                 all_nodes, weights=sampling_distribution, k=1
@@ -152,7 +133,7 @@ class UnsupervisedSampler:
                                 # If the batch_size number of samples are accumulated, yield.
                                 if (
                                     positive_samples_counter + negative_samples_counter
-                                ) == self.batch_size:
+                                ) >= batch_size:
                                     all_pairs = positive_pairs + negative_pairs
                                     all_targets = [1] * len(positive_pairs) + [0] * len(
                                         negative_pairs
@@ -168,3 +149,35 @@ class UnsupervisedSampler:
                                     positive_samples_counter = 0
                                     negative_samples_counter = 0
                                     yield edge_ids, edge_labels
+
+    def _check_parameter_values(self, batch_size):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        Args:
+            batch_size: <int> number of samples to generate in each call of generator
+            
+        """
+
+        if (
+            batch_size is None
+        ):  # must provide a batch size since this is an indicator of how many samples to return
+            raise ValueError(
+                "({}) The batch_size must be provided to generate samples for each batch in the epoch".format(
+                    type(self).__name__
+                )
+            )
+
+        if type(batch_size) != int:  # must be an integer
+            raise TypeError(
+                "({}) The batch_size must be positive integer.".format(
+                    type(self).__name__
+                )
+            )
+        if batch_size < 1:  # must be greater than 0
+            raise ValueError(
+                "({}) The batch_size must be positive integer.".format(
+                    type(self).__name__
+                )
+            )
