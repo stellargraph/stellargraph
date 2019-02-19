@@ -15,10 +15,16 @@
 # limitations under the License.
 
 import pytest
+
+import numpy as np
 import networkx as nx
+import keras
+
 from stellargraph.data.unsupervisedSampler import UnsupervisedSampler
 from stellargraph.core.graph import StellarGraph
-from stellargraph.data.explorer import BiasedRandomWalk, UniformRandomWalk
+from stellargraph.data.explorer import UniformRandomWalk
+from stellargraph.mapper.link_mappers import *
+from stellargraph.layer import GraphSAGE, link_classification
 
 
 def create_test_graph():
@@ -70,38 +76,70 @@ def example_Graph_1(feature_size=None):
     return G
 
 
+def example_Graph_2(feature_size=None):
+    G = nx.Graph()
+    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
+    G.add_edges_from(elist)
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = int(v) * np.ones(feature_size)
+
+    G = StellarGraph(G, node_features="feature")
+    return G
+
+
 class TestUnsupervisedSampler(object):
     def test_parameter_checking(self):
 
         g = create_test_graph()
         rw = UniformRandomWalk(StellarGraph(g))
 
+        # if no graph is provided
+        with pytest.raises(ValueError):
+            UnsupervisedSampler(G=None, walker=rw)
+
         # graph has to be a Stellargraph object
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, walker=rw, batch_size=10)
+            UnsupervisedSampler(G=g, walker=rw)
 
         g = StellarGraph(g)
 
         # only Uniform random walk is supported at the moment
         with pytest.raises(TypeError):
-            UnsupervisedSampler(G=(g), walker=BiasedRandomWalk(g), batch_size=10)
+            UnsupervisedSampler(G=g, walker="any random walker")
 
-        # batch_size must be provided to calculate the number of samples to generate per Epoch
-        with pytest.raises(ValueError):
-            UnsupervisedSampler(G=StellarGraph(g), walker=rw, batch_size=None)
+        # if no walker is provided, default to Uniform Random Walk
+        sampler = UnsupervisedSampler(G=g)
+        assert isinstance(sampler.walker, UniformRandomWalk)
 
-        # batch_size must be an integer
-        with pytest.raises(ValueError):
-            UnsupervisedSampler(G=StellarGraph(g), walker=rw, batch_size="x")
-
-        # batch_size must be greater than 0
-        with pytest.raises(ValueError):
-            UnsupervisedSampler(G=StellarGraph(g), walker=rw, batch_size=-1)
-
-    def test_generator(self):
-
+        """def test_generator_parameter(self):
+            
         g = create_test_graph()
         g = StellarGraph(g)
         rw = UniformRandomWalk(g)
+        sampler = UnsupervisedSampler(G=g, walker=rw)
 
-        sampler = UnsupervisedSampler(G=g, walker=rw, batch_size=10)
+        with pytest.raises(ValueError):
+            sampler.generator(batch_size = None)
+        
+        with pytest.raises(ValueError):
+            sampler.generator(batch_size = "x")
+        
+        with pytest.raises(ValueError):
+            sampler.generator(batch_size = 0)
+        """
+
+    def test_generator(self):
+
+        n_feat = 4
+        batch_size = 2
+        num_samples = [2, 2]
+        layer_sizes = [2, 2]
+
+        G = example_Graph_2(n_feat)
+        rw = UniformRandomWalk(G)
+
+        sampler = UnsupervisedSampler(G=G, walker=rw)
+        
