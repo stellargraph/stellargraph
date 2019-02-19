@@ -83,9 +83,12 @@ class UnsupervisedSampler:
         if seed is not None:
             self.seed = seed
 
-    def generator(self, batch_size=None):
+    def generator(self, batch_size):
 
         self._check_parameter_values(batch_size=batch_size)
+
+        if batch_size % 2 != 0:
+            batch_size += 1
 
         positive_pairs = list()
         negative_pairs = list()
@@ -112,43 +115,39 @@ class UnsupervisedSampler:
                 # (target,contect) pair sampling - GraphSAGE way
                 target = walk[0][0]
                 context_window = walk[0][1:]
-                for context in context_window:
-                    # Don't add self pairs
-                    if context != target:
-                        positive_pairs.append((target, context))
-                        positive_samples_counter += 1
-                        # For each positive sample, add a negative sample.
-                        # Negative samples are contexts not in the current walk with respect to the current target(start node of the walk). And can't be the target itself.
-                        # The Hmailton's Stellargraph does not has this check, any randmly selected node from the sampling distribution can be the target.
-                        # There are strong arguments in favor of this strategy. Although hard to say if out strategy is any worse than Hamilton's.
-                        # One issue with our implmentation is that incase of sparse graphs and large context window, the sampling of negative context will be challenging.
-                        # And the following while loop may not terminate! Need to fix this!
-                        while negative_samples_counter < positive_samples_counter:
+                if len(context_window) >= 1:
+                    for context in context_window:
+                        # Don't add self pairs
+                        if context != target:
+                            positive_pairs.append((target, context))
+                            positive_samples_counter += 1
+
+                            # For each positive sample, add a negative sample.
                             random_sample = random.choices(
                                 all_nodes, weights=sampling_distribution, k=1
                             )
-                            if not random_sample in context_window:
-                                negative_pairs.append((target, *random_sample))
-                                negative_samples_counter = negative_samples_counter + 1
-                                # If the batch_size number of samples are accumulated, yield.
-                                if (
-                                    positive_samples_counter + negative_samples_counter
-                                ) >= batch_size:
-                                    all_pairs = positive_pairs + negative_pairs
-                                    all_targets = [1] * len(positive_pairs) + [0] * len(
-                                        negative_pairs
-                                    )
-                                    edge_ids_labels = list(zip(all_pairs, all_targets))
-                                    random.shuffle(edge_ids_labels)
-                                    edge_ids, edge_labels = [
-                                        [z[i] for z in edge_ids_labels] for i in (0, 1)
-                                    ]
+                            negative_pairs.append((target, *random_sample))
+                            negative_samples_counter = negative_samples_counter + 1
 
-                                    positive_pairs.clear()
-                                    negative_pairs.clear()
-                                    positive_samples_counter = 0
-                                    negative_samples_counter = 0
-                                    yield edge_ids, edge_labels
+                            # If the batch_size number of samples are accumulated, yield.
+                            if (
+                                positive_samples_counter + negative_samples_counter
+                            ) >= batch_size:
+                                all_pairs = positive_pairs + negative_pairs
+                                all_targets = [1] * len(positive_pairs) + [0] * len(
+                                    negative_pairs
+                                )
+                                edge_ids_labels = list(zip(all_pairs, all_targets))
+                                random.shuffle(edge_ids_labels)
+                                edge_ids, edge_labels = [
+                                    [z[i] for z in edge_ids_labels] for i in (0, 1)
+                                ]
+
+                                positive_pairs.clear()
+                                negative_pairs.clear()
+                                positive_samples_counter = 0
+                                negative_samples_counter = 0
+                                yield edge_ids, edge_labels
 
     def _check_parameter_values(self, batch_size):
         """
@@ -175,6 +174,14 @@ class UnsupervisedSampler:
                     type(self).__name__
                 )
             )
+
+        if batch_size < 1:  # must be greater than 0
+            raise ValueError(
+                "({}) The batch_size must be positive integer.".format(
+                    type(self).__name__
+                )
+            )
+
         if batch_size < 1:  # must be greater than 0
             raise ValueError(
                 "({}) The batch_size must be positive integer.".format(
