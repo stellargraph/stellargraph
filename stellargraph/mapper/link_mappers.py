@@ -208,8 +208,8 @@ class OnDemandLinkSequence(Sequence):
                 )
             )
 
-            self._gen = (
-                self.walker.generator()
+            self._gen = self.walker.generator(
+                self.generator.batch_size
             )  # the generator method from the sampler with the batch-size from the link generator method
         else:
             raise TypeError(
