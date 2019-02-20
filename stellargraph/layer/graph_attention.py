@@ -224,18 +224,18 @@ class GraphAttention(Layer):
         # For the GAT model to match that in the paper, we need to ensure that the graph has self-loops,
         # since the neighbourhood of node i in eq. (4) includes node i itself.
         # Adding self-loops to A via setting the diagonal elements of A to 1.0:
-        # N = kwargs.get("num_nodes")
-        # get the number of nodes from inputs[1] directly, rather than passing it via kwargs
-        N = inputs[1]._keras_shape[-1]
-        if N is not None:
-            # create self-loops
-            A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))
-        else:
-            raise ValueError(
-                "{}: need to know number of nodes to add self-loops; obtained None instead".format(
-                    type(self).__name__
+        if kwargs.get("add_self_loops", False):
+            # get the number of nodes from inputs[1] directly
+            N = K.int_shape(inputs[1])[-1]
+            if N is not None:
+                # create self-loops
+                A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))
+            else:
+                raise ValueError(
+                    "{}: need to know number of nodes to add self-loops; obtained None instead".format(
+                        type(self).__name__
+                    )
                 )
-            )
 
         outputs = []
         for head in range(self.attn_heads):
@@ -505,19 +505,24 @@ class GAT:
 
         for layer in self._layers:
             if isinstance(layer, self._gat_layer):  # layer is a GAT layer
-                x = layer([x, A], num_nodes=kwargs.get("num_nodes"))
+                x = layer([x, A], add_self_loops=kwargs.get("add_self_loops"))
             else:  # layer is a Dropout layer
                 x = layer(x)
 
         return self._normalization(x)
 
-    def node_model(self, num_nodes=None, feature_size=None):
+    def node_model(self, num_nodes=None, feature_size=None, add_self_loops=True):
         """
         Builds a GAT model for node prediction
 
+        Args:
+            num_nodes (int or None): (optional) number of nodes in the graph (in the full batch). If not provided, this will be taken from self.generator.
+            feature_size (int or None): (optional) dimensionality of node attributes. If not provided, this will be taken from self.generator.
+            add_self_loops (bool): (default is True) toggles adding self-loops to the graph's adjacency matrix in the GraphAttention layers of the GAT model.
+
         Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
-            for the specified GAT model and ``x_out`` is a Keras tensor for the GAT model output.
+            tuple: (x_inp, x_out) where ``x_inp`` is a list of two Keras input tensors for the specified GAT model
+            (containing node features and graph adjacency matrix), and ``x_out`` is a Keras tensor for the GAT model output.
 
         """
         # Create input tensor:
@@ -543,7 +548,7 @@ class GAT:
         x_inp = [X_in, A_in]
 
         # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
-        x_out = self(x_inp)
+        x_out = self(x_inp, add_self_loops=add_self_loops)
 
         return x_inp, x_out
 
