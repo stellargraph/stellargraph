@@ -38,6 +38,16 @@ class UnsupervisedSampler:
            At least one walk should be performed from each root node. Actually number of walks can be completely ignored here. Since in the end we just need the batch size to generate samples. 
            So if for example, is large, we will do as many walks as needed to generate enough samples. The reason this parameter is still needed is to estimate how many batches in each epoch
            are generated. 
+           
+           Args:
+               G <StellarGraph>: A stellargraph is a must.
+               walker <UniformRandomWalker>: The only walking method supported for sampling is Uniform Random Walk.
+               nodes <iterable of nodes from the graph>: if none provided, defaults to all nodes in the graph as root nodes for walks.
+               length <int>: An integer value for the length of the walk. Minimum length is 2 since the samples are a pair of target,context so at least one hop is needed beyond the root node.
+               number_of_walks <int>: Number of walks from each root node. Note, at the moment this parameter is only used to calculate the number of batches in each epoch,
+                                      as we do not have a pregenerated sample list, we need to estimate given a batch_size, how many batches to generate in each epoch.  
+               
+        
         """
         # Initialize the random state
         self._random_state = random.Random(seed)
@@ -100,8 +110,29 @@ class UnsupervisedSampler:
 
     def generator(self, batch_size):
 
+        """
+        This method yields a batch_size of +/- samples when it is called. The batch_size must be provided. It should be a positive integer. Moreover, for now we make the batch_size even by
+        unit incrementing it, incase it is odd. This is because we generate one negative sample for each positive sample.
+        This method:
+            1. Iterates over the root nodes.
+                1. Generates one walk at a time based on the walker method of the class  over the given Stellargraph. 
+                2. Incrementally extract positive (target,context) from the walks.
+                    1. For each positive pair sample a negative (target, context) from the graph based on a sampling distribution.
+                3. Once the total positive and negative samples generated are equal to the batch_size, the generator returns the samples. 
+         The positive samples are identical to GraphSAGE way of sampling. The negative sampling uses identical sampling distribution. 
+         However, no. of negative samples generated is perhaps different. This observation is based on our present understanding of Hamilton's implementation of GraphSAGE from github.
+         Note, we do not check if the negative sample is a positive context or a target itself. Although we do check that target is not its own context.
+         
+         Args:
+             batch_size: <int> number of samples to generate in each call of generator
+
+        Returns:
+            A tuple of lists: (target, context) pairs and their labels. 
+        """
+
         self._check_parameter_values(batch_size=batch_size)
 
+        # making the batch_size even since we generate 1 negative sample for each positive one.
         if batch_size % 2 != 0:
             batch_size += 1
 
