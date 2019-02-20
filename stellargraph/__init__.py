@@ -16,3 +16,4 @@ from stellargraph.utils.calibration import (
     plot_reliability_diagram,
     expected_calibration_error,
 )
+from stellargraph.utils.ensemble import Ensemble
