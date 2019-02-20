@@ -230,6 +230,12 @@ class OnDemandLinkSequence(Sequence):
 
         """
 
+        if batch_num >= self.__len__():
+            raise IndexError(
+                "Mapper: batch_num larger than number of esstaimted  batches for this epoch."
+            )
+        # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
+
         # Get head nodes and labels
         head_ids, batch_targets = next(self._gen)
         self.ids = list(head_ids)
