@@ -174,7 +174,7 @@ class OnDemandLinkSequence(Sequence):
         generator: An instance of :class:`GraphSAGELinkGenerator`.
                    (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
 
-        walker: A walker object that indicates how the neighborhood of graph are sampled (uniform random walks, biased random walks etc. Currently only Uniform Random walks are enabled).
+        sampler: An UnsupervisedSampler instance that indicates how the neighborhood of graph are sampled (uniform random walks, biased random walks etc. Currently only Uniform Random walks are enabled).
                 This class is responsible for calling the right type of walk generator and then return batch_size of sample source and target pairs  from those walks.
                 These (target, context) pairs are to be used to train or inference, and the embeddings
                 calculated for the links created by a binary operator applied to the target and context nodes,
@@ -218,15 +218,15 @@ class OnDemandLinkSequence(Sequence):
 
     def __getitem__(self, batch_num):
         """
-        Generate one batch of data
+        Generate one batch of data.
 
         Args:
-            batch_num (int): number of a batch
+            batch_num<int>: number of a batch
 
         Returns:
-            batch_feats (list): Node features for nodes and neighbours sampled from a
+            batch_feats<list>: Node features for nodes and neighbours sampled from a
                 batch of the supplied IDs
-            batch_targets (list): Targets/labels for the batch.
+            batch_targets<list>: Targets/labels for the batch.
 
         """
 
