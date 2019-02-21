@@ -63,12 +63,12 @@ class Ensemble(object):
     ):
         for model in self.models:
             model.compile(
-                optimizer,
-                loss,
-                metrics,
-                loss_weights,
-                sample_weight_mode,
-                weighted_metrics,
+                optimizer=optimizer,
+                loss=loss,
+                metrics=metrics,
+                loss_weights=loss_weights,
+                sample_weight_mode=sample_weight_mode,
+                weighted_metrics=weighted_metrics,
             )
 
     def fit_generator(
@@ -91,21 +91,23 @@ class Ensemble(object):
         for model in self.models:
             self.history.append(
                 model.fit_generator(
-                    generator,
-                    steps_per_epoch,
-                    epochs,
-                    verbose,
-                    validation_data,
-                    validation_steps,
-                    validation_freq,
-                    class_weight,
-                    max_queue_size,
-                    workers,
-                    use_multiprocessing,
-                    shuffle,
-                    initial_epoch,
+                    generator=generator,
+                    steps_per_epoch=steps_per_epoch,
+                    epochs=epochs,
+                    verbose=verbose,
+                    validation_data=validation_data,
+                    validation_steps=validation_steps,
+                    #validation_freq=validation_freq,
+                    class_weight=class_weight,
+                    max_queue_size=max_queue_size,
+                    workers=workers,
+                    use_multiprocessing=use_multiprocessing,
+                    shuffle=shuffle,
+                    initial_epoch=initial_epoch,
                 )
             )
+
+        return self.history
 
     def evaluate_generator(
         self,
@@ -122,12 +124,12 @@ class Ensemble(object):
             for _ in range(self.n_predictions):
                 tm.append(
                     model.evaluate_generator(
-                        generator,
-                        steps,
-                        max_queue_size,
-                        workers,
-                        use_multiprocessing,
-                        verbose,
+                        generator=generator,
+                        steps=steps,
+                        max_queue_size=max_queue_size,
+                        workers=workers,
+                        use_multiprocessing=use_multiprocessing,
+                        verbose=verbose,
                     )
                 )
             train_metrics.append(np.mean(tm, axis=0))
@@ -136,6 +138,7 @@ class Ensemble(object):
     def predict_generator(
         self,
         generator,
+        summarise=None,
         steps=None,
         max_queue_size=10,
         workers=1,
@@ -149,19 +152,20 @@ class Ensemble(object):
             for _ in range(self.n_predictions):
                 model_predictions.append(
                     model.predict_generator(
-                        generator,
-                        steps,
-                        max_queue_size,
-                        workers,
-                        use_multiprocessing,
-                        verbose,
+                        generator=generator,
+                        steps=steps,
+                        max_queue_size=max_queue_size,
+                        workers=workers,
+                        use_multiprocessing=use_multiprocessing,
+                        verbose=verbose,
                     )
                 )
             # average the predictions
-            model_predictions = np.mean(model_predictions, axis=0)
+            if summarise is not None:
+                model_predictions = np.mean(model_predictions, axis=0)
 
             # add to predictions list
-            predictions.append(predictions)
+            predictions.append(model_predictions)
 
         return predictions
 
