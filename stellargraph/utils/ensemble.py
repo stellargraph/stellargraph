@@ -97,7 +97,7 @@ class Ensemble(object):
                     verbose=verbose,
                     validation_data=validation_data,
                     validation_steps=validation_steps,
-                    #validation_freq=validation_freq,
+                    # validation_freq=validation_freq,
                     class_weight=class_weight,
                     max_queue_size=max_queue_size,
                     workers=workers,
@@ -139,6 +139,7 @@ class Ensemble(object):
         self,
         generator,
         summarise=None,
+        output_layer=None,
         steps=None,
         max_queue_size=10,
         workers=1,
@@ -147,7 +148,15 @@ class Ensemble(object):
     ):
         predictions = []
 
-        for model in self.models:
+        if output_layer is not None:
+            predict_models = [
+                K.Model(inputs=model.input, outputs=model.layers[output_layer].output)
+                for model in self.models
+            ]
+        else:
+            predict_models = self.models
+
+        for model in predict_models:
             model_predictions = []
             for _ in range(self.n_predictions):
                 model_predictions.append(
@@ -167,7 +176,7 @@ class Ensemble(object):
             # add to predictions list
             predictions.append(model_predictions)
 
-        return predictions
+        return np.array(predictions)
 
     def metrics_names(self):
         return self.models[
