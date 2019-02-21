@@ -176,7 +176,11 @@ class Ensemble(object):
             # add to predictions list
             predictions.append(model_predictions)
 
-        return np.array(predictions)
+        predictions = np.array(predictions)
+        if len(predictions.shape) > 4:
+            predictions = predictions.reshape(predictions.shape[0:3]+(-1,))
+
+        return predictions
 
     def metrics_names(self):
         return self.models[
