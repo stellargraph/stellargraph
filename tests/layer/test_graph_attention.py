@@ -147,10 +147,10 @@ class Test_GraphAttention_layer:
         for i in range(X.shape[0]):
             X[i, :] += i
         A = np.eye(self.N)  # adjacency matrix with self-loops only
-        A[0, 1] = A[1, 0] = 1.  # add undirected link between nodes 0 and 1
+        A[0, 1] = A[1, 0] = 1.0  # add undirected link between nodes 0 and 1
 
-        expected = (X * self.F_in)[:, :self.F_out]
-        expected[:2, ] = np.ones((2, self.F_out)) * (self.F_in / 2)
+        expected = (X * self.F_in)[:, : self.F_out]
+        expected[:2,] = np.ones((2, self.F_out)) * (self.F_in / 2)
         actual = model.predict([X, A])
         assert expected == pytest.approx(actual)
 
