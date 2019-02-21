@@ -128,6 +128,32 @@ class Test_GraphAttention_layer:
         actual = model.predict([X, A])
         assert expected == pytest.approx(actual)
 
+    def test_apply_average_with_neighbours(self):
+        gat = GraphAttention(
+            F_out=self.F_out,
+            attn_heads=1,
+            attn_heads_reduction="average",
+            activation=self.activation,
+            kernel_initializer="ones",
+            attn_kernel_initializer="zeros",
+        )
+        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
+        x_out = gat(x_inp)
+
+        model = keras.Model(inputs=x_inp, outputs=x_out)
+        assert model.output_shape[-1] == self.F_out
+
+        X = np.zeros((self.N, self.F_in))  # features
+        for i in range(X.shape[0]):
+            X[i, :] += i
+        A = np.eye(self.N)  # adjacency matrix with self-loops only
+        A[0, 1] = A[1, 0] = 1.  # add undirected link between nodes 0 and 1
+
+        expected = (X * self.F_in)[:, :self.F_out]
+        expected[:2, ] = np.ones((2, self.F_out)) * (self.F_in / 2)
+        actual = model.predict([X, A])
+        assert expected == pytest.approx(actual)
+
     def test_layer_config(self):
         layer = GraphAttention(
             F_out=self.F_out,
