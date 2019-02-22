@@ -375,7 +375,7 @@ class HinSAGENodeGenerator:
 
         G.check_graph_for_ml(features=True)
 
-        # Create sampler for GraphSAGE
+        # Create sampler for HinSAGE
         self.sampler = SampledHeterogeneousBreadthFirstWalk(G, seed=seed)
 
         # Generate schema
