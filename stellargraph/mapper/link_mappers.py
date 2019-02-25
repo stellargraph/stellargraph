@@ -173,20 +173,11 @@ class OnDemandLinkSequence(Sequence):
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` .
+    :class:`GraphSAGELinkGenerator` ` .
 
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator`.
-                   (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
-
-        sampler: An UnsupervisedSampler instance that indicates how the neighborhood of graph are sampled (uniform random walks, biased random walks etc. Currently only Uniform Random walks are enabled).
-                This class is responsible for calling the right type of walk generator and then return batch_size of sample source and target pairs  from those walks.
-                These (target, context) pairs are to be used to train or inference, and the embeddings
-                calculated for the links created by a binary operator applied to the target and context nodes,
-                are passed to the downstream task of link prediction or link attribute inference.
-                The target and context nodes of the links are used as head nodes for which subgraphs are sampled.
-                The subgraphs are sampled from all nodes.
-
+        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph. The generator method of this class returns `batch_size` of positive and negative samples on demand.
   """
 
     def __init__(self, generator, walker):
