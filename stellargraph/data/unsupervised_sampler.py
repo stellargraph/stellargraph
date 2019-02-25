@@ -35,7 +35,7 @@ class UnsupervisedSampler:
     ):
 
         """
-           Initializing all the paramters for the class instance. A Stellargraph is a must. 
+           Initializing all the paramters for the class instance. 
            Args:
                G <StellarGraph>: A stellargraph with features.
                walker <UniformRandomWalk>: The only walking method supported for sampling is Uniform Random Walk.
