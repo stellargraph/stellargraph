@@ -18,10 +18,14 @@
 Ensembles of graph neural network models, GraphSAGE, GCN, GAT.
 """
 
+from stellargraph.layer import *
+
 __all__ = ["Ensemble"]
 
 import numpy as np
 import keras as K
+
+import stellargraph as sg
 
 
 class Ensemble(object):
@@ -52,6 +56,27 @@ class Ensemble(object):
         for _ in range(self.n_estimators - 1):
             self.models.append(K.models.clone_model(model))
 
+    def layers(self, indx=None):
+        """
+
+        Args:
+            indx:
+
+        Returns:
+
+        """
+        if indx is None and len(self.models) > 0:
+            # Default is to return the layers for the first model
+            return self.models[0].layers
+
+        if len(self.models) > indx:
+            return self.models[indx].layers
+        else:
+            # Error because index is out of bounds
+            raise ValueError(
+                "indx {} is out of range 0 to {}".format(indx, len(self.models))
+            )
+
     def compile(
         self,
         optimizer,
@@ -74,12 +99,13 @@ class Ensemble(object):
     def fit_generator(
         self,
         generator,
+        train_data=None,
+        train_targets=None,
         steps_per_epoch=None,
         epochs=1,
         verbose=1,
         validation_data=None,
         validation_steps=None,
-        validation_freq=1,
         class_weight=None,
         max_queue_size=10,
         workers=1,
@@ -87,25 +113,77 @@ class Ensemble(object):
         shuffle=True,
         initial_epoch=0,
     ):
-        self.history = []
-        for model in self.models:
-            self.history.append(
-                model.fit_generator(
-                    generator=generator,
-                    steps_per_epoch=steps_per_epoch,
-                    epochs=epochs,
-                    verbose=verbose,
-                    validation_data=validation_data,
-                    validation_steps=validation_steps,
-                    # validation_freq=validation_freq,
-                    class_weight=class_weight,
-                    max_queue_size=max_queue_size,
-                    workers=workers,
-                    use_multiprocessing=use_multiprocessing,
-                    shuffle=shuffle,
-                    initial_epoch=initial_epoch,
+
+        if train_data is not None and not isinstance(
+            generator,
+            (
+                sg.mapper.node_mappers.GraphSAGENodeGenerator,
+                sg.mapper.node_mappers.HinSAGENodeGenerator,
+                sg.mapper.node_mappers.FullBatchNodeGenerator,
+            ),
+        ):
+            raise ValueError(
+                "generator must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator if you want to use Bagging. Received type {}".format(
+                    type(generator)
                 )
             )
+
+        self.history = []
+
+        if train_data is not None:
+            # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
+            # datasets.
+            print("*** Train with Bagging ***")
+            for model in self.models:
+                di_index = np.random.choice(
+                    len(train_data), size=len(train_data)
+                )  # sample with replacement
+                di_train = train_data[di_index]
+                di_targets = None
+                if train_targets is not None:
+                    di_targets = train_targets[di_index]
+
+                print(
+                    "Unique train data {} and targets {}".format(
+                        len(np.unique(di_train)), len(np.unique(di_targets))
+                    )
+                )
+
+                di_gen = generator.flow(di_train, di_targets)
+                self.history.append(
+                    model.fit_generator(
+                        generator=di_gen,
+                        steps_per_epoch=steps_per_epoch,
+                        epochs=epochs,
+                        verbose=verbose,
+                        validation_data=validation_data,
+                        validation_steps=validation_steps,
+                        class_weight=class_weight,
+                        max_queue_size=max_queue_size,
+                        workers=workers,
+                        use_multiprocessing=use_multiprocessing,
+                        shuffle=shuffle,
+                        initial_epoch=initial_epoch,
+                    )
+                )
+        else:
+            for model in self.models:
+                self.history.append(
+                    model.fit_generator(
+                        generator=generator,
+                        steps_per_epoch=steps_per_epoch,
+                        epochs=epochs,
+                        verbose=verbose,
+                        validation_data=validation_data,
+                        validation_steps=validation_steps,
+                        class_weight=class_weight,
+                        max_queue_size=max_queue_size,
+                        workers=workers,
+                        use_multiprocessing=use_multiprocessing,
+                        shuffle=shuffle,
+                        initial_epoch=initial_epoch,
+                    )
+                )
 
         return self.history
 
@@ -178,7 +256,7 @@ class Ensemble(object):
 
         predictions = np.array(predictions)
         if len(predictions.shape) > 4:
-            predictions = predictions.reshape(predictions.shape[0:3]+(-1,))
+            predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
         return predictions
 
