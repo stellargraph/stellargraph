@@ -143,33 +143,33 @@ class UnsupervisedSampler:
                     # Don't add self pairs
                     if context == target:
                         continue
-                    else:
-                        positive_pairs.append((target, context))
-                        sample_counter += 1
 
-                        # For each positive sample, add a negative sample.
-                        random_sample = random.choices(
-                            all_nodes, weights=sampling_distribution, k=1
+                    positive_pairs.append((target, context))
+                    sample_counter += 1
+
+                    # For each positive sample, add a negative sample.
+                    random_sample = random.choices(
+                        all_nodes, weights=sampling_distribution, k=1
+                    )
+                    negative_pairs.append((target, *random_sample))
+                    sample_counter += 1
+
+                    # If the batch_size number of samples are accumulated, yield.
+                    if sample_counter == batch_size:
+                        all_pairs = positive_pairs + negative_pairs
+                        all_targets = [1] * len(positive_pairs) + [0] * len(
+                            negative_pairs
                         )
-                        negative_pairs.append((target, *random_sample))
-                        sample_counter += 1
 
-                        # If the batch_size number of samples are accumulated, yield.
-                        if sample_counter == batch_size:
-                            all_pairs = positive_pairs + negative_pairs
-                            all_targets = [1] * len(positive_pairs) + [0] * len(
-                                negative_pairs
-                            )
+                        positive_pairs.clear()
+                        negative_pairs.clear()
+                        sample_counter = 0
 
-                            positive_pairs.clear()
-                            negative_pairs.clear()
-                            sample_counter = 0
+                        edge_ids_labels = list(zip(all_pairs, all_targets))
+                        random.shuffle(edge_ids_labels)
+                        edge_ids, edge_labels = zip(*edge_ids_labels)
 
-                            edge_ids_labels = list(zip(all_pairs, all_targets))
-                            random.shuffle(edge_ids_labels)
-                            edge_ids, edge_labels = zip(*edge_ids_labels)
-
-                            yield edge_ids, edge_labels
+                        yield edge_ids, edge_labels
 
     def _check_parameter_values(self, batch_size):
         """
