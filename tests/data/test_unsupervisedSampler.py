@@ -156,6 +156,10 @@ class TestUnsupervisedSampler(object):
         with pytest.raises(ValueError):
             next(sample_gen)
 
+        sample_gen = sampler.generator(batch_size=3)
+        with pytest.raises(ValueError):
+            next(sample_gen)
+
     def test_generator_samples(self):
 
         n_feat = 4
@@ -178,12 +182,6 @@ class TestUnsupervisedSampler(object):
 
         # batch-size number of samples are returned if batch_size is even
         assert len(samples[0]) == batch_size
-
-        # batch-size +1 number of samples are returned if batch_size is odd
-        batch_size = 5
-        sample_gen = sampler.generator(batch_size)
-        samples = next(sample_gen)
-        assert len(samples[0]) == batch_size + 1
 
     def test_generator_multiple_batches(self):
 
