@@ -177,7 +177,8 @@ class OnDemandLinkSequence(Sequence):
 
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator`.
-        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph. The generator method of this class returns `batch_size` of positive and negative samples on demand.
+        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph. 
+        The generator method of this class returns `batch_size` of positive and negative samples on demand.
   """
 
     def __init__(self, generator, walker):
