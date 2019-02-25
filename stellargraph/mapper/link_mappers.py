@@ -19,7 +19,12 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE and HinSAGE.
 
 """
-__all__ = ["OnDemandLinkSequence", "GraphSAGELinkGenerator", "HinSAGELinkGenerator"]
+__all__ = [
+    "LinkSequence",
+    "OnDemandLinkSequence",
+    "GraphSAGELinkGenerator",
+    "HinSAGELinkGenerator",
+]
 
 import random
 import operator
@@ -40,7 +45,7 @@ from stellargraph.data.explorer import (
 from ..core.utils import is_real_iterable
 
 
-from stellargraph.data.unsupervisedSampler import UnsupervisedSampler
+from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.utils import is_real_iterable
 
 
@@ -168,7 +173,7 @@ class OnDemandLinkSequence(Sequence):
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` .
+    :class:`GraphSAGELinkGenerator` .
 
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator`.
