@@ -293,7 +293,7 @@ class GraphSAGELinkGenerator:
         train_data_gen = G_generator.flow(edge_ids)
 
     Args:
-        g (StellarGraph): A machine-learning ready graph.
+        G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
@@ -589,6 +589,10 @@ class HinSAGELinkGenerator:
             A LinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
-        # The LinkSequence method is renamed to PregeneratedLinkSequence
-        # return LinkSequence(self, link_ids, targets)
+        if not isinstance(link_ids, collections.Iterable):
+            raise TypeError(
+                "Argument to .flow not recognised. "
+                "Please pass a list of samples or a UnsupervisedSampler object."
+            )
+
         return LinkSequence(self, link_ids, targets, shuffle)
