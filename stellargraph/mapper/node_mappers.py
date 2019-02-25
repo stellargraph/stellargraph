@@ -533,9 +533,9 @@ class FullBatchNodeSequence(Sequence):
 
 class FullBatchNodeGenerator:
     """
-    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT
+    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT.
     The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
+    machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -544,6 +544,13 @@ class FullBatchNodeGenerator:
 
         G_generator = FullBatchNodeGenerator(G)
         train_data_gen = G_generator.flow(node_ids, node_targets)
+
+        # Fetch the data from train_data_gen, and feed into a Keras model:
+        [X, A], y_train, node_mask_train = train_data_gen.__getitem__(0)
+        model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train, ...)
+
+        # Alternatively, use the generator itself with model.fit_generator:
+        model.fit_generator(train_gen, epochs=num_epochs, ...)
 
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
@@ -606,8 +613,8 @@ class FullBatchNodeGenerator:
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
 
         """
         # Check targets is an iterable
