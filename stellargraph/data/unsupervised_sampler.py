@@ -105,8 +105,9 @@ class UnsupervisedSampler:
     def generator(self, batch_size):
 
         """
-        This method yields a batch_size of +/- samples when it is called. The batch_size must be provided. It should be a positive even integer. 
-        This method iterates over the root nodes to generate one walk at a time of a given length. It exracts postive pairs from the walks and sample a negative pair for each positive
+        This method yields a batch_size of +/- samples when it is called. A positive even integer for batch_size must be provided.
+        This method generates one walk at a time of a given length from each root node. 
+        It exracts postive pairs from the walks and sample a negative pair for each positive
         one from a given sampling distribution. It returns the batch_size of postive and negative samples.
                     
          Args:
