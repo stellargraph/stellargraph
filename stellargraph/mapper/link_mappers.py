@@ -283,7 +283,8 @@ class GraphSAGELinkGenerator:
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets
+    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
     Example::
@@ -409,7 +410,7 @@ class GraphSAGELinkGenerator:
                 epoch, if False the node_ids will be processed in order.
 
         Returns:
-            A LinkSequence object to use with the GraphSAGE model
+            A LinkSequence or OnDemandLinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
         # Pass sampler to on-demand link sequence generation
