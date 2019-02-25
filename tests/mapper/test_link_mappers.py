@@ -32,8 +32,7 @@ g
 from stellargraph.mapper.link_mappers import *
 from stellargraph.core.graph import *
 from stellargraph.data.explorer import *
-from stellargraph.data.unsupervisedSampler import *
-
+from stellargraph.data.unsupervised_sampler import *
 
 import numpy as np
 import networkx as nx
