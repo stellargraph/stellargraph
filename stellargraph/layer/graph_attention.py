@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-Definition of Graph Attention Network (GAT) layer and GAT class that is a stack of GAT layers
+Definition of Graph Attention Network (GAT) layer, and GAT class that is a stack of GAT layers
 """
 __all__ = ["GraphAttention", "GAT"]
 
@@ -32,10 +32,32 @@ warnings.simplefilter("default")
 
 class GraphAttention(Layer):
     """
-    GAT layer, base implementation taken from https://github.com/danielegrattarola/keras-gat
-    with some modifications added
+    Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
+    some modifications added for ease of use.
 
-    GAT paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1803.07294
+    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1803.07294
+
+    Args:
+            F_out (int): dimensionality of output feature vectors
+            attn_heads (int or list of int): number of attention heads
+            attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
+                'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+            in_dropout_rate (float): dropout rate applied to features
+            attn_dropout_rate (float): dropout rate applied to attention coefficients
+            activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
+            use_bias (bool): toggles an optional bias
+            kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
+            bias_initializer (str): name of the initializer for bias
+            attn_kernel_initializer (str): name of the initializer for attention kernel
+            kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
+            bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
+            attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
+            activity_regularizer (str): not used in the current implementation
+            kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
+            bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
+            attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
+            **kwargs: optional keyword arguments
+
     """
 
     def __init__(
@@ -59,29 +81,6 @@ class GraphAttention(Layer):
         attn_kernel_constraint=None,
         **kwargs
     ):
-        """
-
-        Args:
-            F_out (int): dimensionality of output feature vectors
-            attn_heads (int or list of int): number of attention heads
-            attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
-                'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
-            in_dropout_rate (float): dropout rate applied to features
-            attn_dropout_rate (float): dropout rate applied to attention coefficients
-            activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-            use_bias (bool): toggles an optional bias
-            kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
-            bias_initializer (str): name of the initializer for bias
-            attn_kernel_initializer (str): name of the initializer for attention kernel
-            kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
-            bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
-            attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
-            activity_regularizer (str): not used in the current implementation
-            kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
-            bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
-            attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
-            **kwargs: optional keyword arguments
-        """
 
         if attn_heads_reduction not in {"concat", "average"}:
             raise ValueError(
@@ -204,14 +203,12 @@ class GraphAttention(Layer):
 
     def call(self, inputs, **kwargs):
         """
+        Applies the layer.
 
         Args:
             inputs (list): list of inputs with 2 items: node features (matrix of size N x F),
                 and graph adjacency matrix (size N x N), where N is the number of nodes in the graph,
                 F is the dimensionality of node features
-            **kwargs:
-
-        Returns:
 
         """
         X = inputs[0]  # Node features (N x F)
@@ -303,7 +300,26 @@ class GraphAttention(Layer):
 
 class GAT:
     """
-    A stack of GAT layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1803.07294
+    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1803.07294
+
+    Args:
+            layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
+                the number of GraphAttention layers in the stack.
+            attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
+
+                - a single integer: the passed value of `attn_heads` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
+                - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
+
+            attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
+                for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
+                If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
+                except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
+            activations (list of str): list of activations applied to each layer's output
+            bias (bool): toggles an optional bias in GAT layers
+            in_dropout (float): dropout rate applied to input features of each GAT layer
+            attn_dropout (float): dropout rate applied to attention maps
+            normalize (str or None): normalization applied to the final output features of the GAT layers stack
+            generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
     """
 
     def __init__(
@@ -318,27 +334,6 @@ class GAT:
         normalize="l2",
         generator=None,
     ):
-        """
-
-        Args:
-            layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
-                the number of GraphAttention layers in the stack.
-            attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
-                - a single integer: the passed value of attn_heads will be applied to all GraphAttention layers in the stack
-                    except the last layer (for which the number of attn_heads will be set to 1).
-                - a list of integers: elements of the list define the number of attention heads in the corresponding
-                    layers in the stack.
-            attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
-                for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
-                If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
-                except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the paper).
-            activations (list of str): list of activations applied to each layer's output
-            bias (bool): toggles an optional bias in GAT layers
-            in_dropout (float): dropout rate applied to input features of each GAT layer
-            attn_dropout (float): dropout rate applied to attention maps
-            normalize (str or None): normalization applied to the final output features of the GAT layers stack
-            generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
-        """
         self._gat_layer = GraphAttention
         self.bias = bias
         self.in_dropout = in_dropout
@@ -552,13 +547,9 @@ class GAT:
 
         return x_inp, x_out
 
-    def link_model(self, flatten_output=False):
+    def link_model(self):
         """
-        Builds a GAT model for link (node pair) prediction
-        Args:
-            flatten_output:
-
-        Returns:
+        Builds a GAT model for link (node pair) prediction (implementation pending)
 
         """
         raise NotImplemented
