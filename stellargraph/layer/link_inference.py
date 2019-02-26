@@ -90,9 +90,9 @@ def link_inference(
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
+             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         name (str): optional name of the defined function, used for error logging
@@ -184,9 +184,9 @@ def link_classification(
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
+             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
         Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
@@ -221,9 +221,9 @@ def link_regression(
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- :math:`avg(u,v) = (u+v)/2`.
+             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
         Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
