@@ -3,7 +3,7 @@
 ## [Unreleased](https://github.com/stellargraph/stellargraph/tree/HEAD)
 
 **Implemented new features and enhancements:**
-- Graph Attention (GAT) layer and model (stack of GAT layers) [\#315](https://github.com/stellargraph/stellargraph/pull/315)
+- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#315](https://github.com/stellargraph/stellargraph/pull/315)
 - Shuffling of head nodes/edges in node and link generators at each epoch [\#298](https://github.com/stellargraph/stellargraph/issues/298)
 
 **Fixed bugs:**
