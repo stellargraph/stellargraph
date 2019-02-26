@@ -201,7 +201,7 @@ class GraphSAGELinkGenerator:
         self.name = name
 
         # The sampler used to generate random samples of neighbours
-        self.sampler = SampledBreadthFirstWalk(G)
+        self.sampler = SampledBreadthFirstWalk(G, seed=seed)
 
         # We need a schema for compatibility with HinSAGE
         self.schema = G.create_graph_schema(create_type_maps=True)
