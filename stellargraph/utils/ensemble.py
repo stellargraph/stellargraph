@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-Ensembles of graph neural network models, GraphSAGE, GCN, GAT.
+Ensembles of graph neural network models, GraphSAGE, GCN, GAT, with optional bootstrap sampling of the training data.
 """
 
 from stellargraph.layer import *
@@ -30,7 +30,16 @@ import stellargraph as sg
 
 class Ensemble(object):
     """
+    The Ensemble class can be used to create ensembles of stellargraph's graph neural network algorithms including
+    GCN, GraphSAGE, GAT, and HinSAGE. Ensembles can be used for training classification and regression problems for
+    node attribute inference and link prediction.
 
+    This class allows, but it is not enforced, for the creation of ensembles that employ bootstrap samples to increase
+    variety in the trained models. The weights for each graph neural network model in the ensemble are initialised with
+    a different set of values increasing the ensembles diversity.
+
+    Predictions are either the mean of the predictions of all the models or returned as is allowing the caller to
+    calculate predictions in her preferred method, e.g., mean, median, voting.
     """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):
@@ -38,18 +47,49 @@ class Ensemble(object):
 
         Args:
             model: A keras model.
-            n_estimators: The number of estimators/models in the ensemble
-            n_predictions: The number of predictions per query point per estimator
+            n_estimators: <int> The number of estimators (aka models) in the ensemble.
+            n_predictions: <int> The number of predictions per query point per estimator
         """
+        if not isinstance(model, K.engine.training.Model):
+            raise ValueError(
+                "({}) model must be a Keras model received object of type {}".format(
+                    type(self).__name__, type(model)
+                )
+            )
+        if n_estimators <= 0:
+            raise ValueError(
+                "({}) n_estimators must be positive integer but received {}".format(
+                    type(self).__name__, n_estimators
+                )
+            )
+
+        if n_predictions <= 0:
+            raise ValueError(
+                "({}) n_predictions must be positive integer but received {}".format(
+                    type(self).__name__, n_predictions
+                )
+            )
+
+        self.metrics_names = (
+            None
+        )  # It will be set when the self.compile() method is called
         self.models = []
         self.history = []
         self.n_estimators = n_estimators
         self.n_predictions = n_predictions
 
+        # Create the enseble from the given base model
         self._init_models(model)
 
     def _init_models(self, model):
+        """
+        This method creates an ensemble of models by cloning the given base model self.n_estimators times.
 
+        All models have the same architecture but their weights are initialised with different values.
+        Args:
+            model: A Keras model that is the base model for the ensemble.
+
+        """
         # first copy is the given model
         self.models.append(model)
         # now clone the model self.n_estimators-1 times
@@ -58,13 +98,28 @@ class Ensemble(object):
 
     def layers(self, indx=None):
         """
+        This method returns the layer objects for the model specified by the value of indx.
 
         Args:
-            indx:
+            indx: <None or int> The index of the model to return the layers for. If it is None, then the layers
+            for the 0-th (or first) model are returned.
 
-        Returns:
+        Returns: <list> The layers for the specified model.
 
         """
+        if indx is not None and indx is not isinstance(indx, (int,)):
+            raise ValueError(
+                "({}) indx should be None or integer type but received type {}".format(
+                    type(self).__name__, type(indx)
+                )
+            )
+        if isinstance(indx, (int,)) and indx < 0:
+            raise ValueError(
+                "({}) indx must be greater than or equal to zero but received {}".format(
+                    type(self).__name__, indx
+                )
+            )
+
         if indx is None and len(self.models) > 0:
             # Default is to return the layers for the first model
             return self.models[0].layers
@@ -74,7 +129,9 @@ class Ensemble(object):
         else:
             # Error because index is out of bounds
             raise ValueError(
-                "indx {} is out of range 0 to {}".format(indx, len(self.models))
+                "({}) indx {} is out of range 0 to {}".format(
+                    type(self).__name__, indx, len(self.models)
+                )
             )
 
     def compile(
@@ -86,6 +143,19 @@ class Ensemble(object):
         sample_weight_mode=None,
         weighted_metrics=None,
     ):
+        """
+
+        Args:
+            optimizer:
+            loss:
+            metrics:
+            loss_weights:
+            sample_weight_mode:
+            weighted_metrics:
+
+        Returns:
+
+        """
         for model in self.models:
             model.compile(
                 optimizer=optimizer,
@@ -96,15 +166,17 @@ class Ensemble(object):
                 weighted_metrics=weighted_metrics,
             )
 
+        self.metrics_names = self.models[
+            0
+        ].metrics_names  # assumes all models are same as it should be
+
     def fit_generator(
         self,
         generator,
-        train_data=None,
-        train_targets=None,
         steps_per_epoch=None,
         epochs=1,
         verbose=1,
-        validation_data=None,
+        validation_generator=None,
         validation_steps=None,
         class_weight=None,
         max_queue_size=10,
@@ -112,31 +184,113 @@ class Ensemble(object):
         use_multiprocessing=False,
         shuffle=True,
         initial_epoch=0,
+        train_data=None,
+        train_targets=None,
+        val_data=None,
+        val_targets=None,
+        bag_size=None,
     ):
+        """
+        This method trains the ensemble on the data specified by the generator or the data given in train_data and
+        train_targets. If validation_data and validation_target are given, then the training metrics are evaluated
+        on these data and results printed on screen if verbose level is greater than 0.
 
-        if train_data is not None and not isinstance(
+        The method trains each model in the ensemble in series for the number of epochs specified.
+
+        if train_data and train_targets are given, then each model in the ensemble is trained using a bootstrapped
+        sample of the data (the train data are re-sampled with replacement.) The number of bootstrap samples is
+        either given by bag_size or if the latter is not given equals the number of training points.
+
+        Args:
+            generator: The generator object for training data. if test_data is not None, it should be one of type
+            GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
+            or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
+            NodeSequence, LinkSequence, or FullBatchNodeSequence.
+            steps_per_epoch: <None or int> (Keras specific parameter) If not None, it specifies the number of steps
+            to yield from the generator before declaring one epoch finished and starting a new epoch.
+            epochs: <int> (Keras specific parameter) The number of training epochs.
+            verbose: <int> (Keras specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
+            progress bar, and one line per epoch respectively.
+            validation_generator: A generator for validation data that is optional (None). If not None then, if val_data
+            is not None, it should be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator,
+            GraphSAGELinkGenerator, or HinSAGELinkGenerator. However, if val_data is None, then it should
+            be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.
+            validation_steps: <None or int> (Keras specific parameter) If validation_generator is not None, then it
+            specifies the number of steps to yield from the generator before stopping at the end of every epoch.
+            class_weight: <None or dictionary> (Keras specific parameter) If not None, it should be a dictionary
+            mapping class indices (integers) to a weight (float) value, used for weighting the loss function (during
+            training only). This can be useful to tell the model to "pay more attention" to samples from an
+            under-represented class.
+            max_queue_size: <int> (Keras specific parameter) The maximum size for the generator queue.
+            workers: <int> (Keras specific parameter) The maximum number of workers to use.
+            use_multiprocessing: <True or False> (Keras specific parameter) If True then use process based threading.
+            shuffle: <True or False> (Keras specific parameter) If True, then it shuffles the order of batches at the
+            beginning of each training epoch.
+            initial_epoch: <int> (Keras specific parameter) Epoch at which to start training (useful for resuming a
+            previous training run).
+            train_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the data
+            to train the model with.
+            train_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
+            values for the train data.
+            val_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the validation
+            data.
+            val_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
+            values for the validation data.
+            bag_size: <None or int> The number of samples in a bootstrap sample. If None and bagging is used, then
+            the number of samples is equal to the number of training points.
+
+        Returns: <list> It returns a list of Keras History objects each corresponding to one trained model in the
+        ensemble.
+
+        """
+        if train_data is not None:
+            if not isinstance(
+                generator,
+                (
+                    sg.mapper.GraphSAGENodeGenerator,
+                    sg.mapper.HinSAGENodeGenerator,
+                    sg.mapper.FullBatchNodeGenerator,
+                    sg.mapper.GraphSAGELinkGenerator,
+                    sg.mapper.HinSAGELinkGenerator,
+                ),
+            ):
+                raise ValueError(
+                    "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. Received type {}".format(
+                        type(self).__name__, type(generator)
+                    )
+                )
+            if bag_size is not None and bag_size > len(train_data):
+                raise ValueError(
+                    "({}) bag_size must be less than or equal to the number of training points ({})".format(
+                        type(self).__name__, len(train_data)
+                    )
+                )
+        elif not isinstance(
             generator,
             (
-                sg.mapper.node_mappers.GraphSAGENodeGenerator,
-                sg.mapper.node_mappers.HinSAGENodeGenerator,
-                sg.mapper.node_mappers.FullBatchNodeGenerator,
+                sg.mapper.NodeSequence,
+                sg.mapper.LinkSequence,
+                sg.mapper.FullBatchNodeSequence,
             ),
         ):
             raise ValueError(
-                "generator must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator if you want to use Bagging. Received type {}".format(
-                    type(generator)
+                "({}) If train_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence but received object of type {}".format(
+                    type(self).__name__, type(generator)
                 )
             )
 
         self.history = []
 
         if train_data is not None:
+            num_points_per_bag = len(train_data)
+            if bag_size is not None:
+                num_points_per_bag = bag_size
             # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
             # datasets.
             print("*** Train with Bagging ***")
             for model in self.models:
                 di_index = np.random.choice(
-                    len(train_data), size=len(train_data)
+                    len(train_data), size=num_points_per_bag
                 )  # sample with replacement
                 di_train = train_data[di_index]
                 di_targets = None
@@ -149,14 +303,18 @@ class Ensemble(object):
                     )
                 )
 
+                val_gen = validation_generator
                 di_gen = generator.flow(di_train, di_targets)
+                if val_data is not None and val_targets is not None:
+                    val_gen = generator.flow(val_data, val_targets)
+
                 self.history.append(
                     model.fit_generator(
                         generator=di_gen,
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
                         verbose=verbose,
-                        validation_data=validation_data,
+                        validation_data=val_gen,
                         validation_steps=validation_steps,
                         class_weight=class_weight,
                         max_queue_size=max_queue_size,
@@ -174,7 +332,7 @@ class Ensemble(object):
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
                         verbose=verbose,
-                        validation_data=validation_data,
+                        validation_data=validation_generator,
                         validation_steps=validation_steps,
                         class_weight=class_weight,
                         max_queue_size=max_queue_size,
@@ -190,32 +348,95 @@ class Ensemble(object):
     def evaluate_generator(
         self,
         generator,
+        test_data=None,
+        test_targets=None,
         steps=None,
         max_queue_size=10,
         workers=1,
         use_multiprocessing=False,
         verbose=0,
     ):
-        train_metrics = []
+        """
+        Evaluates the ensemble on a data (node or link) generator. It makes n_predictions for each data point for each
+        of the n_estimators and returns the mean and standard deviation of the predictions.
+
+        Args:
+            generator: The generator object that, if test_data is not None, should be one of type
+            GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
+            or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
+            NodeSequence, LinkSequence, or FullBatchNodeSequence.
+            test_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the node IDs
+            to evaluate the model on.
+            test_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
+            values for the test_data.
+            steps:
+            max_queue_size: <int> (Keras specific parameter) The maximum size for the generator queue.
+            workers: <int> (Keras specific parameter) The maximum number of workers to use.
+            use_multiprocessing: <True or False> (Keras specific parameter) If True then use process based threading.
+            verbose: <int> (Keras specific parameter) The verbocity mode that should be 0 or 1 with the former turning
+            verbocity off and the latter on.
+
+        Returns: The mean and standard deviation of the model metrics for the given data.
+
+        """
+        if test_data is not None and not isinstance(
+            generator,
+            (
+                sg.mapper.GraphSAGENodeGenerator,
+                sg.mapper.HinSAGENodeGenerator,
+                sg.mapper.FullBatchNodeGenerator,
+                sg.mapper.GraphSAGELinkGenerator,
+                sg.mapper.HinSAGELinkGenerator,
+            ),
+        ):
+            raise ValueError(
+                "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator. Received type {}".format(
+                    type(self).__name__, type(generator)
+                )
+            )
+        elif not isinstance(
+            generator,
+            (
+                sg.mapper.NodeSequence,
+                sg.mapper.LinkSequence,
+                sg.mapper.FullBatchNodeSequence,
+            ),
+        ):
+            raise ValueError(
+                "({}) If test_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence but received object of type {}".format(
+                    type(self).__name__, type(generator)
+                )
+            )
+        if test_data is not None and test_targets is None:
+            raise ValueError("({}) test_targets not given.".format(type(self).__name__))
+
+        data_generator = generator
+        if test_data is not None:
+            data_generator = generator.flow(test_data, test_targets)
+
+        test_metrics = []
         for model in self.models:
             tm = []
             for _ in range(self.n_predictions):
                 tm.append(
                     model.evaluate_generator(
-                        generator=generator,
+                        generator=data_generator,
                         steps=steps,
                         max_queue_size=max_queue_size,
                         workers=workers,
                         use_multiprocessing=use_multiprocessing,
                         verbose=verbose,
-                    )
+                    )  # Keras evaluate_generator returns a scalar
                 )
-            train_metrics.append(np.mean(tm, axis=0))
-        return np.mean(train_metrics, axis=0), np.std(train_metrics, axis=0)
+            test_metrics.append(np.mean(tm, axis=0))
+
+        # Return the mean and standard deviation of the metrics
+        return np.mean(test_metrics, axis=0), np.std(test_metrics, axis=0)
 
     def predict_generator(
         self,
         generator,
+        predict_data=None,
         summarise=None,
         output_layer=None,
         steps=None,
@@ -224,6 +445,64 @@ class Ensemble(object):
         use_multiprocessing=False,
         verbose=0,
     ):
+        """
+        This method generates predictions for the data produced by the given generator or alternatively the data
+        given in parameter predict_data.
+
+        Args:
+            generator: The generator object that, if test_data is None, should be one of type
+            GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
+            or HinSAGELinkGenerator. However, if test_data is not None, then generator should be one of type
+            NodeSequence, LinkSequence, or FullBatchNodeSequence.
+            predict_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the node IDs
+            to make predictions for.
+            summarise: <True or False> If True, then the mean of the predictions over self.n_estimators and
+            self.n_predictions are returned for each query point. If False, then all predictions are returned.
+            output_layer: <None or int>
+            steps:
+            max_queue_size: (Keras specific parameter) The maximum size for the generator queue.
+            workers: <int> (Keras specific parameter) The maximum number of workers to use.
+            use_multiprocessing: <True or False> (Keras specific parameter) If True then use process based threading.
+            verbose: <int> (Keras specific parameter) The verbocity mode that should be 0 or 1 with the former turning
+            verbocity off and the latter on.
+
+
+        Returns: <numpy array> The predictions. It will have shape MxKxNxF if summarise is False or MxNxF otherwise. M
+        is the number of estimators (aka models) in the ensemble; K is the number of predictions per query point;
+        N is the number of query points; and F is the output dimensionality of the specified layer determined by the
+        value of output_layer.
+
+        """
+        data_generator = generator
+        if predict_data is not None:
+            if not isinstance(
+                generator,
+                (
+                    sg.mapper.node_mappers.GraphSAGENodeGenerator,
+                    sg.mapper.node_mappers.HinSAGENodeGenerator,
+                    sg.mapper.node_mappers.FullBatchNodeGenerator,
+                ),
+            ):
+                raise ValueError(
+                    "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, or FullBatchNodeGenerator. Received type {}".format(
+                        type(self).__name__, type(generator)
+                    )
+                )
+            data_generator = generator.flow(predict_data)
+        elif not isinstance(
+            generator,
+            (
+                sg.mapper.NodeSequence,
+                sg.mapper.LinkSequence,
+                sg.mapper.FullBatchNodeSequence,
+            ),
+        ):
+            raise ValueError(
+                "({}) If x is None, generator must be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.".format(
+                    type(self).__name__
+                )
+            )
+
         predictions = []
 
         if output_layer is not None:
@@ -239,7 +518,7 @@ class Ensemble(object):
             for _ in range(self.n_predictions):
                 model_predictions.append(
                     model.predict_generator(
-                        generator=generator,
+                        generator=data_generator,
                         steps=steps,
                         max_queue_size=max_queue_size,
                         workers=workers,
@@ -259,8 +538,3 @@ class Ensemble(object):
             predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
         return predictions
-
-    def metrics_names(self):
-        return self.models[
-            0
-        ].metrics_names  # assumes all models are same as it should be
