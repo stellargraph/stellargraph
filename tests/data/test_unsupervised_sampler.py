@@ -94,18 +94,19 @@ class TestUnsupervisedSampler(object):
     def test_UnsupervisedSampler_parameter(self):
 
         g = create_test_graph()
-        rw = UniformRandomWalk(StellarGraph(g))
+        # rw = UniformRandomWalk(StellarGraph(g))
 
         # if no graph is provided
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=None, walker=rw)
+            UnsupervisedSampler(G=None)
 
         # graph has to be a Stellargraph object
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, walker=rw)
+            UnsupervisedSampler(G=g)
 
         g = StellarGraph(g)
 
+        """
         # only Uniform random walk is supported at the moment
         with pytest.raises(TypeError):
             UnsupervisedSampler(G=g, walker="any random walker")
@@ -114,33 +115,35 @@ class TestUnsupervisedSampler(object):
         sampler = UnsupervisedSampler(G=g)
         assert isinstance(sampler.walker, UniformRandomWalk)
 
+        """
+
         # walk must have length strictly greater than 1
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, walker=rw, length=1)
+            UnsupervisedSampler(G=g, length=1)
 
         # at least 1 walk from each root node
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, walker=rw, number_of_walks=0)
+            UnsupervisedSampler(G=g, number_of_walks=0)
 
         # nodes nodes parameter should be an iterableof node IDs
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, walker=rw, nodes=1)
+            UnsupervisedSampler(G=g, nodes=1)
 
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes
-        sampler = UnsupervisedSampler(G=g, walker=rw, nodes=None)
-        assert sampler.nodes == g.nodes()
+        sampler = UnsupervisedSampler(G=g, nodes=None)
+        assert sampler.nodes == list(g.nodes())
 
         # if the seed value is provided, it is set properly
         seed = 123
-        sampler = UnsupervisedSampler(G=g, walker=rw, seed=seed)
+        sampler = UnsupervisedSampler(G=g, seed=seed)
         assert sampler.seed == seed
 
     def test_generator_parameter(self):
 
         g = create_test_graph()
         g = StellarGraph(g)
-        rw = UniformRandomWalk(g)
-        sampler = UnsupervisedSampler(G=g, walker=rw)
+        # rw = UniformRandomWalk(g)
+        sampler = UnsupervisedSampler(G=g)
 
         # generator should be provided with a valid batch size. i.e. an integer >=1
 
@@ -166,9 +169,8 @@ class TestUnsupervisedSampler(object):
         batch_size = 4
 
         G = example_Graph_2(n_feat)
-        rw = UniformRandomWalk(G)
 
-        sampler = UnsupervisedSampler(G=G, walker=rw)
+        sampler = UnsupervisedSampler(G=G)
 
         sample_gen = sampler.generator(batch_size)
 
@@ -190,9 +192,8 @@ class TestUnsupervisedSampler(object):
         number_of_batches = 3
 
         G = example_Graph_2(n_feat)
-        rw = UniformRandomWalk(G)
 
-        sampler = UnsupervisedSampler(G=G, walker=rw)
+        sampler = UnsupervisedSampler(G=G)
 
         sample_gen = sampler.generator(batch_size)
 
