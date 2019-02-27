@@ -189,6 +189,8 @@ class OnDemandLinkSequence(Sequence):
             []
         )  # Since this is an instance of on demand sampling, at the initialization we don't have the pregenerated head samples.
 
+        self.head_node_types = None
+
         if isinstance(walker, UnsupervisedSampler):
 
             self.walker = walker
@@ -237,17 +239,19 @@ class OnDemandLinkSequence(Sequence):
         head_ids, batch_targets = next(self._gen)
         self.ids = list(head_ids)
 
-        # Get head node types from all src, dst nodes extracted from all links,
-        # and make sure there's only one pair of node types:
-        self.head_node_types = self._infer_head_node_types(self.generator.schema)
+        if self.head_node_types is None:
 
-        self._sampling_schema = self.generator.schema.sampling_layout(
-            self.head_node_types, self.generator.num_samples
-        )
+            # Get head node types from all src, dst nodes extracted from all links,
+            # and make sure there's only one pair of node types:
+            self.head_node_types = self._infer_head_node_types(self.generator.schema)
 
-        self.type_adjacency_list = self.generator.schema.type_adjacency_list(
-            self.head_node_types, len(self.generator.num_samples)
-        )
+            self._sampling_schema = self.generator.schema.sampling_layout(
+                self.head_node_types, self.generator.num_samples
+            )
+
+            self.type_adjacency_list = self.generator.schema.type_adjacency_list(
+                self.head_node_types, len(self.generator.num_samples)
+            )
 
         # Get sampled nodes
         batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
