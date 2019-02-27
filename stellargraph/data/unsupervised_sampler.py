@@ -51,6 +51,7 @@ class UnsupervisedSampler:
             self.graph = G
 
         # walker
+        """
         if walker is not None:
             if not isinstance(
                 walker, UniformRandomWalk
@@ -63,14 +64,17 @@ class UnsupervisedSampler:
             else:
                 self.walker = UniformRandomWalk(G)
         else:
-            self.walker = UniformRandomWalk(G)
+        """
+        self.walker = UniformRandomWalk(G)
 
         if nodes is None:
-            self.nodes = (
+            self.nodes = list(
                 G.nodes()
             )  # if no root nodes are provided for sampling defaulting to using all nodes as root nodes.
         elif not is_real_iterable(nodes):  # check whether the nodes provided are valid.
             raise ValueError("nodes parameter should be an iterableof node IDs.")
+        elif type(nodes) is not list:
+            self.nodes = list(nodes)
         else:
             self.nodes = nodes
 
@@ -113,6 +117,8 @@ class UnsupervisedSampler:
             Tuple of lists: ([target, context], [1/0 labels])  
         """
 
+        random.seed(self.seed)
+
         self._check_parameter_values(batch_size)
 
         positive_pairs = list()
@@ -128,6 +134,7 @@ class UnsupervisedSampler:
 
         done = False
         while not done:
+            random.shuffle(self.nodes)
             for node in self.nodes:  # iterate over root nodes
                 # Get 1 walk at a time. For now its assumed that its a uniform random walker
                 walk = self.walker.run(
@@ -167,7 +174,9 @@ class UnsupervisedSampler:
 
                         edge_ids_labels = list(zip(all_pairs, all_targets))
                         random.shuffle(edge_ids_labels)
-                        edge_ids, edge_labels = zip(*edge_ids_labels)
+                        edge_ids, edge_labels = [
+                            [z[i] for z in edge_ids_labels] for i in (0, 1)
+                        ]
 
                         yield edge_ids, edge_labels
 
