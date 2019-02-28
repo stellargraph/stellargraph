@@ -32,8 +32,7 @@ g
 from stellargraph.mapper.link_mappers import *
 from stellargraph.core.graph import *
 from stellargraph.data.explorer import *
-from stellargraph.data.unsupervisedSampler import *
-
+from stellargraph.data.unsupervised_sampler import *
 
 import numpy as np
 import networkx as nx
@@ -438,9 +437,7 @@ class Test_GraphSAGELinkGenerator:
             feature_size=n_feat, n_nodes=6, n_isolates=2, n_edges=10
         )
 
-        rw = UniformRandomWalk(G)
-
-        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes, walker=rw)
+        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes)
 
         gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
             unsupervisedSamples
@@ -462,9 +459,7 @@ class Test_GraphSAGELinkGenerator:
 
         G = example_Graph_2(self.n_feat)
 
-        rw = UniformRandomWalk(G)
-
-        unsupervisedSamples = UnsupervisedSampler(G, walker=rw)
+        unsupervisedSamples = UnsupervisedSampler(G)
 
         mapper = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples

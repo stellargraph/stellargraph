@@ -48,3 +48,11 @@ Link prediction layers
 
 .. automodule:: stellargraph.layer.link_inference
   :members: link_classification, link_regression, link_inference
+
+
+
+Unsupervised Sampling
+------------------------
+
+.. automodule:: stellargraph.data.unsupervised_sampler
+  :members: UnsupervisedSampler
