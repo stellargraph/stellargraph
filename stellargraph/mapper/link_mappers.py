@@ -19,7 +19,12 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE and HinSAGE.
 
 """
-__all__ = ["OnDemandLinkSequence", "GraphSAGELinkGenerator", "HinSAGELinkGenerator"]
+__all__ = [
+    "LinkSequence",
+    "OnDemandLinkSequence",
+    "GraphSAGELinkGenerator",
+    "HinSAGELinkGenerator",
+]
 
 import random
 import operator
@@ -40,7 +45,7 @@ from stellargraph.data.explorer import (
 from ..core.utils import is_real_iterable
 
 
-from stellargraph.data.unsupervisedSampler import UnsupervisedSampler
+from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.utils import is_real_iterable
 
 
@@ -168,20 +173,12 @@ class OnDemandLinkSequence(Sequence):
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` .
+    :class:`GraphSAGELinkGenerator` ` .
 
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator`.
-                   (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
-
-        sampler: An UnsupervisedSampler instance that indicates how the neighborhood of graph are sampled (uniform random walks, biased random walks etc. Currently only Uniform Random walks are enabled).
-                This class is responsible for calling the right type of walk generator and then return batch_size of sample source and target pairs  from those walks.
-                These (target, context) pairs are to be used to train or inference, and the embeddings
-                calculated for the links created by a binary operator applied to the target and context nodes,
-                are passed to the downstream task of link prediction or link attribute inference.
-                The target and context nodes of the links are used as head nodes for which subgraphs are sampled.
-                The subgraphs are sampled from all nodes.
-
+        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph. 
+        The generator method of this class returns `batch_size` of positive and negative samples on demand.
   """
 
     def __init__(self, generator, walker):
@@ -191,6 +188,8 @@ class OnDemandLinkSequence(Sequence):
         self.ids = (
             []
         )  # Since this is an instance of on demand sampling, at the initialization we don't have the pregenerated head samples.
+
+        self.head_node_types = None
 
         if isinstance(walker, UnsupervisedSampler):
 
@@ -240,17 +239,19 @@ class OnDemandLinkSequence(Sequence):
         head_ids, batch_targets = next(self._gen)
         self.ids = list(head_ids)
 
-        # Get head node types from all src, dst nodes extracted from all links,
-        # and make sure there's only one pair of node types:
-        self.head_node_types = self._infer_head_node_types(self.generator.schema)
+        if self.head_node_types is None:
 
-        self._sampling_schema = self.generator.schema.sampling_layout(
-            self.head_node_types, self.generator.num_samples
-        )
+            # Get head node types from all src, dst nodes extracted from all links,
+            # and make sure there's only one pair of node types:
+            self.head_node_types = self._infer_head_node_types(self.generator.schema)
 
-        self.type_adjacency_list = self.generator.schema.type_adjacency_list(
-            self.head_node_types, len(self.generator.num_samples)
-        )
+            self._sampling_schema = self.generator.schema.sampling_layout(
+                self.head_node_types, self.generator.num_samples
+            )
+
+            self.type_adjacency_list = self.generator.schema.type_adjacency_list(
+                self.head_node_types, len(self.generator.num_samples)
+            )
 
         # Get sampled nodes
         batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
@@ -286,7 +287,8 @@ class GraphSAGELinkGenerator:
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets
+    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
     Example::
@@ -295,7 +297,7 @@ class GraphSAGELinkGenerator:
         train_data_gen = G_generator.flow(edge_ids)
 
     Args:
-        g (StellarGraph): A machine-learning ready graph.
+        G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
@@ -412,7 +414,7 @@ class GraphSAGELinkGenerator:
                 epoch, if False the node_ids will be processed in order.
 
         Returns:
-            A LinkSequence object to use with the GraphSAGE model
+            A LinkSequence or OnDemandLinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
         # Pass sampler to on-demand link sequence generation
@@ -591,6 +593,10 @@ class HinSAGELinkGenerator:
             A LinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
-        # The LinkSequence method is renamed to PregeneratedLinkSequence
-        # return LinkSequence(self, link_ids, targets)
+        if not isinstance(link_ids, collections.Iterable):
+            raise TypeError(
+                "Argument to .flow not recognised. "
+                "Please pass a list of samples or a UnsupervisedSampler object."
+            )
+
         return LinkSequence(self, link_ids, targets, shuffle)
