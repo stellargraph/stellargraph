@@ -34,9 +34,7 @@ class UnsupervisedSampler:
 
     """
 
-    def __init__(
-        self, G, walker=None, nodes=None, length=2, number_of_walks=1, seed=None
-    ):
+    def __init__(self, G, nodes=None, length=2, number_of_walks=1, seed=None):
 
         """
         Initializing all the paramters for the class instance. 
@@ -65,6 +63,7 @@ class UnsupervisedSampler:
                 self.walker = UniformRandomWalk(G)
         else:
         """
+        ## only uniform random walk is supported currently
         self.walker = UniformRandomWalk(G)
 
         if nodes is None:
