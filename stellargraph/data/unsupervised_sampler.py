@@ -39,7 +39,7 @@ class UnsupervisedSampler:
     ):
 
         """
-        Initializing all the paramters for the class instance. 
+        Initializing all the parameters for the class instance. 
                
         
         """
