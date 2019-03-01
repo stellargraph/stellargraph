@@ -35,7 +35,7 @@ class UnsupervisedSampler:
     """
 
     def __init__(
-        self, G, walker=None, nodes=None, length=2, number_of_walks=1, seed=None
+        self, G, nodes=None, length=2, number_of_walks=1, seed=None
     ):
 
         """
