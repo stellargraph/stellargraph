@@ -185,10 +185,6 @@ class OnDemandLinkSequence(Sequence):
 
         self.generator = generator  # graphlinkgenerator instance
 
-        self.ids = (
-            []
-        )  # Since this is an instance of on demand sampling, at the initialization we don't have the pregenerated head samples.
-
         self.head_node_types = None
 
         if isinstance(walker, UnsupervisedSampler):
@@ -196,7 +192,8 @@ class OnDemandLinkSequence(Sequence):
             self.walker = walker
 
             self.data_size = (
-                len(self.walker.nodes)
+                2
+                * len(self.walker.nodes)
                 * self.walker.length
                 * self.walker.number_of_walks
             )  # an estimate of the  upper bound on how many samples are generated in each epoch
@@ -237,13 +234,14 @@ class OnDemandLinkSequence(Sequence):
 
         # Get head nodes and labels
         head_ids, batch_targets = next(self._gen)
-        self.ids = list(head_ids)
 
         if self.head_node_types is None:
 
             # Get head node types from all src, dst nodes extracted from all links,
             # and make sure there's only one pair of node types:
-            self.head_node_types = self._infer_head_node_types(self.generator.schema)
+            self.head_node_types = self._infer_head_node_types(
+                self.generator.schema, head_ids
+            )
 
             self._sampling_schema = self.generator.schema.sampling_layout(
                 self.head_node_types, self.generator.num_samples
@@ -258,10 +256,10 @@ class OnDemandLinkSequence(Sequence):
 
         return batch_feats, batch_targets
 
-    def _infer_head_node_types(self, schema):
+    def _infer_head_node_types(self, schema, head_ids):
         """Get head node types from all src, dst nodes extracted from all links in self.ids"""
         head_node_types = []
-        for src, dst in self.ids:  # loop over all edges in self.ids
+        for src, dst in head_ids:  # loop over all edges in self.ids
             head_node_types.append(tuple(schema.get_node_type(v) for v in (src, dst)))
         head_node_types = list(set(head_node_types))
 
