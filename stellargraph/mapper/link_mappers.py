@@ -192,7 +192,8 @@ class OnDemandLinkSequence(Sequence):
             self.walker = walker
 
             self.data_size = (
-                len(self.walker.nodes)
+                2
+                * len(self.walker.nodes)
                 * self.walker.length
                 * self.walker.number_of_walks
             )  # an estimate of the  upper bound on how many samples are generated in each epoch
