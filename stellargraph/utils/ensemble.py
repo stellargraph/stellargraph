@@ -86,6 +86,7 @@ class Ensemble(object):
         This method creates an ensemble of models by cloning the given base model self.n_estimators times.
 
         All models have the same architecture but their weights are initialised with different values.
+
         Args:
             model: A Keras model that is the base model for the ensemble.
 
@@ -144,16 +145,30 @@ class Ensemble(object):
         weighted_metrics=None,
     ):
         """
+        Method for configuring the model for training. It is similar to the keras.models.Model.compile method.
+
+        See https://keras.io/models/model/ for details.
 
         Args:
-            optimizer:
-            loss:
-            metrics:
-            loss_weights:
-            sample_weight_mode:
-            weighted_metrics:
-
-        Returns:
+            optimizer: <Keras optimizer or string> (Keras specific parameter) The optimizer to use given either as an
+            instance of a keras optimizer or a string indicating the optimizer to use.
+            loss: <Keras function or string> (Keras specific parameter) The loss function or string indicating the
+            type of loss to use.
+            metrics: <list or dictionary> (Keras specific parameter) List of metrics to be evaluated by each model in
+            the ensemble during training and testing. It should be a list for a model with a single output. To specify
+            different metrics for different outputs of a multi-output model, you could also pass a dictionary. See
+            Keras documentation for details.
+            loss_weights: <None or list> (Keras specific parameter) Optional list or dictionary specifying scalar
+            coefficients (Python floats) to weight the loss contributions of different model outputs. The loss value
+            that will be minimized by the model will then be the weighted sum of all individual losses, weighted by
+            the loss_weights coefficients. If a list, it is expected to have a 1:1 mapping to the model's outputs. If
+            a tensor, it is expected to map output names (strings) to scalar coefficients.
+            sample_weight_mode: <None, string, list, or dictionary> (Keras specific parameter) If you need to do
+            timestep-wise sample weighting (2D weights), set this to "temporal".  None defaults to sample-wise weights
+            (1D). If the model has multiple outputs, you can use a different  sample_weight_mode on each output by
+            passing a dictionary or a list of modes.
+            weighted_metrics: <list> (Keras specific parameter) List of metrics to be evaluated and weighted by
+            sample_weight or class_weight during training and testing.
 
         """
         for model in self.models:
