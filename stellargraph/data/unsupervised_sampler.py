@@ -34,10 +34,12 @@ class UnsupervisedSampler:
 
     """
 
-    def __init__(self, G, nodes=None, length=2, number_of_walks=1, seed=None):
+    def __init__(
+        self, G, nodes=None, length=2, number_of_walks=1, seed=None
+    ):
 
         """
-        Initializing all the paramters for the class instance. 
+        Initializing all the parameters for the class instance. 
                
         
         """
