@@ -465,9 +465,9 @@ class Test_GraphSAGELinkGenerator:
             G, batch_size=self.batch_size, num_samples=self.num_samples
         ).flow(unsupervisedSamples)
 
-        assert mapper.data_size == 8
+        assert mapper.data_size == 16
         assert self.batch_size == 2
-        assert len(mapper) == 4
+        assert len(mapper) == 8
 
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
@@ -495,7 +495,7 @@ class Test_GraphSAGELinkGenerator:
                 assert sorted(nl) == [0, 1]
 
         with pytest.raises(IndexError):
-            nf, nl = mapper[4]
+            nf, nl = mapper[8]
 
 
 class Test_HinSAGELinkGenerator(object):
