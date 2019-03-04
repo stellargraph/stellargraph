@@ -30,8 +30,8 @@ from keras.losses import categorical_crossentropy
 
 def example_graph_1(feature_size=None):
     G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2), (5, 6), (1, 5)]
+    G.add_nodes_from([1, 2, 3, 4, 5, 6], label="default")
     G.add_edges_from(elist, label="default")
 
     # Add example features
@@ -53,7 +53,7 @@ def create_graphSAGE_model(graph):
     )
 
     x_inp, x_out = base_model.default_model(flatten_output=True)
-    prediction = layers.Dense(units=1, activation="sigmoid")(x_out)
+    prediction = layers.Dense(units=2, activation="softmax")(x_out)
 
     keras_model = Model(inputs=x_inp, outputs=prediction)
 
@@ -125,7 +125,7 @@ def test_compile():
         )
 
 
-def test_fit_generator_invalid_parameters():
+def test_fit_generator():
 
     train_data = np.array([1, 2])
     train_targets = np.array([[1, 0], [0, 1]])
@@ -198,4 +198,51 @@ def test_fit_generator_invalid_parameters():
             shuffle=False,
             bag_size=10,  # larger than the number of training points
         )
-ß
+
+
+def test_evaluate_generator():
+
+    train_data = np.array([1, 2])
+    train_targets = np.array([[1, 0], [0, 1]])
+
+    test_data = np.array([3, 4, 5])
+    test_targets = np.array([[1, 0], [0, 1], [0, 1]])
+
+    graph = example_graph_1(feature_size=10)
+
+    base_model, keras_model, generator, train_gen = create_graphSAGE_model(graph)
+
+    ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
+
+    ens.compile(
+        optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
+    )
+
+    # Check that passing invalid parameters is handled correctly. We will not check error handling for those parameters
+    # that Keras will be responsible for.
+    with pytest.raises(ValueError):
+        ens.evaluate_generator(
+            generator=generator, test_data=test_data, test_targets=test_targets
+        )
+
+    with pytest.raises(ValueError):
+        ens.evaluate_generator(
+            generator=generator, test_data=test_data, test_targets=None,  # must give test_targets
+        )
+
+    with pytest.raises(ValueError):
+        ens.evaluate_generator(
+            generator=generator.flow(test_data, test_targets),
+            test_data=test_data,
+            test_targets=test_targets,
+        )
+
+    # We won't train the model instead use the initial random weights to test
+    # the evaluate_generator method.
+    test_metrics_mean, test_metrics_std = ens.evaluate_generator(
+        generator.flow(test_data, test_targets)
+    )
+
+    assert len(test_metrics_mean) == len(test_metrics_std)
+    assert len(test_metrics_mean.shape) == 1
+    assert len(test_metrics_std.shape) == 1
