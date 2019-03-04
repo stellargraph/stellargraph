@@ -488,7 +488,7 @@ class Ensemble(object):
             verbocity off and the latter on.
 
 
-        Returns: <numpy array> The predictions. It will have shape MxKxNxF if summarise is False or MxNxF otherwise. M
+        Returns: <numpy array> The predictions. It will have shape MxKxNxF if summarise is False or NxF otherwise. M
         is the number of estimators (aka models) in the ensemble; K is the number of predictions per query point;
         N is the number of query points; and F is the output dimensionality of the specified layer determined by the
         value of output_layer.
@@ -547,14 +547,15 @@ class Ensemble(object):
                         verbose=verbose,
                     )
                 )
-            # average the predictions
-            if summarise is not None:
-                model_predictions = np.mean(model_predictions, axis=0)
-
             # add to predictions list
             predictions.append(model_predictions)
 
         predictions = np.array(predictions)
+
+        if summarise is True:
+            # average the predictions across models and predictions per query point
+            predictions = np.mean(predictions, axis=(0, 1,))
+
         if len(predictions.shape) > 4:
             predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
