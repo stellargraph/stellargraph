@@ -19,7 +19,7 @@ import networkx as nx
 
 from stellargraph import StellarGraph
 from stellargraph.layer import GraphSAGE, GCN, GAT, HinSAGE
-from stellargraph.mapper import GraphSAGENodeGenerator, FullBatchNodeGenerator
+from stellargraph.mapper import GraphSAGENodeGenerator, FullBatchNodeGenerator, HinSAGENodeGenerator
 from stellargraph.data.converter import *
 from stellargraph.utils import Ensemble
 
@@ -49,6 +49,22 @@ def create_graphSAGE_model(graph):
     train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = GraphSAGE(
+        layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
+    )
+
+    x_inp, x_out = base_model.default_model(flatten_output=True)
+    prediction = layers.Dense(units=2, activation="softmax")(x_out)
+
+    keras_model = Model(inputs=x_inp, outputs=prediction)
+
+    return base_model, keras_model, generator, train_gen
+
+
+def create_HinSAGE_model(graph):
+    generator = HinSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
+    train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
+
+    base_model = HinSAGE(
         layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
     )
 
@@ -114,6 +130,7 @@ def test_ensemble_init_parameters():
     # base_model, keras_model, generator, train_gen
     gnn_models = [
         create_graphSAGE_model(graph),
+        create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -158,6 +175,7 @@ def test_compile():
     # base_model, keras_model, generator, train_gen
     gnn_models = [
         create_graphSAGE_model(graph),
+        create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -195,6 +213,7 @@ def test_fit_generator():
     # base_model, keras_model, generator, train_gen
     gnn_models = [
         create_graphSAGE_model(graph),
+        create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -280,6 +299,7 @@ def test_evaluate_generator():
     # base_model, keras_model, generator, train_gen
     gnn_models = [
         create_graphSAGE_model(graph),
+        create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -337,6 +357,7 @@ def test_predict_generator():
     # base_model, keras_model, generator, train_gen
     gnn_models = [
         create_graphSAGE_model(graph),
+        create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -364,7 +385,7 @@ def test_predict_generator():
         test_predictions = ens.predict_generator(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
-        if i > 0:
+        if i > 1:
             # GAT and GCN are full batch so we get a prediction for each node in the graph
             assert len(test_predictions) == 6
         else:
@@ -376,7 +397,7 @@ def test_predict_generator():
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions
-        if i > 0:
+        if i > 1:
             assert test_predictions.shape[2] == 6
         else:
             assert test_predictions.shape[2] == len(test_data)
