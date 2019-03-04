@@ -56,14 +56,14 @@ class Ensemble(object):
                     type(self).__name__, type(model)
                 )
             )
-        if n_estimators <= 0:
+        if n_estimators <= 0 or not isinstance(n_estimators, int):
             raise ValueError(
                 "({}) n_estimators must be positive integer but received {}".format(
                     type(self).__name__, n_estimators
                 )
             )
 
-        if n_predictions <= 0:
+        if n_predictions <= 0 or not isinstance(n_predictions, int):
             raise ValueError(
                 "({}) n_predictions must be positive integer but received {}".format(
                     type(self).__name__, n_predictions
