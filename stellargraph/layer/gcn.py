@@ -47,6 +47,7 @@ class GraphConvolution(Layer):
         bias_constraint (str): constraint applied to layer's bias
         **kwargs:
     """
+
     def __init__(
         self,
         units,
@@ -194,7 +195,6 @@ class GCN:
         kernel_regularizer: normalization applied to the kernels of GCN layers
         kwargs: additional parameters for chebyshev or localpool filters
     """
-
 
     def __init__(
         self,
