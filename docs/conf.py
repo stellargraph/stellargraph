@@ -24,7 +24,7 @@ with open(os.path.abspath("../stellargraph/version.py"), "r") as fh:
 # -- Project information -----------------------------------------------------
 
 project = 'StellarGraph'
-copyright = '2018, Data61, CSIRO'
+copyright = '2018-2019, Data61, CSIRO'
 author = 'Data61, CSIRO'
 
 # The full version, including alpha/beta/rc tags
