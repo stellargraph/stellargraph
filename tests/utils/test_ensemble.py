@@ -202,9 +202,6 @@ def test_fit_generator():
 
 def test_evaluate_generator():
 
-    train_data = np.array([1, 2])
-    train_targets = np.array([[1, 0], [0, 1]])
-
     test_data = np.array([3, 4, 5])
     test_targets = np.array([[1, 0], [0, 1], [0, 1]])
 
@@ -227,7 +224,9 @@ def test_evaluate_generator():
 
     with pytest.raises(ValueError):
         ens.evaluate_generator(
-            generator=generator, test_data=test_data, test_targets=None,  # must give test_targets
+            generator=generator,
+            test_data=test_data,
+            test_targets=None,  # must give test_targets
         )
 
     with pytest.raises(ValueError):
@@ -246,3 +245,43 @@ def test_evaluate_generator():
     assert len(test_metrics_mean) == len(test_metrics_std)
     assert len(test_metrics_mean.shape) == 1
     assert len(test_metrics_std.shape) == 1
+
+
+def test_predict_generator():
+
+    #test_data = np.array([[0, 0], [1, 1], [0.8, 0.8]])
+    test_data = np.array([4, 5, 6])
+    test_targets = np.array([[1, 0], [0, 1], [0, 1]])
+
+    graph = example_graph_1(feature_size=2)
+
+    base_model, keras_model, generator, train_gen = create_graphSAGE_model(graph)
+
+    ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
+
+    ens.compile(
+        optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
+    )
+
+    # Check that passing invalid parameters is handled correctly. We will not check error handling for those parameters
+    # that Keras will be responsible for.
+    with pytest.raises(ValueError):
+        ens.predict_generator(generator=generator.flow(test_data), predict_data=test_data)
+
+    # We won't train the model instead use the initial random weights to test
+    # the evaluate_generator method.
+    test_predictions = ens.predict_generator(
+        generator.flow(test_data), summarise=True
+    )
+
+    assert len(test_predictions) == len(test_data)
+    assert test_predictions.shape[1] == test_targets.shape[1]
+
+    test_predictions = ens.predict_generator(
+        generator.flow(test_data), summarise=False
+    )
+
+    assert test_predictions.shape[0] == ens.n_estimators
+    assert test_predictions.shape[1] == ens.n_predictions
+    assert test_predictions.shape[2] == len(test_data)
+    assert test_predictions.shape[3] == test_targets.shape[1]
