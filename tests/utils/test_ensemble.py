@@ -24,6 +24,8 @@ from stellargraph.data.converter import *
 from stellargraph.utils import Ensemble
 
 from keras import layers, Model
+from keras.optimizers import Adam
+from keras.losses import categorical_crossentropy
 
 
 def example_graph_1(feature_size=None):
@@ -88,3 +90,112 @@ def test_ensemble_init_parameters():
 
     with pytest.raises(ValueError):
         Ensemble(keras_model, n_estimators=2.5, n_predictions=11)
+
+    ens = Ensemble(keras_model, n_estimators=14, n_predictions=10)
+
+    assert len(ens.models) == 14
+    assert ens.n_estimators == 14
+    assert ens.n_predictions == 10
+
+
+def test_compile():
+
+    graph = example_graph_1(feature_size=10)
+
+    base_model, keras_model, generator, train_gen = create_graphSAGE_model(graph)
+
+    ens = Ensemble(keras_model, n_estimators=5, n_predictions=12)
+
+    # These are actually raised by keras but I added a check just to make sure
+    with pytest.raises(ValueError):
+        ens.compile(optimizer=Adam(), loss=None, weighted_metrics=["acc"])
+
+    with pytest.raises(ValueError):  # must specify the optimizer to use
+        ens.compile(
+            optimizer=None, loss=categorical_crossentropy, weighted_metrics=["acc"]
+        )
+
+    with pytest.raises(
+        ValueError
+    ):  # The metric is made up so it should raise ValueError
+        ens.compile(
+            optimizer=Adam(),
+            loss=categorical_crossentropy,
+            weighted_metrics=["f1_accuracy"],
+        )
+
+
+def test_fit_generator_invalid_parameters():
+
+    train_data = np.array([1, 2])
+    train_targets = np.array([[1, 0], [0, 1]])
+
+    graph = example_graph_1(feature_size=10)
+
+    base_model, keras_model, generator, train_gen = create_graphSAGE_model(graph)
+
+    ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
+
+    ens.compile(
+        optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
+    )
+
+    # Specifying train_data and train_targets, implies the use of bagging so train_gen would
+    # be of the wrong type for this call to fit_generator.
+    with pytest.raises(ValueError):
+        ens.fit_generator(
+            train_gen,
+            train_data=train_data,
+            train_targets=train_targets,
+            epochs=20,
+            validation_generator=train_gen,
+            verbose=0,
+            shuffle=False,
+        )
+
+    with pytest.raises(ValueError):
+        ens.fit_generator(
+            generator=generator,
+            train_data=train_data,
+            train_targets=None,  # Should not be None
+            epochs=20,
+            validation_generator=train_gen,
+            verbose=0,
+            shuffle=False,
+        )
+
+    with pytest.raises(ValueError):
+        ens.fit_generator(
+            generator=generator,
+            train_data=None,
+            train_targets=None,
+            epochs=20,
+            validation_generator=None,
+            verbose=0,
+            shuffle=False,
+        )
+
+    with pytest.raises(ValueError):
+        ens.fit_generator(
+            generator=generator,
+            train_data=train_data,
+            train_targets=train_targets,
+            epochs=20,
+            validation_generator=None,
+            verbose=0,
+            shuffle=False,
+            bag_size=-1,  # should be positive integer smaller than or equal to len(train_data) or None
+        )
+
+    with pytest.raises(ValueError):
+        ens.fit_generator(
+            generator=generator,
+            train_data=train_data,
+            train_targets=train_targets,
+            epochs=20,
+            validation_generator=None,
+            verbose=0,
+            shuffle=False,
+            bag_size=10,  # larger than the number of training points
+        )
+ß

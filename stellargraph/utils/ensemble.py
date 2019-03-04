@@ -274,10 +274,16 @@ class Ensemble(object):
                         type(self).__name__, type(generator)
                     )
                 )
-            if bag_size is not None and bag_size > len(train_data):
+            if bag_size is not None and (bag_size > len(train_data) or bag_size <= 0):
                 raise ValueError(
-                    "({}) bag_size must be less than or equal to the number of training points ({})".format(
+                    "({}) bag_size must be positive and less than or equal to the number of training points ({})".format(
                         type(self).__name__, len(train_data)
+                    )
+                )
+            if train_targets is None:
+                raise ValueError(
+                    "({}) If train_data is given then train_targets must be given as well.".format(
+                        type(self).__name__
                     )
                 )
         elif not isinstance(
