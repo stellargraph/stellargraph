@@ -56,6 +56,11 @@ The examples folder structure is shown below.
     Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
     using the HinSAGE algorithm.
 
+* [`/ensembles`](https://github.com/stellargraph/stellargraph/tree/master/demos/ensembles)
+
+    Examples of graph convolutional neural networks ensembles, e.g., GraphSAGE, GCN, HinSAGE, etc. for
+    node classification and link prediction.
+
 * [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
 
     Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
