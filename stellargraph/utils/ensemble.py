@@ -554,7 +554,7 @@ class Ensemble(object):
 
         if summarise is True:
             # average the predictions across models and predictions per query point
-            predictions = np.mean(predictions, axis=(0, 1,))
+            predictions = np.mean(predictions, axis=(0, 1))
 
         if len(predictions.shape) > 4:
             predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
