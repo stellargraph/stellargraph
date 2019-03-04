@@ -18,12 +18,20 @@ import pytest
 import networkx as nx
 
 from stellargraph import StellarGraph
-from stellargraph.layer import GraphSAGE, GCN, GAT, HinSAGE, link_classification
+from stellargraph.layer import (
+    GraphSAGE,
+    GCN,
+    GAT,
+    HinSAGE,
+    link_classification,
+    link_regression,
+)
 from stellargraph.mapper import (
     GraphSAGENodeGenerator,
     FullBatchNodeGenerator,
     HinSAGENodeGenerator,
     GraphSAGELinkGenerator,
+    HinSAGELinkGenerator,
 )
 from stellargraph.data.converter import *
 from stellargraph.utils import Ensemble
@@ -54,14 +62,17 @@ def create_graphSAGE_model(graph, link_prediction=False):
     if link_prediction:
         # We are going to train on the original graph
         generator = GraphSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 2])
-    else:
-        generator = GraphSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
-
-    if link_prediction:
         edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
         train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
     else:
+        generator = GraphSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
         train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
+
+    # if link_prediction:
+    #     edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
+    #     train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
+    # else:
+    #     train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = GraphSAGE(
         layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
@@ -90,16 +101,29 @@ def create_graphSAGE_model(graph, link_prediction=False):
     return base_model, keras_model, generator, train_gen
 
 
-def create_HinSAGE_model(graph):
-    generator = HinSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
-    train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
+def create_HinSAGE_model(graph, link_prediction=False):
+
+    if link_prediction:
+        generator = HinSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 1])
+        edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
+        train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
+    else:
+        generator = HinSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
+        train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = HinSAGE(
         layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
     )
 
-    x_inp, x_out = base_model.default_model(flatten_output=True)
-    prediction = layers.Dense(units=2, activation="softmax")(x_out)
+    if link_prediction:
+        # Define input and output sockets of hinsage:
+        x_inp, x_out = base_model.default_model()
+
+        # Final estimator layer
+        prediction = link_regression(edge_embedding_method="ip")(x_out)
+    else:
+        x_inp, x_out = base_model.default_model(flatten_output=True)
+        prediction = layers.Dense(units=2, activation="softmax")(x_out)
 
     keras_model = Model(inputs=x_inp, outputs=prediction)
 
@@ -162,6 +186,7 @@ def test_ensemble_init_parameters():
         create_graphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_graphSAGE_model(graph, link_prediction=True),
+        create_HinSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -208,6 +233,7 @@ def test_compile():
         create_graphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_graphSAGE_model(graph, link_prediction=True),
+        create_HinSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -247,6 +273,7 @@ def test_fit_generator():
         create_graphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_graphSAGE_model(graph, link_prediction=True),
+        create_HinSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -446,7 +473,10 @@ def test_evaluate_generator_link_prediction():
     graph = example_graph_1(feature_size=10)
 
     # base_model, keras_model, generator, train_gen
-    gnn_models = [create_graphSAGE_model(graph, link_prediction=True)]
+    gnn_models = [
+        create_graphSAGE_model(graph, link_prediction=True),
+        create_HinSAGE_model(graph, link_prediction=True),
+    ]
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
@@ -500,7 +530,10 @@ def test_predict_generator_link_prediction():
     graph = example_graph_1(feature_size=2)
 
     # base_model, keras_model, generator, train_gen
-    gnn_models = [create_graphSAGE_model(graph, link_prediction=True)]
+    gnn_models = [
+        create_graphSAGE_model(graph, link_prediction=True),
+        create_HinSAGE_model(graph, link_prediction=True),
+    ]
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
