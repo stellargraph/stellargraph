@@ -3,7 +3,15 @@ Stellar Machine Learning Library
 
 """
 
-__all__ = ["data", "layer", "mapper", "StellarDiGraph", "StellarGraph", "__version__"]
+__all__ = [
+    "data",
+    "layer",
+    "mapper",
+    "utils",
+    "StellarDiGraph",
+    "StellarGraph",
+    "__version__",
+]
 
 # Version
 from .version import __version__
