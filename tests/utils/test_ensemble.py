@@ -18,14 +18,19 @@ import pytest
 import networkx as nx
 
 from stellargraph import StellarGraph
-from stellargraph.layer import GraphSAGE, GCN, GAT, HinSAGE
-from stellargraph.mapper import GraphSAGENodeGenerator, FullBatchNodeGenerator, HinSAGENodeGenerator
+from stellargraph.layer import GraphSAGE, GCN, GAT, HinSAGE, link_classification
+from stellargraph.mapper import (
+    GraphSAGENodeGenerator,
+    FullBatchNodeGenerator,
+    HinSAGENodeGenerator,
+    GraphSAGELinkGenerator,
+)
 from stellargraph.data.converter import *
 from stellargraph.utils import Ensemble
 
 from keras import layers, Model
 from keras.optimizers import Adam
-from keras.losses import categorical_crossentropy
+from keras.losses import categorical_crossentropy, binary_crossentropy
 
 
 def example_graph_1(feature_size=None):
@@ -44,18 +49,43 @@ def example_graph_1(feature_size=None):
         return StellarGraph(G)
 
 
-def create_graphSAGE_model(graph):
-    generator = GraphSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
-    train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
+def create_graphSAGE_model(graph, link_prediction=False):
+
+    if link_prediction:
+        # We are going to train on the original graph
+        generator = GraphSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 2])
+    else:
+        generator = GraphSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
+
+    if link_prediction:
+        edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
+        train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
+    else:
+        train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = GraphSAGE(
         layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
     )
 
-    x_inp, x_out = base_model.default_model(flatten_output=True)
-    prediction = layers.Dense(units=2, activation="softmax")(x_out)
+    if link_prediction:
+        # Expose input and output sockets of graphsage, for source and destination nodes:
+        x_inp_src, x_out_src = base_model.default_model(flatten_output=False)
+        x_inp_dst, x_out_dst = base_model.default_model(flatten_output=False)
+        # re-pack into a list where (source, destination) inputs alternate, for link inputs:
+        x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
+        # same for outputs:
+        x_out = [x_out_src, x_out_dst]
 
-    keras_model = Model(inputs=x_inp, outputs=prediction)
+        prediction = link_classification(
+            output_dim=1, output_act="relu", edge_embedding_method="ip"
+        )(x_out)
+
+        keras_model = Model(inputs=x_inp, outputs=prediction)
+    else:
+        x_inp, x_out = base_model.default_model(flatten_output=True)
+        prediction = layers.Dense(units=2, activation="softmax")(x_out)
+
+        keras_model = Model(inputs=x_inp, outputs=prediction)
 
     return base_model, keras_model, generator, train_gen
 
@@ -131,6 +161,7 @@ def test_ensemble_init_parameters():
     gnn_models = [
         create_graphSAGE_model(graph),
         create_HinSAGE_model(graph),
+        create_graphSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -176,6 +207,7 @@ def test_compile():
     gnn_models = [
         create_graphSAGE_model(graph),
         create_HinSAGE_model(graph),
+        create_graphSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -214,6 +246,7 @@ def test_fit_generator():
     gnn_models = [
         create_graphSAGE_model(graph),
         create_HinSAGE_model(graph),
+        create_graphSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
     ]
@@ -376,9 +409,7 @@ def test_predict_generator():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.predict_generator(
-                generator=test_gen, predict_data=test_data
-            )
+            ens.predict_generator(generator=test_gen, predict_data=test_data)
 
         # We won't train the model instead use the initial random weights to test
         # the evaluate_generator method.
@@ -402,3 +433,103 @@ def test_predict_generator():
         else:
             assert test_predictions.shape[2] == len(test_data)
         assert test_predictions.shape[3] == test_targets.shape[1]
+
+
+#
+# Tests for link prediction that can't be combined easily with the node attribute inference workflow above.
+#
+def test_evaluate_generator_link_prediction():
+
+    edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
+    edge_labels_test = np.array([1, 1, 0])
+
+    graph = example_graph_1(feature_size=10)
+
+    # base_model, keras_model, generator, train_gen
+    gnn_models = [create_graphSAGE_model(graph, link_prediction=True)]
+
+    for gnn_model in gnn_models:
+        keras_model = gnn_model[1]
+        generator = gnn_model[2]
+
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=3)
+
+        ens.compile(
+            optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
+        )
+
+        # Check that passing invalid parameters is handled correctly. We will not check error handling for those
+        # parameters that Keras will be responsible for.
+        with pytest.raises(ValueError):
+            ens.evaluate_generator(
+                generator=generator,
+                test_data=edge_ids_test,
+                test_targets=edge_labels_test,
+            )
+
+        with pytest.raises(ValueError):
+            ens.evaluate_generator(
+                generator=generator,
+                test_data=edge_labels_test,
+                test_targets=None,  # must give test_targets
+            )
+
+        with pytest.raises(ValueError):
+            ens.evaluate_generator(
+                generator=generator.flow(edge_ids_test, edge_labels_test),
+                test_data=edge_ids_test,
+                test_targets=edge_labels_test,
+            )
+
+        # We won't train the model instead use the initial random weights to test
+        # the evaluate_generator method.
+        test_metrics_mean, test_metrics_std = ens.evaluate_generator(
+            generator.flow(edge_ids_test, edge_labels_test)
+        )
+
+        assert len(test_metrics_mean) == len(test_metrics_std)
+        assert len(test_metrics_mean.shape) == 1
+        assert len(test_metrics_std.shape) == 1
+
+
+def test_predict_generator_link_prediction():
+
+    edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
+    edge_labels_test = np.array([1, 1, 0])
+
+    graph = example_graph_1(feature_size=2)
+
+    # base_model, keras_model, generator, train_gen
+    gnn_models = [create_graphSAGE_model(graph, link_prediction=True)]
+
+    for gnn_model in gnn_models:
+        keras_model = gnn_model[1]
+        generator = gnn_model[2]
+
+        ens = Ensemble(keras_model, n_estimators=3, n_predictions=2)
+
+        ens.compile(
+            optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
+        )
+
+        test_gen = generator.flow(edge_ids_test)
+        # Check that passing invalid parameters is handled correctly. We will not check error handling for those
+        # parameters that Keras will be responsible for.
+        with pytest.raises(ValueError):
+            ens.predict_generator(generator=test_gen, predict_data=edge_ids_test)
+
+        # We won't train the model instead use the initial random weights to test
+        # the evaluate_generator method.
+        test_predictions = ens.predict_generator(test_gen, summarise=True)
+
+        print("test_predictions shape {}".format(test_predictions.shape))
+        assert len(test_predictions) == len(edge_ids_test)
+
+        assert test_predictions.shape[1] == 1
+
+        test_predictions = ens.predict_generator(test_gen, summarise=False)
+
+        assert test_predictions.shape[0] == ens.n_estimators
+        assert test_predictions.shape[1] == ens.n_predictions
+        assert test_predictions.shape[2] == len(edge_ids_test)
+        assert test_predictions.shape[3] == 1
