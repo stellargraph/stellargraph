@@ -109,12 +109,12 @@ class Ensemble(object):
             <list> The layers for the specified model.
 
         """
-        if indx is not None and indx is not isinstance(indx, (int,)):
-            raise ValueError(
-                "({}) indx should be None or integer type but received type {}".format(
-                    type(self).__name__, type(indx)
+        if indx is not None and not isinstance(indx, (int,)):
+                raise ValueError(
+                    "({}) indx should be None or integer type but received type {}".format(
+                        type(self).__name__, type(indx)
+                    )
                 )
-            )
         if isinstance(indx, (int,)) and indx < 0:
             raise ValueError(
                 "({}) indx must be greater than or equal to zero but received {}".format(
@@ -309,7 +309,6 @@ class Ensemble(object):
                 num_points_per_bag = bag_size
             # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
             # datasets.
-            print("*** Train with Bagging ***")
             for model in self.models:
                 di_index = np.random.choice(
                     len(train_data), size=num_points_per_bag
@@ -319,11 +318,11 @@ class Ensemble(object):
                 if train_targets is not None:
                     di_targets = train_targets[di_index]
 
-                print(
-                    "Unique train data {} and targets {}".format(
-                        len(np.unique(di_train)), len(np.unique(di_targets))
-                    )
-                )
+                # print(
+                #     "Unique train data {} and targets {}".format(
+                #         len(np.unique(di_train)), len(np.unique(di_targets))
+                #     )
+                # )
 
                 val_gen = validation_generator
                 di_gen = generator.flow(di_train, di_targets)
