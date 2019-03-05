@@ -460,7 +460,7 @@ class Ensemble(object):
         self,
         generator,
         predict_data=None,
-        summarise=None,
+        summarise=False,
         output_layer=None,
         steps=None,
         max_queue_size=10,
