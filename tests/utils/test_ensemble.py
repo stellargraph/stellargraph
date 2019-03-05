@@ -217,10 +217,10 @@ def test_ensemble_init_parameters():
         with pytest.raises(ValueError):
             Ensemble(keras_model, n_estimators=2.5, n_predictions=11)
 
-        ens = Ensemble(keras_model, n_estimators=14, n_predictions=10)
+        ens = Ensemble(keras_model, n_estimators=7, n_predictions=10)
 
-        assert len(ens.models) == 14
-        assert ens.n_estimators == 14
+        assert len(ens.models) == 7
+        assert ens.n_estimators == 7
         assert ens.n_predictions == 10
 
 
@@ -240,7 +240,7 @@ def test_compile():
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
-        ens = Ensemble(keras_model, n_estimators=5, n_predictions=12)
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=5)
 
         # These are actually raised by keras but I added a check just to make sure
         with pytest.raises(ValueError):
@@ -296,7 +296,7 @@ def test_fit_generator():
                 train_gen,
                 train_data=train_data,
                 train_targets=train_targets,
-                epochs=20,
+                epochs=10,
                 validation_generator=train_gen,
                 verbose=0,
                 shuffle=False,
@@ -307,7 +307,7 @@ def test_fit_generator():
                 generator=generator,
                 train_data=train_data,
                 train_targets=None,  # Should not be None
-                epochs=20,
+                epochs=10,
                 validation_generator=train_gen,
                 verbose=0,
                 shuffle=False,
@@ -318,7 +318,7 @@ def test_fit_generator():
                 generator=generator,
                 train_data=None,
                 train_targets=None,
-                epochs=20,
+                epochs=10,
                 validation_generator=None,
                 verbose=0,
                 shuffle=False,
@@ -329,7 +329,7 @@ def test_fit_generator():
                 generator=generator,
                 train_data=train_data,
                 train_targets=train_targets,
-                epochs=20,
+                epochs=10,
                 validation_generator=None,
                 verbose=0,
                 shuffle=False,
@@ -341,7 +341,7 @@ def test_fit_generator():
                 generator=generator,
                 train_data=train_data,
                 train_targets=train_targets,
-                epochs=20,
+                epochs=10,
                 validation_generator=None,
                 verbose=0,
                 shuffle=False,
@@ -354,7 +354,7 @@ def test_evaluate_generator():
     test_data = np.array([3, 4, 5])
     test_targets = np.array([[1, 0], [0, 1], [0, 1]])
 
-    graph = example_graph_1(feature_size=10)
+    graph = example_graph_1(feature_size=5)
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
@@ -470,7 +470,7 @@ def test_evaluate_generator_link_prediction():
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
     edge_labels_test = np.array([1, 1, 0])
 
-    graph = example_graph_1(feature_size=10)
+    graph = example_graph_1(feature_size=4)
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
@@ -525,7 +525,6 @@ def test_evaluate_generator_link_prediction():
 def test_predict_generator_link_prediction():
 
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
-    edge_labels_test = np.array([1, 1, 0])
 
     graph = example_graph_1(feature_size=2)
 
@@ -539,7 +538,7 @@ def test_predict_generator_link_prediction():
         keras_model = gnn_model[1]
         generator = gnn_model[2]
 
-        ens = Ensemble(keras_model, n_estimators=3, n_predictions=2)
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=3)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
