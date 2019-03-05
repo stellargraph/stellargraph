@@ -24,6 +24,7 @@ __all__ = ["Ensemble"]
 
 import numpy as np
 import keras as K
+from keras.callbacks import EarlyStopping
 
 import stellargraph as sg
 
@@ -110,11 +111,11 @@ class Ensemble(object):
 
         """
         if indx is not None and not isinstance(indx, (int,)):
-                raise ValueError(
-                    "({}) indx should be None or integer type but received type {}".format(
-                        type(self).__name__, type(indx)
-                    )
+            raise ValueError(
+                "({}) indx should be None or integer type but received type {}".format(
+                    type(self).__name__, type(indx)
                 )
+            )
         if isinstance(indx, (int,)) and indx < 0:
             raise ValueError(
                 "({}) indx must be greater than or equal to zero but received {}".format(
@@ -205,6 +206,8 @@ class Ensemble(object):
         val_data=None,
         val_targets=None,
         bag_size=None,
+        use_early_stopping=False,
+        early_stopping_monitor="val_loss",
     ):
         """
         This method trains the ensemble on the data specified by the generator or the data given in train_data and
@@ -254,6 +257,9 @@ class Ensemble(object):
                 values for the validation data.
             bag_size: <None or int> The number of samples in a bootstrap sample. If None and bagging is used, then
                 the number of samples is equal to the number of training points.
+            use_early_stopping: <True or False> If set to True, then early stopping is used. The default is False.
+            early_stopping_monitor: <string> The quantity to monitor for early stopping, e.g., 'val_loss',
+                'val_weighted_acc'.
 
         Returns:
             <list> It returns a list of Keras History objects each corresponding to one trained model in the ensemble.
@@ -318,16 +324,20 @@ class Ensemble(object):
                 if train_targets is not None:
                     di_targets = train_targets[di_index]
 
-                # print(
-                #     "Unique train data {} and targets {}".format(
-                #         len(np.unique(di_train)), len(np.unique(di_targets))
-                #     )
-                # )
-
                 val_gen = validation_generator
                 di_gen = generator.flow(di_train, di_targets)
                 if val_data is not None and val_targets is not None:
                     val_gen = generator.flow(val_data, val_targets)
+
+                es_callback = None
+                if use_early_stopping and val_gen is not None:
+                    es_callback = [
+                        EarlyStopping(
+                            monitor=early_stopping_monitor,
+                            patience=10,
+                            restore_best_weights=True,
+                        )
+                    ]
 
                 self.history.append(
                     model.fit_generator(
@@ -335,6 +345,7 @@ class Ensemble(object):
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
                         verbose=verbose,
+                        callbacks=es_callback,
                         validation_data=val_gen,
                         validation_steps=validation_steps,
                         class_weight=class_weight,
@@ -346,6 +357,16 @@ class Ensemble(object):
                     )
                 )
         else:
+            es_callback = None
+            if use_early_stopping and validation_generator is not None:
+                es_callback = [
+                    EarlyStopping(
+                        monitor=early_stopping_monitor,
+                        patience=10,
+                        restore_best_weights=True,
+                    )
+                ]
+
             for model in self.models:
                 self.history.append(
                     model.fit_generator(
@@ -353,6 +374,7 @@ class Ensemble(object):
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
                         verbose=verbose,
+                        callbacks=es_callback,
                         validation_data=validation_generator,
                         validation_steps=validation_steps,
                         class_weight=class_weight,
