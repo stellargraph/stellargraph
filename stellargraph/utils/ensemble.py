@@ -78,6 +78,7 @@ class Ensemble(object):
         self.history = []
         self.n_estimators = n_estimators
         self.n_predictions = n_predictions
+        self.early_stoppping_patience = 10
 
         # Create the enseble from the given base model
         self._init_models(model)
@@ -334,7 +335,7 @@ class Ensemble(object):
                     es_callback = [
                         EarlyStopping(
                             monitor=early_stopping_monitor,
-                            patience=10,
+                            patience=self.early_stoppping_patience,
                             restore_best_weights=True,
                         )
                     ]
@@ -362,7 +363,7 @@ class Ensemble(object):
                 es_callback = [
                     EarlyStopping(
                         monitor=early_stopping_monitor,
-                        patience=10,
+                        patience=self.early_stoppping_patience,
                         restore_best_weights=True,
                     )
                 ]
