@@ -29,8 +29,11 @@ from typing import List, Tuple, Callable, AnyStr
 class GraphConvolution(Layer):
 
     """
-    A class of graph convolution layer implemented with Keras layer.
-    The implementation is based on the keras-gcn github https://github.com/tkipf/keras-gcn.
+    Graph Convolution (GCN) Keras layer.
+    The implementation is based on the keras-gcn github repo https://github.com/tkipf/keras-gcn.
+
+    Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
+    International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
 
     Args:
         units: dimensionality of output feature vectors
@@ -99,7 +102,7 @@ class GraphConvolution(Layer):
 
     def build(self, input_shapes):
         """
-        Builds layer
+        Builds the layer
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
@@ -180,7 +183,7 @@ class GraphConvolution(Layer):
 
 class GCN:
     """
-    To implement the graph convolution network as in https://arxiv.org/abs/1609.02907
+    A stack of Graph Convolutional layers to implement the graph convolution network model as in https://arxiv.org/abs/1609.02907
 
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer,
