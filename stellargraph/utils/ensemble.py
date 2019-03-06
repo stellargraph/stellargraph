@@ -35,12 +35,17 @@ class Ensemble(object):
     GCN, GraphSAGE, GAT, and HinSAGE. Ensembles can be used for training classification and regression problems for
     node attribute inference and link prediction.
 
-    This class allows, but it is not enforced, for the creation of ensembles that employ bootstrap samples to increase
-    variety in the trained models. The weights for each graph neural network model in the ensemble are initialised with
-    a different set of values increasing the ensembles diversity.
+    The Ensemble class can be used to create two different types of ensembles, Naive and Bagging.
 
-    Predictions are either the mean of the predictions of all the models or returned as is allowing the caller to
-    calculate predictions in her preferred method, e.g., mean, median, voting.
+    Naive ensembles add model diversity only by random initialisation of the models' weights (before training) to
+    different values. Each model is trained on the same training examples.
+
+    Bagging ensembles add model diversity using both random weight initialisation and bootstrap sampling of the training
+    data. That is, each model in the ensemble is trained on a subset of the training examples where the subset is
+    sampled from the original data using replacement.
+
+    The choice of ensemble type, Naive or Bagging, is done implicitly based on how data is passed to the
+    fit_generator method.
     """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):
@@ -150,17 +155,18 @@ class Ensemble(object):
         """
         Method for configuring the model for training. It is similar to the keras.models.Model.compile method.
 
-        See https://keras.io/models/model/ for details.
+        For detail descriptions of Keras specific parameters consult the Keras documentation
+        at https://keras.io/models/sequential/
 
         Args:
             optimizer: <Keras optimizer or string> (Keras specific parameter) The optimizer to use given either as an
-                instance of a keras optimizer or a string indicating the optimizer to use.
+                instance of a keras optimizer or a string naming the optimiser of choice.
             loss: <Keras function or string> (Keras specific parameter) The loss function or string indicating the
                 type of loss to use.
             metrics: <list or dictionary> (Keras specific parameter) List of metrics to be evaluated by each model in
                 the ensemble during training and testing. It should be a list for a model with a single output. To
                 specify different metrics for different outputs of a multi-output model, you could also pass a
-                dictionary. See Keras documentation for details.
+                dictionary.
             loss_weights: <None or list> (Keras specific parameter) Optional list or dictionary specifying scalar
                 coefficients (Python floats) to weight the loss contributions of different model outputs. The loss value
                 that will be minimized by the model will then be the weighted sum of all individual losses, weighted by
@@ -212,14 +218,19 @@ class Ensemble(object):
     ):
         """
         This method trains the ensemble on the data specified by the generator or the data given in train_data and
-        train_targets. If validation_data and validation_target are given, then the training metrics are evaluated
+        train_targets. If validation data are given, then the training metrics are evaluated
         on these data and results printed on screen if verbose level is greater than 0.
 
-        The method trains each model in the ensemble in series for the number of epochs specified.
+        The method trains each model in the ensemble in series for the number of epochs specified. Training can
+        also stop early with the best model as evaluated on the validation data, if use_early_stopping is enabled.
 
         if train_data and train_targets are given, then each model in the ensemble is trained using a bootstrapped
         sample of the data (the train data are re-sampled with replacement.) The number of bootstrap samples is
-        either given by bag_size or if the latter is not given equals the number of training points.
+        can be specified via the bag_size parameter; by default, the number of bootstrap samples equals the number of
+        training points.
+
+        For detail descriptions of Keras specific parameters consult the Keras documentation
+        at https://keras.io/models/sequential/
 
         Args:
             generator: The generator object for training data. if test_data is not None, it should be one of type
@@ -258,9 +269,10 @@ class Ensemble(object):
                 values for the validation data.
             bag_size: <None or int> The number of samples in a bootstrap sample. If None and bagging is used, then
                 the number of samples is equal to the number of training points.
-            use_early_stopping: <True or False> If set to True, then early stopping is used. The default is False.
+            use_early_stopping: <True or False> If set to True, then early stopping is used when training each model
+                in the ensemble. The default is False.
             early_stopping_monitor: <string> The quantity to monitor for early stopping, e.g., 'val_loss',
-                'val_weighted_acc'.
+                'val_weighted_acc'. It should be a valid Keras metric.
 
         Returns:
             <list> It returns a list of Keras History objects each corresponding to one trained model in the ensemble.
@@ -404,6 +416,9 @@ class Ensemble(object):
         Evaluates the ensemble on a data (node or link) generator. It makes n_predictions for each data point for each
         of the n_estimators and returns the mean and standard deviation of the predictions.
 
+        For detail descriptions of Keras specific parameters consult the Keras documentation
+        at https://keras.io/models/sequential/
+
         Args:
             generator: The generator object that, if test_data is not None, should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
@@ -495,10 +510,13 @@ class Ensemble(object):
         This method generates predictions for the data produced by the given generator or alternatively the data
         given in parameter predict_data.
 
+        For detail descriptions of Keras specific parameters consult the Keras documentation
+        at https://keras.io/models/sequential/
+
         Args:
-            generator: The generator object that, if test_data is None, should be one of type
+            generator: The generator object that, if predictdata is None, should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
-                or HinSAGELinkGenerator. However, if test_data is not None, then generator should be one of type
+                or HinSAGELinkGenerator. However, if predict_data is not None, then generator should be one of type
                 NodeSequence, LinkSequence, or FullBatchNodeSequence.
             predict_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the node IDs
                 to make predictions for.
@@ -517,9 +535,9 @@ class Ensemble(object):
 
         Returns:
             <numpy array> The predictions. It will have shape MxKxNxF if summarise is False or NxF otherwise. M
-            is the number of estimators (aka models) in the ensemble; K is the number of predictions per query
+            is the number of estimators in the ensemble; K is the number of predictions per query
             point; N is the number of query points; and F is the output dimensionality of the specified layer
-            determined by the value of output_layer.
+            determined by the shape of the output layer.
 
         """
         data_generator = generator
