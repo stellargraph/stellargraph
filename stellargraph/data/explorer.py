@@ -596,7 +596,8 @@ class UniformRandomMetaPathWalk(GraphWalk):
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if self.graph.node[n_node][node_type_attribute] == metapath[d]
+                            if self.graph.node[n_node][node_type_attribute]
+                            == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
