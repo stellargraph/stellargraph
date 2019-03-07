@@ -33,10 +33,10 @@ class GraphConvolution(Layer):
     The implementation is based on the keras-gcn github https://github.com/tkipf/keras-gcn.
 
     Args:
-        units: dimensionality of output feature vectors
-        support: number of support weights
-        activation: nonlinear activation applied to layer's output to obtain output features
-        use_bias: toggles an optional bias
+        units (int): dimensionality of output feature vectors
+        support (int): number of support weights
+        activation (string): nonlinear activation applied to layer's output to obtain output features
+        use_bias (bool): toggles an optional bias
         kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
         bias_initializer (str): name of the initializer for bias
         attn_kernel_initializer (str): name of the initializer for attention kernel
@@ -135,11 +135,13 @@ class GraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs: a list of input tensors that includes 2 items: node features (matrix of size N x F),
+            inputs (Tensors): a list of input tensors that includes 2 items: node features (matrix of size N x F),
                 and graph adjacency matrix (size N x N), where N is the number of nodes in the graph,
                 F is the dimensionality of node features.
             mask: This mask is only used as an tranmission function. It passes the corresponding mask from the previous layer
                 to the next attached layer if the previous layer set a mask.
+        Returns:
+            Keras Tensor that represents the output of the layer.
         """
 
         features = inputs[0]
@@ -157,7 +159,11 @@ class GraphConvolution(Layer):
 
     def get_config(self):
         """
-        Gets class configuration for Keras serialization
+        Gets class configuration for Keras serialization.
+        Used by keras model serialization.
+
+        Returns:
+            A dictionary that contains the config of the layer
         """
 
         config = {
@@ -187,12 +193,12 @@ class GCN:
     activation functions for each hidden layers, and a generator object.
 
     Args:
-        layer_sizes: list of output sizes of GCN layers in the stack
-        activations: list of activations applied to each layer's output
-        generator: an instance of FullBatchNodeGenerator class constructed on the graph of interest
-        bias: toggles an optional bias in GCN layers
-        dropout: dropout rate applied to input features of each GCN layer
-        kernel_regularizer: normalization applied to the kernels of GCN layers
+        layer_sizes (list of int): list of output sizes of GCN layers in the stack
+        activations (list of string): list of activations applied to each layer's output
+        generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
+        bias (bool): toggles an optional bias in GCN layers
+        dropout (float): dropout rate applied to input features of each GCN layer
+        kernel_regularizer (string): normalization applied to the kernels of GCN layers
         kwargs: additional parameters for chebyshev or localpool filters
     """
 
@@ -239,7 +245,7 @@ class GCN:
         Apply a stack of GCN layers
 
         Args:
-            x (list of Tensor): input features
+            x (Tensor): input features
 
         Returns:
             Output tensor
