@@ -38,7 +38,7 @@ class GraphConvolution(Layer):
     Args:
         units (int): dimensionality of output feature vectors
         support (int): number of support weights
-        activation (string): nonlinear activation applied to layer's output to obtain output features
+        activation (str): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
         kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
         bias_initializer (str): name of the initializer for bias
@@ -197,11 +197,11 @@ class GCN:
 
     Args:
         layer_sizes (list of int): list of output sizes of GCN layers in the stack
-        activations (list of string): list of activations applied to each layer's output
+        activations (list of str): list of activations applied to each layer's output
         generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
         bias (bool): toggles an optional bias in GCN layers
         dropout (float): dropout rate applied to input features of each GCN layer
-        kernel_regularizer (string): normalization applied to the kernels of GCN layers
+        kernel_regularizer (str): normalization applied to the kernels of GCN layers
         kwargs: additional parameters for chebyshev or localpool filters
     """
 
