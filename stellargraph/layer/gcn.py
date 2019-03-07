@@ -105,8 +105,7 @@ class GraphConvolution(Layer):
         Builds the layer
 
         Args:
-            input_shape (list of list of int): Shape of input tensors for self
-            and neighbour
+            input_shape (list of list of int): Shape of input tensors for self and neighbour
 
         """
 
@@ -138,10 +137,10 @@ class GraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (Tensors): a list of input tensors that includes 2 items: node features (matrix of size N x F),
+            inputs (list): a list of input tensors that includes 2 items: node features (matrix of size N x F),
                 and graph adjacency matrix (size N x N), where N is the number of nodes in the graph,
                 F is the dimensionality of node features.
-            mask: This mask is only used as an tranmission function. It passes the corresponding mask from the previous layer
+            mask (None or Tensor):  a Tensor indicating the input mask for Embedding. This mask is only used as a bypassing. It passes the corresponding mask from the previous layer
                 to the next attached layer if the previous layer set a mask.
         Returns:
             Keras Tensor that represents the output of the layer.
