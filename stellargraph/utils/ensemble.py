@@ -406,7 +406,6 @@ class Ensemble(object):
         generator,
         test_data=None,
         test_targets=None,
-        steps=None,
         max_queue_size=10,
         workers=1,
         use_multiprocessing=False,
@@ -428,8 +427,6 @@ class Ensemble(object):
                 to evaluate the model on.
             test_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
                 values for the test_data.
-            steps: <None or int>  (Keras-specific parameter) Total number of steps (batches of samples) to yield from
-                generator before stopping.
             max_queue_size: <int> (Keras-specific parameter) The maximum size for the generator queue.
             workers: <int> (Keras-specific parameter) The maximum number of workers to use.
             use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
@@ -482,7 +479,6 @@ class Ensemble(object):
                 tm.append(
                     model.evaluate_generator(
                         generator=data_generator,
-                        steps=steps,
                         max_queue_size=max_queue_size,
                         workers=workers,
                         use_multiprocessing=use_multiprocessing,
@@ -500,7 +496,6 @@ class Ensemble(object):
         predict_data=None,
         summarise=False,
         output_layer=None,
-        steps=None,
         max_queue_size=10,
         workers=1,
         use_multiprocessing=False,
@@ -514,18 +509,18 @@ class Ensemble(object):
         at https://keras.io/models/sequential/
 
         Args:
-            generator: The generator object that, if predictdata is None, should be one of type
+            generator: The generator object that, if predict_data is None, should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if predict_data is not None, then generator should be one of type
                 NodeSequence, LinkSequence, or FullBatchNodeSequence.
             predict_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the node IDs
-                to make predictions for.
+                to make predictions for. If generator is of type FullBatchNodeGenerator then predict_data should be all
+                the nodes in the graph since full batch approaches such as GCN and GAT can only be used to make
+                predictions for all graph nodes.
             summarise: <True or False> If True, then the mean of the predictions over self.n_estimators and
                 self.n_predictions are returned for each query point. If False, then all predictions are returned.
-            output_layer: <None or int> If not None, then the predictions are the activations of the layer specified.
+            output_layer: <None or int> If not None, then the predictions are the outputs of the layer specified.
                 The default is the model's output layer.
-            steps: <None or int>  (Keras-specific parameter) Total number of steps (batches of samples) to yield from
-                generator before stopping.
             max_queue_size: (Keras-specific parameter) The maximum size for the generator queue.
             workers: <int> (Keras-specific parameter) The maximum number of workers to use.
             use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
@@ -586,7 +581,6 @@ class Ensemble(object):
                 model_predictions.append(
                     model.predict_generator(
                         generator=data_generator,
-                        steps=steps,
                         max_queue_size=max_queue_size,
                         workers=workers,
                         use_multiprocessing=use_multiprocessing,
