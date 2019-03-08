@@ -428,12 +428,12 @@ class Ensemble(object):
                 to evaluate the model on.
             test_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
                 values for the test_data.
-            steps: <None or int>  (Keras specific parameter) Total number of steps (batches of samples) to yield from
+            steps: <None or int>  (Keras-specific parameter) Total number of steps (batches of samples) to yield from
                 generator before stopping.
-            max_queue_size: <int> (Keras specific parameter) The maximum size for the generator queue.
-            workers: <int> (Keras specific parameter) The maximum number of workers to use.
-            use_multiprocessing: <True or False> (Keras specific parameter) If True then use process based threading.
-            verbose: <int> (Keras specific parameter) The verbocity mode that should be 0 or 1 with the former turning
+            max_queue_size: <int> (Keras-specific parameter) The maximum size for the generator queue.
+            workers: <int> (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
+            verbose: <int> (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
                 verbocity off and the latter on.
 
         Returns:
@@ -524,12 +524,12 @@ class Ensemble(object):
                 self.n_predictions are returned for each query point. If False, then all predictions are returned.
             output_layer: <None or int> If not None, then the predictions are the activations of the layer specified.
                 The default is the model's output layer.
-            steps: <None or int>  (Keras specific parameter) Total number of steps (batches of samples) to yield from
+            steps: <None or int>  (Keras-specific parameter) Total number of steps (batches of samples) to yield from
                 generator before stopping.
-            max_queue_size: (Keras specific parameter) The maximum size for the generator queue.
-            workers: <int> (Keras specific parameter) The maximum number of workers to use.
-            use_multiprocessing: <True or False> (Keras specific parameter) If True then use process based threading.
-            verbose: <int> (Keras specific parameter) The verbocity mode that should be 0 or 1 with the former turning
+            max_queue_size: (Keras-specific parameter) The maximum size for the generator queue.
+            workers: <int> (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
+            verbose: <int> (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
                 verbocity off and the latter on.
 
 
