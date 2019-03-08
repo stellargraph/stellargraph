@@ -48,7 +48,6 @@ class GraphConvolution(Layer):
         activity_regularizer (str): not used in the current implementation
         kernel_constraint (str): constraint applied to layer's kernel
         bias_constraint (str): constraint applied to layer's bias
-        **kwargs:
     """
 
     def __init__(
@@ -201,7 +200,8 @@ class GCN:
         bias (bool): toggles an optional bias in GCN layers
         dropout (float): dropout rate applied to input features of each GCN layer
         kernel_regularizer (str): normalization applied to the kernels of GCN layers
-        kwargs: additional parameters for chebyshev or localpool filters
+        kwargs: additional parameters for max degree, chebyshev or localpool filters (e.g. filter=localpool, max_degree=2).
+            For more information, please read `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/utils>`_ in the file **utils.py** and GCN demo `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
     def __init__(
