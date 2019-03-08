@@ -58,8 +58,9 @@ The examples folder structure is shown below.
 
 * [`/ensembles`](https://github.com/stellargraph/stellargraph/tree/master/demos/ensembles)
 
-    Examples of graph convolutional neural networks ensembles, e.g., GraphSAGE, GCN, HinSAGE, etc. for
-    node classification and link prediction.
+    Examples of using ensembles of graph convolutional neural networks, e.g., GraphSAGE, GCN, HinSAGE, etc., for
+    node classification and link prediction. Model ensembles usually yield better predictions than single models, 
+    while also providing estimates of prediction uncertainty as a bonus. 
 
 * [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
 
