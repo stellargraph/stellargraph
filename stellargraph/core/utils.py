@@ -159,6 +159,8 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
         max_degree = kwargs.get("max_degree", 2)
-        T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), max_degree)
+        T_k = chebyshev_polynomial(
+            rescale_laplacian(normalized_laplacian(A)), max_degree
+        )
         features = [features] + T_k
     return features, A
