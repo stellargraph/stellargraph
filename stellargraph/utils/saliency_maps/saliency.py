@@ -19,6 +19,7 @@ import numpy as np
 import keras.backend as K
 import scipy.sparse as sp
 
+
 class GradientSaliency(object):
     """
     Class to compute the saliency maps based on the vanilla gradient w.r.t the adjacency and the feature matrix.
@@ -41,41 +42,56 @@ class GradientSaliency(object):
         # Placeholder for class prediction (model output):
         output = model.output
 
-        #The placeholder for the node index of interest. It is typically the index of the target test node.
-        self.node_idx = K.placeholder(shape=(), dtype='int32')
+        # The placeholder for the node index of interest. It is typically the index of the target test node.
+        self.node_idx = K.placeholder(shape=(), dtype="int32")
 
-        #The placeholder for the class of interest. One will generally use the winning class.
-        self.class_of_interest = K.placeholder(shape=(), dtype='int32')
+        # The placeholder for the class of interest. One will generally use the winning class.
+        self.class_of_interest = K.placeholder(shape=(), dtype="int32")
 
-        #The input tensors for computing the node saliency map
-        node_mask_tensors = [features, adj,
-                             K.learning_phase(),  # placeholder for mode (train or test) tense
-                             self.node_idx, self.class_of_interest]
+        # The input tensors for computing the node saliency map
+        node_mask_tensors = [
+            features,
+            adj,
+            K.learning_phase(),  # placeholder for mode (train or test) tense
+            self.node_idx,
+            self.class_of_interest,
+        ]
 
-        #The input tensors for computing the link saliency map
-        link_mask_tensors = [features, adj,
-                             K.learning_phase(),
-                             self.node_idx, self.class_of_interest]
-
+        # The input tensors for computing the link saliency map
+        link_mask_tensors = [
+            features,
+            adj,
+            K.learning_phase(),
+            self.node_idx,
+            self.class_of_interest,
+        ]
 
         # node gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. input features of all nodes in the graph
         node_gradients = model.optimizer.get_gradients(
-            K.gather(K.gather(output, self.node_idx), self.class_of_interest), features)
+            K.gather(K.gather(output, self.node_idx), self.class_of_interest), features
+        )
         self.is_sparse = K.is_sparse(adj)
         # link gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
-            print('link adj is sparse!!!')
+            print("link adj is sparse!!!")
             self.link_gradients = model.optimizer.get_gradients(
-                K.gather(K.gather(output, self.node_idx), self.class_of_interest), adj.values)
+                K.gather(K.gather(output, self.node_idx), self.class_of_interest),
+                adj.values,
+            )
 
         else:
             self.link_gradients = model.optimizer.get_gradients(
-                K.gather(K.gather(output, self.node_idx), self.class_of_interest), adj)
+                K.gather(K.gather(output, self.node_idx), self.class_of_interest), adj
+            )
 
-        self.compute_link_gradients = K.function(inputs=link_mask_tensors, outputs=self.link_gradients)
-        self.compute_node_gradients = K.function(inputs=node_mask_tensors, outputs=node_gradients)
+        self.compute_link_gradients = K.function(
+            inputs=link_mask_tensors, outputs=self.link_gradients
+        )
+        self.compute_node_gradients = K.function(
+            inputs=node_mask_tensors, outputs=node_gradients
+        )
 
     def get_node_masks(self, X_val, A_val, node_idx, class_of_interest):
         """
@@ -86,7 +102,9 @@ class GradientSaliency(object):
         """
 
         # Execute the function to compute the gradient
-        gradients = self.compute_node_gradients([X_val, A_val, 0, node_idx, class_of_interest])
+        gradients = self.compute_node_gradients(
+            [X_val, A_val, 0, node_idx, class_of_interest]
+        )
         return gradients
 
     def get_link_masks(self, X_val, A_val, node_idx, class_of_interest):
@@ -98,13 +116,14 @@ class GradientSaliency(object):
         """
 
         # Execute the function to compute the gradient
-        #sp.issparse(A_val) and not self.is_sparse:
+        # sp.issparse(A_val) and not self.is_sparse:
         #    A_val = A_val.todense()
-
 
         if self.is_sparse and not sp.issparse(A_val):
             A_val = sp.lil_matrix(A_val)
-        gradients = self.compute_link_gradients([X_val, A_val, 0, node_idx, class_of_interest])
+        gradients = self.compute_link_gradients(
+            [X_val, A_val, 0, node_idx, class_of_interest]
+        )
         return gradients
 
     def get_node_importance(self, X_val, A_val, node_idx, class_of_interest):

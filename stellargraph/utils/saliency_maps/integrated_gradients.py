@@ -31,14 +31,18 @@ import numpy as np
 from .saliency import GradientSaliency
 import scipy.sparse as sp
 
+
 class IntegratedGradients(GradientSaliency):
     """
     A SaliencyMask class that implements the integrated gradients method.
     """
-    def __init__(self,  model):
+
+    def __init__(self, model):
         GradientSaliency.__init__(self, model)
 
-    def get_integrated_node_masks(self, X_val, A_val, node_idx, class_of_interest, X_baseline = None, steps = 20):
+    def get_integrated_node_masks(
+        self, X_val, A_val, node_idx, class_of_interest, X_baseline=None, steps=20
+    ):
         """
         Args:
         X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
@@ -57,10 +61,21 @@ class IntegratedGradients(GradientSaliency):
 
         for alpha in np.linspace(0, 1, steps):
             X_step = X_baseline + alpha * X_diff
-            total_gradients += super(IntegratedGradients, self).get_node_masks(X_step, A_val, node_idx, class_of_interest)[0]
+            total_gradients += super(IntegratedGradients, self).get_node_masks(
+                X_step, A_val, node_idx, class_of_interest
+            )[0]
         return total_gradients * X_diff
 
-    def get_integrated_link_masks(self, X_val, A_val, node_idx, class_of_interest, A_baseline = None, steps = 20, non_exist_edge = False):
+    def get_integrated_link_masks(
+        self,
+        X_val,
+        A_val,
+        node_idx,
+        class_of_interest,
+        A_baseline=None,
+        steps=20,
+        non_exist_edge=False,
+    ):
         """
         Args:
         X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
@@ -84,19 +99,23 @@ class IntegratedGradients(GradientSaliency):
         A_diff = A_val - A_baseline
 
         total_gradients = np.zeros(A_val.shape)
-        for alpha in np.linspace(1.0/steps, 1.0, steps):
+        for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
             if self.is_sparse:
                 A_step = sp.lil_matrix(A_step)
                 A_csr = sp.csr_matrix(A_step)
-            tmp = super(IntegratedGradients, self).get_link_masks(X_val, A_step, node_idx, class_of_interest)[0]
+            tmp = super(IntegratedGradients, self).get_link_masks(
+                X_val, A_step, node_idx, class_of_interest
+            )[0]
             if self.is_sparse:
-                tmp = sp.csr_matrix((tmp, A_csr.indices, A_csr.indptr), shape=A_csr.shape).toarray()
+                tmp = sp.csr_matrix(
+                    (tmp, A_csr.indices, A_csr.indptr), shape=A_csr.shape
+                ).toarray()
             total_gradients += tmp
         return np.array(total_gradients * A_diff)
 
-    def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps = 20):
-        gradients = self.get_integrated_node_masks(X_val, A_val, node_idx, class_of_interest, steps=steps)
-        return np.sum(gradients, axis = 1)
-
-
+    def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps=20):
+        gradients = self.get_integrated_node_masks(
+            X_val, A_val, node_idx, class_of_interest, steps=steps
+        )
+        return np.sum(gradients, axis=1)
