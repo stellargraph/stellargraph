@@ -92,7 +92,7 @@ class Ensemble(object):
         """
         This method creates an ensemble of models by cloning the given base model self.n_estimators times.
 
-        All models have the same architecture but their weights are initialised with different values.
+        All models have the same architecture but their weights are initialised with different (random) values.
 
         Args:
             model: A Keras model that is the base model for the ensemble.
@@ -153,9 +153,9 @@ class Ensemble(object):
         weighted_metrics=None,
     ):
         """
-        Method for configuring the model for training. It is similar to the keras.models.Model.compile method.
+        Method for configuring the model for training. It is a wrapper of the keras.models.Model.compile method for all models in the ensebmle.
 
-        For detail descriptions of Keras specific parameters consult the Keras documentation
+        For detailed descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
 
         Args:
@@ -416,7 +416,7 @@ class Ensemble(object):
         Evaluates the ensemble on a data (node or link) generator. It makes n_predictions for each data point for each
         of the n_estimators and returns the mean and standard deviation of the predictions.
 
-        For detail descriptions of Keras specific parameters consult the Keras documentation
+        For detailed descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
 
         Args:
@@ -510,7 +510,7 @@ class Ensemble(object):
         This method generates predictions for the data produced by the given generator or alternatively the data
         given in parameter predict_data.
 
-        For detail descriptions of Keras specific parameters consult the Keras documentation
+        For detailed descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
 
         Args:
