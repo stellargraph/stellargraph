@@ -43,6 +43,13 @@ GCN model
   :members: GraphConvolution, GCN
 
 
+GAT model
+-------------
+
+.. automodule:: stellargraph.layer.graph_attention
+  :members: GraphAttention, GAT
+
+
 Link prediction layers
 ------------------------
 
