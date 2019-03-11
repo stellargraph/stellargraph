@@ -45,7 +45,7 @@ class Ensemble(object):
     sampled with replacement from the original training data.
 
     The choice of ensemble type, Naive or Bagging, is done implicitly based on how data is passed to the
-    `fit_generator` method.
+    ``fit_generator`` method.
     """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):
@@ -153,30 +153,30 @@ class Ensemble(object):
         weighted_metrics=None,
     ):
         """
-        Method for configuring the model for training. It is a wrapper of the keras.models.Model.compile method for all models in the ensebmle.
+        Method for configuring the model for training. It is a wrapper of the `keras.models.Model.compile` method for all models in the ensemble.
 
         For detailed descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
 
         Args:
-            optimizer: <Keras optimizer or string> (Keras specific parameter) The optimizer to use given either as an
+            optimizer: <Keras optimizer or string> (Keras-specific parameter) The optimizer to use given either as an
                 instance of a keras optimizer or a string naming the optimiser of choice.
-            loss: <Keras function or string> (Keras specific parameter) The loss function or string indicating the
+            loss: <Keras function or string> (Keras-specific parameter) The loss function or string indicating the
                 type of loss to use.
-            metrics: <list or dictionary> (Keras specific parameter) List of metrics to be evaluated by each model in
+            metrics: <list or dictionary> (Keras-specific parameter) List of metrics to be evaluated by each model in
                 the ensemble during training and testing. It should be a list for a model with a single output. To
                 specify different metrics for different outputs of a multi-output model, you could also pass a
                 dictionary.
-            loss_weights: <None or list> (Keras specific parameter) Optional list or dictionary specifying scalar
+            loss_weights: <None or list> (Keras-specific parameter) Optional list or dictionary specifying scalar
                 coefficients (Python floats) to weight the loss contributions of different model outputs. The loss value
                 that will be minimized by the model will then be the weighted sum of all individual losses, weighted by
                 the loss_weights coefficients. If a list, it is expected to have a 1:1 mapping to the model's outputs.
                 If a tensor, it is expected to map output names (strings) to scalar coefficients.
-            sample_weight_mode: <None, string, list, or dictionary> (Keras specific parameter) If you need to do
+            sample_weight_mode: <None, string, list, or dictionary> (Keras-specific parameter) If you need to do
                 timestep-wise sample weighting (2D weights), set this to "temporal".  None defaults to sample-wise
                 weights (1D). If the model has multiple outputs, you can use a different  sample_weight_mode on
                 each output by passing a dictionary or a list of modes.
-            weighted_metrics: <list> (Keras specific parameter) List of metrics to be evaluated and weighted by
+            weighted_metrics: <list> (Keras-specific parameter) List of metrics to be evaluated and weighted by
                 sample_weight or class_weight during training and testing.
 
         """
@@ -190,9 +190,7 @@ class Ensemble(object):
                 weighted_metrics=weighted_metrics,
             )
 
-        self.metrics_names = self.models[
-            0
-        ].metrics_names  # assumes all models are same as it should be
+        self.metrics_names = self.models[0].metrics_names  # assumes all models are same
 
     def fit_generator(
         self,
@@ -229,7 +227,7 @@ class Ensemble(object):
         can be specified via the bag_size parameter; by default, the number of bootstrap samples equals the number of
         training points.
 
-        For detail descriptions of Keras specific parameters consult the Keras documentation
+        For detail descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
 
         Args:
@@ -237,27 +235,27 @@ class Ensemble(object):
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
                 NodeSequence, LinkSequence, or FullBatchNodeSequence.
-            steps_per_epoch: <None or int> (Keras specific parameter) If not None, it specifies the number of steps
+            steps_per_epoch: <None or int> (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
-            epochs: <int> (Keras specific parameter) The number of training epochs.
-            verbose: <int> (Keras specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
+            epochs: <int> (Keras-specific parameter) The number of training epochs.
+            verbose: <int> (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
                 progress bar, and one line per epoch respectively.
             validation_generator: A generator for validation data that is optional (None). If not None then, if val_data
                 is not None, it should be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator,
                 FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator. However, if val_data is None,
                 then it should be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.
-            validation_steps: <None or int> (Keras specific parameter) If validation_generator is not None, then it
+            validation_steps: <None or int> (Keras-specific parameter) If validation_generator is not None, then it
                 specifies the number of steps to yield from the generator before stopping at the end of every epoch.
-            class_weight: <None or dictionary> (Keras specific parameter) If not None, it should be a dictionary
+            class_weight: <None or dictionary> (Keras-specific parameter) If not None, it should be a dictionary
                 mapping class indices (integers) to a weight (float) value, used for weighting the loss function (during
                 training only). This can be useful to tell the model to "pay more attention" to samples from an
                 under-represented class.
-            max_queue_size: <int> (Keras specific parameter) The maximum size for the generator queue.
-            workers: <int> (Keras specific parameter) The maximum number of workers to use.
-            use_multiprocessing: <True or False> (Keras specific parameter) If True then use process based threading.
-            shuffle: <True or False> (Keras specific parameter) If True, then it shuffles the order of batches at the
+            max_queue_size: <int> (Keras-specific parameter) The maximum size for the generator queue.
+            workers: <int> (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
+            shuffle: <True or False> (Keras-specific parameter) If True, then it shuffles the order of batches at the
                 beginning of each training epoch.
-            initial_epoch: <int> (Keras specific parameter) Epoch at which to start training (useful for resuming a
+            initial_epoch: <int> (Keras-specific parameter) Epoch at which to start training (useful for resuming a
                 previous training run).
             train_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the data
                 to train the model with.
@@ -290,7 +288,9 @@ class Ensemble(object):
                 ),
             ):
                 raise ValueError(
-                    "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. Received type {}".format(
+                    "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, "
+                    "FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. "
+                    "Received type {}".format(
                         type(self).__name__, type(generator)
                     )
                 )
@@ -315,7 +315,8 @@ class Ensemble(object):
             ),
         ):
             raise ValueError(
-                "({}) If train_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence but received object of type {}".format(
+                "({}) If train_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence "
+                "but received object of type {}".format(
                     type(self).__name__, type(generator)
                 )
             )
@@ -412,8 +413,8 @@ class Ensemble(object):
         verbose=0,
     ):
         """
-        Evaluates the ensemble on a data (node or link) generator. It makes n_predictions for each data point for each
-        of the n_estimators and returns the mean and standard deviation of the predictions.
+        Evaluates the ensemble on a data (node or link) generator. It makes `n_predictions` for each data point for each
+        of the `n_estimators` and returns the mean and standard deviation of the predictions.
 
         For detailed descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
@@ -448,7 +449,8 @@ class Ensemble(object):
             ),
         ):
             raise ValueError(
-                "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator. Received type {}".format(
+                "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, "
+                "GraphSAGELinkGenerator, or HinSAGELinkGenerator. Received type {}".format(
                     type(self).__name__, type(generator)
                 )
             )
@@ -461,7 +463,8 @@ class Ensemble(object):
             ),
         ):
             raise ValueError(
-                "({}) If test_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence but received object of type {}".format(
+                "({}) If test_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence "
+                "but received object of type {}".format(
                     type(self).__name__, type(generator)
                 )
             )
@@ -529,9 +532,9 @@ class Ensemble(object):
 
 
         Returns:
-            <numpy array> The predictions. It will have shape MxKxNxF if summarise is False or NxF otherwise. M
-            is the number of estimators in the ensemble; K is the number of predictions per query
-            point; N is the number of query points; and F is the output dimensionality of the specified layer
+            <numpy array> The predictions. It will have shape `MxKxNxF` if **summarise** is set to `False`, or NxF otherwise. `M`
+            is the number of estimators in the ensemble; `K` is the number of predictions per query
+            point; `N` is the number of query points; and `F` is the output dimensionality of the specified layer
             determined by the shape of the output layer.
 
         """
