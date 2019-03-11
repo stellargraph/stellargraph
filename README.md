@@ -144,6 +144,14 @@ The StellarGraph library currently includes the following algorithms for graph m
   Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs.
   The current implementation supports mean aggregation of neighbour nodes,
   taking into account their types and the types of links between them.
+  
+* GAT
+  - Graph ATtention Network algorithm [4] for homogeneous graphs. The implementation supports representation learning and node classification for homogeneous graphs.
+  
+* GCN
+  - Graph Convolutional Network algorithm [5] for homogeneous graphs. 
+  The implementation supports representation learning and node classification for homogeneous graphs.
+  
 
 * Node2Vec [2]
   - Unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring
@@ -161,8 +169,6 @@ The StellarGraph library currently includes the following algorithms for graph m
   downstream machine learning models to solve tasks such as node classification, link prediction, etc,
   for heterogeneous networks.
 
-* Graph Convolutional Networks (GCN) [4]
-  - An implementation supports representation learning, node classification for homogeneous graphs.
 
 ## Getting Help
 
@@ -191,6 +197,8 @@ Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.e
 Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-4. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
+4. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
+
+5. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
 International Conference on Learning Representations (ICLR), 2017
 ([link](https://github.com/tkipf/gcn))
