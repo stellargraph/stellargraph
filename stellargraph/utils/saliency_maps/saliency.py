@@ -116,8 +116,6 @@ class GradientSaliency(object):
         """
 
         # Execute the function to compute the gradient
-        # sp.issparse(A_val) and not self.is_sparse:
-        #    A_val = A_val.todense()
 
         if self.is_sparse and not sp.issparse(A_val):
             A_val = sp.lil_matrix(A_val)
