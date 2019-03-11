@@ -45,7 +45,7 @@ class Ensemble(object):
     sampled with replacement from the original training data.
 
     The choice of ensemble type, Naive or Bagging, is done implicitly based on how data is passed to the
-    fit_generator method.
+    `fit_generator` method.
     """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):
