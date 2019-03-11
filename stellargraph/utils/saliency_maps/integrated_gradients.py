@@ -56,7 +56,6 @@ class IntegratedGradients(GradientSaliency):
         if X_baseline is None:
             X_baseline = np.zeros(X_val.shape)
         X_diff = X_val - X_baseline
-        assert X_diff.shape == X_val.shape
         total_gradients = np.zeros(X_val.shape)
 
         for alpha in np.linspace(0, 1, steps):
