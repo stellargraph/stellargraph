@@ -84,8 +84,8 @@ class IntegratedGradients(GradientSaliency):
                                               matrix with the size of the original adjacency matrix.
         steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.\
 
-        non_exist_edge (bool): Set this to True (A_baseline = all one matrix): allows the function to get the importance for non-exist edges. This is useful when we want to understand
-            adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting this to False ((A_baseline = all zero matrix))
+        non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
+            adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
             could only accurately measure the importance of existing edges.
 
         return (Numpy array): shape the same with A_val. Integrated gradients for the links.
@@ -115,6 +115,15 @@ class IntegratedGradients(GradientSaliency):
         return np.array(total_gradients * A_diff)
 
     def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps=20):
+        """
+        The importance of the node is defined as the sum of all the feature importance of the node.
+
+        Args:
+            Refer to the parameters in get_integrated_node_masks.
+
+        Returns:
+            Importance score for the node.
+        """
         gradients = self.get_integrated_node_masks(
             X_val, A_val, node_idx, class_of_interest, steps=steps
         )
