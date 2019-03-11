@@ -41,7 +41,7 @@ class Ensemble(object):
     different values. Each model in the ensemble is trained on the same training set of examples.
 
     Bagging ensembles add additional model diversity via bootstrap sampling of the training
-    data. That is, each model in the ensemble is trained on a subset of the training examples where the subset is
+    data. That is, each model in the ensemble is trained on a random subset of the training examples,
     sampled with replacement from the original training data.
 
     The choice of ensemble type, Naive or Bagging, is done implicitly based on how data is passed to the
