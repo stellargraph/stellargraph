@@ -68,3 +68,10 @@ Calibration
 
 .. automodule:: stellargraph.utils.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
+
+
+Unsupervised Sampling
+------------------------
+
+.. automodule:: stellargraph.data.unsupervised_sampler
+  :members: UnsupervisedSampler
