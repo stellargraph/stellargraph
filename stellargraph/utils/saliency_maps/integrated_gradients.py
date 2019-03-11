@@ -121,8 +121,7 @@ class IntegratedGradients(GradientSaliency):
         Args:
             Refer to the parameters in get_integrated_node_masks.
 
-        Returns:
-            Importance score for the node.
+        return (float): Importance score for the node.
         """
         gradients = self.get_integrated_node_masks(
             X_val, A_val, node_idx, class_of_interest, steps=steps
