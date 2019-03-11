@@ -88,6 +88,13 @@ class GraphConvolution(Layer):
         return output_shape  # (batch_size, output_dim)
 
     def build(self, input_shapes):
+        """
+        Builds the layer
+
+        Args:
+            input_shape (list of list of int): shapes of the layer's input(s)
+
+        """
         features_shape = input_shapes[0]
         assert len(features_shape) == 2
         input_dim = features_shape[1]

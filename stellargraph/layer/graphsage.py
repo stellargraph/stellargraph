@@ -105,7 +105,7 @@ class GraphSAGEAggregator(Layer):
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
-            and neighbour
+                and neighbour features
 
         """
         # Build a MLP model if zero neighbours
@@ -223,7 +223,7 @@ class MeanAggregator(GraphSAGEAggregator):
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
-            and neighbour
+                and neighbour features
 
         """
         super().build(input_shape)
@@ -271,7 +271,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
-            and neighbour
+                and neighbour features
 
         """
         super().build(input_shape)
@@ -349,7 +349,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
-            and neighbour
+                and neighbour features
 
         """
         super().build(input_shape)
@@ -498,7 +498,7 @@ class GraphSAGE:
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
-    Different aggregators can also be specified with the `aggregator` argument, which
+    Different neighbour node aggregators can also be specified with the `aggregator` argument, which
     should be the aggregator class, either :class:`MeanAggregator`,
     :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`,
     or :class:`AttentionalAggregator`.
