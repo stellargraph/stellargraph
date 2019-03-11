@@ -290,9 +290,7 @@ class Ensemble(object):
                 raise ValueError(
                     "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, "
                     "FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. "
-                    "Received type {}".format(
-                        type(self).__name__, type(generator)
-                    )
+                    "Received type {}".format(type(self).__name__, type(generator))
                 )
             if bag_size is not None and (bag_size > len(train_data) or bag_size <= 0):
                 raise ValueError(
