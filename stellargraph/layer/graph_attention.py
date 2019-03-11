@@ -157,6 +157,15 @@ class GraphAttention(Layer):
         return {**base_config, **config}
 
     def build(self, input_shape):
+        """
+        Builds the layer
+
+        Args:
+            input_shape (list of list of int): shapes of the layer's input(s)
+
+        Returns:
+
+        """
         assert len(input_shape) >= 2
         F_in = int(input_shape[0][-1])
 
