@@ -136,7 +136,7 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
         features: node features in the graph
         A: adjacency matrix
         kwargs: additional arguments for choosing filter: localpool, or chebyshev
-                (For example, pass filter=localpool as an additional argument to apply the localpool filter)
+                (For example, pass filter="localpool" as an additional argument to apply the localpool filter)
 
     Returns:
         features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
