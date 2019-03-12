@@ -1,5 +1,5 @@
 steps:
-  - label: ":python:"
+  - label: ":python: 3.6"
     command: ".buildkite/script.sh"
     plugins:
       docker#v3.0.1:
@@ -10,7 +10,22 @@ steps:
           - COVERALLS_REPO_TOKEN
           - BUILDKITE_BUILD_NUMBER
           - BUILDKITE_BRANCH
+    agents:
+      queue: 't2medium'
+
+  - label: ":python: 3.7.2"
+    command: ".buildkite/script.sh"
+    plugins:
+      docker#v3.0.1:
+        image: "python:3.7.2"
+        environment:
+          - PYTHONDONTWRITEBYTECODE=1
+          - GIT_BRANCH=$BUILDKITE_BRANCH
+          - COVERALLS_REPO_TOKEN
+          - BUILDKITE_BUILD_NUMBER
+          - BUILDKITE_BRANCH
           - AWS_LOGS_BUCKET
+          - UPLOAD_PYTEST=true
     agents:
       queue: 't2medium'
 
