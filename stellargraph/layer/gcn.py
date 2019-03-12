@@ -104,7 +104,7 @@ class GraphConvolution(Layer):
         Builds the layer
 
         Args:
-            input_shape (list of list of int): Shape of input tensors for self and neighbour
+            input_shape (list of int): shapes of the layer's inputs: node features and adjacency matrix
 
         """
 
