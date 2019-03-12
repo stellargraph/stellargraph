@@ -24,7 +24,7 @@ def is_real_iterable(x):
     Tests if x is an iterable and is not a string.
 
     Args:
-        x:
+        x: a variable to check for whether it is an iterable
 
     Returns:
         True if x is an iterable (but not a string) and False otherwise
@@ -136,7 +136,7 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
         features: node features in the graph
         A: adjacency matrix
         kwargs: additional arguments for choosing filter: localpool, or chebyshev
-                (For example, pass filter=localpool as an additional argument to apply the localpool filter)
+                (For example, pass filter="localpool" as an additional argument to apply the localpool filter)
 
     Returns:
         features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
@@ -158,6 +158,9 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
     elif filter == "chebyshev":
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
-        T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), 2)
+        max_degree = kwargs.get("max_degree", 2)
+        T_k = chebyshev_polynomial(
+            rescale_laplacian(normalized_laplacian(A)), max_degree
+        )
         features = [features] + T_k
     return features, A

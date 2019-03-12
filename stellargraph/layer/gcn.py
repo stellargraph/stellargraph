@@ -27,8 +27,27 @@ from typing import List, Tuple, Callable, AnyStr
 
 
 class GraphConvolution(Layer):
+
     """
-    Implementation of the graph convolution layer as in https://arxiv.org/abs/1609.02907
+    Graph Convolution (GCN) Keras layer.
+    The implementation is based on the keras-gcn github repo https://github.com/tkipf/keras-gcn.
+
+    Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
+    International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
+
+    Args:
+        units (int): dimensionality of output feature vectors
+        support (int): number of support weights
+        activation (str): nonlinear activation applied to layer's output to obtain output features
+        use_bias (bool): toggles an optional bias
+        kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
+        bias_initializer (str): name of the initializer for bias
+        attn_kernel_initializer (str): name of the initializer for attention kernel
+        kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
+        bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
+        activity_regularizer (str): not used in the current implementation
+        kernel_constraint (str): constraint applied to layer's kernel
+        bias_constraint (str): constraint applied to layer's bias
     """
 
     def __init__(
@@ -46,25 +65,6 @@ class GraphConvolution(Layer):
         bias_constraint=None,
         **kwargs
     ):
-
-        """
-
-        Args:
-            units: dimensionality of output feature vectors
-            support: number of support weights
-            activation: nonlinear activation applied to layer's output to obtain output features
-            use_bias: toggles an optional bias
-            kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
-            bias_initializer (str): name of the initializer for bias
-            attn_kernel_initializer (str): name of the initializer for attention kernel
-            kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
-            bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
-            activity_regularizer (str): not used in the current implementation
-            kernel_constraint (str): constraint applied to layer's kernel
-            bias_constraint (str): constraint applied to layer's bias
-            **kwargs:
-        """
-
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
@@ -83,6 +83,18 @@ class GraphConvolution(Layer):
         self.support = support
 
     def compute_output_shape(self, input_shapes):
+        """
+        Computes the output shape of the layer.
+        Assumes that the layer will be built to match that input shape provided.
+
+        Args:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
+
         features_shape = input_shapes[0]
         output_shape = (features_shape[0], self.units)
         return output_shape  # (batch_size, output_dim)
@@ -92,9 +104,10 @@ class GraphConvolution(Layer):
         Builds the layer
 
         Args:
-            input_shape (list of list of int): shapes of the layer's input(s)
+            input_shape (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
+
         features_shape = input_shapes[0]
         assert len(features_shape) == 2
         input_dim = features_shape[1]
@@ -119,6 +132,19 @@ class GraphConvolution(Layer):
         self.built = True
 
     def call(self, inputs, mask=None):
+        """
+        Applies the layer.
+
+        Args:
+            inputs (list): a list of input tensors that includes 2 items: node features (matrix of size N x F),
+                and graph adjacency matrix (size N x N), where N is the number of nodes in the graph,
+                F is the dimensionality of node features.
+            mask (None or Tensor):  a Tensor indicating the input mask for Embedding. This mask is only used as a bypassing. It passes the corresponding mask from the previous layer
+                to the next attached layer if the previous layer set a mask.
+        Returns:
+            Keras Tensor that represents the output of the layer.
+        """
+
         features = inputs[0]
         A = inputs[1:]
 
@@ -134,8 +160,13 @@ class GraphConvolution(Layer):
 
     def get_config(self):
         """
-        Gets class configuration for Keras serialization
+        Gets class configuration for Keras serialization.
+        Used by keras model serialization.
+
+        Returns:
+            A dictionary that contains the config of the layer
         """
+
         config = {
             "units": self.units,
             "use_bias": self.use_bias,
@@ -156,8 +187,19 @@ class GraphConvolution(Layer):
 
 class GCN:
     """
-    To create GCN layers with Keras layers.
+    A stack of Graph Convolutional layers to implement the graph convolution network model as in https://arxiv.org/abs/1609.02907
 
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer,
+    activation functions for each hidden layers, and a generator object.
+
+    Args:
+        layer_sizes (list of int): list of output sizes of GCN layers in the stack
+        activations (list of str): list of activations applied to each layer's output
+        generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
+        bias (bool): toggles an optional bias in GCN layers
+        dropout (float): dropout rate applied to input features of each GCN layer
+        kernel_regularizer (str): normalization applied to the kernels of GCN layers
     """
 
     def __init__(
@@ -168,21 +210,7 @@ class GCN:
         bias=True,
         dropout=0.0,
         kernel_regularizer=None,
-        **kwargs
     ):
-
-        """
-
-        Args:
-            layer_sizes: list of output sizes of GCN layers in the stack
-            activations: list of activations applied to each layer's output
-            generator: an instance of FullBatchNodeGenerator class constructed on the graph of interest
-            bias: toggles an optional bias in GCN layers
-            dropout: dropout rate applied to input features of each GCN layer
-            kernel_regularizer: normalization applied to the kernels of GCN layers
-            kwargs: additional parameters for chebyshev or localpool filters
-        """
-
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
@@ -195,7 +223,7 @@ class GCN:
         self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
-        self.kwargs = kwargs
+        self.kwargs = generator.kwargs
 
         # Initialize a stack of GCN layers
         self._layers = []
@@ -216,7 +244,7 @@ class GCN:
         Apply a stack of GCN layers
 
         Args:
-            x (list of Tensor): input features
+            x (Tensor): input features
 
         Returns:
             Output tensor
@@ -240,8 +268,8 @@ class GCN:
         Builds a GCN model for node prediction
 
         Returns:
-            tuple: (x_inp, x_out) where `x_inp` is a Keras input tensor
-                for the specified GCN model and `x_out` is a Keras tensor for the GCN model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
+            and `x_out` is a Keras tensor for the GCN model output.
         """
 
         x_in = Input(shape=(self.generator.features.shape[1],))
@@ -260,11 +288,14 @@ class GCN:
         x_out = self(x_inp)
         return x_inp, x_out
 
-    def link_model(self, flatten_output=False):
+    # NOTE: Temporarily remove this function from sphinx doc because it has not been implemented
+    def _link_model(self, flatten_output=False):
         """
         Builds a GCN model for link (node pair) prediction
+
         Args:
             flatten_output:
         Returns:
+            NotImplemented
         """
         raise NotImplemented
