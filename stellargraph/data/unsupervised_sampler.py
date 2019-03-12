@@ -38,7 +38,6 @@ class UnsupervisedSampler:
         else:
             self.graph = G
 
-
         # Instantiate the walker class used to generate random walks in the graph
         self.walker = UniformRandomWalk(G, seed=seed)
 
