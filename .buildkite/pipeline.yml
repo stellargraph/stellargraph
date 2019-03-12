@@ -11,6 +11,8 @@ steps:
           - BUILDKITE_BUILD_NUMBER
           - BUILDKITE_BRANCH
           - AWS_LOGS_BUCKET
+    agents:
+      queue: 't2medium'
 
   - label: "style"
     plugins:

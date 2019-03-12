@@ -121,10 +121,10 @@ class MeanHinAggregator(Layer):
         Apply MeanAggregation on input tensors, x
 
         Args:
-          x: List of Keras Tensors
-            x[0] = tensor of self features shape (n_batch, n_head, n_feat)
-            x[1+r] = tensors of neighbour features each of shape
-            (n_batch, n_head, n_neighbour[r], n_feat[r])
+          x: List of Keras Tensors with the following elements
+
+            - x[0]: tensor of self features shape (n_batch, n_head, n_feat)
+            - x[1+r]: tensors of neighbour features each of shape (n_batch, n_head, n_neighbour[r], n_feat[r])
 
         Returns:
             Keras Tensor representing the aggregated embeddings in the input.
@@ -169,7 +169,7 @@ class MeanHinAggregator(Layer):
 
         Args:
             input_shape (tuple of ints)
-                Shape tuples can include None for free dimensions, instead of an integer.
+                Shape tuples can include `None` for free dimensions, instead of an integer.
 
         Returns:
             An input shape tuple.

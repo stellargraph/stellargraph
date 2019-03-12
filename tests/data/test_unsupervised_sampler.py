@@ -125,7 +125,7 @@ class TestUnsupervisedSampler(object):
         with pytest.raises(ValueError):
             UnsupervisedSampler(G=g, number_of_walks=0)
 
-        # nodes nodes parameter should be an iterableof node IDs
+        # nodes nodes parameter should be an iterable of node IDs
         with pytest.raises(ValueError):
             UnsupervisedSampler(G=g, nodes=1)
 
@@ -133,10 +133,21 @@ class TestUnsupervisedSampler(object):
         sampler = UnsupervisedSampler(G=g, nodes=None)
         assert sampler.nodes == list(g.nodes())
 
-        # if the seed value is provided, it is set properly
-        seed = 123
-        sampler = UnsupervisedSampler(G=g, seed=seed)
-        assert sampler.seed == seed
+        # if the seed value is provided check
+        # that the random choices is reproducable
+        sampler = UnsupervisedSampler(G=g, seed=1)
+        assert sampler.random.choices(range(100), k=10) == [
+            13,
+            84,
+            76,
+            25,
+            49,
+            44,
+            65,
+            78,
+            9,
+            2,
+        ]
 
     def test_generator_parameter(self):
 
