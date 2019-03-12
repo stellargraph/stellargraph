@@ -16,8 +16,8 @@ The examples folder structure is shown below.
 
 * [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
 
-    Examples of unsupervised node representation learning for homogeneous and heterogeneous networks,
-    using the Node2Vec, Metapath2Vec, and Unsupervised GraphSAGE algorithms.
+    Examples of unsupervised node representation learning for homogeneous networks, heterogeneous networks, and homogenous networks wih node features
+    using the Node2Vec, Metapath2Vec, and Unsupervised GraphSAGE algorithms respectively.
 
 * [`/link-prediction-random-walks`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-random-walks)
 
