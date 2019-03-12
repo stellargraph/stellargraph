@@ -1,5 +1,19 @@
 # Change Log
 
+## [Unreleased](https://github.com/stellargraph/stellargraph/tree/HEAD)
+
+**Implemented new features and enhancements:**
+- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216), 
+[\#315](https://github.com/stellargraph/stellargraph/pull/315)
+- Unsupervised GraphSAGE  [\#331](https://github.com/stellargraph/stellargraph/pull/331)
+- Saliency maps and integrated gradients for model interpretability [\#345](https://github.com/stellargraph/stellargraph/pull/345)
+- Shuffling of head nodes/edges in node and link generators at each epoch [\#298](https://github.com/stellargraph/stellargraph/issues/298)
+
+**Fixed bugs:**
+- a bug where seed was not passed to sampler in `GraphSAGELinkGenerator` constructor [\#337](https://github.com/stellargraph/stellargraph/pull/337)
+- UniformRandomMetaPathWalk doesn't update the current node neighbors [\#340](https://github.com/stellargraph/stellargraph/issues/340)
+- seed value for link mapper [\#336](https://github.com/stellargraph/stellargraph/issues/336)
+
 ## [0.5.0](https://github.com/stellargraph/stellargraph/tree/v0.5.0) (11 Feb 2019)
 
 **Implemented new features and enhancements:**
