@@ -65,21 +65,16 @@ def load_data(graph_loc, ignore_attr):
     node_data = pd.read_table(
         os.path.join(graph_loc, "cora.content"), header=None, names=column_names
     )
+    node_data.drop(columns=["subject"], inplace=True)
 
     g = nx.from_pandas_edgelist(edgelist)
 
     # Extract the feature data. These are the node feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    predictor_names = sorted(set(column_names) - set(ignore_attr))
+    predictor_names = sorted(set(column_names) - set(ignore_attr+["subject"]))
 
-    if "subject" in predictor_names:
-        # Convert node features to numeric vectors
-        feature_encoding = feature_extraction.DictVectorizer(sparse=False)
-        node_features = feature_encoding.fit_transform(
-            node_data[predictor_names].to_dict("records")
-        )
-    else:  # node features are already numeric, no further conversion is needed
-        node_features = node_data[predictor_names].values
+    # node features are already numeric, no further conversion is needed
+    node_features = node_data[predictor_names].values
 
     node_ids = node_data.index
 
