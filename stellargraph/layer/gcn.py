@@ -268,8 +268,7 @@ class GCN:
         Builds a GCN model for node prediction
 
         Returns:
-            tuple: (x_inp, x_out)
-                where `x_inp` is a Keras input tensor for the specified GCN model and `x_out` is a Keras tensor for the GCN model output.
+            a tuple `(x_inp, x_out)`, where `x_inp` is a Keras input tensor for the specified GCN model and `x_out` is a Keras tensor for the GCN model output.
         """
 
         x_in = Input(shape=(self.generator.features.shape[1],))
