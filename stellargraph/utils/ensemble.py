@@ -53,8 +53,8 @@ class Ensemble(object):
 
         Args:
             model: A keras model.
-            n_estimators: <int> The number of estimators (aka models) in the ensemble.
-            n_predictions: <int> The number of predictions per query point per estimator
+            n_estimators (int):  The number of estimators (aka models) in the ensemble.
+            n_predictions (int):  The number of predictions per query point per estimator
         """
         if not isinstance(model, K.engine.training.Model):
             raise ValueError(
@@ -109,11 +109,11 @@ class Ensemble(object):
         This method returns the layer objects for the model specified by the value of indx.
 
         Args:
-            indx: <None or int> The index of the model to return the layers for. If it is None, then the layers
+            indx (None or int): The index of the model to return the layers for. If it is None, then the layers
                 for the 0-th (or first) model are returned.
 
         Returns:
-            <list> The layers for the specified model.
+            list: The layers for the specified model.
 
         """
         if indx is not None and not isinstance(indx, (int,)):
@@ -159,24 +159,24 @@ class Ensemble(object):
         at https://keras.io/models/sequential/
 
         Args:
-            optimizer: <Keras optimizer or string> (Keras-specific parameter) The optimizer to use given either as an
+            optimizer (Keras optimizer or str): (Keras-specific parameter) The optimizer to use given either as an
                 instance of a keras optimizer or a string naming the optimiser of choice.
-            loss: <Keras function or string> (Keras-specific parameter) The loss function or string indicating the
+            loss (Keras function or str): (Keras-specific parameter) The loss function or string indicating the
                 type of loss to use.
-            metrics: <list or dictionary> (Keras-specific parameter) List of metrics to be evaluated by each model in
+            metrics (list or dict): (Keras-specific parameter) List of metrics to be evaluated by each model in
                 the ensemble during training and testing. It should be a list for a model with a single output. To
                 specify different metrics for different outputs of a multi-output model, you could also pass a
                 dictionary.
-            loss_weights: <None or list> (Keras-specific parameter) Optional list or dictionary specifying scalar
+            loss_weights (None or list): (Keras-specific parameter) Optional list or dictionary specifying scalar
                 coefficients (Python floats) to weight the loss contributions of different model outputs. The loss value
                 that will be minimized by the model will then be the weighted sum of all individual losses, weighted by
                 the loss_weights coefficients. If a list, it is expected to have a 1:1 mapping to the model's outputs.
                 If a tensor, it is expected to map output names (strings) to scalar coefficients.
-            sample_weight_mode: <None, string, list, or dictionary> (Keras-specific parameter) If you need to do
+            sample_weight_mode (None, str, list, or dict): (Keras-specific parameter) If you need to do
                 timestep-wise sample weighting (2D weights), set this to "temporal".  None defaults to sample-wise
                 weights (1D). If the model has multiple outputs, you can use a different  sample_weight_mode on
                 each output by passing a dictionary or a list of modes.
-            weighted_metrics: <list> (Keras-specific parameter) List of metrics to be evaluated and weighted by
+            weighted_metrics (list): (Keras-specific parameter) List of metrics to be evaluated and weighted by
                 sample_weight or class_weight during training and testing.
 
         """
@@ -235,45 +235,45 @@ class Ensemble(object):
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
                 NodeSequence, LinkSequence, or FullBatchNodeSequence.
-            steps_per_epoch: <None or int> (Keras-specific parameter) If not None, it specifies the number of steps
+            steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
-            epochs: <int> (Keras-specific parameter) The number of training epochs.
-            verbose: <int> (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
+            epochs (int): (Keras-specific parameter) The number of training epochs.
+            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
                 progress bar, and one line per epoch respectively.
             validation_generator: A generator for validation data that is optional (None). If not None then, if val_data
                 is not None, it should be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator,
                 FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator. However, if val_data is None,
                 then it should be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.
-            validation_steps: <None or int> (Keras-specific parameter) If validation_generator is not None, then it
+            validation_steps (None or int): (Keras-specific parameter) If validation_generator is not None, then it
                 specifies the number of steps to yield from the generator before stopping at the end of every epoch.
-            class_weight: <None or dictionary> (Keras-specific parameter) If not None, it should be a dictionary
+            class_weight (None or dict): (Keras-specific parameter) If not None, it should be a dictionary
                 mapping class indices (integers) to a weight (float) value, used for weighting the loss function (during
                 training only). This can be useful to tell the model to "pay more attention" to samples from an
                 under-represented class.
-            max_queue_size: <int> (Keras-specific parameter) The maximum size for the generator queue.
-            workers: <int> (Keras-specific parameter) The maximum number of workers to use.
-            use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
-            shuffle: <True or False> (Keras-specific parameter) If True, then it shuffles the order of batches at the
+            max_queue_size (int): (Keras-specific parameter) The maximum size for the generator queue.
+            workers (int): (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing (bool): (Keras-specific parameter) If True then use process based threading.
+            shuffle (bool): (Keras-specific parameter) If True, then it shuffles the order of batches at the
                 beginning of each training epoch.
-            initial_epoch: <int> (Keras-specific parameter) Epoch at which to start training (useful for resuming a
+            initial_epoch (int): (Keras-specific parameter) Epoch at which to start training (useful for resuming a
                 previous training run).
-            train_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the data
+            train_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the data
                 to train the model with.
-            train_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
+            train_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the target
                 values for the train data.
-            val_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the validation
+            val_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the validation
                 data.
-            val_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
+            val_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the target
                 values for the validation data.
-            bag_size: <None or int> The number of samples in a bootstrap sample. If None and bagging is used, then
+            bag_size (None or int): The number of samples in a bootstrap sample. If None and bagging is used, then
                 the number of samples is equal to the number of training points.
-            use_early_stopping: <True or False> If set to True, then early stopping is used when training each model
+            use_early_stopping (bool): If set to True, then early stopping is used when training each model
                 in the ensemble. The default is False.
-            early_stopping_monitor: <string> The quantity to monitor for early stopping, e.g., 'val_loss',
+            early_stopping_monitor (str): The quantity to monitor for early stopping, e.g., 'val_loss',
                 'val_weighted_acc'. It should be a valid Keras metric.
 
         Returns:
-            <list> It returns a list of Keras History objects each corresponding to one trained model in the ensemble.
+            list: It returns a list of Keras History objects each corresponding to one trained model in the ensemble.
 
         """
         if train_data is not None:
@@ -422,18 +422,18 @@ class Ensemble(object):
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
                 NodeSequence, LinkSequence, or FullBatchNodeSequence.
-            test_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the node IDs
+            test_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the node IDs
                 to evaluate the model on.
-            test_targets: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the target
+            test_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the target
                 values for the test_data.
-            max_queue_size: <int> (Keras-specific parameter) The maximum size for the generator queue.
-            workers: <int> (Keras-specific parameter) The maximum number of workers to use.
-            use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
-            verbose: <int> (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
+            max_queue_size (int): (Keras-specific parameter) The maximum size for the generator queue.
+            workers (int): (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing (bool): (Keras-specific parameter) If True then use process based threading.
+            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
                 verbocity off and the latter on.
 
         Returns:
-            The mean and standard deviation of the model metrics for the given data.
+            tuple: The mean and standard deviation of the model metrics for the given data.
 
         """
         if test_data is not None and not isinstance(
@@ -514,24 +514,24 @@ class Ensemble(object):
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if predict_data is not None, then generator should be one of type
                 NodeSequence, LinkSequence, or FullBatchNodeSequence.
-            predict_data: <None or iterable> If not None, then it is an iterable, e.g. list, that specifies the node IDs
+            predict_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the node IDs
                 to make predictions for. If generator is of type FullBatchNodeGenerator then predict_data should be all
                 the nodes in the graph since full batch approaches such as GCN and GAT can only be used to make
                 predictions for all graph nodes.
-            summarise: <True or False> If True, then the mean of the predictions over self.n_estimators and
+            summarise (bool): If True, then the mean of the predictions over self.n_estimators and
                 self.n_predictions are returned for each query point. If False, then all predictions are returned.
-            output_layer: <None or int> If not None, then the predictions are the outputs of the layer specified.
+            output_layer (None or int): If not None, then the predictions are the outputs of the layer specified.
                 The default is the model's output layer.
-            max_queue_size: (Keras-specific parameter) The maximum size for the generator queue.
-            workers: <int> (Keras-specific parameter) The maximum number of workers to use.
-            use_multiprocessing: <True or False> (Keras-specific parameter) If True then use process based threading.
-            verbose: <int> (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
+            max_queue_size (int): (Keras-specific parameter) The maximum size for the generator queue.
+            workers (int): (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing (bool): (Keras-specific parameter) If True then use process based threading.
+            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
                 verbocity off and the latter on.
 
 
         Returns:
-            <numpy array> The predictions. It will have shape `MxKxNxF` if **summarise** is set to `False`, or NxF otherwise. `M`
-            is the number of estimators in the ensemble; `K` is the number of predictions per query
+            numpy array: The predictions. It will have shape `MxKxNxF` if **summarise** is set to `False`, or NxF
+            otherwise. `M` is the number of estimators in the ensemble; `K` is the number of predictions per query
             point; `N` is the number of query points; and `F` is the output dimensionality of the specified layer
             determined by the shape of the output layer.
 
