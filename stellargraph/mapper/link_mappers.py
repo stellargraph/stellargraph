@@ -19,34 +19,44 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE and HinSAGE.
 
 """
-__all__ = ["LinkSequence", "GraphSAGELinkGenerator", "HinSAGELinkGenerator"]
+__all__ = [
+    "LinkSequence",
+    "OnDemandLinkSequence",
+    "GraphSAGELinkGenerator",
+    "HinSAGELinkGenerator",
+]
 
 import random
 import operator
 import numpy as np
 import itertools as it
-
+import operator
+import collections
 from functools import reduce
+
+import keras
 from keras.utils import Sequence
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
+    UniformRandomWalk,
 )
 from ..core.utils import is_real_iterable
+
+
+from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
+from stellargraph.core.utils import is_real_iterable
 
 
 class LinkSequence(Sequence):
     """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
-
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
     :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` .
-
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator`.
-
         ids (list or iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
             (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
             These are the links that are to be used to train or inference, and the embeddings
@@ -54,11 +64,8 @@ class LinkSequence(Sequence):
             are passed to the downstream task of link prediction or link attribute inference.
             The source and target nodes of the links are used as head nodes for which subgraphs are sampled.
             The subgraphs are sampled from all nodes.
-
         targets (list or iterable): Labels corresponding to the above links, e.g., 0 or 1 for the link prediction problem.
-
         shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
-
     """
 
     def __init__(self, generator, ids, targets=None, shuffle=True):
@@ -123,15 +130,12 @@ class LinkSequence(Sequence):
     def __getitem__(self, batch_num):
         """
         Generate one batch of data
-
         Args:
             batch_num (int): number of a batch
-
         Returns:
             batch_feats (list): Node features for nodes and neighbours sampled from a
                 batch of the supplied IDs
             batch_targets (list): Targets/labels for the batch.
-
         """
         start_idx = self.generator.batch_size * batch_num
         end_idx = start_idx + self.generator.batch_size
@@ -163,6 +167,114 @@ class LinkSequence(Sequence):
             random.shuffle(self.indices)
 
 
+class OnDemandLinkSequence(Sequence):
+    """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
+    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+
+    This class generates data samples for link inference models
+    and should be created using the :meth:`flow` method of
+    :class:`GraphSAGELinkGenerator` ` .
+
+    Args:
+        generator: An instance of :class:`GraphSAGELinkGenerator`.
+        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph. 
+        The generator method of this class returns `batch_size` of positive and negative samples on demand.
+  """
+
+    def __init__(self, generator, walker):
+
+        self.generator = generator  # graphlinkgenerator instance
+
+        self.head_node_types = None
+
+        if isinstance(walker, UnsupervisedSampler):
+
+            self.walker = walker
+
+            self.data_size = (
+                2
+                * len(self.walker.nodes)
+                * self.walker.length
+                * self.walker.number_of_walks
+            )  # an estimate of the  upper bound on how many samples are generated in each epoch
+
+            print(
+                "Running GraphSAGELinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
+                    round(self.data_size / self.generator.batch_size)
+                )
+            )
+
+            self._gen = self.walker.generator(
+                self.generator.batch_size
+            )  # the generator method from the sampler with the batch-size from the link generator method
+        else:
+            raise TypeError(
+                "({}) UnsupervisedSampler is required.".format(type(self).__name__)
+            )
+
+    def __getitem__(self, batch_num):
+        """
+        Generate one batch of data.
+
+        Args:
+            batch_num<int>: number of a batch
+
+        Returns:
+            batch_feats<list>: Node features for nodes and neighbours sampled from a
+                batch of the supplied IDs
+            batch_targets<list>: Targets/labels for the batch.
+
+        """
+
+        if batch_num >= self.__len__():
+            raise IndexError(
+                "Mapper: batch_num larger than number of esstaimted  batches for this epoch."
+            )
+        # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
+
+        # Get head nodes and labels
+        head_ids, batch_targets = next(self._gen)
+
+        if self.head_node_types is None:
+
+            # Get head node types from all src, dst nodes extracted from all links,
+            # and make sure there's only one pair of node types:
+            self.head_node_types = self._infer_head_node_types(
+                self.generator.schema, head_ids
+            )
+
+            self._sampling_schema = self.generator.schema.sampling_layout(
+                self.head_node_types, self.generator.num_samples
+            )
+
+            self.type_adjacency_list = self.generator.schema.type_adjacency_list(
+                self.head_node_types, len(self.generator.num_samples)
+            )
+
+        # Get sampled nodes
+        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+
+        return batch_feats, batch_targets
+
+    def _infer_head_node_types(self, schema, head_ids):
+        """Get head node types from all src, dst nodes extracted from all links in self.ids"""
+        head_node_types = []
+        for src, dst in head_ids:  # loop over all edges in self.ids
+            head_node_types.append(tuple(schema.get_node_type(v) for v in (src, dst)))
+        head_node_types = list(set(head_node_types))
+
+        if len(head_node_types) != 1:
+            raise RuntimeError(
+                "All (src,dst) node types for inferred links must be of the same type!"
+            )
+
+        return head_node_types.pop()
+
+    def __len__(self):
+        "Denotes the number of batches per epoch"
+        return int(np.ceil(self.data_size / self.generator.batch_size))
+
+
 class GraphSAGELinkGenerator:
     """A data generator for link prediction with Homogeneous GraphSAGE models
 
@@ -173,7 +285,8 @@ class GraphSAGELinkGenerator:
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets
+    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
     Example::
@@ -182,7 +295,7 @@ class GraphSAGELinkGenerator:
         train_data_gen = G_generator.flow(edge_ids)
 
     Args:
-        g (StellarGraph): A machine-learning ready graph.
+        G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
@@ -290,18 +403,31 @@ class GraphSAGELinkGenerator:
         False for prediction.
 
         Args:
-            link_ids: an iterable of (src_id, dst_id) tuples specifying the
-                edges.
-            targets: a 2D array of numeric targets with shape
+            link_ids (list or UnsupervisedSampler): an iterable of (src_id, dst_id) tuples
+                specifying the edges or an UnsupervisedSampler object that has a generator
+                method to generate samples on the fly.
+            targets (optional, array): a 2D array of numeric targets with shape
                 `(len(link_ids), target_size)`
-            shuffle (bool): If True the node_ids will be shuffled at each
+            shuffle (optional, bool): If True the node_ids will be shuffled at each
                 epoch, if False the node_ids will be processed in order.
 
         Returns:
-            A LinkSequence object to use with the GraphSAGE model
+            A LinkSequence or OnDemandLinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
-        return LinkSequence(self, link_ids, targets, shuffle=shuffle)
+        # Pass sampler to on-demand link sequence generation
+        if isinstance(link_ids, UnsupervisedSampler):
+            return OnDemandLinkSequence(self, link_ids)
+
+        # Otherwise pass iterable (check?) to standard LinkSequence
+        elif isinstance(link_ids, collections.Iterable):
+            return LinkSequence(self, link_ids, targets, shuffle)
+
+        else:
+            raise TypeError(
+                "Argument to .flow not recognised. "
+                "Please pass a list of samples or a UnsupervisedSampler object."
+            )
 
 
 class HinSAGELinkGenerator:
@@ -465,4 +591,10 @@ class HinSAGELinkGenerator:
             A LinkSequence object to use with the GraphSAGE model
             methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
         """
-        return LinkSequence(self, link_ids, targets, shuffle=shuffle)
+        if not isinstance(link_ids, collections.Iterable):
+            raise TypeError(
+                "Argument to .flow not recognised. "
+                "Please pass a list of samples or a UnsupervisedSampler object."
+            )
+
+        return LinkSequence(self, link_ids, targets, shuffle)

@@ -107,7 +107,7 @@ class GraphConvolution(Layer):
             input_shape (list of int): shapes of the layer's inputs: node features and adjacency matrix
 
         """
-
+        
         features_shape = input_shapes[0]
         assert len(features_shape) == 2
         input_dim = features_shape[1]

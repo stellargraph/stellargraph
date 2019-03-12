@@ -23,6 +23,7 @@ __all__ = [
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
     "FullBatchNodeGenerator",
+    "FullBatchNodeSequence",
 ]
 
 import operator

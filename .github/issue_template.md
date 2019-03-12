@@ -37,4 +37,3 @@ so that:
 - [ ] Peer Code Review Performed
 - [ ] Code well commented
 - [ ] CHANGELOG.md updated
-
