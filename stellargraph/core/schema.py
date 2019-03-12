@@ -26,7 +26,7 @@ class GraphSchema:
     Class to encapsulate the schema information for a heterogeneous graph.
 
     Typically this should be created from a StellarGraph object, using the
-    create_graph_schema method.
+    :func:`~stellargraph.core.graph.create_graph_schema` method.
     """
 
     _is_directed = False

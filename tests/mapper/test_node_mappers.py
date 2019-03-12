@@ -644,9 +644,6 @@ def test_hinnodemapper_zero_samples():
     batch_feats, batch_targets = mapper[0]
     assert len(batch_feats) == len(sampling_adj)
 
-    # print(sampling_adj)
-    # print(batch_feats)
-
 
 def test_hinnodemapper_no_neighbors():
     batch_size = 3
@@ -728,7 +725,7 @@ class Test_FullBatchNodeGenerator:
 
         [X, A], y, sample_weights = gen.__getitem__(0)
         assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
         assert y is None
         assert sum(sample_weights) == len(node_ids)
 
@@ -745,7 +742,7 @@ class Test_FullBatchNodeGenerator:
 
         [X, A], y, sample_weights = gen.__getitem__(0)
         assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
 
         assert y.shape == (self.N, self.target_dim)
         assert np.array_equal(
@@ -772,7 +769,7 @@ class Test_FullBatchNodeGenerator:
         with pytest.raises(TypeError):
             generator.flow(node_ids, node_targets)
 
-    def test_fullbatch_generater_init_1(self):
+    def test_fullbatch_generator_init_1(self):
         G, feats = create_graph_features()
         nodes = G.nodes()
         node_features = pd.DataFrame.from_dict(
@@ -784,7 +781,7 @@ class Test_FullBatchNodeGenerator:
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
 
-    def test_fullbatch_generater_init_2(self):
+    def test_fullbatch_generator_init_2(self):
         G, feats = create_graph_features()
         nodes = G.nodes()
         node_features = pd.DataFrame.from_dict(
@@ -799,7 +796,7 @@ class Test_FullBatchNodeGenerator:
         assert generator.name == "test"
         assert np.array_equal(feats * feats, generator.features)
 
-    def test_fullbatch_generater_init_3(self):
+    def test_fullbatch_generator_init_3(self):
         G, feats = create_graph_features()
         nodes = G.nodes()
         node_features = pd.DataFrame.from_dict(
