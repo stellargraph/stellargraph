@@ -557,7 +557,9 @@ class FullBatchNodeGenerator:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         func_opt: an optional function to apply on features and adjacency matrix (declared func_opt(features, Aadj, **kwargs))
-        kwargs: additional parameters for func_opt function
+        kwargs: additional parameters needed when using this generator with GCN model with the [func_opt] function. It must be chebyshev or localpool filters (e.g. filter="localpool", or filter="chebyshev", max_degree=2).
+            For more information, please read `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/core>`_ in the file **utils.py**
+            and GCN demo `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
     def __init__(self, G, name=None, func_opt=None, **kwargs):
@@ -566,6 +568,7 @@ class FullBatchNodeGenerator:
 
         self.graph = G
         self.name = name
+        self.kwargs = kwargs
 
         # Check if the graph has features
         G.check_graph_for_ml()
