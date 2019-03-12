@@ -200,8 +200,6 @@ class GCN:
         bias (bool): toggles an optional bias in GCN layers
         dropout (float): dropout rate applied to input features of each GCN layer
         kernel_regularizer (str): normalization applied to the kernels of GCN layers
-        kwargs: additional parameters for max degree, chebyshev or localpool filters (e.g. filter=localpool, max_degree=2).
-            For more information, please read `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/utils>`_ in the file **utils.py** and GCN demo `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
     def __init__(
@@ -212,7 +210,6 @@ class GCN:
         bias=True,
         dropout=0.0,
         kernel_regularizer=None,
-        **kwargs
     ):
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
@@ -226,7 +223,7 @@ class GCN:
         self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
-        self.kwargs = kwargs
+        self.kwargs = generator.kwargs
 
         # Initialize a stack of GCN layers
         self._layers = []

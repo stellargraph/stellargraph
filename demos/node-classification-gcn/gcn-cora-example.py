@@ -58,7 +58,7 @@ def train(train_nodes,
 
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
-    gcnModel = GCN(layer_sizes, activations, generator=generator, bias=True, dropout=dropout, kernel_regularizer=regularizers.l2(5e-4), filter='localpool')
+    gcnModel = GCN(layer_sizes, activations, generator=generator, bias=True, dropout=dropout, kernel_regularizer=regularizers.l2(5e-4))
 
     # Expose the input and output sockets of the model:
     x_inp, x_out = gcnModel.node_model()
