@@ -9,7 +9,7 @@ classification (`calibration-pubmed-node-classification.ipynb`) problems.
 
 ### Pubmed-Diabetes
 
-The examples in this directory uses the Pubmed-Diabetes dataset. 
+The examples in this directory use the Pubmed-Diabetes dataset. 
 
 The dataset can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz).
 
