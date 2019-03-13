@@ -1,8 +1,7 @@
 ## Table of Contents
 
 This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
-data to solve several common problems including node attribute inference (inferring
-entity properties) and link prediction (predicting relations and/or their properties). The
+data to solve link prediction (predicting relations and/or their properties) problems. The
 examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
@@ -14,29 +13,20 @@ Word2Vec [4] algorithm.
 
 The examples folder structure is shown below.
 
-* [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
+* [`/random-walks`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/random-walks)
 
-    Examples of unsupervised node representation learning for homogeneous and heterogeneous networks,
-    using the Node2Vec and Metapath2Vec algorithms.
+    Examples of semi-supervised link prediction for homogeneous and heterogeneous networks,
+    using the Node2Vec and Metapath2vec algorithms.
 
-* [`/link-prediction`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction)
+* [`/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/graphsage)
 
-    Examples of using StellarGraph algorithms for link prediction on homogeneous and heterogeneous networks.
+    Example of semi-supervised link prediction for a homogeneous network with attributed nodes,
+    using the GraphSAGE algorithm.
 
-* [`/node-classification`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification)
+* [`/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/hinsage)
 
-    Examples of using StellarGraph algorithms for node classification on homogeneous and heterogenous networks.
-
-* [`/ensembles`](https://github.com/stellargraph/stellargraph/tree/master/demos/ensembles)
-
-    Examples of using ensembles of graph convolutional neural networks, e.g., GraphSAGE, GCN, HinSAGE, etc., for
-    node classification and link prediction. Model ensembles usually yield better predictions than single models, 
-    while also providing estimates of prediction uncertainty as a bonus. 
-
-* [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
-
-    Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
-    multi-class classification problems.
+    Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types,
+    using the HinSAGE algorithm.
 
 
 ## References

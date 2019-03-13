@@ -1,8 +1,7 @@
 ## Table of Contents
 
 This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
-data to solve several common problems including node attribute inference (inferring
-entity properties) and link prediction (predicting relations and/or their properties). The
+data to solve node attribute inference (inferring entity properties) problems. The
 examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
@@ -14,29 +13,27 @@ Word2Vec [4] algorithm.
 
 The examples folder structure is shown below.
 
-* [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
+* [`/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
 
-    Examples of unsupervised node representation learning for homogeneous and heterogeneous networks,
-    using the Node2Vec and Metapath2Vec algorithms.
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
+    
+* [`/gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn)
 
-* [`/link-prediction`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction)
+    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm.
 
-    Examples of using StellarGraph algorithms for link prediction on homogeneous and heterogeneous networks.
+* [`/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
-* [`/node-classification`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification)
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
 
-    Examples of using StellarGraph algorithms for node classification on homogeneous and heterogenous networks.
+* [`/node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/node2vec)
 
-* [`/ensembles`](https://github.com/stellargraph/stellargraph/tree/master/demos/ensembles)
+    Example of unsupervised node representation learning using Node2Vec and supervised classification using
+    the Scikit-learn library.
 
-    Examples of using ensembles of graph convolutional neural networks, e.g., GraphSAGE, GCN, HinSAGE, etc., for
-    node classification and link prediction. Model ensembles usually yield better predictions than single models, 
-    while also providing estimates of prediction uncertainty as a bonus. 
+* [`/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/hinsage)
 
-* [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
-
-    Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
-    multi-class classification problems.
+    Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
+    using the HinSAGE algorithm.
 
 
 ## References
