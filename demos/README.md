@@ -19,39 +19,39 @@ The examples folder structure is shown below.
     Examples of unsupervised node representation learning for homogeneous and heterogeneous networks,
     using the Node2Vec and Metapath2Vec algorithms.
 
-* [`/link-prediction-random-walks`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-random-walks)
+* [`/link-prediction/random-walks`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/random-walks)
 
     Examples of semi-supervised link prediction for homogeneous and heterogeneous networks,
     using the Node2Vec and Metapath2vec algorithms.
 
-* [`/link-prediction-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-graphsage)
+* [`/link-prediction/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/graphsage)
 
     Example of semi-supervised link prediction for a homogeneous network with attributed nodes,
     using the GraphSAGE algorithm.
 
-* [`/link-prediction-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction-hinsage)
+* [`/link-prediction/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/hinsage)
 
     Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types,
     using the HinSAGE algorithm.
 
-* [`/node-classification-graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-graphsage)
+* [`/node-classification/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
 
     Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
     
-* [`/node-classification-gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-gcn)
+* [`/node-classification/gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn)
 
     Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm.
 
-* [`/node-classification-gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-gat)
+* [`/node-classification/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
     Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
 
-* [`/node-classification-node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-node2vec)
+* [`/node-classification/node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/node2vec)
 
     Example of unsupervised node representation learning using Node2Vec and supervised classification using
     the Scikit-learn library.
 
-* [`/node-classification-hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification-hinsage)
+* [`/node-classification/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/hinsage)
 
     Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
     using the HinSAGE algorithm.
