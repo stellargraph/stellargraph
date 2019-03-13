@@ -9,7 +9,7 @@ link prediction (`ensemble-link-prediction-example.ipynb`) using `StellarGraph`'
 
 ### Cora
 
-Some of the examples in this directory uses the CORA dataset. 
+Some of the examples in this directory use the CORA dataset. 
 
 The dataset can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz).
 
@@ -24,7 +24,7 @@ location on your computer and set the corresponding variable in the notebook to 
 
 ### Pubmed-Diabetes
 
-Some of the examples in this directory uses the Pubmed-Diabetes dataset. 
+Some of the examples in this directory use the Pubmed-Diabetes dataset. 
 
 The dataset can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz).
 
