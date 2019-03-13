@@ -27,6 +27,9 @@ from sklearn.cluster import DBSCAN
 from functools import reduce
 import matplotlib.pyplot as plt
 
+import warnings
+warnings.filterwarnings('ignore') # supress warnings due to some future deprications
+
 
 def load_features(input_data):
     # Summarise features by terrorist group
