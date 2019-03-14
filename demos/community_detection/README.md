@@ -1,6 +1,6 @@
 # Community detection on a terrorist attack data
 
-This is an example of using Unsupervised GraphSAGE embeddings with the clustering to demonstrate how to solve community detection problem. The demo guides through the steps and shows the differences between "traditional" community detection (infomap) and the embeddings' approach.
+This is an example of using Unsupervised GraphSAGE embeddings with clustering to demonstrate how to solve community detection problem. The demo guides through the steps and shows the differences between "traditional" community detection (infomap) and the clustering-of-embeddings approach.
 
 ## Requirements
 This example assumes the `stellargraph` library and its requirements have been 
