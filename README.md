@@ -135,7 +135,7 @@ See the [README](https://github.com/stellargraph/stellargraph/tree/master/demos/
 The StellarGraph library currently includes the following algorithms for graph machine learning:
 
 * GraphSAGE [1]
-  - Supports representation learning, node classification/regression, and link prediction for homogeneous networks.
+  - Supports supervised as well as unsupervised representation learning, node classification/regression, and link prediction for homogeneous networks.
   The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and
   attentional aggregators.
 
