@@ -38,6 +38,10 @@ The examples folder structure is shown below.
     Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
     multi-class classification problems.
 
+* [`/community_detection`](https://github.com/stellargraph/stellargraph/tree/master/demos/community_detection)
+
+    Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is          demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings. 
+
 
 ## References
 
