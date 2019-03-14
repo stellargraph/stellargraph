@@ -1,10 +1,11 @@
 ## Node classification using Node2Vec [1]
 
-This folder contains a [Jupyter](http://jupyter.org/) python notebook demonstrating the combined use of 
+This folder contains two [Jupyter](http://jupyter.org/) python notebooks demonstrating the combined use of 
 `stellargraph` (this library), `Gensim` [4], and `Scikit-learn` [3] libraries for node classification in a 
 homogeneous graph. 
 
-The example demonstrates how to calculate node embedding vectors in just a few lines of Python code.
+The examples demonstrate how to calculate node embedding vectors in just a few lines of Python code using the
+`Node2Vec` [1] algorithm on both weighted and unweighted graphs.
  
 The learned node representations are then used in a node classification task. Specifically, the example demonstrates
 how to predict the subject of a research paper given a paper citation network. The latter is a homogeneous graph
@@ -14,7 +15,7 @@ treated as undirected.
 
 ## Dataset
 
-The example in this directory uses the CORA dataset. 
+The examples in this directory uses the CORA dataset. 
 
 The dataset can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz).
 

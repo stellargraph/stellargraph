@@ -3,7 +3,15 @@ Stellar Machine Learning Library
 
 """
 
-__all__ = ["data", "layer", "mapper", "StellarDiGraph", "StellarGraph", "__version__"]
+__all__ = [
+    "data",
+    "layer",
+    "mapper",
+    "utils",
+    "StellarDiGraph",
+    "StellarGraph",
+    "__version__",
+]
 
 # Version
 from .version import __version__
@@ -16,3 +24,4 @@ from stellargraph.utils.calibration import (
     plot_reliability_diagram,
     expected_calibration_error,
 )
+from stellargraph.utils.ensemble import Ensemble
