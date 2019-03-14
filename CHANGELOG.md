@@ -5,13 +5,11 @@
 **Implemented new features and enhancements:**
 - Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216), 
 [\#315](https://github.com/stellargraph/stellargraph/pull/315)
-- Unsupervised GraphSAGE  [\#331](https://github.com/stellargraph/stellargraph/pull/331)
+- Unsupervised GraphSAGE [\#331](https://github.com/stellargraph/stellargraph/pull/331) with a demo [\#335](https://github.com/stellargraph/stellargraph/pull/335)
+- Model Ensembles [\#343](https://github.com/stellargraph/stellargraph/pull/343)
+- Community detection based on unsupervised graph representation learning [\#354](https://github.com/stellargraph/stellargraph/pull/354)
 - Saliency maps and integrated gradients for model interpretability [\#345](https://github.com/stellargraph/stellargraph/pull/345)
 - Shuffling of head nodes/edges in node and link generators at each epoch [\#298](https://github.com/stellargraph/stellargraph/issues/298)
-
-**New demos:**
-- Community detection based on graph representation learning [\#354](https://github.com/stellargraph/stellargraph/pull/354)
-- Unsupervised graph sage demo [\#335](https://github.com/stellargraph/stellargraph/pull/335)
 
 **Fixed bugs:**
 - a bug where seed was not passed to sampler in `GraphSAGELinkGenerator` constructor [\#337](https://github.com/stellargraph/stellargraph/pull/337)
