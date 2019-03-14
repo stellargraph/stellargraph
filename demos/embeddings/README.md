@@ -1,9 +1,9 @@
 ## Representation Learning Examples
 
-This folder contains three [Jupyter](http://jupyter.org/) python notebooks demonstrating the use of unsupervised representation learning methods implemented in the `stellargraph` library for homogeneous and hetrogenous graphs with or without node features. The original works are referenced below. 
+This folder contains three [Jupyter](http://jupyter.org/) python notebooks demonstrating the use of unsupervised graph representation learning methods implemented in the `stellargraph` library for homogeneous and hetrogenous graphs with or without node features. The original works are referenced below. 
 
 **Node2Vec** and **Metapath2Vec** notebooks demonstrate the combined use of `stellargraph` and `Gensim` [4] libraries for representation learning on homogeneous and heterogeneous graphs. 
-**Unsupervised GraphSAGE** notebook demonstrates the use of the implementation  of the GraphSAGE method in the `Stellargraph` library for unsupervised learning of node embeddings of homogeneous graphs with node features.
+**Unsupervised GraphSAGE** notebook demonstrates the use of `Stellargraph` library's GraphSAGE implementation for unsupervised learning of node embeddings for homogeneous graphs with node features.
 
 The notebooks demonstrate the following algorithms.
 - `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs
