@@ -44,15 +44,14 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     prediction_probabilities.
 
     Args:
-        prediction_probabilities: <numpy array>  The predicted probabilities
-        accuracy: <numpy array> The accuracy such that the i-th entry in the array
-        holds the proportion of correctly classified samples that fall in the i-th
-        bin.
-        confidence: <numpy array> The confidence such that the i-th entry in the
-        array is the average prediction probability over all the samples assigned
-        to this bin.
+        prediction_probabilities (numpy array):  The predicted probabilities.
+        accuracy (numpy array): The accuracy such that the i-th entry in the array holds the proportion of correctly
+            classified samples that fall in the i-th bin.
+        confidence (numpy array): The confidence such that the i-th entry in the array is the average prediction
+            probability over all the samples assigned to this bin.
 
-    Returns: <Float> The expected calibration error.
+    Returns:
+        float: The expected calibration error.
 
     """
     if not isinstance(prediction_probabilities, np.ndarray):
@@ -95,17 +94,15 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
 def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=None):
     """
     Helper function for plotting a reliability diagram.
+
     Args:
-        calibration_data: <list> The calibration data as a list where each entry in the
-        list is a 2-tuple of type numpy.ndarray. Each entry in the tuple holds the
-        fraction of positives and the mean predicted values for the true and predicted
-        class labels.
-        predictions: <np.ndarray> The probabilistic predictions of the classifier for
-         each sample in the dataset used for diagnosing miscalibration.
-        ece: <None or list of floats> If not None, this list stores the expected calibration
-        error for each class.
-        filename: <string or None> If not None, the figure is saved on disk in the
-        given filename.
+        calibration_data (list): The calibration data as a list where each entry in the list is a 2-tuple of type
+            numpy.ndarray. Each entry in the tuple holds the fraction of positives and the mean predicted values
+            for the true and predicted class labels.
+        predictions (np.ndarray): The probabilistic predictions of the classifier for each sample in the dataset used
+            for diagnosing miscalibration.
+        ece (None or list of float): If not None, this list stores the expected calibration error for each class.
+        filename (str or None): If not None, the figure is saved on disk in the given filename.
     """
     if not isinstance(calibration_data, list):
         raise ValueError(
@@ -189,15 +186,15 @@ class TemperatureCalibration(object):
         If validation data is given, then training stops when the validation accuracy starts increasing.
 
         Args:
-            x_train: <numpy array> The training data that should be a classifier's non-probabilistic outputs.
-            It should have shape (N, C) where N is the number of samples and C is the number of classes.
-            y_train: <numpy array> The training data class labels. It should have shape (N, C) where N is the number of
-            samples and C is the number of classes and the class labels are one-hot encoded.
-            x_val: <numpy array or None> The validation data used for early stopping. It should have shape (M, C)
-            where M is the number of validation samples and C is the number of classes and the class labels are one-hot
-            encoded.
-            y_val: <numpy array or None> The validation data class labels. It should have shape (M, C) where M is the
-             number of validation samples and C is the number of classes and the class labels are one-hot encoded.
+            x_train (numpy array): The training data that should be a classifier's non-probabilistic outputs. It should
+                have shape (N, C) where N is the number of samples and C is the number of classes.
+            y_train (numpy array): The training data class labels. It should have shape (N, C) where N is the number
+                of samples and C is the number of classes and the class labels are one-hot encoded.
+            x_val (numpy array or None): The validation data used for early stopping. It should have shape (M, C) where
+                M is the number of validation samples and C is the number of classes and the class labels are one-hot
+                encoded.
+            y_val (numpy array or None): The validation data class labels. It should have shape (M, C) where M is the
+                number of validation samples and C is the number of classes and the class labels are one-hot encoded.
         """
         with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
             x = tf.placeholder(
@@ -244,11 +241,12 @@ class TemperatureCalibration(object):
     def _fit_platt_scaling(self, x_train, y_train):
         """
         Helper method for calibration of a binary classifier using Platt Scaling.
+
         Args:
-            x_train: <numpy array> The training data that should be a classifier's non-probabilistic outputs. It should
-            have shape (N,) where N is the number of training samples.
-            y_train: <numpy array> The training data class labels. It should have shape (N,) where N is the
-            number of training samples.
+            x_train (numpy array): The training data that should be a classifier's non-probabilistic outputs. It
+                should have shape (N,) where N is the number of training samples.
+            y_train (numpy array): The training data class labels. It should have shape (N,) where N is the number
+                of training samples.
 
         """
 
@@ -264,21 +262,21 @@ class TemperatureCalibration(object):
         training stops when the validation accuracy starts increasing. Validation data are ignored for Platt scaling
 
         Args:
-            x_train: <numpy array> The training data that should be a classifier's non-probabilistic outputs. For
-            calibrating a binary classifier it should have shape (N,) where N is the number of training samples.
-            For calibrating a multi-class classifier, it should have shape (N, C) where N is the number of samples
-            and C is the number of classes.
-            y_train: <numpy array> The training data class labels. For
-            calibrating a binary classifier it should have shape (N,) where N is the number of training samples.
-            For calibrating a multi-class classifier, it should have shape (N, C) where N is the number of samples
-            and C is the number of classes and the class labels are one-hot encoded.
-            x_val: <numpy array or None> The validation data used only for calibrating multi-class classification
-            models. It should have shape (M, C) where M is the number of validation samples and C is the number of
-            classes and the class labels are one-hot encoded.
-             that should be the classifier's non-probabilistic outputs.
-            y_val: <numpy array or None> The validation data class labels used only for calibrating multi-class
-             classification models. It should have shape (M, C) where M is the number of validation samples and C
-             is the number of classes and the class labels are one-hot encoded.
+            x_train (numpy array): The training data that should be a classifier's non-probabilistic outputs. For
+                calibrating a binary classifier it should have shape (N,) where N is the number of training samples.
+                For calibrating a multi-class classifier, it should have shape (N, C) where N is the number of samples
+                and C is the number of classes.
+            y_train (numpy array): The training data class labels. For
+                calibrating a binary classifier it should have shape (N,) where N is the number of training samples.
+                For calibrating a multi-class classifier, it should have shape (N, C) where N is the number of samples
+                and C is the number of classes and the class labels are one-hot encoded.
+            x_val (numpy array or None): The validation data used only for calibrating multi-class classification
+                models. It should have shape (M, C) where M is the number of validation samples and C is the number of
+                classes and the class labels are one-hot encoded.
+                that should be the classifier's non-probabilistic outputs.
+            y_val (numpy array or None): The validation data class labels used only for calibrating multi-class
+                classification models. It should have shape (M, C) where M is the number of validation samples and C
+                is the number of classes and the class labels are one-hot encoded.
         """
         if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
             raise ValueError("x_train and y_train must be numpy arrays")
@@ -331,13 +329,14 @@ class TemperatureCalibration(object):
         This method calibrates the given data using the learned temperature. It
         scales each logit by the temperature, exponentiates the results, and finally
         normalizes the scaled values such that their sum is 1.
+
         Args:
-            x: <numpy.ndarray> The logits. For binary classification problems, it should have dimensionality (N,) where
-            N is the number of samples to calibrate. For multi-class problems, it should have dimensionality (N, C)
-            where C is the number of classes.
+            x (numpy.ndarray): The logits. For binary classification problems, it should have dimensionality (N,) where
+                N is the number of samples to calibrate. For multi-class problems, it should have dimensionality (N, C)
+                where C is the number of classes.
 
-        Returns: The calibrated probabilities.
-
+        Returns:
+            numpy array: The calibrated probabilities.
         """
         if not isinstance(x, np.ndarray):
             raise ValueError(
@@ -376,11 +375,11 @@ class IsotonicCalibration(object):
         Train a calibration model using the provided data.
 
         Args:
-            x_train: <numpy array> The training data that should be the classifier's probabilistic outputs. It should
-            have shape NxC where N is the number of training samples and C is the number of classes.
-            y_train: <numpy array> The training class labels. For binary problems y_train has shape (N,)
-            when N is the number of samples. For multi-class classification, y_train has shape (N,C) where
-            C is the number of classes and y_train is using one-hot encoding.
+            x_train (numpy array): The training data that should be the classifier's probabilistic outputs. It should
+                have shape NxC where N is the number of training samples and C is the number of classes.
+            y_train (numpy array): The training class labels. For binary problems y_train has shape (N,)
+                when N is the number of samples. For multi-class classification, y_train has shape (N,C) where
+                C is the number of classes and y_train is using one-hot encoding.
 
         """
         if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
@@ -413,12 +412,13 @@ class IsotonicCalibration(object):
         isotonic regression model and then normalized to sum to 1.
 
         Args:
-            x: <numpy array> The values to calibrate. For binary classification problems it should have shape (N,) where
-            N is the number of samples to calibrate. For multi-class classification problems, it should have shape
-            (N, C) where C is the number of classes.
+            x (numpy array): The values to calibrate. For binary classification problems it should have shape (N,) where
+                N is the number of samples to calibrate. For multi-class classification problems, it should have shape
+                (N, C) where C is the number of classes.
 
-        Returns: <numpy array> The calibrated probabilities. It has shape (N, C) where N is the number of samples and
-        C is the number of classes.
+        Returns:
+            numpy array: The calibrated probabilities. It has shape (N, C) where N is the number of samples
+            and C is the number of classes.
         """
         if not isinstance(x, np.ndarray):
             raise ValueError(
