@@ -111,7 +111,7 @@ class IntegratedGradients(GradientSaliency):
                     (tmp, A_csr.indices, A_csr.indptr), shape=A_csr.shape
                 ).toarray()
             total_gradients += tmp
-        return np.array(total_gradients * A_diff)
+        return np.multiply(total_gradients ,A_diff)
 
     def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps=20):
         """
