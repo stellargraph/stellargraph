@@ -601,7 +601,7 @@ class FullBatchNodeGenerator:
         if func_opt is not None:
             if callable(func_opt):
                 self.features, self.Aadj = func_opt(
-                    features=self.features, Aadj=self.Aadj, **kwargs
+                    features=self.features, A=self.Aadj, **kwargs
                 )
             else:
                 raise ValueError("argument 'func_opt' must be a callable.")
