@@ -789,8 +789,8 @@ class Test_FullBatchNodeGenerator:
         )
         G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-        def func(features, Aadj, **kwargs):
-            return features * features, Aadj
+        def func(features, A, **kwargs):
+            return features * features, A
 
         generator = FullBatchNodeGenerator(G, "test", func, key="value")
         assert generator.name == "test"
