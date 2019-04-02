@@ -123,7 +123,7 @@ def chebyshev_polynomial(X, k):
     return T_k
 
 
-def GCN_Aadj_feats_op(features, A, **kwargs):
+def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
@@ -163,4 +163,9 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
             rescale_laplacian(normalized_laplacian(A)), max_degree
         )
         features = [features] + T_k
+    elif filter == "smoothed":
+        print("Calculating {}-th power of normalized A...".format(k))
+        A = preprocess_adj(A)
+        A = np.power(A, k)
+
     return features, A

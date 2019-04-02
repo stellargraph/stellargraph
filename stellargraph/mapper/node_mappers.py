@@ -562,12 +562,13 @@ class FullBatchNodeGenerator:
             and GCN demo `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
-    def __init__(self, G, name=None, func_opt=None, **kwargs):
+    def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.name = name
+        self.k = k
         self.kwargs = kwargs
 
         # Check if the graph has features
@@ -601,7 +602,7 @@ class FullBatchNodeGenerator:
         if func_opt is not None:
             if callable(func_opt):
                 self.features, self.Aadj = func_opt(
-                    features=self.features, Aadj=self.Aadj, **kwargs
+                    features=self.features, A=self.Aadj, k=self.k, **kwargs
                 )
             else:
                 raise ValueError("argument 'func_opt' must be a callable.")
