@@ -534,7 +534,7 @@ class FullBatchNodeSequence(Sequence):
 
 class FullBatchNodeGenerator:
     """
-    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT.
+    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT, SGC.
     The supplied graph G should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
@@ -556,10 +556,16 @@ class FullBatchNodeGenerator:
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        func_opt: an optional function to apply on features and adjacency matrix (declared func_opt(features, Aadj, **kwargs))
-        kwargs: additional parameters needed when using this generator with GCN model with the [func_opt] function. It must be chebyshev or localpool filters (e.g. filter="localpool", or filter="chebyshev", max_degree=2).
-            For more information, please read `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/core>`_ in the file **utils.py**
-            and GCN demo `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
+        func_opt: an optional function to apply on features and adjacency matrix
+            (declared func_opt(features, Aadj, **kwargs))
+        k (None or int): If not none and filter is smoothed, the normalised adjacency matrix with self loops will be
+            raised to the k-th power before multiplying by the node features.
+        kwargs: additional parameters needed when using this generator with GCN model with the [func_opt] function.
+            It must be chebyshev, localpool, or smoothed filters (e.g. filter="localpool", or
+            filter="chebyshev", max_degree=2, or filter="smoothed"). For more information, please read
+            `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/core>`_ in the
+            file **utils.py** and GCN demo
+            `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
     def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
@@ -579,7 +585,8 @@ class FullBatchNodeGenerator:
         self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
 
         # Power-user feature: make the generator yield dense adjacency matrix instead of the default sparse one.
-        # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency maps
+        # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency
+        # maps
         self.sparse = kwargs.get("sparse", True)
         if not self.sparse:
             self.Aadj = self.Aadj.todense()
