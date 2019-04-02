@@ -139,7 +139,7 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
         features: node features in the graph
         A: adjacency matrix
         k (int or None): If filter is 'smoothed' then it should be an integer indicating the power to raise the
-        normalised adjacency matric with self loops.
+        normalised adjacency matrix with self loops before multiplying the node features matrix.
         kwargs: additional arguments for choosing filter: localpool, chebyshev, or smoothed
                 (For example, pass filter="localpool" as an additional argument to apply the localpool filter)
 
@@ -169,8 +169,15 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
         )
         features = [features] + T_k
     elif filter == "smoothed":
-        print("Calculating {}-th power of normalized A...".format(k))
-        A = preprocess_adj(A)
-        A = np.power(A, k)
+        if isinstance(k, int) and k > 0:
+            print("Calculating {}-th power of normalized A...".format(k))
+            A = preprocess_adj(A)
+            A = np.power(A, k)
+        else:
+            raise ValueError(
+                "k should be positive integer for filter='smoothed'; but received type {} with value {}.".format(
+                    type(k), k
+                )
+            )
 
     return features, A
