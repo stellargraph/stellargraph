@@ -127,15 +127,20 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
-    The features and adjacency matrix will be manipulated by either 'localpool' or 'chebyshev' filters.
-    For more information about 'localpool' or 'chebyshev' filters, please read details:
+    The features and adjacency matrix will be manipulated by either 'localpool', 'chebyshev', or
+    'smoothed' filters.
+
+    For more information about 'localpool', 'chebyshev', and 'smoothed' filters, please read details:
         [1] https://en.wikipedia.org/wiki/Chebyshev_filter
         [2] https://arxiv.org/abs/1609.02907
+        [3] https://arxiv.org/abs/1902.07153
 
     Args:
         features: node features in the graph
         A: adjacency matrix
-        kwargs: additional arguments for choosing filter: localpool, or chebyshev
+        k (int or None): If filter is 'smoothed' then it should be an integer indicating the power to raise the
+        normalised adjacency matric with self loops.
+        kwargs: additional arguments for choosing filter: localpool, chebyshev, or smoothed
                 (For example, pass filter="localpool" as an additional argument to apply the localpool filter)
 
     Returns:

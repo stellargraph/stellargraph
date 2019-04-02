@@ -141,7 +141,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
         test_nodes, test_targets, train_size=300, test_size=None, random_state=523214
     )
 
-    generator = FullBatchNodeGenerator(G, func_A_feats=GCN_Aadj_feats_op, filter='localpool')
+    generator = FullBatchNodeGenerator(G, func_opt=GCN_Aadj_feats_op, filter='localpool')
 
     model = train(train_nodes, train_targets, val_nodes, val_targets, generator, dropout,
         layer_sizes, learning_rate, activations)

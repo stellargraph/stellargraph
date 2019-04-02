@@ -1,4 +1,12 @@
 # Change Log
+## [0.6.1](https://github.com/stellargraph/stellargraph/tree/v0.6.1) (1 Apr 2019)
+**Enhancements:**
+- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb`
+
+**Fixed bugs:**
+- a bug in passing graph adjacency matrix to the optional `func_opt` function in `FullBatchNodeGenerator` class
+- a bug in `demos/node-classification/gcn/gcn-cora-example.py:144`: incorrect argument was used to pass
+the optional function to the generator for GCN 
 
 ## [0.6.0](https://github.com/stellargraph/stellargraph/tree/v0.6.0) (14 Mar 2019)
 
