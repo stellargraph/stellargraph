@@ -119,3 +119,24 @@ def test_GCN_Aadj_feats_op():
     assert features_[2].max() < 1
     assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
     assert Aadj.get_shape() == Aadj_.get_shape()
+
+    # k must be positive integer
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=None)
+
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=0)
+
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=-191)
+
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=2.0)
+
+    features_, Aadj_ = GCN_Aadj_feats_op(
+        features=features, A=Aadj, filter="smoothed", k=2
+    )
+
+    assert len(features_) == 6
+    assert np.array_equal(features, features_)
+    assert Aadj.get_shape() == Aadj_.get_shape()

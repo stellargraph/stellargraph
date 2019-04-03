@@ -22,6 +22,8 @@ Mapper tests:
 from stellargraph.core.graph import *
 from stellargraph.mapper.node_mappers import *
 
+# from stellargraph.utils import GCN_Aadj_feats_op
+
 import networkx as nx
 import numpy as np
 import random
