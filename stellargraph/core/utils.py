@@ -172,7 +172,7 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
         if isinstance(k, int) and k > 0:
             print("Calculating {}-th power of normalized A...".format(k))
             A = preprocess_adj(A)
-            A = np.power(A, k)
+            A = A ** k  # return scipy.sparse.csr_matrix
         else:
             raise ValueError(
                 "k should be positive integer for filter='smoothed'; but received type {} with value {}.".format(
