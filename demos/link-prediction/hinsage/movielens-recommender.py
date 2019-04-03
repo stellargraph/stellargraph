@@ -229,7 +229,7 @@ class LinkInference(object):
         labels = [e[2]["score"] for e in edges]
 
         # Create a StellarGraph object from the ingested graph, for testing the model:
-        # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
+        # When sampling the HinSAGE subgraphs, we want to treat user-movie links as undirected
         if not isinstance(self.g, sg.StellarGraph):
             self.g = sg.StellarGraph(self.g, node_features="feature")
 
