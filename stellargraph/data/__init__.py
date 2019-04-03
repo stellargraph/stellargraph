@@ -19,10 +19,9 @@ The data package contains classes and functions to read, process, and query grap
 
 """
 
-# __all__ = ["explorer", "edge_splitter", "node_splitter", "stellargraph"]
-
 # Expose the stellargraph.data classes:
 from .explorer import *
 from .edge_splitter import *
 from .node_splitter import *
-from .stellargraph import *
+from .loader import from_epgm, load_dataset_BlogCatalog3
+from .unsupervised_sampler import *

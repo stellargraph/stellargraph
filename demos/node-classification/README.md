@@ -1,46 +1,61 @@
-# Graphsage Node Classification
+## Table of Contents
 
-This is an example of using Homogenous GraphSAGE to classify nodes in a graph.
+This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
+data to solve node attribute inference (inferring entity properties) problems. The
+examples demonstrate using the `StellarGraph` library to build machine learning
+workflows on both homogeneous and heterogeneous networks.
 
-## Requirements
-Install the Stellar ML library.
+Each folder contains one or more examples of using the StellarGraph implementations of the
+state-of-the-art algorithms, GraphSAGE [3], HinSAGE, GCN [5], GAT [6], Node2Vec [1], and Metapath2Vec [2]. 
+GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [5]. Node2Vec and
+Metapath2Vec are methods based on graph random walks and representation learning using the
+Word2Vec [4] algorithm.
 
-In top-level stellar-ml directory install using pip:
+The examples folder structure is shown below.
 
-```
-pip install -e .
-```
+* [`/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
 
-## CORA dataset
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
+    
+* [`/gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn)
 
-Currently this example is tested on the CORA dataset. The GraphSAGE model assumes that node
-features are available.
+    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm.
 
-The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
+* [`/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
-The following is the description of the dataset:
-> The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
-> The citation network consists of 5429 links. Each publication in the dataset is described by a
-> 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
-> The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
 
-Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your computer and pass this location
-as a command line argument to this script.
+* [`/node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/node2vec)
 
-## Running the script
+    Example of unsupervised node representation learning using Node2Vec and supervised classification using
+    the Scikit-learn library.
 
-The example should be run on supplying the location of the downloaded CORA dataset with the following command:
-```
-python cora-example.py -g <path_to_cora_dataset>
-```
+* [`/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/hinsage)
+
+    Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
+    using the HinSAGE algorithm.
+
 
 ## References
 
-```
- @inproceedings{hamilton2017inductive,
-     author = {Hamilton, William L. and Ying, Rex and Leskovec, Jure},
-     title = {Inductive Representation Learning on Large Graphs},
-     booktitle = {NIPS},
-     year = {2017}
-   }
-```
+1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on 
+Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
+
+2. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and 
+Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
+([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
+
+3. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216 
+[cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
+
+4. Distributed representations of words and phrases and their compositionality. T. Mikolov, 
+I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Information Processing
+ Systems (NIPS), pp. 3111-3119, 2013. ([link](https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf))
+
+5. Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling. 
+ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
+
+6. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
+
+7. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. 
+ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))

@@ -18,36 +18,44 @@ import setuptools
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
-VERSION = "0.4.0b"
 
 # Required packages
 REQUIRES = [
-    "keras>=2.2.0",
+    "keras>=2.2.3",
     "tensorflow>=1.8",
-    "numpy>=1.14, <1.15",
-    "networkx>=2.1",
+    "numpy>=1.14",
+    "networkx>=2.2",
     "scikit_learn>=0.18",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
+    "pandas>=0.23"
 ]
 
-EXTRAS_REQURES = {"demos": ["pandas", "numba"], "test": ["pytest", "pandas"]}
+EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas", "pytest-benchmark"]}
 
 # Long description
 with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
+
+# Get global version
+# see: https://packaging.python.org/guides/single-sourcing-package-version/
+version = {}
+with open("stellargraph/version.py", "r") as fh:
+    exec(fh.read(), version)
+VERSION = version['__version__']
 
 setuptools.setup(
     name="stellargraph",
     version=VERSION,
     description=DESCRIPTION,
     author="Data61, CSIRO",
+    author_email="stellar.admin@csiro.au",
     url=URL,
     license="Apache 2.0",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    python_requires='>=3.6.0, <3.7.0',
+    python_requires='>=3.5.0, <3.7.0',
     install_requires=REQUIRES,
     extras_require=EXTRAS_REQURES,
     packages=setuptools.find_packages(exclude=("tests",)),

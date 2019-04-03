@@ -19,26 +19,32 @@
 GraphSAGE and compatible aggregator layers
 
 """
-__all__ = ["GraphSAGE", "MeanAggregator"]
+__all__ = [
+    "GraphSAGE",
+    "MeanAggregator",
+    "MaxPoolingAggregator",
+    "MeanPoolingAggregator",
+    "AttentionalAggregator",
+]
 
 import numpy as np
 from keras.engine.topology import Layer
 from keras import Input
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape
+from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from keras.utils import Sequence
 from keras import activations
 from typing import List, Tuple, Callable, AnyStr
 
 
-class MeanAggregator(Layer):
+class GraphSAGEAggregator(Layer):
     """
-    Mean Aggregator for GraphSAGE implemented with Keras base layer
+    Base class for GraphSAGE aggregators
 
     Args:
         output_dim (int): Output dimension
         bias (bool): Optional bias
-        act (Callable or str): name of the activation function to use (must be a 
+        act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
 
     """
@@ -50,12 +56,14 @@ class MeanAggregator(Layer):
         act: Callable or AnyStr = "relu",
         **kwargs
     ):
+        # Ensure the output dimension is divisible by 2
+        if output_dim % 2 != 0:
+            raise ValueError("Output dimension must be divisible by two in aggregator")
+
         self.output_dim = output_dim
-        assert output_dim % 2 == 0
-        self.half_output_dim = int(output_dim / 2)
+        self.half_output_dim = output_dim // 2
         self.has_bias = bias
         self.act = activations.get(act)
-        self.w_neigh = None
         self.w_self = None
         self.bias = None
         self._initializer = "glorot_uniform"
@@ -64,7 +72,7 @@ class MeanAggregator(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization
-        
+
         """
         config = {
             "output_dim": self.output_dim,
@@ -74,39 +82,83 @@ class MeanAggregator(Layer):
         base_config = super().get_config()
         return {**base_config, **config}
 
+    def weight_output_size(self):
+        """
+        Calculates the output size, according to
+        whether the model is building a MLP and
+        the method (concat or sum).
+
+        Returns:
+            int: size of the weight outputs.
+
+        """
+        if self._build_mlp_only:
+            weight_dim = self.output_dim
+        else:
+            weight_dim = self.half_output_dim
+
+        return weight_dim
+
     def build(self, input_shape):
         """
         Builds layer
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
-            and neighbour
+                and neighbour features
 
         """
-        self.w_neigh = self.add_weight(
-            name="w_neigh",
-            shape=(input_shape[1][3], self.half_output_dim),
-            initializer=self._initializer,
-            trainable=True,
-        )
+        # Build a MLP model if zero neighbours
+        self._build_mlp_only = input_shape[1][2] == 0
+
         self.w_self = self.add_weight(
             name="w_self",
-            shape=(input_shape[0][2], self.half_output_dim),
+            shape=(input_shape[0][2], self.weight_output_size()),
             initializer=self._initializer,
             trainable=True,
         )
+
         if self.has_bias:
             self.bias = self.add_weight(
                 name="bias",
-                shape=[self.output_dim],
+                shape=(self.output_dim,),
                 initializer="zeros",
                 trainable=True,
             )
+
         super().build(input_shape)
+
+    def apply_mlp(self, x, **kwargs):
+        """
+        Create MLP on input self tensor, x
+
+        Args:
+          x (List[Tensor]): Tensor giving the node features
+                shape: (batch_size, head size, feature_size)
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        h_out = K.dot(x, self.w_self)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+        return h_out
+
+    def aggregate_neighbours(self, x_neigh):
+        """
+        Override with a method to aggregate tensors over neighbourhood.
+        """
+        raise NotImplementedError(
+            "The GraphSAGEAggregator base class should not be directly instantiated"
+        )
 
     def call(self, x, **kwargs):
         """
-        Apply MeanAggregation on input tensors, x
+        Apply aggregator on input tensors, x
 
         Args:
           x: Keras Tensor
@@ -115,45 +167,365 @@ class MeanAggregator(Layer):
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        neigh_means = K.mean(x[1], axis=2)
+        # x[0]: self vector (batch_size, head size, feature_size)
+        # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
+        x_self, x_neigh = x
 
-        from_self = K.dot(x[0], self.w_self)
-        from_neigh = K.dot(neigh_means, self.w_neigh)
-        total = K.concatenate([from_self, from_neigh], axis=2)
+        if self._build_mlp_only:
+            return self.apply_mlp(x_self, **kwargs)
 
-        return self.act(total + self.bias if self.has_bias else total)
+        # Weight maxtrix multiplied by self features
+        from_self = K.dot(x_self, self.w_self)
+
+        # If there are neighbours aggregate over them
+        from_neigh = self.aggregate_neighbours(x_neigh)
+
+        h_out = K.concatenate([from_self, from_neigh], axis=2)
+
+        # Finally, add bias and apply activation
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+
+        return h_out
 
     def compute_output_shape(self, input_shape):
+        """
+        Computes the output shape of the layer.
+        Assumes that the layer will be built to match that input shape provided.
+
+        Args:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
         return input_shape[0][0], input_shape[0][1], self.output_dim
+
+
+class MeanAggregator(GraphSAGEAggregator):
+    """
+    Mean Aggregator for GraphSAGE implemented with Keras base layer
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def build(self, input_shape):
+        """
+        Builds layer
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+                and neighbour features
+
+        """
+        super().build(input_shape)
+
+        if self._build_mlp_only:
+            self.w_neigh = None
+
+        else:
+            self.w_neigh = self.add_weight(
+                name="w_neigh",
+                shape=(input_shape[1][3], self.weight_output_size()),
+                initializer=self._initializer,
+                trainable=True,
+            )
+
+    def aggregate_neighbours(self, x_neigh):
+        from_neigh = K.dot(K.mean(x_neigh, axis=2), self.w_neigh)
+        return from_neigh
+
+
+class MaxPoolingAggregator(GraphSAGEAggregator):
+    """
+    Max Pooling Aggregator for GraphSAGE implemented with Keras base layer
+
+    Implements the aggregator of Eq. (3) in Hamilton et al. (2017)
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # TODO: These should be user parameters
+        self.hidden_dim = self.output_dim
+        self.hidden_act = activations.get("relu")
+
+    def build(self, input_shape):
+        """
+        Builds layer
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+                and neighbour features
+
+        """
+        super().build(input_shape)
+
+        if self._build_mlp_only:
+            self.w_neigh = None
+            self.w_pool = None
+            self.b_pool = None
+
+        else:
+            self.w_neigh = self.add_weight(
+                name="w_neigh",
+                shape=(self.hidden_dim, self.weight_output_size()),
+                initializer=self._initializer,
+                trainable=True,
+            )
+            self.w_pool = self.add_weight(
+                name="w_pool",
+                shape=(input_shape[1][3], self.hidden_dim),
+                initializer=self._initializer,
+                trainable=True,
+            )
+            self.b_pool = self.add_weight(
+                name="b_pool",
+                shape=(self.hidden_dim,),
+                initializer=self._initializer,
+                trainable=True,
+            )
+
+    def aggregate_neighbours(self, x_neigh):
+        """
+        Aggregates the neighbour tensors by max-pooling of neighbours
+
+        Args:
+            x_neigh (Tensor): Neighbour tensor of shape (n_batch, n_head, n_neighbour, n_feat)
+
+        Returns:
+            Aggregated neighbour tensor of shape (n_batch, n_head, n_feat)
+        """
+        # Pass neighbour features through a dense layer with self.w_pool, self.b_pool
+        xw_neigh = self.hidden_act(K.dot(x_neigh, self.w_pool) + self.b_pool)
+
+        # Take max of this tensor over neighbour dimension
+        neigh_agg = K.max(xw_neigh, axis=2)
+
+        # Final output is a dense layer over the aggregated tensor
+        from_neigh = K.dot(neigh_agg, self.w_neigh)
+        return from_neigh
+
+
+class MeanPoolingAggregator(GraphSAGEAggregator):
+    """
+    Mean Pooling Aggregator for GraphSAGE implemented with Keras base layer
+
+    Implements the aggregator of Eq. (3) in Hamilton et al. (2017), with max pooling replaced with mean pooling
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # TODO: These should be user parameters
+        self.hidden_dim = self.output_dim
+        self.hidden_act = activations.get("relu")
+
+    def build(self, input_shape):
+        """
+        Builds layer
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+                and neighbour features
+
+        """
+        super().build(input_shape)
+
+        if self._build_mlp_only:
+            self.w_neigh = None
+            self.w_pool = None
+            self.b_pool = None
+
+        else:
+            self.w_neigh = self.add_weight(
+                name="w_neigh",
+                shape=(self.hidden_dim, self.weight_output_size()),
+                initializer=self._initializer,
+                trainable=True,
+            )
+            self.w_pool = self.add_weight(
+                name="w_pool",
+                shape=(input_shape[1][3], self.hidden_dim),
+                initializer=self._initializer,
+                trainable=True,
+            )
+            self.b_pool = self.add_weight(
+                name="b_pool",
+                shape=(self.hidden_dim,),
+                initializer=self._initializer,
+                trainable=True,
+            )
+
+    def aggregate_neighbours(self, x_neigh):
+        """
+        Aggregates the neighbour tensors by mean-pooling of neighbours
+
+        Args:
+            x_neigh (Tensor): Neighbour tensor of shape (n_batch, n_head, n_neighbour, n_feat)
+
+        Returns:
+            Aggregated neighbour tensor of shape (n_batch, n_head, n_feat)
+        """
+        # Pass neighbour features through a dense layer with self.hidden_act activations
+        xw_neigh = self.hidden_act(K.dot(x_neigh, self.w_pool) + self.b_pool)
+
+        # Aggregate over neighbour activations using mean
+        neigh_agg = K.mean(xw_neigh, axis=2)
+
+        # Final output is a dense layer over the aggregated tensor
+        from_neigh = K.dot(neigh_agg, self.w_neigh)
+        return from_neigh
+
+
+class AttentionalAggregator(GraphSAGEAggregator):
+    """
+    Attentional Aggregator for GraphSAGE implemented with Keras base layer
+
+    Implements the aggregator of Veličković et al. "Graph Attention Networks" ICLR 2018
+
+    Args:
+        output_dim (int): Output dimension
+        bias (bool): Optional bias
+        act (Callable or str): name of the activation function to use (must be a
+            Keras activation function), or alternatively, a TensorFlow operation.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # How can we expose these options to the user?
+        self.attn_act = LeakyReLU(0.2)
+
+    def weight_output_size(self):
+        return self.output_dim
+
+    def build(self, input_shape):
+        # Build the full model if non-zero neighbours
+        super().build(input_shape)
+
+        self.a_self = self.add_weight(
+            name="a_self",
+            shape=(self.output_dim, 1),
+            initializer=self._initializer,
+            trainable=True,
+        )
+
+        if self._build_mlp_only:
+            self.a_neigh = None
+        else:
+            self.a_neigh = self.add_weight(
+                name="a_neigh",
+                shape=(self.output_dim, 1),
+                initializer=self._initializer,
+                trainable=True,
+            )
+
+    def call(self, x, **kwargs):
+        """
+        Apply aggregator on input tensors, x
+
+        Args:
+          x (List[Tensor]): Tensors giving self and neighbour features
+                x[0]: self Tensor (batch_size, head size, feature_size)
+                x[1]: neighbour Tensor (batch_size, head size, neighbours, feature_size)
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        if self._build_mlp_only:
+            return self.apply_mlp(x[0], **kwargs)
+
+        # Calculate features for self & neighbours
+        xw_self = K.expand_dims(K.dot(x[0], self.w_self), axis=2)
+        xw_neigh = K.dot(x[1], self.w_self)
+
+        # Concatenate self vector to neighbour vectors
+        # Shape is (n_b, n_h, n_neigh+1, n_feat)
+        xw_all = K.concatenate([xw_self, xw_neigh], axis=2)
+
+        # Calculate attention
+        attn_self = K.dot(xw_self, self.a_self)  # (n_b, n_h, 1)
+        attn_neigh = K.dot(xw_all, self.a_neigh)  # (n_b, n_h, n_neigh+1, 1)
+
+        # Add self and neighbour attn and apply activation
+        # Note: This broadcasts to (n_b, n_h, n_neigh + 1, 1)
+        attn_u = self.attn_act(attn_self + attn_neigh)
+
+        # Attn coefficients, softmax over the neighbours
+        attn = K.softmax(attn_u, axis=2)
+
+        # Multiply attn coefficients by neighbours (and self) and aggregate
+        h_out = K.sum(attn * xw_all, axis=2)
+
+        if self.has_bias:
+            h_out = self.act(h_out + self.bias)
+        else:
+            h_out = self.act(h_out)
+
+        return h_out
 
 
 class GraphSAGE:
     """
-    Implementation of the GraphSAGE algorithm with Keras layers.
+    Implementation of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
+    see: http://snap.stanford.edu/graphsage/
+
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer and a generator object.
+
+    Different neighbour node aggregators can also be specified with the `aggregator` argument, which
+    should be the aggregator class, either :class:`MeanAggregator`,
+    :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`,
+    or :class:`AttentionalAggregator`.
 
     Args:
-        layer_sizes (list of int): Hidden feature dimensions for each layer
-        mapper (Sequence): A GraphSAGENodeMapper or GraphSAGELinkMapper. If specified the n_samples
+        layer_sizes (list): Hidden feature dimensions for each layer
+        generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
             and input_dim will be taken from this object.
-        n_samples (list of int): (Optional: needs to be specified if no mapper 
+        n_samples (list): (Optional: needs to be specified if no mapper
             is provided.) The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
-        aggregator (class Layer): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
+        aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
-        normalize (str): The normalization used after each layer, defaults to L2 normalization.
+        normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
 
     """
 
     def __init__(
         self,
         layer_sizes,
-        mapper=None,
+        generator=None,
         n_samples=None,
         input_dim=None,
         aggregator=None,
         bias=True,
-        dropout=0.,
+        dropout=0.0,
         normalize="l2",
     ):
         # Set the aggregator layer used in the model
@@ -168,14 +540,22 @@ class GraphSAGE:
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
 
-        elif normalize is None or normalize == "none":
+        elif normalize is None or normalize == "none" or normalize == "None":
             self._normalization = Lambda(lambda x: x)
+
+        else:
+            raise ValueError(
+                "Normalization should be either 'l2' or 'none'; received '{}'".format(
+                    normalize
+                )
+            )
 
         # Get the input_dim and num_samples from the mapper if it is given
         # Use both the schema and head node type from the mapper
-        if mapper is not None:
-            self.n_samples = mapper.num_samples
-            feature_sizes = mapper.graph.get_feature_sizes()
+        # TODO: Refactor the horror of generator.generator.graph...
+        if generator is not None:
+            self.n_samples = generator.generator.num_samples
+            feature_sizes = generator.generator.graph.node_feature_sizes()
             if len(feature_sizes) > 1:
                 raise RuntimeError(
                     "GraphSAGE called on graph with more than one node type."
@@ -210,18 +590,7 @@ class GraphSAGE:
             for layer in range(self.n_layers)
         ]
 
-        # Sizes of the neighbours for each layer
-        self._neigh_reshape = [
-            [
-                Reshape((-1, max(1, self.n_samples[i]), self.dims[layer]))
-                for i in range(self.n_layers - layer)
-            ]
-            for layer in range(self.n_layers)
-        ]
-
-        self._normalization = Lambda(lambda x: K.l2_normalize(x, 2))
-
-    def __call__(self, x: List):
+    def __call__(self, xin: List):
         """
         Apply aggregator layers
 
@@ -232,54 +601,54 @@ class GraphSAGE:
             Output tensor
         """
 
-        def compose_layers(_x: List, layer: int):
+        def apply_layer(x: List, layer: int):
             """
-            Function to recursively compose aggregation layers. When current layer is at final layer, then length of _x
-            should be 1, and compose_layers(_x, layer) returns _x[0].
+            Compute the list of output tensors for a single GraphSAGE layer
 
             Args:
-                _x:       List of feature matrix tensors
-                layer:   Current layer index
+                x (List[Tensor]): Inputs to the layer
+                layer (int): Layer index to construct
 
             Returns:
-                _x computed from current layer to output layer
+                Outputs of applying the aggregators as a list of Tensors
+
             """
+            layer_out = []
+            for i in range(self.n_layers - layer):
+                head_shape = K.int_shape(x[i])[1]
 
-            def x_next(agg):
-                """
-                Compute the list of tensors for the next layer
+                # Reshape neighbours per node per layer
+                neigh_in = Dropout(self.dropout)(
+                    Reshape((head_shape, self.n_samples[i], self.dims[layer]))(x[i + 1])
+                )
 
-                Args:
-                    agg (Layer): Aggregator layer to apply
+                # Apply aggregator to head node and neighbour nodes
+                layer_out.append(
+                    self._aggs[layer]([Dropout(self.dropout)(x[i]), neigh_in])
+                )
 
-                Returns: 
-                    Output list of tensors of applying the aggregator to inputs
+            return layer_out
 
-                """
-                return [
-                    agg(
-                        [
-                            Dropout(self.dropout)(_x[i]),
-                            Dropout(self.dropout)(
-                                self._neigh_reshape[layer][i](_x[i + 1])
-                            ),
-                        ]
-                    )
-                    for i in range(self.n_layers - layer)
-                ]
+        if not isinstance(xin, list):
+            raise TypeError("Input features to GraphSAGE must be a list")
 
-            return (
-                compose_layers(x_next(self._aggs[layer]), layer + 1)
-                if layer < self.n_layers
-                else _x[0]
+        if len(xin) != self.n_layers + 1:
+            raise ValueError(
+                "Length of input features should equal the number of GraphSAGE layers plus one"
             )
 
-        assert isinstance(x, list), "Input features must be a list"
-        assert (
-            len(x) == self.n_layers + 1 > 1
-        ), "Length of input features should match the number of GraphSAGE layers"
+        # Form GraphSAGE layers iteratively
+        self.layer_tensors = []
+        h_layer = xin
+        for layer in range(0, self.n_layers):
+            h_layer = apply_layer(h_layer, layer)
+            self.layer_tensors.append(h_layer)
 
-        return self._normalization(compose_layers(x, 0))
+        return (
+            self._normalization(h_layer[0])
+            if len(h_layer) == 1
+            else [self._normalization(xi) for xi in h_layer]
+        )
 
     def _input_shapes(self) -> List[Tuple[int, int]]:
         """
@@ -292,10 +661,7 @@ class GraphSAGE:
         """
 
         def shape_at(i: int) -> Tuple[int, int]:
-            return (
-                max(1, np.product(self.n_samples[:i], dtype=int)),
-                self.input_feature_size,
-            )
+            return (np.product(self.n_samples[:i], dtype=int), self.input_feature_size)
 
         input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
         return input_shapes
@@ -311,8 +677,9 @@ class GraphSAGE:
                 (batch_size, 1*feature_size)
 
         Returns:
-            x_inp: Keras input tensors for specified graphsage model
-            y_out: Keras tensor for GraphSAGE model output
+            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
+            for the specified GraphSAGE model and ``x_out`` is tne Keras tensor
+            for the GraphSAGE model output.
 
         """
         # Create tensor inputs

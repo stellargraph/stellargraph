@@ -17,7 +17,7 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.core.graph import StellarGraph
 
 
 def create_test_graph():
@@ -78,10 +78,6 @@ class TestUniformRandomWalk(object):
             urw.run(
                 nodes="0", n=n, length=length, seed=seed
             )  # can't just pass a node id, need list, e.g., ["0"]
-        with pytest.raises(ValueError):
-            urw.run(
-                nodes=(1, 2), n=n, length=length, seed=seed
-            )  # tuple is not accepted, only list
         # n has to be positive integer
         with pytest.raises(ValueError):
             urw.run(nodes=nodes, n=0, length=length, seed=seed)
@@ -267,3 +263,14 @@ class TestUniformRandomWalk(object):
             assert len(subgraph) == length
             for node in subgraph:
                 assert node == "self lonely"  # all nodes should be the same node
+
+    def test_benchmark_uniformrandomwalk(self, benchmark):
+
+        g = create_test_graph()
+        urw = UniformRandomWalk(g)
+
+        nodes = ["0"]  # this node has no edges including itself
+        n = 5
+        length = 5
+
+        benchmark(lambda: urw.run(nodes=nodes, n=n, length=length))
