@@ -232,10 +232,8 @@ class LinkInference(object):
 
         # Create a StellarGraph object from the ingested graph, for testing the model:
         # When sampling the GraphSAGE subgraphs, we want to treat user-movie links as undirected
-        self.g = sg.StellarGraph(self.g)
-
-        # Make sure the StellarGraph object is ML-ready, i.e., that its node features are numeric (as required by the model):
-        self.g.fit_attribute_spec()
+        if not isinstance(self.g, sg.StellarGraph):
+            self.g = sg.StellarGraph(self.g, node_features="feature")
 
         # Load the model:
         model = keras.models.load_model(
@@ -248,12 +246,15 @@ class LinkInference(object):
             for ii in range(1, len(model.input_shape) - 1, 2)
         ]
 
-        # Mapper feeds data from (source, target) sampled subgraphs to GraphSAGE model
-        all_mapper = HinSAGELinkMapper(
-            self.g, edgelist, labels, 200, num_samples, name="mapper_all"
+        # Generator feeds data from (source, target) sampled subgraphs to HinSAGE model
+        generator = HinSAGELinkGenerator(
+            self.g,
+            200,
+            num_samples,
         )
+        all_gen = generator.flow(edgelist, labels)
 
-        all_metrics = model.evaluate_generator(all_mapper)
+        all_metrics = model.evaluate_generator(all_gen)
 
         print("\nEvaluation on all edges:")
         for name, val in zip(model.metrics_names, all_metrics):
@@ -268,7 +269,7 @@ if __name__ == "__main__":
         "-p",
         "--data_path",
         type=str,
-        default="../data/ml-100k",
+        default="../../data/ml-100k",
         help="Dataset path (directory)",
     )
     parser.add_argument(
