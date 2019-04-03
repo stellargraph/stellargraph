@@ -17,7 +17,7 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import UniformRandomMetaPathWalk
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.core.graph import StellarGraph
 
 
 def create_test_graph():
@@ -90,9 +90,6 @@ class TestMetaPathWalk(object):
             mrw.run(nodes=None, n=n, length=length, metapaths=metapaths, seed=seed)
         with pytest.raises(ValueError):
             mrw.run(nodes=0, n=n, length=length, metapaths=metapaths, seed=seed)
-        # only list is acceptable type for nodes
-        with pytest.raises(ValueError):
-            mrw.run(nodes=(1, 2), n=n, length=length, metapaths=metapaths, seed=seed)
         # n has to be positive integer
         with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=-1, length=length, metapaths=metapaths, seed=seed)
@@ -301,3 +298,15 @@ class TestMetaPathWalk(object):
         assert len(walks) == n * 6
         for walk in walks:
             assert len(walk) <= length  # test against maximum walk length
+
+    def test_benchmark_uniformrandommetapathwalk(self, benchmark):
+
+        g = create_test_graph()
+        mrw = UniformRandomMetaPathWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        length = 5
+        metapaths = [["s", "n", "n", "s"], ["n", "s", "n"], ["n", "n"]]
+
+        benchmark(lambda: mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths))

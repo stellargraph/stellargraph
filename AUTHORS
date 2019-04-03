@@ -1,0 +1,22 @@
+# This is the official list of StellarGraph authors for copyright purposes, as well as copyright holders of reference
+# implementations of the algorithms used/implemented in StellarGraph.
+# This file is distinct from the CONTRIBUTORS files.
+# See the latter for an explanation.
+
+StellarGraph library:
+Copyright (c) 2018  (CSIRO)
+All rights reserved
+
+Node2Vec algorithm:
+Copyright (c) 2016 Aditya Grover | MIT License
+
+GraphSAGE algorithm:
+Copyright (c) 2017 William L. Hamilton, Rex Ying | MIT License
+Copyright (c) 2016 Thomas Kipf | MIT License
+
+Graph Convolutional Networks (GCN) algorithm:
+Copyright (c) 2016 Thomas Kipf | MIT License
+
+GAT algorithm:
+Copyright (c) 2018 Daniele Grattarola | MIT License
+Copyright (c) 2018 Petar Veličković | MIT License

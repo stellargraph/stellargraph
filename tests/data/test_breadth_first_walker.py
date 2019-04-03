@@ -17,7 +17,7 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import SampledBreadthFirstWalk
-from stellargraph.data.stellargraph import StellarGraph
+from stellargraph.core.graph import StellarGraph
 
 
 def create_test_graph():
@@ -94,9 +94,6 @@ class TestBreadthFirstWalk(object):
             bfw.run(nodes=None, n=n, n_size=n_size)
         with pytest.raises(ValueError):
             bfw.run(nodes=0, n=n, n_size=n_size)
-        with pytest.raises(ValueError):
-            # only list is acceptable type for nodes
-            bfw.run(nodes=(1, 2), n=n, n_size=n_size)
 
         # n has to be positive integer
         with pytest.raises(ValueError):
@@ -471,3 +468,13 @@ class TestBreadthFirstWalk(object):
 
         assert len(w0) == len(w1)
         assert w0 == w1
+
+    def test_benchmark_sampledbreadthfirstwalk(self, benchmark):
+        g = create_test_graph()
+        bfw = SampledBreadthFirstWalk(g)
+
+        nodes = ["0"]
+        n = 5
+        n_size = [5, 5]
+
+        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))

@@ -1,0 +1,121 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2018-2019 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+"""
+Utils tests:
+
+"""
+import pytest
+import random
+import networkx as nx
+import numpy as np
+import scipy as sp
+
+from stellargraph.core.utils import *
+from stellargraph.core.graph import *
+
+
+def example_graph(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
+    G = nx.Graph()
+    n_noniso = n_nodes - n_isolates
+    edges = [
+        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_nodes_from(range(n_nodes))
+    G.add_edges_from(edges, label="default")
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def beforeall():
+    G = example_graph(feature_size=4, n_nodes=6, n_isolates=1, n_edges=20)
+    pytest.G = G
+
+
+def test_normalize_adj():
+    node_list = list(pytest.G.nodes())
+    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    csr = normalize_adj(Aadj)
+    dense = csr.todense()
+    assert 5 == pytest.approx(dense.sum(), 0.1)
+    assert csr.get_shape() == Aadj.get_shape()
+
+    csr = normalize_adj(Aadj, symmetric=False)
+    dense = csr.todense()
+    assert 5 == pytest.approx(dense.sum(), 0.1)
+    assert csr.get_shape() == Aadj.get_shape()
+
+
+def test_normalized_laplacian():
+    node_list = list(pytest.G.nodes())
+    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    laplacian = normalized_laplacian(Aadj)
+    assert 1 == pytest.approx(laplacian.sum(), 0.2)
+    assert laplacian.get_shape() == Aadj.get_shape()
+
+    laplacian = normalized_laplacian(Aadj, symmetric=False)
+    assert 1 == pytest.approx(laplacian.sum(), 0.2)
+    assert laplacian.get_shape() == Aadj.get_shape()
+
+
+def test_rescale_laplacian():
+    node_list = list(pytest.G.nodes())
+    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    rl = rescale_laplacian(normalized_laplacian(Aadj))
+    assert rl.max() < 1
+    assert rl.get_shape() == Aadj.get_shape()
+
+
+def test_chebyshev_polynomial():
+    node_list = list(pytest.G.nodes())
+    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+
+    k = 2
+    cp = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(Aadj)), k)
+    assert len(cp) == k + 1
+    assert np.array_equal(cp[0].todense(), sp.eye(Aadj.shape[0]).todense())
+    assert cp[1].max() < 1
+    assert 5 == pytest.approx(cp[2].todense()[:5, :5].sum(), 0.1)
+
+
+def test_GCN_Aadj_feats_op():
+    node_list = list(pytest.G.nodes())
+    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    features = pytest.G.get_feature_for_nodes(node_list)
+
+    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, filter="localpool")
+
+    assert np.array_equal(features, features_)
+    assert 6 == pytest.approx(Aadj_.todense().sum(), 0.1)
+
+    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, filter="chebyshev")
+
+    assert len(features_) == 4
+    assert np.array_equal(features_[0], features_[0])
+    assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
+    assert features_[2].max() < 1
+    assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
+    assert Aadj.get_shape() == Aadj_.get_shape()

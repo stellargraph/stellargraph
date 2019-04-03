@@ -24,12 +24,15 @@ __all__ = [
     "SampledHeterogeneousBreadthFirstWalk",
 ]
 
+
 import networkx as nx
 import numpy as np
 import random
-from stellargraph.data.stellargraph import GraphSchema
-from stellargraph.data.stellargraph import StellarGraphBase
 from collections import defaultdict
+
+from ..core.schema import GraphSchema
+from ..core.graph import StellarGraphBase
+from ..core.utils import is_real_iterable
 
 
 class GraphWalk(object):
@@ -37,8 +40,15 @@ class GraphWalk(object):
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph, graph_schema=None):
+    def __init__(self, graph, graph_schema=None, seed=None):
         self.graph = graph
+
+        # Initialize the random state
+        self._random_state = random.Random(seed)
+
+        # Initialize a numpy random state (for numpy random methods)
+        self._np_random_state = np.random.RandomState(seed=seed)
+
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraphBase):
             raise TypeError(
@@ -72,7 +82,10 @@ class GraphWalk(object):
                     for k in iter(nkeys)
                     if self.graph_schema.is_of_edge_type((n1, n2, k), et)
                 ]
-                self.adj[et][n1] = neigh_et
+                # Create adjacency list in lexographical order
+                # Otherwise sampling methods will not be deterministic
+                # even when the seed is set.
+                self.adj[et][n1] = sorted(neigh_et, key=str)
 
     def neighbors(self, graph, node):
         if node not in graph:
@@ -101,6 +114,7 @@ class UniformRandomWalk(GraphWalk):
 
     def run(self, nodes=None, n=None, length=None, seed=None):
         """
+        Perform a random walk starting from the root nodes.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -114,7 +128,12 @@ class UniformRandomWalk(GraphWalk):
         """
         self._check_parameter_values(nodes=nodes, n=n, length=length, seed=seed)
 
-        random.seed(seed)  # seed the random number generator
+        if seed:
+            # seed the random number generator
+            rs = random.Random(seed)
+        else:
+            # Restore the random state
+            rs = self._random_state
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -129,7 +148,7 @@ class UniformRandomWalk(GraphWalk):
                     ):  # for whatever reason this node has no neighbours so stop
                         break
                     else:
-                        random.shuffle(neighbours)  # shuffles the list in place
+                        rs.shuffle(neighbours)  # shuffles the list in place
                         current_node = neighbours[0]  # select the first node to follow
 
                 walks.append(walk)
@@ -155,8 +174,8 @@ class UniformRandomWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
-            raise ValueError("nodes parameter should be a list of node IDs.")
+        if not is_real_iterable(nodes):
+            raise ValueError("nodes parameter should be an iterable of node IDs.")
         if (
             len(nodes) == 0
         ):  # this is not an error but maybe a warning should be printed to inform the caller
@@ -207,14 +226,60 @@ class UniformRandomWalk(GraphWalk):
                 )
 
 
+def naive_weighted_choices(rs, weights):
+    """
+    Select an index at random, weighted by the iterator `weights` of
+    arbitrary (non-negative) floats. That is, `x` will be returned
+    with probability `weights[x]/sum(weights)`.
+
+    For doing a single sample with arbitrary weights, this is much (5x
+    or more) faster than numpy.random.choice, because the latter
+    requires a lot of preprocessing (normalized probabilties), and
+    does a lot of conversions/checks/preprocessing internally.
+    """
+
+    # divide the interval [0, sum(weights)) into len(weights)
+    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
+    # weights[i]
+    subinterval_ends = []
+    running_total = 0
+    for w in weights:
+        assert w >= 0
+        running_total += w
+        subinterval_ends.append(running_total)
+
+    # pick a place in the overall interval
+    x = rs.random() * running_total
+
+    # find the subinterval that contains the place, by looking for the
+    # first subinterval where the end is (strictly) after it
+    for idx, end in enumerate(subinterval_ends):
+        if x < end:
+            break
+
+    return idx
+
+
 class BiasedRandomWalk(GraphWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def run(self, nodes=None, n=None, p=1., q=1., length=None, seed=None):
+    def run(
+        self,
+        nodes=None,
+        n=None,
+        p=1.0,
+        q=1.0,
+        length=None,
+        seed=None,
+        weighted=False,
+        edge_weight_label="weight",
+    ):
+
         """
+        Perform a random walk starting from the root nodes.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -223,69 +288,136 @@ class BiasedRandomWalk(GraphWalk):
             q: <float> Defines probability, 1/q, for moving to a node away from the source node
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
+            weighted: <False or True> Indicates whether the walk is unweighted or weighted
+            edge_weight_label: <string> Label of the edge weight property.
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
 
         """
         self._check_parameter_values(
-            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed
+            nodes=nodes,
+            n=n,
+            p=p,
+            q=q,
+            length=length,
+            seed=seed,
+            weighted=weighted,
+            edge_weight_label=edge_weight_label,
         )
 
-        np.random.seed(seed)  # seed the random number generator
+        if seed:
+            # seed a new random number generator
+            rs = random.Random(seed)
+        else:
+            # Restore the random state
+            rs = self._random_state
 
-        ip = 1. / p
-        iq = 1. / q
+        if weighted:
+            # Check that all edge weights are greater than or equal to 0.
+            # Also, if the given graph is a MultiGraph, then check that there are no two edges between
+            # the same two nodes with different weights.
+            for node in self.graph.nodes():
+                for neighbor in self.neighbors(self.graph, node):
+
+                    wts = set()
+                    for k, v in self.graph[node][neighbor].items():
+                        weight = v.get(edge_weight_label)
+                        if weight is None or np.isnan(weight) or weight == np.inf:
+                            raise ValueError(
+                                "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
+                                    weight, node, neighbor
+                                )
+                            )
+                        if not isinstance(weight, (int, float)):
+                            raise ValueError(
+                                "Edge weight between nodes ({}) and ({}) is not numeric ({}).".format(
+                                    node, neighbor, weight
+                                )
+                            )
+                        if weight < 0:  # check if edge has a negative weight
+                            raise ValueError(
+                                "An edge weight between nodes ({}) and ({}) is negative ({}).".format(
+                                    node, neighbor, weight
+                                )
+                            )
+
+                        wts.add(weight)
+                    if (
+                        len(wts) > 1
+                    ):  # multigraph with different weights on edges between same pair of nodes
+                        raise ValueError(
+                            "({}) and ({}) have multiple edges with weights ({}). Ambiguous to choose an edge for the random walk.".format(
+                                node, neighbor, list(wts)
+                            )
+                        )
+
+        ip = 1.0 / p
+        iq = 1.0 / q
 
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                walk = list()
-                current_node = node
-                # add the current node to the walk
-                walk.extend([current_node])
-                # the neighbours of the current node
-                # for isolated nodes the length of neighbours will be 0; we will test for this later
-                neighbours = self.neighbors(self.graph, current_node)
-                previous_node = current_node
+                # the walk starts at the root
+                walk = [node]
+
+                neighbours = self.neighbors(self.graph, node)
+
+                previous_node = node
                 previous_node_neighbours = neighbours
-                if len(neighbours) > 0:  # special check for isolated root nodes
-                    # this is the root node so there is no previous node. The next node
-                    # is sampled with equal probability from all the neighbours
-                    current_node = neighbours[np.random.choice(a=len(neighbours))]
+
+                # calculate the appropriate unnormalised transition
+                # probability, given the history of the walk
+                def transition_probability(
+                    nn, current_node, weighted, edge_weight_label
+                ):
+
+                    if weighted:
+                        weight_cn = self.graph[current_node][nn][0].get(
+                            edge_weight_label
+                        )
+                    else:
+                        weight_cn = 1.0
+
+                    if nn == previous_node:  # d_tx = 0
+                        return ip * weight_cn
+                    elif nn in previous_node_neighbours:  # d_tx = 1
+                        return 1.0 * weight_cn
+                    else:  # d_tx = 2
+                        return iq * weight_cn
+
+                if neighbours:
+                    current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
-                        walk.extend([current_node])
-                        # the neighbours of the current node
+                        walk.append(current_node)
                         neighbours = self.neighbors(self.graph, current_node)
-                        if (
-                            len(neighbours) == 0
-                        ):  # for whatever reason this node has no neighbours so stop
+
+                        if not neighbours:
                             break
-                        else:
-                            # determine the sampling probabilities for all the nodes
-                            common_neighbours = set(neighbours).intersection(
-                                previous_node_neighbours
-                            )  # nodes that are in common between the previous and current nodes; these get
-                            # 1. transition probabilities
-                            probs = [iq] * len(neighbours)
-                            for i, nn in enumerate(neighbours):
-                                if nn == previous_node:  # this is the previous node
-                                    probs[i] = ip
-                                elif nn in common_neighbours:
-                                    probs[i] = 1.
-                            # normalize the probabilities
-                            total_prob = sum(probs)
-                            probs = [m / total_prob for m in probs]
-                            previous_node = current_node
-                            # select the next node based on the calculated transition probabilities
-                            current_node = neighbours[
-                                np.random.choice(a=len(neighbours), p=probs)
-                            ]
+
+                        # select one of the neighbours using the
+                        # appropriate transition probabilities
+                        choice = naive_weighted_choices(
+                            rs,
+                            (
+                                transition_probability(
+                                    nn, current_node, weighted, edge_weight_label
+                                )
+                                for nn in neighbours
+                            ),
+                        )
+
+                        previous_node = current_node
+                        previous_node_neighbours = neighbours
+                        current_node = neighbours[choice]
+
                 walks.append(walk)
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, p, q, length, seed):
+    def _check_parameter_values(
+        self, nodes, n, p, q, length, seed, weighted, edge_weight_label
+    ):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -297,7 +429,9 @@ class BiasedRandomWalk(GraphWalk):
             p: <float>
             q: <float>
             length: <int> Maximum length of walk measured as the number of edges followed from root node.
-            seed: <int> Random number generator seed
+            seed: <int> Random number generator seed.
+            weighted: <False or True> Indicates whether the walk is unweighted or weighted.
+            edge_weight_label: <string> Label of the edge weight property.
 
         """
         if nodes is None:
@@ -306,8 +440,8 @@ class BiasedRandomWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
-            raise ValueError("nodes parameter should be a list of node IDs.")
+        if not is_real_iterable(nodes):
+            raise ValueError("nodes parameter should be an iterableof node IDs.")
         if (
             len(nodes) == 0
         ):  # this is not an error but maybe a warning should be printed to inform the caller
@@ -331,12 +465,12 @@ class BiasedRandomWalk(GraphWalk):
                 )
             )
 
-        if p <= 0.:
+        if p <= 0.0:
             raise ValueError(
                 "({}) Parameter p should be greater than 0.".format(type(self).__name__)
             )
 
-        if q <= 0.:
+        if q <= 0.0:
             raise ValueError(
                 "({}) Parameter q should be greater than 0.".format(type(self).__name__)
             )
@@ -369,6 +503,20 @@ class BiasedRandomWalk(GraphWalk):
                     )
                 )
 
+        if type(weighted) != bool:
+            raise ValueError(
+                "({}) Parameter weighted has to be either False (unweighted random walks) or True (weighted random walks).".format(
+                    type(self).__name__
+                )
+            )
+
+        if not isinstance(edge_weight_label, str):
+            raise ValueError(
+                "({}) The edge weight property label has to be of type string".format(
+                    type(self).__name__
+                )
+            )
+
 
 class UniformRandomMetaPathWalk(GraphWalk):
     """
@@ -385,7 +533,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
         seed=None,
     ):
         """
-        Method for performing metapath-driven uniform random walks on heterogeneous graphs.
+        Performs metapath-driven uniform random walks on heterogeneous graphs.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
@@ -409,7 +557,12 @@ class UniformRandomMetaPathWalk(GraphWalk):
             seed=seed,
         )
 
-        random.seed(seed)  # seed the random number generator
+        if seed:
+            # seed the random number generator
+            rs = random.Random(seed)
+        else:
+            # Restore the random state
+            rs = self._random_state
 
         walks = []
 
@@ -431,23 +584,26 @@ class UniformRandomMetaPathWalk(GraphWalk):
                 # else:
                 metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
                 for _ in range(n):
-                    walk = []  # holds the walk data for this walk; first node is the starting node
+                    walk = (
+                        []
+                    )  # holds the walk data for this walk; first node is the starting node
                     current_node = node
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = nx.neighbors(self.graph, node)
+                        neighbours = nx.neighbors(self.graph, current_node)
                         # filter these by node type
                         neighbours = [
-                            node
-                            for node in neighbours
-                            if self.graph.node[node][node_type_attribute] == metapath[d]
+                            n_node
+                            for n_node in neighbours
+                            if self.graph.node[n_node][node_type_attribute]
+                            == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
                             break
                         # select one of the neighbours uniformly at random
-                        current_node = random.choice(
+                        current_node = rs.choice(
                             neighbours
                         )  # the next node in the walk
 
@@ -479,9 +635,9 @@ class UniformRandomMetaPathWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
+        if not is_real_iterable(nodes):
             raise ValueError(
-                "({}) The nodes parameter should be a list of node IDs.".format(
+                "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
                 )
             )
@@ -556,7 +712,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
         if type(node_type_attribute) != str:
             raise ValueError(
                 "({}) The parameter label should be string type not {} as given".format(
-                    type(self).__name__, type(node_type_label).__name__
+                    type(self).__name__, type(node_type_attribute).__name__
                 )
             )
 
@@ -581,16 +737,8 @@ class DepthFirstWalk(GraphWalk):
     It can be used to extract, in a memory efficient way, a sub-graph starting from a node and up to a given depth.
     """
 
-    def run(self, **kwargs):
-        """
-
-        :param n: Number of walks. If it is equal to the number of nodes in the graph, then it generates all the
-        sub-graphs with every node as the root and up to the given depth, d.
-        :param d: Depth of walk as in distance (number of edges) from starting node.
-        :return: (The return value might differ when compared to the other walk types with exception to
-        BreadthFirstWalk defined next)
-        """
-        pass
+    # TODO: Implement the run method
+    pass
 
 
 class BreadthFirstWalk(GraphWalk):
@@ -599,6 +747,7 @@ class BreadthFirstWalk(GraphWalk):
     It can be used to extract a sub-graph starting from a node and up to a given depth.
     """
 
+    # TODO: Implement the run method
     pass
 
 
@@ -610,6 +759,7 @@ class SampledBreadthFirstWalk(GraphWalk):
 
     def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
+        Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
             nodes:  <list> A list of root node ids such that from each node n BFWs will be generated up to the
@@ -620,7 +770,6 @@ class SampledBreadthFirstWalk(GraphWalk):
             requested.
             seed: <int> Random number generator seed; default is None
 
-
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
@@ -629,7 +778,12 @@ class SampledBreadthFirstWalk(GraphWalk):
         walks = []
         d = len(n_size)  # depth of search
 
-        random.seed(seed)
+        if seed:
+            # seed the random number generator
+            rs = random.Random(seed)
+        else:
+            # Restore the random state
+            rs = self._random_state
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -650,8 +804,11 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = self.neighbors(self.graph, frontier[0])
                         if len(neighbours) == 0:
                             break
-                        else:  # sample with replacement
-                            neighbours = random.choices(neighbours, k=n_size[depth - 1])
+                        else:
+                            # sample with replacement
+                            neighbours = [
+                                rs.choice(neighbours) for _ in range(n_size[depth - 1])
+                            ]
 
                         # add them to the back of the queue
                         q.extend([(sampled_node, depth) for sampled_node in neighbours])
@@ -680,9 +837,9 @@ class SampledBreadthFirstWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
+        if not is_real_iterable(nodes):
             raise ValueError(
-                "({}) The nodes parameter should be a list of node IDs.".format(
+                "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
                 )
             )
@@ -766,6 +923,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
 
     def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
+        Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
             nodes:  <list> A list of root node ids such that from each node n BFWs will be generated
@@ -788,7 +946,12 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
         walks = []
         d = len(n_size)  # depth of search
 
-        random.seed(seed)
+        if seed:
+            # seed the random number generator
+            rs = random.Random(seed)
+        else:
+            # Restore the random state
+            rs = self._random_state
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -810,9 +973,8 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                     # consider the subgraph up to and including depth d from root node
                     if depth <= d:
                         # Find edge types for current node type
-                        current_edge_types = self.graph_schema.edge_types_for_node_type(
-                            current_node_type
-                        )
+                        current_edge_types = self.graph_schema.schema[current_node_type]
+
                         # Create samples of neigbhours for all edge types
                         for et in current_edge_types:
                             neigh_et = self.adj[et][current_node]
@@ -823,7 +985,12 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             # In case of no neighbours of the current node for et, neigh_et == [None],
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
-                                samples = random.choices(neigh_et, k=n_size[depth - 1])
+                                samples = [
+                                    rs.choice(neigh_et)
+                                    for _ in range(n_size[depth - 1])
+                                ]
+                                # Choices limits us to Python 3.6+
+                                # samples = random.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 
@@ -860,9 +1027,9 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                     type(self).__name__
                 )
             )
-        if type(nodes) != list:
+        if not is_real_iterable(nodes):
             raise ValueError(
-                "({}) The nodes parameter should be a list of node IDs.".format(
+                "({}) The nodes parameter should be an iterable of node IDs.".format(
                     type(self).__name__
                 )
             )
