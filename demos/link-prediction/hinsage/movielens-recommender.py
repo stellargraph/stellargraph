@@ -215,7 +215,7 @@ if __name__ == "__main__":
         "-p",
         "--data_path",
         type=str,
-        default="../data/ml-100k",
+        default="../../data/ml-100k",
         help="Dataset path (directory)",
     )
     parser.add_argument(
