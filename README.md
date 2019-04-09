@@ -44,6 +44,7 @@
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
    * [CI](#ci)
+   * [Citing](#citing)
    * [References](#references)
 
 ## Introduction
