@@ -1,6 +1,6 @@
 ![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
-# Stellar Graph Machine Learning Library
+# StellarGraph Machine Learning Library
 
 <p align="center">
   <a href="https://github.com/ambv/black" alt="Code style">
@@ -177,11 +177,12 @@ Pipeline is defined in `.buildkite/pipeline.yml`
 * Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.
 
 ## Citing
+StellarGraph is designed, developed and supported by [CSIRO's Data61](https://data61.csiro.au/).
 If you use any part of this library in your research, please cite it using the following BibTex entry
 ```latex
-@misc{stellargraph,
-  author = {Data61},
-  title = {Stellar Graph Machine Learning Library},
+@misc{StellarGraph,
+  author = {CSIRO's Data61},
+  title = {StellarGraph Machine Learning Library},
   year = {2018},
   publisher = {GitHub},
   journal = {GitHub Repository},
