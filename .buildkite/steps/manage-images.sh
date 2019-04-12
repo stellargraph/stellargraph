@@ -31,8 +31,10 @@ action="$1"
 case "${BUILDKITE_BRANCH}" in
   develop)
     version=latest
+    ;;
   feature/*)
     version=testing
+    ;;
 esac
 
 case "${action}" in
