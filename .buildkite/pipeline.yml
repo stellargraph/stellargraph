@@ -18,7 +18,7 @@ steps:
     agents:
       queue: 't2medium'
 
-  - label: ":black: style"
+  - label: ":python-black: style"
     plugins:
       docker#v3.0.1:
         image: "stellargraph/black"
@@ -30,7 +30,7 @@ steps:
     continue_on_failure: true
 
   - label: ":docker: (conditionally) publish docker images"
-    command: ".buildkite/steps/checkstatus.sh .buildkite/steps/manage-images.sh build-publish"
+    command: ".buildkite/utils/checkstatus.sh .buildkite/steps/manage-images.sh build-publish"
     branches: "develop feature/*"
     agents:
       queue: "t2medium"
