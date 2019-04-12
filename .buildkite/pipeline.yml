@@ -1,6 +1,6 @@
 steps:
-  - label: ":python:"
-    command: ".buildkite/script.sh"
+  - label: ":python: 3.6"
+    command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.0.1:
         image: "python:3.6"
@@ -18,7 +18,7 @@ steps:
     agents:
       queue: 't2medium'
 
-  - label: "style"
+  - label: ":black: style"
     plugins:
       docker#v3.0.1:
         image: "stellargraph/black"
@@ -29,5 +29,14 @@ steps:
   - wait: ~
     continue_on_failure: true
 
+  - label: ":docker: (conditionally) publish docker images"
+    command: ".buildkite/steps/checkstatus.sh .buildkite/steps/manage-images.sh build-publish"
+    branches: "develop feature/*"
+    agents:
+      queue: "t2medium"
+
+  - wait: ~
+    continue_on_failure: true
+
   - label: ":console: push logs"
-    command: .buildkite/pushlogs.sh "#build-bots"
+    command: .buildkite/utils/pushlogs.sh "#build-bots"
