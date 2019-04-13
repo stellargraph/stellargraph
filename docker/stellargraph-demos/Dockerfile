@@ -6,9 +6,9 @@ WORKDIR /data
 RUN apt-get update \
       && apt-get install --no-install-recommends -y curl unzip \
       && curl -sLO "https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz" \
-      && tar -xf cora.tgz \
+      && tar --no-same-owner -xf cora.tgz \
       && curl -sLO "https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz" \
-      && tar -xf Pubmed-Diabetes.tgz \
+      && tar --no-same-owner -xf Pubmed-Diabetes.tgz \
       && curl -sLO "http://files.grouplens.org/datasets/movielens/ml-100k.zip" \
       && unzip ml-100k.zip \
       && curl -sLO "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip" \
@@ -27,6 +27,6 @@ COPY --chown=stellar --from=base /data/Pubmed-Diabetes /home/stellar/data/pubmed
 COPY --chown=stellar --from=base /data/ml-100k /home/stellar/data/ml-100k
 COPY --chown=stellar --from=base /data/BlogCatalog-dataset /home/stellar/data/BlogCatalog-dataset
 
-EXPOSE 8888 8888
+EXPOSE 8888
 
 CMD ["jupyter", "notebook", "--no-browser", "--port=8888", "--ip=0.0.0.0", "--notebook-dir=/home/stellar", "--NotebookApp.token=''","--NotebookApp.password=''"]
