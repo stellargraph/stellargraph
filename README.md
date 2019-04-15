@@ -30,7 +30,11 @@
   <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
     <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
   </a>
+  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
+  </a>
 </p>
+
 
 # Table of Contents
    * [Introduction](#introduction)
@@ -39,7 +43,9 @@
    * [Installation](#installation)
        * [Install StellarGraph using pip](#install-stellargraph-using-pip)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
+   * [Docker Images](#docker-images)
    * [Running the examples](#running-the-examples)
+       * [Running examples with jupyter on docker](#Running-the-examples-with-docker)
    * [Algorithms](#algorithms)
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
@@ -138,7 +144,6 @@ To install these dependencies using `pip`, execute the following command:
 pip install stellargraph[demos]
 ```
 
-
 #### Install StellarGraph from Github source:
 First, clone the StellarGraph repository using `git`:
 ```
@@ -152,9 +157,28 @@ pip install -r requirements.txt
 pip install .
 ```
 
+## Docker Images
+
+There are two docker images
+
+* [stellargraph/stellaraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
+* [stellargraph/stellargraph-demos](https://hub.docker.com/r/stellargraph/stellargraph-demos): A complete demo docker image with `stellargraph` (base image) and [jupyter notebook](https://jupyter.org/) with the demos and datasets.
+
+Images can be pulled via `docker pull stellargraph/stellaraph` and `docker pull stellargraph/stellargraph-demos`
+
 ## Running the examples
 
 See the [README](https://github.com/stellargraph/stellargraph/tree/master/demos/README.md) in the `demos` directory for more information about the examples and how to run them.
+
+#### Running the examples with docker
+
+To run the containerised version with all the datasets and demos in a jupyter notebook, run
+
+```
+docker run -it -p 8888:8888 stellargraph/stellargraph-demos
+```
+
+and visit [http://localhost:8888](http://localhost:8888)
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
@@ -226,7 +250,7 @@ If you use any part of this library in your research, please cite it using the f
   journal = {GitHub Repository},
   howpublished = {\url{https://github.com/stellargraph/stellargraph}},
 }
-```  
+```
 
 ## References
 
