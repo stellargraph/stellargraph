@@ -45,7 +45,7 @@
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
    * [Docker Images](#docker-images)
    * [Running the examples](#running-the-examples)
-       * [Running examples with jupyter on docker](#Running-the-examples-with-docker)
+       * [Running the examples with docker](#Running-the-examples-with-docker)
    * [Algorithms](#algorithms)
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
