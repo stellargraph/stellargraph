@@ -143,11 +143,12 @@ def test_GCN_Aadj_feats_op():
 
     # Check if the power of the normalised adjacency matrix is calculated correctly.
     # First retrieve the normalised adjacency matrix using localpool filter.
-    features_, Aadj_norm = GCN_Aadj_feats_op(features=features, A=Aadj, filter="localpool")
+    features_, Aadj_norm = GCN_Aadj_feats_op(
+        features=features, A=Aadj, filter="localpool"
+    )
     Aadj_norm = Aadj_norm.todense()
     Aadj_power_2 = np.linalg.matrix_power(Aadj_norm, 2)  # raise it to the power of 2
     # Both matrices should have the same shape
     assert Aadj_power_2.shape == Aadj_.get_shape()
     # and the same values.
     assert (Aadj_power_2 == Aadj_.todense()).all()
-
