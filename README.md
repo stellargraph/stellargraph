@@ -161,10 +161,10 @@ pip install .
 
 There are two docker images
 
-* [stellargraph/stellaraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
+* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
 * [stellargraph/stellargraph-demos](https://hub.docker.com/r/stellargraph/stellargraph-demos): A complete demo docker image with `stellargraph` (base image) and [jupyter notebook](https://jupyter.org/) with the demos and datasets.
 
-Images can be pulled via `docker pull stellargraph/stellaraph` and `docker pull stellargraph/stellargraph-demos`
+Images can be pulled via `docker pull stellargraph/stellargraph` and `docker pull stellargraph/stellargraph-demos`
 
 ## Running the examples
 

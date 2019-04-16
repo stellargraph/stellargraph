@@ -22,8 +22,8 @@ build_publish_images() {
 }
 
 images=(
-stellargraph
-stellargraph-demos
+  stellargraph
+  stellargraph-demos
 )
 
 action="$1"
