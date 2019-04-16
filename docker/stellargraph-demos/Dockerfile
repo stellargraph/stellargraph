@@ -1,17 +1,16 @@
-FROM python:3.6-slim as base
+FROM alpine:3.9 as base
 
 WORKDIR /data
 
 # Download datasets
-RUN apt-get update \
-      && apt-get install --no-install-recommends -y curl unzip \
-      && curl -sLO "https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz" \
+RUN apk add --no-cache --update ca-certificates \
+      && wget -q "https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz" \
       && tar --no-same-owner -xf cora.tgz \
-      && curl -sLO "https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz" \
+      && wget -q "https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz" \
       && tar --no-same-owner -xf Pubmed-Diabetes.tgz \
-      && curl -sLO "http://files.grouplens.org/datasets/movielens/ml-100k.zip" \
+      && wget -q "http://files.grouplens.org/datasets/movielens/ml-100k.zip" \
       && unzip ml-100k.zip \
-      && curl -sLO "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip" \
+      && wget -q "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip" \
       && unzip BlogCatalog-dataset.zip
 
 FROM stellargraph/stellargraph
