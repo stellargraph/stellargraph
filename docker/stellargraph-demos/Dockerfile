@@ -24,7 +24,7 @@ ENV JUPYTER_VERSION="1.0.0" \
 
 # hadolint ignore=DL3013
 RUN pip install --upgrade pip --user \
-      && pip install jupyter=="${JUPYTER_VERSION}" --user
+      && pip install --no-cache-dir jupyter=="${JUPYTER_VERSION}" --user
 
 COPY --chown=stellar ./demos /home/stellar/demos
 COPY --chown=stellar --from=base /data/cora /home/stellar/data/cora
