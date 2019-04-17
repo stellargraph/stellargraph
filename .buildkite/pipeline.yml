@@ -26,14 +26,23 @@ steps:
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 
+  - label: ":docker: publish numbered images"
+    command: ".buildkite/steps/manage-images.sh build-publish-numbered"
+    agents:
+      queue: "t2medium"
+
   - wait: ~
     continue_on_failure: true
 
   - label: ":docker: (conditionally) publish docker images"
-    command: ".buildkite/utils/checkstatus.sh .buildkite/steps/manage-images.sh build-publish"
+    command: ".buildkite/utils/checkstatus.sh .buildkite/steps/manage-images.sh publish-images"
     branches: "develop feature/*"
-    agents:
-      queue: "t2medium"
+
+  - wait: ~
+    continue_on_failure: true
+
+  - label: ":do_not_litter: delete numbered temporary images"
+    command: ".buildkite/steps/manage-images.sh delete-numbered"
 
   - wait: ~
     continue_on_failure: true
