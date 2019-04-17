@@ -4,6 +4,7 @@ FROM python:3.6-slim as base
 WORKDIR /data
 
 # Download datasets
+# hadolint ignore=DL3008
 RUN apt-get update \
       && apt-get install --no-install-recommends -y curl unzip \
       && curl -sLO "https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz" \
@@ -15,11 +16,13 @@ RUN apt-get update \
       && curl -sLO "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip" \
       && unzip BlogCatalog-dataset.zip
 
+# hadolint ignore=DL3006
 FROM stellargraph/stellargraph
 
 ENV JUPYTER_VERSION="1.0.0" \
   PATH=${PATH}:/home/stellar/.local/bin
 
+# hadolint ignore=DL3013
 RUN pip install --upgrade pip --user \
       && pip install jupyter=="${JUPYTER_VERSION}" --user
 

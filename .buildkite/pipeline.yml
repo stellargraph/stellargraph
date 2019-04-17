@@ -26,6 +26,12 @@ steps:
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 
+  - label: ":docker: :hadolint:"
+    command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
+    plugins:
+       docker#v3.0.1:
+          image: "hadolint/hadolint:latest-debian"
+
   - label: ":docker: publish numbered images"
     command: ".buildkite/steps/manage-images.sh build-publish-numbered"
     agents:
