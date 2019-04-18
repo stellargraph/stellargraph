@@ -95,8 +95,11 @@ class NodeSequence(Sequence):
             )
 
         # Infer head_node_type
-        if generator.schema.node_type_map is None:
-            head_node_types = {generator.graph.type_for_node(n) for n in ids}
+        if (
+            generator.schema.node_type_map is None
+            or generator.schema.edge_type_map is None
+        ):
+            raise RuntimeError("Schema must have node and edge type maps.")
         else:
             head_node_types = {generator.schema.get_node_type(n) for n in ids}
         if len(head_node_types) > 1:
