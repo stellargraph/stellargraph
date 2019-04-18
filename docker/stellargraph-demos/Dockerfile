@@ -22,7 +22,7 @@ FROM stellargraph/stellargraph
 ENV JUPYTER_VERSION="1.0.0" \
   PATH=${PATH}:/home/stellar/.local/bin
 
-# keep pip up to date for the end to user
+# keep pip up to date for the end user
 # hadolint ignore=DL3013
 RUN pip install --upgrade pip --user \
       && pip install --no-cache-dir jupyter=="${JUPYTER_VERSION}" --user
