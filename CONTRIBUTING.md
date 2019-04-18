@@ -20,7 +20,8 @@ Please follow these steps to report a bug:
 
 ### Contributor License Agreement
 
-In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). Please email stellar.admin@csiro.au to obtain a CLA.
+In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). You will 
+be guided through the process of digitally signing our CLA when you create a pull request. 
 
 ### Be Friendly ###
  

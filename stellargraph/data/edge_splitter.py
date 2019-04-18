@@ -51,8 +51,8 @@ class EdgeSplitter(object):
     Args:
         g: <StellarGraph or networkx object> The graph to sample edges from.
         g_master: <StellarGraph or networkx object> The graph representing the original dataset and a superset of the
-        graph g. If it is not None, then when positive and negative edges are sampled, care is taken to make sure
-         that a true positive edge is not sampled as a negative edge.
+            graph g. If it is not None, then when positive and negative edges are sampled, care is taken to make sure
+            that a true positive edge is not sampled as a negative edge.
 
     """
 
