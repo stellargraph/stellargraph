@@ -1,12 +1,37 @@
 # Change Log
+## [0.6.1](https://github.com/stellargraph/stellargraph/tree/v0.6.1) (1 Apr 2019)
+
+**Fixed bugs:**
+- a bug in passing graph adjacency matrix to the optional `func_opt` function in `FullBatchNodeGenerator` class
+- a bug in `demos/node-classification/gcn/gcn-cora-example.py:144`: incorrect argument was used to pass
+the optional function to the generator for GCN
+
+**Enhancements:**
+- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb` 
+
+## [0.6.0](https://github.com/stellargraph/stellargraph/tree/v0.6.0) (14 Mar 2019)
+
+**Implemented new features and enhancements:**
+- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216), 
+[\#315](https://github.com/stellargraph/stellargraph/pull/315)
+- Unsupervised GraphSAGE [\#331](https://github.com/stellargraph/stellargraph/pull/331) with a demo [\#335](https://github.com/stellargraph/stellargraph/pull/335)
+- Model Ensembles [\#343](https://github.com/stellargraph/stellargraph/pull/343)
+- Community detection based on unsupervised graph representation learning [\#354](https://github.com/stellargraph/stellargraph/pull/354)
+- Saliency maps and integrated gradients for model interpretability [\#345](https://github.com/stellargraph/stellargraph/pull/345)
+- Shuffling of head nodes/edges in node and link generators at each epoch [\#298](https://github.com/stellargraph/stellargraph/issues/298)
+
+**Fixed bugs:**
+- a bug where seed was not passed to sampler in `GraphSAGELinkGenerator` constructor [\#337](https://github.com/stellargraph/stellargraph/pull/337)
+- UniformRandomMetaPathWalk doesn't update the current node neighbors [\#340](https://github.com/stellargraph/stellargraph/issues/340)
+- seed value for link mapper [\#336](https://github.com/stellargraph/stellargraph/issues/336)
 
 ## [0.5.0](https://github.com/stellargraph/stellargraph/tree/v0.5.0) (11 Feb 2019)
 
 **Implemented new features and enhancements:**
 
 - Added model calibration [\#326](https://github.com/stellargraph/stellargraph/pull/326)
-- Added `GraphConvolution` layer, `GCN` class for a stack of `GraphConvolution` layers, 
-and `FullBatchNodeGenerator` class for feeding data into `GCN` models [\#318](https://github.com/stellargraph/stellargraph/pull/318)
+- Added `GraphConvolution` layer, `GCN` class for a stack of `GraphConvolution` layers,
+  and `FullBatchNodeGenerator` class for feeding data into `GCN` models [\#318](https://github.com/stellargraph/stellargraph/pull/318)
 - Added GraphSAGE attention aggregator [\#317](https://github.com/stellargraph/stellargraph/pull/317)
 - Added GraphSAGE MaxPoolAggregator and MeanPoolAggregator [\#278](https://github.com/stellargraph/stellargraph/pull/278)
 - Added shuffle option to all `flow` methods for GraphSAGE and HinSAGE generators [\#328](https://github.com/stellargraph/stellargraph/pull/328)
@@ -28,4 +53,3 @@ and `FullBatchNodeGenerator` class for feeding data into `GCN` models [\#318](ht
 
 **Refactoring:**
 - Refactored link inference classes to use `edge_embedding_method` instead of `edge_feature_method` [\#327](https://github.com/stellargraph/stellargraph/pull/327)
-

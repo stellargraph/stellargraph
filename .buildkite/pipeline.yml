@@ -11,6 +11,12 @@ steps:
           - BUILDKITE_BUILD_NUMBER
           - BUILDKITE_BRANCH
           - AWS_LOGS_BUCKET
+          # for coveralls-python, to send more metadata to coveralls.io
+          - BUILDKITE
+          - BUILDKITE_PULL_REQUEST
+          - BUILDKITE_JOB_ID
+    agents:
+      queue: 't2medium'
 
   - label: "style"
     plugins:

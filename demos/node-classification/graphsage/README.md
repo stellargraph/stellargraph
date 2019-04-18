@@ -14,7 +14,7 @@ the example.
 ## CORA dataset
 
 Currently the examples in this directory are tested on the CORA dataset. The GraphSAGE model assumes that node
-features are available.
+features are available for all nodes in the graph.
 
 The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
 
