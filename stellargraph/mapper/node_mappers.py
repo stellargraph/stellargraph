@@ -95,8 +95,11 @@ class NodeSequence(Sequence):
             )
 
         # Infer head_node_type
-        if generator.schema.node_type_map is None:
-            head_node_types = {generator.graph.type_for_node(n) for n in ids}
+        if (
+            generator.schema.node_type_map is None
+            or generator.schema.edge_type_map is None
+        ):
+            raise RuntimeError("Schema must have node and edge type maps.")
         else:
             head_node_types = {generator.schema.get_node_type(n) for n in ids}
         if len(head_node_types) > 1:
@@ -206,9 +209,6 @@ class GraphSAGENodeGenerator:
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # Create sampler for GraphSAGE
-        self.sampler = SampledBreadthFirstWalk(G, seed=seed)
-
         # We need a schema for compatibility with HinSAGE
         if schema is None:
             self.schema = G.create_graph_schema(create_type_maps=True)
@@ -222,6 +222,9 @@ class GraphSAGENodeGenerator:
             print(
                 "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
             )
+
+        # Create sampler for GraphSAGE
+        self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
 
     def sample_features(self, head_nodes, sampling_schema):
         """
@@ -378,9 +381,6 @@ class HinSAGENodeGenerator:
 
         G.check_graph_for_ml(features=True)
 
-        # Create sampler for HinSAGE
-        self.sampler = SampledHeterogeneousBreadthFirstWalk(G, seed=seed)
-
         # Generate schema
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -389,6 +389,11 @@ class HinSAGENodeGenerator:
             self.schema = schema
         else:
             raise TypeError("Schema must be a GraphSchema object")
+
+        # Create sampler for HinSAGE
+        self.sampler = SampledHeterogeneousBreadthFirstWalk(
+            G, graph_schema=self.schema, seed=seed
+        )
 
     def sample_features(self, head_nodes, sampling_schema):
         """
