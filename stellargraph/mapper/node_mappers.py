@@ -186,7 +186,8 @@ class GraphSAGENodeGenerator:
     Example::
 
         G_generator = GraphSAGENodeGenerator(G, 50, [10,10])
-        train_data_gen = G_generator.flow(node_ids)
+        train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+        test_data_gen = G_generator.flow(test_node_ids)
 
     Args:
         G (StellarGraph): The machine-learning ready graph.
@@ -355,7 +356,8 @@ class HinSAGENodeGenerator:
      Example::
 
          G_generator = HinSAGENodeGenerator(G, 50, [10,10])
-         data_gen = G_generator.flow(node_ids)
+         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+         test_data_gen = G_generator.flow(test_node_ids)
 
      """
 
