@@ -128,6 +128,32 @@ class Test_GraphAttention_layer:
         actual = model.predict([X, A])
         assert expected == pytest.approx(actual)
 
+    def test_apply_average_with_neighbours(self):
+        gat = GraphAttention(
+            F_out=self.F_out,
+            attn_heads=1,
+            attn_heads_reduction="average",
+            activation=self.activation,
+            kernel_initializer="ones",
+            attn_kernel_initializer="zeros",
+        )
+        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
+        x_out = gat(x_inp)
+
+        model = keras.Model(inputs=x_inp, outputs=x_out)
+        assert model.output_shape[-1] == self.F_out
+
+        X = np.zeros((self.N, self.F_in))  # features
+        for i in range(X.shape[0]):
+            X[i, :] += i
+        A = np.eye(self.N)  # adjacency matrix with self-loops only
+        A[0, 1] = A[1, 0] = 1.0  # add undirected link between nodes 0 and 1
+
+        expected = (X * self.F_in)[:, : self.F_out]
+        expected[:2,] = np.ones((2, self.F_out)) * (self.F_in / 2)
+        actual = model.predict([X, A])
+        assert expected == pytest.approx(actual)
+
     def test_layer_config(self):
         layer = GraphAttention(
             F_out=self.F_out,
@@ -165,10 +191,62 @@ class Test_GAT:
     def test_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G)
-        with pytest.raises(AssertionError):
+        # test error if no activations are passed:
+        with pytest.raises(TypeError):
             gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
 
-        with pytest.raises(AssertionError):
+        # test error where layer_sizes is not a list:
+        with pytest.raises(TypeError):
+            gat = GAT(
+                layer_sizes=10,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                generator=gen,
+                bias=True,
+            )
+
+        # test error where layer_sizes values are not valid
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=[4, 0],
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                generator=gen,
+                bias=True,
+            )
+
+        # test for incorrect length of att_heads list:
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=[8, 8, 1],
+                generator=gen,
+                bias=True,
+            )
+
+        # test for invalid values in att_heads list:
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=[8, 0],
+                generator=gen,
+                bias=True,
+            )
+
+        # test for invalid type of att_heads argument:
+        with pytest.raises(TypeError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=8.0,
+                generator=gen,
+                bias=True,
+            )
+
+        # test error where activations is not a list:
+        with pytest.raises(TypeError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations="relu",
@@ -176,7 +254,37 @@ class Test_GAT:
                 bias=True,
             )
 
-        with pytest.raises(AssertionError):
+        # test attn_heads_reduction errors:
+        with pytest.raises(TypeError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction="concat",
+                generator=gen,
+                bias=True,
+            )
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction=["concat", "concat", "average"],
+                generator=gen,
+                bias=True,
+            )
+        with pytest.raises(ValueError):
+            gat = GAT(
+                layer_sizes=self.layer_sizes,
+                activations=self.activations,
+                attn_heads=self.attn_heads,
+                attn_heads_reduction=["concat", "sum"],
+                generator=gen,
+                bias=True,
+            )
+
+        # test error where len(activations) is not equal to len(layer_sizes):
+        with pytest.raises(ValueError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations=["relu"],
@@ -248,7 +356,9 @@ class Test_GAT:
     def test_gat_node_model_constructor_wrong_generator(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = GraphSAGENodeGenerator(G, self.N, [5, 10])
-        with pytest.raises(AssertionError):
+
+        # test error where generator is of the wrong type for GAT:
+        with pytest.raises(ValueError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations=self.activations,

@@ -26,6 +26,7 @@ import networkx as nx
 import numpy as np
 import random
 import pytest
+import pandas as pd
 
 
 def example_graph_1(feature_size=None):
@@ -247,6 +248,47 @@ def test_nodemapper_1():
         GraphSAGENodeGenerator(G1, batch_size=2, num_samples=[2, 2]).flow(["A", "B"])
 
 
+def test_nodemapper_shuffle():
+    n_feat = 1
+    n_batch = 2
+
+    G = example_graph_2(feature_size=n_feat)
+    nodes = list(G.nodes())
+
+    # With shuffle
+    random.seed(15)
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+        nodes, nodes, shuffle=True
+    )
+
+    expected_node_batches = [[5, 4], [3, 1], [2]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # This should re-shuffle the IDs
+    mapper.on_epoch_end()
+    expected_node_batches = [[4, 3], [1, 5], [2]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # With no shuffle
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+        nodes, nodes, shuffle=False
+    )
+    expected_node_batches = [[1, 2], [3, 4], [5]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+
 def test_nodemapper_with_labels():
     n_feat = 4
     n_batch = 2
@@ -278,7 +320,7 @@ def test_nodemapper_with_labels():
         nf, nl = gen[len(gen)]
 
 
-def test_nodemapper_no_samples():
+def test_nodemapper_zero_samples():
     n_feat = 4
     n_batch = 2
 
@@ -294,6 +336,22 @@ def test_nodemapper_no_samples():
         nf, nl = mapper[ii]
         assert len(nf) == 2
         assert nf[0].shape == (n_batch, 1, n_feat)
+        assert nf[1].shape == (n_batch, 0, n_feat)
+        assert nl is None
+
+    # test graph
+    G = example_graph_1(feature_size=n_feat)
+    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
+        G.nodes()
+    )
+
+    # This is an edge case, are we sure we want this behaviour?
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert len(nf) == 3
+        assert nf[0].shape == (n_batch, 1, n_feat)
+        assert nf[1].shape == (n_batch, 0, n_feat)
         assert nf[1].shape == (n_batch, 0, n_feat)
         assert nl is None
 
@@ -354,10 +412,12 @@ def test_nodemapper_manual_schema():
     )
 
     # Create manual schema without type maps
+    # Currently this raises an error:
     schema = G.create_graph_schema(create_type_maps=False)
-    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        list(G)
-    )
+    with pytest.raises(RuntimeError):
+        GraphSAGENodeGenerator(
+            G, schema=schema, batch_size=n_batch, num_samples=[1]
+        ).flow(list(G))
 
 
 def test_nodemapper_incorrect_targets():
@@ -479,6 +539,45 @@ def test_hinnodemapper_level_2():
         assert nt in batch_node_types
 
 
+def test_hinnodemapper_shuffle():
+    random.seed(10)
+
+    batch_size = 2
+    feature_sizes = {"t1": 1, "t2": 4}
+    G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
+
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0]).flow(
+        nodes_type_1, nodes_type_1, shuffle=True
+    )
+
+    expected_node_batches = [[3, 2], [1, 0]]
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # This should re-shuffle the IDs
+    mapper.on_epoch_end()
+    expected_node_batches = [[2, 1], [3, 0]]
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # With no shuffle
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0]).flow(
+        nodes_type_1, nodes_type_1, shuffle=False
+    )
+    expected_node_batches = [[0, 1], [2, 3]]
+    assert len(mapper) == 2
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+
 def test_hinnodemapper_with_labels():
     batch_size = 2
     feature_sizes = {"t1": 1, "t2": 2}
@@ -487,7 +586,7 @@ def test_hinnodemapper_with_labels():
     labels = [n * 2 for n in nodes_type_1]
 
     gen = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2, 3]).flow(
-        nodes_type_1, labels
+        nodes_type_1, labels, shuffle=False
     )
     assert len(gen) == 2
 
@@ -523,10 +622,31 @@ def test_hinnodemapper_manual_schema():
     )
 
     # Create manual schema without type maps
+    # Currently this raises an error
     schema = G.create_graph_schema(create_type_maps=False)
-    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        nodes_type_1
+    with pytest.raises(RuntimeError):
+        HinSAGENodeGenerator(
+            G, schema=schema, batch_size=n_batch, num_samples=[1]
+        ).flow(nodes_type_1)
+
+
+def test_hinnodemapper_zero_samples():
+    batch_size = 3
+    feature_sizes = {"t1": 1, "t2": 1}
+    G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0, 0]).flow(
+        nodes_type_2
     )
+
+    schema = G.create_graph_schema()
+    sampling_adj = schema.type_adjacency_list(["t2"], 2)
+
+    assert len(mapper) == 1
+
+    # Get a batch!
+    batch_feats, batch_targets = mapper[0]
+    assert len(batch_feats) == len(sampling_adj)
 
 
 def test_hinnodemapper_no_neighbors():
@@ -559,6 +679,14 @@ def test_hinnodemapper_no_neighbors():
 
     # Second edge type (e2): Node 0 has 2, node 1 has none, and node 6 sampling has terminated
     assert np.all(batch_feats[3][:, 0, 0] == np.array([12, 0, 0]))
+
+
+def create_graph_features():
+    G = nx.Graph()
+    G.add_nodes_from(["a", "b", "c"])
+    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
+    G = G.to_undirected()
+    return G, np.array([[1, 1], [1, 0], [0, 1]])
 
 
 class Test_FullBatchNodeGenerator:
@@ -601,7 +729,7 @@ class Test_FullBatchNodeGenerator:
 
         [X, A], y, sample_weights = gen.__getitem__(0)
         assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
         assert y is None
         assert sum(sample_weights) == len(node_ids)
 
@@ -618,7 +746,7 @@ class Test_FullBatchNodeGenerator:
 
         [X, A], y, sample_weights = gen.__getitem__(0)
         assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert (A != gen.A).nnz == 0  # A should be equal to gen.A
+        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
 
         assert y.shape == (self.N, self.target_dim)
         assert np.array_equal(
@@ -644,3 +772,43 @@ class Test_FullBatchNodeGenerator:
         node_targets = 1
         with pytest.raises(TypeError):
             generator.flow(node_ids, node_targets)
+
+    def test_fullbatch_generator_init_1(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        generator = FullBatchNodeGenerator(G, name="test", func_opt=None, key="value")
+        assert generator.name == "test"
+        assert np.array_equal(feats, generator.features)
+
+    def test_fullbatch_generator_init_2(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        def func(features, A, **kwargs):
+            return features * features, A
+
+        generator = FullBatchNodeGenerator(G, "test", func, key="value")
+        assert generator.name == "test"
+        assert np.array_equal(feats * feats, generator.features)
+
+    def test_fullbatch_generator_init_3(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        func = "Not callable"
+
+        with pytest.raises(ValueError):
+            generator = FullBatchNodeGenerator(G, "test", func, key="value")

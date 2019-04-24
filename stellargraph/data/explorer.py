@@ -266,13 +266,6 @@ class BiasedRandomWalk(GraphWalk):
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None):
-        # TODO: add doc string
-        super().__init__(graph, graph_schema=None, seed=None)
-
-    #        if (graph.weighted):
-    #           print("its a weighted graph!")
-
     def run(
         self,
         nodes=None,
@@ -383,19 +376,15 @@ class BiasedRandomWalk(GraphWalk):
                         weight_cn = self.graph[current_node][nn][0].get(
                             edge_weight_label
                         )
-                        if nn == previous_node:  # d_tx = 0
-                            return ip * weight_cn
-                        elif nn in previous_node_neighbours:  # d_tx = 1
-                            return 1.0 * weight_cn
-                        else:  # d_tx = 2
-                            return iq * weight_cn
                     else:
-                        if nn == previous_node:  # d_tx = 0
-                            return ip
-                        elif nn in previous_node_neighbours:  # d_tx = 1
-                            return 1.0
-                        else:  # d_tx = 2
-                            return iq
+                        weight_cn = 1.0
+
+                    if nn == previous_node:  # d_tx = 0
+                        return ip * weight_cn
+                    elif nn in previous_node_neighbours:  # d_tx = 1
+                        return 1.0 * weight_cn
+                    else:  # d_tx = 2
+                        return iq * weight_cn
 
                 if neighbours:
                     current_node = rs.choice(neighbours)
@@ -602,12 +591,13 @@ class UniformRandomMetaPathWalk(GraphWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = nx.neighbors(self.graph, node)
+                        neighbours = nx.neighbors(self.graph, current_node)
                         # filter these by node type
                         neighbours = [
-                            node
-                            for node in neighbours
-                            if self.graph.node[node][node_type_attribute] == metapath[d]
+                            n_node
+                            for n_node in neighbours
+                            if self.graph.node[n_node][node_type_attribute]
+                            == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.

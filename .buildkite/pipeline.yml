@@ -1,25 +1,28 @@
 steps:
   - label: ":python:"
-    command:
-      - pip install -q --no-cache-dir -r requirements.txt -e .
-        && py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider
-        && coveralls
+    command: ".buildkite/script.sh"
     plugins:
-      docker#v1.3.0:
+      docker#v3.0.1:
         image: "python:3.6"
-        workdir: /app
         environment:
           - PYTHONDONTWRITEBYTECODE=1
-          - COVERALLS_REPO_TOKEN=$COVERALLS_REPO_TOKEN
+          - GIT_BRANCH=$BUILDKITE_BRANCH
+          - COVERALLS_REPO_TOKEN
+          - BUILDKITE_BUILD_NUMBER
+          - BUILDKITE_BRANCH
+          - AWS_LOGS_BUCKET
+          # for coveralls-python, to send more metadata to coveralls.io
+          - BUILDKITE
+          - BUILDKITE_PULL_REQUEST
+          - BUILDKITE_JOB_ID
+    agents:
+      queue: 't2medium'
 
   - label: "style"
-    command:
-      - --check stellargraph tests
     plugins:
-      docker#v1.3.0:
+      docker#v3.0.1:
         image: "stellargraph/black"
-        workdir: /app
-        entrypoint: /usr/bin/black
+        command: ["--check", "stellargraph", "tests"]
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 

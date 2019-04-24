@@ -12,17 +12,59 @@ Data
 ----------------
 
 .. automodule:: stellargraph.data
-  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
+  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
 
-
-Layers
-------------
-
-.. automodule:: stellargraph.layer
-  :members: GraphSAGE, MeanAggregator, HinSAGE, MeanHinAggregator, link_inference, link_classification, link_regression
 
 Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: NodeSequence, LinkSequence, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator
+  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator
+
+
+GraphSAGE model
+----------------
+
+.. automodule:: stellargraph.layer.graphsage
+  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+
+
+HinSAGE model
+----------------
+
+.. automodule:: stellargraph.layer.hinsage
+  :members: HinSAGE, MeanHinAggregator
+
+
+GCN model
+-------------
+
+.. automodule:: stellargraph.layer.gcn
+  :members: GraphConvolution, GCN
+
+
+GAT model
+-------------
+
+.. automodule:: stellargraph.layer.graph_attention
+  :members: GraphAttention, GAT
+
+
+Link prediction layers
+------------------------
+
+.. automodule:: stellargraph.layer.link_inference
+  :members: link_classification, link_regression, link_inference
+
+Ensembles
+------------------------
+
+.. automodule:: stellargraph.utils.ensemble
+  :members: Ensemble, compile, fit_generator, evaluate_generator, predict_generator, layers
+
+
+Calibration
+------------------------
+
+.. automodule:: stellargraph.utils.calibration
+  :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
