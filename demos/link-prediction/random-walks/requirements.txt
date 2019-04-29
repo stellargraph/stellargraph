@@ -1,3 +1,4 @@
+paramiko==2.4.2
 chardet==3.0.4
 scipy==1.0.1
 typing==3.6.4
