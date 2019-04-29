@@ -28,6 +28,15 @@ The following is the description of the dataset:
 Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your 
 computer and pass this location as a command line argument to this script.
 
+### Setup and Installation
+
+These examples assume the `stellargraph` library and its requirements have been installed by following the installation instructions in the README of the library's [root directory](https://github.com/stellargraph/stellargraph).
+
+To install the requirements for running these examples, activate an environment where the stellargraph library is installed (see the library installation instructions), navigate to the directory with these examples, and execute
+
+```pip install -r requirements.txt```
+
+
 ## References
 
 **1.** Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference 
