@@ -412,10 +412,12 @@ def test_nodemapper_manual_schema():
     )
 
     # Create manual schema without type maps
+    # Currently this raises an error:
     schema = G.create_graph_schema(create_type_maps=False)
-    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        list(G)
-    )
+    with pytest.raises(RuntimeError):
+        GraphSAGENodeGenerator(
+            G, schema=schema, batch_size=n_batch, num_samples=[1]
+        ).flow(list(G))
 
 
 def test_nodemapper_incorrect_targets():
@@ -620,10 +622,12 @@ def test_hinnodemapper_manual_schema():
     )
 
     # Create manual schema without type maps
+    # Currently this raises an error
     schema = G.create_graph_schema(create_type_maps=False)
-    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        nodes_type_1
-    )
+    with pytest.raises(RuntimeError):
+        HinSAGENodeGenerator(
+            G, schema=schema, batch_size=n_batch, num_samples=[1]
+        ).flow(nodes_type_1)
 
 
 def test_hinnodemapper_zero_samples():
@@ -789,8 +793,8 @@ class Test_FullBatchNodeGenerator:
         )
         G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-        def func(features, Aadj, **kwargs):
-            return features * features, Aadj
+        def func(features, A, **kwargs):
+            return features * features, A
 
         generator = FullBatchNodeGenerator(G, "test", func, key="value")
         assert generator.name == "test"

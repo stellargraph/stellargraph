@@ -1,46 +1,43 @@
 ## Table of Contents
 
 This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
-data to solve several common problems including node attribute inference (inferring
-entity properties) and link prediction (predicting relations and/or their properties). The
+data to solve node attribute inference (inferring entity properties) problems. The
 examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, GraphSAGE [3], HinSAGE, GCN [5], GAT [6], Node2Vec [1], and Metapath2Vec [2]. 
+state-of-the-art algorithms, GraphSAGE [3], HinSAGE, GCN [5], GAT [6], SGC [8], Node2Vec [1], and Metapath2Vec [2]. 
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [5]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
 Word2Vec [4] algorithm.
 
 The examples folder structure is shown below.
 
-* [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
+* [`/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
 
-    Examples of unsupervised node representation learning for homogeneous networks, heterogeneous networks, and homogeneous networks with node features
-    using Node2Vec, Metapath2Vec, and Unsupervised GraphSAGE algorithm, respectively.
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm [3].
+    
+* [`/gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn)
 
-* [`/link-prediction`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction)
+    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm [5].
 
-    Examples of using StellarGraph algorithms for link prediction on homogeneous and heterogeneous networks.
+* [`/sgc`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/sgc)
 
-* [`/node-classification`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification)
+    Example of semi-supervised node classification for a homogeneous network, using the SGC algorithm [8].
 
-    Examples of using StellarGraph algorithms for node classification on homogeneous and heterogenous networks.
+* [`/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
-* [`/ensembles`](https://github.com/stellargraph/stellargraph/tree/master/demos/ensembles)
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
 
-    Examples of using ensembles of graph convolutional neural networks, e.g., GraphSAGE, GCN, HinSAGE, etc., for
-    node classification and link prediction. Model ensembles usually yield better predictions than single models, 
-    while also providing estimates of prediction uncertainty as a bonus. 
+* [`/node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/node2vec)
 
-* [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
+    Example of unsupervised node representation learning using Node2Vec and supervised classification using
+    the Scikit-learn library.
 
-    Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
-    multi-class classification problems.
+* [`/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/hinsage)
 
-* [`/community_detection`](https://github.com/stellargraph/stellargraph/tree/master/demos/community_detection)
-
-    Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is          demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings. 
+    Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
+    using the HinSAGE algorithm.
 
 
 ## References
@@ -66,3 +63,7 @@ ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
 
 7. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. 
 ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
+
+8. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger. 
+arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
+
