@@ -24,7 +24,7 @@ def is_real_iterable(x):
     Tests if x is an iterable and is not a string.
 
     Args:
-        x:
+        x: a variable to check for whether it is an iterable
 
     Returns:
         True if x is an iterable (but not a string) and False otherwise
@@ -123,20 +123,25 @@ def chebyshev_polynomial(X, k):
     return T_k
 
 
-def GCN_Aadj_feats_op(features, A, **kwargs):
+def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
-    The features and adjacency matrix will be manipulated by either 'localpool' or 'chebyshev' filters.
-    For more information about 'localpool' or 'chebyshev' filters, please read details:
+    The features and adjacency matrix will be manipulated by either 'localpool', 'chebyshev', or
+    'smoothed' filters.
+
+    For more information about 'localpool', 'chebyshev', and 'smoothed' filters, please read details:
         [1] https://en.wikipedia.org/wiki/Chebyshev_filter
         [2] https://arxiv.org/abs/1609.02907
+        [3] https://arxiv.org/abs/1902.07153
 
     Args:
         features: node features in the graph
         A: adjacency matrix
-        kwargs: additional arguments for choosing filter: localpool, or chebyshev
-                (For example, pass filter=localpool as an additional argument to apply the localpool filter)
+        k (int or None): If filter is 'smoothed' then it should be an integer indicating the power to raise the
+        normalised adjacency matrix with self loops before multiplying the node features matrix.
+        kwargs: additional arguments for choosing filter: localpool, chebyshev, or smoothed
+                (For example, pass filter="localpool" as an additional argument to apply the localpool filter)
 
     Returns:
         features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
@@ -158,6 +163,21 @@ def GCN_Aadj_feats_op(features, A, **kwargs):
     elif filter == "chebyshev":
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
-        T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), 2)
+        max_degree = kwargs.get("max_degree", 2)
+        T_k = chebyshev_polynomial(
+            rescale_laplacian(normalized_laplacian(A)), max_degree
+        )
         features = [features] + T_k
+    elif filter == "smoothed":
+        if isinstance(k, int) and k > 0:
+            print("Calculating {}-th power of normalized A...".format(k))
+            A = preprocess_adj(A)
+            A = A ** k  # return scipy.sparse.csr_matrix
+        else:
+            raise ValueError(
+                "k should be positive integer for filter='smoothed'; but received type {} with value {}.".format(
+                    type(k), k
+                )
+            )
+
     return features, A

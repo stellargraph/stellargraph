@@ -1,11 +1,22 @@
 # Change Log
+## [0.6.1](https://github.com/stellargraph/stellargraph/tree/v0.6.1) (1 Apr 2019)
 
-## [Unreleased](https://github.com/stellargraph/stellargraph/tree/HEAD)
+**Fixed bugs:**
+- a bug in passing graph adjacency matrix to the optional `func_opt` function in `FullBatchNodeGenerator` class
+- a bug in `demos/node-classification/gcn/gcn-cora-example.py:144`: incorrect argument was used to pass
+the optional function to the generator for GCN
+
+**Enhancements:**
+- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb` 
+
+## [0.6.0](https://github.com/stellargraph/stellargraph/tree/v0.6.0) (14 Mar 2019)
 
 **Implemented new features and enhancements:**
 - Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216), 
 [\#315](https://github.com/stellargraph/stellargraph/pull/315)
-- Unsupervised GraphSAGE  [\#331](https://github.com/stellargraph/stellargraph/pull/331)
+- Unsupervised GraphSAGE [\#331](https://github.com/stellargraph/stellargraph/pull/331) with a demo [\#335](https://github.com/stellargraph/stellargraph/pull/335)
+- Model Ensembles [\#343](https://github.com/stellargraph/stellargraph/pull/343)
+- Community detection based on unsupervised graph representation learning [\#354](https://github.com/stellargraph/stellargraph/pull/354)
 - Saliency maps and integrated gradients for model interpretability [\#345](https://github.com/stellargraph/stellargraph/pull/345)
 - Shuffling of head nodes/edges in node and link generators at each epoch [\#298](https://github.com/stellargraph/stellargraph/issues/298)
 

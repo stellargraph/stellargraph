@@ -10,6 +10,10 @@ steps:
           - COVERALLS_REPO_TOKEN
           - BUILDKITE_BUILD_NUMBER
           - BUILDKITE_BRANCH
+          # for coveralls-python, to send more metadata to coveralls.io
+          - BUILDKITE
+          - BUILDKITE_PULL_REQUEST
+          - BUILDKITE_JOB_ID
     agents:
       queue: 't2medium'
 

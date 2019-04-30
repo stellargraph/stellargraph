@@ -523,8 +523,8 @@ class GAT:
             add_self_loops (bool): (default is True) toggles adding self-loops to the graph's adjacency matrix in the GraphAttention layers of the GAT model.
 
         Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a list of two Keras input tensors for the specified GAT model
-            (containing node features and graph adjacency matrix), and ``x_out`` is a Keras tensor for the GAT model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the specified GAT model
+            (containing node features and graph adjacency matrix), and `x_out` is a Keras tensor for the GAT model output.
 
         """
         # Create input tensor:

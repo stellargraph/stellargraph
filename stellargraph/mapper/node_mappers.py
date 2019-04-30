@@ -95,8 +95,11 @@ class NodeSequence(Sequence):
             )
 
         # Infer head_node_type
-        if generator.schema.node_type_map is None:
-            head_node_types = {generator.graph.type_for_node(n) for n in ids}
+        if (
+            generator.schema.node_type_map is None
+            or generator.schema.edge_type_map is None
+        ):
+            raise RuntimeError("Schema must have node and edge type maps.")
         else:
             head_node_types = {generator.schema.get_node_type(n) for n in ids}
         if len(head_node_types) > 1:
@@ -183,7 +186,8 @@ class GraphSAGENodeGenerator:
     Example::
 
         G_generator = GraphSAGENodeGenerator(G, 50, [10,10])
-        train_data_gen = G_generator.flow(node_ids)
+        train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+        test_data_gen = G_generator.flow(test_node_ids)
 
     Args:
         G (StellarGraph): The machine-learning ready graph.
@@ -206,9 +210,6 @@ class GraphSAGENodeGenerator:
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # Create sampler for GraphSAGE
-        self.sampler = SampledBreadthFirstWalk(G, seed=seed)
-
         # We need a schema for compatibility with HinSAGE
         if schema is None:
             self.schema = G.create_graph_schema(create_type_maps=True)
@@ -222,6 +223,9 @@ class GraphSAGENodeGenerator:
             print(
                 "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
             )
+
+        # Create sampler for GraphSAGE
+        self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
 
     def sample_features(self, head_nodes, sampling_schema):
         """
@@ -352,7 +356,8 @@ class HinSAGENodeGenerator:
      Example::
 
          G_generator = HinSAGENodeGenerator(G, 50, [10,10])
-         data_gen = G_generator.flow(node_ids)
+         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+         test_data_gen = G_generator.flow(test_node_ids)
 
      """
 
@@ -378,9 +383,6 @@ class HinSAGENodeGenerator:
 
         G.check_graph_for_ml(features=True)
 
-        # Create sampler for HinSAGE
-        self.sampler = SampledHeterogeneousBreadthFirstWalk(G, seed=seed)
-
         # Generate schema
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -389,6 +391,11 @@ class HinSAGENodeGenerator:
             self.schema = schema
         else:
             raise TypeError("Schema must be a GraphSchema object")
+
+        # Create sampler for HinSAGE
+        self.sampler = SampledHeterogeneousBreadthFirstWalk(
+            G, graph_schema=self.schema, seed=seed
+        )
 
     def sample_features(self, head_nodes, sampling_schema):
         """
@@ -534,7 +541,7 @@ class FullBatchNodeSequence(Sequence):
 
 class FullBatchNodeGenerator:
     """
-    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT.
+    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT, SGC.
     The supplied graph G should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
@@ -556,16 +563,26 @@ class FullBatchNodeGenerator:
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        func_opt: an optional function to apply on features and adjacency matrix (declared func_opt(features, Aadj, **kwargs))
-        kwargs: additional parameters for func_opt function
+        func_opt: an optional function to apply on features and adjacency matrix
+            (declared func_opt(features, Aadj, **kwargs))
+        k (None or int): If not none and filter is smoothed, the normalised adjacency matrix with self loops will be
+            raised to the k-th power before multiplying by the node features.
+        kwargs: additional parameters needed when using this generator with GCN model with the [func_opt] function.
+            It must be chebyshev, localpool, or smoothed filters (e.g. filter="localpool", or
+            filter="chebyshev", max_degree=2, or filter="smoothed"). For more information, please read
+            `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/core>`_ in the
+            file **utils.py** and GCN demo
+            `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
-    def __init__(self, G, name=None, func_opt=None, **kwargs):
+    def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.name = name
+        self.k = k
+        self.kwargs = kwargs
 
         # Check if the graph has features
         G.check_graph_for_ml()
@@ -575,7 +592,8 @@ class FullBatchNodeGenerator:
         self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
 
         # Power-user feature: make the generator yield dense adjacency matrix instead of the default sparse one.
-        # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency maps
+        # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency
+        # maps
         self.sparse = kwargs.get("sparse", True)
         if not self.sparse:
             self.Aadj = self.Aadj.todense()
@@ -598,7 +616,7 @@ class FullBatchNodeGenerator:
         if func_opt is not None:
             if callable(func_opt):
                 self.features, self.Aadj = func_opt(
-                    features=self.features, Aadj=self.Aadj, **kwargs
+                    features=self.features, A=self.Aadj, k=self.k, **kwargs
                 )
             else:
                 raise ValueError("argument 'func_opt' must be a callable.")
