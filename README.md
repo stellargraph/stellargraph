@@ -37,6 +37,7 @@
    * [Guiding Principles](#guiding-principles)
    * [Getting Started](#getting-started)
    * [Installation](#installation)
+       * [Mac OSX System Setup](#mac-osx-system-setup)
        * [Install StellarGraph using pip](#install-stellargraph-using-pip)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
    * [Running the examples](#running-the-examples)
@@ -124,7 +125,20 @@ environment, available from [anaconda.com](https://www.anaconda.com/download/).
 The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
 -->
 
-The StellarGraph library can be installed in one of two ways, described next.
+The StellarGraph library can be installed in one of two ways, described next. But prior to installation, you should first check your operating system setup. Instructions for Mac OSX are provided below. Linux setup is often similar.
+
+#### Mac OSX System Setup
+
+You should have a working C compiler and header files. On Mac OSX, this is provided by XCode Command Line Tools. Download the Command Line Tools for XCode from [https://developer.apple.com/download/more/](https://developer.apple.com/download/more/), logging in with your Apple ID to access the downloads. Choose the most recent Command Line Tools for your MacOS version.  
+
+If you are installing for MacOS 10.14.* (i.e. Mojave) you need to need to open a Terminal and run the following command to install the header files:
+```
+open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg
+```
+
+If your python was installed with Anaconda, add the following setting to enable plotting to work. In a Terminal:
+Create `~/.matplotlib/matplotlibrc` 
+Add `backend: TkAgg` to the `matplotlibrc` file.
 
 #### Install StellarGraph using pip:
 To install StellarGraph library from [PyPi](https://pypi.org) using `pip`, execute the following command:
