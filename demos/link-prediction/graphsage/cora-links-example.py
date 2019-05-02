@@ -52,8 +52,8 @@ def load_data(graph_loc, ignore_attr):
     """
 
     # Load the edge list
-    edgelist = pd.read_table(
-        os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
+    edgelist = pd.read_csv(
+        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
     )
 
     # Load node features
@@ -62,8 +62,8 @@ def load_data(graph_loc, ignore_attr):
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
-    node_data = pd.read_table(
-        os.path.join(graph_loc, "cora.content"), header=None, names=column_names
+    node_data = pd.read_csv(
+        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
     )
     node_data.drop(columns=["subject"], inplace=True)
 

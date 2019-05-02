@@ -22,8 +22,9 @@ URL = "https://github.com/stellargraph/stellargraph"
 # Required packages
 REQUIRES = [
     "keras>=2.2.4",
-    "tensorflow>=1.13",
-    "numpy>=1.16",
+    "tensorflow>=1.12",
+    "numpy>=1.14,<1.15",
+    "scipy>=1.10,<1.2",
     "networkx>=2.2",
     "scikit_learn>=0.20",
     "matplotlib>=2.2",
@@ -31,8 +32,13 @@ REQUIRES = [
     "pandas>=0.24",
 ]
 
+# The demos requirements are as follows:
+# demos/community_detection: mplleaflet, python-igraph
+# demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
+# demos/link-prediction/hinsage/utils.py: numba
+# 
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter"],
+    "demos": ["numba", "jupyter", "paramiko", "mplleaflet", "seaborn", "python-igraph"],
     "test": ["pytest", "pytest-benchmark"],
 }
 
