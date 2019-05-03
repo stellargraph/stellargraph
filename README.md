@@ -115,10 +115,11 @@ StellarGraph supports different machine learning use-cases, including:
 
 
 ## Installation
-StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library
-uses Keras with the Tensorflow backend, and thus does not currently work in python 3.7). The required Python version
+StellarGraph is a Python 3 library and we recommend using Python version `3.6.*`. The required Python version
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
+
+*Note*: while the library works on Python 3.7 you will notice some deprecation warnings due to the rapid development of the Python libraries that StellarGraph depends upon.
 
 <!--
 The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
@@ -132,12 +133,10 @@ To install StellarGraph library from [PyPi](https://pypi.org) using `pip`, execu
 pip install stellargraph
 ```
 
-Some of the examples require installing additional dependencies as well as `stellargraph`.
-To install these dependencies using `pip`, execute the following command:
+Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip`, execute the following command:
 ```
 pip install stellargraph[demos]
 ```
-
 
 #### Install StellarGraph from Github source:
 First, clone the StellarGraph repository using `git`:
@@ -148,9 +147,14 @@ git clone https://github.com/stellargraph/stellargraph.git
 Then, `cd` to the StellarGraph folder, and install the library by executing the following commands:
 ```
 cd stellargraph
-pip install -r requirements.txt
 pip install .
 ```
+
+Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip`, execute the following command:
+```
+pip install .[demos]
+```
+
 
 ## Running the examples
 
