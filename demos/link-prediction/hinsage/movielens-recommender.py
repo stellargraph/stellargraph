@@ -164,7 +164,7 @@ class LinkInference(object):
         )
 
         # Define input and output sockets of hinsage:
-        x_inp, x_out = hinsage.default_model()
+        x_inp, x_out = hinsage.node_model()
 
         # Final estimator layer
         score_prediction = link_regression(
