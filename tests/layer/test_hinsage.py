@@ -267,7 +267,7 @@ def test_hinsage_apply():
     assert actual == pytest.approx(expected)
 
 
-def test_hinsage_node_model():
+def test_hinsage_default_model():
     hs = HinSAGE(
         layer_sizes=[2, 2],
         n_samples=[2, 2],
@@ -287,7 +287,7 @@ def test_hinsage_node_model():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.node_model()
+    xin, xout = hs.default_model()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -320,7 +320,7 @@ def test_hinsage_serialize():
         normalize="none",
         bias=False,
     )
-    xin, xout = hs.node_model()
+    xin, xout = hs.default_model()
     model = keras.Model(inputs=xin, outputs=xout)
 
     # Save model
@@ -369,7 +369,7 @@ def test_hinsage_zero_neighbours():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.node_model()
+    xin, xout = hs.default_model()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -407,7 +407,7 @@ def test_hinsage_aggregators():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.node_model()
+    xin, xout = hs.default_model()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [

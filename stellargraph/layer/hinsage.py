@@ -29,7 +29,6 @@ from keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
 import itertools as it
 import operator as op
-import warnings
 
 
 class MeanHinAggregator(Layer):
@@ -423,9 +422,9 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def node_model(self, flatten_output=False):
+    def default_model(self, flatten_output=False):
         """
-        Builds a HinSAGE model for node prediction
+        Return model with default inputs
 
         Args:
             flatten_output (bool): The HinSAGE model returns an output tensor
@@ -449,11 +448,3 @@ class HinSAGE:
             x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
-
-    def default_model(self, flatten_output=False):
-        warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .node_model() or .link_model() methods instead.",
-            PendingDeprecationWarning,
-        )
-        return self.node_model(flatten_output=flatten_output)
