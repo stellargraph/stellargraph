@@ -679,7 +679,7 @@ class GraphSAGE:
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model and ``x_out`` is tne Keras tensor
+            for the specified GraphSAGE model and ``x_out`` is the Keras tensor
             for the GraphSAGE model output.
 
         """
@@ -693,6 +693,27 @@ class GraphSAGE:
             x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
+
+    def link_model(self):
+        """
+        Builds a GraphSAGE model for link prediction
+
+
+        Returns:
+            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) node pairs
+            (where (src, dst) node inputs alternate),
+            and ``x_out`` is a list of output tensors for (src, dst) nodes in the node pairs
+
+        """
+        # Expose input and output sockets of the model, for source and destination nodes:
+        x_inp_src, x_out_src = self.node_model(flatten_output=False)
+        x_inp_dst, x_out_dst = self.node_model(flatten_output=False)
+        # re-pack into a list where (source, target) inputs alternate, for link inputs:
+        x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
+        # same for outputs:
+        x_out = [x_out_src, x_out_dst]
+        return x_inp, x_out
+
 
     def default_model(self, flatten_output=False):
         warnings.warn(
