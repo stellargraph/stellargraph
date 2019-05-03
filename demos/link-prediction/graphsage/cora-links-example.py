@@ -163,8 +163,8 @@ def train(
     )
 
     # Expose input and output sockets of the model, for source and destination nodes:
-    x_inp_src, x_out_src = graphsage.default_model(flatten_output=False)
-    x_inp_dst, x_out_dst = graphsage.default_model(flatten_output=False)
+    x_inp_src, x_out_src = graphsage.node_model(flatten_output=False)
+    x_inp_dst, x_out_dst = graphsage.node_model(flatten_output=False)
     # re-pack into a list where (source, target) inputs alternate, for link inputs:
     x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
     # same for outputs:

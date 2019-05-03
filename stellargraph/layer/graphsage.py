@@ -35,6 +35,7 @@ from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from keras.utils import Sequence
 from keras import activations
 from typing import List, Tuple, Callable, AnyStr
+import warnings
 
 
 class GraphSAGEAggregator(Layer):
@@ -666,9 +667,9 @@ class GraphSAGE:
         input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
         return input_shapes
 
-    def default_model(self, flatten_output=False):
+    def node_model(self, flatten_output=False):
         """
-        Return model with default inputs
+        Builds a GraphSAGE model for node prediction
 
         Args:
             flatten_output: The GraphSAGE model will return an output tensor
@@ -692,3 +693,11 @@ class GraphSAGE:
             x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
+
+    def default_model(self, flatten_output=False):
+        warnings.warn(
+            "The .default_model() method will be deprecated in future versions. "
+            "Please use .node_model() or .link_model() methods instead.",
+            PendingDeprecationWarning,
+        )
+        return self.node_model(flatten_output=flatten_output)
