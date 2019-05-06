@@ -110,3 +110,11 @@ site
 # pytest
 **/.pytest_cache
 
+# swap
+**/[._]*.s[a-v][a-z]
+**/[._]*.sw[a-p]
+**/[._]s[a-v][a-z]
+**/[._]sw[a-p]
+
+# Vim session
+**/Session.vim
