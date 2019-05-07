@@ -26,7 +26,7 @@ steps:
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 
-  - label: ":docker: :hadolint:"
+  - label: ":docker: :hadolint: lint Dockerfiles"
     command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
     plugins:
        docker#v3.0.1:

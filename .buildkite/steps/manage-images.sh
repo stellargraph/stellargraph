@@ -56,7 +56,9 @@ delete_numbered() {
     done
 }
 
-images=stellargraph
+images=(
+  stellargraph
+)
 
 action="$1"
 
