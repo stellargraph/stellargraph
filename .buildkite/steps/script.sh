@@ -11,5 +11,5 @@ py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-
 coveralls
 
 if [ "${BUILDKITE_BRANCH}" = "develop"  ] || [ "${BUILDKITE_BRANCH}" = "master" ] ; then
-	upload_tests
+  upload_tests
 fi
