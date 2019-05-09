@@ -36,6 +36,7 @@ steps:
     command: ".buildkite/steps/manage-images.sh build-publish-numbered"
     agents:
       queue: "t2medium"
+    branches: "develop feature/*"
 
   - wait: ~
     continue_on_failure: true
@@ -49,6 +50,7 @@ steps:
 
   - label: ":do_not_litter: delete numbered temporary images"
     command: ".buildkite/steps/manage-images.sh delete-numbered"
+    branches: "develop feature/*"
 
   - wait: ~
     continue_on_failure: true
