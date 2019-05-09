@@ -2,7 +2,7 @@ steps:
   - label: ":python: 3.6"
     command: ".buildkite/steps/script.sh"
     plugins:
-      docker#v3.0.1:
+      docker#v3.2.0:
         image: "python:3.6"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
@@ -20,7 +20,7 @@ steps:
 
   - label: "style"
     plugins:
-      docker#v3.0.1:
+      docker#v3.2.0:
         image: "stellargraph/black"
         command: ["--check", "stellargraph", "tests"]
         environment:
@@ -29,7 +29,7 @@ steps:
   - label: ":docker: :hadolint: lint Dockerfiles"
     command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
     plugins:
-       docker#v3.0.1:
+       docker#v3.2.0:
           image: "hadolint/hadolint:latest-debian"
 
   - label: ":docker: publish numbered images"
