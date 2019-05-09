@@ -1,6 +1,6 @@
 ![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
-# Stellar Graph Machine Learning Library
+# StellarGraph Machine Learning Library
 
 <p align="center">
   <a href="https://community.stellargraph.io" alt="Discourse Forum">
@@ -30,7 +30,11 @@
   <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
     <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
   </a>
+  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
+  </a>
 </p>
+
 
 # Table of Contents
    * [Introduction](#introduction)
@@ -39,11 +43,14 @@
    * [Installation](#installation)
        * [Install StellarGraph using pip](#install-stellargraph-using-pip)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
+   * [Docker Image](#docker-image)
    * [Running the examples](#running-the-examples)
+       * [Running the examples with docker](#Running-the-examples-with-docker)
    * [Algorithms](#algorithms)
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
    * [CI](#ci)
+   * [Citing](#citing)
    * [References](#references)
 
 ## Introduction
@@ -137,7 +144,6 @@ To install these dependencies using `pip`, execute the following command:
 pip install stellargraph[demos]
 ```
 
-
 #### Install StellarGraph from Github source:
 First, clone the StellarGraph repository using `git`:
 ```
@@ -150,6 +156,12 @@ cd stellargraph
 pip install -r requirements.txt
 pip install .
 ```
+
+## Docker Image
+
+* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
+
+Images can be pulled via `docker pull stellargraph/stellargraph` 
 
 ## Running the examples
 
@@ -212,6 +224,20 @@ Pipeline is defined in `.buildkite/pipeline.yml`
 
 * Tests: Uses the official [python:3.6](https://hub.docker.com/_/python/) image.
 * Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.
+
+## Citing
+StellarGraph is designed, developed and supported by [CSIRO's Data61](https://data61.csiro.au/).
+If you use any part of this library in your research, please cite it using the following BibTex entry
+```latex
+@misc{StellarGraph,
+  author = {CSIRO's Data61},
+  title = {StellarGraph Machine Learning Library},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/stellargraph/stellargraph}},
+}
+```
 
 ## References
 
