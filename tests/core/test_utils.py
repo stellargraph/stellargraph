@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIROß
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -119,3 +119,36 @@ def test_GCN_Aadj_feats_op():
     assert features_[2].max() < 1
     assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
     assert Aadj.get_shape() == Aadj_.get_shape()
+
+    # k must be positive integer
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=None)
+
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=0)
+
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=-191)
+
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=2.0)
+
+    features_, Aadj_ = GCN_Aadj_feats_op(
+        features=features, A=Aadj, filter="smoothed", k=2
+    )
+
+    assert len(features_) == 6
+    assert np.array_equal(features, features_)
+    assert Aadj.get_shape() == Aadj_.get_shape()
+
+    # Check if the power of the normalised adjacency matrix is calculated correctly.
+    # First retrieve the normalised adjacency matrix using localpool filter.
+    features_, Aadj_norm = GCN_Aadj_feats_op(
+        features=features, A=Aadj, filter="localpool"
+    )
+    Aadj_norm = Aadj_norm.todense()
+    Aadj_power_2 = np.linalg.matrix_power(Aadj_norm, 2)  # raise it to the power of 2
+    # Both matrices should have the same shape
+    assert Aadj_power_2.shape == Aadj_.get_shape()
+    # and the same values.
+    assert (Aadj_power_2 == Aadj_.todense()).all()
