@@ -56,6 +56,7 @@ class GraphConvolution(Layer):
         support=1,
         activation=None,
         use_bias=True,
+        final_layer=False,
         kernel_initializer="glorot_uniform",
         bias_initializer="zeros",
         kernel_regularizer=None,
@@ -81,6 +82,7 @@ class GraphConvolution(Layer):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         self.support = support
+        self.final_layer = final_layer
 
     def compute_output_shape(self, input_shapes):
         """
@@ -136,27 +138,41 @@ class GraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (list): a list of input tensors that includes 2 items: node features (matrix of size N x F),
-                and graph adjacency matrix (size N x N), where N is the number of nodes in the graph,
+            inputs (list): a list of input tensors that includes 2
+                node features (matrix of size N x F), and
+                graph adjacency matrix (size N x N),
+                where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
-            mask (None or Tensor):  a Tensor indicating the input mask for Embedding. This mask is only used as a bypassing. It passes the corresponding mask from the previous layer
-                to the next attached layer if the previous layer set a mask.
+            mask (None or Tensor):  a Tensor indicating the input mask for Embedding. This mask
+                is only used as a bypassing. It passes the corresponding mask from the previous
+                layer to the next attached layer if the previous layer set a mask.
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-
         features = inputs[0]
-        A = inputs[1:]
+        indices = inputs[1]
+        Am = inputs[2:]
 
+        # Create list of the product of an input matrix by the features,
+        # concatenates them then multiplies the output by the kernel.
+        # When there is a single matrix in the list this reduces to GCN.
         supports = list()
         for i in range(self.support):
-            supports.append(K.dot(A[i], features))
+            supports.append(K.dot(Am[i], features))
         supports = K.concatenate(supports, axis=1)
         output = K.dot(supports, self.kernel)
 
+        # Add optional bias
         if self.bias:
             output += self.bias
-        return self.activation(output)
+
+        output = self.activation(output)
+
+        # On the final layer we gather the nodes referenced by the indices
+        if self.final_layer:
+            output = K.gather(output, indices)
+
+        return output
 
     def get_config(self):
         """
@@ -226,8 +242,11 @@ class GCN:
         self.kwargs = generator.kwargs
 
         # Initialize a stack of GCN layers
+        n_layers = len(self.layer_sizes)
         self._layers = []
-        for l, a in zip(self.layer_sizes, self.activations):
+        for ii in range(n_layers):
+            l = self.layer_sizes[ii]
+            a = self.activations[ii]
             self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 GraphConvolution(
@@ -236,6 +255,7 @@ class GCN:
                     activation=a,
                     use_bias=self.bias,
                     kernel_regularizer=self.kernel_regularizer,
+                    final_layer=ii == (n_layers - 1),
                 )
             )
 
@@ -249,14 +269,13 @@ class GCN:
         Returns:
             Output tensor
         """
-
         H = x[0]
-        suppG = x[1:]
+        extra_in = x[1:]
 
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
-                # It is a GCN layer
-                H = layer([H] + suppG)
+                # It is a GCN layer add the extra inputs
+                H = layer([H] + extra_in)
             else:
                 # layer is a Dropout layer
                 H = layer(H)
@@ -271,20 +290,23 @@ class GCN:
             tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
             and `x_out` is a Keras tensor for the GCN model output.
         """
+        # Placeholder for node features
+        x_in = Input(batch_shape=(1, None, self.generator.features.shape[1]))
 
-        x_in = Input(shape=(self.generator.features.shape[1],))
+        # Placeholder for target indices
+        indices_in = Input(batch_shape=(1, None), dtype="int32")
 
         filter = self.kwargs.get("filter", "localpool")
         if filter == "chebyshev":
             self.support = self.kwargs.get("max_degree", 2)
-            suppG = [
-                Input(batch_shape=(None, None), sparse=True)
+            Am_in = [
+                Input(batch_shape=(1, None, None), sparse=True)
                 for _ in range(self.support)
             ]
         else:
-            suppG = [Input(batch_shape=(None, None), sparse=True)]
+            Am_in = [Input(batch_shape=(1, None, None), sparse=True)]
 
-        x_inp = [x_in] + suppG
+        x_inp = [x_in, indices_in] + Am_in
         x_out = self(x_inp)
         return x_inp, x_out
 
