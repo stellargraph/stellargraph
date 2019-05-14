@@ -621,7 +621,7 @@ class FullBatchNodeGenerator:
             else:
                 raise ValueError("argument 'func_opt' must be a callable.")
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, class_weights=None):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -642,9 +642,10 @@ class FullBatchNodeGenerator:
 
         # The list of indices of the target nodes in self.node_list
         node_indices = np.array([self.node_list.index(n) for n in node_ids])
-        node_mask = np.zeros(len(self.node_list), dtype=int)
+        node_mask = np.zeros(len(self.node_list), dtype=float)
         node_mask[node_indices] = 1
-        node_mask = np.ma.make_mask(node_mask)
+        # Pantelis removed the below line
+        #node_mask = np.ma.make_mask(node_mask)
 
         # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
         if targets is not None:
@@ -656,8 +657,19 @@ class FullBatchNodeGenerator:
 
             n = self.Aadj.shape[0]
             y = np.zeros((n, c))
-            for i, t in zip(node_indices, targets):
-                y[i] = t
+            if c == 1 and class_weights is not None:
+                for i, t in zip(node_indices, targets):
+                    y[i] = t
+                    node_mask[i] = class_weights[t]
+                    # if t == 0:
+                    #     node_mask[i] = 1
+                    # else:
+                    #     node_mask[i] = 20
+            else:
+                node_mask = np.ma.make_mask(node_mask)
+
+                for i, t in zip(node_indices, targets):
+                    y[i] = t
         else:
             y = None
 
