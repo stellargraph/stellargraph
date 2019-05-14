@@ -505,38 +505,58 @@ class HinSAGENodeGenerator:
 
 class FullBatchNodeSequence(Sequence):
     """
-    Keras-compatible data generator to use with the Keras
-    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
-    and :meth:`keras.Model.predict_generator`, for models that require full-batch training (e.g., GCN, GAT).
+    Keras-compatible data generator for for node inference models
+    that require full-batch training (e.g., GCN, GAT).
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
 
-    This class generated data samples for node inference models
-    and should be created using the `.flow(...)` method of
+    This class should be created using the `.flow(...)` method of
     :class:`FullBatchNodeGenerator`.
 
-    These Generators are classes that capture the graph structure
-    and the feature vectors of each node.
+    Args:
+        features (np.ndarray): An array of node features of size (N x F),
+            where N is the number of nodes in the graph, F is the node feature size
+        A (np.ndarray or sparse matrix): An adjacency matrix of the graph of size (N x N).
+        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
+            where C is the target size (e.g., number of classes for one-hot class targets)
+        indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
+            of the targets. Required if targets is not None.
     """
 
-    def __init__(self, features, A, targets=None, sample_weight=None):
-        """
+    def __init__(self, features, A, targets=None, indices=None):
 
-        Args:
-            features: a matrix of node features of size (N x F), where N is the number of nodes in the graph, F is the node feature size
-            A: an adjacency matrix of the graph
-            targets: an optional array of node targets of size (N x C), where C is the target size (e.g., number of classes for one-hot class targets)
-            sample_weight: Optional Numpy array of weights for the node samples, used for weighting the loss function during training or evaluation.
-                You can either pass a flat (1D) Numpy array with the same length as the input features (1:1 mapping between weights and rows in features)
-        """
-        self.features = features
+        if (targets is None) != (indices is None):
+            raise ValueError("Both targets and indices must be supplied.")
+
+        # Store features and targets as np.ndarray
+        self.features = np.asanyarray(features)
+        self.targets = np.asanyarray(targets)
+        self.target_indices = np.asanyarray(indices)
         self.A = A
-        self.targets = targets
-        self.sample_weight = sample_weight
+
+        # Check shapes
+        Nb_f, Nnodes_f, Nf_f = self.features.shape
+        Nb_a, Nnodes_a1, Nnodes_a2 = self.A.shape
+        Nb_t, Nnodes_t, Nt_t = self.A.shape
+        Nb_i, Nnodes_i = self.A.shape
+
+        if Nb_f != Nb_a or Nb_a != Nb_t or Nb_t != Nb_i:
+            raise ValueError("All batch sizes must be the same")
+
+        if Nnodes_f != Nnodes_a1 or Nnodes_a1 != Nnodes_a2:
+            raise ValueError(
+                "Number of nodes in features and adjacency matrix must be the same."
+            )
+
+        if Nnodes_t != Nnodes_i:
+            raise ValueError("Number of nodes in target and indecies must be the same.")
 
     def __len__(self):
         return 1
 
     def __getitem__(self, index):
-        return [self.features, self.A], self.targets, self.sample_weight
+        return [self.features, self.target_indices, self.A], self.targets
 
 
 class FullBatchNodeGenerator:
@@ -636,29 +656,46 @@ class FullBatchNodeGenerator:
             and :meth:`predict_generator`
 
         """
-        # Check targets is an iterable
-        if not is_real_iterable(targets) and targets is not None:
-            raise TypeError("Targets must be an iterable or None")
+        if targets is not None:
+            # Check targets is an iterable
+            if not is_real_iterable(targets):
+                raise TypeError("Targets must be an iterable or None")
+
+            # Check targets correct shape
+            if len(targets) != len(node_ids):
+                raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
+        targets = np.asanyarray(targets)
         node_indices = np.array([self.node_list.index(n) for n in node_ids])
-        node_mask = np.zeros(len(self.node_list), dtype=int)
-        node_mask[node_indices] = 1
-        node_mask = np.ma.make_mask(node_mask)
+
+        # Reshape features, targets and adjacency matrix to have a batch dimension of 1
+        # Note: this is required to pass different numbers of nodes as input and output
+        targets = np.reshape(targets, (1,) + targets.shape)
+        node_indices = np.reshape(node_indices, (1,) + node_indices.shape)
+        Am = self.Aadj.reshape((1,) + self.Aadj.shape)
+        features = np.reshape(self.features, (1,) + self.features.shape)
+
+        print(self.Aadj.shape)
+        print(Am.shape)
+
+        # node_mask = np.zeros(len(self.node_list), dtype=int)
+        # node_mask[node_indices] = 1
+        # node_mask = np.ma.make_mask(node_mask)
 
         # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
-        if targets is not None:
-            targets = np.array(targets)
-            if len(targets.shape) == 1:
-                c = 1
-            else:
-                c = targets.shape[1]
+        # if targets is not None:
+        #     targets = np.array(targets)
+        #     if len(targets.shape) == 1:
+        #         c = 1
+        #     else:
+        #         c = targets.shape[1]
+        #
+        #     n = self.Aadj.shape[0]
+        #     y = np.zeros((n, c))
+        #     for i, t in zip(node_indices, targets):
+        #         y[i] = t
+        # else:
+        #     y = None
 
-            n = self.Aadj.shape[0]
-            y = np.zeros((n, c))
-            for i, t in zip(node_indices, targets):
-                y[i] = t
-        else:
-            y = None
-
-        return FullBatchNodeSequence(self.features, self.Aadj, y, node_mask)
+        return FullBatchNodeSequence(features, Am, targets, node_indices)
