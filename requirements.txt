@@ -1,7 +1,7 @@
 networkx==2.2
 setuptools>=39.1.0
 Keras>=2.2.3
-tensorflow>=1.10.0
+tensorflow>=1.13.0
 numba>=0.39.0
 numpy>=1.14.5
 scikit_learn>=0.19.2
