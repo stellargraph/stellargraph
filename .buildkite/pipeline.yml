@@ -26,6 +26,12 @@ steps:
         environment:
           - PYTHONDONTWRITEBYTECODE=1
 
+  - label: ":shell: format"
+    plugins:
+      docker#v3.2.0:
+        image: "mvdan/shfmt:v2.6.4"
+        command: ["-d", "-i", "2", "-ci", "-sr", "."]
+
   - label: ":docker: :hadolint: lint Dockerfiles"
     command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
     plugins:
