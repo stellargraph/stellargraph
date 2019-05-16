@@ -697,7 +697,7 @@ class GraphSAGE:
 
     def link_model(self, flatten_output=False):
         """
-        Builds a GraphSAGE model for link prediction
+        Builds a GraphSAGE model for link or node pair prediction
 
 
         Returns:
@@ -722,14 +722,17 @@ class GraphSAGE:
             elif len(self.generator._sampling_schema) == 2:
                 return self.link_model(flatten_output=flatten_output)
             else:
-                raise RuntimeError("The generator used for model creation is neither a node nor a link generator, "
-                                   "unable to figure out how to deploy the model. Consider using node_model or "
-                                   "link_model method explicitly to deploy node or link prediction model, respectively.")
+                raise RuntimeError(
+                    "The generator used for model creation is neither a node nor a link generator, "
+                    "unable to figure out how to deploy the model. Consider using node_model or "
+                    "link_model method explicitly to deploy node or link prediction model, respectively."
+                )
         else:
-            raise RuntimeError("Suitable generator is not provided at model creation time, unable to figure out how to deploy the model. "
-                               "Consider either providing a generator, or using node_model or link_model method explicitly to deploy node or "
-                               "link prediction model, respectively.")
-
+            raise RuntimeError(
+                "Suitable generator is not provided at model creation time, unable to figure out how to deploy the model. "
+                "Consider either providing a generator, or using node_model or link_model method explicitly to deploy node or "
+                "link prediction model, respectively."
+            )
 
     def default_model(self, flatten_output=False):
         warnings.warn(
