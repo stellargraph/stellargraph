@@ -441,10 +441,13 @@ class HinSAGE:
         # Create tensor inputs
         x_inp = [Input(shape=s) for s in self._input_shapes()]
 
-        # Output from GraphSAGE model
+        # Output from HinSAGE model
         x_out = self(x_inp)
 
         if flatten_output:
-            x_out = Reshape((-1,))(x_out)
+            if isinstance(x_out, list):
+                x_out = [Reshape((-1,))(x) for x in x_out]
+            else:
+                x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
