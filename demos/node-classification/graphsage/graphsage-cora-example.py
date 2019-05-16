@@ -89,7 +89,8 @@ def train(
     node_features = node_data[feature_names]
 
     # Create graph from edgelist and set node features and node type
-    Gnx = nx.from_pandas_edgelist(edgelist)
+    Gnx = nx.from_pandas_edgelist(edgelist, edge_attr="label")
+    nx.set_node_attributes(Gnx, "paper", "label")
 
     # Convert to StellarGraph and prepare for ML
     G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
@@ -321,6 +322,7 @@ if __name__ == "__main__":
     edgelist = pd.read_table(
         os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
     )
+    edgelist["label"] = "cites"
 
     # Load node features
     # The CORA dataset contains binary attributes 'w_x' that correspond to whether the corresponding keyword
