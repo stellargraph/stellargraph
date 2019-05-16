@@ -29,6 +29,7 @@ from keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
 import itertools as it
 import operator as op
+import warnings
 
 
 class MeanHinAggregator(Layer):
@@ -422,7 +423,7 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def default_model(self, flatten_output=False):
+    def deploy(self, flatten_output=False):
         """
         Return model with default inputs
 
@@ -451,3 +452,11 @@ class HinSAGE:
                 x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
+
+    def default_model(self, flatten_output=False):
+        warnings.warn(
+            "The .default_model() method will be deprecated in future versions. "
+            "Please use .deploy() method instead.",
+            PendingDeprecationWarning,
+        )
+        return self.deploy(flatten_output=flatten_output)

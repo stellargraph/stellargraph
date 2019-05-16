@@ -99,7 +99,7 @@ def train(
 
     # GraphSAGE model
     model = HinSAGE(layer_size, train_gen, dropout=dropout)
-    x_inp, x_out = model.default_model(flatten_output=True)
+    x_inp, x_out = model.deploy(flatten_output=True)
 
     # Final estimator layer
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
