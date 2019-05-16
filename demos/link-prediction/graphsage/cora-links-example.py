@@ -163,7 +163,7 @@ def train(
     )
 
     # Construct input and output tensors for the link prediction model
-    x_inp, x_out = graphsage.link_model()
+    x_inp, x_out = graphsage.deploy()
 
     # Final estimator layer
     prediction = link_classification(

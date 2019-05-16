@@ -554,6 +554,7 @@ class GraphSAGE:
         # Get the input_dim and num_samples from the generator if it is given
         # Use both the schema and head node type from the generator
         # TODO: Refactor the horror of generator.generator.graph...
+        self.generator = generator
         if generator is not None:
             self.n_samples = generator.generator.num_samples
             feature_sizes = generator.generator.graph.node_feature_sizes()
@@ -694,7 +695,7 @@ class GraphSAGE:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def link_model(self, flatten_output=False):
         """
         Builds a GraphSAGE model for link prediction
 
@@ -706,19 +707,34 @@ class GraphSAGE:
 
         """
         # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model(flatten_output=False)
-        x_inp_dst, x_out_dst = self.node_model(flatten_output=False)
+        x_inp_src, x_out_src = self.node_model(flatten_output=flatten_output)
+        x_inp_dst, x_out_dst = self.node_model(flatten_output=flatten_output)
         # re-pack into a list where (source, target) inputs alternate, for link inputs:
         x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
         # same for outputs:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
+    def deploy(self, flatten_output=False):
+        if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
+            if len(self.generator._sampling_schema) == 1:
+                return self.node_model(flatten_output=flatten_output)
+            elif len(self.generator._sampling_schema) == 2:
+                return self.link_model(flatten_output=flatten_output)
+            else:
+                raise RuntimeError("The generator used for model creation is neither a node nor a link generator, "
+                                   "unable to figure out how to deploy the model. Consider using node_model or "
+                                   "link_model method explicitly to deploy node or link prediction model, respectively.")
+        else:
+            raise RuntimeError("Suitable generator is not provided at model creation time, unable to figure out how to deploy the model. "
+                               "Consider either providing a generator, or using node_model or link_model method explicitly to deploy node or "
+                               "link prediction model, respectively.")
+
 
     def default_model(self, flatten_output=False):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
-            "Please use .node_model() or .link_model() methods instead.",
+            "Please use .deploy() method instead.",
             PendingDeprecationWarning,
         )
-        return self.node_model(flatten_output=flatten_output)
+        return self.deploy(flatten_output=flatten_output)

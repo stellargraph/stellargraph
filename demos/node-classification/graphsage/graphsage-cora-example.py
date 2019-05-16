@@ -124,7 +124,7 @@ def train(
         aggregator=MeanAggregator,
     )
     # Expose the input and output sockets of the model:
-    x_inp, x_out = model.node_model(flatten_output=True)
+    x_inp, x_out = model.deploy(flatten_output=True)
 
     # Snap the final estimator layer to x_out
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
