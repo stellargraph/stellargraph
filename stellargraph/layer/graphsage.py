@@ -716,6 +716,21 @@ class GraphSAGE:
         return x_inp, x_out
 
     def deploy(self, flatten_output=False):
+        """
+        Deploys a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
+        the model (whether it is a node or link/node pair generator).
+        Args:
+            flatten_output: The GraphSAGE model will return a list of output tensors
+                of form (batch_size, 1, feature_size). If this flag
+                is true, the output will be of size
+                (batch_size, 1*feature_size)
+
+        Returns:
+            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
+            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
+            for the model output.
+
+        """
         if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
             if len(self.generator._sampling_schema) == 1:
                 return self.node_model(flatten_output=flatten_output)

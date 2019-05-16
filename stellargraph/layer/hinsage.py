@@ -425,18 +425,18 @@ class HinSAGE:
 
     def deploy(self, flatten_output=False):
         """
-        Return model with default inputs
-
+        Deploys a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
+        the model (whether it is a node or link/node pair generator).
         Args:
-            flatten_output (bool): The HinSAGE model returns an output tensor
-                of form (batch_size, 1, feature_size) -
-                if this flag is True, the output will be resized to
-                (batch_size, feature_size)
+            flatten_output: The HinSAGE model will return a list of output tensors
+                of form (batch_size, 1, feature_size). If this flag
+                is true, the output will be of size
+                (batch_size, 1*feature_size)
 
         Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
-            for the specified HinSAGE model and ``x_out`` is tne Keras tensor
-            for the HinSAGE model output.
+            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
+            for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
+            for the model output.
 
         """
         # Create tensor inputs
