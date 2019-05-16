@@ -551,8 +551,8 @@ class GraphSAGE:
                 )
             )
 
-        # Get the input_dim and num_samples from the mapper if it is given
-        # Use both the schema and head node type from the mapper
+        # Get the input_dim and num_samples from the generator if it is given
+        # Use both the schema and head node type from the generator
         # TODO: Refactor the horror of generator.generator.graph...
         if generator is not None:
             self.n_samples = generator.generator.num_samples
@@ -570,7 +570,7 @@ class GraphSAGE:
 
         else:
             raise RuntimeError(
-                "If mapper is not provided, n_samples and input_dim must be specified."
+                "If generator is not provided, n_samples and input_dim must be specified."
             )
 
         # Model parameters

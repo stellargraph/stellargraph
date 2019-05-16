@@ -198,7 +198,7 @@ class HinSAGE:
         """
         Args:
             layer_sizes (list): Hidden feature dimensions for each layer
-            mapper (Sequence): A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
+            generator (Sequence): A NodeSequence or LinkSequence. If specified, n_samples,
                 input_neighbour_tree and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
                 The number of samples per layer in the model.
@@ -257,8 +257,8 @@ class HinSAGE:
                 )
             )
 
-        # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
-        # Use both the schema and head node type from the mapper
+        # Get the sampling tree, input_dim, and num_samples from the generator if it is given
+        # Use both the schema and head node type from the generator
         # TODO: Refactor the horror of generator.generator.graph...
         if generator is not None:
             self.n_samples = generator.generator.num_samples
@@ -278,7 +278,7 @@ class HinSAGE:
 
         else:
             raise RuntimeError(
-                "If mapper is not provided, input_neighbour_tree, n_samples,"
+                "If generator is not provided, input_neighbour_tree, n_samples,"
                 " and input_dim must be specified."
             )
 
