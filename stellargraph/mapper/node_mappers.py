@@ -40,6 +40,7 @@ from ..data.explorer import (
 )
 from ..core.graph import StellarGraphBase, GraphSchema
 from ..core.utils import is_real_iterable
+from ..core.utils import GCN_Aadj_feats_op
 
 
 class NodeSequence(Sequence):
@@ -575,7 +576,10 @@ class FullBatchNodeGenerator:
             `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
     """
 
-    def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
+    # def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
+
+    def __init__(self, G, name=None, k=None, **kwargs):
+
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -613,13 +617,18 @@ class FullBatchNodeGenerator:
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
-        if func_opt is not None:
-            if callable(func_opt):
-                self.features, self.Aadj = func_opt(
-                    features=self.features, A=self.Aadj, k=self.k, **kwargs
-                )
-            else:
-                raise ValueError("argument 'func_opt' must be a callable.")
+        # if func_opt is not None:
+        #    if callable(func_opt):
+        #       self.features, self.Aadj = func_opt(
+        #          features=self.features, A=self.Aadj, k=self.k, **kwargs
+        #     )
+        # else:
+        #    raise ValueError("argument 'func_opt' must be a callable.")
+
+        if kwargs is not None:
+            self.features, self.Aadj = GCN_Aadj_feats_op(
+                features=self.features, A=self.Aadj, k=self.k, **kwargs
+            )
 
     def flow(self, node_ids, targets=None):
         """
