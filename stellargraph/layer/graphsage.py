@@ -715,9 +715,9 @@ class GraphSAGE:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def deploy(self, flatten_output=False):
+    def build(self, flatten_output=False):
         """
-        Deploys a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
+        Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
         Args:
             flatten_output: The GraphSAGE model will return a list of output tensors
@@ -739,20 +739,20 @@ class GraphSAGE:
             else:
                 raise RuntimeError(
                     "The generator used for model creation is neither a node nor a link generator, "
-                    "unable to figure out how to deploy the model. Consider using node_model or "
-                    "link_model method explicitly to deploy node or link prediction model, respectively."
+                    "unable to figure out how to build the model. Consider using node_model or "
+                    "link_model method explicitly to build node or link prediction model, respectively."
                 )
         else:
             raise RuntimeError(
-                "Suitable generator is not provided at model creation time, unable to figure out how to deploy the model. "
-                "Consider either providing a generator, or using node_model or link_model method explicitly to deploy node or "
+                "Suitable generator is not provided at model creation time, unable to figure out how to build the model. "
+                "Consider either providing a generator, or using node_model or link_model method explicitly to build node or "
                 "link prediction model, respectively."
             )
 
     def default_model(self, flatten_output=False):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
-            "Please use .deploy() method instead.",
+            "Please use .build() method instead.",
             PendingDeprecationWarning,
         )
-        return self.deploy(flatten_output=flatten_output)
+        return self.build(flatten_output=flatten_output)

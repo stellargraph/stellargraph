@@ -423,9 +423,9 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def deploy(self, flatten_output=False):
+    def build(self, flatten_output=False):
         """
-        Deploys a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
+        Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
         Args:
             flatten_output: The HinSAGE model will return a list of output tensors
@@ -456,7 +456,7 @@ class HinSAGE:
     def default_model(self, flatten_output=False):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
-            "Please use .deploy() method instead.",
+            "Please use .build() method instead.",
             PendingDeprecationWarning,
         )
-        return self.deploy(flatten_output=flatten_output)
+        return self.build(flatten_output=flatten_output)

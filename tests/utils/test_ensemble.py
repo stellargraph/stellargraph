@@ -117,12 +117,12 @@ def create_HinSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
         # Define input and output sockets of hinsage:
-        x_inp, x_out = base_model.deploy()
+        x_inp, x_out = base_model.build()
 
         # Final estimator layer
         prediction = link_regression(edge_embedding_method="ip")(x_out)
     else:
-        x_inp, x_out = base_model.deploy(flatten_output=True)
+        x_inp, x_out = base_model.build(flatten_output=True)
         prediction = layers.Dense(units=2, activation="softmax")(x_out)
 
     keras_model = Model(inputs=x_inp, outputs=prediction)
