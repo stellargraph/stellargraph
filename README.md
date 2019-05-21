@@ -30,7 +30,11 @@
   <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
     <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
   </a>
+  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
+  </a>
 </p>
+
 
 # Table of Contents
    * [Introduction](#introduction)
@@ -39,7 +43,9 @@
    * [Installation](#installation)
        * [Install StellarGraph using pip](#install-stellargraph-using-pip)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
+   * [Docker Image](#docker-image)
    * [Running the examples](#running-the-examples)
+       * [Running the examples with docker](#Running-the-examples-with-docker)
    * [Algorithms](#algorithms)
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
@@ -138,7 +144,6 @@ To install these dependencies using `pip`, execute the following command:
 pip install stellargraph[demos]
 ```
 
-
 #### Install StellarGraph from Github source:
 First, clone the StellarGraph repository using `git`:
 ```
@@ -157,6 +162,14 @@ To install these dependencies using `pip`, execute the following command:
 ```
 pip install stellargraph[demos]
 ```
+
+
+## Docker Image
+
+* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
+
+Images can be pulled via `docker pull stellargraph/stellargraph` 
+
 
 ## Running the examples
 
@@ -183,9 +196,6 @@ The StellarGraph library currently includes the following algorithms for graph m
   - Graph Convolutional Network algorithm [5] for homogeneous graphs.
   The implementation supports representation learning and node classification for homogeneous graphs.
 
-* SGC
-  - Simplified Graph Convolutional network algorithm [6] for homogeneous graphs. 
-  The implementation supports representation learning and node classification for homogeneous graphs.
 
 * Node2Vec [2]
   - Unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring
@@ -235,7 +245,7 @@ If you use any part of this library in your research, please cite it using the f
   journal = {GitHub Repository},
   howpublished = {\url{https://github.com/stellargraph/stellargraph}},
 }
-```  
+```
 
 ## References
 
@@ -254,7 +264,3 @@ Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and 
 5. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
 International Conference on Learning Representations (ICLR), 2017
 ([link](https://github.com/tkipf/gcn))
-
-6. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger. 
-arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
-
