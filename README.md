@@ -152,6 +152,12 @@ pip install -r requirements.txt
 pip install .
 ```
 
+Some of the examples require installing additional dependencies as well as `stellargraph`.
+To install these dependencies using `pip`, execute the following command:
+```
+pip install stellargraph[demos]
+```
+
 ## Running the examples
 
 See the [README](https://github.com/stellargraph/stellargraph/tree/master/demos/README.md) in the `demos` directory for more information about the examples and how to run them.
