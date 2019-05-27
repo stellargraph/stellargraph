@@ -31,7 +31,7 @@ REQUIRES = [
     "pandas>=0.23"
 ]
 
-EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas", "pytest-benchmark"]}
+EXTRAS_REQURES = {"demos": ["numba", "seaborn"], "test": ["pytest", "pandas", "pytest-benchmark"]}
 
 # Long description
 with open("README.md", "r") as fh:
