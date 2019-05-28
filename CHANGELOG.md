@@ -1,4 +1,18 @@
 # Change Log
+
+## [Unreleased](https://github.com/stellargraph/stellargraph/tree/HEAD)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.6.1...HEAD)
+
+**Implemented enhancements:**
+
+- SGC Implementation [\#361](https://github.com/stellargraph/stellargraph/pull/361) ([PantelisElinas](https://github.com/PantelisElinas))
+
+**Fixed bugs:**
+
+- Removed label from features for pubmed dataset. [\#362](https://github.com/stellargraph/stellargraph/pull/362)
+- Python igraph requirement fixed [\#392](https://github.com/stellargraph/stellargraph/pull/392)
+
 ## [0.6.1](https://github.com/stellargraph/stellargraph/tree/v0.6.1) (1 Apr 2019)
 
 **Fixed bugs:**
