@@ -157,11 +157,19 @@ pip install -r requirements.txt
 pip install .
 ```
 
+Some of the examples require installing additional dependencies as well as `stellargraph`.
+To install these dependencies using `pip`, execute the following command:
+```
+pip install stellargraph[demos]
+```
+
+
 ## Docker Image
 
 * [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
 
 Images can be pulled via `docker pull stellargraph/stellargraph` 
+
 
 ## Running the examples
 
