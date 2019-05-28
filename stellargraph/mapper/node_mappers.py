@@ -578,15 +578,16 @@ class FullBatchNodeGenerator:
 
     # def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
 
-    def __init__(self, G, name=None, k=None, **kwargs):
-
+    # def __init__(self, G, name=None, k=None, **kwargs):
+    def __init__(self, G, name=None, method="gcn", k=1,max_degree=2):
+     
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.name = name
         self.k = k
-        self.kwargs = kwargs
+        #self.kwargs = kwargs
 
         # Check if the graph has features
         G.check_graph_for_ml()
@@ -595,11 +596,16 @@ class FullBatchNodeGenerator:
         self.node_list = list(G.nodes())
         self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
 
+        
+        self.method = method
+        
         # Power-user feature: make the generator yield dense adjacency matrix instead of the default sparse one.
         # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency
         # maps
-        self.sparse = kwargs.get("sparse", True)
-        if not self.sparse:
+        #self.sparse = kwargs.get("sparse", True)
+        
+        if self.method is None:
+        #if not self.sparse:
             self.Aadj = self.Aadj.todense()
 
         # We need a schema to check compatibility with GAT, GCN
@@ -625,11 +631,14 @@ class FullBatchNodeGenerator:
         # else:
         #    raise ValueError("argument 'func_opt' must be a callable.")
 
-        if kwargs is not None:
-            self.features, self.Aadj = GCN_Aadj_feats_op(
-                features=self.features, A=self.Aadj, k=self.k, **kwargs
+        #if kwargs is not None:
+        if self.method is not None:
+            
+                 self.features, self.Aadj = GCN_Aadj_feats_op(
+                 features=self.features, A=self.Aadj, k=self.k, method = self.method, max_degree = max_degree   
+                #features=self.features, A=self.Aadj, k=self.k, **kwargs
             )
-
+        
     def flow(self, node_ids, targets=None):
         """
         Creates a generator/sequence object for training or evaluation
