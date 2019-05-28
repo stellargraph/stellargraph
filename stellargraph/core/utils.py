@@ -123,7 +123,9 @@ def chebyshev_polynomial(X, k):
     return T_k
 
 
-def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
+#def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
+def GCN_Aadj_feats_op(features, A, k=1, method="gcn", max_degree=2):
+
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
@@ -154,21 +156,32 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
 
     # build symmetric adjacency matrix
     A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
-    filter = kwargs.get("filter", "localpool")
+    #filter = kwargs.get("filter", "localpool")
 
-    if filter == "localpool":
+    filter = method
+    
+    if filter == "gcn":
         """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
         print("Using local pooling filters...")
         A = preprocess_adj(A)
     elif filter == "chebyshev":
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
-        max_degree = kwargs.get("max_degree", 2)
-        T_k = chebyshev_polynomial(
-            rescale_laplacian(normalized_laplacian(A)), max_degree
-        )
-        features = [features] + T_k
-    elif filter == "smoothed":
+        #max_degree = kwargs.get("max_degree", 2)
+        if isinstance(max_degree, int) and k > 0:
+            T_k = chebyshev_polynomial(
+                    rescale_laplacian(normalized_laplacian(A)), max_degree
+                    )
+            features = [features] + T_k
+        else:
+            raise ValueError(
+                "max_degree should be positive integer for filter='chebyshev'; but received type {} with value {}.".format(
+                    type(max_degree), max_degree
+                )
+            )
+   
+    elif filter == "sgcn":
+        """ Smoothing filter (Simplifying Graph Convolutional Networks) """
         if isinstance(k, int) and k > 0:
             print("Calculating {}-th power of normalized A...".format(k))
             A = preprocess_adj(A)
