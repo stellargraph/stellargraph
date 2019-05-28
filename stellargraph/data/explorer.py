@@ -105,6 +105,7 @@ class GraphWalk(object):
         Returns:
 
         """
+        raise NotImplemented()
 
 
 class UniformRandomWalk(GraphWalk):
