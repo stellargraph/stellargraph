@@ -9,6 +9,9 @@
   <a href="https://github.com/ambv/black" alt="Code style">
     <img src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
   </a>
+  <a href="https://github.com/mvdan/sh/" alt="Shellcode style">
+    <img src="https://img.shields.io/badge/shell%20style-shfmt-black.svg"/>
+  </a>
   <a href="https://stellargraph.readthedocs.io/" alt="Docs">
     <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
   </a>
