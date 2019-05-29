@@ -26,13 +26,16 @@ __all__ = [
     "FullBatchNodeSequence",
 ]
 
+import warnings
 import operator
 import random
 import numpy as np
 import itertools as it
+import networkx as nx
+import scipy.sparse as sps
+import keras.backend as K
 from functools import reduce
 from keras.utils import Sequence
-import networkx as nx
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,
@@ -503,6 +506,72 @@ class HinSAGENodeGenerator:
         )
 
 
+class SparseFullBatchNodeSequence(Sequence):
+    """
+    Keras-compatible data generator for for node inference models
+    that require full-batch training (e.g., GCN, GAT).
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
+
+    This class uses sparse matrix representations to send data to the models,
+    and only works with the Keras tensorflow backend. For any other backends,
+    use the :class:`FullBatchNodeSequence` class.
+
+    This class should be created using the `.flow(...)` method of
+    :class:`FullBatchNodeGenerator`.
+
+    Args:
+        features (np.ndarray): An array of node features of size (N x F),
+            where N is the number of nodes in the graph, F is the node feature size
+        A (np.ndarray or sparse matrix): An adjacency matrix of the graph of size (N x N).
+        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
+            where C is the target size (e.g., number of classes for one-hot class targets)
+        indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
+            of the targets. Required if targets is not None.
+    """
+
+    use_sparse = True
+
+    def __init__(self, features, A, targets=None, indices=None):
+
+        if (targets is None) != (indices is None):
+            raise ValueError("Please pass both targets and indices together.")
+
+        # Store features and targets as np.ndarray
+        self.features = np.asanyarray(features)
+        self.targets = np.asanyarray(targets)
+        self.target_indices = np.asanyarray(indices)
+
+        # Reshape all inputs to have batch dimension of 1
+        self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+
+        # Ensure matrix is in COO format to extract indices
+        if not sps.isspmatrix_coo(A):
+            print("Warning: Converting adjacency matrix to required COO format")
+            A = A.tocoo()
+
+        # Convert matrices to list of indices & values
+        self.A_indices = np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
+        self.A_values = np.expand_dims(A.data, 0)
+        self.inputs = [
+            self.features,
+            self.target_indices,
+            self.A_indices,
+            self.A_values,
+        ]
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        return self.inputs, self.targets
+
+
 class FullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
@@ -524,39 +593,43 @@ class FullBatchNodeSequence(Sequence):
             of the targets. Required if targets is not None.
     """
 
+    use_sparse = False
+
     def __init__(self, features, A, targets=None, indices=None):
 
         if (targets is None) != (indices is None):
-            raise ValueError("Both targets and indices must be supplied.")
+            raise ValueError("Please pass both targets and indices together.")
 
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
         self.targets = np.asanyarray(targets)
         self.target_indices = np.asanyarray(indices)
-        self.A = A
 
-        # Check shapes
-        Nb_f, Nnodes_f, Nf_f = self.features.shape
-        Nb_a, Nnodes_a1, Nnodes_a2 = self.A.shape
-        Nb_t, Nnodes_t, Nt_t = self.A.shape
-        Nb_i, Nnodes_i = self.A.shape
-
-        if Nb_f != Nb_a or Nb_a != Nb_t or Nb_t != Nb_i:
-            raise ValueError("All batch sizes must be the same")
-
-        if Nnodes_f != Nnodes_a1 or Nnodes_a1 != Nnodes_a2:
-            raise ValueError(
-                "Number of nodes in features and adjacency matrix must be the same."
+        # Convert sparse matrix to dense:
+        if sps.issparse(A) and hasattr(A, "toarray"):
+            self.A_dense = A.toarray()
+        elif isinstance(A, (np.ndarray, np.matrix)):
+            self.A_dense = np.asanyarray(A)
+        else:
+            raise TypeError(
+                "Expected input matrix to be either a Scipy sparse matrix or a Numpy array."
             )
 
-        if Nnodes_t != Nnodes_i:
-            raise ValueError("Number of nodes in target and indecies must be the same.")
+        # Reshape all inputs to have batch dimension of 1
+        self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.A_dense = self.A_dense.reshape((1,) + self.A_dense.shape)
+
+        self.inputs = [self.features, self.target_indices, self.A_dense]
 
     def __len__(self):
         return 1
 
     def __getitem__(self, index):
-        return [self.features, self.target_indices, self.A], self.targets
+        return self.inputs, self.targets
 
 
 class FullBatchNodeGenerator:
@@ -603,20 +676,27 @@ class FullBatchNodeGenerator:
         self.name = name
         self.k = k
         self.kwargs = kwargs
+        self.number_of_nodes = G.number_of_nodes()
 
         # Check if the graph has features
         G.check_graph_for_ml()
 
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
-        self.Aadj = nx.adjacency_matrix(G, nodelist=self.node_list)
+        self.Aadj = nx.to_scipy_sparse_matrix(
+            G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
+        )
 
-        # Power-user feature: make the generator yield dense adjacency matrix instead of the default sparse one.
-        # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency
-        # maps
-        self.sparse = kwargs.get("sparse", True)
-        if not self.sparse:
-            self.Aadj = self.Aadj.todense()
+        # Power-user feature: make the generator yield dense adjacency matrix instead
+        # of the default sparse one.
+        self.use_sparse = kwargs.get("sparse", True)
+
+        # If sparse is specified, check that the backend is tensorflow
+        if self.use_sparse and K.backend() != "tensorflow":
+            warnings.warn(
+                "Sparse adjacency matrices are only supported in tensorflow."
+                " Falling back to using a dense adjacency matrix."
+            )
 
         # We need a schema to check compatibility with GAT, GCN
         self.schema = G.create_graph_schema(create_type_maps=True)
@@ -635,11 +715,11 @@ class FullBatchNodeGenerator:
 
         if func_opt is not None:
             if callable(func_opt):
-                self.features, self.Aadj = func_opt(
+                self.Aadj = func_opt(
                     features=self.features, A=self.Aadj, k=self.k, **kwargs
                 )
             else:
-                raise ValueError("argument 'func_opt' must be a callable.")
+                raise ValueError("argument 'func_opt' must be callable")
 
     def flow(self, node_ids, targets=None):
         """
@@ -669,33 +749,11 @@ class FullBatchNodeGenerator:
         targets = np.asanyarray(targets)
         node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
-        # Reshape features, targets and adjacency matrix to have a batch dimension of 1
-        # Note: this is required to pass different numbers of nodes as input and output
-        targets = np.reshape(targets, (1,) + targets.shape)
-        node_indices = np.reshape(node_indices, (1,) + node_indices.shape)
-        Am = self.Aadj.reshape((1,) + self.Aadj.shape)
-        features = np.reshape(self.features, (1,) + self.features.shape)
-
-        print(self.Aadj.shape)
-        print(Am.shape)
-
-        # node_mask = np.zeros(len(self.node_list), dtype=int)
-        # node_mask[node_indices] = 1
-        # node_mask = np.ma.make_mask(node_mask)
-
-        # Reshape targets to (number of nodes in self.graph, number of classes), and store in y
-        # if targets is not None:
-        #     targets = np.array(targets)
-        #     if len(targets.shape) == 1:
-        #         c = 1
-        #     else:
-        #         c = targets.shape[1]
-        #
-        #     n = self.Aadj.shape[0]
-        #     y = np.zeros((n, c))
-        #     for i, t in zip(node_indices, targets):
-        #         y[i] = t
-        # else:
-        #     y = None
-
-        return FullBatchNodeSequence(features, Am, targets, node_indices)
+        if self.use_sparse:
+            return SparseFullBatchNodeSequence(
+                self.features, self.Aadj, targets, node_indices
+            )
+        else:
+            return FullBatchNodeSequence(
+                self.features, self.Aadj, targets, node_indices
+            )

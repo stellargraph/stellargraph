@@ -14,16 +14,64 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from keras import activations, initializers, constraints
-from keras import regularizers
-from keras.engine import Layer
-from keras import backend as K
 from keras import Input
+from keras.engine import Layer
+from keras import activations, initializers, constraints, regularizers
+from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape
+
 from ..mapper.node_mappers import FullBatchNodeGenerator
 
 from typing import List, Tuple, Callable, AnyStr
+
+import tensorflow as tf
+
+
+class TFSparseConversion(Layer):
+    """
+    Converts keras input tensors containing
+    """
+
+    def __init__(self, shape, dtype=None):
+        super().__init__()
+
+        self.trainable = False
+        self.supports_masking = True
+        self.matrix_shape = shape
+        self.dtype = dtype
+
+    def get_config(self):
+        config = {"shape": self.matrix_shape, "dtype": self.dtype}
+        return config
+
+    def compute_output_shape(self, input_shapes):
+        return tuple(self.matrix_shape)
+
+    def call(self, inputs):
+        """
+        Applies the layer.
+
+        Args:
+            inputs (list): Two input tensors contining
+                matrix indices (size 1 x E x 2) of type int64, and
+                matrix values (size (size 1 x E),
+                where E is the number of non-zero entries in the matrix.
+
+        Returns:
+            Tensorflow SparseTensor that represents the converted sparse matrix.
+        """
+        # Here we reduce the batch dimension (if 1)
+        indices = K.squeeze(inputs[0], 0)
+        values = K.squeeze(inputs[1], 0)
+
+        if not self.dtype:
+            dtype = K.dtype(values)
+
+        # Build sparse tensor for the matrix
+        output = tf.SparseTensor(
+            indices=indices, values=values, dense_shape=self.matrix_shape
+        )
+        return output
 
 
 class GraphConvolution(Layer):
@@ -37,7 +85,6 @@ class GraphConvolution(Layer):
 
     Args:
         units (int): dimensionality of output feature vectors
-        support (int): number of support weights
         activation (str): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
         kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
@@ -53,7 +100,6 @@ class GraphConvolution(Layer):
     def __init__(
         self,
         units,
-        support=1,
         activation=None,
         use_bias=True,
         final_layer=False,
@@ -64,12 +110,12 @@ class GraphConvolution(Layer):
         activity_regularizer=None,
         kernel_constraint=None,
         bias_constraint=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
-        super(GraphConvolution, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.units = units
         self.activation = activations.get(activation)
@@ -81,13 +127,12 @@ class GraphConvolution(Layer):
         self.activity_regularizer = regularizers.get(activity_regularizer)
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
-        self.support = support
         self.final_layer = final_layer
 
     def compute_output_shape(self, input_shapes):
         """
         Computes the output shape of the layer.
-        Assumes that the layer will be built to match that input shape provided.
+        Assumes the following inputs:
 
         Args:
             input_shape (tuple of ints)
@@ -96,10 +141,14 @@ class GraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
+        batch_dim = input_shapes[0][0]
+        if self.final_layer:
+            out_dim = input_shapes[2][1]
+        else:
+            out_dim = input_shapes[0][1]
 
-        features_shape = input_shapes[0]
-        output_shape = (features_shape[0], self.units)
-        return output_shape  # (batch_size, output_dim)
+        output_shape = [batch_dim, out_dim, self.units]
+        return tuple(output_shape)
 
     def build(self, input_shapes):
         """
@@ -109,13 +158,11 @@ class GraphConvolution(Layer):
             input_shape (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
-
-        features_shape = input_shapes[0]
-        assert len(features_shape) == 2
-        input_dim = features_shape[1]
+        feat_shape = input_shapes[0]
+        input_dim = feat_shape[-1]
 
         self.kernel = self.add_weight(
-            shape=(input_dim * self.support, self.units),
+            shape=(input_dim, self.units),
             initializer=self.kernel_initializer,
             name="kernel",
             regularizer=self.kernel_regularizer,
@@ -133,7 +180,7 @@ class GraphConvolution(Layer):
             self.bias = None
         self.built = True
 
-    def call(self, inputs, mask=None):
+    def call(self, inputs):
         """
         Applies the layer.
 
@@ -143,34 +190,33 @@ class GraphConvolution(Layer):
                 graph adjacency matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
-            mask (None or Tensor):  a Tensor indicating the input mask for Embedding. This mask
-                is only used as a bypassing. It passes the corresponding mask from the previous
-                layer to the next attached layer if the previous layer set a mask.
+
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features = inputs[0]
-        indices = inputs[1]
-        Am = inputs[2:]
+        features, As, out_indices = inputs
 
-        # Create list of the product of an input matrix by the features,
-        # concatenates them then multiplies the output by the kernel.
-        # When there is a single matrix in the list this reduces to GCN.
-        supports = list()
-        for i in range(self.support):
-            supports.append(K.dot(Am[i], features))
-        supports = K.concatenate(supports, axis=1)
-        output = K.dot(supports, self.kernel)
+        # Remove singleton batch dimension
+        batch_dim, n_nodes, _ = K.int_shape(features)
+        features = K.squeeze(features, 0)
+        out_indices = K.squeeze(out_indices, 0)
 
-        # Add optional bias
+        # Calculate the layer operation of GCN
+        h_graph = K.dot(As, features)
+        output = K.dot(h_graph, self.kernel)
+
+        # Add optional bias & apply activation
         if self.bias:
             output += self.bias
-
         output = self.activation(output)
 
         # On the final layer we gather the nodes referenced by the indices
         if self.final_layer:
-            output = K.gather(output, indices)
+            output = K.gather(output, out_indices)
+
+        # Add batch dimension back if we removed it
+        if batch_dim == 1:
+            output = K.expand_dims(output, 0)
 
         return output
 
@@ -186,7 +232,6 @@ class GraphConvolution(Layer):
         config = {
             "units": self.units,
             "use_bias": self.use_bias,
-            "support": self.support,
             "activation": activations.serialize(self.activation),
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "bias_initializer": initializers.serialize(self.bias_initializer),
@@ -238,8 +283,10 @@ class GCN:
         self.dropout = dropout
         self.kernel_regularizer = kernel_regularizer
         self.generator = generator
-        self.support = 1
         self.kwargs = generator.kwargs
+
+        # Check if the generator is producing a sparse matrix
+        self.use_sparse = generator.use_sparse
 
         # Initialize a stack of GCN layers
         n_layers = len(self.layer_sizes)
@@ -251,7 +298,6 @@ class GCN:
             self._layers.append(
                 GraphConvolution(
                     l,
-                    self.support,
                     activation=a,
                     use_bias=self.bias,
                     kernel_regularizer=self.kernel_regularizer,
@@ -261,26 +307,56 @@ class GCN:
 
     def __call__(self, x: List):
         """
-        Apply a stack of GCN layers
+        Apply a stack of GCN layers to the inputs.
+        The input tensors are expected to be a list of the following:
+        [
+            Node features shape (1, N, F),
+            Adjacency indices (1, E, 2),
+            Adjacency values (1, E),
+            Output indices (1, O)
+        ]
+        where N is the number of nodes, F the number of input features,
+              E is the number of edges, O the number of output nodes.
 
         Args:
-            x (Tensor): input features
+            x (Tensor): input tensors
 
         Returns:
             Output tensor
         """
-        H = x[0]
-        extra_in = x[1:]
+        x_in, out_indices, *As = x
 
+        # Currently we require the batch dimension to be one for full-batch methods
+        batch_dim, n_nodes, _ = K.int_shape(x_in)
+        if batch_dim != 1:
+            raise ValueError(
+                "Currently full-batch methods only support a batch dimension of one"
+            )
+
+        # Convert input indices & values to a sparse matrix
+        if self.use_sparse:
+            A_indices, A_values = As
+            Ainput = TFSparseConversion(shape=(n_nodes, n_nodes))([A_indices, A_values])
+
+        # Otherwise, create dense matrix from input tensor
+        else:
+            Ainput = Lambda(lambda A: K.squeeze(A, 0))(As[0])
+
+        # Remove singleton batch dimension
+        h_layer = x_in
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
-                # It is a GCN layer add the extra inputs
-                H = layer([H] + extra_in)
-            else:
-                # layer is a Dropout layer
-                H = layer(H)
+                # For a GCN layer add the matrix and output indices
+                # Note that the output indices are only used if `final_layer=True`
+                h_layer = layer([h_layer, Ainput, out_indices])
 
-        return H
+            else:
+                # For other (non-graph) layers only supply the input tensor
+                h_layer = layer(h_layer)
+
+            print("Hlayer:", h_layer)
+
+        return h_layer
 
     def node_model(self):
         """
@@ -291,33 +367,33 @@ class GCN:
             and `x_out` is a Keras tensor for the GCN model output.
         """
         # Placeholder for node features
-        x_in = Input(batch_shape=(1, None, self.generator.features.shape[1]))
+        N_nodes = self.generator.features.shape[0]
+        N_feat = self.generator.features.shape[1]
 
-        # Placeholder for target indices
-        indices_in = Input(batch_shape=(1, None), dtype="int32")
+        # Inputs for features & target indices
+        x_t = Input(batch_shape=(1, N_nodes, N_feat))
+        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
-        filter = self.kwargs.get("filter", "localpool")
-        if filter == "chebyshev":
-            self.support = self.kwargs.get("max_degree", 2)
-            Am_in = [
-                Input(batch_shape=(1, None, None), sparse=True)
-                for _ in range(self.support)
-            ]
+        # Create inputs for sparse or dense matrices
+        if self.use_sparse:
+            # Placeholders for the sparse adjacency matrix
+            A_indices_t = Input(batch_shape=(1, None, 2), dtype="int64")
+            A_values_t = Input(batch_shape=(1, None))
+            A_placeholders = [A_indices_t, A_values_t]
+
         else:
-            Am_in = [Input(batch_shape=(1, None, None), sparse=True)]
+            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
+            A_placeholders = [A_m]
 
-        x_inp = [x_in, indices_in] + Am_in
+        # filter = self.kwargs.get("filter", "localpool")
+        # if filter == "chebyshev":
+        #     self.support = self.kwargs.get("max_degree", 2)
+        #     Am_in = [
+        #         Input(batch_shape=(None, None), sparse=True)
+        #         for _ in range(self.support)
+        #     ]
+        # else:
+
+        x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
         return x_inp, x_out
-
-    # NOTE: Temporarily remove this function from sphinx doc because it has not been implemented
-    def _link_model(self, flatten_output=False):
-        """
-        Builds a GCN model for link (node pair) prediction
-
-        Args:
-            flatten_output:
-        Returns:
-            NotImplemented
-        """
-        raise NotImplemented
