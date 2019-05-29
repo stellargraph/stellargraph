@@ -43,7 +43,6 @@ def test_GraphConvolution_config():
     conf = gcn_layer.get_config()
 
     assert conf["units"] == 16
-    assert conf["support"] == 1
     assert conf["activation"] == "linear"
     assert conf["use_bias"] == True
     assert conf["kernel_initializer"]["class_name"] == "VarianceScaling"
@@ -57,10 +56,9 @@ def test_GraphConvolution_config():
 
 
 def test_GraphConvolution_init():
-    gcn_layer = GraphConvolution(units=16, support=2, activation="relu")
+    gcn_layer = GraphConvolution(units=16, activation="relu")
 
     assert gcn_layer.units == 16
-    assert gcn_layer.support == 2
     assert gcn_layer.use_bias == True
     assert gcn_layer.get_config()["activation"] == "relu"
 
