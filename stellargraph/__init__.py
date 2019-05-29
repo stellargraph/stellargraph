@@ -16,6 +16,9 @@ __all__ = [
 # Version
 from .version import __version__
 
+# Import modules
+from stellargraph import mapper, layer, utils
+
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
 from stellargraph.core.schema import GraphSchema

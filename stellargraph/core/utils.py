@@ -160,6 +160,7 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
         """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
         print("Using local pooling filters...")
         A = preprocess_adj(A)
+
     elif filter == "chebyshev":
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
@@ -167,7 +168,8 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
         T_k = chebyshev_polynomial(
             rescale_laplacian(normalized_laplacian(A)), max_degree
         )
-        features = [features] + T_k
+        A = T_k
+
     elif filter == "smoothed":
         if isinstance(k, int) and k > 0:
             print("Calculating {}-th power of normalized A...".format(k))
@@ -180,4 +182,4 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
                 )
             )
 
-    return features, A
+    return A_processed
