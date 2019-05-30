@@ -35,7 +35,7 @@ class GraphAttention(Layer):
     Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
     some modifications added for ease of use.
 
-    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1803.07294
+    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
 
     Args:
             F_out (int): dimensionality of output feature vectors
@@ -307,7 +307,7 @@ class GraphAttention(Layer):
 
 class GAT:
     """
-    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1803.07294
+    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
     Args:
             layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
@@ -563,7 +563,7 @@ class GAT:
 
     def default_model(self, flatten_output=False):
         warnings.warn(
-            "The .default_model() method will be deprecated soon. "
+            "The .default_model() method will be deprecated in future versions. "
             "Please use .node_model() or .link_model() methods instead.",
             PendingDeprecationWarning,
         )

@@ -9,6 +9,9 @@
   <a href="https://github.com/ambv/black" alt="Code style">
     <img src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
   </a>
+  <a href="https://github.com/mvdan/sh/" alt="Shellcode style">
+    <img src="https://img.shields.io/badge/shell%20style-shfmt-black.svg"/>
+  </a>
   <a href="https://stellargraph.readthedocs.io/" alt="Docs">
     <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
   </a>
@@ -30,7 +33,11 @@
   <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
     <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
   </a>
+  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
+  </a>
 </p>
+
 
 # Table of Contents
    * [Introduction](#introduction)
@@ -39,7 +46,9 @@
    * [Installation](#installation)
        * [Install StellarGraph using pip](#install-stellargraph-using-pip)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
+   * [Docker Image](#docker-image)
    * [Running the examples](#running-the-examples)
+       * [Running the examples with docker](#Running-the-examples-with-docker)
    * [Algorithms](#algorithms)
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
@@ -119,7 +128,9 @@ StellarGraph is a Python 3 library and we recommend using Python version `3.6.*`
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
-*Note*: while the library works on Python 3.7 you will notice some deprecation warnings due to the rapid development of the Python libraries that StellarGraph depends upon.
+*Note*: while the library works on Python 3.7 it is based on Keras which does not officially support Python 3.7.
+Therefore, there may be unforseen bugs and you there are many warnings from the Python libraries that 
+StellarGraph depends upon.
 
 <!--
 The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
@@ -150,10 +161,18 @@ cd stellargraph
 pip install .
 ```
 
-Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip`, execute the following command:
+Some of the examples require installing additional dependencies as well as `stellargraph`.
+To install these dependencies using `pip`, execute the following command:
 ```
-pip install .[demos]
+pip install stellargraph[demos]
 ```
+
+
+## Docker Image
+
+* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
+
+Images can be pulled via `docker pull stellargraph/stellargraph` 
 
 
 ## Running the examples
@@ -233,7 +252,7 @@ If you use any part of this library in your research, please cite it using the f
   journal = {GitHub Repository},
   howpublished = {\url{https://github.com/stellargraph/stellargraph}},
 }
-```  
+```
 
 ## References
 
