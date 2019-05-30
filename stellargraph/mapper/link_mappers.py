@@ -185,7 +185,12 @@ class OnDemandLinkSequence(Sequence):
 
         self.generator = generator  # graphlinkgenerator instance
 
-        self.head_node_types = None
+        self.head_node_types = self.generator.schema.node_types * 2
+
+        # YT: we need to have self._sampling_schema for GraphSAGE.build() method to work
+        self._sampling_schema = generator.schema.sampling_layout(
+            self.head_node_types, generator.num_samples
+        )
 
         if isinstance(walker, UnsupervisedSampler):
 

@@ -29,6 +29,7 @@ from keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
 import itertools as it
 import operator as op
+import warnings
 
 
 class MeanHinAggregator(Layer):
@@ -198,7 +199,7 @@ class HinSAGE:
         """
         Args:
             layer_sizes (list): Hidden feature dimensions for each layer
-            mapper (Sequence): A HinSAGENodeMapper or HinSAGELinkMapper. If specified the n_samples,
+            generator (Sequence): A NodeSequence or LinkSequence. If specified, n_samples,
                 input_neighbour_tree and input_dim will be taken from this object.
             n_samples: (Optional: needs to be specified if no mapper is provided.)
                 The number of samples per layer in the model.
@@ -257,8 +258,8 @@ class HinSAGE:
                 )
             )
 
-        # Get the sampling tree, input_dim, and num_samples from the mapper if it is given
-        # Use both the schema and head node type from the mapper
+        # Get the sampling tree, input_dim, and num_samples from the generator if it is given
+        # Use both the schema and head node type from the generator
         # TODO: Refactor the horror of generator.generator.graph...
         if generator is not None:
             self.n_samples = generator.generator.num_samples
@@ -278,7 +279,7 @@ class HinSAGE:
 
         else:
             raise RuntimeError(
-                "If mapper is not provided, input_neighbour_tree, n_samples,"
+                "If generator is not provided, input_neighbour_tree, n_samples,"
                 " and input_dim must be specified."
             )
 
@@ -422,29 +423,40 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def default_model(self, flatten_output=False):
+    def build(self, flatten_output=False):
         """
-        Return model with default inputs
-
+        Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
+        the model (whether it is a node or link/node pair generator).
         Args:
-            flatten_output (bool): The HinSAGE model returns an output tensor
-                of form (batch_size, 1, feature_size) -
-                if this flag is True, the output will be resized to
-                (batch_size, feature_size)
+            flatten_output: The HinSAGE model will return a list of output tensors
+                of form (batch_size, 1, feature_size). If this flag
+                is true, the output will be of size
+                (batch_size, 1*feature_size)
 
         Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
-            for the specified HinSAGE model and ``x_out`` is tne Keras tensor
-            for the HinSAGE model output.
+            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
+            for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
+            for the model output.
 
         """
         # Create tensor inputs
         x_inp = [Input(shape=s) for s in self._input_shapes()]
 
-        # Output from GraphSAGE model
+        # Output from HinSAGE model
         x_out = self(x_inp)
 
         if flatten_output:
-            x_out = Reshape((-1,))(x_out)
+            if isinstance(x_out, list):
+                x_out = [Reshape((-1,))(x) for x in x_out]
+            else:
+                x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
+
+    def default_model(self, flatten_output=False):
+        warnings.warn(
+            "The .default_model() method will be deprecated in future versions. "
+            "Please use .build() method instead.",
+            PendingDeprecationWarning,
+        )
+        return self.build(flatten_output=flatten_output)
