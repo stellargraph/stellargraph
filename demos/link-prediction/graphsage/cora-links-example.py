@@ -162,13 +162,8 @@ def train(
         layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout
     )
 
-    # Expose input and output sockets of the model, for source and destination nodes:
-    x_inp_src, x_out_src = graphsage.default_model(flatten_output=False)
-    x_inp_dst, x_out_dst = graphsage.default_model(flatten_output=False)
-    # re-pack into a list where (source, target) inputs alternate, for link inputs:
-    x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
-    # same for outputs:
-    x_out = [x_out_src, x_out_dst]
+    # Construct input and output tensors for the link prediction model
+    x_inp, x_out = graphsage.build()
 
     # Final estimator layer
     prediction = link_classification(
