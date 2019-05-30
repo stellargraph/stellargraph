@@ -106,12 +106,12 @@ def test_GCN_Aadj_feats_op():
     Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
     features = pytest.G.get_feature_for_nodes(node_list)
 
-    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, filter="localpool")
+    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
 
     assert np.array_equal(features, features_)
     assert 6 == pytest.approx(Aadj_.todense().sum(), 0.1)
 
-    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, filter="chebyshev")
+    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev")
 
     assert len(features_) == 4
     assert np.array_equal(features_[0], features_[0])
@@ -122,20 +122,18 @@ def test_GCN_Aadj_feats_op():
 
     # k must be positive integer
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=None)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=None)
 
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=0)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=0)
 
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=-191)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=-191)
 
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, filter="smoothed", k=2.0)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=2.0)
 
-    features_, Aadj_ = GCN_Aadj_feats_op(
-        features=features, A=Aadj, filter="smoothed", k=2
-    )
+    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=2)
 
     assert len(features_) == 6
     assert np.array_equal(features, features_)
@@ -143,12 +141,10 @@ def test_GCN_Aadj_feats_op():
 
     # Check if the power of the normalised adjacency matrix is calculated correctly.
     # First retrieve the normalised adjacency matrix using localpool filter.
-    features_, Aadj_norm = GCN_Aadj_feats_op(
-        features=features, A=Aadj, filter="localpool"
-    )
+    features_, Aadj_norm = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
     Aadj_norm = Aadj_norm.todense()
     Aadj_power_2 = np.linalg.matrix_power(Aadj_norm, 2)  # raise it to the power of 2
     # Both matrices should have the same shape
     assert Aadj_power_2.shape == Aadj_.get_shape()
     # and the same values.
-    assert (Aadj_power_2 == Aadj_.todense()).all()
+    assert pytest.approx(Aadj_power_2) == Aadj_.todense()
