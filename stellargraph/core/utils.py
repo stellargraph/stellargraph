@@ -123,14 +123,13 @@ def chebyshev_polynomial(X, k):
     return T_k
 
 
-# def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
 def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
 
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
-    The features and adjacency matrix will be manipulated by either 'localpool', 'chebyshev', or
-    'smoothed' filters.
+    The features and adjacency matrix will be manipulated by either 'gcn' (applying localpool filter as a default), 'chebyshev', or
+    'sgcn' filters.
 
     For more information about 'localpool', 'chebyshev', and 'smoothed' filters, please read details:
         [1] https://en.wikipedia.org/wiki/Chebyshev_filter
@@ -140,10 +139,11 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     Args:
         features: node features in the graph
         A: adjacency matrix
-        k (int or None): If filter is 'smoothed' then it should be an integer indicating the power to raise the
+        k (int or None): If method is 'sgcn' then it should be an integer indicating the power to raise the
         normalised adjacency matrix with self loops before multiplying the node features matrix.
-        kwargs: additional arguments for choosing filter: localpool, chebyshev, or smoothed
-                (For example, pass filter="localpool" as an additional argument to apply the localpool filter)
+        If method is 'chebyshev' then it should be an integer indicating the maximum order of the Chebyshev polynomials.
+        method: to specify the filter to use with gcn. If method=gcn, default filter is localpool, other options are 'chebyshev' and 'sgcn'. 
+        
 
     Returns:
         features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
@@ -156,7 +156,6 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
 
     # build symmetric adjacency matrix
     A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
-    # filter = kwargs.get("filter", "localpool")
 
     method = method
 
@@ -167,26 +166,18 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     elif method == "chebyshev":
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
-        # max_degree = kwargs.get("max_degree", 2)
         if isinstance(k, int):
-            if k > 1:
-                T_k = chebyshev_polynomial(
-                    rescale_laplacian(normalized_laplacian(A)), k
-                )
-                features = [features] + T_k
-            else:
-                raise ValueError(
-                    "max_degree should be positive integer of value at least 2 for filter='chebyshev'; but received the value {}.".format(
-                        k
-                    )
-                )
+            k = (
+                2 if k < 2 else k
+            )  # default minimum max_degree for the order of 'chebyshev' polynomialls.
+            T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), k)
+            features = [features] + T_k
         else:
             raise ValueError(
-                "max_degree should be positive integer of value at least 2 for filter='chebyshev'; but received type {} with value {}.".format(
+                "max_degree should be positive integer of value at least 2 for method='chebyshev'; but received type {} with value {}.".format(
                     type(k), k
                 )
             )
-
     elif method == "sgcn":
         """ Smoothing filter (Simplifying Graph Convolutional Networks) """
         if isinstance(k, int) and k > 0:
@@ -195,7 +186,7 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
             A = A ** k  # return scipy.sparse.csr_matrix
         else:
             raise ValueError(
-                "k should be positive integer for filter='smoothed'; but received type {} with value {}.".format(
+                "k should be positive integer for method='sgcn'; but received type {} with value {}.".format(
                     type(k), k
                 )
             )
