@@ -578,9 +578,6 @@ class FullBatchNodeGenerator:
        
     """
 
-    # def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
-
-    # def __init__(self, G, name=None, k=None, **kwargs):
     def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
 
         if not isinstance(G, StellarGraphBase):
@@ -603,8 +600,6 @@ class FullBatchNodeGenerator:
         # this is needed for GAT model to be differentiable through all layers down to the input, e.g., for saliency
         # maps
 
-        # self.sparse = kwargs.get("sparse", True)
-
         self.sparse = sparse
 
         if not self.sparse:
@@ -624,16 +619,6 @@ class FullBatchNodeGenerator:
 
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
-
-        # if func_opt is not None:
-        #    if callable(func_opt):
-        #       self.features, self.Aadj = func_opt(
-        #          features=self.features, A=self.Aadj, k=self.k, **kwargs
-        #     )
-        # else:
-        #    raise ValueError("argument 'func_opt' must be a callable.")
-
-        # if kwargs is not None:
 
         if transform is not None:
             if callable(transform):
