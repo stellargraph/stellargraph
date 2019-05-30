@@ -781,7 +781,8 @@ class Test_FullBatchNodeGenerator:
         )
         G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-        generator = FullBatchNodeGenerator(G, name="test", func_opt=None, key="value")
+        generator = FullBatchNodeGenerator(G, name="test", method=None)
+
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
 
@@ -796,19 +797,19 @@ class Test_FullBatchNodeGenerator:
         def func(features, A, **kwargs):
             return features * features, A
 
-        generator = FullBatchNodeGenerator(G, "test", func, key="value")
+        generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
         assert np.array_equal(feats * feats, generator.features)
 
+    def test_fullbatch_generator_init_3(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-#  def test_fullbatch_generator_init_3(self):
-#     G, feats = create_graph_features()
-#    nodes = G.nodes()
-##       {n: f for n, f in zip(nodes, feats)}, orient="index"
-#  )
-#   G = StellarGraph(G, node_type_name="node", node_features=node_features)
+        func = "Not callable"
 
-#  func = "Not callable"
-
-# with pytest.raises(ValueError):
-#     generator = FullBatchNodeGenerator(G, "test", func, key="value")
+        with pytest.raises(ValueError):
+            generator = FullBatchNodeGenerator(G, "test", transform=func)
