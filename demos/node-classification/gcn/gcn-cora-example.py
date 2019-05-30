@@ -31,16 +31,17 @@ from stellargraph.mapper import FullBatchNodeGenerator
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
 
-def train(train_nodes,
-            train_targets,
-            val_nodes,
-            val_targets,
-            generator,
-            dropout=0.0,
-            layer_sizes=[16, 7],
-            learning_rate = 0.01,
-            activations = ['relu', 'softmax']
-    ):
+def train(
+    train_nodes,
+    train_targets,
+    val_nodes,
+    val_targets,
+    generator,
+    dropout=0.0,
+    layer_sizes=[16, 7],
+    learning_rate=0.01,
+    activations=["relu", "softmax"],
+):
     """
 
     Train a GCN model on the specified graph G with given parameters, evaluate it, and save the model.
@@ -58,14 +59,25 @@ def train(train_nodes,
 
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
-    gcnModel = GCN(layer_sizes, activations, generator=generator, bias=True, dropout=dropout, kernel_regularizer=regularizers.l2(5e-4))
+    gcnModel = GCN(
+        layer_sizes,
+        activations,
+        generator=generator,
+        bias=True,
+        dropout=dropout,
+        kernel_regularizer=regularizers.l2(5e-4),
+    )
 
     # Expose the input and output sockets of the model:
     x_inp, x_out = gcnModel.node_model()
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=x_out)
-    model.compile(loss=losses.categorical_crossentropy, weighted_metrics=[metrics.categorical_accuracy], optimizer=optimizers.Adam(lr=learning_rate))
+    model.compile(
+        loss=losses.categorical_crossentropy,
+        weighted_metrics=[metrics.categorical_accuracy],
+        optimizer=optimizers.Adam(lr=learning_rate),
+    )
 
     # Train model
     history = model.fit_generator(
@@ -73,7 +85,6 @@ def train(train_nodes,
     )
 
     return model
-
 
 
 def test(test_nodes, test_targets, generator, model_file):
@@ -90,8 +101,14 @@ def test(test_nodes, test_targets, generator, model_file):
 
     test_gen = generator.flow(test_nodes, test_targets)
 
-    model = keras.models.load_model(model_file, custom_objects={"GraphConvolution": GraphConvolution})
-    model.compile(loss=losses.categorical_crossentropy, weighted_metrics=[metrics.categorical_accuracy], optimizer=optimizers.Adam(lr=0.01))
+    model = keras.models.load_model(
+        model_file, custom_objects={"GraphConvolution": GraphConvolution}
+    )
+    model.compile(
+        loss=losses.categorical_crossentropy,
+        weighted_metrics=[metrics.categorical_accuracy],
+        optimizer=optimizers.Adam(lr=0.01),
+    )
     print(model.summary())
 
     # Evaluate on test set and print metrics
@@ -102,25 +119,24 @@ def test(test_nodes, test_targets, generator, model_file):
         print("\t{}: {:0.4f}".format(name, val))
 
 
-
 def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
     edgelist = pd.read_table(
-        os.path.join(graph_loc, 'cora.cites'), header=None, names=['source', 'target']
+        os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
     )
 
     # Load node features
     # The CORA dataset contains binary attributes 'w_x' that correspond to whether the corresponding keyword
     # (out of 1433 keywords) is found in the corresponding publication.
-    feature_names = ['w_{}'.format(ii) for ii in range(1433)]
+    feature_names = ["w_{}".format(ii) for ii in range(1433)]
     # Also, there is a "subject" column
-    column_names = feature_names + ['subject']
+    column_names = feature_names + ["subject"]
     node_data = pd.read_table(
-        os.path.join(graph_loc, 'cora.content'), header=None, names=column_names
+        os.path.join(graph_loc, "cora.content"), header=None, names=column_names
     )
 
     target_encoding = feature_extraction.DictVectorizer(sparse=False)
     node_targets = target_encoding.fit_transform(
-        node_data[['subject']].to_dict("records")
+        node_data[["subject"]].to_dict("records")
     )
 
     node_ids = node_data.index
@@ -133,7 +149,12 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
-        node_ids, node_targets, train_size=140, test_size=None, stratify=node_targets, random_state=55232
+        node_ids,
+        node_targets,
+        train_size=140,
+        test_size=None,
+        stratify=node_targets,
+        random_state=55232,
     )
 
     # Split test set into test and validation
@@ -141,14 +162,24 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
         test_nodes, test_targets, train_size=300, test_size=None, random_state=523214
     )
 
-    generator = FullBatchNodeGenerator(G, func_opt=GCN_Aadj_feats_op, filter='localpool')
+    # default filter is localpool when gcn is the method. Other options are method = 'chebyshev' or method = 'sgcn'.
+    generator = FullBatchNodeGenerator(G, method="gcn")
 
-    model = train(train_nodes, train_targets, val_nodes, val_targets, generator, dropout,
-        layer_sizes, learning_rate, activations)
+    model = train(
+        train_nodes,
+        train_targets,
+        val_nodes,
+        val_targets,
+        generator,
+        dropout,
+        layer_sizes,
+        learning_rate,
+        activations,
+    )
 
     # Save the trained model
     save_str = "_h{}_l{}_d{}_r{}".format(
-        "gcn", ''.join([str(x) for x in layer_sizes]), str(dropout), str(learning_rate)
+        "gcn", "".join([str(x) for x in layer_sizes]), str(dropout), str(learning_rate)
     )
 
     model.save("cora_gcn_model" + save_str + ".h5")
@@ -160,11 +191,8 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
     test(test_nodes, test_targets, generator, "cora_gcn_model" + save_str + ".h5")
 
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Graph node classification using GCN"
-    )
+    parser = argparse.ArgumentParser(description="Graph node classification using GCN")
 
     parser.add_argument(
         "-e",
@@ -213,5 +241,5 @@ if __name__ == "__main__":
             "Please specify the directory containing the dataset using the '-l' flag"
         )
 
-    activations = ['relu', 'softmax']
+    activations = ["relu", "softmax"]
     main(graph_loc, args.layer_sizes, activations, args.dropout, args.learningrate)
