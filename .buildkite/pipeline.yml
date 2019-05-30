@@ -19,7 +19,7 @@ steps:
       queue: 't2medium'
 
   - label: ":python: 3.7.2"
-    command: ".buildkite/script.sh"
+    command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
         image: "python:3.7.2"
