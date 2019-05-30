@@ -8,6 +8,10 @@
 
 - SGC Implementation [\#361](https://github.com/stellargraph/stellargraph/pull/361) ([PantelisElinas](https://github.com/PantelisElinas))
 
+**Refactoring:**
+- Added build\(\) method for GraphSAGE and HinSAGE model classes [\#385](https://github.com/stellargraph/stellargraph/pull/385)
+This replaces the node_model\(\) and link_model\(\) methods, which will be deprecated in future versions (deprecation warnings added).
+
 **Fixed bugs:**
 
 - Removed label from features for pubmed dataset. [\#362](https://github.com/stellargraph/stellargraph/pull/362)
