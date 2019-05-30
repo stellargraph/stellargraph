@@ -124,7 +124,7 @@ def chebyshev_polynomial(X, k):
 
 
 # def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
-def GCN_Aadj_feats_op(features, A, k=1, method="gcn", max_degree=2):
+def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
 
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
@@ -158,29 +158,36 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn", max_degree=2):
     A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
     # filter = kwargs.get("filter", "localpool")
 
-    filter = method
+    method = method
 
-    if filter == "gcn":
+    if method == "gcn":
         """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
         print("Using local pooling filters...")
         A = preprocess_adj(A)
-    elif filter == "chebyshev":
+    elif method == "chebyshev":
         """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
         print("Using Chebyshev polynomial basis filters...")
         # max_degree = kwargs.get("max_degree", 2)
-        if isinstance(max_degree, int) and k > 0:
-            T_k = chebyshev_polynomial(
-                rescale_laplacian(normalized_laplacian(A)), max_degree
-            )
-            features = [features] + T_k
+        if isinstance(k, int):
+            if k > 1:
+                T_k = chebyshev_polynomial(
+                    rescale_laplacian(normalized_laplacian(A)), k
+                )
+                features = [features] + T_k
+            else:
+                raise ValueError(
+                    "max_degree should be positive integer of value at least 2 for filter='chebyshev'; but received the value {}.".format(
+                        k
+                    )
+                )
         else:
             raise ValueError(
-                "max_degree should be positive integer for filter='chebyshev'; but received type {} with value {}.".format(
-                    type(max_degree), max_degree
+                "max_degree should be positive integer of value at least 2 for filter='chebyshev'; but received type {} with value {}.".format(
+                    type(k), k
                 )
             )
 
-    elif filter == "sgcn":
+    elif method == "sgcn":
         """ Smoothing filter (Simplifying Graph Convolutional Networks) """
         if isinstance(k, int) and k > 0:
             print("Calculating {}-th power of normalized A...".format(k))
