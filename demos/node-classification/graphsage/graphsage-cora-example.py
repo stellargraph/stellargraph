@@ -89,7 +89,8 @@ def train(
     node_features = node_data[feature_names]
 
     # Create graph from edgelist and set node features and node type
-    Gnx = nx.from_pandas_edgelist(edgelist)
+    Gnx = nx.from_pandas_edgelist(edgelist, edge_attr="label")
+    nx.set_node_attributes(Gnx, "paper", "label")
 
     # Convert to StellarGraph and prepare for ML
     G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
@@ -123,7 +124,7 @@ def train(
         aggregator=MeanAggregator,
     )
     # Expose the input and output sockets of the model:
-    x_inp, x_out = model.default_model(flatten_output=True)
+    x_inp, x_out = model.build(flatten_output=True)
 
     # Snap the final estimator layer to x_out
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
@@ -321,6 +322,7 @@ if __name__ == "__main__":
     edgelist = pd.read_csv(
         os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
     )
+    edgelist["label"] = "cites"
 
     # Load node features
     # The CORA dataset contains binary attributes 'w_x' that correspond to whether the corresponding keyword
