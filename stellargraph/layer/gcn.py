@@ -223,7 +223,6 @@ class GCN:
         self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
-        # self.kwargs = generator.kwargs
         self.method = generator.method
 
         # Initialize a stack of GCN layers
@@ -278,7 +277,6 @@ class GCN:
         # filter = self.kwargs.get("filter", "localpool")
         method = self.method
         if method == "chebyshev":
-            # self.support = self.kwargs.get("max_degree", 2)
             self.support = self.generator.k
             suppG = [
                 Input(batch_shape=(None, None), sparse=True)
