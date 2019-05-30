@@ -564,22 +564,24 @@ class FullBatchNodeGenerator:
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        func_opt: an optional function to apply on features and adjacency matrix
-            (declared func_opt(features, Aadj, **kwargs))
-        k (None or int): If not none and filter is smoothed, the normalised adjacency matrix with self loops will be
-            raised to the k-th power before multiplying by the node features.
-        kwargs: additional parameters needed when using this generator with GCN model with the [func_opt] function.
-            It must be chebyshev, localpool, or smoothed filters (e.g. filter="localpool", or
-            filter="chebyshev", max_degree=2, or filter="smoothed"). For more information, please read
+        method: is gcn with default filter localpool. Other options are 'chebyshev' and 'sgcn' filters for gcn. 
+        For more information, please read
             `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/core>`_ in the
             file **utils.py** and GCN demo
             `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
+        k (None or int): If not none and method is sgcn, the normalised adjacency matrix with self loops will be
+            raised to the k-th power before multiplying by the node features.
+            If method is 'chebyshev' then it should be an integer indicating the order of the Chebyshev polynomial.        
+            transform: an optional function to apply on features and adjacency matrix
+            (declared transform(features, Aadj))
+       sparse: Booloean to indicate whether the adjacency matrix is to be made dense. Default is sparse. 
+       
     """
 
     # def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
 
     # def __init__(self, G, name=None, k=None, **kwargs):
-    def __init__(self, G, name=None, method="gcn", k=1, sparse=True):
+    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -633,11 +635,23 @@ class FullBatchNodeGenerator:
 
         # if kwargs is not None:
 
-        if self.method is not None:  # 'gcn', chebychev', or 'sgcn'
+        if transform is not None:
+            if callable(transform):
+                self.features, self.Aadj = transform(
+                    features=self.features, A=self.Aadj
+                )
+            else:
+                raise ValueError("argument 'transform' must be a callable.")
 
-            self.features, self.Aadj = GCN_Aadj_feats_op(
-                features=self.features, A=self.Aadj, k=self.k, method=self.method
-            )
+        elif self.method is not None:  # 'gcn', chebyshev', or 'sgcn'
+            if self.method in ["gcn", "chebyshev", "sgcn"]:
+                self.features, self.Aadj = GCN_Aadj_feats_op(
+                    features=self.features, A=self.Aadj, k=self.k, method=self.method
+                )
+            else:
+                raise ValueError(
+                    "Undefined method for transformation. Only 'gcn' (default is localpool), 'chebyshev','sgcn' filters are supported."
+                )
 
     def flow(self, node_ids, targets=None):
         """
