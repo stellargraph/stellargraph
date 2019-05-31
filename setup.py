@@ -36,9 +36,9 @@ REQUIRES = [
 # demos/community_detection: mplleaflet, python-igraph
 # demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
 # demos/link-prediction/hinsage/utils.py: numba
-# 
+#
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "paramiko", "mplleaflet", "seaborn", "python-igraph"],
+    "demos": ["numba", "jupyter", "mplleaflet", "seaborn", "python-igraph"],
     "test": ["pytest", "pytest-benchmark"],
 }
 
