@@ -144,7 +144,7 @@ To install StellarGraph library from [PyPi](https://pypi.org) using `pip`, execu
 pip install stellargraph
 ```
 
-Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip`, execute the following command:
+Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
 ```
 pip install stellargraph[demos]
 ```
@@ -161,10 +161,9 @@ cd stellargraph
 pip install .
 ```
 
-Some of the examples require installing additional dependencies as well as `stellargraph`.
-To install these dependencies using `pip`, execute the following command:
+Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
 ```
-pip install stellargraph[demos]
+pip install .[demos]
 ```
 
 
