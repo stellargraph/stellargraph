@@ -319,8 +319,8 @@ if __name__ == "__main__":
             "Please specify the directory containing the dataset using the '-l' flag"
         )
 
-    edgelist = pd.read_table(
-        os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
+    edgelist = pd.read_csv(
+        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
     )
     edgelist["label"] = "cites"
 
@@ -330,8 +330,8 @@ if __name__ == "__main__":
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
-    node_data = pd.read_table(
-        os.path.join(graph_loc, "cora.content"), header=None, names=column_names
+    node_data = pd.read_csv(
+        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
     )
 
     if args.checkpoint is None:

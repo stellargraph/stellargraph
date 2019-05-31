@@ -124,10 +124,13 @@ StellarGraph supports different machine learning use-cases, including:
 
 
 ## Installation
-StellarGraph is a Python 3 library and requires Python version 3.6 to function (note that the library
-uses Keras with the Tensorflow backend, and thus does not currently work in python 3.7). The required Python version
+StellarGraph is a Python 3 library and we recommend using Python version `3.6.*`. The required Python version
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
+
+*Note*: while the library works on Python 3.7 it is based on Keras which does not officially support Python 3.7.
+Therefore, there may be unforseen bugs and you there are many warnings from the Python libraries that 
+StellarGraph depends upon.
 
 <!--
 The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
@@ -141,8 +144,7 @@ To install StellarGraph library from [PyPi](https://pypi.org) using `pip`, execu
 pip install stellargraph
 ```
 
-Some of the examples require installing additional dependencies as well as `stellargraph`.
-To install these dependencies using `pip`, execute the following command:
+Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip`, execute the following command:
 ```
 pip install stellargraph[demos]
 ```
@@ -156,7 +158,6 @@ git clone https://github.com/stellargraph/stellargraph.git
 Then, `cd` to the StellarGraph folder, and install the library by executing the following commands:
 ```
 cd stellargraph
-pip install -r requirements.txt
 pip install .
 ```
 
@@ -199,6 +200,9 @@ The StellarGraph library currently includes the following algorithms for graph m
   - Graph Convolutional Network algorithm [5] for homogeneous graphs.
   The implementation supports representation learning and node classification for homogeneous graphs.
 
+* SGC
+  - Simplified Graph Convolutional network algorithm [6] for homogeneous graphs. 
+  The implementation supports representation learning and node classification for homogeneous graphs.
 
 * Node2Vec [2]
   - Unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring
@@ -267,3 +271,7 @@ Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and 
 5. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
 International Conference on Learning Representations (ICLR), 2017
 ([link](https://github.com/tkipf/gcn))
+
+6. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger. 
+arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
+
