@@ -21,57 +21,7 @@ from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape
 
 from ..mapper.node_mappers import FullBatchNodeGenerator
-
-from typing import List, Tuple, Callable, AnyStr
-
-import tensorflow as tf
-
-
-class TFSparseConversion(Layer):
-    """
-    Converts keras input tensors containing
-    """
-
-    def __init__(self, shape, dtype=None):
-        super().__init__()
-
-        self.trainable = False
-        self.supports_masking = True
-        self.matrix_shape = shape
-        self.dtype = dtype
-
-    def get_config(self):
-        config = {"shape": self.matrix_shape, "dtype": self.dtype}
-        return config
-
-    def compute_output_shape(self, input_shapes):
-        return tuple(self.matrix_shape)
-
-    def call(self, inputs):
-        """
-        Applies the layer.
-
-        Args:
-            inputs (list): Two input tensors contining
-                matrix indices (size 1 x E x 2) of type int64, and
-                matrix values (size (size 1 x E),
-                where E is the number of non-zero entries in the matrix.
-
-        Returns:
-            Tensorflow SparseTensor that represents the converted sparse matrix.
-        """
-        # Here we reduce the batch dimension (if 1)
-        indices = K.squeeze(inputs[0], 0)
-        values = K.squeeze(inputs[1], 0)
-
-        if not self.dtype:
-            dtype = K.dtype(values)
-
-        # Build sparse tensor for the matrix
-        output = tf.SparseTensor(
-            indices=indices, values=values, dense_shape=self.matrix_shape
-        )
-        return output
+from .misc import SqueezedSparseConversion
 
 
 class GraphConvolution(Layer):
@@ -87,6 +37,8 @@ class GraphConvolution(Layer):
         units (int): dimensionality of output feature vectors
         activation (str): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
+        final_layer (bool): If False the layer returns output for all nodes,
+                            if True it returns the subset specified by the indices passed to it.
         kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
         bias_initializer (str): name of the initializer for bias
         attn_kernel_initializer (str): name of the initializer for attention kernel
@@ -129,6 +81,32 @@ class GraphConvolution(Layer):
         self.bias_constraint = constraints.get(bias_constraint)
         self.final_layer = final_layer
 
+    def get_config(self):
+        """
+        Gets class configuration for Keras serialization.
+        Used by keras model serialization.
+
+        Returns:
+            A dictionary that contains the config of the layer
+        """
+
+        config = {
+            "units": self.units,
+            "use_bias": self.use_bias,
+            "final_layer": self.final_layer,
+            "activation": activations.serialize(self.activation),
+            "kernel_initializer": initializers.serialize(self.kernel_initializer),
+            "bias_initializer": initializers.serialize(self.bias_initializer),
+            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
+            "activity_regularizer": regularizers.serialize(self.activity_regularizer),
+            "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "bias_constraint": constraints.serialize(self.bias_constraint),
+        }
+
+        base_config = super().get_config()
+        return {**base_config, **config}
+
     def compute_output_shape(self, input_shapes):
         """
         Computes the output shape of the layer.
@@ -141,14 +119,15 @@ class GraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
-        batch_dim = input_shapes[0][0]
-        if self.final_layer:
-            out_dim = input_shapes[2][1]
-        else:
-            out_dim = input_shapes[0][1]
+        feature_shape, out_shape, *As_shapes = input_shapes
 
-        output_shape = [batch_dim, out_dim, self.units]
-        return tuple(output_shape)
+        batch_dim = feature_shape[0]
+        if self.final_layer:
+            out_dim = out_shape[1]
+        else:
+            out_dim = feature_shape[1]
+
+        return (batch_dim, out_dim, self.units)
 
     def build(self, input_shapes):
         """
@@ -194,15 +173,20 @@ class GraphConvolution(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features, As, out_indices = inputs
+        features, out_indices, *As = inputs
+        batch_dim, n_nodes, _ = K.int_shape(features)
+        if batch_dim != 1:
+            raise ValueError(
+                "Currently full-batch methods only support a batch dimension of one"
+            )
 
         # Remove singleton batch dimension
-        batch_dim, n_nodes, _ = K.int_shape(features)
         features = K.squeeze(features, 0)
         out_indices = K.squeeze(out_indices, 0)
+        A = K.squeeze(As[0], 0)
 
         # Calculate the layer operation of GCN
-        h_graph = K.dot(As, features)
+        h_graph = K.dot(A, features)
         output = K.dot(h_graph, self.kernel)
 
         # Add optional bias & apply activation
@@ -215,35 +199,11 @@ class GraphConvolution(Layer):
             output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
+        print("BATCH DIM:", batch_dim)
         if batch_dim == 1:
             output = K.expand_dims(output, 0)
 
         return output
-
-    def get_config(self):
-        """
-        Gets class configuration for Keras serialization.
-        Used by keras model serialization.
-
-        Returns:
-            A dictionary that contains the config of the layer
-        """
-
-        config = {
-            "units": self.units,
-            "use_bias": self.use_bias,
-            "activation": activations.serialize(self.activation),
-            "kernel_initializer": initializers.serialize(self.kernel_initializer),
-            "bias_initializer": initializers.serialize(self.bias_initializer),
-            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
-            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
-            "activity_regularizer": regularizers.serialize(self.activity_regularizer),
-            "kernel_constraint": constraints.serialize(self.kernel_constraint),
-            "bias_constraint": constraints.serialize(self.bias_constraint),
-        }
-
-        base_config = super().get_config()
-        return {**base_config, **config}
 
 
 class GCN:
@@ -305,7 +265,7 @@ class GCN:
                 )
             )
 
-    def __call__(self, x: List):
+    def __call__(self, x):
         """
         Apply a stack of GCN layers to the inputs.
         The input tensors are expected to be a list of the following:
@@ -336,11 +296,15 @@ class GCN:
         # Convert input indices & values to a sparse matrix
         if self.use_sparse:
             A_indices, A_values = As
-            Ainput = TFSparseConversion(shape=(n_nodes, n_nodes))([A_indices, A_values])
+            Ainput = [
+                SqueezedSparseConversion(shape=(n_nodes, n_nodes))(
+                    [A_indices, A_values]
+                )
+            ]
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = Lambda(lambda A: K.squeeze(A, 0))(As[0])
+            Ainput = As
 
         # Remove singleton batch dimension
         h_layer = x_in
@@ -348,7 +312,7 @@ class GCN:
             if isinstance(layer, GraphConvolution):
                 # For a GCN layer add the matrix and output indices
                 # Note that the output indices are only used if `final_layer=True`
-                h_layer = layer([h_layer, Ainput, out_indices])
+                h_layer = layer([h_layer, out_indices] + Ainput)
 
             else:
                 # For other (non-graph) layers only supply the input tensor
