@@ -75,7 +75,7 @@ class GradientSaliency(object):
         # link gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
-            print("link adj is sparse!!!")
+            print("adjacency matrix tensor is sparse")
             self.link_gradients = model.optimizer.get_gradients(
                 K.gather(K.gather(output, self.node_idx), self.class_of_interest),
                 adj.values,
