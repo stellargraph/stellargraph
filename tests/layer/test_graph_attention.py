@@ -25,6 +25,7 @@ from stellargraph.mapper.node_mappers import (
 from stellargraph.layer.graph_attention import *
 
 import keras
+import keras.backend as K
 from keras.layers import Input
 import numpy as np
 import networkx as nx
@@ -60,19 +61,19 @@ class Test_GraphAttention_layer:
     def test_constructor(self):
         # attn_heads_reduction = "concat":
         layer = GraphAttention(
-            F_out=self.F_out,
+            units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
             activation=self.activation,
         )
-        assert layer.F_out == self.F_out
+        assert layer.units == self.F_out
         assert layer.attn_heads == self.attn_heads
         assert layer.output_dim == self.F_out * self.attn_heads
         assert layer.activation == keras.activations.get(self.activation)
 
         # attn_heads_reduction = "average":
         layer = GraphAttention(
-            F_out=self.F_out,
+            units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
             activation=self.activation,
@@ -82,7 +83,7 @@ class Test_GraphAttention_layer:
         # attn_heads_reduction = "ave":
         with pytest.raises(ValueError):
             GraphAttention(
-                F_out=self.F_out,
+                units=self.F_out,
                 attn_heads=self.attn_heads,
                 attn_heads_reduction="ave",
                 activation=self.activation,
@@ -90,80 +91,113 @@ class Test_GraphAttention_layer:
 
     def test_apply_concat(self):
         gat = GraphAttention(
-            F_out=self.F_out,
+            units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
             activation=self.activation,
             kernel_initializer="ones",
         )
-        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
+        x_inp = [
+            Input(batch_shape=(1, self.N, self.F_in)),
+            Input(batch_shape=(1, None), dtype="int32"),
+            Input(batch_shape=(1, self.N, self.N)),
+        ]
         x_out = gat(x_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
+        print(x_out)
+        print(model.output_shape)
+
         assert model.output_shape[-1] == self.F_out * self.attn_heads
 
-        X = np.ones((self.N, self.F_in))  # features
-        A = np.eye(self.N)  # adjacency matrix with self-loops only
+        X = np.ones((1, self.N, self.F_in))  # features
+        A = np.eye(self.N)[None, :, :]  # adjacency matrix with self-loops only
+        all_indices = np.arange(self.N)[None, :]
+
         expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
-        actual = model.predict([X, A])
+        actual = model.predict([X, all_indices, A])[0]
+
         assert expected == pytest.approx(actual)
 
     def test_apply_average(self):
         gat = GraphAttention(
-            F_out=self.F_out,
+            units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
             activation=self.activation,
             kernel_initializer="ones",
+            attn_kernel_initializer="zeros",
+            bias_initializer="zeros",
+            final_layer=False,
         )
-        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
+        x_inp = [
+            Input(batch_shape=(1, self.N, self.F_in)),
+            Input(batch_shape=(1, None), dtype="int32"),
+            Input(batch_shape=(1, self.N, self.N)),
+        ]
         x_out = gat(x_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
         assert model.output_shape[-1] == self.F_out
 
-        X = np.ones((self.N, self.F_in))  # features
-        A = np.eye(self.N)  # adjacency matrix with self-loops only
-        expected = np.ones((self.N, self.F_out)) * self.F_in
-        actual = model.predict([X, A])
-        assert expected == pytest.approx(actual)
+        X = np.ones((1, self.N, self.F_in))  # features
+        for i in range(self.N):
+            X[:, i, :] = i + 1
+
+        A = np.eye(self.N)[None, ...]  # adjacency matrix with self-loops only
+        all_indices = np.arange(self.N)[None, :]
+
+        expected = (X * self.F_in)[..., : self.F_out]
+        actual = model.predict([X, all_indices, A])
+
+        assert np.allclose(expected, actual)
 
     def test_apply_average_with_neighbours(self):
         gat = GraphAttention(
-            F_out=self.F_out,
-            attn_heads=1,
+            units=self.F_out,
+            attn_heads=self.attn_heads,
             attn_heads_reduction="average",
             activation=self.activation,
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
+            bias_initializer="zeros",
+            final_layer=False,
         )
-        x_inp = [Input(shape=(self.F_in,)), Input(shape=(self.N,))]
+        x_inp = [
+            Input(batch_shape=(1, self.N, self.F_in)),
+            Input(batch_shape=(1, None), dtype="int32"),
+            Input(batch_shape=(1, self.N, self.N)),
+        ]
         x_out = gat(x_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
         assert model.output_shape[-1] == self.F_out
 
-        X = np.zeros((self.N, self.F_in))  # features
-        for i in range(X.shape[0]):
-            X[i, :] += i
-        A = np.eye(self.N)  # adjacency matrix with self-loops only
-        A[0, 1] = A[1, 0] = 1.0  # add undirected link between nodes 0 and 1
+        X = np.zeros((1, self.N, self.F_in))  # features
+        for i in range(self.N):
+            X[:, i, :] = i
 
-        expected = (X * self.F_in)[:, : self.F_out]
-        expected[:2,] = np.ones((2, self.F_out)) * (self.F_in / 2)
-        actual = model.predict([X, A])
-        assert expected == pytest.approx(actual)
+        A = np.eye(self.N)[None, ...]  # adjacency matrix with self-loops only
+        A[:, 0, 1] = A[:, 1, 0] = 1.0  # add undirected link between nodes 0 and 1
+
+        all_indices = np.arange(self.N)[None, :]
+
+        expected = (X * self.F_in)[..., : self.F_out]
+        expected[:, :2] = self.F_in / 2
+        actual = model.predict([X, all_indices, A])
+
+        assert np.allclose(expected, actual)
 
     def test_layer_config(self):
         layer = GraphAttention(
-            F_out=self.F_out,
+            units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
             activation=self.activation,
         )
         conf = layer.get_config()
 
-        assert conf["F_out"] == self.F_out
+        assert conf["units"] == self.F_out
         assert conf["attn_heads"] == self.attn_heads
         assert conf["attn_heads_reduction"] == "concat"
         assert conf["activation"] == self.activation
@@ -330,9 +364,9 @@ class Test_GAT:
 
         assert len(gat.node_model()) == 2
         x_in, x_out = gat.node_model()
-        assert len(x_in) == 2
+        assert len(x_in) == 3
         assert int(x_in[0].shape[-1]) == self.F_in
-        assert x_in[1]._keras_shape == (None, G.number_of_nodes())
+        assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
     def test_gat_node_model_constructor_no_generator(self):
@@ -348,9 +382,9 @@ class Test_GAT:
             x_in, x_out = gat.node_model()
 
         x_in, x_out = gat.node_model(num_nodes=1000, feature_size=self.F_in)
-        assert len(x_in) == 2
+        assert len(x_in) == 3
         assert int(x_in[0].shape[-1]) == self.F_in
-        assert x_in[1]._keras_shape == (None, 1000)
+        assert K.int_shape(x_in[-1]) == (1, 1000, 1000)
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
     def test_gat_node_model_constructor_wrong_generator(self):
@@ -369,7 +403,7 @@ class Test_GAT:
 
     def test_gat_node_model_l2norm(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G)
+        gen = FullBatchNodeGenerator(G, sparse=False)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -384,26 +418,21 @@ class Test_GAT:
         gat._layers[3].kernel_initializer = keras.initializers.get("ones")
         gat._layers[3].attn_kernel_initializer = keras.initializers.get("ones")
 
-        assert len(gat.node_model()) == 2
         x_in, x_out = gat.node_model()
-        assert len(x_in) == 2
-        assert int(x_in[0].shape[-1]) == self.F_in
-        assert x_in[1]._keras_shape == (None, G.number_of_nodes())
-        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
-        X = gen.features
-        A = gen.Aadj
-        actual = model.predict([X, A])
+        ng = gen.flow(G.nodes())
+        actual = model.predict_generator(ng)
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             1.0 / G.number_of_nodes()
         )
-        assert expected == pytest.approx(actual)
+
+        assert np.allclose(expected, actual[0])
 
     def test_gat_node_model_no_norm(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G)
+        gen = FullBatchNodeGenerator(G, sparse=False)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -418,22 +447,17 @@ class Test_GAT:
         gat._layers[3].kernel_initializer = keras.initializers.get("ones")
         gat._layers[3].attn_kernel_initializer = keras.initializers.get("ones")
 
-        assert len(gat.node_model()) == 2
         x_in, x_out = gat.node_model()
-        assert len(x_in) == 2
-        assert int(x_in[0].shape[-1]) == self.F_in
-        assert x_in[1]._keras_shape == (None, G.number_of_nodes())
-        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
-        X = gen.features
-        A = gen.Aadj
-        actual = model.predict([X, A])
+        ng = gen.flow(G.nodes())
+        actual = model.predict_generator(ng)
+
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             self.F_in * self.layer_sizes[0] * self.attn_heads
         )
-        assert expected == pytest.approx(actual)
+        assert np.allclose(expected, actual[0])
 
     def test_gat_node_model_wrong_norm(self):
         G = example_graph_1(feature_size=self.F_in)
@@ -450,7 +474,7 @@ class Test_GAT:
 
     def test_gat_serialize(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G)
+        gen = FullBatchNodeGenerator(G, sparse=False)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -462,6 +486,8 @@ class Test_GAT:
 
         x_in, x_out = gat.node_model()
         model = keras.Model(inputs=x_in, outputs=x_out)
+
+        ng = gen.flow(G.nodes())
 
         # Save model
         model_json = model.to_json()
@@ -475,11 +501,9 @@ class Test_GAT:
         )
         model2.set_weights(model_weights)
 
-        # Test loaded model
-        X = gen.features
-        A = gen.Aadj
-        actual = model2.predict([X, A])
+        # Test deserialized model
+        actual = model2.predict_generator(ng)
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             1.0 / G.number_of_nodes()
         )
-        assert expected == pytest.approx(actual)
+        assert np.allclose(expected, actual[0])

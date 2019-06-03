@@ -535,35 +535,42 @@ class SparseFullBatchNodeSequence(Sequence):
 
     def __init__(self, features, A, targets=None, indices=None):
 
-        if (targets is None) != (indices is None):
-            raise ValueError("Please pass both targets and indices together.")
+        if (targets is not None) and (len(indices) != len(targets)):
+            raise ValueError(
+                "When passed together targets and indices should be the same length."
+            )
 
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
-        self.targets = np.asanyarray(targets)
         self.target_indices = np.asanyarray(indices)
-
-        # Reshape all inputs to have batch dimension of 1
-        self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
 
         # Ensure matrix is in COO format to extract indices
         if not sps.isspmatrix_coo(A):
-            print("Warning: Converting adjacency matrix to required COO format")
+            raise ValueError("Adjacency matrix not in expected sparse format")
+        else:
             A = A.tocoo()
 
         # Convert matrices to list of indices & values
         self.A_indices = np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
         self.A_values = np.expand_dims(A.data, 0)
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
         self.inputs = [
             self.features,
             self.target_indices,
             self.A_indices,
             self.A_values,
         ]
+
+        if targets is not None:
+            self.targets = np.asanyarray(targets)
+            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        else:
+            self.targets = None
 
     def __len__(self):
         return 1
@@ -597,12 +604,13 @@ class FullBatchNodeSequence(Sequence):
 
     def __init__(self, features, A, targets=None, indices=None):
 
-        if (targets is None) != (indices is None):
-            raise ValueError("Please pass both targets and indices together.")
+        if (targets is not None) and (len(indices) != len(targets)):
+            raise ValueError(
+                "When passed together targets and indices should be the same length."
+            )
 
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
-        self.targets = np.asanyarray(targets)
         self.target_indices = np.asanyarray(indices)
 
         # Convert sparse matrix to dense:
@@ -616,14 +624,19 @@ class FullBatchNodeSequence(Sequence):
             )
 
         # Reshape all inputs to have batch dimension of 1
-        self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.A_dense = self.A_dense.reshape((1,) + self.A_dense.shape)
         self.target_indices = np.reshape(
             self.target_indices, (1,) + self.target_indices.shape
         )
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
-        self.A_dense = self.A_dense.reshape((1,) + self.A_dense.shape)
 
         self.inputs = [self.features, self.target_indices, self.A_dense]
+
+        if targets is not None:
+            self.targets = np.asanyarray(targets)
+            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        else:
+            self.targets = None
 
     def __len__(self):
         return 1
@@ -746,7 +759,6 @@ class FullBatchNodeGenerator:
                 raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
-        targets = np.asanyarray(targets)
         node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
         if self.use_sparse:

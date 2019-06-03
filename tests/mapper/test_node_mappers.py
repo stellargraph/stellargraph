@@ -27,6 +27,7 @@ import numpy as np
 import random
 import pytest
 import pandas as pd
+import scipy.sparse as sps
 
 
 def example_graph_1(feature_size=None):
@@ -716,55 +717,70 @@ class Test_FullBatchNodeGenerator:
         with pytest.raises(TypeError):
             generator = FullBatchNodeGenerator(Ghin)
 
+    def generator_flow(self, G, node_ids, node_targets):
+        generator = FullBatchNodeGenerator(G, sparse=False)
+        n_nodes = len(G)
+
+        gen = generator.flow(node_ids, node_targets)
+        [X, tind, A], y = gen[0]
+
+        assert isinstance(A, np.ndarray)
+        assert np.allclose(A, nx.to_numpy_array(G))
+        assert np.allclose(X, gen.features)  # X should be equal to gen.features
+        assert tind.shape[1] == len(node_ids)
+        if node_targets is not None:
+            assert np.allclose(y, node_targets)
+
+        generator = FullBatchNodeGenerator(G, sparse=True)
+        gen = generator.flow(node_ids, node_targets)
+        [X, tind, A_ind, A_val], y = gen[0]
+
+        assert np.allclose(
+            sps.coo_matrix(
+                (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])), shape=(n_nodes, n_nodes)
+            ).toarray(),
+            nx.to_numpy_array(G),
+        )
+        assert np.allclose(X, gen.features)  # X should be equal to gen.features
+        assert tind.shape[1] == len(node_ids)
+        if node_targets is not None:
+            assert np.allclose(y, node_targets)
+        return tind, y
+
     def test_generator_flow_notargets(self):
-        generator = FullBatchNodeGenerator(self.G)
-        node_ids = self.G.nodes()
-        gen = generator.flow(node_ids)
+        node_ids = list(self.G.nodes())[:3]
+        tind, y = self.generator_flow(self.G, node_ids, None)
+        assert np.allclose(tind, range(3))
 
-        assert len(gen) == 1
-        assert gen.A.shape == (self.N, self.N)
-        assert gen.features.shape == (self.N, self.n_feat)
-        assert sum(gen.sample_weight) == len(node_ids)
-        assert gen.targets is None
-
-        [X, A], y, sample_weights = gen.__getitem__(0)
-        assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
-        assert y is None
-        assert sum(sample_weights) == len(node_ids)
+        node_ids = list(self.G.nodes())
+        tind, y = self.generator_flow(self.G, node_ids, None)
+        assert np.allclose(tind, range(len(node_ids)))
 
     def test_generator_flow_withtargets(self):
-        generator = FullBatchNodeGenerator(self.G)
         node_ids = list(self.G.nodes())[:3]
-        node_targets = np.ones((len(node_ids), self.target_dim))
-        gen = generator.flow(node_ids, node_targets)
+        node_targets = np.ones((len(node_ids), self.target_dim)) * np.arange(3)[:, None]
+        tind, y = self.generator_flow(self.G, node_ids, node_targets)
+        assert np.allclose(tind, range(3))
+        assert np.allclose(y, node_targets[:3])
 
-        assert gen.A.shape == (self.N, self.N)
-        assert gen.features.shape == (self.N, self.n_feat)
-        assert sum(gen.sample_weight) == len(node_ids)
-        assert gen.targets.shape == (self.N, self.target_dim)
-
-        [X, A], y, sample_weights = gen.__getitem__(0)
-        assert np.array_equal(X, gen.features)  # X should be equal to gen.features
-        assert len(np.nonzero(A != gen.A)[0]) == 0  # A should be equal to gen.A
-
-        assert y.shape == (self.N, self.target_dim)
-        assert np.array_equal(
-            y[sample_weights, :], np.ones((len(node_ids), self.target_dim))
+        node_ids = list(self.G.nodes())[::-1]
+        node_targets = (
+            np.ones((len(node_ids), self.target_dim))
+            * np.arange(len(node_ids))[:, None]
         )
-
-        assert sum(sample_weights) == len(node_ids)
+        tind, y = self.generator_flow(self.G, node_ids, node_targets)
+        assert np.allclose(tind, range(len(node_ids))[::-1])
+        assert np.allclose(y, node_targets)
 
     def test_generator_flow_targets_as_list(self):
         generator = FullBatchNodeGenerator(self.G)
         node_ids = list(self.G.nodes())[:3]
         node_targets = [1] * len(node_ids)
         gen = generator.flow(node_ids, node_targets)
-        assert gen.targets.shape == (self.N, 1)
 
-        [X, A], y, sample_weights = gen.__getitem__(0)
-        assert y.shape == (self.N, 1)
-        assert sum(y) == len(node_ids)
+        inputs, y = gen[0]
+        assert y.shape == (1, 3)
+        assert np.sum(y) == 3
 
     def test_generator_flow_targets_not_iterator(self):
         generator = FullBatchNodeGenerator(self.G)

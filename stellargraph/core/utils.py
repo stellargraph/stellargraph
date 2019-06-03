@@ -182,4 +182,4 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
                 )
             )
 
-    return A_processed
+    return features, A
