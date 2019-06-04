@@ -107,12 +107,12 @@ def test_GCN_Aadj_feats_op():
     features = pytest.G.get_feature_for_nodes(node_list)
 
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
-
     assert np.array_equal(features, features_)
     assert 6 == pytest.approx(Aadj_.todense().sum(), 0.1)
 
-    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev")
-
+    features_, Aadj_ = GCN_Aadj_feats_op(
+        features=features, A=Aadj, method="chebyshev", k=2
+    )
     assert len(features_) == 4
     assert np.array_equal(features_[0], features_[0])
     assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
@@ -120,20 +120,28 @@ def test_GCN_Aadj_feats_op():
     assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
     assert Aadj.get_shape() == Aadj_.get_shape()
 
+    # k must an integer greater than or equal to 2
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev", k=1)
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev", k=2.0)
+    with pytest.raises(ValueError):
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev", k=None)
+
     # k must be positive integer
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=None)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgc", k=None)
 
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=0)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgc", k=0)
 
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=-191)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgc", k=-191)
 
     with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=2.0)
+        GCN_Aadj_feats_op(features=features, A=Aadj, method="sgc", k=2.0)
 
-    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="sgcn", k=2)
+    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="sgc", k=2)
 
     assert len(features_) == 6
     assert np.array_equal(features, features_)

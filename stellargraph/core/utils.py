@@ -142,8 +142,8 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
         k (int or None): If method is 'sgcn' then it should be an integer indicating the power to raise the
         normalised adjacency matrix with self loops before multiplying the node features matrix.
         If method is 'chebyshev' then it should be an integer indicating the maximum order of the Chebyshev polynomials.
-        method: to specify the filter to use with gcn. If method=gcn, default filter is localpool, other options are 'chebyshev' and 'sgcn'. 
-        
+        method: to specify the filter to use with gcn. If method=gcn, default filter is localpool, other options are 'chebyshev' and 'sgcn'.
+
 
     Returns:
         features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
@@ -160,16 +160,15 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     method = method
 
     if method == "gcn":
-        """ Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
-        print("Using local pooling filters...")
+        # Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
+        print("Using GCN (local pooling) filters...")
         A = preprocess_adj(A)
+
     elif method == "chebyshev":
-        """ Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)  """
-        print("Using Chebyshev polynomial basis filters...")
-        if isinstance(k, int):
-            k = (
-                2 if k < 2 else k
-            )  # default minimum max_degree for the order of 'chebyshev' polynomialls.
+        # Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)
+        print("Using Chebyshev polynomial filters...")
+        if isinstance(k, int) and k >= 2:
+            # default minimum degree for Chebyshev polynomials.
             T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), k)
             features = [features] + T_k
         else:
@@ -178,8 +177,9 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
                     type(k), k
                 )
             )
-    elif method == "sgcn":
-        """ Smoothing filter (Simplifying Graph Convolutional Networks) """
+
+    elif method == "sgc":
+        # Smoothing filter (Simplifying Graph Convolutional Networks)
         if isinstance(k, int) and k > 0:
             print("Calculating {}-th power of normalized A...".format(k))
             A = preprocess_adj(A)
