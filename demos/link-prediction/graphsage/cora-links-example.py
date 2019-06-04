@@ -52,8 +52,8 @@ def load_data(graph_loc, ignore_attr):
     """
 
     # Load the edge list
-    edgelist = pd.read_table(
-        os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
+    edgelist = pd.read_csv(
+        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
     )
 
     # Load node features
@@ -62,24 +62,19 @@ def load_data(graph_loc, ignore_attr):
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
-    node_data = pd.read_table(
-        os.path.join(graph_loc, "cora.content"), header=None, names=column_names
+    node_data = pd.read_csv(
+        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
     )
+    node_data.drop(columns=["subject"], inplace=True)
 
     g = nx.from_pandas_edgelist(edgelist)
 
     # Extract the feature data. These are the node feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    predictor_names = sorted(set(column_names) - set(ignore_attr))
+    predictor_names = sorted(set(column_names) - set(ignore_attr+["subject"]))
 
-    if "subject" in predictor_names:
-        # Convert node features to numeric vectors
-        feature_encoding = feature_extraction.DictVectorizer(sparse=False)
-        node_features = feature_encoding.fit_transform(
-            node_data[predictor_names].to_dict("records")
-        )
-    else:  # node features are already numeric, no further conversion is needed
-        node_features = node_data[predictor_names].values
+    # node features are already numeric, no further conversion is needed
+    node_features = node_data[predictor_names].values
 
     node_ids = node_data.index
 
@@ -162,13 +157,8 @@ def train(
         layer_sizes=layer_size, generator=train_gen, bias=True, dropout=dropout
     )
 
-    # Expose input and output sockets of the model, for source and destination nodes:
-    x_inp_src, x_out_src = graphsage.default_model(flatten_output=False)
-    x_inp_dst, x_out_dst = graphsage.default_model(flatten_output=False)
-    # re-pack into a list where (source, target) inputs alternate, for link inputs:
-    x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
-    # same for outputs:
-    x_out = [x_out_src, x_out_dst]
+    # Construct input and output tensors for the link prediction model
+    x_inp, x_out = graphsage.build()
 
     # Final estimator layer
     prediction = link_classification(

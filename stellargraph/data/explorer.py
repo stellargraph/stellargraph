@@ -87,11 +87,11 @@ class GraphWalk(object):
                 # even when the seed is set.
                 self.adj[et][n1] = sorted(neigh_et, key=str)
 
-    def neighbors(self, graph, node):
-        if node not in graph:
+    def neighbors(self, node):
+        if node not in self.graph:
             print("node {} not in graph".format(node))
-            print("Graph nodes {}".format(graph.nodes()))
-        return list(nx.neighbors(graph, node))
+            print("Graph nodes {}".format(self.graph.nodes()))
+        return list(nx.neighbors(self.graph, node))
 
     def run(self, **kwargs):
         """
@@ -105,6 +105,7 @@ class GraphWalk(object):
         Returns:
 
         """
+        raise NotImplementedError
 
 
 class UniformRandomWalk(GraphWalk):
@@ -142,7 +143,7 @@ class UniformRandomWalk(GraphWalk):
                 current_node = node
                 for _ in range(length):
                     walk.extend([current_node])
-                    neighbours = self.neighbors(self.graph, current_node)
+                    neighbours = self.neighbors(current_node)
                     if (
                         len(neighbours) == 0
                     ):  # for whatever reason this node has no neighbours so stop
@@ -318,7 +319,7 @@ class BiasedRandomWalk(GraphWalk):
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
             for node in self.graph.nodes():
-                for neighbor in self.neighbors(self.graph, node):
+                for neighbor in self.neighbors(node):
 
                     wts = set()
                     for k, v in self.graph[node][neighbor].items():
@@ -361,7 +362,7 @@ class BiasedRandomWalk(GraphWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.neighbors(self.graph, node)
+                neighbours = self.neighbors(node)
 
                 previous_node = node
                 previous_node_neighbours = neighbours
@@ -390,7 +391,7 @@ class BiasedRandomWalk(GraphWalk):
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
-                        neighbours = self.neighbors(self.graph, current_node)
+                        neighbours = self.neighbors(current_node)
 
                         if not neighbours:
                             break
@@ -591,7 +592,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = nx.neighbors(self.graph, current_node)
+                        neighbours = self.neighbors(current_node)
                         # filter these by node type
                         neighbours = [
                             n_node
@@ -801,7 +802,7 @@ class SampledBreadthFirstWalk(GraphWalk):
 
                     # consider the subgraph up to and including depth d from root node
                     if depth <= d:
-                        neighbours = self.neighbors(self.graph, frontier[0])
+                        neighbours = self.neighbors(frontier[0])
                         if len(neighbours) == 0:
                             break
                         else:
