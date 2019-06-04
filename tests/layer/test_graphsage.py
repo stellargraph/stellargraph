@@ -422,7 +422,7 @@ def test_graphsage_apply_1():
     assert expected == pytest.approx(actual)
 
     # Use the default model:
-    xinp, xout = gs.default_model()
+    xinp, xout = gs.node_model()
     model2 = keras.Model(inputs=xinp, outputs=xout)
 
     expected = np.array([[[16, 25]]])

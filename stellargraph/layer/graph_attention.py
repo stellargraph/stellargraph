@@ -563,7 +563,7 @@ class GAT:
 
     def default_model(self, flatten_output=False):
         warnings.warn(
-            "The .default_model() method will be deprecated soon. "
+            "The .default_model() method will be deprecated in future versions. "
             "Please use .node_model() or .link_model() methods instead.",
             PendingDeprecationWarning,
         )
