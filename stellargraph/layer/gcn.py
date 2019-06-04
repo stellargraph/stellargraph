@@ -274,9 +274,7 @@ class GCN:
 
         x_in = Input(shape=(self.generator.features.shape[1],))
 
-        # filter = self.kwargs.get("filter", "localpool")
-        method = self.method
-        if method == "chebyshev":
+        if self.method == "chebyshev":
             self.support = self.generator.k
             suppG = [
                 Input(batch_shape=(None, None), sparse=True)

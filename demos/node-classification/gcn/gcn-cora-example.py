@@ -22,13 +22,11 @@ import pandas as pd
 import networkx as nx
 import keras
 from keras import optimizers, losses, layers, metrics, regularizers
-from sklearn import preprocessing, feature_extraction, model_selection
-from keras.layers import Dropout
+from sklearn import feature_extraction, model_selection
 
 import stellargraph as sg
 from stellargraph.layer import GCN, GraphConvolution
 from stellargraph.mapper import FullBatchNodeGenerator
-from stellargraph.core.utils import GCN_Aadj_feats_op
 
 
 def train(
@@ -145,7 +143,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
     Gnx = nx.from_pandas_edgelist(edgelist)
 
     # Convert to StellarGraph and prepare for ML
-    G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
+    G = sg.StellarGraph(Gnx, node_features=node_features)
 
     # Split nodes into train/test using stratification.
     train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
@@ -162,7 +160,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
         test_nodes, test_targets, train_size=300, test_size=None, random_state=523214
     )
 
-    # default filter is localpool when gcn is the method. Other options are method = 'chebyshev' or method = 'sgcn'.
+    # We specify the method='gcn' to give the pre-processing required by the GCN algorithm.
     generator = FullBatchNodeGenerator(G, method="gcn")
 
     model = train(
