@@ -17,8 +17,6 @@
 from keras.engine import Layer
 from keras import backend as K
 
-import tensorflow as tf
-
 
 class SqueezedSparseConversion(Layer):
     """
@@ -80,6 +78,8 @@ class SqueezedSparseConversion(Layer):
 
         if not self.dtype:
             dtype = K.dtype(values)
+
+        import tensorflow as tf
 
         # Build sparse tensor for the matrix
         output = tf.SparseTensor(

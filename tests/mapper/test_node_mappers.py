@@ -717,30 +717,43 @@ class Test_FullBatchNodeGenerator:
         with pytest.raises(TypeError):
             generator = FullBatchNodeGenerator(Ghin)
 
-    def generator_flow(self, G, node_ids, node_targets):
-        generator = FullBatchNodeGenerator(G, sparse=False)
+    def generator_flow(self, G, node_ids, node_targets, method="none"):
+        generator = FullBatchNodeGenerator(G, sparse=False, method=method)
         n_nodes = len(G)
 
         gen = generator.flow(node_ids, node_targets)
         [X, tind, A], y = gen[0]
-
         assert isinstance(A, np.ndarray)
-        assert np.allclose(A, nx.to_numpy_array(G))
+
+        A_dense = A[0]
+        if method == "none":
+            assert np.allclose(A_dense, nx.to_numpy_array(G))
+
+        # For self_loops check that the diagonals are one
+        elif method == "self_loops":
+            assert np.allclose(A_dense.diagonal(), 1)
+
         assert np.allclose(X, gen.features)  # X should be equal to gen.features
         assert tind.shape[1] == len(node_ids)
         if node_targets is not None:
             assert np.allclose(y, node_targets)
 
-        generator = FullBatchNodeGenerator(G, sparse=True)
+        generator = FullBatchNodeGenerator(G, sparse=True, method=method)
         gen = generator.flow(node_ids, node_targets)
         [X, tind, A_ind, A_val], y = gen[0]
-
-        assert np.allclose(
-            sps.coo_matrix(
-                (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])), shape=(n_nodes, n_nodes)
-            ).toarray(),
-            nx.to_numpy_array(G),
+        A_sparse = sps.coo_matrix(
+            (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])), shape=(n_nodes, n_nodes)
         )
+
+        if method == "none":
+            assert np.allclose(A_sparse.toarray(), nx.to_numpy_array(G))
+        else:
+            assert np.allclose(A_sparse.toarray(), A_dense)
+
+        # Check that the diagonals are one
+        if method == "self_loops":
+            assert np.allclose(A_sparse.diagonal(), 1)
+
         assert np.allclose(X, gen.features)  # X should be equal to gen.features
         assert tind.shape[1] == len(node_ids)
         if node_targets is not None:
@@ -749,12 +762,19 @@ class Test_FullBatchNodeGenerator:
 
     def test_generator_flow_notargets(self):
         node_ids = list(self.G.nodes())[:3]
-        tind, y = self.generator_flow(self.G, node_ids, None)
+        tind, y = self.generator_flow(self.G, node_ids, None, method="none")
         assert np.allclose(tind, range(3))
 
         node_ids = list(self.G.nodes())
-        tind, y = self.generator_flow(self.G, node_ids, None)
+        tind, y = self.generator_flow(self.G, node_ids, None, method="none")
         assert np.allclose(tind, range(len(node_ids)))
+
+        # Check other pre-processing options
+        node_ids = list(self.G.nodes())[:20]
+        self.generator_flow(self.G, node_ids, None, method="gcn")
+
+        node_ids = list(self.G.nodes())[:20]
+        self.generator_flow(self.G, node_ids, None, method="self_loops")
 
     def test_generator_flow_withtargets(self):
         node_ids = list(self.G.nodes())[:3]
@@ -797,7 +817,8 @@ class Test_FullBatchNodeGenerator:
         )
         G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-        generator = FullBatchNodeGenerator(G, name="test", func_opt=None, key="value")
+        generator = FullBatchNodeGenerator(G, name="test", method=None)
+
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
 
@@ -812,7 +833,7 @@ class Test_FullBatchNodeGenerator:
         def func(features, A, **kwargs):
             return features * features, A
 
-        generator = FullBatchNodeGenerator(G, "test", func, key="value")
+        generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
         assert np.array_equal(feats * feats, generator.features)
 
@@ -827,4 +848,4 @@ class Test_FullBatchNodeGenerator:
         func = "Not callable"
 
         with pytest.raises(ValueError):
-            generator = FullBatchNodeGenerator(G, "test", func, key="value")
+            generator = FullBatchNodeGenerator(G, "test", transform=func)

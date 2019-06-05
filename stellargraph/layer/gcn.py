@@ -243,7 +243,8 @@ class GCN:
         self.dropout = dropout
         self.kernel_regularizer = kernel_regularizer
         self.generator = generator
-        self.kwargs = generator.kwargs
+        self.support = 1
+        self.method = generator.method
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
@@ -350,14 +351,7 @@ class GCN:
             A_m = Input(batch_shape=(1, N_nodes, N_nodes))
             A_placeholders = [A_m]
 
-        # filter = self.kwargs.get("filter", "localpool")
-        # if filter == "chebyshev":
-        #     self.support = self.kwargs.get("max_degree", 2)
-        #     Am_in = [
-        #         Input(batch_shape=(None, None), sparse=True)
-        #         for _ in range(self.support)
-        #     ]
-        # else:
+        # TODO: Support multiple matrices
 
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)

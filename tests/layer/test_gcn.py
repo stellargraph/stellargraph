@@ -159,7 +159,7 @@ def test_GCN_apply_dense():
     )
     G = StellarGraph(G, node_features=node_features)
 
-    generator = FullBatchNodeGenerator(G, sparse=False)
+    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
     gcnModel = GCN([2], ["relu"], generator=generator, dropout=0.5)
 
     x_in, x_out = gcnModel.node_model()
@@ -188,7 +188,7 @@ def test_GCN_apply_sparse():
     )
     G = StellarGraph(G, node_features=node_features)
 
-    generator = FullBatchNodeGenerator(G, sparse=False)
+    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
     gcnModel = GCN([2], ["relu"], generator=generator, dropout=0.5)
 
     x_in, x_out = gcnModel.node_model()
