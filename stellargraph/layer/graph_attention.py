@@ -665,7 +665,15 @@ class GAT:
             A_placeholders = [A_m]
 
         x_inp = [x_t, out_indices_t] + A_placeholders
-        return x_inp, self(x_inp)
+        x_out = self(x_inp)
+
+        # Flatten output by removing singleton batch dimension
+        if x_out.shape[0] == 1:
+            self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
+        else:
+            self.x_out_flat = x_out
+
+        return x_inp, x_out
 
     def link_model(self):
         """

@@ -111,14 +111,14 @@ def test_GCN_Aadj_feats_op():
     assert np.array_equal(features, features_)
     assert 6 == pytest.approx(Aadj_.todense().sum(), 0.1)
 
-    features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, filter="chebyshev")
-
-    assert len(features_) == 4
-    assert np.array_equal(features_[0], features_[0])
-    assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
-    assert features_[2].max() < 1
-    assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
-    assert Aadj.get_shape() == Aadj_.get_shape()
+    # features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, filter="chebyshev")
+    #
+    # assert len(features_) == 4
+    # assert np.array_equal(features_[0], features_[0])
+    # assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
+    # assert features_[2].max() < 1
+    # assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
+    # assert Aadj.get_shape() == Aadj_.get_shape()
 
     # k must be positive integer
     with pytest.raises(ValueError):

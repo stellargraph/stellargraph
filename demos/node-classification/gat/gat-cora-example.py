@@ -105,7 +105,7 @@ def train(
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = FullBatchNodeGenerator(G)
+    generator = FullBatchNodeGenerator(G, sparse=False)
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
@@ -121,7 +121,7 @@ def train(
         normalize=None,
     )
     # Expose the input and output tensors of the GAT model for nodes:
-    x_inp, x_out = gat.node_model(add_self_loops=True)
+    x_inp, x_out = gat.node_model()
 
     # Snap the final estimator layer to x_out
     x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
@@ -152,22 +152,19 @@ def train(
     if args.interface == "fit":
         print("\nUsing model.fit() to train the model\n")
         # Get the training data
-        [X, A], y_train, node_mask_train = train_gen.__getitem__(0)
-        N = A.shape[0]
-        # A = sparse.csr_matrix(A + np.eye(A.shape[0]))  # Add self-loops
+        inputs_train, y_train = train_gen[0]
 
         # Get the validation data
-        [_, _], y_val, node_mask_val = val_gen.__getitem__(0)
+        inputs_val, y_val = val_gen[0]
 
         history = model.fit(
-            x=[X, A],
+            x=inputs_train,
             y=y_train,
-            sample_weight=node_mask_train,
             batch_size=N,
             shuffle=False,  # must be False, since shuffling data means shuffling the whole graph
             epochs=num_epochs,
             verbose=2,
-            validation_data=([X, A], y_val, node_mask_val),
+            validation_data=(inputs_val, y_val),
             callbacks=[es_callback, tb_callback, mc_callback],
         )
     else:
@@ -186,9 +183,7 @@ def train(
 
     # Evaluate on validation set and print metrics
     if args.interface == "fit":
-        val_metrics = model.evaluate(
-            x=[X, A], y=y_val, sample_weight=node_mask_val, batch_size=N
-        )
+        val_metrics = model.evaluate(x=inputs_val, y=y_val)
     else:
         val_metrics = model.evaluate_generator(val_gen)
 
@@ -198,12 +193,8 @@ def train(
 
     # Evaluate on test set and print metrics
     if args.interface == "fit":
-        [_, _], y_test, node_mask_test = generator.flow(
-            test_nodes, test_targets
-        ).__getitem__(0)
-        test_metrics = model.evaluate(
-            x=[X, A], y=y_test, sample_weight=node_mask_test, batch_size=N
-        )
+        inputs_test, y_test = generator.flow(test_nodes, test_targets)[0]
+        test_metrics = model.evaluate(x=inputs_test, y=y_test)
     else:
         test_metrics = model.evaluate_generator(
             generator.flow(test_nodes, test_targets)
@@ -214,13 +205,10 @@ def train(
         print("\t{}: {:0.4f}".format(name, val))
 
     # Get predictions for all nodes
-    # Note that the `predict` or `predict_generator` function now operates differently to the `GraphSAGE` or `HinSAGE` models
-    # in that if you give it less than the complete set of nodes, it will still return all predictions and in a fixed order
-    # defined by the order of nodes in X and A (which is defined by the order of G.nodes()).
-    if args.interface == "fit":
-        all_predictions = model.predict(x=[X, A], batch_size=N)
-    else:
-        all_predictions = model.predict_generator(generator.flow(node_ids))
+    all_predictions = model.predict_generator(generator.flow(node_ids))
+
+    # Remove singleton batch dimension
+    all_predictions = np.squeeze(all_predictions)
 
     # Turn predictions back into the original categories
     node_predictions = pd.DataFrame(
@@ -267,7 +255,7 @@ if __name__ == "__main__":
         "-e",
         "--epochs",
         type=int,
-        default=10,
+        default=20,
         help="The number of epochs to train the model",
     )
     parser.add_argument(
@@ -334,8 +322,11 @@ if __name__ == "__main__":
             "Please specify the directory containing the dataset using the '-l' flag"
         )
 
-    edgelist = pd.read_table(
-        os.path.join(graph_loc, "cora.cites"), header=None, names=["source", "target"]
+    edgelist = pd.read_csv(
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["source", "target"],
     )
 
     # Load node features
