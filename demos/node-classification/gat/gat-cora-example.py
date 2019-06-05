@@ -105,7 +105,7 @@ def train(
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = FullBatchNodeGenerator(G, sparse=False)
+    generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
@@ -131,7 +131,7 @@ def train(
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate, decay=0.001),
         loss=losses.categorical_crossentropy,
-        weighted_metrics=["acc"],
+        metrics=["acc"],
     )
     print(model.summary())
 
@@ -140,11 +140,11 @@ def train(
     if not os.path.isdir("logs"):
         os.makedirs("logs")
     N = len(node_ids)
-    es_callback = EarlyStopping(monitor="val_weighted_acc", patience=es_patience)
+    es_callback = EarlyStopping(monitor="val_acc", patience=es_patience)
     tb_callback = TensorBoard(batch_size=N)
     mc_callback = ModelCheckpoint(
         "logs/best_model.h5",
-        monitor="val_weighted_acc",
+        monitor="val_acc",
         save_best_only=True,
         save_weights_only=True,
     )
@@ -218,7 +218,7 @@ def train(
         [
             "subject=" + gt_subject == p
             for gt_subject, p in zip(
-                node_data["subject"][list(G.nodes())], node_predictions.idxmax(axis=1)
+                node_data["subject"], node_predictions.idxmax(axis=1)
             )
         ]
     )
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         "-e",
         "--epochs",
         type=int,
-        default=20,
+        default=50,
         help="The number of epochs to train the model",
     )
     parser.add_argument(
@@ -280,7 +280,12 @@ if __name__ == "__main__":
         help="Patience for early stopping (number of epochs with no improvement after which training should be stopped)",
     )
     parser.add_argument(
-        "-a", "--attn_heads", type=int, default=1, help="Number of attention heads"
+        "-a",
+        "--attn_heads",
+        type=int,
+        nargs="*",
+        default=[8, 1],
+        help="Number of attention heads",
     )
     parser.add_argument(
         "-s",
@@ -336,7 +341,10 @@ if __name__ == "__main__":
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
 
     if args.checkpoint is None:
