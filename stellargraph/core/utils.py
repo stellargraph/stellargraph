@@ -168,7 +168,6 @@ def GCN_Aadj_feats_op(features, A, k=1, **kwargs):
         T_k = chebyshev_polynomial(
             rescale_laplacian(normalized_laplacian(A)), max_degree
         )
-        A = T_k
 
     elif filter == "smoothed":
         if isinstance(k, int) and k > 0:

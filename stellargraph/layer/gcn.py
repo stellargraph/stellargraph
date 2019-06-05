@@ -183,9 +183,9 @@ class GraphConvolution(Layer):
         # Remove singleton batch dimension
         features = K.squeeze(features, 0)
         out_indices = K.squeeze(out_indices, 0)
-        A = K.squeeze(As[0], 0)
 
         # Calculate the layer operation of GCN
+        A = As[0]
         h_graph = K.dot(A, features)
         output = K.dot(h_graph, self.kernel)
 
@@ -199,7 +199,7 @@ class GraphConvolution(Layer):
             output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
-        print("BATCH DIM:", batch_dim)
+        # print("BATCH DIM:", batch_dim)
         if batch_dim == 1:
             output = K.expand_dims(output, 0)
 
@@ -304,7 +304,7 @@ class GCN:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = As
+            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
 
         # Remove singleton batch dimension
         h_layer = x_in
@@ -318,7 +318,7 @@ class GCN:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
 
-            print("Hlayer:", h_layer)
+            # print("Hlayer:", h_layer)
 
         return h_layer
 
@@ -346,6 +346,7 @@ class GCN:
             A_placeholders = [A_indices_t, A_values_t]
 
         else:
+            # Placeholders for the dense adjacency matrix
             A_m = Input(batch_shape=(1, N_nodes, N_nodes))
             A_placeholders = [A_m]
 
@@ -360,4 +361,11 @@ class GCN:
 
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
+
+        # Flatten output by removing singleton batch dimension
+        if x_out.shape[0] == 1:
+            self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
+        else:
+            self.x_out_flat = x_out
+
         return x_inp, x_out

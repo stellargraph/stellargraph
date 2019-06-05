@@ -545,10 +545,11 @@ class SparseFullBatchNodeSequence(Sequence):
         self.target_indices = np.asanyarray(indices)
 
         # Ensure matrix is in COO format to extract indices
-        if not sps.isspmatrix_coo(A):
-            raise ValueError("Adjacency matrix not in expected sparse format")
-        else:
+        if sps.isspmatrix(A):
             A = A.tocoo()
+
+        else:
+            raise ValueError("Adjacency matrix not in expected sparse format")
 
         # Convert matrices to list of indices & values
         self.A_indices = np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
@@ -728,7 +729,7 @@ class FullBatchNodeGenerator:
 
         if func_opt is not None:
             if callable(func_opt):
-                self.Aadj = func_opt(
+                _, self.Aadj = func_opt(
                     features=self.features, A=self.Aadj, k=self.k, **kwargs
                 )
             else:

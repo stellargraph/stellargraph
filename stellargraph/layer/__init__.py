@@ -27,3 +27,4 @@ from .hinsage import *
 from .graph_attention import *
 from .link_inference import *
 from .gcn import *
+from .misc import SqueezedSparseConversion
