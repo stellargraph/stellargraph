@@ -201,7 +201,7 @@ if __name__ == "__main__":
         "-e",
         "--epochs",
         type=int,
-        default=20,
+        default=50,
         help="The number of epochs to train the model",
     )
     parser.add_argument(
@@ -223,7 +223,7 @@ if __name__ == "__main__":
         "--layer_sizes",
         type=int,
         nargs="*",
-        default=[16, 7],
+        default=[32, 7],
         help="The number of hidden features at each GCN layer",
     )
     parser.add_argument(
