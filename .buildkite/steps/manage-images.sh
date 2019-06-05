@@ -5,7 +5,7 @@ build_push() {
   local image="$1"
   local tag="$2"
 
-  echo "Building ${image}";
+  echo "Building ${image}"
   docker/"${image}"/build.sh
   docker tag stellargraph/"${image}" stellargraph/"${image}":"${tag}"
   docker push stellargraph/"${image}":"${tag}"
@@ -51,9 +51,8 @@ delete_numbered() {
       else
         echo "failed to delete 'stellargraph/${image_name}:${version}' (probably never uploaded)"
       fi
-      fi
-      #done
-    done
+    fi
+  done
 }
 
 images=(
@@ -87,4 +86,5 @@ case "${action}" in
   *)
     echo "[ERROR] unknown argument '${action}'" >&2
     exit 1
+    ;;
 esac

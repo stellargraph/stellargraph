@@ -24,6 +24,7 @@ __all__ = [
     "HinSAGENodeGenerator",
     "FullBatchNodeGenerator",
     "FullBatchNodeSequence",
+    "SparseFullBatchNodeSequence",
 ]
 
 import warnings
@@ -43,6 +44,7 @@ from ..data.explorer import (
 )
 from ..core.graph import StellarGraphBase, GraphSchema
 from ..core.utils import is_real_iterable
+from ..core.utils import GCN_Aadj_feats_op
 
 
 class NodeSequence(Sequence):
@@ -648,12 +650,31 @@ class FullBatchNodeSequence(Sequence):
 
 class FullBatchNodeGenerator:
     """
-    A data generator for node prediction with Homogeneous full-batch models, e.g., GCN, GAT, SGC.
+    A data generator for use with full-batch models on homogeneous graphs,
+    e.g., GCN, GAT, SGC.
     The supplied graph G should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
+
+    For these algorithms the adjacency matrix requires pre-processing and the
+    'method' option should be specified with the correct pre-processing for
+    each algorhtm. The options are as follows–
+
+    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+        This implements the linearized convolution of Eq. 8 in [1].
+    *   ``method='chebyshev'``: Implements the approximate spectral convolution
+        operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
+    *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
+        to implement the Simplified Graph Convolusions of Eq. 8 in [2].
+    *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
+        of the adjacency matrix to one, effectively adding self loops. This is
+        used by the GAT algorithm of [3].
+
+    [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
+    [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
 
     Example::
 
@@ -661,36 +682,40 @@ class FullBatchNodeGenerator:
         train_data_gen = G_generator.flow(node_ids, node_targets)
 
         # Fetch the data from train_data_gen, and feed into a Keras model:
-        [X, A], y_train, node_mask_train = train_data_gen.__getitem__(0)
+        [X, A], y_train, node_mask_train = train_data_gen[0]
         model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train, ...)
 
         # Alternatively, use the generator itself with model.fit_generator:
         model.fit_generator(train_gen, epochs=num_epochs, ...)
 
+    For more information, please see the GCN/GAT and SGC demos:
+        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        func_opt: an optional function to apply on features and adjacency matrix
-            (declared func_opt(features, Aadj, **kwargs))
-        k (None or int): If not none and filter is smoothed, the normalised adjacency matrix with self loops will be
-            raised to the k-th power before multiplying by the node features.
-        kwargs: additional parameters needed when using this generator with GCN model with the [func_opt] function.
-            It must be chebyshev, localpool, or smoothed filters (e.g. filter="localpool", or
-            filter="chebyshev", max_degree=2, or filter="smoothed"). For more information, please read
-            `GCN_Aadj_feats_op <https://github.com/stellargraph/stellargraph/tree/master/stellargraph/core>`_ in the
-            file **utils.py** and GCN demo
-            `gcn-cora-example.py <https://github.com/stellargraph/stellargraph/blob/master/demos/node-classification-gcn/gcn-cora-example.py>`_
+        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
+            'chebyshev','sgc', 'self_loops', or 'none'.
+        k (None or int): This is the smoothing order for the 'sgc' method or the
+            Chebyshev series order for the 'chebyshev' method. In both cases this
+            should be positive integer.
+        transform (callable): an optional function to apply on features and adjacency matrix
+            the function takes (features, Aadj) as arguments.
+        sparse (bool): If True (default) a sparse adjacency matrix is used,
+            if False a dense adjacency matrix is used.
+
     """
 
-    def __init__(self, G, name=None, func_opt=None, k=None, **kwargs):
+    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
+
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.name = name
         self.k = k
-        self.kwargs = kwargs
-        self.number_of_nodes = G.number_of_nodes()
+        # self.kwargs = kwargs
+        self.method = method
 
         # Check if the graph has features
         G.check_graph_for_ml()
@@ -703,7 +728,7 @@ class FullBatchNodeGenerator:
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
-        self.use_sparse = kwargs.get("sparse", True)
+        self.use_sparse = sparse
 
         # If sparse is specified, check that the backend is tensorflow
         if self.use_sparse and K.backend() != "tensorflow":
@@ -727,13 +752,32 @@ class FullBatchNodeGenerator:
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
-        if func_opt is not None:
-            if callable(func_opt):
-                _, self.Aadj = func_opt(
-                    features=self.features, A=self.Aadj, k=self.k, **kwargs
+        if transform is not None:
+            if callable(transform):
+                self.features, self.Aadj = transform(
+                    features=self.features, A=self.Aadj
                 )
             else:
-                raise ValueError("argument 'func_opt' must be callable")
+                raise ValueError("argument 'transform' must be a callable.")
+
+        if self.method in ["gcn", "chebyshev", "sgc"]:
+            self.features, self.Aadj = GCN_Aadj_feats_op(
+                features=self.features, A=self.Aadj, k=self.k, method=self.method
+            )
+
+        elif self.method in ["gat", "self_loops"]:
+            self.Aadj = self.Aadj + sps.diags(
+                np.ones(self.Aadj.shape[0]) - self.Aadj.diagonal()
+            )
+
+        elif self.method in [None, "none"]:
+            pass
+
+        else:
+            raise ValueError(
+                "Undefined method for adjacency matrix transformation. "
+                "Accepted: 'gcn' (default), 'chebyshev','sgc', and 'self_loops'."
+            )
 
     def flow(self, node_ids, targets=None):
         """

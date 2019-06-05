@@ -17,3 +17,7 @@ The dataset used in this demo is available at https://www.kaggle.com/START-UMD/g
 
 
 To run the demo notebook, extract the data into a directory, and adjust the data path in the notebook pointing to the raw data
+
+## Issues
+
+Some people experience troubles installing `igraph-python`. Please refer to the installation page https://igraph.org/python/ for the help. 

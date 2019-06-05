@@ -245,8 +245,6 @@ class GraphAttention(Layer):
         out_indices = inputs[1]  # output indices (1 x K)
         A = inputs[2]  # Adjacency matrix (1 x N x N)
 
-        print(">>", X.shape, A.shape, out_indices.shape)
-
         batch_dim, n_nodes, _ = K.int_shape(X)
         if batch_dim != 1:
             raise ValueError(
@@ -336,7 +334,6 @@ class GraphAttention(Layer):
             output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
-        print("BATCH DIM:", batch_dim)
         if batch_dim == 1:
             output = K.expand_dims(output, 0)
 
@@ -556,8 +553,6 @@ class GAT:
 
         x = x_in
         for layer in self._layers:
-            print("layer", layer)
-            print("input", K.shape(x), K.int_shape(x), x.shape)
             # layer is a GAT layer and needs A
             if isinstance(layer, self._gat_layer):
                 x = layer([x, out_indices])
@@ -616,7 +611,7 @@ class GAT:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
 
-            print("Hlayer:", h_layer)
+            # print("Hlayer:", h_layer)
 
         return self._normalization(h_layer)
 
@@ -684,7 +679,7 @@ class GAT:
 
     def default_model(self, flatten_output=False):
         warnings.warn(
-            "The .default_model() method will be deprecated soon. "
+            "The .default_model() method will be deprecated in future versions. "
             "Please use .node_model() or .link_model() methods instead.",
             PendingDeprecationWarning,
         )
