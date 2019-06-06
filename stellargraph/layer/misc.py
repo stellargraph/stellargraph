@@ -38,13 +38,14 @@ class SqueezedSparseConversion(Layer):
         dtype (str or tf.dtypes.DType): Data type for the created sparse matrix
     """
 
-    def __init__(self, shape, dtype=None):
+    def __init__(self, shape, axis=0, dtype=None):
         super().__init__()
 
         self.trainable = False
         self.supports_masking = True
         self.matrix_shape = shape
         self.dtype = dtype
+        self.axis = axis
 
         # Check backend
         if K.backend() != "tensorflow":
@@ -61,7 +62,7 @@ class SqueezedSparseConversion(Layer):
 
     def call(self, inputs):
         """
-        Applies the layer.
+        Creates a Tensorflow `SparseTensor` from the inputs
 
         Args:
             inputs (list): Two input tensors contining
@@ -72,13 +73,19 @@ class SqueezedSparseConversion(Layer):
         Returns:
             Tensorflow SparseTensor that represents the converted sparse matrix.
         """
-        # Here we reduce the batch dimension (if 1)
-        indices = K.squeeze(inputs[0], 0)
-        values = K.squeeze(inputs[1], 0)
+        # Here we squeeze the specified axis
+        if self.axis is not None:
+            indices = K.squeeze(inputs[0], self.axis)
+            values = K.squeeze(inputs[1], self.axis)
+        else:
+            indices = inputs[0]
+            values = inputs[1]
 
-        if not self.dtype:
-            dtype = K.dtype(values)
+        if self.dtype:
+            values = K.cast(values, self.dtype)
 
+        # Import tensorflow here so that the backend check will work without
+        # tensorflow installed.
         import tensorflow as tf
 
         # Build sparse tensor for the matrix

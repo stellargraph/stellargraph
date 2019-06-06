@@ -24,7 +24,6 @@ from keras import activations, constraints, initializers, regularizers
 from keras import backend as K
 from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 from stellargraph.mapper import FullBatchNodeGenerator
-from .misc import SqueezedSparseConversion
 
 
 class GraphAttention(Layer):
