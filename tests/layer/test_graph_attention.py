@@ -49,14 +49,15 @@ def example_graph_1(feature_size=None):
 
 
 class Test_GraphAttention_layer:
+    """
+    Tests of GraphAttention layer
+    """
+
     N = 10
     F_in = 5
     F_out = 2
     attn_heads = 8
     activation = "relu"
-    """
-    Tests of GraphAttention layer
-    """
 
     def test_constructor(self):
         # attn_heads_reduction = "concat":
@@ -105,8 +106,6 @@ class Test_GraphAttention_layer:
         x_out = gat(x_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
-        print(x_out)
-        print(model.output_shape)
 
         assert model.output_shape[-1] == self.F_out * self.attn_heads
 
@@ -212,15 +211,16 @@ class Test_GraphAttention_layer:
 
 
 class Test_GAT:
+    """
+    Tests of GAT class
+    """
+
     N = 10
     F_in = 5
     F_out = 2
     attn_heads = 8
     layer_sizes = [4, 16]
     activations = ["relu", "linear"]
-    """
-    Tests of GAT class
-    """
 
     def test_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
