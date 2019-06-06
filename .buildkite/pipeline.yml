@@ -18,11 +18,11 @@ steps:
     agents:
       queue: 't2medium'
 
-  - label: ":python: 3.7.2"
+  - label: ":python: 3.7"
     command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
-        image: "python:3.7.2"
+        image: "python:3.7-slim"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - GIT_BRANCH=$BUILDKITE_BRANCH
