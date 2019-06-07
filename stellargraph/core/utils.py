@@ -157,8 +157,6 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     # build symmetric adjacency matrix
     A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
 
-    method = method
-
     if method == "gcn":
         # Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
         print("Using GCN (local pooling) filters...")

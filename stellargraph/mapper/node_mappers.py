@@ -714,7 +714,6 @@ class FullBatchNodeGenerator:
         self.graph = G
         self.name = name
         self.k = k
-        # self.kwargs = kwargs
         self.method = method
 
         # Check if the graph has features
