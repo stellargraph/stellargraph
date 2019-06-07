@@ -341,26 +341,53 @@ class GraphAttention(Layer):
 
 class GAT:
     """
-    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
+    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads,
+    Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
+
+    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
+    pre-processing the generator object should be instantiated as follows::
+
+        generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
+
+    Note that currently the GAT class is not compatible with sparse adjacency matrices and
+    therefore a dense adjacency matrix is required for GAT, hence the ``sparse=False`` option.
+
+    For more details, please see the GAT demo notebook:
+    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
+
+    Examples:
+        Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
+
+            generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
+            gat = GAT(
+                    layer_sizes=[8, 4],
+                    activations=["elu","softmax"],
+                    attn_heads=8,
+                    generator=generator,
+                    in_dropout=0.5,
+                    attn_dropout=0.5,
+                )
+            x_inp, predictions = gat.node_model()
 
     Args:
-            layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
-                the number of GraphAttention layers in the stack.
-            attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
+        layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
+            the number of GraphAttention layers in the stack.
+        attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
 
-                - a single integer: the passed value of `attn_heads` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
-                - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
+            - a single integer: the passed value of `attn_heads` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
+            - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
 
-            attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
-                for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
-                If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
-                except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
-            activations (list of str): list of activations applied to each layer's output
-            bias (bool): toggles an optional bias in GAT layers
-            in_dropout (float): dropout rate applied to input features of each GAT layer
-            attn_dropout (float): dropout rate applied to attention maps
-            normalize (str or None): normalization applied to the final output features of the GAT layers stack
-            generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
+        attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
+            for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
+            If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
+            except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
+        activations (list of str): list of activations applied to each layer's output
+        bias (bool): toggles an optional bias in GAT layers
+        in_dropout (float): dropout rate applied to input features of each GAT layer
+        attn_dropout (float): dropout rate applied to attention maps
+        normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
+        generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
     """
 
     def __init__(
@@ -372,7 +399,7 @@ class GAT:
         bias=True,
         in_dropout=0.0,
         attn_dropout=0.0,
-        normalize="l2",
+        normalize=None,
         generator=None,
     ):
         self._gat_layer = GraphAttention

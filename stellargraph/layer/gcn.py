@@ -208,11 +208,36 @@ class GraphConvolution(Layer):
 
 class GCN:
     """
-    A stack of Graph Convolutional layers to implement the graph convolution network model as in https://arxiv.org/abs/1609.02907
+    A stack of Graph Convolutional layers that implement a graph convolution network model
+    as in https://arxiv.org/abs/1609.02907
 
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
+
+    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
+    pre-processing the generator object should be instantiated as follows::
+
+        generator = FullBatchNodeGenerator(G, method="gcn")
+
+    Note that currently the GCN class is compatible with both sparse and dense adjacency
+    matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
+
+    For more details, please see the GCN demo notebook:
+    demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
+
+    Examples:
+        Creating a GCN node classification model from an existing :class:`StellarGraph` object ``G``::
+
+            generator = FullBatchNodeGenerator(G, method="gcn")
+            gcn = GCN(
+                    layer_sizes=[32, 4],
+                    activations=["elu","softmax"],
+                    generator=generator,
+                    dropout=0.5
+                )
+            x_inp, predictions = gcn.node_model()
 
     Args:
         layer_sizes (list of int): list of output sizes of GCN layers in the stack
