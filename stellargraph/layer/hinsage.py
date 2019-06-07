@@ -427,6 +427,7 @@ class HinSAGE:
         """
         Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
+
         Args:
             flatten_output: The HinSAGE model will return a list of output tensors
                 of form (batch_size, 1, feature_size). If this flag
