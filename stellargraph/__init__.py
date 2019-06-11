@@ -33,5 +33,6 @@ from stellargraph.utils.ensemble import Ensemble
 custom_keras_layers = {
     "GraphConvolution": layer.GraphConvolution,
     "GraphAttention": layer.GraphAttention,
+    "GraphAttentionSparse": layer.GraphAttentionSparse,
     "SqueezedSparseConversion": layer.SqueezedSparseConversion,
 }

@@ -14,13 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from keras import Input
-from keras.engine import Layer
-from keras import activations, initializers, constraints, regularizers
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape
+from keras import activations, initializers, constraints, regularizers
+from keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
-from ..mapper.node_mappers import FullBatchNodeGenerator
+from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion
 
 
@@ -164,8 +162,9 @@ class GraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (list): a list of input tensors that includes 2
-                node features (matrix of size N x F), and
+            inputs (list): a list of 3 input tensors that includes
+                node features (size 1 x N x F),
+                output indices (size 1 x M)
                 graph adjacency matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
@@ -332,7 +331,12 @@ class GCN:
         else:
             Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
 
-        # Remove singleton batch dimension
+        # TODO: Support multiple matrices?
+        if len(Ainput) != 1:
+            raise NotImplementedError(
+                "The GCN method currently only accepts a single matrix"
+            )
+
         h_layer = x_in
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
