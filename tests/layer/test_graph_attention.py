@@ -22,14 +22,16 @@ from stellargraph.mapper.node_mappers import (
     FullBatchNodeGenerator,
     GraphSAGENodeGenerator,
 )
-from stellargraph.layer.graph_attention import *
+from stellargraph.layer import *
 
 import keras
 import keras.backend as K
 from keras.layers import Input
+
 import numpy as np
 import networkx as nx
 import pytest
+import scipy.sparse as sps
 
 
 def example_graph_1(feature_size=None):
@@ -48,7 +50,7 @@ def example_graph_1(feature_size=None):
         return StellarGraph(G)
 
 
-class Test_GraphAttention_layer:
+class Test_GraphAttention:
     """
     Tests of GraphAttention layer
     """
@@ -58,10 +60,31 @@ class Test_GraphAttention_layer:
     F_out = 2
     attn_heads = 8
     activation = "relu"
+    layer = GraphAttention
+
+    def get_inputs(self):
+        x_inp = [
+            Input(batch_shape=(1, self.N, self.F_in)),
+            Input(batch_shape=(1, None), dtype="int32"),
+            Input(batch_shape=(1, self.N, self.N)),
+        ]
+
+        # For dense matrix, remove batch dimension
+        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[2])
+        layer_inp = x_inp[:2] + [A_mat]
+
+        return x_inp, layer_inp
+
+    def get_matrix(self, edges=[]):
+        # adjacency matrix with self-loops only
+        A = np.eye(self.N)
+        for e, v in edges:
+            A[e[0], e[1]] = v
+        return [A[None, :, :]]
 
     def test_constructor(self):
         # attn_heads_reduction = "concat":
-        layer = GraphAttention(
+        layer = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
@@ -73,7 +96,7 @@ class Test_GraphAttention_layer:
         assert layer.activation == keras.activations.get(self.activation)
 
         # attn_heads_reduction = "average":
-        layer = GraphAttention(
+        layer = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
@@ -83,7 +106,7 @@ class Test_GraphAttention_layer:
 
         # attn_heads_reduction = "ave":
         with pytest.raises(ValueError):
-            GraphAttention(
+            self.layer(
                 units=self.F_out,
                 attn_heads=self.attn_heads,
                 attn_heads_reduction="ave",
@@ -91,35 +114,33 @@ class Test_GraphAttention_layer:
             )
 
     def test_apply_concat(self):
-        gat = GraphAttention(
+        gat = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
             activation=self.activation,
             kernel_initializer="ones",
         )
-        x_inp = [
-            Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
-            Input(batch_shape=(1, self.N, self.N)),
-        ]
-        x_out = gat(x_inp)
+        x_inp, layer_inp = self.get_inputs()
+
+        # Instantiate layer with squeezed matrix
+        x_out = gat(layer_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
 
         assert model.output_shape[-1] == self.F_out * self.attn_heads
 
+        As = self.get_matrix()
         X = np.ones((1, self.N, self.F_in))  # features
-        A = np.eye(self.N)[None, :, :]  # adjacency matrix with self-loops only
         all_indices = np.arange(self.N)[None, :]
 
         expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
-        actual = model.predict([X, all_indices, A])[0]
+        actual = model.predict([X, all_indices] + As)
 
-        assert expected == pytest.approx(actual)
+        assert np.allclose(actual.squeeze(), expected)
 
     def test_apply_average(self):
-        gat = GraphAttention(
+        gat = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
@@ -129,12 +150,10 @@ class Test_GraphAttention_layer:
             bias_initializer="zeros",
             final_layer=False,
         )
-        x_inp = [
-            Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
-            Input(batch_shape=(1, self.N, self.N)),
-        ]
-        x_out = gat(x_inp)
+        x_inp, layer_inp = self.get_inputs()
+
+        # Instantiate layer with squeezed matrix
+        x_out = gat(layer_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
         assert model.output_shape[-1] == self.F_out
@@ -143,16 +162,16 @@ class Test_GraphAttention_layer:
         for i in range(self.N):
             X[:, i, :] = i + 1
 
-        A = np.eye(self.N)[None, ...]  # adjacency matrix with self-loops only
+        As = self.get_matrix()
         all_indices = np.arange(self.N)[None, :]
 
         expected = (X * self.F_in)[..., : self.F_out]
-        actual = model.predict([X, all_indices, A])
+        actual = model.predict([X, all_indices] + As)
 
-        assert np.allclose(expected, actual)
+        assert np.allclose(actual.squeeze(), expected)
 
     def test_apply_average_with_neighbours(self):
-        gat = GraphAttention(
+        gat = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
@@ -162,12 +181,10 @@ class Test_GraphAttention_layer:
             bias_initializer="zeros",
             final_layer=False,
         )
-        x_inp = [
-            Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
-            Input(batch_shape=(1, self.N, self.N)),
-        ]
-        x_out = gat(x_inp)
+        x_inp, layer_inp = self.get_inputs()
+
+        # Instantiate layer with squeezed matrix
+        x_out = gat(layer_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
         assert model.output_shape[-1] == self.F_out
@@ -176,19 +193,18 @@ class Test_GraphAttention_layer:
         for i in range(self.N):
             X[:, i, :] = i
 
-        A = np.eye(self.N)[None, ...]  # adjacency matrix with self-loops only
-        A[:, 0, 1] = A[:, 1, 0] = 1.0  # add undirected link between nodes 0 and 1
+        As = self.get_matrix([((0, 1), 1), ((1, 0), 1)])
 
         all_indices = np.arange(self.N)[None, :]
 
         expected = (X * self.F_in)[..., : self.F_out]
         expected[:, :2] = self.F_in / 2
-        actual = model.predict([X, all_indices, A])
+        actual = model.predict([X, all_indices] + As)
 
         assert np.allclose(expected, actual)
 
     def test_layer_config(self):
-        layer = GraphAttention(
+        layer = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="concat",
@@ -208,6 +224,48 @@ class Test_GraphAttention_layer:
         assert conf["bias_regularizer"] == None
         assert conf["kernel_constraint"] == None
         assert conf["bias_constraint"] == None
+
+
+class Test_GraphAttentionSparse(Test_GraphAttention):
+    """
+    Tests of GraphAttentionSparse layer
+    """
+
+    N = 10
+    F_in = 5
+    F_out = 2
+    attn_heads = 8
+    activation = "relu"
+    layer = GraphAttentionSparse
+
+    def get_inputs(self):
+        x_inp = [
+            Input(batch_shape=(1, self.N, self.F_in)),
+            Input(batch_shape=(1, None), dtype="int32"),
+            Input(batch_shape=(1, None, 2), dtype="int64"),
+            Input(batch_shape=(1, None), dtype="float32"),
+        ]
+
+        # Test with final_layer=False
+        A_mat = SqueezedSparseConversion(shape=(self.N, self.N))(x_inp[2:])
+
+        # For dense matrix, remove batch dimension
+        layer_inp = x_inp[:2] + [A_mat]
+
+        return x_inp, layer_inp
+
+    def get_matrix(self, edges=[]):
+        # adjacency matrix with self-loops + edges
+        A_sparse = sps.eye(self.N, format="lil")
+        for e, v in edges:
+            A_sparse[e[0], e[1]] = v
+        # Extract indices & values to feed to tensorflow
+        A_sparse = A_sparse.tocoo()
+        A_indices = np.expand_dims(
+            np.hstack((A_sparse.row[:, None], A_sparse.col[:, None])), 0
+        )
+        A_values = np.expand_dims(A_sparse.data, 0)
+        return [A_indices, A_values]
 
 
 class Test_GAT:
@@ -353,7 +411,7 @@ class Test_GAT:
 
     def test_gat_node_model_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G)
+        gen = FullBatchNodeGenerator(G, sparse=False)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -369,6 +427,23 @@ class Test_GAT:
         assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
+    def test_gat_sparse_node_model_constructor(self):
+        G = example_graph_1(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(G, sparse=True)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+            bias=True,
+        )
+
+        assert len(gat.node_model()) == 2
+        x_in, x_out = gat.node_model()
+        assert len(x_in) == 4
+        assert int(x_in[0].shape[-1]) == self.F_in
+        assert int(x_out.shape[-1]) == self.layer_sizes[-1]
+
     def test_gat_node_model_constructor_no_generator(self):
         G = example_graph_1(feature_size=self.F_in)
         gat = GAT(
@@ -377,6 +452,7 @@ class Test_GAT:
             attn_heads=self.attn_heads,
             bias=True,
         )
+        assert gat.use_sparse == False
 
         with pytest.raises(RuntimeError):
             x_in, x_out = gat.node_model()
@@ -384,7 +460,6 @@ class Test_GAT:
         x_in, x_out = gat.node_model(num_nodes=1000, feature_size=self.F_in)
         assert len(x_in) == 3
         assert int(x_in[0].shape[-1]) == self.F_in
-        assert K.int_shape(x_in[-1]) == (1, 1000, 1000)
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
     def test_gat_node_model_constructor_wrong_generator(self):
