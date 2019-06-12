@@ -279,10 +279,12 @@ class Test_GAT:
     attn_heads = 8
     layer_sizes = [4, 16]
     activations = ["relu", "linear"]
+    sparse = False
+    method = "gat"
 
     def test_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G)
+        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         # test error if no activations are passed:
         with pytest.raises(TypeError):
             gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
@@ -411,7 +413,7 @@ class Test_GAT:
 
     def test_gat_node_model_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=False)
+        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -422,14 +424,14 @@ class Test_GAT:
 
         assert len(gat.node_model()) == 2
         x_in, x_out = gat.node_model()
-        assert len(x_in) == 3
+        assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
     def test_gat_sparse_node_model_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=True)
+        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -440,7 +442,7 @@ class Test_GAT:
 
         assert len(gat.node_model()) == 2
         x_in, x_out = gat.node_model()
-        assert len(x_in) == 4
+        assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
@@ -458,7 +460,7 @@ class Test_GAT:
             x_in, x_out = gat.node_model()
 
         x_in, x_out = gat.node_model(num_nodes=1000, feature_size=self.F_in)
-        assert len(x_in) == 3
+        assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
@@ -478,7 +480,7 @@ class Test_GAT:
 
     def test_gat_node_model_l2norm(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=False)
+        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -507,7 +509,7 @@ class Test_GAT:
 
     def test_gat_node_model_no_norm(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=False)
+        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -549,7 +551,7 @@ class Test_GAT:
 
     def test_gat_serialize(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=False)
+        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -582,3 +584,8 @@ class Test_GAT:
             1.0 / G.number_of_nodes()
         )
         assert np.allclose(expected, actual[0])
+
+
+def TestGATsparse(Test_GAT):
+    sparse = False
+    method = "gat"
