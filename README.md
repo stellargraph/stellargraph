@@ -193,11 +193,11 @@ The StellarGraph library currently includes the following algorithms for graph m
   taking into account their types and the types of links between them.
 
 * GAT
-  - Graph ATtention Network algorithm [4] for homogeneous graphs. The implementation supports representation learning and node classification for homogeneous graphs.
+  - Graph ATtention Network algorithm [4] for homogeneous graphs. The implementation supports representation learning and node classification for homogeneous graphs. There are versions of the graph attention layer that support both sparse and dense adjacency matrices.
 
 * GCN
   - Graph Convolutional Network algorithm [5] for homogeneous graphs.
-  The implementation supports representation learning and node classification for homogeneous graphs.
+  The implementation supports representation learning and node classification for homogeneous graphs. There are versions of the graph convolutional layer that support both sparse and dense adjacency matrices.
 
 * SGC
   - Simplified Graph Convolutional network algorithm [6] for homogeneous graphs. 
