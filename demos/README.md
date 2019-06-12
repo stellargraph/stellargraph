@@ -42,6 +42,11 @@ The examples folder structure is shown below.
 
     Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is          demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings. 
 
+* [`/interpretability`](https://github.com/stellargraph/stellargraph/tree/master/demos/interpretability)
+
+    Examples of using saliency map based methods, such as integrated gradients, to provide interpretability to the graph neural networks, e.g., GCN. Saliency maps are used to approximate the importance of the nodes and links (in the ego network of a target node) while making the prediction.
+
+
 
 ## References
 
@@ -66,3 +71,5 @@ ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
 
 7. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. 
 ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
+
+8. Axiomatic Attribution for Deep Networks. Mukund Sundararajan, Ankur Taly and Qiqi Yan. ICML 2017. ([link](https://arxiv.org/pdf/1703.01365.pdf))
