@@ -61,7 +61,7 @@ def train(
     target_name="subject",
 ):
     """
-    Train a GAT model on the specified graph G with given parameters, evaluate it, and save the model.
+    Train a GAT model on the specified graph G with given parameters, zevaluate it, and save the model.
 
     Args:
         edgelist: Graph edgelist
@@ -105,7 +105,7 @@ def train(
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
+    generator = FullBatchNodeGenerator(G, method="gat")
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
