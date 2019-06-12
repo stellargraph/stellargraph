@@ -703,7 +703,6 @@ class Test_FullBatchNodeGenerator:
 
     def test_generator_constructor(self):
         generator = FullBatchNodeGenerator(self.G)
-
         assert generator.Aadj.shape == (self.N, self.N)
         assert generator.features.shape == (self.N, self.n_feat)
 
@@ -717,69 +716,64 @@ class Test_FullBatchNodeGenerator:
         with pytest.raises(TypeError):
             generator = FullBatchNodeGenerator(Ghin)
 
-    def generator_flow(self, G, node_ids, node_targets, method="none"):
-        generator = FullBatchNodeGenerator(G, sparse=False, method=method)
+    def generator_flow(
+        self, G, node_ids, node_targets, sparse=False, method="none", k=1
+    ):
+        generator = FullBatchNodeGenerator(G, sparse=sparse, method=method, k=k)
         n_nodes = len(G)
 
         gen = generator.flow(node_ids, node_targets)
-        [X, tind, A], y = gen[0]
-        assert isinstance(A, np.ndarray)
+        if sparse:
+            [X, tind, A_ind, A_val], y = gen[0]
+            A_sparse = sps.coo_matrix(
+                (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])), shape=(n_nodes, n_nodes)
+            )
+            A_dense = A_sparse.toarray()
 
-        A_dense = A[0]
-        if method == "none":
-            assert np.allclose(A_dense, nx.to_numpy_array(G))
-
-        # For self_loops check that the diagonals are one
-        elif method == "self_loops":
-            assert np.allclose(A_dense.diagonal(), 1)
+        else:
+            [X, tind, A], y = gen[0]
+            A_dense = A[0]
 
         assert np.allclose(X, gen.features)  # X should be equal to gen.features
         assert tind.shape[1] == len(node_ids)
+
         if node_targets is not None:
             assert np.allclose(y, node_targets)
-
-        generator = FullBatchNodeGenerator(G, sparse=True, method=method)
-        gen = generator.flow(node_ids, node_targets)
-        [X, tind, A_ind, A_val], y = gen[0]
-        A_sparse = sps.coo_matrix(
-            (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])), shape=(n_nodes, n_nodes)
-        )
-
-        if method == "none":
-            assert np.allclose(A_sparse.toarray(), nx.to_numpy_array(G))
-        else:
-            assert np.allclose(A_sparse.toarray(), A_dense)
 
         # Check that the diagonals are one
         if method == "self_loops":
-            assert np.allclose(A_sparse.diagonal(), 1)
+            assert np.allclose(A_dense.diagonal(), 1)
 
-        assert np.allclose(X, gen.features)  # X should be equal to gen.features
-        assert tind.shape[1] == len(node_ids)
-        if node_targets is not None:
-            assert np.allclose(y, node_targets)
-        return tind, y
+        return A_dense, tind, y
 
     def test_generator_flow_notargets(self):
         node_ids = list(self.G.nodes())[:3]
-        tind, y = self.generator_flow(self.G, node_ids, None, method="none")
+        _, tind, y = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="none"
+        )
+        assert np.allclose(tind, range(3))
+        _, tind, y = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="none"
+        )
         assert np.allclose(tind, range(3))
 
         node_ids = list(self.G.nodes())
-        tind, y = self.generator_flow(self.G, node_ids, None, method="none")
+        _, tind, y = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="none"
+        )
         assert np.allclose(tind, range(len(node_ids)))
-
-        # Check other pre-processing options
-        node_ids = list(self.G.nodes())[:20]
-        self.generator_flow(self.G, node_ids, None, method="gcn")
-
-        node_ids = list(self.G.nodes())[:20]
-        self.generator_flow(self.G, node_ids, None, method="self_loops")
+        _, tind, y = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="none"
+        )
+        assert np.allclose(tind, range(len(node_ids)))
 
     def test_generator_flow_withtargets(self):
         node_ids = list(self.G.nodes())[:3]
         node_targets = np.ones((len(node_ids), self.target_dim)) * np.arange(3)[:, None]
-        tind, y = self.generator_flow(self.G, node_ids, node_targets)
+        _, tind, y = self.generator_flow(self.G, node_ids, node_targets, sparse=True)
+        assert np.allclose(tind, range(3))
+        assert np.allclose(y, node_targets[:3])
+        _, tind, y = self.generator_flow(self.G, node_ids, node_targets, sparse=False)
         assert np.allclose(tind, range(3))
         assert np.allclose(y, node_targets[:3])
 
@@ -788,7 +782,7 @@ class Test_FullBatchNodeGenerator:
             np.ones((len(node_ids), self.target_dim))
             * np.arange(len(node_ids))[:, None]
         )
-        tind, y = self.generator_flow(self.G, node_ids, node_targets)
+        _, tind, y = self.generator_flow(self.G, node_ids, node_targets)
         assert np.allclose(tind, range(len(node_ids))[::-1])
         assert np.allclose(y, node_targets)
 
@@ -818,24 +812,8 @@ class Test_FullBatchNodeGenerator:
         G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
         generator = FullBatchNodeGenerator(G, name="test", method=None)
-
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
-
-    def test_fullbatch_generator_init_2(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
-
-        def func(features, A, **kwargs):
-            return features * features, A
-
-        generator = FullBatchNodeGenerator(G, "test", transform=func)
-        assert generator.name == "test"
-        assert np.array_equal(feats * feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
         G, feats = create_graph_features()
@@ -849,3 +827,73 @@ class Test_FullBatchNodeGenerator:
 
         with pytest.raises(ValueError):
             generator = FullBatchNodeGenerator(G, "test", transform=func)
+
+    def test_fullbatch_generator_transform(self):
+        G, feats = create_graph_features()
+        nodes = G.nodes()
+        node_features = pd.DataFrame.from_dict(
+            {n: f for n, f in zip(nodes, feats)}, orient="index"
+        )
+        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+        def func(features, A, **kwargs):
+            return features, A.dot(A)
+
+        generator = FullBatchNodeGenerator(G, "test", transform=func)
+        assert generator.name == "test"
+
+        A = nx.to_numpy_array(G)
+        assert np.array_equal(A.dot(A), generator.Aadj.toarray())
+
+    def test_generator_methods(self):
+        node_ids = list(self.G.nodes())
+        Aadj = nx.to_numpy_array(self.G)
+        Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
+        Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
+        Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)
+
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="none"
+        )
+        assert np.allclose(A_dense, Aadj)
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="none"
+        )
+        assert np.allclose(A_dense, Aadj)
+
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="self_loops"
+        )
+        assert np.allclose(A_dense, Aadj_selfloops)
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="self_loops"
+        )
+        assert np.allclose(A_dense, Aadj_selfloops)
+
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="gat"
+        )
+        assert np.allclose(A_dense, Aadj_selfloops)
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="gat"
+        )
+        assert np.allclose(A_dense, Aadj_selfloops)
+
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="gcn"
+        )
+        assert np.allclose(A_dense, Agcn)
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="gcn"
+        )
+        assert np.allclose(A_dense, Agcn)
+
+        # Check other pre-processing options
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=True, method="sgc", k=2
+        )
+        assert np.allclose(A_dense, Agcn.dot(Agcn))
+        A_dense, _, _ = self.generator_flow(
+            self.G, node_ids, None, sparse=False, method="sgc", k=2
+        )
+        assert np.allclose(A_dense, Agcn.dot(Agcn))

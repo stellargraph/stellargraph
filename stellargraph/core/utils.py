@@ -150,7 +150,7 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     """
 
     def preprocess_adj(adj, symmetric=True):
-        adj = adj + sp.eye(adj.shape[0])
+        adj = adj + sp.diags(np.ones(adj.shape[0]) - adj.diagonal())
         adj = normalize_adj(adj, symmetric)
         return adj
 

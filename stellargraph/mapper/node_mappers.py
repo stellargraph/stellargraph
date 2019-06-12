@@ -759,7 +759,7 @@ class FullBatchNodeGenerator:
             else:
                 raise ValueError("argument 'transform' must be a callable.")
 
-        if self.method in ["gcn", "chebyshev", "sgc"]:
+        elif self.method in ["gcn", "chebyshev", "sgc"]:
             self.features, self.Aadj = GCN_Aadj_feats_op(
                 features=self.features, A=self.Aadj, k=self.k, method=self.method
             )
