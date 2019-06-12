@@ -8,7 +8,6 @@
 - SGC Implementation [\#361](https://github.com/stellargraph/stellargraph/pull/361) ([PantelisElinas](https://github.com/PantelisElinas))
 - Updated to support Python 3.7 [\#348](https://github.com/stellargraph/stellargraph/pull/348)
 - FullBatchNodeGenerator API update [\#405](https://github.com/stellargraph/stellargraph/pull/405)
-- Saliency maps based interpretability tool and demo. [\#383](https://github.com/stellargraph/stellargraph/pull/383)
 
 **Refactoring:**
 - Added build\(\) method for GraphSAGE and HinSAGE model classes [\#385](https://github.com/stellargraph/stellargraph/pull/385)

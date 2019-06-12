@@ -73,8 +73,7 @@ The StellarGraph library can be used to solve tasks using graph-structured data,
 - Classification and attribute inference of nodes or edges;
 - Link prediction.
 
-The StellarGraph library implements the saliency map tools (e.g., integrated gradients) in the graph neural network context to
-provide interpretability in decision making. These tools are able to give hints about which nodes and edges play more important roles while making the predictions.
+The StellarGraph library implements the saliency map tools (e.g., integrated gradients) in the graph neural network context to provide interpretability in decision making. These tools are able to give hints about which nodes and edges play more important roles while making the predictions.
 
 
 We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve
