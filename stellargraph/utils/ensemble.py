@@ -234,7 +234,7 @@ class Ensemble(object):
             generator: The generator object for training data. if test_data is not None, it should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
-                NodeSequence, LinkSequence, or FullBatchNodeSequence.
+                NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
             epochs (int): (Keras-specific parameter) The number of training epochs.
@@ -243,7 +243,7 @@ class Ensemble(object):
             validation_generator: A generator for validation data that is optional (None). If not None then, if val_data
                 is not None, it should be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator,
                 FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator. However, if val_data is None,
-                then it should be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.
+                then it should be one of type NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             validation_steps (None or int): (Keras-specific parameter) If validation_generator is not None, then it
                 specifies the number of steps to yield from the generator before stopping at the end of every epoch.
             class_weight (None or dict): (Keras-specific parameter) If not None, it should be a dictionary
@@ -310,6 +310,7 @@ class Ensemble(object):
                 sg.mapper.NodeSequence,
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
+                sg.mapper.SparseFullBatchNodeSequence,
             ),
         ):
             raise ValueError(
@@ -458,10 +459,12 @@ class Ensemble(object):
                 sg.mapper.NodeSequence,
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
+                sg.mapper.SparseFullBatchNodeSequence,
             ),
         ):
             raise ValueError(
-                "({}) If test_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence "
+                "({}) If test_data is None, generator must be one of type NodeSequence, "
+                "LinkSequence, FullBatchNodeSequence, or SparseFullBatchNodeSequence "
                 "but received object of type {}".format(
                     type(self).__name__, type(generator)
                 )
@@ -513,7 +516,7 @@ class Ensemble(object):
             generator: The generator object that, if predict_data is None, should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if predict_data is not None, then generator should be one of type
-                NodeSequence, LinkSequence, or FullBatchNodeSequence.
+                NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             predict_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the node IDs
                 to make predictions for. If generator is of type FullBatchNodeGenerator then predict_data should be all
                 the nodes in the graph since full batch approaches such as GCN and GAT can only be used to make
@@ -558,10 +561,12 @@ class Ensemble(object):
                 sg.mapper.NodeSequence,
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
+                sg.mapper.SparseFullBatchNodeSequence,
             ),
         ):
             raise ValueError(
-                "({}) If x is None, generator must be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.".format(
+                "({}) If x is None, generator must be one of type NodeSequence, "
+                "LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.".format(
                     type(self).__name__
                 )
             )
@@ -597,7 +602,7 @@ class Ensemble(object):
             # average the predictions across models and predictions per query point
             predictions = np.mean(predictions, axis=(0, 1))
 
-        if len(predictions.shape) > 4:
-            predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
+        # if len(predictions.shape) > 4:
+        #     predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
         return predictions

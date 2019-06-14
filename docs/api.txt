@@ -40,14 +40,14 @@ GCN model
 -------------
 
 .. automodule:: stellargraph.layer.gcn
-  :members: GraphConvolution, GCN
+  :members: GCN, GraphConvolution
 
 
 GAT model
 -------------
 
 .. automodule:: stellargraph.layer.graph_attention
-  :members: GraphAttention, GAT
+  :members: GAT, GraphAttention
 
 
 Link prediction layers

@@ -25,8 +25,9 @@ from keras import optimizers, losses, layers, metrics, regularizers
 from sklearn import feature_extraction, model_selection
 
 import stellargraph as sg
-from stellargraph.layer import GCN, GraphConvolution
+from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
+from stellargraph.core.utils import GCN_Aadj_feats_op
 
 
 def train(
@@ -39,6 +40,7 @@ def train(
     layer_sizes=[16, 7],
     learning_rate=0.01,
     activations=["relu", "softmax"],
+    num_epochs=10,
 ):
     """
 
@@ -79,7 +81,7 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_gen, epochs=100, validation_data=val_gen, verbose=2, shuffle=False
+        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
     )
 
     return model
@@ -99,9 +101,7 @@ def test(test_nodes, test_targets, generator, model_file):
 
     test_gen = generator.flow(test_nodes, test_targets)
 
-    model = keras.models.load_model(
-        model_file, custom_objects={"GraphConvolution": GraphConvolution}
-    )
+    model = keras.models.load_model(model_file, custom_objects=sg.custom_keras_layers)
     model.compile(
         loss=losses.categorical_crossentropy,
         weighted_metrics=[metrics.categorical_accuracy],
@@ -117,7 +117,7 @@ def test(test_nodes, test_targets, generator, model_file):
         print("\t{}: {:0.4f}".format(name, val))
 
 
-def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
+def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs):
 
     edgelist = pd.read_csv(
         os.path.join(graph_loc, 'cora.cites'), sep="\t", header=None, names=['source', 'target']
@@ -133,7 +133,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
     node_data = pd.read_csv(
         os.path.join(graph_loc, 'cora.content'), sep="\t", header=None, names=column_names
 
-      
+
     )
 
     target_encoding = feature_extraction.DictVectorizer(sparse=False)
@@ -177,6 +177,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
         layer_sizes,
         learning_rate,
         activations,
+        num_epochs
     )
 
     # Save the trained model
@@ -200,7 +201,7 @@ if __name__ == "__main__":
         "-e",
         "--epochs",
         type=int,
-        default=10,
+        default=50,
         help="The number of epochs to train the model",
     )
     parser.add_argument(
@@ -222,7 +223,7 @@ if __name__ == "__main__":
         "--layer_sizes",
         type=int,
         nargs="*",
-        default=[16, 7],
+        default=[32, 7],
         help="The number of hidden features at each GCN layer",
     )
     parser.add_argument(
@@ -244,4 +245,11 @@ if __name__ == "__main__":
         )
 
     activations = ["relu", "softmax"]
-    main(graph_loc, args.layer_sizes, activations, args.dropout, args.learningrate)
+    main(
+        graph_loc,
+        args.layer_sizes,
+        activations,
+        args.dropout,
+        args.learningrate,
+        args.epochs,
+    )

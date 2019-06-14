@@ -150,14 +150,12 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     """
 
     def preprocess_adj(adj, symmetric=True):
-        adj = adj + sp.eye(adj.shape[0])
+        adj = adj + sp.diags(np.ones(adj.shape[0]) - adj.diagonal())
         adj = normalize_adj(adj, symmetric)
         return adj
 
     # build symmetric adjacency matrix
     A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
-
-    method = method
 
     if method == "gcn":
         # Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """

@@ -499,10 +499,10 @@ class GraphSAGE:
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
-    Different neighbour node aggregators can also be specified with the `aggregator` argument, which
-    should be the aggregator class, either :class:`MeanAggregator`,
-    :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`,
-    or :class:`AttentionalAggregator`.
+    Different neighbour node aggregators can also be specified with the ``aggregator``
+    argument, which should be the aggregator class,
+    either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
+    :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
@@ -719,6 +719,7 @@ class GraphSAGE:
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
+
         Args:
             flatten_output: The GraphSAGE model will return a list of output tensors
                 of form (batch_size, 1, feature_size). If this flag
