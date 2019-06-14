@@ -658,9 +658,14 @@ class FullBatchNodeGenerator:
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
+    This generator will supply the features array and the adjacency matrix to a
+    full-batch Keras graph ML model.  There is a choice to supply either a sparse
+    adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
+    argument.
+
     For these algorithms the adjacency matrix requires pre-processing and the
     'method' option should be specified with the correct pre-processing for
-    each algorhtm. The options are as follows–
+    each algorhtm. The options are as follows:
 
     *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
@@ -682,8 +687,8 @@ class FullBatchNodeGenerator:
         train_data_gen = G_generator.flow(node_ids, node_targets)
 
         # Fetch the data from train_data_gen, and feed into a Keras model:
-        [X, A], y_train, node_mask_train = train_data_gen[0]
-        model.fit(x=[X, A], y=y_train, sample_weight=node_mask_train, ...)
+        x_inputs, y_train = train_data_gen[0]
+        model.fit(x=x_inputs, y=y_train)
 
         # Alternatively, use the generator itself with model.fit_generator:
         model.fit_generator(train_gen, epochs=num_epochs, ...)
@@ -727,14 +732,16 @@ class FullBatchNodeGenerator:
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
-        self.use_sparse = sparse
-
         # If sparse is specified, check that the backend is tensorflow
-        if self.use_sparse and K.backend() != "tensorflow":
+        if sparse and K.backend() != "tensorflow":
             warnings.warn(
                 "Sparse adjacency matrices are only supported in tensorflow."
                 " Falling back to using a dense adjacency matrix."
             )
+            self.use_sparse = False
+
+        else:
+            self.use_sparse = sparse
 
         # We need a schema to check compatibility with GAT, GCN
         self.schema = G.create_graph_schema(create_type_maps=True)
@@ -784,7 +791,8 @@ class FullBatchNodeGenerator:
         with the supplied node ids and numeric targets.
 
         Args:
-            node_ids: and iterable of node ids for the nodes of interest (e.g., training, validation, or test set nodes)
+            node_ids: and iterable of node ids for the nodes of interest
+                (e.g., training, validation, or test set nodes)
             targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
 
         Returns:

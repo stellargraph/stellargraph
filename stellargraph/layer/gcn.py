@@ -14,13 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from keras import Input
-from keras.engine import Layer
-from keras import activations, initializers, constraints, regularizers
 from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape
+from keras import activations, initializers, constraints, regularizers
+from keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
-from ..mapper.node_mappers import FullBatchNodeGenerator
+from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion
 
 
@@ -32,6 +30,24 @@ class GraphConvolution(Layer):
 
     Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the normalized graph Laplacian matrix
+
+      - This class assumes that the normalized Laplacian matrix is passed as
+        input to the Keras methods.
+
+      - The output indices are used when ``final_layer=True`` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If ``final_layer=False`` all the node features are output in the same ordering as
+        given by the adjacency matrix.
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -164,8 +180,9 @@ class GraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (list): a list of input tensors that includes 2
-                node features (matrix of size N x F), and
+            inputs (list): a list of 3 input tensors that includes
+                node features (size 1 x N x F),
+                output indices (size 1 x M)
                 graph adjacency matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
@@ -227,8 +244,22 @@ class GCN:
     For more details, please see the GCN demo notebook:
     demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
 
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`FullBatchNodeGenerator` object.
+
+      - This assumes that the normalized Lapalacian matrix is provided as input to
+        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
+        ``method='gcn'`` argument to do this pre-processing.
+
+      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
+
     Examples:
-        Creating a GCN node classification model from an existing :class:`StellarGraph` object ``G``::
+        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        object ``G``::
 
             generator = FullBatchNodeGenerator(G, method="gcn")
             gcn = GCN(
@@ -332,7 +363,12 @@ class GCN:
         else:
             Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
 
-        # Remove singleton batch dimension
+        # TODO: Support multiple matrices?
+        if len(Ainput) != 1:
+            raise NotImplementedError(
+                "The GCN method currently only accepts a single matrix"
+            )
+
         h_layer = x_in
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):

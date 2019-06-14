@@ -27,7 +27,6 @@ from sklearn import feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
-from stellargraph.core.utils import GCN_Aadj_feats_op
 
 
 def train(
