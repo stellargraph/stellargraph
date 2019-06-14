@@ -27,7 +27,8 @@ ENV JUPYTER_VERSION="1.0.0" \
 RUN pip install --upgrade pip --user \
       && pip install --no-cache-dir jupyter=="${JUPYTER_VERSION}" treon seaborn --user  
 
-#python-igraph need to be installed for the community demo but there is no already built version of it for linux so can't be pip installed.
+# python-igraph need to be installed for the community demo but there is no already built version of it for linux so can't be pip installed.
+# A lot of dependencies need to be installed.
 
 COPY --chown=stellar ./demos /home/stellar/demos
 COPY --chown=stellar --from=base /data/cora /home/stellar/data/cora
@@ -39,5 +40,4 @@ COPY --chown=stellar ./scripts/ /home/stellar/scripts
 
 EXPOSE 8888
 
-# CMD ["treon", "/home/stellar/demos"]
 CMD ["python",  "/home/stellar/scripts/test_demos.py"]
