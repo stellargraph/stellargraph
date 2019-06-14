@@ -30,10 +30,29 @@ from .misc import SqueezedSparseConversion
 
 class GraphAttention(Layer):
     """
-    Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
-    some modifications added for ease of use.
+    Graph Attention (GAT) layer. The base implementation is taken from
+    https://github.com/danielegrattarola/keras-gat,
+    with some modifications added for ease of use.
 
     Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the graph adjacency matrix
+
+      - This does not add self loops to the adjacency matrix, you should preprocess
+        the adjacency matrix to add self-loops
+
+      - The output indices are used when ``final_layer=True`` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If ``final_layer=False`` all the node features are output in the same ordering as
+        given by the adjacency matrix.
 
     Args:
         F_out (int): dimensionality of output feature vectors
@@ -56,7 +75,7 @@ class GraphAttention(Layer):
         kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
         bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
         attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
-        **kwargs: optional keyword arguments
+        **kwargs: optional keyword arguments supplied to the Keras :class:`Layer`
     """
 
     def __init__(
@@ -234,24 +253,32 @@ class GraphAttention(Layer):
 
     def call(self, inputs):
         """
-        Creates the layer as a Keras graph
+        Creates the layer as a Keras graph.
+
+        Note that the inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+        There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the graph adjacency matrix
 
         Notes:
             This does not add self loops to the adjacency matrix.
-            The output indices are only used when `final_layer=True`
+            The output indices are only used when ``final_layer=True``
 
         Args:
             inputs (list): list of inputs with 3 items:
-            node features (size b x N x F),
-            output indices (size b x M),
-            graph adjacency matrix (size b x N x N),
+            node features (size 1 x N x F),
+            output indices (size 1 x M),
+            graph adjacency matrix (size N x N),
             where N is the number of nodes in the graph,
                   F is the dimensionality of node features
                   M is the number of output nodes
         """
         X = inputs[0]  # Node features (1 x N x F)
         out_indices = inputs[1]  # output indices (1 x K)
-        A = inputs[2]  # Adjacency matrix (1 x N x N)
+        A = inputs[2]  # Adjacency matrix (N x N)
 
         batch_dim, n_nodes, _ = K.int_shape(X)
         if batch_dim != 1:
@@ -341,6 +368,25 @@ class GraphAttentionSparse(GraphAttention):
 
     Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
 
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer),
+        and the graph adjacency matrix
+
+      - This does not add self loops to the adjacency matrix, you should preprocess
+        the adjacency matrix to add self-loops
+
+      - The output indices are used when `final_layer=True` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If `final_layer=False` all the node features are output in the same ordering as
+        given by the adjacency matrix.
+
+
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
@@ -362,7 +408,7 @@ class GraphAttentionSparse(GraphAttention):
         kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
         bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
         attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
-        **kwargs: optional keyword arguments
+        **kwargs: optional keyword arguments supplied to the Keras :class:`Layer`
     """
 
     def __init__(self, *args, **kwargs):
@@ -416,7 +462,7 @@ class GraphAttentionSparse(GraphAttention):
             features = K.dot(X, kernel)  # (N x F')
 
             # Compute feature combinations
-            # Note: [[a_1], [a_2]]^T [[Wh_i], [Wh_2]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
+            # Note: [[a_1], [a_2]]^T [[Wh_i], [Wh_j]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
             attn_for_self = K.dot(
                 features, attention_kernel[0]
             )  # (N x 1), [a_1]^T [Wh_i]
@@ -493,16 +539,13 @@ class GAT:
 
         generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
 
-    Note that currently the GAT class is not compatible with sparse adjacency matrices and
-    therefore a dense adjacency matrix is required for GAT, hence the ``sparse=False`` option.
-
     For more details, please see the GAT demo notebook:
     demos/node-classification/gat/gat-cora-node-classification-example.ipynb
 
     Examples:
         Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
 
-            generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
+            generator = FullBatchNodeGenerator(G, method="gat")
             gat = GAT(
                     layer_sizes=[8, 4],
                     activations=["elu","softmax"],
@@ -513,12 +556,25 @@ class GAT:
                 )
             x_inp, predictions = gat.node_model()
 
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`FullBatchNodeGenerator` object.
+
+      - This does not add self loops to the adjacency matrix, you should preprocess
+        the adjacency matrix to add self-loops, using the ``method='gat'`` argument
+        of the :class:`FullBatchNodeGenerator`.
+
+      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
+
     Args:
         layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
             the number of GraphAttention layers in the stack.
         attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
 
-            - a single integer: the passed value of `attn_heads` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
+            - a single integer: the passed value of ``attn_heads`` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
             - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
 
         attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,

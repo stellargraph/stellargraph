@@ -31,6 +31,24 @@ class GraphConvolution(Layer):
     Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
 
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the normalized graph Laplacian matrix
+
+      - This class assumes that the normalized Laplacian matrix is passed as
+        input to the Keras methods.
+
+      - The output indices are used when ``final_layer=True`` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If ``final_layer=False`` all the node features are output in the same ordering as
+        given by the adjacency matrix.
+
     Args:
         units (int): dimensionality of output feature vectors
         activation (str): nonlinear activation applied to layer's output to obtain output features
@@ -226,8 +244,22 @@ class GCN:
     For more details, please see the GCN demo notebook:
     demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
 
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`FullBatchNodeGenerator` object.
+
+      - This assumes that the normalized Lapalacian matrix is provided as input to
+        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
+        ``method='gcn'`` argument to do this pre-processing.
+
+      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
+
     Examples:
-        Creating a GCN node classification model from an existing :class:`StellarGraph` object ``G``::
+        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        object ``G``::
 
             generator = FullBatchNodeGenerator(G, method="gcn")
             gcn = GCN(
