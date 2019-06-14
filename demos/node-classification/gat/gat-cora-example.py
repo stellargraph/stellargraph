@@ -105,7 +105,7 @@ def train(
     )
 
     # Create mappers for GraphSAGE that input data from the graph to the model
-    generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
+    generator = FullBatchNodeGenerator(G, method="gat")
     train_gen = generator.flow(train_nodes, train_targets)
     val_gen = generator.flow(val_nodes, val_targets)
 
