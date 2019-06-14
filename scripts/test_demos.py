@@ -4,7 +4,7 @@ import sys
 import subprocess
 import warnings
 
-#SGDIR = os.path.realpath(os.path.dirname(sys.argv[0]) + "/..")
+SGDIR = os.path.realpath(os.path.dirname(sys.argv[0]) + "/..")
 
 def test_notebooks():
     # Jupyter notebooks to test:
