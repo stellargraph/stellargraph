@@ -61,7 +61,7 @@ def train(
     target_name="subject",
 ):
     """
-    Train a GAT model on the specified graph G with given parameters, zevaluate it, and save the model.
+    Train a GAT model on the specified graph G with given parameters, evaluate it, and save the model.
 
     Args:
         edgelist: Graph edgelist
