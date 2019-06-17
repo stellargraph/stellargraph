@@ -40,14 +40,14 @@ GCN model
 -------------
 
 .. automodule:: stellargraph.layer.gcn
-  :members: GraphConvolution, GCN
+  :members: GCN, GraphConvolution
 
 
 GAT model
 -------------
 
 .. automodule:: stellargraph.layer.graph_attention
-  :members: GraphAttention, GAT
+  :members: GAT, GraphAttention, GraphAttentionSparse
 
 
 Link prediction layers
@@ -60,7 +60,7 @@ Ensembles
 ------------------------
 
 .. automodule:: stellargraph.utils.ensemble
-  :members: Ensemble, compile, fit_generator, evaluate_generator, predict_generator, layers
+  :members: Ensemble
 
 
 Calibration

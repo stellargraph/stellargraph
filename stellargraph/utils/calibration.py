@@ -398,11 +398,13 @@ class IsotonicCalibration(object):
             self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
             if len(x_train.shape) > 1:
                 x_train = x_train.reshape(-1)
-            self.regressors[-1].fit(X=x_train, y=y_train)
+            self.regressors[-1].fit(X=x_train.astype(np.double), y=y_train)
         else:
             for n in range(self.n_classes):
                 self.regressors.append(IsotonicRegression(out_of_bounds="clip"))
-                self.regressors[-1].fit(X=x_train[:, n], y=y_train[:, n])
+                self.regressors[-1].fit(
+                    X=x_train[:, n].astype(np.double), y=y_train[:, n]
+                )
 
     def predict(self, x):
         """
