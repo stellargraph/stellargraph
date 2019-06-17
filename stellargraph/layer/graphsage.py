@@ -35,6 +35,7 @@ from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from keras.utils import Sequence
 from keras import activations
 from typing import List, Tuple, Callable, AnyStr
+import warnings
 
 
 class GraphSAGEAggregator(Layer):
@@ -498,10 +499,10 @@ class GraphSAGE:
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
-    Different neighbour node aggregators can also be specified with the `aggregator` argument, which
-    should be the aggregator class, either :class:`MeanAggregator`,
-    :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`,
-    or :class:`AttentionalAggregator`.
+    Different neighbour node aggregators can also be specified with the ``aggregator``
+    argument, which should be the aggregator class,
+    either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
+    :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
@@ -550,9 +551,10 @@ class GraphSAGE:
                 )
             )
 
-        # Get the input_dim and num_samples from the mapper if it is given
-        # Use both the schema and head node type from the mapper
+        # Get the input_dim and num_samples from the generator if it is given
+        # Use both the schema and head node type from the generator
         # TODO: Refactor the horror of generator.generator.graph...
+        self.generator = generator
         if generator is not None:
             self.n_samples = generator.generator.num_samples
             feature_sizes = generator.generator.graph.node_feature_sizes()
@@ -569,7 +571,7 @@ class GraphSAGE:
 
         else:
             raise RuntimeError(
-                "If mapper is not provided, n_samples and input_dim must be specified."
+                "If generator is not provided, n_samples and input_dim must be specified."
             )
 
         # Model parameters
@@ -666,9 +668,9 @@ class GraphSAGE:
         input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
         return input_shapes
 
-    def default_model(self, flatten_output=False):
+    def node_model(self, flatten_output=False):
         """
-        Return model with default inputs
+        Builds a GraphSAGE model for node prediction
 
         Args:
             flatten_output: The GraphSAGE model will return an output tensor
@@ -678,7 +680,7 @@ class GraphSAGE:
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model and ``x_out`` is tne Keras tensor
+            for the specified GraphSAGE model and ``x_out`` is the Keras tensor
             for the GraphSAGE model output.
 
         """
@@ -692,3 +694,66 @@ class GraphSAGE:
             x_out = Reshape((-1,))(x_out)
 
         return x_inp, x_out
+
+    def link_model(self, flatten_output=False):
+        """
+        Builds a GraphSAGE model for link or node pair prediction
+
+
+        Returns:
+            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) node pairs
+            (where (src, dst) node inputs alternate),
+            and ``x_out`` is a list of output tensors for (src, dst) nodes in the node pairs
+
+        """
+        # Expose input and output sockets of the model, for source and destination nodes:
+        x_inp_src, x_out_src = self.node_model(flatten_output=flatten_output)
+        x_inp_dst, x_out_dst = self.node_model(flatten_output=flatten_output)
+        # re-pack into a list where (source, target) inputs alternate, for link inputs:
+        x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
+        # same for outputs:
+        x_out = [x_out_src, x_out_dst]
+        return x_inp, x_out
+
+    def build(self, flatten_output=False):
+        """
+        Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
+        the model (whether it is a node or link/node pair generator).
+
+        Args:
+            flatten_output: The GraphSAGE model will return a list of output tensors
+                of form (batch_size, 1, feature_size). If this flag
+                is true, the output will be of size
+                (batch_size, 1*feature_size)
+
+        Returns:
+            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
+            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
+            for the model output.
+
+        """
+        if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
+            if len(self.generator._sampling_schema) == 1:
+                return self.node_model(flatten_output=flatten_output)
+            elif len(self.generator._sampling_schema) == 2:
+                return self.link_model(flatten_output=flatten_output)
+            else:
+                raise RuntimeError(
+                    "The generator used for model creation is neither a node nor a link generator, "
+                    "unable to figure out how to build the model. Consider using node_model or "
+                    "link_model method explicitly to build node or link prediction model, respectively."
+                )
+        else:
+            raise RuntimeError(
+                "Suitable generator is not provided at model creation time, unable to figure out how to build the model. "
+                "Consider either providing a generator, or using node_model or link_model method explicitly to build node or "
+                "link prediction model, respectively."
+            )
+
+    def default_model(self, flatten_output=False):
+        warnings.warn(
+            "The .default_model() method will be deprecated in future versions. "
+            "Please use .build() method instead.",
+            PendingDeprecationWarning,
+        )
+        return self.build(flatten_output=flatten_output)

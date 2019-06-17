@@ -1,4 +1,26 @@
 # Change Log
+
+## [Unreleased](https://github.com/stellargraph/stellargraph/tree/HEAD)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.6.1...HEAD)
+
+**Implemented enhancements:**
+- SGC Implementation [\#361](https://github.com/stellargraph/stellargraph/pull/361) ([PantelisElinas](https://github.com/PantelisElinas))
+- Updated to support Python 3.7 [\#348](https://github.com/stellargraph/stellargraph/pull/348)
+- FullBatchNodeGenerator now supports a simpler interface to apply different adjacency matrix pre-processing options [\#405](https://github.com/stellargraph/stellargraph/pull/405)
+- Full-batch models (GCN, GAT, and SGC) now return predictions for only those nodes provided to the generator in the same order [\#417](https://github.com/stellargraph/stellargraph/pull/417)
+- GAT now supports using a sparse adjacency matrix making execution faster [\#420](https://github.com/stellargraph/stellargraph/pull/420)
+
+
+**Refactoring:**
+- Added build\(\) method for GraphSAGE and HinSAGE model classes [\#385](https://github.com/stellargraph/stellargraph/pull/385)
+This replaces the node_model\(\) and link_model\(\) methods, which will be deprecated in future versions (deprecation warnings added).
+
+
+**Fixed bugs:**
+- Removed label from features for pubmed dataset. [\#362](https://github.com/stellargraph/stellargraph/pull/362)
+- Python igraph requirement fixed [\#392](https://github.com/stellargraph/stellargraph/pull/392)
+
 ## [0.6.1](https://github.com/stellargraph/stellargraph/tree/v0.6.1) (1 Apr 2019)
 
 **Fixed bugs:**

@@ -3,7 +3,26 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
-        image: "python:3.6"
+        image: "python:3.6-slim"
+        environment:
+          - PYTHONDONTWRITEBYTECODE=1
+          - GIT_BRANCH=$BUILDKITE_BRANCH
+          - COVERALLS_REPO_TOKEN
+          - BUILDKITE_BUILD_NUMBER
+          - BUILDKITE_BRANCH
+          - AWS_LOGS_BUCKET
+          # for coveralls-python, to send more metadata to coveralls.io
+          - BUILDKITE
+          - BUILDKITE_PULL_REQUEST
+          - BUILDKITE_JOB_ID
+    agents:
+      queue: 't2medium'
+
+  - label: ":python: 3.7"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      docker#v3.2.0:
+        image: "python:3.7-slim"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - GIT_BRANCH=$BUILDKITE_BRANCH
@@ -25,6 +44,12 @@ steps:
         command: ["--check", "stellargraph", "tests"]
         environment:
           - PYTHONDONTWRITEBYTECODE=1
+
+  - label: ":shell: format"
+    plugins:
+      docker#v3.2.0:
+        image: "mvdan/shfmt:v2.6.4"
+        command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
   - label: ":docker: :hadolint: lint Dockerfiles"
     command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
