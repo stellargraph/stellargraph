@@ -37,7 +37,4 @@ COPY --chown=stellar --from=base /data/ml-100k /home/stellar/data/ml-100k
 COPY --chown=stellar --from=base /data/BlogCatalog-dataset /home/stellar/data/BlogCatalog-dataset
 COPY --chown=stellar ./scripts/ /home/stellar/scripts
 
-
-EXPOSE 8888
-
-CMD ["python",  "/home/stellar/scripts/test_demos.py"]
+CMD ["sh", "-c", "python", "/home/stellar/scripts/test_demos.py"]
