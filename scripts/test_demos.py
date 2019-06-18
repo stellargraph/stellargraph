@@ -148,9 +148,9 @@ if __name__ == "__main__":
 
     print("=" * 100)
     print("\033[1;31;40m" if num_errors_sc > 0 else "\033[1;32;40m")
-    print(f"Demo scripts: {num_errors_sc} passed and {num_errors_sc} failed")
+    print(f"Demo scripts: {num_passed_sc} passed and {num_errors_sc} failed")
     print("\033[1;31;40m" if num_errors_nb > 0 else "\033[1;32;40m")
-    print(f"Demo notebooks: {num_errors_nb} passed and {num_passed_nb} failed")
+    print(f"Demo notebooks: {num_passed_nb} passed and {num_passed_nb} failed")
     print("\033[0m")
     print("=" * 100)
 
