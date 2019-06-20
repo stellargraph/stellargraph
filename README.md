@@ -73,10 +73,9 @@ The StellarGraph library can be used to solve tasks using graph-structured data,
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
-- Interpretation of node classification through calculated importances of edges and neighbours for selected nodes.
+- Interpretation of node classification through calculated importances of edges and neighbours for selected nodes [7].
 
-We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve
-such tasks using several real-world datasets.
+We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve such tasks using several real-world datasets.
 
 
 ## Guiding Principles
@@ -254,22 +253,23 @@ If you use any part of this library in your research, please cite it using the f
 
 ## References
 
-1. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
-[cs.SI], 2017. ([link](https://snap.stanford.edu/graphsage/))
+1. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec.
+Neural Information Processing Systems (NIPS), 2017. ([link](https://arxiv.org/abs/1706.02216) [webpage](https://snap.stanford.edu/graphsage/))
 
-2. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on
-Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
+2. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
 
-3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
-Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
+3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and Ananthram Swami.
+ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-4. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
+4. Graph Attention Networks. P. Velickovic et al.
+International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
 
 5. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
 International Conference on Learning Representations (ICLR), 2017
 ([link](https://github.com/tkipf/gcn))
 
 6. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger. 
-arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
+International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv.org/abs/1902.07153))
 
+7. Adversarial Examples on Graph Data: Deep Insights into Attack and Defense. H. Wu, C. Wang, Y. Tyshetskiy, A. Docherty, K. Lu, and L. Zhu. IJCAI 2019. ([link](https://arxiv.org/abs/1903.01610))
