@@ -36,6 +36,9 @@
   <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
     <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
   </a>
+  <a href="https://pypi.org/project/stellargraph" alt="pypi downloads">
+    <img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph">
+  </a>
 </p>
 
 
