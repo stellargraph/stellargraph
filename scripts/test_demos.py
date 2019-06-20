@@ -118,7 +118,7 @@ def test_scripts():
         cmd_args = script["args"].format(**argument_dict)
         cmd_line = "python " + abs_script_path + " " + cmd_args
 
-        print("\033[1;33;40m Running {path}\033[0m".format(**script))
+        print("\033[1;33;40m|Running {path}\033[0m".format(**script))
 
         procout = subprocess.run(
             cmd_line,
@@ -132,11 +132,11 @@ def test_scripts():
 
         if procout.returncode != 0:
             num_errors += 1
-            print("> {path}  \033[1;31;40m -- FAILED\033[0m".format(**script))
+            print("| {path}  \033[1;31;40m -- FAILED\033[0m".format(**script))
 
         else:
             num_passed += 1
-            print("> {path}  \033[1;32;40m -- SUCCEEDED\033[0m".format(**script))
+            print("| {path}  \033[1;32;40m -- SUCCEEDED\033[0m".format(**script))
 
         print()
     return num_errors, num_passed
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     print("\033[1;31;40m" if num_errors_sc > 0 else "\033[1;32;40m")
     print(f"Demo scripts: {num_passed_sc} passed and {num_errors_sc} failed")
     print("\033[1;31;40m" if num_errors_nb > 0 else "\033[1;32;40m")
-    print(f"Demo notebooks: {num_passed_nb} passed and {num_passed_nb} failed")
+    print(f"Demo notebooks: {num_passed_nb} passed and {num_errors_nb} failed")
     print("\033[0m")
     print("=" * 100)
 
