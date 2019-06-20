@@ -17,58 +17,77 @@
 """
 Definition of Graph Attention Network (GAT) layer, and GAT class that is a stack of GAT layers
 """
-__all__ = ["GraphAttention", "GAT"]
+__all__ = ["GraphAttention", "GraphAttentionSparse", "GAT"]
 
-from keras import activations, constraints, initializers, regularizers
-from keras import backend as K
-from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
-import numpy as np
-import tensorflow as tf
-from stellargraph.mapper import FullBatchNodeGenerator
 import warnings
+from keras import backend as K
+from keras import activations, constraints, initializers, regularizers
+from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
-warnings.simplefilter("default")
+from ..mapper import FullBatchNodeGenerator
+from .misc import SqueezedSparseConversion
 
 
 class GraphAttention(Layer):
     """
-    Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
-    some modifications added for ease of use.
+    Graph Attention (GAT) layer. The base implementation is taken from
+    https://github.com/danielegrattarola/keras-gat,
+    with some modifications added for ease of use.
 
-    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1803.07294
+    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the graph adjacency matrix
+
+      - This does not add self loops to the adjacency matrix, you should preprocess
+        the adjacency matrix to add self-loops
+
+      - The output indices are used when ``final_layer=True`` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If ``final_layer=False`` all the node features are output in the same ordering as
+        given by the adjacency matrix.
 
     Args:
-            F_out (int): dimensionality of output feature vectors
-            attn_heads (int or list of int): number of attention heads
-            attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
-                'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
-            in_dropout_rate (float): dropout rate applied to features
-            attn_dropout_rate (float): dropout rate applied to attention coefficients
-            activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-            use_bias (bool): toggles an optional bias
-            kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
-            bias_initializer (str): name of the initializer for bias
-            attn_kernel_initializer (str): name of the initializer for attention kernel
-            kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
-            bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
-            attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
-            activity_regularizer (str): not used in the current implementation
-            kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
-            bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
-            attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
-            **kwargs: optional keyword arguments
-
+        F_out (int): dimensionality of output feature vectors
+        attn_heads (int or list of int): number of attention heads
+        attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
+            'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+        in_dropout_rate (float): dropout rate applied to features
+        attn_dropout_rate (float): dropout rate applied to attention coefficients
+        activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
+        final_layer (bool): If False the layer returns output for all nodes,
+                            if True it returns the subset specified by the indices passed to it.
+        use_bias (bool): toggles an optional bias
+        kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
+        bias_initializer (str): name of the initializer for bias
+        attn_kernel_initializer (str): name of the initializer for attention kernel
+        kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
+        bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
+        attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
+        activity_regularizer (str): not used in the current implementation
+        kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
+        bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
+        attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
+        **kwargs: optional keyword arguments supplied to the Keras :class:`Layer`
     """
 
     def __init__(
         self,
-        F_out,
+        units,
         attn_heads=1,
         attn_heads_reduction="concat",  # {'concat', 'average'}
         in_dropout_rate=0.0,
         attn_dropout_rate=0.0,
         activation="relu",
         use_bias=True,
+        final_layer=False,
         kernel_initializer="glorot_uniform",
         bias_initializer="zeros",
         attn_kernel_initializer="glorot_uniform",
@@ -89,13 +108,14 @@ class GraphAttention(Layer):
                 )
             )
 
-        self.F_out = F_out  # Number of output features (F' in the paper)
+        self.units = units  # Number of output features (F' in the paper)
         self.attn_heads = attn_heads  # Number of attention heads (K in the paper)
         self.attn_heads_reduction = attn_heads_reduction  # Eq. 5 and 6 in the paper
         self.in_dropout_rate = in_dropout_rate  # dropout rate for node features
         self.attn_dropout_rate = attn_dropout_rate  # dropout rate for attention coefs
         self.activation = activations.get(activation)  # Eq. 4 in the paper
         self.use_bias = use_bias
+        self.final_layer = final_layer
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.bias_initializer = initializers.get(bias_initializer)
@@ -117,12 +137,12 @@ class GraphAttention(Layer):
 
         if attn_heads_reduction == "concat":
             # Output will have shape (..., K * F')
-            self.output_dim = self.F_out * self.attn_heads
+            self.output_dim = self.units * self.attn_heads
         else:
             # Output will have shape (..., F')
-            self.output_dim = self.F_out
+            self.output_dim = self.units
 
-        super(GraphAttention, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_config(self):
         """
@@ -130,13 +150,14 @@ class GraphAttention(Layer):
 
         """
         config = {
-            "F_out": self.F_out,
+            "units": self.units,
             "attn_heads": self.attn_heads,
             "attn_heads_reduction": self.attn_heads_reduction,
             "in_dropout_rate": self.in_dropout_rate,
             "attn_dropout_rate": self.attn_dropout_rate,
             "activation": activations.serialize(self.activation),
             "use_bias": self.use_bias,
+            "final_layer": self.final_layer,
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "bias_initializer": initializers.serialize(self.bias_initializer),
             "attn_kernel_initializer": initializers.serialize(
@@ -156,22 +177,44 @@ class GraphAttention(Layer):
         base_config = super().get_config()
         return {**base_config, **config}
 
-    def build(self, input_shape):
+    def compute_output_shape(self, input_shapes):
+        """
+        Computes the output shape of the layer.
+        Assumes the following inputs:
+
+        Args:
+            input_shape (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
+        feature_shape, out_shape, *As_shapes = input_shapes
+
+        batch_dim = feature_shape[0]
+        if self.final_layer:
+            out_dim = out_shape[1]
+        else:
+            out_dim = feature_shape[1]
+
+        return (batch_dim, out_dim, self.output_dim)
+
+    def build(self, input_shapes):
         """
         Builds the layer
 
         Args:
-            input_shape (list of list of int): shapes of the layer's input(s)
+            input_shape (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
-        assert len(input_shape) >= 2
-        F_in = int(input_shape[0][-1])
+        feat_shape = input_shapes[0]
+        input_dim = feat_shape[-1]
 
         # Initialize weights for each attention head
         for head in range(self.attn_heads):
             # Layer kernel
             kernel = self.add_weight(
-                shape=(F_in, self.F_out),
+                shape=(input_dim, self.units),
                 initializer=self.kernel_initializer,
                 regularizer=self.kernel_regularizer,
                 constraint=self.kernel_constraint,
@@ -182,7 +225,7 @@ class GraphAttention(Layer):
             # # Layer bias
             if self.use_bias:
                 bias = self.add_weight(
-                    shape=(self.F_out,),
+                    shape=(self.units,),
                     initializer=self.bias_initializer,
                     regularizer=self.bias_regularizer,
                     constraint=self.bias_constraint,
@@ -192,14 +235,14 @@ class GraphAttention(Layer):
 
             # Attention kernels
             attn_kernel_self = self.add_weight(
-                shape=(self.F_out, 1),
+                shape=(self.units, 1),
                 initializer=self.attn_kernel_initializer,
                 regularizer=self.attn_kernel_regularizer,
                 constraint=self.attn_kernel_constraint,
                 name="attn_kernel_self_{}".format(head),
             )
             attn_kernel_neighs = self.add_weight(
-                shape=(self.F_out, 1),
+                shape=(self.units, 1),
                 initializer=self.attn_kernel_initializer,
                 regularizer=self.attn_kernel_regularizer,
                 constraint=self.attn_kernel_constraint,
@@ -208,38 +251,45 @@ class GraphAttention(Layer):
             self.attn_kernels.append([attn_kernel_self, attn_kernel_neighs])
         self.built = True
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs):
         """
-        Applies the layer.
+        Creates the layer as a Keras graph.
+
+        Note that the inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+        There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the graph adjacency matrix
+
+        Notes:
+            This does not add self loops to the adjacency matrix.
+            The output indices are only used when ``final_layer=True``
 
         Args:
-            inputs (list): list of inputs with 2 items: node features (matrix of size N x F),
-                and graph adjacency matrix (size N x N), where N is the number of nodes in the graph,
-                F is the dimensionality of node features
-
+            inputs (list): list of inputs with 3 items:
+            node features (size 1 x N x F),
+            output indices (size 1 x M),
+            graph adjacency matrix (size N x N),
+            where N is the number of nodes in the graph,
+                  F is the dimensionality of node features
+                  M is the number of output nodes
         """
-        X = inputs[0]  # Node features (N x F)
-        A = inputs[1]  # Adjacency matrix (N x N)
-        # Convert A to dense tensor - needed for the mask to work
-        # TODO: replace this dense implementation of GraphAttention layer with a sparse implementation
-        if K.is_sparse(A):
-            A = tf.sparse_tensor_to_dense(A, validate_indices=False)
+        X = inputs[0]  # Node features (1 x N x F)
+        out_indices = inputs[1]  # output indices (1 x K)
+        A = inputs[2]  # Adjacency matrix (N x N)
 
-        # For the GAT model to match that in the paper, we need to ensure that the graph has self-loops,
-        # since the neighbourhood of node i in eq. (4) includes node i itself.
-        # Adding self-loops to A via setting the diagonal elements of A to 1.0:
-        if kwargs.get("add_self_loops", False):
-            # get the number of nodes from inputs[1] directly
-            N = K.int_shape(inputs[1])[-1]
-            if N is not None:
-                # create self-loops
-                A = tf.linalg.set_diag(A, K.cast(np.ones((N,)), dtype="float"))
-            else:
-                raise ValueError(
-                    "{}: need to know number of nodes to add self-loops; obtained None instead".format(
-                        type(self).__name__
-                    )
-                )
+        batch_dim, n_nodes, _ = K.int_shape(X)
+        if batch_dim != 1:
+            raise ValueError(
+                "Currently full-batch methods only support a batch dimension of one"
+            )
+
+        else:
+            # Remove singleton batch dimension
+            X = K.squeeze(X, 0)
+            out_indices = K.squeeze(out_indices, 0)
 
         outputs = []
         for head in range(self.attn_heads):
@@ -276,7 +326,7 @@ class GraphAttention(Layer):
             dense += mask
 
             # Apply softmax to get attention coefficients
-            dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
+            dense = K.softmax(dense, axis=1)  # (N x N), Eq. 3 of the paper
 
             # Apply dropout to features and attention coefficients
             dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')
@@ -297,36 +347,246 @@ class GraphAttention(Layer):
         else:
             output = K.mean(K.stack(outputs), axis=0)  # N x F')
 
+        # Nonlinear activation function
         output = self.activation(output)
+
+        # On the final layer we gather the nodes referenced by the indices
+        if self.final_layer:
+            output = K.gather(output, out_indices)
+
+        # Add batch dimension back if we removed it
+        if batch_dim == 1:
+            output = K.expand_dims(output, 0)
+
         return output
 
-    def compute_output_shape(self, input_shape):
-        output_shape = input_shape[0][0], self.output_dim
-        return output_shape
+
+class GraphAttentionSparse(GraphAttention):
+    """
+    Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
+    some modifications added for ease of use.
+
+    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer),
+        and the graph adjacency matrix
+
+      - This does not add self loops to the adjacency matrix, you should preprocess
+        the adjacency matrix to add self-loops
+
+      - The output indices are used when `final_layer=True` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If `final_layer=False` all the node features are output in the same ordering as
+        given by the adjacency matrix.
+
+
+    Args:
+        F_out (int): dimensionality of output feature vectors
+        attn_heads (int or list of int): number of attention heads
+        attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
+            'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+        in_dropout_rate (float): dropout rate applied to features
+        attn_dropout_rate (float): dropout rate applied to attention coefficients
+        activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
+        final_layer (bool): If False the layer returns output for all nodes,
+                            if True it returns the subset specified by the indices passed to it.
+        use_bias (bool): toggles an optional bias
+        kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
+        bias_initializer (str): name of the initializer for bias
+        attn_kernel_initializer (str): name of the initializer for attention kernel
+        kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
+        bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
+        attn_kernel_regularizer (str): name of regularizer to be applied to attention kernel. Must be a Keras regularizer.
+        activity_regularizer (str): not used in the current implementation
+        kernel_constraint (str): constraint applied to layer's kernel. Must be a Keras constraint https://keras.io/constraints/
+        bias_constraint (str): constraint applied to layer's bias. Must be a Keras constraint https://keras.io/constraints/
+        attn_kernel_constraint (str): constraint applied to attention kernel. Must be a Keras constraint https://keras.io/constraints/
+        **kwargs: optional keyword arguments supplied to the Keras :class:`Layer`
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def call(self, inputs, **kwargs):
+        """
+        Creates the layer as a Keras graph
+
+        Notes:
+            This does not add self loops to the adjacency matrix.
+            The output indices are only used when `final_layer=True`
+
+        Args:
+            inputs (list): list of inputs with 4 items:
+            node features (size b x N x F),
+            output indices (size b x M),
+            sparse graph adjacency matrix (size N x N),
+            where N is the number of nodes in the graph,
+                  F is the dimensionality of node features
+                  M is the number of output nodes
+        """
+        X = inputs[0]  # Node features (1 x N x F)
+        out_indices = inputs[1]  # output indices (1 x K)
+        A_sparse = inputs[2]  # Adjacency matrix (1 x N x N)
+
+        if not isinstance(A_sparse, K.tf.SparseTensor):
+            raise TypeError("A is not sparse")
+
+        # Get undirected graph edges (E x 2)
+        A_indices = A_sparse.indices
+
+        batch_dim, n_nodes, _ = K.int_shape(X)
+        if batch_dim != 1:
+            raise ValueError(
+                "Currently full-batch methods only support a batch dimension of one"
+            )
+        else:
+            # Remove singleton batch dimension
+            out_indices = K.squeeze(out_indices, 0)
+            X = K.squeeze(X, 0)
+
+        outputs = []
+        for head in range(self.attn_heads):
+            kernel = self.kernels[head]  # W in the paper (F x F')
+            attention_kernel = self.attn_kernels[
+                head
+            ]  # Attention kernel a in the paper (2F' x 1)
+
+            # Compute inputs to attention network
+            features = K.dot(X, kernel)  # (N x F')
+
+            # Compute feature combinations
+            # Note: [[a_1], [a_2]]^T [[Wh_i], [Wh_j]] = [a_1]^T [Wh_i] + [a_2]^T [Wh_j]
+            attn_for_self = K.dot(
+                features, attention_kernel[0]
+            )  # (N x 1), [a_1]^T [Wh_i]
+            attn_for_neighs = K.dot(
+                features, attention_kernel[1]
+            )  # (N x 1), [a_2]^T [Wh_j]
+
+            # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
+            dense = attn_for_self + K.transpose(
+                attn_for_neighs
+            )  # (N x N) via broadcasting
+
+            # Create sparse attention vector (All non-zero values of the matrix)
+            sparse_attn_self = K.tf.gather(
+                K.reshape(attn_for_self, [-1]), A_indices[:, 0], axis=0
+            )
+            sparse_attn_neighs = K.tf.gather(
+                K.reshape(attn_for_neighs, [-1]), A_indices[:, 1], axis=0
+            )
+            attn_values = sparse_attn_self + sparse_attn_neighs
+
+            # Add nonlinearity
+            attn_values = LeakyReLU(alpha=0.2)(attn_values)
+
+            # Apply dropout to features and attention coefficients
+            dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')
+            dropout_attn = Dropout(self.attn_dropout_rate)(attn_values)  # (N x N)
+
+            # Convert to sparse matrix
+            sparse_attn = K.tf.sparse.SparseTensor(
+                A_indices, values=dropout_attn, dense_shape=[n_nodes, n_nodes]
+            )
+
+            # Apply softmax to get attention coefficients
+            sparse_attn = K.tf.sparse.softmax(
+                sparse_attn
+            )  # (N x N), Eq. 3 of the paper
+
+            # Linear combination with neighbors' features [YT: see Eq. 4]
+            node_features = K.tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
+
+            if self.use_bias:
+                node_features = K.bias_add(node_features, self.biases[head])
+
+            # Add output of attention head to final output
+            outputs.append(node_features)
+
+        # Aggregate the heads' output according to the reduction method
+        if self.attn_heads_reduction == "concat":
+            output = K.concatenate(outputs)  # (N x KF')
+        else:
+            output = K.mean(K.stack(outputs), axis=0)  # N x F')
+
+        output = self.activation(output)
+
+        # On the final layer we gather the nodes referenced by the indices
+        if self.final_layer:
+            output = K.gather(output, out_indices)
+
+        # Add batch dimension back if we removed it
+        if batch_dim == 1:
+            output = K.expand_dims(output, 0)
+        return output
 
 
 class GAT:
     """
-    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads, Eqs 5-6 of the GAT paper https://arxiv.org/abs/1803.07294
+    A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads,
+    Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
+
+    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
+    pre-processing the generator object should be instantiated as follows::
+
+        generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
+
+    For more details, please see the GAT demo notebook:
+    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
+
+    Examples:
+        Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
+
+            generator = FullBatchNodeGenerator(G, method="gat")
+            gat = GAT(
+                    layer_sizes=[8, 4],
+                    activations=["elu","softmax"],
+                    attn_heads=8,
+                    generator=generator,
+                    in_dropout=0.5,
+                    attn_dropout=0.5,
+                )
+            x_inp, predictions = gat.node_model()
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`FullBatchNodeGenerator` object.
+
+      - This does not add self loops to the adjacency matrix, you should preprocess
+        the adjacency matrix to add self-loops, using the ``method='gat'`` argument
+        of the :class:`FullBatchNodeGenerator`.
+
+      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
 
     Args:
-            layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
-                the number of GraphAttention layers in the stack.
-            attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
+        layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
+            the number of GraphAttention layers in the stack.
+        attn_heads (int or list of int): number of attention heads in GraphAttention layers. The options are:
 
-                - a single integer: the passed value of `attn_heads` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
-                - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
+            - a single integer: the passed value of ``attn_heads`` will be applied to all GraphAttention layers in the stack, except the last layer (for which the number of attn_heads will be set to 1).
+            - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
 
-            attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
-                for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
-                If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
-                except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
-            activations (list of str): list of activations applied to each layer's output
-            bias (bool): toggles an optional bias in GAT layers
-            in_dropout (float): dropout rate applied to input features of each GAT layer
-            attn_dropout (float): dropout rate applied to attention maps
-            normalize (str or None): normalization applied to the final output features of the GAT layers stack
-            generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
+        attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
+            for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
+            If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
+            except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
+        activations (list of str): list of activations applied to each layer's output
+        bias (bool): toggles an optional bias in GAT layers
+        in_dropout (float): dropout rate applied to input features of each GAT layer
+        attn_dropout (float): dropout rate applied to attention maps
+        normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
+        generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
     """
 
     def __init__(
@@ -338,10 +598,9 @@ class GAT:
         bias=True,
         in_dropout=0.0,
         attn_dropout=0.0,
-        normalize="l2",
+        normalize=None,
         generator=None,
     ):
-        self._gat_layer = GraphAttention
         self.bias = bias
         self.in_dropout = in_dropout
         self.attn_dropout = attn_dropout
@@ -362,6 +621,7 @@ class GAT:
                     type(self).__name__
                 )
             )
+        self.layer_sizes = layer_sizes
 
         # Check attn_heads (must be int or list of int):
         if isinstance(attn_heads, list):
@@ -379,13 +639,14 @@ class GAT:
                         type(self).__name__
                     )
                 )
-
             self.attn_heads = attn_heads  # (list of int as passed by the user)
+
         elif isinstance(attn_heads, int):
             self.attn_heads = list()
             for l, _ in enumerate(layer_sizes):
                 # number of attention heads for layer l: attn_heads (int) for all but the last layer (for which it's set to 1)
                 self.attn_heads.append(attn_heads if l < len(layer_sizes) - 1 else 1)
+
         else:
             raise TypeError(
                 "{}: attn_heads should be an integer or a list of integers!".format(
@@ -455,9 +716,15 @@ class GAT:
                     )
                 )
 
+            # Check if the generator is producing a sparse matrix
+            self.use_sparse = generator.use_sparse
+
+        else:
+            self.use_sparse = False
+
         # Set the normalization layer used in the model
         if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=1))
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
 
         elif normalize is None or str(normalize).lower() in {"none", "linear"}:
             self._normalization = Lambda(lambda x: x)
@@ -469,25 +736,34 @@ class GAT:
                 )
             )
 
+        # Switch between sparse or dense model
+        if self.use_sparse:
+            self._gat_layer = GraphAttentionSparse
+        else:
+            self._gat_layer = GraphAttention
+
         # Initialize a stack of GAT layers
         self._layers = []
-        for l, F_out in enumerate(layer_sizes):
+        n_layers = len(self.layer_sizes)
+        for ii in range(n_layers):
             # Dropout on input node features before each GAT layer
             self._layers.append(Dropout(self.in_dropout))
+
             # GraphAttention layer
             self._layers.append(
                 self._gat_layer(
-                    F_out=F_out,
-                    attn_heads=self.attn_heads[l],
-                    attn_heads_reduction=self.attn_heads_reduction[l],
+                    units=self.layer_sizes[ii],
+                    attn_heads=self.attn_heads[ii],
+                    attn_heads_reduction=self.attn_heads_reduction[ii],
                     in_dropout_rate=self.in_dropout,
                     attn_dropout_rate=self.attn_dropout,
-                    activation=self.activations[l],
+                    activation=self.activations[ii],
                     use_bias=self.bias,
+                    final_layer=ii == (n_layers - 1),
                 )
             )
 
-    def __call__(self, x_inp, **kwargs):
+    def __call__(self, inputs):
         """
         Apply a stack of GAT layers to the input x_inp
 
@@ -497,60 +773,101 @@ class GAT:
         Returns: Output tensor of the GAT layers stack
 
         """
-
-        assert isinstance(x_inp, list), "input must be a list, got {} instead".format(
-            type(x_inp)
+        assert isinstance(inputs, list), "input must be a list, got {} instead".format(
+            type(inputs)
         )
+        x_in, out_indices, *As = inputs
 
-        x = x_inp[0]
-        A = x_inp[1]
+        # Currently we require the batch dimension to be one for full-batch methods
+        batch_dim, n_nodes, _ = K.int_shape(x_in)
+        if batch_dim != 1:
+            raise ValueError(
+                "Currently full-batch methods only support a batch dimension of one"
+            )
 
+        # Convert input indices & values to a sparse matrix
+        if self.use_sparse:
+            A_indices, A_values = As
+            Ainput = [
+                SqueezedSparseConversion(shape=(n_nodes, n_nodes))(
+                    [A_indices, A_values]
+                )
+            ]
+
+        # Otherwise, create dense matrix from input tensor
+        else:
+            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+
+        # TODO: Support multiple matrices?
+        if len(Ainput) != 1:
+            raise NotImplementedError(
+                "The GAT method currently only accepts a single matrix"
+            )
+
+        # Remove singleton batch dimension
+        h_layer = x_in
         for layer in self._layers:
-            if isinstance(layer, self._gat_layer):  # layer is a GAT layer
-                x = layer([x, A], add_self_loops=kwargs.get("add_self_loops"))
-            else:  # layer is a Dropout layer
-                x = layer(x)
+            if isinstance(layer, self._gat_layer):
+                # For a GAT layer add the matrix and output indices
+                # Note that the output indices are only used if `final_layer=True`
+                h_layer = layer([h_layer, out_indices] + Ainput)
 
-        return self._normalization(x)
+            else:
+                # For other (non-graph) layers only supply the input tensor
+                h_layer = layer(h_layer)
 
-    def node_model(self, num_nodes=None, feature_size=None, add_self_loops=True):
+            # print("Hlayer:", h_layer)
+
+        return self._normalization(h_layer)
+
+    def node_model(self, num_nodes=None, feature_size=None):
         """
-        Builds a GAT model for node prediction
-
-        Args:
-            num_nodes (int or None): (optional) number of nodes in the graph (in the full batch). If not provided, this will be taken from self.generator.
-            feature_size (int or None): (optional) dimensionality of node attributes. If not provided, this will be taken from self.generator.
-            add_self_loops (bool): (default is True) toggles adding self-loops to the graph's adjacency matrix in the GraphAttention layers of the GAT model.
+        Builds a GCN model for node prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the specified GAT model
-            (containing node features and graph adjacency matrix), and `x_out` is a Keras tensor for the GAT model output.
-
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
+            and `x_out` is a Keras tensor for the GCN model output.
         """
         # Create input tensor:
         if self.generator is not None:
-            N = self.generator.Aadj.shape[0]
-
-            assert self.generator.features.shape[0] == N
-            F = self.generator.features.shape[1]
-            is_adj_sparse = self.generator.sparse
+            # Placeholder for node features
+            N_nodes = self.generator.features.shape[0]
+            N_feat = self.generator.features.shape[1]
 
         elif num_nodes is not None and feature_size is not None:
-            N = num_nodes
-            F = feature_size
-            is_adj_sparse = True
+            N_nodes = num_nodes
+            N_feat = feature_size
+
         else:
             raise RuntimeError(
                 "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
             )
 
-        X_in = Input(shape=(F,))
-        A_in = Input(shape=(N,), sparse=is_adj_sparse)
+        # Inputs for features & target indices
+        x_t = Input(batch_shape=(1, N_nodes, N_feat))
+        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
-        x_inp = [X_in, A_in]
+        # Create inputs for sparse or dense matrices
+        if self.use_sparse:
+            # Placeholders for the sparse adjacency matrix
+            A_indices_t = Input(batch_shape=(1, None, 2), dtype="int64")
+            A_values_t = Input(batch_shape=(1, None))
+            A_placeholders = [A_indices_t, A_values_t]
 
-        # Output from GAT model, N x F', where F' is the output size of the last GAT layer in the stack
-        x_out = self(x_inp, add_self_loops=add_self_loops)
+        else:
+            # Placeholders for the dense adjacency matrix
+            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
+            A_placeholders = [A_m]
+
+        # TODO: Support multiple matrices?
+        x_inp = [x_t, out_indices_t] + A_placeholders
+        x_out = self(x_inp)
+
+        # Flatten output by removing singleton batch dimension
+        if x_out.shape[0] == 1:
+            self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
+        else:
+            self.x_out_flat = x_out
 
         return x_inp, x_out
 
@@ -563,7 +880,7 @@ class GAT:
 
     def default_model(self, flatten_output=False):
         warnings.warn(
-            "The .default_model() method will be deprecated soon. "
+            "The .default_model() method will be deprecated in future versions. "
             "Please use .node_model() or .link_model() methods instead.",
             PendingDeprecationWarning,
         )

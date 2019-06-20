@@ -21,17 +21,26 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "keras>=2.2.3",
-    "tensorflow>=1.8",
+    "keras>=2.2.4",
+    "tensorflow>=1.12",
     "numpy>=1.14",
+    "scipy>=1.1.0",
     "networkx>=2.2",
-    "scikit_learn>=0.18",
+    "scikit_learn>=0.20",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
-    "pandas>=0.23"
+    "pandas>=0.24",
 ]
 
-EXTRAS_REQURES = {"demos": ["numba"], "test": ["pytest", "pandas", "pytest-benchmark"]}
+# The demos requirements are as follows:
+# demos/community_detection: mplleaflet, python-igraph
+# demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
+# demos/link-prediction/hinsage/utils.py: numba
+#
+EXTRAS_REQURES = {
+    "demos": ["numba", "jupyter", "mplleaflet", "seaborn", "python-igraph"],
+    "test": ["pytest", "pytest-benchmark"],
+}
 
 # Long description
 with open("README.md", "r") as fh:
@@ -42,7 +51,7 @@ with open("README.md", "r") as fh:
 version = {}
 with open("stellargraph/version.py", "r") as fh:
     exec(fh.read(), version)
-VERSION = version['__version__']
+VERSION = version["__version__"]
 
 setuptools.setup(
     name="stellargraph",
@@ -55,7 +64,7 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    python_requires='>=3.5.0, <3.7.0',
+    python_requires=">=3.5.0, <3.8.0",
     install_requires=REQUIRES,
     extras_require=EXTRAS_REQURES,
     packages=setuptools.find_packages(exclude=("tests",)),
