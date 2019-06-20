@@ -1,7 +1,26 @@
 # GraphSAGE Node Classification
 
-This is an example of using the GraphSAGE algorithm [1] for semi-supervised node classification 
-in a homogeneous network.
+This folder includes two examples of using the GraphSAGE algorithm [1] for semi-supervised node classification in
+homogeneous networks.
+
+The first example demonstrates transductive node classification using the Cora citation network. This demo is included 
+as the Python script `graphsage-cora-example.py` and as the Jupyter 
+notebook `graphsage-cora-node-classification-example.ipynb`.
+
+The second example demonstrates inductive representation learning and node classification using the Pubmed-Diabetes
+paper citation network. This demo is included in the Jupyter notebook 
+`graphsage-pubmed-inductive-node-classification-example.ipynb`.
+
+The two Jupyter notebooks include all the information for downloading the corresponding datasets, training the GraphSAGE
+models and using them to classify nodes with unknown (to the training algorithm) labels. 
+
+To run the notebooks install Jupyter to the same Python 3.6 environment as StellarGraph, following the instructions on 
+the Jupyter project website: http://jupyter.org/install.html
+
+After starting the Jupyter server on your computer, load either of the two notebooks and follow the instructions inside.
+
+Instructions for downloading the Cora dataset and running the script `graphsage-cora-example.py` follow.
+
 
 ## Requirements
 All examples use Python 3.6 and the StellarGraph library. To install the StellarGraph library
@@ -40,16 +59,6 @@ description of these arguments is displayed using the help option to the script:
 ```
 python graphsage-cora-example.py --help
 ```
-
-## Running the notebook
-
-The same example is also available as a Juptyer notebook. To use this install Jupyter to the
-same Python 3.6 environment as StellarGraph, following the instructions on the Jupyter project
-website: http://jupyter.org/install.html
-
-After starting the Jupyter server on your computer, load the notebook
-`graphsage-cora-node-classification-example.ipynb` and follow the instructions inside.
-
 
 ## References
 

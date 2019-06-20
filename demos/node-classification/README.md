@@ -6,7 +6,7 @@ examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, GraphSAGE [3], HinSAGE, GCN [5], GAT [6], Node2Vec [1], and Metapath2Vec [2]. 
+state-of-the-art algorithms, GraphSAGE [3], HinSAGE, GCN [5], GAT [6], SGC [8], Node2Vec [1], and Metapath2Vec [2]. 
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [5]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
 Word2Vec [4] algorithm.
@@ -15,11 +15,15 @@ The examples folder structure is shown below.
 
 * [`/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
 
-    Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm.
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GraphSAGE algorithm [3].
     
 * [`/gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn)
 
-    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm.
+    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm [5].
+
+* [`/sgc`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/sgc)
+
+    Example of semi-supervised node classification for a homogeneous network, using the SGC algorithm [8].
 
 * [`/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
@@ -59,3 +63,7 @@ ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
 
 7. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger. 
 ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
+
+8. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger. 
+arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
+

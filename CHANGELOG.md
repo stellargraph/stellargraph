@@ -1,12 +1,40 @@
 # Change Log
+
+## [0.7.0](https://github.com/stellargraph/stellargraph/tree/v0.7.0)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.6.1...v0.7.0)
+
+**Implemented enhancements:**
+- SGC Implementation [\#361](https://github.com/stellargraph/stellargraph/pull/361) ([PantelisElinas](https://github.com/PantelisElinas))
+- Updated to support Python 3.7 [\#348](https://github.com/stellargraph/stellargraph/pull/348)
+- FullBatchNodeGenerator now supports a simpler interface to apply different adjacency matrix pre-processing options [\#405](https://github.com/stellargraph/stellargraph/pull/405)
+- Full-batch models (GCN, GAT, and SGC) now return predictions for only those nodes provided to the generator in the same order [\#417](https://github.com/stellargraph/stellargraph/pull/417)
+- GAT now supports using a sparse adjacency matrix making execution faster [\#420](https://github.com/stellargraph/stellargraph/pull/420)
+- Added interpretability of GCN models and a demo of finding important edges for a node prediction [\#383](https://github.com/stellargraph/stellargraph/pull/383)
+- Added a demo showing inductive classification with the PubMed dataset [\#372](https://github.com/stellargraph/stellargraph/pull/372)
+
+
+**Refactoring:**
+- Added build\(\) method for GraphSAGE and HinSAGE model classes [\#385](https://github.com/stellargraph/stellargraph/pull/385)
+This replaces the node_model\(\) and link_model\(\) methods, which will be deprecated in future versions (deprecation warnings added).
+- Changed the `FullBatchNodeGenerator` to accept simpler `method` and `transform` arguments [\#405](https://github.com/stellargraph/stellargraph/pull/405)
+
+
+**Fixed bugs:**
+- Removed label from features for pubmed dataset. [\#362](https://github.com/stellargraph/stellargraph/pull/362)
+- Python igraph requirement fixed [\#392](https://github.com/stellargraph/stellargraph/pull/392)
+- Simplified random walks to not require passing a graph [\#408](https://github.com/stellargraph/stellargraph/pull/408)
+
+
 ## [0.6.1](https://github.com/stellargraph/stellargraph/tree/v0.6.1) (1 Apr 2019)
-**Enhancements:**
-- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb`
 
 **Fixed bugs:**
 - a bug in passing graph adjacency matrix to the optional `func_opt` function in `FullBatchNodeGenerator` class
 - a bug in `demos/node-classification/gcn/gcn-cora-example.py:144`: incorrect argument was used to pass
-the optional function to the generator for GCN 
+the optional function to the generator for GCN
+
+**Enhancements:**
+- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb` 
 
 ## [0.6.0](https://github.com/stellargraph/stellargraph/tree/v0.6.0) (14 Mar 2019)
 

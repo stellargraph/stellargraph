@@ -159,12 +159,13 @@ class LinkInference(object):
         assert len(layer_size) == len(
             num_samples
         ), "layer_size and num_samples must be of the same length! Stopping."
+
         hinsage = HinSAGE(
             layer_sizes=layer_size, generator=train_gen, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
-        x_inp, x_out = hinsage.default_model()
+        x_inp, x_out = hinsage.build()
 
         # Final estimator layer
         score_prediction = link_regression(
@@ -215,7 +216,7 @@ if __name__ == "__main__":
         "-p",
         "--data_path",
         type=str,
-        default="../data/ml-100k",
+        default="../../data/ml-100k",
         help="Dataset path (directory)",
     )
     parser.add_argument(
