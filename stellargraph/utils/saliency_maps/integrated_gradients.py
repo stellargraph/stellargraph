@@ -38,7 +38,7 @@ class IntegratedGradients(GradientSaliency):
     """
 
     def __init__(self, model):
-        GradientSaliency.__init__(self, model)
+        super().__init__(model)
 
     def get_integrated_node_masks(
         self, X_val, A_val, node_idx, class_of_interest, X_baseline=None, steps=20
@@ -56,14 +56,14 @@ class IntegratedGradients(GradientSaliency):
         if X_baseline is None:
             X_baseline = np.zeros(X_val.shape)
         X_diff = X_val - X_baseline
-        total_gradients = np.zeros(X_val.shape)
 
+        total_gradients = np.zeros(X_val.shape)
         for alpha in np.linspace(0, 1, steps):
             X_step = X_baseline + alpha * X_diff
-            total_gradients += super(IntegratedGradients, self).get_node_masks(
+            total_gradients += self.get_node_masks(
                 X_step, A_val, node_idx, class_of_interest
-            )[0]
-        return total_gradients * X_diff
+            )
+        return np.squeeze(total_gradients * X_diff, 0)
 
     def get_integrated_link_masks(
         self,
@@ -103,15 +103,14 @@ class IntegratedGradients(GradientSaliency):
             if self.is_sparse:
                 A_step = sp.lil_matrix(A_step)
                 A_csr = sp.csr_matrix(A_step)
-            tmp = super(IntegratedGradients, self).get_link_masks(
-                X_val, A_step, node_idx, class_of_interest
-            )[0]
+            tmp = self.get_link_masks(X_val, A_step, node_idx, class_of_interest)
             if self.is_sparse:
                 tmp = sp.csr_matrix(
                     (tmp, A_csr.indices, A_csr.indptr), shape=A_csr.shape
                 ).toarray()
             total_gradients += tmp
-        return np.multiply(total_gradients, A_diff) / steps
+
+        return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
 
     def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps=20):
         """
@@ -125,4 +124,5 @@ class IntegratedGradients(GradientSaliency):
         gradients = self.get_integrated_node_masks(
             X_val, A_val, node_idx, class_of_interest, steps=steps
         )
-        return np.sum(gradients, axis=1)
+
+        return np.sum(gradients, axis=-1)
