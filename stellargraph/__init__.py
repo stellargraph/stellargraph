@@ -35,4 +35,9 @@ custom_keras_layers = {
     "GraphAttention": layer.GraphAttention,
     "GraphAttentionSparse": layer.GraphAttentionSparse,
     "SqueezedSparseConversion": layer.SqueezedSparseConversion,
+    "MeanAggregator": layer.graphsage.MeanAggregator,
+    "MaxPoolingAggregator": layer.graphsage.MaxPoolingAggregator,
+    "MeanPoolingAggregator": layer.graphsage.MeanPoolingAggregator,
+    "AttentionalAggregator": layer.graphsage.AttentionalAggregator,
+    "MeanHinAggregator": layer.hinsage.MeanHinAggregator,
 }
