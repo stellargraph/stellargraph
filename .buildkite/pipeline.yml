@@ -51,6 +51,12 @@ steps:
         image: "mvdan/shfmt:v2.6.4"
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
+  - label: ":shell: shellcheck"
+    command: 'find ./ -type f \( -name "*.sh" \) -print0 | xargs -0 shellcheck --color=always'
+    plugins:
+      docker#v3.2.0:
+        image: "koalaman/shellcheck-alpine"
+
   - label: ":docker: :hadolint: lint Dockerfiles"
     command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
     plugins:
