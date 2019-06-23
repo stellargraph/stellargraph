@@ -14,34 +14,34 @@ scripts = [
     {
         "name": "GAT Demo script",
         "path": "demos/node-classification/gat/gat-cora-example.py",
-        "args": "-l {CORA_DIR}",
+        "args": "-l {CORA_DIR} -e 5",
     },
     {
         "name": "GCN Demo script",
         "path": "demos/node-classification/gcn/gcn-cora-example.py",
-        "args": "-l {CORA_DIR}",
+        "args": "-l {CORA_DIR} -e 5",
     },
     {
         "name": "GraphSAGE Demo script",
         "path": "demos/node-classification/graphsage/graphsage-cora-example.py",
-        "args": "-l {CORA_DIR}",
+        "args": "-l {CORA_DIR} -e 5",
     },
     {
         "name": "GraphSAGE LP Demo script",
         "path": "demos/link-prediction/graphsage/cora-links-example.py",
-        "args": "-l {CORA_DIR}",
+        "args": "-l {CORA_DIR} -e 5",
     },
-    {
-        "name": "HinSAGE Movielens Demo script",
-        "path": "demos/link-prediction/hinsage/movielens-recommender.py",
-        "args": "-p {ML100_DIR} -f {SCRIPT_DIR}/ml-100k-config.json",
-    },
+#    {
+#        "name": "HinSAGE Movielens Demo script",
+#        "path": "demos/link-prediction/hinsage/movielens-recommender.py",
+#        "args": "-p {ML100_DIR} -f {SCRIPT_DIR}/ml-100k-config.json -e 5",
+#    },
 ]
 
 # Datasets & arguments
 argument_dict = {
     "CORA_DIR": os.path.expandvars("$HOME/data/cora"),
-    "ML100_DIR": os.path.expandvars("$HOME/data/ml-100k"),
+#    "ML100_DIR": os.path.expandvars("$HOME/data/ml-100k"),
 }
 
 # Jupyter notebooks to test:
@@ -51,8 +51,9 @@ notebook_paths = [
     "demos/node-classification/node2vec/",
     "demos/node-classification/sgc/",
     "demos/link-prediction/graphsage/",
-    "demos/link-prediction/hinsage/",
+    #"demos/link-prediction/hinsage/",
     "demos/link-prediction/random-walks/",
+    #"demos/interpretability/gcn/",
     "demos/calibration",
     "demos/embeddings",
     "demos/ensembles",
