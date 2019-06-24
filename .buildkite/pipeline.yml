@@ -52,7 +52,7 @@ steps:
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
   - label: ":shell: shellcheck"
-    command: 'find ./ -type f \( -name "*.sh" \) -print0 | xargs -0 shellcheck --color=always'
+    command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
     plugins:
       docker#v3.2.0:
         image: "koalaman/shellcheck-alpine"
