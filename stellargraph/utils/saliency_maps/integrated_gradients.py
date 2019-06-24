@@ -100,14 +100,7 @@ class IntegratedGradients(GradientSaliency):
         total_gradients = np.zeros(A_val.shape)
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
-            if self.is_sparse:
-                A_step = sp.lil_matrix(A_step)
-                A_csr = sp.csr_matrix(A_step)
             tmp = self.get_link_masks(X_val, A_step, node_idx, class_of_interest)
-            if self.is_sparse:
-                tmp = sp.csr_matrix(
-                    (tmp, A_csr.indices, A_csr.indptr), shape=A_csr.shape
-                ).toarray()
             total_gradients += tmp
 
         return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
