@@ -66,15 +66,15 @@ class GradientSaliency:
         self.node_gradients = model.optimizer.get_gradients(
             K.gather(output[0, 0], self.class_of_interest), features_t
         )
-        self.is_sparse = False  # K.is_sparse(adj)
+        self.is_sparse = False
 
         # link gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
-            print("adjacency matrix tensor is sparse")
-            self.link_gradients = model.optimizer.get_gradients(
-                K.gather(output[0, 0], self.class_of_interest), adj_values
-            )
+            # self.link_gradients = model.optimizer.get_gradients(
+            #     K.gather(output[0, 0], self.class_of_interest), adj_values
+            # )
+            raise NotImplementedError("Sparse matrix support is not yet implemented")
 
         else:
             self.link_gradients = model.optimizer.get_gradients(
@@ -113,8 +113,9 @@ class GradientSaliency:
         out_indices = np.array([[node_idx]])
 
         # Execute the function to compute the gradient
-        if self.is_sparse and not sp.issparse(A_val):
-            A_val = sp.lil_matrix(A_val)
+        if self.is_sparse:
+            raise NotImplementedError("Sparse matrix support is not yet implemented")
+
         gradients = self.compute_link_gradients(
             [X_val, out_indices, A_val, 0, class_of_interest]
         )
