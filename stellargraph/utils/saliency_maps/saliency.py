@@ -20,7 +20,7 @@ import keras.backend as K
 import scipy.sparse as sp
 
 
-class GradientSaliency(object):
+class GradientSaliency:
     """
     Class to compute the saliency maps based on the vanilla gradient w.r.t the adjacency and the feature matrix.
 
@@ -37,8 +37,12 @@ class GradientSaliency(object):
                     This is typically the logit or softmax output.
         """
 
+        if len(model.inputs) != 3:
+            raise RuntimeError("Expected a GCN model with dense adjacency matrix")
+
         # The placeholder for features and adjacency matrix (model input):
-        features, adj = model.input
+        features_t, output_indices_t, adj_t = model.input
+
         # Placeholder for class prediction (model output):
         output = model.output
 
@@ -49,48 +53,39 @@ class GradientSaliency(object):
         self.class_of_interest = K.placeholder(shape=(), dtype="int32")
 
         # The input tensors for computing the node saliency map
-        node_mask_tensors = [
-            features,
-            adj,
+        node_mask_tensors = model.input + [
             K.learning_phase(),  # placeholder for mode (train or test) tense
-            self.node_idx,
             self.class_of_interest,
         ]
 
         # The input tensors for computing the link saliency map
-        link_mask_tensors = [
-            features,
-            adj,
-            K.learning_phase(),
-            self.node_idx,
-            self.class_of_interest,
-        ]
+        link_mask_tensors = model.input + [K.learning_phase(), self.class_of_interest]
 
         # node gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. input features of all nodes in the graph
-        node_gradients = model.optimizer.get_gradients(
-            K.gather(K.gather(output, self.node_idx), self.class_of_interest), features
+        self.node_gradients = model.optimizer.get_gradients(
+            K.gather(output[0, 0], self.class_of_interest), features_t
         )
-        self.is_sparse = K.is_sparse(adj)
+        self.is_sparse = False
+
         # link gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
-            print("adjacency matrix tensor is sparse")
-            self.link_gradients = model.optimizer.get_gradients(
-                K.gather(K.gather(output, self.node_idx), self.class_of_interest),
-                adj.values,
-            )
+            # self.link_gradients = model.optimizer.get_gradients(
+            #     K.gather(output[0, 0], self.class_of_interest), adj_values
+            # )
+            raise NotImplementedError("Sparse matrix support is not yet implemented")
 
         else:
             self.link_gradients = model.optimizer.get_gradients(
-                K.gather(K.gather(output, self.node_idx), self.class_of_interest), adj
+                K.gather(output[0, 0], self.class_of_interest), adj_t
             )
 
         self.compute_link_gradients = K.function(
             inputs=link_mask_tensors, outputs=self.link_gradients
         )
         self.compute_node_gradients = K.function(
-            inputs=node_mask_tensors, outputs=node_gradients
+            inputs=node_mask_tensors, outputs=self.node_gradients
         )
 
     def get_node_masks(self, X_val, A_val, node_idx, class_of_interest):
@@ -100,12 +95,13 @@ class GradientSaliency(object):
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
+        out_indices = np.array([[node_idx]])
 
         # Execute the function to compute the gradient
         gradients = self.compute_node_gradients(
-            [X_val, A_val, 0, node_idx, class_of_interest]
+            [X_val, out_indices, A_val, 0, class_of_interest]
         )
-        return gradients
+        return gradients[0]
 
     def get_link_masks(self, X_val, A_val, node_idx, class_of_interest):
         """
@@ -114,15 +110,16 @@ class GradientSaliency(object):
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
+        out_indices = np.array([[node_idx]])
 
         # Execute the function to compute the gradient
+        if self.is_sparse:
+            raise NotImplementedError("Sparse matrix support is not yet implemented")
 
-        if self.is_sparse and not sp.issparse(A_val):
-            A_val = sp.lil_matrix(A_val)
         gradients = self.compute_link_gradients(
-            [X_val, A_val, 0, node_idx, class_of_interest]
+            [X_val, out_indices, A_val, 0, class_of_interest]
         )
-        return gradients
+        return gradients[0]
 
     def get_node_importance(self, X_val, A_val, node_idx, class_of_interest):
         """
@@ -135,5 +132,5 @@ class GradientSaliency(object):
         Returns:
             (Numpy array): Each element indicates the importance of a node.
         """
-        gradients = self.get_node_masks(X_val, A_val, node_idx, class_of_interest)[0]
+        gradients = self.get_node_masks(X_val, A_val, node_idx, class_of_interest)
         return np.sum(gradients, axis=1)
