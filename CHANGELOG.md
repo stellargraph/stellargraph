@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.7.1](https://github.com/stellargraph/stellargraph/tree/v0.7.1)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.0...v0.7.1)
+
+**Fixed bugs:**
+- Removed igraph and mplleaflet from `demos` requirements in `setup.py`. Python-igraph doesn't install on many systems and is only required for the clustering notebook. See the `README.md` in that directory for requirements and installation directions.
+- Updated GCN interpretability notebook to work with new FullBatchGenerator API [\#429](https://github.com/stellargraph/stellargraph/pull/429)
+
 ## [0.7.0](https://github.com/stellargraph/stellargraph/tree/v0.7.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.6.1...v0.7.0)
