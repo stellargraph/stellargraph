@@ -37,11 +37,11 @@ class IntegratedGradients(GradientSaliency):
     A SaliencyMask class that implements the integrated gradients method.
     """
 
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, model, sparse=True):
+        super().__init__(model, sparse)
 
     def get_integrated_node_masks(
-        self, X_val, A_val, node_idx, class_of_interest, X_baseline=None, steps=20
+        self, X_val, A_index, A_val, node_idx, class_of_interest, X_baseline=None, steps=20
     ):
         """
         Args:
@@ -61,13 +61,14 @@ class IntegratedGradients(GradientSaliency):
         for alpha in np.linspace(0, 1, steps):
             X_step = X_baseline + alpha * X_diff
             total_gradients += self.get_node_masks(
-                X_step, A_val, node_idx, class_of_interest
+                X_step, A_index, A_val, node_idx, class_of_interest
             )
         return np.squeeze(total_gradients * X_diff, 0)
 
     def get_integrated_link_masks(
         self,
         X_val,
+        A_index,
         A_val,
         node_idx,
         class_of_interest,
@@ -100,12 +101,12 @@ class IntegratedGradients(GradientSaliency):
         total_gradients = np.zeros(A_val.shape)
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
-            tmp = self.get_link_masks(X_val, A_step, node_idx, class_of_interest)
+            tmp = self.get_link_masks(X_val, A_index, A_step, node_idx, class_of_interest)
             total_gradients += tmp
 
         return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
 
-    def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps=20):
+    def get_node_importance(self, X_val, A_index,  A_val, node_idx, class_of_interest, steps=20):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
@@ -115,7 +116,7 @@ class IntegratedGradients(GradientSaliency):
         return (float): Importance score for the node.
         """
         gradients = self.get_integrated_node_masks(
-            X_val, A_val, node_idx, class_of_interest, steps=steps
+            X_val, A_index, A_val, node_idx, class_of_interest, steps=steps
         )
 
         return np.sum(gradients, axis=-1)

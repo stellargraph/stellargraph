@@ -26,7 +26,7 @@ class GradientSaliency:
 
     """
 
-    def __init__(self, model):
+    def __init__(self, model, sparse=True):
         """
         Args:
             model (Keras model object): The differentiable graph model object.
@@ -37,11 +37,15 @@ class GradientSaliency:
                     This is typically the logit or softmax output.
         """
 
-        if len(model.inputs) != 3:
-            raise RuntimeError("Expected a GCN model with dense adjacency matrix")
+        #if len(model.inputs) != 3:
+        #    raise RuntimeError("Expected a GCN model with dense adjacency matrix")
+        self.is_sparse = sparse
 
         # The placeholder for features and adjacency matrix (model input):
-        features_t, output_indices_t, adj_t = model.input
+        if not self.is_sparse:
+            features_t, output_indices_t, adj_t = model.input
+        else:
+            features_t, output_indices_t, adj_indices_t, adj_t = model.input
 
         # Placeholder for class prediction (model output):
         output = model.output
@@ -66,15 +70,14 @@ class GradientSaliency:
         self.node_gradients = model.optimizer.get_gradients(
             K.gather(output[0, 0], self.class_of_interest), features_t
         )
-        self.is_sparse = False
 
         # link gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
-            # self.link_gradients = model.optimizer.get_gradients(
-            #     K.gather(output[0, 0], self.class_of_interest), adj_values
-            # )
-            raise NotImplementedError("Sparse matrix support is not yet implemented")
+            self.link_gradients = model.optimizer.get_gradients(
+                 K.gather(output[0, 0], self.class_of_interest), adj_t
+            )
+            #raise NotImplementedError("Sparse matrix support is not yet implemented")
 
         else:
             self.link_gradients = model.optimizer.get_gradients(
@@ -88,7 +91,7 @@ class GradientSaliency:
             inputs=node_mask_tensors, outputs=self.node_gradients
         )
 
-    def get_node_masks(self, X_val, A_val, node_idx, class_of_interest):
+    def get_node_masks(self, X_val, A_index, A_val, node_idx, class_of_interest):
         """
         Args:
             X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
@@ -96,14 +99,18 @@ class GradientSaliency:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
         out_indices = np.array([[node_idx]])
-
+        if self.is_sparse:
+            gradients = self.compute_node_gradients(
+                [X_val, out_indices, A_index, A_val, 0, class_of_interest]
+            )
         # Execute the function to compute the gradient
-        gradients = self.compute_node_gradients(
-            [X_val, out_indices, A_val, 0, class_of_interest]
-        )
+        else:
+            gradients = self.compute_node_gradients(
+                [X_val, out_indices, A_val, 0, class_of_interest]
+            )
         return gradients[0]
 
-    def get_link_masks(self, X_val, A_val, node_idx, class_of_interest):
+    def get_link_masks(self, X_val, A_index, A_val, node_idx, class_of_interest):
         """
         Args:
             X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
@@ -114,11 +121,14 @@ class GradientSaliency:
 
         # Execute the function to compute the gradient
         if self.is_sparse:
-            raise NotImplementedError("Sparse matrix support is not yet implemented")
-
-        gradients = self.compute_link_gradients(
-            [X_val, out_indices, A_val, 0, class_of_interest]
-        )
+            #raise NotImplementedError("Sparse matrix support is not yet implemented")
+            gradients = self.compute_link_gradients(
+                [X_val, out_indices, A_index , A_val, 0, class_of_interest]
+            )
+        else:
+            gradients = self.compute_link_gradients(
+                [X_val, out_indices, A_val, 0, class_of_interest]
+            )
         return gradients[0]
 
     def get_node_importance(self, X_val, A_val, node_idx, class_of_interest):
