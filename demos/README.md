@@ -40,7 +40,8 @@ The examples folder structure is shown below.
 
 * [`/community_detection`](https://github.com/stellargraph/stellargraph/tree/master/demos/community_detection)
 
-    Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is          demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings. 
+    Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings.
+    Note that this demo requires the installation of `igraph-python`, see the `README.md` in this directory for more details.
 
 
 ## References

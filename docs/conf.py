@@ -27,7 +27,8 @@ project = 'StellarGraph'
 copyright = '2018-2019, Data61, CSIRO'
 author = 'Data61, CSIRO'
 
-# The full version, including alpha/beta/rc tags
+# Get global version
+# see: https://packaging.python.org/guides/single-sourcing-package-version/
 release = version['__version__']
 
 # The short X.Y version

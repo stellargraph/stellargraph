@@ -20,4 +20,4 @@ To run the demo notebook, extract the data into a directory, and adjust the data
 
 ## Issues
 
-Some people experience troubles installing `igraph-python`. Please refer to the installation page https://igraph.org/python/ for the help. 
+If you experience problems in installing `igraph-python`, please refer to the installation page https://igraph.org/python/ for help. 
