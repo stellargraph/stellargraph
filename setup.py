@@ -33,12 +33,16 @@ REQUIRES = [
 ]
 
 # The demos requirements are as follows:
-# demos/community_detection: mplleaflet, python-igraph
-# demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
-# demos/link-prediction/hinsage/utils.py: numba
+# * demos/community_detection: mplleaflet, python-igraph
+#  *** For now these are not installed as compiled python-igraph is not available for all platforms
 #
+# * demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
+#
+# * demos/link-prediction/hinsage/utils.py: numba
+#
+# Other demos do not have specific requirements
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "mplleaflet", "seaborn", "python-igraph"],
+    "demos": ["numba", "jupyter", "seaborn"],
     "test": ["pytest", "pytest-benchmark"],
 }
 
