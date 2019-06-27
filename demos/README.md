@@ -43,6 +43,9 @@ The examples folder structure is shown below.
     Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings.
     Note that this demo requires the installation of `igraph-python`, see the `README.md` in this directory for more details.
 
+* [`/use-cases`](https://github.com/stellargraph/stellargraph/tree/master/demos/use-cases)
+
+    Example use-cases/applications for graph neural network algorithms.
 
 ## References
 
