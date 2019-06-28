@@ -63,7 +63,7 @@ class IntegratedGradients(GradientSaliency):
         for alpha in np.linspace(1.0 / steps, 1, steps):
             X_step = X_baseline + alpha * X_diff
             total_gradients += super(IntegratedGradients, self).get_node_masks(
-                node_idx, class_of_interest, X_val = X_step
+                node_idx, class_of_interest, X_val=X_step
             )
         return np.squeeze(total_gradients * X_diff, 0)
 

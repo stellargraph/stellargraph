@@ -212,14 +212,9 @@ class GraphAttention(Layer):
         feat_shape = input_shapes[0]
         input_dim = feat_shape[-1]
 
-
-
         # Variables to support integrated gradients
         self.delta = self.add_weight(
-            name="ig_delta",
-            shape=(),
-            trainable=False,
-            initializer=initializers.ones(),
+            name="ig_delta", shape=(), trainable=False, initializer=initializers.ones()
         )
         self.non_exist_edge = self.add_weight(
             name="ig_non_exist_edge",
@@ -347,10 +342,9 @@ class GraphAttention(Layer):
                 dense += mask
                 dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
 
-
             else:
-                #dense = dense - tf.reduce_max(dense)
-                #GAT with support for saliency calculations
+                # dense = dense - tf.reduce_max(dense)
+                # GAT with support for saliency calculations
                 a = (self.delta * A) * K.exp(dense) * (
                     1 - self.non_exist_edge
                 ) + self.non_exist_edge * (
@@ -635,7 +629,7 @@ class GAT:
         attn_dropout=0.0,
         normalize=None,
         generator=None,
-        saliency_map_support=False
+        saliency_map_support=False,
     ):
         self.bias = bias
         self.in_dropout = in_dropout
@@ -796,7 +790,7 @@ class GAT:
                     activation=self.activations[ii],
                     use_bias=self.bias,
                     final_layer=ii == (n_layers - 1),
-                    saliency_map_support=self.saliency_map_support
+                    saliency_map_support=self.saliency_map_support,
                 )
             )
 
