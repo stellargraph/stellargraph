@@ -70,10 +70,7 @@ class GradientSaliency(object):
         ]
 
         # The input tensors for computing the link saliency map
-        link_mask_tensors = model.input + [
-            K.learning_phase(),
-            self.class_of_interest,
-        ]
+        link_mask_tensors = model.input + [K.learning_phase(), self.class_of_interest]
 
         # node gradients are the gradients of the output's component corresponding to the
         # class of interest, w.r.t. input features of all nodes in the graph
@@ -147,7 +144,6 @@ class GradientSaliency(object):
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
         out_indices = np.array([[node_idx]])
-
 
         if X_val is None:
             X_val = self.X
