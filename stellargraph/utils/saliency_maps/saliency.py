@@ -37,7 +37,7 @@ class GradientSaliency:
                     This is typically the logit or softmax output.
         """
 
-        #if len(model.inputs) != 3:
+        # if len(model.inputs) != 3:
         #    raise RuntimeError("Expected a GCN model with dense adjacency matrix")
         self.is_sparse = sparse
 
@@ -75,9 +75,9 @@ class GradientSaliency:
         # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
             self.link_gradients = model.optimizer.get_gradients(
-                 K.gather(output[0, 0], self.class_of_interest), adj_t
+                K.gather(output[0, 0], self.class_of_interest), adj_t
             )
-            #raise NotImplementedError("Sparse matrix support is not yet implemented")
+            # raise NotImplementedError("Sparse matrix support is not yet implemented")
 
         else:
             self.link_gradients = model.optimizer.get_gradients(
@@ -121,9 +121,9 @@ class GradientSaliency:
 
         # Execute the function to compute the gradient
         if self.is_sparse:
-            #raise NotImplementedError("Sparse matrix support is not yet implemented")
+            # raise NotImplementedError("Sparse matrix support is not yet implemented")
             gradients = self.compute_link_gradients(
-                [X_val, out_indices, A_index , A_val, 0, class_of_interest]
+                [X_val, out_indices, A_index, A_val, 0, class_of_interest]
             )
         else:
             gradients = self.compute_link_gradients(

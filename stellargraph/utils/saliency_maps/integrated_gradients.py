@@ -41,7 +41,14 @@ class IntegratedGradients(GradientSaliency):
         super().__init__(model, sparse)
 
     def get_integrated_node_masks(
-        self, X_val, A_index, A_val, node_idx, class_of_interest, X_baseline=None, steps=20
+        self,
+        X_val,
+        A_index,
+        A_val,
+        node_idx,
+        class_of_interest,
+        X_baseline=None,
+        steps=20,
     ):
         """
         Args:
@@ -101,12 +108,16 @@ class IntegratedGradients(GradientSaliency):
         total_gradients = np.zeros(A_val.shape)
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
-            tmp = self.get_link_masks(X_val, A_index, A_step, node_idx, class_of_interest)
+            tmp = self.get_link_masks(
+                X_val, A_index, A_step, node_idx, class_of_interest
+            )
             total_gradients += tmp
 
         return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
 
-    def get_node_importance(self, X_val, A_index,  A_val, node_idx, class_of_interest, steps=20):
+    def get_node_importance(
+        self, X_val, A_index, A_val, node_idx, class_of_interest, steps=20
+    ):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
