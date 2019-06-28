@@ -46,7 +46,7 @@ def example_graph_1(feature_size=None):
 
 
 def create_GAT_model(graph):
-    generator = FullBatchNodeGenerator(graph, sparse=False)
+    generator = FullBatchNodeGenerator(graph, sparse=False, method=None)
     train_gen = generator.flow([0, 1], np.array([[1, 0], [0, 1]]))
 
     gat = GAT(
@@ -64,6 +64,11 @@ def create_GAT_model(graph):
     x_inp, x_out = gat.node_model()
     keras_model = Model(inputs=x_inp, outputs=x_out)
     return gat, keras_model, generator, train_gen
+
+
+def get_ego_node_num(graph, target_idx):
+    G_ego = nx.ego_graph(graph, target_idx, radius=2)
+    return G_ego.number_of_nodes()
 
 
 def test_ig_saliency_map():
@@ -98,16 +103,18 @@ def test_ig_saliency_map():
     ig_link_importance = ig_saliency.get_integrated_link_masks(
         target_idx, class_of_interest, steps=200
     )
+    print(ig_link_importance)
+    print(train_gen.A_dense)
     ig_link_importance_ref = np.array(
         [
-            [3.99e-08, 3.99e-08, 3.99e-08, 0, 0],
-            [-3.10e-08, -3.10e-08, 0, 0, 0],
-            [3.14e-08, 0.00e00, 3.14e-08, 3.14e-08, 0],
+            [1.99e-10, 1.99e-10, 1.99e-10, 0, 0],
+            [-1.55e-10, -1.55e-10, 0, 0, 0],
+            [1.57e-10, 0.00e00, 1.57e-10, 1.57e-10, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
         ]
     )
-    assert pytest.approx(ig_link_importance_ref, abs=1e-10) == ig_link_importance
+    assert pytest.approx(ig_link_importance_ref, abs=1e-11) == ig_link_importance
     non_zero_edge_importance = np.count_nonzero(ig_link_importance)
     assert 8 == non_zero_edge_importance
     ig_node_importance = ig_saliency.get_node_importance(
