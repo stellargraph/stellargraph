@@ -38,7 +38,8 @@ delete_numbered() {
   shift
 
   set +x # don't print out the docker hub credentials
-  TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${DOCKER_LOGIN_USER}'", "password": "'${DOCKER_LOGIN_PASSWORD}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+  payload="{\"username\": \"${DOCKER_LOGIN_USER}\", \"password\": \"${DOCKER_LOGIN_PASSWORD}\"}"
+  TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d "${payload}" https://hub.docker.com/v2/users/login/ | jq -r .token)
   authHeader="Authorization: JWT ${TOKEN}"
 
   for image_name in "$@"; do
