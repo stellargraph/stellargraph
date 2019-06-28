@@ -118,7 +118,7 @@ def test_ig_saliency_map():
             [0, 0, 0, 0, 0],
         ]
     )
-    assert pytest.approx(ig_link_importance_ref, ig_link_importance)
+    assert pytest.approx(ig_link_importance_ref, ig_link_importance, abs=1e-10)
     non_zero_edge_importance = np.count_nonzero(ig_link_importance)
     assert 8 == non_zero_edge_importance
     ig_node_importance = ig_saliency.get_node_importance(
