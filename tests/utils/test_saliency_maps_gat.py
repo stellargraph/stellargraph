@@ -66,11 +66,6 @@ def create_GAT_model(graph):
     return gat, keras_model, generator, train_gen
 
 
-def get_ego_node_num(graph, target_idx):
-    G_ego = nx.ego_graph(graph, target_idx, radius=2)
-    return G_ego.number_of_nodes()
-
-
 def test_ig_saliency_map():
     graph = example_graph_1(feature_size=4)
     base_model, keras_model_gat, generator, train_gen = create_GAT_model(graph)
@@ -97,12 +92,6 @@ def test_ig_saliency_map():
         0.0,
     ]
     keras_model_gat.set_weights(weights)
-    for var in keras_model_gat.non_trainable_weights:
-        if "ig_delta" in var.name:
-            K.set_value(var, 1)
-        if "ig_non_exist_edge" in var.name:
-            K.set_value(var, 0)
-
     ig_saliency = saliency_gat.IntegratedGradients(keras_model_gat, train_gen)
     target_idx = 0
     class_of_interest = 0
@@ -118,7 +107,7 @@ def test_ig_saliency_map():
             [0, 0, 0, 0, 0],
         ]
     )
-    assert pytest.approx(ig_link_importance_ref, ig_link_importance, abs=1e-10)
+    assert pytest.approx(ig_link_importance_ref, abs=1e-10) == ig_link_importance
     non_zero_edge_importance = np.count_nonzero(ig_link_importance)
     assert 8 == non_zero_edge_importance
     ig_node_importance = ig_saliency.get_node_importance(
