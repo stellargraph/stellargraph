@@ -665,16 +665,16 @@ class FullBatchNodeGenerator:
 
     For these algorithms the adjacency matrix requires pre-processing and the
     'method' option should be specified with the correct pre-processing for
-    each algorhtm. The options are as follows:
+    each algorithm. The options are as follows:
 
     *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
     *   ``method='chebyshev'``: Implements the approximate spectral convolution
         operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
-        to implement the Simplified Graph Convolusions of Eq. 8 in [2].
+        to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
-        of the adjacency matrix to one, effectively adding self loops. This is
+        of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
