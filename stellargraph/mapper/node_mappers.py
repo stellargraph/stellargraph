@@ -526,7 +526,7 @@ class SparseFullBatchNodeSequence(Sequence):
     Args:
         features (np.ndarray): An array of node features of size (N x F),
             where N is the number of nodes in the graph, F is the node feature size
-        A (np.ndarray or sparse matrix): An adjacency matrix of the graph of size (N x N).
+        A (sparse matrix): An adjacency matrix of the graph of size (N x N).
         targets (np.ndarray, optional): An optional array of node targets of size (N x C),
             where C is the target size (e.g., number of classes for one-hot class targets)
         indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
