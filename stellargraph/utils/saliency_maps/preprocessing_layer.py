@@ -62,9 +62,9 @@ class GraphPreProcessingLayer(Layer):
             Returns:
                 The tensor of the transformed adjacency matrix.
         """
-        #Add self loops.
+        # Add self loops.
         adj = adj + tf.eye(tf.shape(adj)[0])
-        #Normalization
+        # Normalization
         rowsum = tf.reduce_sum(adj, 1)
         p = tf.fill(tf.shape(rowsum), -0.5)
         d_inv_sqrt = tf.pow(rowsum, p)
