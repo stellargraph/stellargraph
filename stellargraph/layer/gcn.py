@@ -306,7 +306,9 @@ class GCN:
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
         if self.method == "none":
-            self.graph_norm_layer = GraphPreProcessingLayer(output_dim=self.generator.Aadj.shape)
+            self.graph_norm_layer = GraphPreProcessingLayer(
+                output_dim=self.generator.Aadj.shape
+            )
 
         # Initialize a stack of GCN layers
         n_layers = len(self.layer_sizes)
@@ -372,11 +374,9 @@ class GCN:
                 "The GCN method currently only accepts a single matrix"
             )
 
-
-
         h_layer = x_in
         if self.method == "none":
-            #For GCN, if no preprocessing has been done, we apply the preprocessing layer to perform that.
+            # For GCN, if no preprocessing has been done, we apply the preprocessing layer to perform that.
             Ainput = [self.graph_norm_layer(Ainput[0])]
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
