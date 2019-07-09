@@ -117,18 +117,18 @@ def test_ig_saliency_map():
 
     keras_model_gcn.set_weights(weights)
     keras_model_gcn_sp.set_weights(weights)
-    ig_dense = IntegratedGradients(keras_model_gcn, sparse=False)
-    ig_sparse = IntegratedGradients(keras_model_gcn_sp, sparse=True)
+    ig_dense = IntegratedGradients(keras_model_gcn, train_gen, sparse=False)
+    ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp, sparse=True)
 
     [X, _, A], y_true_all = train_gen[0]
     [X, _, A_index, A_sp], y_true_all = train_gen_sp[0]
     target_idx = 0
     class_of_interest = 0
     ig_node_importance_dense = ig_dense.get_node_importance(
-        X, None, A, target_idx, class_of_interest, steps=50
+        target_idx, class_of_interest, steps=50
     )
     ig_node_importance_sp = ig_sparse.get_node_importance(
-        X, A_index, A_sp, target_idx, class_of_interest, steps=50
+        target_idx, class_of_interest, steps=50
     )
 
     ig_node_importance_ref = np.array([20.91, 18.29, 11.98, 5.98, 0])
@@ -140,13 +140,13 @@ def test_ig_saliency_map():
     )
 
     ig_link_importance_dense = ig_dense.get_integrated_link_masks(
-        X, None, A, target_idx, class_of_interest, A_baseline=None, steps=50
+        target_idx, class_of_interest, A_baseline=None, steps=50
     )
     ig_link_importance_dense_nz = ig_link_importance_dense[
         np.nonzero(ig_link_importance_dense)
     ]
     ig_link_importance_sp = ig_sparse.get_integrated_link_masks(
-        X, A_index, A_sp, target_idx, class_of_interest, A_baseline=None, steps=50
+        target_idx, class_of_interest, A_baseline=None, steps=50
     )
     ig_link_importance_sp_nz = ig_link_importance_sp[np.nonzero(ig_link_importance_sp)]
 
