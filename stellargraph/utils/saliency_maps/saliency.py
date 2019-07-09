@@ -172,7 +172,7 @@ class GradientSaliency:
             )
         if self.is_sparse:
             return csr_matrix((gradients[0][0], (A_index[0, :, 0], A_index[0, :, 1])))
-        return gradients
+        return np.squeeze(gradients, 0)
 
     def get_node_importance(
         self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
