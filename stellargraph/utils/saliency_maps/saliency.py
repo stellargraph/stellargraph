@@ -17,7 +17,11 @@
 
 import numpy as np
 import keras.backend as K
-import scipy.sparse as sp
+from scipy.sparse import csr_matrix
+from stellargraph.mapper.node_mappers import (
+    SparseFullBatchNodeSequence,
+    FullBatchNodeSequence,
+)
 
 
 class GradientSaliency:
@@ -26,7 +30,7 @@ class GradientSaliency:
 
     """
 
-    def __init__(self, model, sparse=True):
+    def __init__(self, model, generator, sparse=True):
         """
         Args:
             model (Keras model object): The differentiable graph model object.
@@ -40,6 +44,20 @@ class GradientSaliency:
         # if len(model.inputs) != 3:
         #    raise RuntimeError("Expected a GCN model with dense adjacency matrix")
         self.is_sparse = sparse
+        if self.is_sparse:
+            if not isinstance(generator, SparseFullBatchNodeSequence):
+                raise TypeError(
+                    "The generator supplied has to be an object of SparseFullBatchNodeSequence for sparse adjacency matrix."
+                )
+            self.A = generator.A_values
+            self.A_indices = generator.A_indices
+        else:
+            if not isinstance(generator, FullBatchNodeSequence):
+                raise TypeError(
+                    "The generator supplied has to be an object of FullBatchNodeSequence for dense adjacency matrix."
+                )
+            self.A = generator.A_dense
+        self.X = generator.features
 
         # The placeholder for features and adjacency matrix (model input):
         if not self.is_sparse:
@@ -91,13 +109,25 @@ class GradientSaliency:
             inputs=node_mask_tensors, outputs=self.node_gradients
         )
 
-    def get_node_masks(self, X_val, A_index, A_val, node_idx, class_of_interest):
+    def get_node_masks(
+        self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
+    ):
         """
         Args:
-            X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
+            node_idx, class_of_interest: The values to feed while computing the gradients.
+            X_val, The value of node features, default is obtained from the generator.
+            A_val: The values of adjacency matrix while computing the gradients. When the adjacency matrix is sparse, it only contains the non-zero values. The default is obtained from the generator.
+            A_index: When the adjacency matrix is sparse, it is the indices of the non-zero values. The default is obtained from the generator.
+
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
+        if X_val is None:
+            X_val = self.X
+        if A_index is None and self.is_sparse:
+            A_index = self.A_indices
+        if A_val is None:
+            A_val = self.A
         out_indices = np.array([[node_idx]])
         if self.is_sparse:
             gradients = self.compute_node_gradients(
@@ -110,13 +140,24 @@ class GradientSaliency:
             )
         return gradients[0]
 
-    def get_link_masks(self, X_val, A_index, A_val, node_idx, class_of_interest):
+    def get_link_masks(
+        self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
+    ):
         """
         Args:
-            X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
+            node_idx, class_of_interest: The values to feed while computing the gradients.
+            X_val, The value of node features, default is obtained from the generator.
+            A_val: The values of adjacency matrix while computing the gradients. When the adjacency matrix is sparse, it only contains the non-zero values. The default is obtained from the generator.
+            A_index: When the adjacency matrix is sparse, it is the indices of the non-zero values. The default is obtained from the generator.
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
+        if X_val is None:
+            X_val = self.X
+        if A_index is None and self.is_sparse:
+            A_index = self.A_indices
+        if A_val is None:
+            A_val = self.A
         out_indices = np.array([[node_idx]])
 
         # Execute the function to compute the gradient
@@ -129,9 +170,13 @@ class GradientSaliency:
             gradients = self.compute_link_gradients(
                 [X_val, out_indices, A_val, 0, class_of_interest]
             )
-        return gradients[0]
+        if self.is_sparse:
+            return csr_matrix((gradients[0][0], (A_index[0, :, 0], A_index[0, :, 1])))
+        return gradients
 
-    def get_node_importance(self, X_val, A_val, node_idx, class_of_interest):
+    def get_node_importance(
+        self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
+    ):
         """
         For nodes, the saliency mask we get gives us the importance of each features. For visualization purpose, we may
         want to see a summary of the importance for the node. The importance of each node can be defined as the sum of
@@ -142,5 +187,7 @@ class GradientSaliency:
         Returns:
             (Numpy array): Each element indicates the importance of a node.
         """
-        gradients = self.get_node_masks(X_val, A_val, node_idx, class_of_interest)
+        gradients = self.get_node_masks(
+            node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
+        )
         return np.sum(gradients, axis=1)
