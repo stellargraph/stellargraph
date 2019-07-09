@@ -28,21 +28,58 @@ __all__ = [
 import networkx as nx
 import numpy as np
 import random
+import itertools
 from collections import defaultdict
+
+import dask
 
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraphBase
 from ..core.utils import is_real_iterable
 
 
+def _walks_from(nodes, graph, n, length, rs):
+    """
+    Runs a single random walk of length starting from node.
+    Args:
+        graph:
+        node:
+        n:
+        length:
+        rs:
+
+    Returns: <list> The node ids encountered during the random walk.
+
+    """
+    # print("type(graph): {}".format(type(graph)))
+    walks = list()
+    for node in nodes:
+        for _ in range(n):
+            walk = list()
+            current_node = node
+            for _ in range(length):
+                walk.extend([current_node])
+                neighbours = list(graph.neighbors(current_node))
+                if (
+                        len(neighbours) == 0
+                ):  # for whatever reason this node has no neighbours so stop
+                    break
+                else:
+                    rs.shuffle(neighbours)  # shuffles the list in place
+                    current_node = neighbours[0]  # select the first node to follow
+            walks.append(walk)
+
+    return walks
+
 class GraphWalk(object):
     """
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None):
+    def __init__(self, graph, graph_schema=None, seed=None, client=None):
         self.graph = graph
 
+        self._client = client
         # Initialize the random state
         self._random_state = random.Random(seed)
 
@@ -113,6 +150,29 @@ class UniformRandomWalk(GraphWalk):
     Performs uniform random walks on the given graph
     """
 
+    def __split_nodes(self, nodes, n):
+        k, m = divmod(len(nodes), n)
+        return [nodes[i * k + min(i, m): (i + 1) * k + min(i + 1, m)] for i in range(n)]
+
+    def _run_distributed(self, nodes=None, n=None, length=None):
+        walks = []
+
+        # scatter the graph to all the workers
+        graph_future = self._client.scatter(self.graph, broadcast=True)
+
+        node_groups = self.__split_nodes(nodes, 100)
+        print("Using client.map() with {} node groups".format(len(node_groups)))
+        walk_features = self._client.map(
+            _walks_from, node_groups, graph=graph_future, n=n, length=length, rs=self._random_state
+        )
+        print("Executing random walk jobs")
+        walks = self._client.gather(walk_features)
+        walks = list(itertools.chain.from_iterable(walks))
+        # print(walks)
+        print("Finished!")
+
+        return walks
+
     def run(self, nodes=None, n=None, length=None, seed=None):
         """
         Perform a random walk starting from the root nodes.
@@ -137,22 +197,26 @@ class UniformRandomWalk(GraphWalk):
             rs = self._random_state
 
         walks = []
-        for node in nodes:  # iterate over root nodes
-            for walk_number in range(n):  # generate n walks per root node
-                walk = list()
-                current_node = node
-                for _ in range(length):
-                    walk.extend([current_node])
-                    neighbours = self.neighbors(current_node)
-                    if (
-                        len(neighbours) == 0
-                    ):  # for whatever reason this node has no neighbours so stop
-                        break
-                    else:
-                        rs.shuffle(neighbours)  # shuffles the list in place
-                        current_node = neighbours[0]  # select the first node to follow
 
-                walks.append(walk)
+        if self._client:
+            walks = self._run_distributed(nodes=nodes, n=n, length=length)
+        else:
+            for node in nodes:  # iterate over root nodes
+                for walk_number in range(n):  # generate n walks per root node
+                    walk = list()
+                    current_node = node
+                    for _ in range(length):
+                        walk.extend([current_node])
+                        neighbours = self.neighbors(current_node)
+                        if (
+                            len(neighbours) == 0
+                        ):  # for whatever reason this node has no neighbours so stop
+                            break
+                        else:
+                            rs.shuffle(neighbours)  # shuffles the list in place
+                            current_node = neighbours[0]  # select the first node to follow
+
+                    walks.append(walk)
 
         return walks
 
