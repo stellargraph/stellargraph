@@ -133,6 +133,10 @@ class GraphWalk(object):
         self.graph = graph
 
         self._client = client
+
+        if self._client:
+            self.graph_future = self._client.scatter(self.graph, broadcast=True)
+
         # Initialize the random state
         self._random_state = random.Random(seed)
 
@@ -936,10 +940,9 @@ class SampledBreadthFirstWalk(GraphWalk):
             rs = self._random_state
         if self._client:
             # scatter the graph to all the workers
-            graph_future = self._client.scatter(self.graph, broadcast=True)
-
+            #graph_future = self._client.scatter(self.graph, broadcast=True)
             walks = self._run_distributed(
-                graph_future=graph_future, nodes=nodes, n=n, d=d, n_size=n_size
+                graph_future=self.graph_future, nodes=nodes, n=n, d=d, n_size=n_size
             )
         else:
             for node in nodes:  # iterate over root nodes
