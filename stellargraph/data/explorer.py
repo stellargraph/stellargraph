@@ -61,7 +61,7 @@ def _walks_from(nodes, graph, n, length, rs):
                 walk.extend([current_node])
                 neighbours = list(graph.neighbors(current_node))
                 if (
-                        len(neighbours) == 0
+                    len(neighbours) == 0
                 ):  # for whatever reason this node has no neighbours so stop
                     break
                 else:
@@ -70,6 +70,59 @@ def _walks_from(nodes, graph, n, length, rs):
             walks.append(walk)
 
     return walks
+
+
+def _sampled_bfs_walks_from(nodes, graph, n, d, n_size, rs):
+    """
+    Runs a single random walk of length starting from node.
+    Args:
+        graph:
+        node:
+        n:
+        length:
+        d:
+        n_size:
+        rs:
+
+    Returns: <list> The node ids encountered during the random walk.
+
+    """
+    # print("type(graph): {}".format(type(graph)))
+    walks = list()
+    for node in nodes:  # iterate over root nodes
+        for _ in range(n):  # do n bounded breadth first walks from each root node
+            q = list()  # the queue of neighbours
+            walk = list()  # the list of nodes in the subgraph of node
+            # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+            q.extend([(node, 0)])
+
+            while len(q) > 0:
+                # remove the top element in the queue
+                # index 0 pop the item from the front of the list
+                frontier = q.pop(0)
+                depth = frontier[1] + 1  # the depth of the neighbouring nodes
+                walk.extend([frontier[0]])  # add to the walk
+
+                # consider the subgraph up to and including depth d from root node
+                if depth <= d:
+                    # neighbours = self.neighbors(frontier[0])
+                    neighbours = list(graph.neighbors(frontier[0]))
+                    if len(neighbours) == 0:
+                        break
+                    else:
+                        # sample with replacement
+                        neighbours = [
+                            rs.choice(neighbours) for _ in range(n_size[depth - 1])
+                        ]
+
+                    # add them to the back of the queue
+                    q.extend([(sampled_node, depth) for sampled_node in neighbours])
+
+            # finished i-th walk from node so add it to the list of walks as a list
+            walks.append(walk)
+
+    return walks
+
 
 class GraphWalk(object):
     """
@@ -130,6 +183,12 @@ class GraphWalk(object):
             print("Graph nodes {}".format(self.graph.nodes()))
         return list(nx.neighbors(self.graph, node))
 
+    def _split_nodes(self, nodes, n):
+        k, m = divmod(len(nodes), n)
+        return [
+            nodes[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n)
+        ]
+
     def run(self, **kwargs):
         """
         To be overridden by subclasses. It is the main entry point for performing random walks on the given
@@ -150,20 +209,23 @@ class UniformRandomWalk(GraphWalk):
     Performs uniform random walks on the given graph
     """
 
-    def __split_nodes(self, nodes, n):
-        k, m = divmod(len(nodes), n)
-        return [nodes[i * k + min(i, m): (i + 1) * k + min(i + 1, m)] for i in range(n)]
+    # def _split_nodes(self, nodes, n):
+    #     k, m = divmod(len(nodes), n)
+    #     return [nodes[i * k + min(i, m): (i + 1) * k + min(i + 1, m)] for i in range(n)]
 
     def _run_distributed(self, nodes=None, n=None, length=None):
-        walks = []
-
         # scatter the graph to all the workers
         graph_future = self._client.scatter(self.graph, broadcast=True)
 
-        node_groups = self.__split_nodes(nodes, 100)
+        node_groups = self._split_nodes(nodes, 100)
         print("Using client.map() with {} node groups".format(len(node_groups)))
         walk_features = self._client.map(
-            _walks_from, node_groups, graph=graph_future, n=n, length=length, rs=self._random_state
+            _walks_from,
+            node_groups,
+            graph=graph_future,
+            n=n,
+            length=length,
+            rs=self._random_state,
         )
         print("Executing random walk jobs")
         walks = self._client.gather(walk_features)
@@ -214,7 +276,9 @@ class UniformRandomWalk(GraphWalk):
                             break
                         else:
                             rs.shuffle(neighbours)  # shuffles the list in place
-                            current_node = neighbours[0]  # select the first node to follow
+                            current_node = neighbours[
+                                0
+                            ]  # select the first node to follow
 
                     walks.append(walk)
 
@@ -822,6 +886,29 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
+    def _run_distributed(self, nodes=None, n=None, d=1, n_size=1, rs=None):
+        # scatter the graph to all the workers
+        graph_future = self._client.scatter(self.graph, broadcast=True)
+
+        node_groups = self._split_nodes(nodes, 100)
+        print("Using client.map() with {} node groups".format(len(node_groups)))
+        walk_features = self._client.map(
+            _sampled_bfs_walks_from,
+            node_groups,
+            graph=graph_future,
+            n=n,
+            rs=self._random_state,
+            d=d,
+            n_size=n_size,
+        )
+        print("Executing random walk jobs")
+        walks = self._client.gather(walk_features)
+        walks = list(itertools.chain.from_iterable(walks))
+        # print(walks)
+        print("Finished!")
+
+        return walks
+
     def run(self, nodes=None, n=1, n_size=None, seed=None):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
@@ -849,37 +936,44 @@ class SampledBreadthFirstWalk(GraphWalk):
         else:
             # Restore the random state
             rs = self._random_state
+        if self._client:
+            walks = self._run_distributed(nodes=nodes, n=n, d=d, n_size=n_size, rs=rs)
+        else:
+            for node in nodes:  # iterate over root nodes
+                for _ in range(
+                    n
+                ):  # do n bounded breadth first walks from each root node
+                    q = list()  # the queue of neighbours
+                    walk = list()  # the list of nodes in the subgraph of node
+                    # extend() needs iterable as parameter; we use list of tuples (node id, depth)
+                    q.extend([(node, 0)])
 
-        for node in nodes:  # iterate over root nodes
-            for _ in range(n):  # do n bounded breadth first walks from each root node
-                q = list()  # the queue of neighbours
-                walk = list()  # the list of nodes in the subgraph of node
-                # extend() needs iterable as parameter; we use list of tuples (node id, depth)
-                q.extend([(node, 0)])
+                    while len(q) > 0:
+                        # remove the top element in the queue
+                        # index 0 pop the item from the front of the list
+                        frontier = q.pop(0)
+                        depth = frontier[1] + 1  # the depth of the neighbouring nodes
+                        walk.extend([frontier[0]])  # add to the walk
 
-                while len(q) > 0:
-                    # remove the top element in the queue
-                    # index 0 pop the item from the front of the list
-                    frontier = q.pop(0)
-                    depth = frontier[1] + 1  # the depth of the neighbouring nodes
-                    walk.extend([frontier[0]])  # add to the walk
+                        # consider the subgraph up to and including depth d from root node
+                        if depth <= d:
+                            neighbours = self.neighbors(frontier[0])
+                            if len(neighbours) == 0:
+                                break
+                            else:
+                                # sample with replacement
+                                neighbours = [
+                                    rs.choice(neighbours)
+                                    for _ in range(n_size[depth - 1])
+                                ]
 
-                    # consider the subgraph up to and including depth d from root node
-                    if depth <= d:
-                        neighbours = self.neighbors(frontier[0])
-                        if len(neighbours) == 0:
-                            break
-                        else:
-                            # sample with replacement
-                            neighbours = [
-                                rs.choice(neighbours) for _ in range(n_size[depth - 1])
-                            ]
+                            # add them to the back of the queue
+                            q.extend(
+                                [(sampled_node, depth) for sampled_node in neighbours]
+                            )
 
-                        # add them to the back of the queue
-                        q.extend([(sampled_node, depth) for sampled_node in neighbours])
-
-                # finished i-th walk from node so add it to the list of walks as a list
-                walks.append(walk)
+                    # finished i-th walk from node so add it to the list of walks as a list
+                    walks.append(walk)
 
         return walks
 
@@ -1018,58 +1112,65 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
             # Restore the random state
             rs = self._random_state
 
-        for node in nodes:  # iterate over root nodes
-            for _ in range(n):  # do n bounded breadth first walks from each root node
-                q = list()  # the queue of neighbours
-                walk = list()  # the list of nodes in the subgraph of node
+        if self._client:
+            # walks = self._run_distributed(nodes=nodes, n=n, d=d, n_size=n_size, rs=rs)
+            pass
+        else:
+            for node in nodes:  # iterate over root nodes
+                for _ in range(
+                    n
+                ):  # do n bounded breadth first walks from each root node
+                    q = list()  # the queue of neighbours
+                    walk = list()  # the list of nodes in the subgraph of node
 
-                # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph_schema.get_node_type(node)
-                q.extend([(node, node_type, 0)])
+                    # Start the walk by adding the head node, and node type to the frontier list q
+                    node_type = self.graph_schema.get_node_type(node)
+                    q.extend([(node, node_type, 0)])
 
-                # add the root node to the walks
-                walk.append([node])
-                while len(q) > 0:
-                    # remove the top element in the queue and pop the item from the front of the list
-                    frontier = q.pop(0)
-                    current_node, current_node_type, depth = frontier
-                    depth = depth + 1  # the depth of the neighbouring nodes
+                    # add the root node to the walks
+                    walk.append([node])
+                    while len(q) > 0:
+                        # remove the top element in the queue and pop the item from the front of the list
+                        frontier = q.pop(0)
+                        current_node, current_node_type, depth = frontier
+                        depth = depth + 1  # the depth of the neighbouring nodes
 
-                    # consider the subgraph up to and including depth d from root node
-                    if depth <= d:
-                        # Find edge types for current node type
-                        current_edge_types = self.graph_schema.schema[current_node_type]
+                        # consider the subgraph up to and including depth d from root node
+                        if depth <= d:
+                            # Find edge types for current node type
+                            current_edge_types = self.graph_schema.schema[
+                                current_node_type
+                            ]
 
-                        # Create samples of neigbhours for all edge types
-                        for et in current_edge_types:
-                            neigh_et = self.adj[et][current_node]
+                            # Create samples of neigbhours for all edge types
+                            for et in current_edge_types:
+                                neigh_et = self.adj[et][current_node]
 
-                            # If there are no neighbours of this type then we return None
-                            # in the place of the nodes that would have been sampled
-                            # YT update: with the new way to get neigh_et from self.adj[et][current_node], len(neigh_et) is always > 0.
-                            # In case of no neighbours of the current node for et, neigh_et == [None],
-                            # and samples automatically becomes [None]*n_size[depth-1]
-                            if len(neigh_et) > 0:
-                                samples = [
-                                    rs.choice(neigh_et)
-                                    for _ in range(n_size[depth - 1])
-                                ]
-                                # Choices limits us to Python 3.6+
-                                # samples = random.choices(neigh_et, k=n_size[depth - 1])
-                            else:  # this doesn't happen anymore, see the comment above
-                                samples = [None] * n_size[depth - 1]
+                                # If there are no neighbours of this type then we return None
+                                # in the place of the nodes that would have been sampled
+                                # YT update: with the new way to get neigh_et from self.adj[et][current_node], len(neigh_et) is always > 0.
+                                # In case of no neighbours of the current node for et, neigh_et == [None],
+                                # and samples automatically becomes [None]*n_size[depth-1]
+                                if len(neigh_et) > 0:
+                                    samples = [
+                                        rs.choice(neigh_et)
+                                        for _ in range(n_size[depth - 1])
+                                    ]
+                                    # Choices limits us to Python 3.6+
+                                    # samples = random.choices(neigh_et, k=n_size[depth - 1])
+                                else:  # this doesn't happen anymore, see the comment above
+                                    samples = [None] * n_size[depth - 1]
 
-                            walk.append(samples)
-                            q.extend(
-                                [
-                                    (sampled_node, et.n2, depth)
-                                    for sampled_node in samples
-                                ]
-                            )
+                                walk.append(samples)
+                                q.extend(
+                                    [
+                                        (sampled_node, et.n2, depth)
+                                        for sampled_node in samples
+                                    ]
+                                )
 
-                # finished i-th walk from node so add it to the list of walks as a list
-                walks.append(walk)
-
+                    # finished i-th walk from node so add it to the list of walks as a list
+                    walks.append(walk)
         return walks
 
     def _check_parameter_values(self, nodes, n, n_size, graph_schema, seed):
