@@ -886,12 +886,10 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def _run_distributed(self, nodes=None, n=None, d=1, n_size=1, rs=None):
-        # scatter the graph to all the workers
-        graph_future = self._client.scatter(self.graph, broadcast=True)
+    def _run_distributed(self, graph_future, nodes=None, n=None, d=1, n_size=1):
 
-        node_groups = self._split_nodes(nodes, 100)
-        print("Using client.map() with {} node groups".format(len(node_groups)))
+        node_groups = self._split_nodes(nodes, 5)
+        # print("Using client.map() with {} node groups".format(len(node_groups)))
         walk_features = self._client.map(
             _sampled_bfs_walks_from,
             node_groups,
@@ -901,11 +899,11 @@ class SampledBreadthFirstWalk(GraphWalk):
             d=d,
             n_size=n_size,
         )
-        print("Executing random walk jobs")
+        # print("Executing random walk jobs for {} nodes".format(len(nodes)))
         walks = self._client.gather(walk_features)
         walks = list(itertools.chain.from_iterable(walks))
         # print(walks)
-        print("Finished!")
+        # print("Finished!")
 
         return walks
 
@@ -937,7 +935,12 @@ class SampledBreadthFirstWalk(GraphWalk):
             # Restore the random state
             rs = self._random_state
         if self._client:
-            walks = self._run_distributed(nodes=nodes, n=n, d=d, n_size=n_size, rs=rs)
+            # scatter the graph to all the workers
+            graph_future = self._client.scatter(self.graph, broadcast=True)
+
+            walks = self._run_distributed(
+                graph_future=graph_future, nodes=nodes, n=n, d=d, n_size=n_size
+            )
         else:
             for node in nodes:  # iterate over root nodes
                 for _ in range(

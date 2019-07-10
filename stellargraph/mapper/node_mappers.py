@@ -161,6 +161,7 @@ class NodeSequence(Sequence):
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
         # Get sampled nodes
+        #print("NodeSequence.__getitem__ len(head_ids)={}".format(len(head_ids)))
         batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
 
         return batch_feats, batch_targets
@@ -203,7 +204,7 @@ class GraphSAGENodeGenerator:
         name (str or None): Name of the generator (optional)
     """
 
-    def __init__(self, G, batch_size, num_samples, schema=None, seed=None, name=None):
+    def __init__(self, G, batch_size, num_samples, schema=None, seed=None, name=None,client=None):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -230,7 +231,7 @@ class GraphSAGENodeGenerator:
             )
 
         # Create sampler for GraphSAGE
-        self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
+        self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed, client=client)
 
     def sample_features(self, head_nodes, sampling_schema):
         """
