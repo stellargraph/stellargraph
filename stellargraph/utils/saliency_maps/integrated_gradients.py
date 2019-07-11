@@ -121,7 +121,7 @@ class IntegratedGradients(GradientSaliency):
             A_dense_shape = csr_matrix(
                 (A_val[0], (A_index[0, :, 0], A_index[0, :, 1]))
             ).shape
-            total_gradients = csr_matrix(np.zeros(A_dense_shape))
+            total_gradients = csr_matrix(A_dense_shape)
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
             tmp = self.get_link_masks(
