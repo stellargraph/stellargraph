@@ -423,7 +423,7 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def build(self, flatten_output=False):
+    def build(self, flatten_output=True):
         """
         Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -454,7 +454,7 @@ class HinSAGE:
 
         return x_inp, x_out
 
-    def default_model(self, flatten_output=False):
+    def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
             "Please use .build() method instead.",

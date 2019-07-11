@@ -878,7 +878,7 @@ class GAT:
         """
         raise NotImplemented
 
-    def default_model(self, flatten_output=False):
+    def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
             "Please use .node_model() or .link_model() methods instead.",

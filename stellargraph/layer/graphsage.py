@@ -668,7 +668,7 @@ class GraphSAGE:
         input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
         return input_shapes
 
-    def node_model(self, flatten_output=False):
+    def node_model(self, flatten_output=True):
         """
         Builds a GraphSAGE model for node prediction
 
@@ -695,7 +695,7 @@ class GraphSAGE:
 
         return x_inp, x_out
 
-    def link_model(self, flatten_output=False):
+    def link_model(self, flatten_output=True):
         """
         Builds a GraphSAGE model for link or node pair prediction
 
@@ -715,7 +715,7 @@ class GraphSAGE:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self, flatten_output=False):
+    def build(self, flatten_output=True):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -750,7 +750,7 @@ class GraphSAGE:
                 "link prediction model, respectively."
             )
 
-    def default_model(self, flatten_output=False):
+    def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
             "Please use .build() method instead.",
