@@ -287,7 +287,7 @@ def test_hinsage_default_model():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.build()
+    xin, xout = hs.build(flatten_output=False)
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -320,7 +320,7 @@ def test_hinsage_serialize():
         normalize="none",
         bias=False,
     )
-    xin, xout = hs.build()
+    xin, xout = hs.build(flatten_output=False)
     model = keras.Model(inputs=xin, outputs=xout)
 
     # Save model
@@ -369,7 +369,7 @@ def test_hinsage_zero_neighbours():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.build()
+    xin, xout = hs.build(flatten_output=False)
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -407,7 +407,7 @@ def test_hinsage_aggregators():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.build()
+    xin, xout = hs.build(flatten_output=False)
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
