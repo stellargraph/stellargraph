@@ -114,7 +114,9 @@ def link_inference(
             out = Activation(output_act)(out)
             if output_dim != 1:
                 warnings.warn(
-                    "Inner product is a scalar, but output_dim is set to {}. Reverting output_dim to be 1.".format(output_dim)
+                    "Inner product is a scalar, but output_dim is set to {}. Reverting output_dim to be 1.".format(
+                        output_dim
+                    )
                 )
             out = Reshape((1,))(out)
 
