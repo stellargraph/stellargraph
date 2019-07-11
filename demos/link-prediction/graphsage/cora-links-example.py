@@ -43,7 +43,7 @@ from sklearn import feature_extraction
 
 def load_data(graph_loc, ignore_attr):
     """
-    Load Cora dataset, and create a NetworkX graph
+    Load Cora dataset (in cited-paper, citing-paper ordering), and create a NetworkX graph
     Args:
         graph_loc: dataset path
 
@@ -53,7 +53,7 @@ def load_data(graph_loc, ignore_attr):
 
     # Load the edge list
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
+        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["target", "source"]
     )
 
     # Load node features
