@@ -50,7 +50,8 @@ from stellargraph.core.utils import is_real_iterable
 
 
 class LinkSequence(Sequence):
-    """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
+    """
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
@@ -124,7 +125,7 @@ class LinkSequence(Sequence):
         return head_node_types.pop()
 
     def __len__(self):
-        "Denotes the number of batches per epoch"
+        """Denotes the number of batches per epoch"""
         return int(np.ceil(self.data_size / self.generator.batch_size))
 
     def __getitem__(self, batch_num):
@@ -168,7 +169,8 @@ class LinkSequence(Sequence):
 
 
 class OnDemandLinkSequence(Sequence):
-    """Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
+    """
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
 
     This class generates data samples for link inference models
@@ -177,9 +179,9 @@ class OnDemandLinkSequence(Sequence):
 
     Args:
         generator: An instance of :class:`GraphSAGELinkGenerator`.
-        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph. 
+        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph.
         The generator method of this class returns `batch_size` of positive and negative samples on demand.
-  """
+    """
 
     def __init__(self, generator, walker):
 
@@ -276,12 +278,13 @@ class OnDemandLinkSequence(Sequence):
         return head_node_types.pop()
 
     def __len__(self):
-        "Denotes the number of batches per epoch"
+        """Denotes the number of batches per epoch"""
         return int(np.ceil(self.data_size / self.generator.batch_size))
 
 
 class GraphSAGELinkGenerator:
-    """A data generator for link prediction with Homogeneous GraphSAGE models
+    """
+    A data generator for link prediction with Homogeneous GraphSAGE models
 
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
@@ -436,7 +439,8 @@ class GraphSAGELinkGenerator:
 
 
 class HinSAGELinkGenerator:
-    """A data generator for link prediction with Heterogeneous HinSAGE models
+    """
+    A data generator for link prediction with Heterogeneous HinSAGE models
 
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
