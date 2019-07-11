@@ -37,8 +37,8 @@ class IntegratedGradients(GradientSaliency):
     A SaliencyMask class that implements the integrated gradients method.
     """
 
-    def __init__(self, model, generator, sparse=True):
-        super().__init__(model, generator, sparse)
+    def __init__(self, model, generator):
+        super().__init__(model, generator)
 
     def get_integrated_node_masks(
         self,
@@ -128,10 +128,16 @@ class IntegratedGradients(GradientSaliency):
                 node_idx, class_of_interest, X_val, A_index, A_step
             )
             total_gradients += tmp
+
         if self.is_sparse:
             A_diff = csr_matrix((A_diff[0], (A_index[0, :, 0], A_index[0, :, 1])))
-            return total_gradients.multiply(A_diff) / steps
-        return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
+            total_gradients = total_gradients.multiply(A_diff) / steps
+        else:
+            total_gradients = np.squeeze(
+                np.multiply(total_gradients, A_diff) / steps, 0
+            )
+
+        return total_gradients
 
     def get_node_importance(
         self,

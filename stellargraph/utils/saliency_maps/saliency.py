@@ -30,40 +30,51 @@ class GradientSaliency:
 
     """
 
-    def __init__(self, model, generator, sparse=True):
+    def __init__(self, model, generator):
         """
         Args:
             model (Keras model object): The differentiable graph model object.
-                model.input should contain two tensors:
-                    - features (Numpy array): The placeholder of the feature matrix.
-                    - adj (Numpy array): The placeholder of the adjacency matrix.
-                model.output (Keras tensor): The tensor of model prediction output.
+                For a dense model, the model.input should contain two tensors:
+                    - features: The placeholder of the feature matrix.
+                    - adj: The placeholder of the adjacency matrix.
+                For a sparse model, the model.input should contain three tensors:
+                    - features: The placeholder of the feature matrix.
+                    - adj_index: The placeholder of the adjacency matrix.
+                    - adj_values: The placeholder of the adjacency matrix.
+                The model.output (Keras tensor) is the tensor of model prediction output.
                     This is typically the logit or softmax output.
-        """
 
-        # if len(model.inputs) != 3:
-        #    raise RuntimeError("Expected a GCN model with dense adjacency matrix")
-        self.is_sparse = sparse
+        """
+        # Set sparse flag from the generator
+        self.is_sparse = generator.use_sparse
+
         if self.is_sparse:
             if not isinstance(generator, SparseFullBatchNodeSequence):
                 raise TypeError(
                     "The generator supplied has to be an object of SparseFullBatchNodeSequence for sparse adjacency matrix."
                 )
+            if len(model.input) != 4:
+                raise RuntimeError(
+                    "Keras model for sparse adjacency is expected to have four inputs"
+                )
             self.A = generator.A_values
             self.A_indices = generator.A_indices
+            features_t, output_indices_t, adj_indices_t, adj_t = model.input
         else:
             if not isinstance(generator, FullBatchNodeSequence):
                 raise TypeError(
                     "The generator supplied has to be an object of FullBatchNodeSequence for dense adjacency matrix."
                 )
-            self.A = generator.A_dense
-        self.X = generator.features
+            if len(model.input) != 3:
+                raise RuntimeError(
+                    "Keras model for dense adjacency is expected to have three inputs"
+                )
 
-        # The placeholder for features and adjacency matrix (model input):
-        if not self.is_sparse:
+            self.A = generator.A_dense
             features_t, output_indices_t, adj_t = model.input
-        else:
-            features_t, output_indices_t, adj_indices_t, adj_t = model.input
+
+        # Extract features from generator
+        self.X = generator.features
 
         # Placeholder for class prediction (model output):
         output = model.output

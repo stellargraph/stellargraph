@@ -117,8 +117,8 @@ def test_ig_saliency_map():
 
     keras_model_gcn.set_weights(weights)
     keras_model_gcn_sp.set_weights(weights)
-    ig_dense = IntegratedGradients(keras_model_gcn, train_gen, sparse=False)
-    ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp, sparse=True)
+    ig_dense = IntegratedGradients(keras_model_gcn, train_gen)
+    ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp)
 
     [X, _, A], y_true_all = train_gen[0]
     [X, _, A_index, A_sp], y_true_all = train_gen_sp[0]
