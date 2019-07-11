@@ -120,8 +120,6 @@ def test_ig_saliency_map():
     ig_dense = IntegratedGradients(keras_model_gcn, train_gen)
     ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp)
 
-    [X, _, A], y_true_all = train_gen[0]
-    [X, _, A_index, A_sp], y_true_all = train_gen_sp[0]
     target_idx = 0
     class_of_interest = 0
     ig_node_importance_dense = ig_dense.get_node_importance(
@@ -153,3 +151,26 @@ def test_ig_saliency_map():
     assert pytest.approx(ig_link_importance_dense_nz, ig_link_importance_nz_ref)
 
     assert pytest.approx(ig_link_importance_dense_nz, ig_link_importance_sp_nz)
+
+
+def test_saliency_init_parameters():
+    graph = example_graph_1(feature_size=4)
+    base_model, keras_model_gcn, generator, train_gen = create_GCN_model_dense(graph)
+    base_model_sp, keras_model_gcn_sp, generator_sp, train_gen_sp = create_GCN_model_sparse(
+        graph
+    )
+
+    keras_model_gcn.compile(
+        optimizer=Adam(lr=0.1), loss=categorical_crossentropy, weighted_metrics=["acc"]
+    )
+
+    keras_model_gcn_sp.compile(
+        optimizer=Adam(lr=0.1), loss=categorical_crossentropy, weighted_metrics=["acc"]
+    )
+    # Both TypeError and RuntimeError will be raised.
+    # TypeError is raised due to the wrong generator type while RuntimeError is due to the wrong number of inputs for the model.
+    with pytest.raises(TypeError) and pytest.raises(RuntimeError):
+        IntegratedGradients(keras_model_gcn, train_gen_sp)
+
+    with pytest.raises(TypeError) and pytest.raises(RuntimeError):
+        IntegratedGradients(keras_model_gcn_sp, train_gen)
