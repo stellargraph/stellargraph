@@ -117,9 +117,9 @@ def test(test_nodes, test_targets, generator, model_file):
 
 
 def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs):
-
+    # Load edges in order 'cited-paper' <- 'citing-paper'
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, 'cora.cites'), sep="\t", header=None, names=['source', 'target']
+        os.path.join(graph_loc, 'cora.cites'), sep="\t", header=None, names=['target', 'source']
 
     )
 
