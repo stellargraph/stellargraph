@@ -29,7 +29,7 @@ actual input. Therefore, it could solve the problem we described above and give 
 
 import numpy as np
 from .saliency import GradientSaliency
-import scipy.sparse as sp
+from scipy.sparse import csr_matrix
 
 
 class IntegratedGradients(GradientSaliency):
@@ -37,11 +37,18 @@ class IntegratedGradients(GradientSaliency):
     A SaliencyMask class that implements the integrated gradients method.
     """
 
-    def __init__(self, model):
-        super().__init__(model)
+    def __init__(self, model, generator):
+        super().__init__(model, generator)
 
     def get_integrated_node_masks(
-        self, X_val, A_val, node_idx, class_of_interest, X_baseline=None, steps=20
+        self,
+        node_idx,
+        class_of_interest,
+        X_val=None,
+        A_index=None,
+        A_val=None,
+        X_baseline=None,
+        steps=20,
     ):
         """
         Args:
@@ -53,6 +60,12 @@ class IntegratedGradients(GradientSaliency):
 
         return (Numpy array): Integrated gradients for the node features.
         """
+        if X_val is None:
+            X_val = self.X
+        if A_index is None and self.is_sparse:
+            A_index = self.A_indices
+        if A_val is None:
+            A_val = self.A
         if X_baseline is None:
             X_baseline = np.zeros(X_val.shape)
         X_diff = X_val - X_baseline
@@ -61,19 +74,20 @@ class IntegratedGradients(GradientSaliency):
         for alpha in np.linspace(0, 1, steps):
             X_step = X_baseline + alpha * X_diff
             total_gradients += self.get_node_masks(
-                X_step, A_val, node_idx, class_of_interest
+                node_idx, class_of_interest, X_step, A_index, A_val
             )
         return np.squeeze(total_gradients * X_diff, 0)
 
     def get_integrated_link_masks(
         self,
-        X_val,
-        A_val,
         node_idx,
         class_of_interest,
-        A_baseline=None,
-        steps=20,
         non_exist_edge=False,
+        X_val=None,
+        A_index=None,
+        A_val=None,
+        steps=20,
+        A_baseline=None,
     ):
         """
         Args:
@@ -89,6 +103,12 @@ class IntegratedGradients(GradientSaliency):
 
         return (Numpy array): shape the same with A_val. Integrated gradients for the links.
         """
+        if X_val is None:
+            X_val = self.X
+        if A_index is None and self.is_sparse:
+            A_index = self.A_indices
+        if A_val is None:
+            A_val = self.A
         if A_baseline is None:
             if non_exist_edge:
                 A_baseline = A_val
@@ -96,16 +116,38 @@ class IntegratedGradients(GradientSaliency):
             else:
                 A_baseline = np.zeros(A_val.shape)
         A_diff = A_val - A_baseline
-
-        total_gradients = np.zeros(A_val.shape)
+        total_gradients = np.zeros_like(A_val)
+        if self.is_sparse:
+            A_dense_shape = csr_matrix(
+                (A_val[0], (A_index[0, :, 0], A_index[0, :, 1]))
+            ).shape
+            total_gradients = csr_matrix(A_dense_shape)
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
-            tmp = self.get_link_masks(X_val, A_step, node_idx, class_of_interest)
+            tmp = self.get_link_masks(
+                node_idx, class_of_interest, X_val, A_index, A_step
+            )
             total_gradients += tmp
 
-        return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
+        if self.is_sparse:
+            A_diff = csr_matrix((A_diff[0], (A_index[0, :, 0], A_index[0, :, 1])))
+            total_gradients = total_gradients.multiply(A_diff) / steps
+        else:
+            total_gradients = np.squeeze(
+                np.multiply(total_gradients, A_diff) / steps, 0
+            )
 
-    def get_node_importance(self, X_val, A_val, node_idx, class_of_interest, steps=20):
+        return total_gradients
+
+    def get_node_importance(
+        self,
+        node_idx,
+        class_of_interest,
+        X_val=None,
+        A_index=None,
+        A_val=None,
+        steps=20,
+    ):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
@@ -114,8 +156,19 @@ class IntegratedGradients(GradientSaliency):
 
         return (float): Importance score for the node.
         """
+        if X_val is None:
+            X_val = self.X
+        if A_index is None and self.is_sparse:
+            A_index = self.A_indices
+        if A_val is None:
+            A_val = self.A
         gradients = self.get_integrated_node_masks(
-            X_val, A_val, node_idx, class_of_interest, steps=steps
+            node_idx,
+            class_of_interest,
+            steps=steps,
+            X_val=X_val,
+            A_index=A_index,
+            A_val=A_val,
         )
 
         return np.sum(gradients, axis=-1)
