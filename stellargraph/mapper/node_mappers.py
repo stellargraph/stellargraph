@@ -38,6 +38,8 @@ import keras.backend as K
 from functools import reduce
 from keras.utils import Sequence
 
+from timeit import default_timer as timer
+
 from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
@@ -250,8 +252,11 @@ class GraphSAGENodeGenerator:
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
+        #start_sampling = timer()
         node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
-
+        #end_sampling = timer()
+        #print("\nTime to sample batch subgraphs {} secs".format(end_sampling-start_sampling))
+        #start_features = timer()
         # The number of samples for each head node (not including itself)
         num_full_samples = np.sum(np.cumprod(self.num_samples))
 
@@ -286,6 +291,7 @@ class GraphSAGENodeGenerator:
             np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
             for a in batch_feats
         ]
+        #print("Time to sample batch features {} secs".format(timer()-start_features))
         return batch_feats
 
     def flow(self, node_ids, targets=None, shuffle=False):
