@@ -539,7 +539,7 @@ class GraphSAGE:
 
         # Set the normalization layer used in the model
         if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
 
         elif normalize is None or normalize == "none" or normalize == "None":
             self._normalization = Lambda(lambda x: x)
@@ -668,7 +668,7 @@ class GraphSAGE:
         input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
         return input_shapes
 
-    def node_model(self, flatten_output=True):
+    def node_model(self):
         """
         Builds a GraphSAGE model for node prediction
 
@@ -690,12 +690,12 @@ class GraphSAGE:
         # Output from GraphSAGE model
         x_out = self(x_inp)
 
-        if flatten_output:
-            x_out = Reshape((-1,))(x_out)
+        if K.int_shape(x_out)[1] == 1:
+            x_out = Reshape(K.int_shape(x_out)[2:])(x_out)
 
         return x_inp, x_out
 
-    def link_model(self, flatten_output=True):
+    def link_model(self):
         """
         Builds a GraphSAGE model for link or node pair prediction
 
@@ -707,15 +707,15 @@ class GraphSAGE:
 
         """
         # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model(flatten_output=flatten_output)
-        x_inp_dst, x_out_dst = self.node_model(flatten_output=flatten_output)
+        x_inp_src, x_out_src = self.node_model()
+        x_inp_dst, x_out_dst = self.node_model()
         # re-pack into a list where (source, target) inputs alternate, for link inputs:
         x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
         # same for outputs:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self, flatten_output=True):
+    def build(self):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -734,9 +734,9 @@ class GraphSAGE:
         """
         if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
             if len(self.generator._sampling_schema) == 1:
-                return self.node_model(flatten_output=flatten_output)
+                return self.node_model()
             elif len(self.generator._sampling_schema) == 2:
-                return self.link_model(flatten_output=flatten_output)
+                return self.link_model()
             else:
                 raise RuntimeError(
                     "The generator used for model creation is neither a node nor a link generator, "

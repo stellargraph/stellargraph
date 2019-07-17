@@ -263,7 +263,7 @@ def test_hinsage_apply():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
 
 
@@ -287,7 +287,7 @@ def test_hinsage_default_model():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.build(flatten_output=False)
+    xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -300,7 +300,7 @@ def test_hinsage_default_model():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
 
 
@@ -320,7 +320,7 @@ def test_hinsage_serialize():
         normalize="none",
         bias=False,
     )
-    xin, xout = hs.build(flatten_output=False)
+    xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
 
     # Save model
@@ -345,7 +345,7 @@ def test_hinsage_serialize():
         np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
     ]
     actual = model2.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
 
 
@@ -369,7 +369,7 @@ def test_hinsage_zero_neighbours():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.build(flatten_output=False)
+    xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -382,7 +382,7 @@ def test_hinsage_zero_neighbours():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[2.5, 0]]])
+    expected = np.array([[2.5, 0]])
     assert actual == pytest.approx(expected)
 
 
@@ -407,7 +407,7 @@ def test_hinsage_aggregators():
         for _, agg in aggs.items():
             agg._initializer = "ones"
 
-    xin, xout = hs.build(flatten_output=False)
+    xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -420,5 +420,5 @@ def test_hinsage_aggregators():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
