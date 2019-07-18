@@ -62,6 +62,18 @@ class GraphPreProcessingLayer(Layer):
             Returns:
                 The tensor of the transformed adjacency matrix.
         """
+
+        # Build a symmetric adjacency matrix.
+        adj_T = tf.transpose(adj)
+        adj = (
+            adj
+            + tf.multiply(
+                adj_T, tf.where(adj_T > adj, tf.ones_like(adj), tf.zeros_like(adj))
+            )
+            - tf.multiply(
+                adj, tf.where(adj_T > adj, tf.ones_like(adj), tf.zeros_like(adj))
+            )
+        )
         # Add self loops.
         adj = adj + tf.eye(tf.shape(adj)[0])
         # Normalization
