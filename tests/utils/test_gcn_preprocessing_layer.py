@@ -23,19 +23,17 @@ import keras.backend as K
 import numpy as np
 from scipy.sparse import coo_matrix
 
+
 def test_preprocessing_layer():
-    #check whether the layer implementation is equivalent to the numpy implementation.
+    # check whether the layer implementation is equivalent to the numpy implementation.
     feature = np.array([[1, 0, 1, 1], [0, 1, 1, 0], [1, 1, 0, 0], [0, 0, 1, 1]])
     adj = np.array([[0, 0, 0, 1], [0, 0, 1, 1], [1, 1, 0, 0], [1, 0, 1, 0]])
-    graph_norm_layer = GraphPreProcessingLayer(
-        output_dim=(4, 4)
-    )
+    graph_norm_layer = GraphPreProcessingLayer(output_dim=(4, 4))
     adj_t = K.variable(adj, dtype="float32")
     layer_normalized_adj = K.eval(graph_norm_layer(adj_t))
-    _, np_normalized_adj = GCN_Aadj_feats_op(feature, coo_matrix(adj), method='gcn')
+    _, np_normalized_adj = GCN_Aadj_feats_op(feature, coo_matrix(adj), method="gcn")
 
     print(layer_normalized_adj)
 
     print(np_normalized_adj.todense())
     assert pytest.approx(layer_normalized_adj, np_normalized_adj.todense())
-
