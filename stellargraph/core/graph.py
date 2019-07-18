@@ -350,16 +350,15 @@ class StellarGraphBase:
 
         # Ensure that the incoming graph data has node & edge types
         # TODO: This requires traversing all nodes and edges. Is there another way?
-        # TODO: Should we add the default values as class arguments for these?
         node_types = set()
         type_for_node = {}
         for n, ndata in self.nodes(data=True):
-            type_for_node[n] = ndata.get(self._node_type_attr, self._node_type_default)
+            type_for_node[n] = self._get_node_type(ndata)
             node_types.add(type_for_node[n])
 
         edge_types = set()
         for n1, n2, k, edata in self.edges(keys=True, data=True):
-            edge_types.add(edata.get(self._edge_type_attr, self._edge_type_default))
+            edge_types.add(self._get_edge_type(edata))
 
         # New style: we are passed numpy arrays or pandas arrays of the feature vectors
         node_features = attr.get("node_features", None)
@@ -403,6 +402,20 @@ class StellarGraphBase:
         )
         return s
 
+    def _get_node_type(self, node_data):
+        node_type = node_data.get(self._node_type_attr)
+        if node_type is None:
+            node_type = self._node_type_default
+            node_data[self._node_type_attr] = node_type
+        return node_type
+
+    def _get_edge_type(self, edge_data):
+        edge_type = edge_data.get(self._edge_type_attr)
+        if edge_type is None:
+            edge_type = self._edge_type_default
+            edge_data[self._edge_type_attr] = edge_type
+        return edge_type
+
     def check_graph_for_ml(self, features=True):
         """
         Checks if all properties required for machine learning training/inference are set up.
@@ -441,7 +454,7 @@ class StellarGraphBase:
         # Get the node type if not specified.
         if node_type is None:
             node_types = {
-                self.node[n].get(self._node_type_attr, self._node_type_default)
+                self._get_node_type(self.node[n])
                 for n in nodes
                 if n is not None
             }
@@ -520,7 +533,7 @@ class StellarGraphBase:
             return [
                 n
                 for n, ndata in self.nodes(data=True)
-                if ndata.get(self._node_type_attr, self._node_type_default) == node_type
+                if self._get_node_type(ndata) == node_type
             ]
 
     def type_for_node(self, node):
@@ -533,8 +546,7 @@ class StellarGraphBase:
         Returns:
             Node type
         """
-        ndata = self.node[node]
-        return ndata.get(self._node_type_attr, self._node_type_default)
+        return self._get_node_type(self.node[node])
 
     @property
     def node_types(self):
@@ -550,7 +562,7 @@ class StellarGraphBase:
             return set(self._node_attribute_arrays.keys())
         else:
             return {
-                ndata.get(self._node_type_attr, self._node_type_default)
+                self._get_node_type(ndata)
                 for n, ndata in self.nodes(data=True)
             }
 
@@ -586,9 +598,9 @@ class StellarGraphBase:
 
         def is_of_edge_type(e, edge_type):
             et2 = (
-                self.node[e[0]].get(self._node_type_attr, self._node_type_default),
-                self.edges[e].get(self._edge_type_attr, self._edge_type_default),
-                self.node[e[1]].get(self._node_type_attr, self._node_type_default),
+                self._get_node_type(self.node[e[0]]),
+                self._get_edge_type(self.edges[e]),
+                self._get_node_type(self.node[e[1]]),
             )
             return et2 == edge_type
 
@@ -599,7 +611,7 @@ class StellarGraphBase:
             nt_nodes = [
                 ndata
                 for n, ndata in self.nodes(data=True)
-                if ndata.get(self._node_type_attr, self._node_type_default) == nt
+                if self._get_node_type(ndata) == nt
             ]
             s += "  {}: [{}]\n".format(nt, len(nt_nodes))
 
@@ -669,7 +681,7 @@ class StellarGraphBase:
         # Create node type index list
         node_types = sorted(
             {
-                self.node[n].get(self._node_type_attr, self._node_type_default)
+                self._get_node_type(self.node[n])
                 for n in nodes
             },
             key=str,
@@ -683,13 +695,9 @@ class StellarGraphBase:
             edata = self.adj[n1][n2][k]
 
             # Edge type tuple
-            node_type_1 = self.node[n1].get(
-                self._node_type_attr, self._node_type_default
-            )
-            node_type_2 = self.node[n2].get(
-                self._node_type_attr, self._node_type_default
-            )
-            edge_type = edata.get(self._edge_type_attr, self._edge_type_default)
+            node_type_1 = self._get_node_type(self.node[n1])
+            node_type_2 = self._get_node_type(self.node[n2])
+            edge_type = self._get_edge_type(edata)
 
             # Add edge type to node_type_1 data
             edge_type_tri = EdgeType(node_type_1, edge_type, node_type_2)
@@ -726,16 +734,14 @@ class StellarGraphBase:
         # less storage.
         if create_type_maps:
             node_type_map = {
-                n: node_types.index(
-                    ndata.get(self._node_type_attr, self._node_type_default)
-                )
+                n: node_types.index(self._get_node_type(ndata))
                 for n, ndata in self.nodes(data=True)
             }
             edge_type_map = {
                 (edge[0], edge[1], edge[2]): edge_types.index(
                     EdgeType(
                         node_types[node_type_map[edge[0]]],
-                        edge[3].get(self._edge_type_attr, self._edge_type_default),
+                        self._get_edge_type(edge[3]),
                         node_types[node_type_map[edge[1]]],
                     )
                 )
