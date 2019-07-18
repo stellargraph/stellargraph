@@ -454,9 +454,7 @@ class StellarGraphBase:
         # Get the node type if not specified.
         if node_type is None:
             node_types = {
-                self._get_node_type(self.node[n])
-                for n in nodes
-                if n is not None
+                self._get_node_type(self.node[n]) for n in nodes if n is not None
             }
 
             if len(node_types) > 1:
@@ -561,10 +559,7 @@ class StellarGraphBase:
         if len(self._node_attribute_arrays) > 0:
             return set(self._node_attribute_arrays.keys())
         else:
-            return {
-                self._get_node_type(ndata)
-                for n, ndata in self.nodes(data=True)
-            }
+            return {self._get_node_type(ndata) for n, ndata in self.nodes(data=True)}
 
     def info(self, show_attributes=True, sample=None):
         """
@@ -679,13 +674,7 @@ class StellarGraphBase:
             raise ValueError("Creating type maps for subsampled nodes is not supported")
 
         # Create node type index list
-        node_types = sorted(
-            {
-                self._get_node_type(self.node[n])
-                for n in nodes
-            },
-            key=str,
-        )
+        node_types = sorted({self._get_node_type(self.node[n]) for n in nodes}, key=str)
 
         graph_schema = {nt: set() for nt in node_types}
 
