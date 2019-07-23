@@ -136,7 +136,9 @@ class GradientSaliency(object):
         for edge_var in self.non_exist_edges:
             K.set_value(edge_var, edge_value)
 
-    def get_node_masks(self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None):
+    def get_node_masks(
+        self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
+    ):
         """
         Args:
             X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
@@ -162,7 +164,14 @@ class GradientSaliency(object):
         return gradients[0]
 
     def get_link_masks(
-        self, alpha, node_idx, class_of_interest, non_exist_edge, X_val=None, A_index=None, A_val=None
+        self,
+        alpha,
+        node_idx,
+        class_of_interest,
+        non_exist_edge,
+        X_val=None,
+        A_index=None,
+        A_val=None,
     ):
         """
         Args:
@@ -191,7 +200,6 @@ class GradientSaliency(object):
         if self.is_sparse:
             return csr_matrix((gradients[0][0], (A_index[0, :, 0], A_index[0, :, 1])))
         return np.squeeze(gradients, 0)
-
 
     def get_node_importance(
         self, alpha, node_idx, class_of_interest, X_val=None, A_val=None

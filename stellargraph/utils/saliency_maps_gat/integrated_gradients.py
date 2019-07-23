@@ -41,7 +41,6 @@ class IntegratedGradients(GradientSaliency):
     def __init__(self, model, generator):
         super().__init__(model, generator)
 
-
     def get_integrated_node_masks(
         self,
         node_idx,
@@ -80,15 +79,15 @@ class IntegratedGradients(GradientSaliency):
         return np.squeeze(total_gradients * X_diff, 0)
 
     def get_integrated_link_masks(
-            self,
-            node_idx,
-            class_of_interest,
-            non_exist_edge=False,
-            X_val=None,
-            A_index=None,
-            A_val=None,
-            steps=20,
-            A_baseline=None,
+        self,
+        node_idx,
+        class_of_interest,
+        non_exist_edge=False,
+        X_val=None,
+        A_index=None,
+        A_val=None,
+        steps=20,
+        A_baseline=None,
     ):
         """
         Args:
@@ -124,7 +123,13 @@ class IntegratedGradients(GradientSaliency):
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
             tmp = self.get_link_masks(
-                alpha, node_idx, class_of_interest, non_exist_edge, X_val, A_index, A_step
+                alpha,
+                node_idx,
+                class_of_interest,
+                non_exist_edge,
+                X_val,
+                A_index,
+                A_step,
             )
             total_gradients += tmp
 

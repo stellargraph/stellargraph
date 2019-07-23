@@ -499,11 +499,6 @@ class GraphAttentionSparse(GraphAttention):
                 features, attention_kernel[1]
             )  # (N x 1), [a_2]^T [Wh_j]
 
-            # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
-            dense = attn_for_self + K.transpose(
-                attn_for_neighs
-            )  # (N x N) via broadcasting
-
             # Create sparse attention vector (All non-zero values of the matrix)
             sparse_attn_self = K.tf.gather(
                 K.reshape(attn_for_self, [-1]), A_indices[:, 0], axis=0
@@ -519,16 +514,28 @@ class GraphAttentionSparse(GraphAttention):
             # Apply dropout to features and attention coefficients
             dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')
             dropout_attn = Dropout(self.attn_dropout_rate)(attn_values)  # (N x N)
-
             # Convert to sparse matrix
-            sparse_attn = K.tf.sparse.SparseTensor(
-                A_indices, values=dropout_attn, dense_shape=[n_nodes, n_nodes]
-            )
 
-            # Apply softmax to get attention coefficients
-            sparse_attn = K.tf.sparse.softmax(
-                sparse_attn
-            )  # (N x N), Eq. 3 of the paper
+            # HW: Implementing integrated gradients here is a bit tricky. Support adding edge feature will lose the
+            # benefit of sparse tensors. Hence, we only support the integrated gradients for the existing edges only for now.
+            if self.saliency_map_support:
+                a = self.delta * A_sparse.values
+                a = K.tf.multiply(a, K.exp(dropout_attn))
+                sparse_attn = K.tf.sparse.SparseTensor(
+                    A_indices, values=a, dense_shape=[n_nodes, n_nodes]
+                )
+                exp_reduce_sum = K.tf.sparse.reduce_sum(
+                    sparse_attn, axis=1, keepdims=True
+                )
+                sparse_attn = sparse_attn / exp_reduce_sum
+            else:
+                sparse_attn = K.tf.sparse.SparseTensor(
+                    A_indices, values=dropout_attn, dense_shape=[n_nodes, n_nodes]
+                )
+                # Apply softmax to get attention coefficients
+                sparse_attn = K.tf.sparse.softmax(
+                    sparse_attn
+                )  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
             node_features = K.tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
