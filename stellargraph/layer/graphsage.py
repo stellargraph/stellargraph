@@ -646,6 +646,11 @@ class GraphSAGE:
             h_layer = apply_layer(h_layer, layer)
             self.layer_tensors.append(h_layer)
 
+        # Remove neighbourhood dimension from output tensors
+        h_layer = [
+            Reshape(K.int_shape(x)[2:])(x) for x in h_layer if K.int_shape(x)[1] == 1
+        ]
+
         return (
             self._normalization(h_layer[0])
             if len(h_layer) == 1
@@ -683,9 +688,6 @@ class GraphSAGE:
 
         # Output from GraphSAGE model
         x_out = self(x_inp)
-
-        if K.int_shape(x_out)[1] == 1:
-            x_out = Reshape(K.int_shape(x_out)[2:])(x_out)
 
         return x_inp, x_out
 
