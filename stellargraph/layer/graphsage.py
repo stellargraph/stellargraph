@@ -539,7 +539,7 @@ class GraphSAGE:
 
         # Set the normalization layer used in the model
         if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
 
         elif normalize is None or normalize == "none" or normalize == "None":
             self._normalization = Lambda(lambda x: x)
@@ -646,6 +646,12 @@ class GraphSAGE:
             h_layer = apply_layer(h_layer, layer)
             self.layer_tensors.append(h_layer)
 
+        # Remove neighbourhood dimension from output tensors of the stack
+        # note that at this point h_layer contains the output tensor of the top (last applied) layer of the stack
+        h_layer = [
+            Reshape(K.int_shape(x)[2:])(x) for x in h_layer if K.int_shape(x)[1] == 1
+        ]
+
         return (
             self._normalization(h_layer[0])
             if len(h_layer) == 1
@@ -668,15 +674,9 @@ class GraphSAGE:
         input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
         return input_shapes
 
-    def node_model(self, flatten_output=False):
+    def node_model(self):
         """
         Builds a GraphSAGE model for node prediction
-
-        Args:
-            flatten_output: The GraphSAGE model will return an output tensor
-                of form (batch_size, 1, feature_size). If this flag
-                is true, the output will be of size
-                (batch_size, 1*feature_size)
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
@@ -690,15 +690,11 @@ class GraphSAGE:
         # Output from GraphSAGE model
         x_out = self(x_inp)
 
-        if flatten_output:
-            x_out = Reshape((-1,))(x_out)
-
         return x_inp, x_out
 
-    def link_model(self, flatten_output=False):
+    def link_model(self):
         """
         Builds a GraphSAGE model for link or node pair prediction
-
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) node pairs
@@ -707,36 +703,30 @@ class GraphSAGE:
 
         """
         # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model(flatten_output=flatten_output)
-        x_inp_dst, x_out_dst = self.node_model(flatten_output=flatten_output)
+        x_inp_src, x_out_src = self.node_model()
+        x_inp_dst, x_out_dst = self.node_model()
         # re-pack into a list where (source, target) inputs alternate, for link inputs:
         x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
         # same for outputs:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self, flatten_output=False):
+    def build(self):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
 
-        Args:
-            flatten_output: The GraphSAGE model will return a list of output tensors
-                of form (batch_size, 1, feature_size). If this flag
-                is true, the output will be of size
-                (batch_size, 1*feature_size)
-
         Returns:
             tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
-            for the model output.
+            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` contains
+            model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
         if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
             if len(self.generator._sampling_schema) == 1:
-                return self.node_model(flatten_output=flatten_output)
+                return self.node_model()
             elif len(self.generator._sampling_schema) == 2:
-                return self.link_model(flatten_output=flatten_output)
+                return self.link_model()
             else:
                 raise RuntimeError(
                     "The generator used for model creation is neither a node nor a link generator, "
@@ -750,10 +740,10 @@ class GraphSAGE:
                 "link prediction model, respectively."
             )
 
-    def default_model(self, flatten_output=False):
+    def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
             "Please use .build() method instead.",
             PendingDeprecationWarning,
         )
-        return self.build(flatten_output=flatten_output)
+        return self.build()
