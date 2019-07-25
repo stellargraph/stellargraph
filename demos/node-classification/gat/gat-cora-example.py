@@ -318,7 +318,7 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
+    # Load the dataset - this assumes it is the CORA dataset (in 'cited-paper' <- 'citing-paper' order)
     # Load graph edgelist
     if args.location is not None:
         graph_loc = os.path.expanduser(args.location)
@@ -331,7 +331,7 @@ if __name__ == "__main__":
         os.path.join(graph_loc, "cora.cites"),
         sep="\t",
         header=None,
-        names=["source", "target"],
+        names=["target", "source"],
     )
 
     # Load node features
