@@ -15,7 +15,8 @@
 # limitations under the License.
 
 """
-Ensembles of graph neural network models, GraphSAGE, GCN, GAT, with optional bootstrap sampling of the training data.
+Ensembles of graph neural network models, GraphSAGE, GCN, GAT, and HinSAGE, with optional bootstrap sampling of the
+training data (implemented in the BaggingEnsemble class).
 """
 
 from stellargraph.layer import *
@@ -504,8 +505,6 @@ class Ensemble(object):
 
 #
 #
-# Copy for BaggingEnsemble class
-#
 #
 class BaggingEnsemble(Ensemble):
     """
@@ -516,7 +515,7 @@ class BaggingEnsemble(Ensemble):
     This class can be used to create Bagging ensembles.
 
     Bagging ensembles add model diversity in two ways: (1) by random initialisation of the models' weights (before
-    training) to different values; and (b) by bootstrap sampling of the training data for each model. That is, each
+    training) to different values; and (2) by bootstrap sampling of the training data for each model. That is, each
     model in the ensemble is trained on a random subset of the training examples, sampled with replacement from the
     original training data.
     """
