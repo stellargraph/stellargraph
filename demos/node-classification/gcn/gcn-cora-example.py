@@ -35,11 +35,11 @@ def train(
     val_nodes,
     val_targets,
     generator,
-    dropout=0.0,
-    layer_sizes=[16, 7],
-    learning_rate=0.01,
-    activations=["relu", "softmax"],
-    num_epochs=10,
+    dropout,
+    layer_sizes,
+    learning_rate,
+    activations,
+    num_epochs
 ):
     """
 
