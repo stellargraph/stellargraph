@@ -822,11 +822,11 @@ class GAT:
 
     def node_model(self, num_nodes=None, feature_size=None):
         """
-        Builds a GCN model for node prediction
+        Builds a GAT model for node prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
-            and `x_out` is a Keras tensor for the GCN model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GAT model (containing node features and graph adjacency matrix),
+            and `x_out` is a Keras tensor for the GAT model output.
         """
         # Create input tensor:
         if self.generator is not None:

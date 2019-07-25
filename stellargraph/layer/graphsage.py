@@ -672,12 +672,6 @@ class GraphSAGE:
         """
         Builds a GraphSAGE model for node prediction
 
-        Args:
-            flatten_output: The GraphSAGE model will return an output tensor
-                of form (batch_size, 1, feature_size). If this flag
-                is true, the output will be of size
-                (batch_size, 1*feature_size)
-
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
             for the specified GraphSAGE model and ``x_out`` is the Keras tensor
@@ -699,7 +693,6 @@ class GraphSAGE:
         """
         Builds a GraphSAGE model for link or node pair prediction
 
-
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) node pairs
             (where (src, dst) node inputs alternate),
@@ -720,16 +713,10 @@ class GraphSAGE:
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
 
-        Args:
-            flatten_output: The GraphSAGE model will return a list of output tensors
-                of form (batch_size, 1, feature_size). If this flag
-                is true, the output will be of size
-                (batch_size, 1*feature_size)
-
         Returns:
             tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
-            for the model output.
+            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` contains
+            model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
         if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
@@ -756,4 +743,4 @@ class GraphSAGE:
             "Please use .build() method instead.",
             PendingDeprecationWarning,
         )
-        return self.build(flatten_output=flatten_output)
+        return self.build()
