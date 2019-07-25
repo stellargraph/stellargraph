@@ -92,6 +92,9 @@ def train(
         user_targets, train_size=0.25, test_size=None
     )
 
+    print("Train targets:\n", train_targets.iloc[:, 0].value_counts())
+    print("Test targets:\n", test_targets.iloc[:, 0].value_counts())
+
     # The mapper feeds data from sampled subgraph to GraphSAGE model
     generator = HinSAGENodeGenerator(G, batch_size, num_samples)
     train_gen = generator.flow_from_dataframe(train_targets, shuffle=True)
@@ -121,7 +124,9 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
+    history = model.fit_generator(
+        train_gen, epochs=num_epochs, verbose=2, shuffle=False
+    )
 
     # Evaluate on test set and print metrics
     predictions = model.predict_generator(test_gen)
@@ -222,6 +227,13 @@ if __name__ == "__main__":
     print("Reading user features and targets...")
     user_features = pd.read_pickle(os.path.join(data_loc, "user_features_filtered.pkl"))
     user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
+
+    # Quick check of target sanity
+    vc = user_targets.iloc[:, 0].value_counts()
+    if vc.iloc[0] == vc.sum():
+        raise ValueError(
+            "Targets are all the same, there has been an error in data processing"
+        )
 
     print("Reading business features...")
     business_features = pd.read_pickle(
