@@ -416,16 +416,14 @@ def test_graphsage_apply_1():
         np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
         np.array([[[4, 4], [4, 4], [4, 4], [4, 4], [5, 5], [5, 5], [5, 5], [5, 5]]]),
     ]
+    expected = np.array([[16, 25]])
 
     actual = model.predict(x)
-    expected = np.array([[[16, 25]]])
     assert expected == pytest.approx(actual)
 
-    # Use the default model:
+    # Use the node model:
     xinp, xout = gs.node_model()
     model2 = keras.Model(inputs=xinp, outputs=xout)
-
-    expected = np.array([[[16, 25]]])
     assert pytest.approx(expected) == model2.predict(x)
 
 
@@ -454,8 +452,9 @@ def test_graphsage_serialize():
     # Test loaded model
     x1 = np.array([[[1, 1]]])
     x2 = np.array([[[2, 2], [3, 3]]])
+    expected = np.array([[2, 2, 5, 5]])
+
     actual = model2.predict([x1, x2])
-    expected = np.array([[[2, 2, 5, 5]]])
     assert expected == pytest.approx(actual)
 
 
@@ -474,5 +473,5 @@ def test_graphsage_zero_neighbours():
     x = [np.array([[[1.5, 1]]]), np.zeros((1, 0, 2)), np.zeros((1, 0, 2))]
 
     actual = model.predict(x)
-    expected = np.array([[[5, 5]]])
+    expected = np.array([[5, 5]])
     assert actual == pytest.approx(expected)

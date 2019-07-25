@@ -246,7 +246,7 @@ class HinSAGE:
 
         # Set the normalization layer used in the model
         if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=2))
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
 
         elif normalize is None or normalize == "none" or normalize == "None":
             self._normalization = Lambda(lambda x: x)
@@ -379,6 +379,12 @@ class HinSAGE:
             h_layer = apply_layer(h_layer, layer)
             self.layer_tensors.append(h_layer)
 
+        # Remove neighbourhood dimension from output tensors
+        # note that at this point h_layer contains the output tensor of the top (last applied) layer of the stack
+        h_layer = [
+            Reshape(K.int_shape(x)[2:])(x) for x in h_layer if K.int_shape(x)[1] == 1
+        ]
+
         # Return final layer output tensor with optional normalization
         return (
             self._normalization(h_layer[0])
@@ -423,21 +429,15 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def build(self, flatten_output=False):
+    def build(self):
         """
         Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
 
-        Args:
-            flatten_output: The HinSAGE model will return a list of output tensors
-                of form (batch_size, 1, feature_size). If this flag
-                is true, the output will be of size
-                (batch_size, 1*feature_size)
-
         Returns:
             tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` is the Keras tensor
-            for the model output.
+            for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` contains
+            model output tensor(s) of shape (batch_size, layer_sizes[-1]).
 
         """
         # Create tensor inputs
@@ -446,18 +446,12 @@ class HinSAGE:
         # Output from HinSAGE model
         x_out = self(x_inp)
 
-        if flatten_output:
-            if isinstance(x_out, list):
-                x_out = [Reshape((-1,))(x) for x in x_out]
-            else:
-                x_out = Reshape((-1,))(x_out)
-
         return x_inp, x_out
 
-    def default_model(self, flatten_output=False):
+    def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
             "Please use .build() method instead.",
             PendingDeprecationWarning,
         )
-        return self.build(flatten_output=flatten_output)
+        return self.build()
