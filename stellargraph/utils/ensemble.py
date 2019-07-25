@@ -647,7 +647,7 @@ class BaggingEnsemble(Ensemble):
         num_points_per_bag = len(train_data)
         if bag_size is not None:
             num_points_per_bag = bag_size
-            
+
         # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
         # datasets.
         for model in self.models:
