@@ -380,6 +380,7 @@ class HinSAGE:
             self.layer_tensors.append(h_layer)
 
         # Remove neighbourhood dimension from output tensors
+        # note that at this point h_layer contains the output tensor of the top (last applied) layer of the stack
         h_layer = [
             Reshape(K.int_shape(x)[2:])(x) for x in h_layer if K.int_shape(x)[1] == 1
         ]
