@@ -78,7 +78,7 @@ class GraphConvolution(Layer):
         activity_regularizer=None,
         kernel_constraint=None,
         bias_constraint=None,
-        **kwargs,
+        **kwargs
     ):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
@@ -129,7 +129,7 @@ class GraphConvolution(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shape (tuple of ints)
+            input_shapes (tuple of ints)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -143,14 +143,14 @@ class GraphConvolution(Layer):
         else:
             out_dim = feature_shape[1]
 
-        return (batch_dim, out_dim, self.units)
+        return batch_dim, out_dim, self.units
 
     def build(self, input_shapes):
         """
         Builds the layer
 
         Args:
-            input_shape (list of int): shapes of the layer's inputs (node features and adjacency matrix)
+            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
         feat_shape = input_shapes[0]

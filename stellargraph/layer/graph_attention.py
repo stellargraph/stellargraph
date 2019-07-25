@@ -183,7 +183,7 @@ class GraphAttention(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shape (tuple of ints)
+            input_shapes (tuple of ints)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -197,14 +197,14 @@ class GraphAttention(Layer):
         else:
             out_dim = feature_shape[1]
 
-        return (batch_dim, out_dim, self.output_dim)
+        return batch_dim, out_dim, self.output_dim
 
     def build(self, input_shapes):
         """
         Builds the layer
 
         Args:
-            input_shape (list of int): shapes of the layer's inputs (node features and adjacency matrix)
+            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
         feat_shape = input_shapes[0]
