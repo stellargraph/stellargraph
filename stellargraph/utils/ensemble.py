@@ -194,7 +194,7 @@ class Ensemble(object):
         steps_per_epoch=None,
         epochs=1,
         verbose=1,
-        validation_generator=None,
+        validation_data=None,
         validation_steps=None,
         class_weight=None,
         max_queue_size=10,
@@ -223,7 +223,7 @@ class Ensemble(object):
             epochs (int): (Keras-specific parameter) The number of training epochs.
             verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
                 progress bar, and one line per epoch respectively.
-            validation_generator: A generator for validation data that is optional (None). If not None then, it should
+            validation_data: A generator for validation data that is optional (None). If not None then, it should
                 be one of type NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             validation_steps (None or int): (Keras-specific parameter) If validation_generator is not None, then it
                 specifies the number of steps to yield from the generator before stopping at the end of every epoch.
@@ -266,7 +266,7 @@ class Ensemble(object):
         self.history = []
 
         es_callback = None
-        if use_early_stopping and validation_generator is not None:
+        if use_early_stopping and validation_data is not None:
             es_callback = [
                 EarlyStopping(
                     monitor=early_stopping_monitor,
@@ -283,7 +283,7 @@ class Ensemble(object):
                     epochs=epochs,
                     verbose=verbose,
                     callbacks=es_callback,
-                    validation_data=validation_generator,
+                    validation_data=validation_data,
                     validation_steps=validation_steps,
                     class_weight=class_weight,
                     max_queue_size=max_queue_size,
@@ -548,8 +548,8 @@ class BaggingEnsemble(Ensemble):
         initial_epoch=0,
         train_data=None,
         train_targets=None,
-        val_data=None,
-        val_targets=None,
+        validation_data=None,
+        validation_targets=None,
         bag_size=None,
         use_early_stopping=False,
         early_stopping_monitor="val_loss",
@@ -598,10 +598,10 @@ class BaggingEnsemble(Ensemble):
                 to train the model with.
             train_targets (iterable): It is an iterable, e.g. list, that specifies the target
                 values for the train data.
-            val_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the validation
-                data.
-            val_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the target
-                values for the validation data.
+            validation_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the
+                validation data.
+            validation_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the
+                target values for the validation data.
             bag_size (None or int): The number of samples in a bootstrap sample. If None and bagging is used, then
                 the number of samples is equal to the number of training points.
             use_early_stopping (bool): If set to True, then early stopping is used when training each model
@@ -660,8 +660,8 @@ class BaggingEnsemble(Ensemble):
 
             val_gen = validation_generator
             di_gen = generator.flow(di_train, di_targets)
-            if val_data is not None and val_targets is not None:
-                val_gen = generator.flow(val_data, val_targets)
+            if validation_data is not None and validation_targets is not None:
+                val_gen = generator.flow(validation_data, validation_targets)
 
             es_callback = None
             if use_early_stopping and val_gen is not None:
