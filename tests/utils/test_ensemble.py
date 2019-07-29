@@ -342,7 +342,7 @@ def test_Ensemble_fit_generator():
             ens.fit_generator(
                 generator=generator,  # wrong type
                 epochs=10,
-                validation_generator=train_gen,
+                validation_data=train_gen,
                 verbose=0,
                 shuffle=False,
             )
