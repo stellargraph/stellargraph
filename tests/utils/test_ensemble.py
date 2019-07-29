@@ -379,7 +379,7 @@ def test_BaggingEnsemble_fit_generator():
             train_data=train_data,
             train_targets=train_targets,
             epochs=10,
-            validation_generator=train_gen,
+            validation_data=train_gen,
             verbose=0,
             shuffle=False,
         )
@@ -394,7 +394,7 @@ def test_BaggingEnsemble_fit_generator():
                 train_data=train_data,
                 train_targets=None,  # Should not be None
                 epochs=10,
-                validation_generator=train_gen,
+                validation_data=train_gen,
                 verbose=0,
                 shuffle=False,
             )
@@ -405,7 +405,7 @@ def test_BaggingEnsemble_fit_generator():
                 train_data=None,
                 train_targets=None,
                 epochs=10,
-                validation_generator=None,
+                validation_data=None,
                 verbose=0,
                 shuffle=False,
             )
@@ -416,7 +416,7 @@ def test_BaggingEnsemble_fit_generator():
                 train_data=train_data,
                 train_targets=train_targets,
                 epochs=10,
-                validation_generator=None,
+                validation_data=None,
                 verbose=0,
                 shuffle=False,
                 bag_size=-1,  # should be positive integer smaller than or equal to len(train_data) or None
@@ -428,7 +428,7 @@ def test_BaggingEnsemble_fit_generator():
                 train_data=train_data,
                 train_targets=train_targets,
                 epochs=10,
-                validation_generator=None,
+                validation_data=None,
                 verbose=0,
                 shuffle=False,
                 bag_size=10,  # larger than the number of training points
@@ -495,7 +495,7 @@ def test_evaluate_generator():
         # Repeat for BaggingEnsemble
 
         ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=1)
-
+ß
         ens.compile(
             optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
         )
