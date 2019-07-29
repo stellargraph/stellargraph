@@ -495,7 +495,7 @@ def test_evaluate_generator():
         # Repeat for BaggingEnsemble
 
         ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=1)
-ß
+
         ens.compile(
             optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
         )
