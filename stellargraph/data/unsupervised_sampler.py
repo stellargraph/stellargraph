@@ -10,6 +10,8 @@ from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import UniformRandomWalk
 
+from dask.distributed import Client, LocalCluster
+
 
 class UnsupervisedSampler:
     """
@@ -39,7 +41,11 @@ class UnsupervisedSampler:
             self.graph = G
 
         # Instantiate the walker class used to generate random walks in the graph
-        self.walker = UniformRandomWalk(G, seed=seed)
+        self.cluster = LocalCluster()
+        self.client = Client(self.cluster, processes=True)
+        print(self.client)
+
+        self.walker = UniformRandomWalk(G, seed=seed, client=self.client)
 
         # This code will enable alternative walker classes
         # TODO: Enable this code, but figure out how to pass required options to run
@@ -124,17 +130,22 @@ class UnsupervisedSampler:
         done = False
         while not done:
             self.random.shuffle(self.nodes)
-            for node in self.nodes:  # iterate over root nodes
+            walks = self.walker.run(
+                nodes=self.nodes,  # root nodes
+                length=self.length,  # maximum length of a random walk
+                n=1,  # number of random walks per root node
+            )
+            for walk, node in zip(walks, self.nodes): #self.nodes:  # iterate over root nodes
                 # Get 1 walk at a time. For now its assumed that its a uniform random walker
-                walk = self.walker.run(
-                    nodes=[node],  # root nodes
-                    length=self.length,  # maximum length of a random walk
-                    n=1,  # number of random walks per root node
-                )
+                # walk = self.walker.run(
+                #     nodes=[node],  # root nodes
+                #     length=self.length,  # maximum length of a random walk
+                #     n=1,  # number of random walks per root node
+                # )
 
                 # (target,contect) pair sampling - GraphSAGE way
-                target = walk[0][0]
-                context_window = walk[0][1:]
+                target = walk[0] # [0]
+                context_window = walk[1:] #[1:]
                 for context in context_window:
                     # Don't add self pairs
                     if context == target:
