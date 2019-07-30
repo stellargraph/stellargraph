@@ -23,6 +23,7 @@ import keras.backend as K
 import tensorflow as tf
 from keras.engine.topology import Layer
 import keras
+import numpy as np
 
 
 class GraphPreProcessingLayer(Layer):
@@ -35,19 +36,13 @@ class GraphPreProcessingLayer(Layer):
     output_dim (int pair): The output shape of the pre-processed adjacency matrix.
     """
 
-    def __init__(self, output_dim=(2708, 2708), **kwargs):
+    def __init__(self, num_of_nodes, **kwargs):
         if K.backend() != "tensorflow":
             raise TypeError("Only tensorflow backend is currently supported.")
-        self.output_dims = output_dim
+        self.output_dims = (num_of_nodes, num_of_nodes)
         super().__init__(**kwargs)
 
     def build(self, input_shape):
-        self.d_inv_sqrt_var = self.add_weight(
-            name="d_inv_sqrt_var",
-            shape=(self.output_dims[0],),
-            initializer=keras.initializers.zeros(),
-            trainable=False,
-        )
         super().build(input_shape)
 
     def call(self, adj):
@@ -75,20 +70,9 @@ class GraphPreProcessingLayer(Layer):
             )
         )
         # Add self loops.
-        adj = adj + tf.eye(tf.shape(adj)[0])
+        adj = adj + tf.linalg.diag(tf.ones(adj.shape[0]) - tf.diag_part(adj))
         # Normalization
         rowsum = tf.reduce_sum(adj, 1)
-        p = tf.fill(tf.shape(rowsum), -0.5)
-        d_inv_sqrt = tf.pow(rowsum, p)
-        self.d_inv_sqrt_var = tf.assign(self.d_inv_sqrt_var, d_inv_sqrt)
-        tf.assign(
-            self.d_inv_sqrt_var,
-            tf.where(
-                tf.is_inf(self.d_inv_sqrt_var),
-                tf.zeros_like(self.d_inv_sqrt_var),
-                self.d_inv_sqrt_var,
-            ),
-        )
-        d_mat_inv_sqrt = tf.diag(self.d_inv_sqrt_var)
+        d_mat_inv_sqrt = tf.diag(tf.rsqrt(rowsum))
         adj_normalized = tf.matmul(tf.matmul(d_mat_inv_sqrt, adj), d_mat_inv_sqrt)
         return adj_normalized

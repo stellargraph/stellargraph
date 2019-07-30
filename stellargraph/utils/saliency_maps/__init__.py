@@ -16,4 +16,3 @@
 
 from .integrated_gradients import IntegratedGradients
 from .saliency import GradientSaliency
-from .preprocessing_layer import GraphPreProcessingLayer

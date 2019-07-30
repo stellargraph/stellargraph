@@ -20,7 +20,7 @@ from keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion
-from ..utils.saliency_maps.preprocessing_layer import GraphPreProcessingLayer
+from .preprocessing_layer import GraphPreProcessingLayer
 
 
 class GraphConvolution(Layer):
