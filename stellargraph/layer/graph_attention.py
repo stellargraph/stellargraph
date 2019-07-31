@@ -345,17 +345,16 @@ class GraphAttention(Layer):
             else:
                 # dense = dense - tf.reduce_max(dense)
                 # GAT with support for saliency calculations
-                a = (self.delta * A) * K.exp(dense) * (
-                    1 - self.non_exist_edge
-                ) + self.non_exist_edge * (
+                W = (self.delta * A) * K.exp(
+                    dense - K.max(dense, axis=1, keepdims=True)
+                ) * (1 - self.non_exist_edge) + self.non_exist_edge * (
                     A
                     + self.delta * (K.ones(shape=[N, N], dtype="float") - A)
                     + K.eye(N)
                 ) * K.exp(
-                    dense
+                    dense - K.max(dense, axis=1, keepdims=True)
                 )
-                exp_reduce_sum = K.sum(a, axis=1, keepdims=True)
-                dense = a / exp_reduce_sum
+                dense = W / K.sum(W, axis=1, keepdims=True)
 
             # Apply dropout to features and attention coefficients
             dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')

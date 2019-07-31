@@ -88,8 +88,8 @@ def test_ig_saliency_map():
         ),
         np.array([[0.71832293], [0.8542117]]),
         np.array([[0.46560588], [0.8165422]]),
-        0.32935917,
-        0.29731724,
+        1.0,
+        0.0,
         np.array([[0.4391179, 0.595691], [0.06000895, 0.2613866]]),
         np.array([[0.43496376], [0.02840129]]),
         np.array([[0.33972418], [0.22352563]]),
@@ -97,29 +97,43 @@ def test_ig_saliency_map():
         0.0,
     ]
     keras_model_gat.set_weights(weights)
+
+    # sanity check to make sure that the values of delta and non_exist_edges are not trainable
+    # the expected value should be delta = 1.0 and non_exist_edges = 0.0
+    for var in keras_model_gat.non_trainable_weights:
+        if "ig_delta" in var.name:
+            assert K.get_value(var) == 1.0
+        if "ig_non_exist_edge" in var.name:
+            assert K.get_value(var) == 0.0
+
     ig_saliency = saliency_gat.IntegratedGradients(keras_model_gat, train_gen)
     target_idx = 0
     class_of_interest = 0
-    ig_link_importance = ig_saliency.get_integrated_link_masks(
+    ig_link_importance = ig_saliency.get_link_importance(
         target_idx, class_of_interest, steps=200
     )
     print(ig_link_importance)
-    print(train_gen.A_dense)
+
     ig_link_importance_ref = np.array(
         [
-            [1.99e-10, 1.99e-10, 1.99e-10, 0, 0],
-            [-1.55e-10, -1.55e-10, 0, 0, 0],
-            [1.57e-10, 0.00e00, 1.57e-10, 1.57e-10, 0],
+            [4.759e-11, 4.759e-11, 4.759e-11, 0, 0],
+            [-1.442e-10, -1.442e-10, 0, 0, 0],
+            [1.183e-10, 0, 1.183e-10, 1.183e-10, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
         ]
     )
+    # Check the number of non-zero elements in the node importance matrix. We expect to see the number be same with the number of nodes in the ego network.
+    assert pytest.approx(
+        np.sum(np.ma.masked_array(ig_link_importance, mask=train_gen.A_dense)), 0
+    )
     assert pytest.approx(ig_link_importance_ref, abs=1e-11) == ig_link_importance
-    non_zero_edge_importance = np.count_nonzero(ig_link_importance)
+    non_zero_edge_importance = np.sum(np.abs(ig_link_importance) > 1e-11)
     assert 8 == non_zero_edge_importance
     ig_node_importance = ig_saliency.get_node_importance(
         target_idx, class_of_interest, steps=200
     )
+    print(ig_node_importance)
     assert pytest.approx(ig_node_importance, np.array([-13.06, -9.32, -7.46, -3.73, 0]))
-    non_zero_node_importance = np.count_nonzero(ig_node_importance)
+    non_zero_node_importance = np.sum(np.abs(ig_node_importance) > 1e-5)
     assert 4 == non_zero_node_importance

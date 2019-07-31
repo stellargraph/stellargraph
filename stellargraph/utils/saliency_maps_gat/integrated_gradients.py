@@ -67,7 +67,7 @@ class IntegratedGradients(GradientSaliency):
             )
         return np.squeeze(total_gradients * X_diff, 0)
 
-    def get_integrated_link_masks(
+    def get_link_importance(
         self, node_idx, class_of_interest, steps=20, non_exist_edge=False
     ):
         """
