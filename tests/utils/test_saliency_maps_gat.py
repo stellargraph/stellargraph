@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import pytest
-import stellargraph.utils.saliency_maps_gat as saliency_gat
+from stellargraph.utils.saliency_maps import IntegratedGradientsGAT
 import numpy as np
 from stellargraph.layer import GraphAttention
 from stellargraph import StellarGraph
@@ -106,7 +106,7 @@ def test_ig_saliency_map():
         if "ig_non_exist_edge" in var.name:
             assert K.get_value(var) == 0.0
 
-    ig_saliency = saliency_gat.IntegratedGradients(keras_model_gat, train_gen)
+    ig_saliency = IntegratedGradientsGAT(keras_model_gat, train_gen)
     target_idx = 0
     class_of_interest = 0
     ig_link_importance = ig_saliency.get_link_importance(
