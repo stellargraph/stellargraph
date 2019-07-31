@@ -33,7 +33,7 @@ class GraphPreProcessingLayer(Layer):
     We currently only support this for tensorflow backend.
 
     Args:
-    output_dim (int pair): The output shape of the pre-processed adjacency matrix.
+    num_of_nodes (int pair): The number of nodes in the graph.
     """
 
     def __init__(self, num_of_nodes, **kwargs):
