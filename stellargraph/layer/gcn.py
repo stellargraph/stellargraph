@@ -307,7 +307,7 @@ class GCN:
         self.use_sparse = generator.use_sparse
         if self.method == "none":
             self.graph_norm_layer = GraphPreProcessingLayer(
-                output_dim=self.generator.Aadj.shape
+                num_of_nodes=self.generator.Aadj.shape[0]
             )
 
         # Initialize a stack of GCN layers
