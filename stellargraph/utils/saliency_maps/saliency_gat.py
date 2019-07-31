@@ -21,7 +21,7 @@ import scipy.sparse as sp
 from stellargraph.mapper.node_mappers import FullBatchNodeSequence
 
 
-class GradientSaliency(object):
+class GradientSaliencyGAT(object):
     """
     Class to compute the saliency maps based on the vanilla gradient w.r.t the adjacency and the feature matrix.
 

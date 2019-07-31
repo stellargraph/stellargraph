@@ -28,12 +28,12 @@ actual input. Therefore, it could solve the problem we described above and give 
 """
 
 import numpy as np
-from .saliency import GradientSaliency
+from .saliency_gat import GradientSaliencyGAT
 import scipy.sparse as sp
 import keras.backend as K
 
 
-class IntegratedGradients(GradientSaliency):
+class IntegratedGradientsGAT(GradientSaliencyGAT):
     """
     A SaliencyMask class that implements the integrated gradients method.
     """
@@ -62,7 +62,7 @@ class IntegratedGradients(GradientSaliency):
 
         for alpha in np.linspace(1.0 / steps, 1, steps):
             X_step = X_baseline + alpha * X_diff
-            total_gradients += super(IntegratedGradients, self).get_node_masks(
+            total_gradients += super(IntegratedGradientsGAT, self).get_node_masks(
                 node_idx, class_of_interest, X_val=X_step
             )
         return np.squeeze(total_gradients * X_diff, 0)
@@ -94,7 +94,7 @@ class IntegratedGradients(GradientSaliency):
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             if self.is_sparse:
                 A_val = sp.lil_matrix(A_val)
-            tmp = super(IntegratedGradients, self).get_link_masks(
+            tmp = super(IntegratedGradientsGAT, self).get_link_masks(
                 alpha, node_idx, class_of_interest, int(non_exist_edge)
             )
             if self.is_sparse:
