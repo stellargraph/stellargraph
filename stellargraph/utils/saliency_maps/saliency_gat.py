@@ -119,6 +119,9 @@ class GradientSaliencyGAT(object):
     def get_node_masks(self, node_id, class_of_interest, X_val=None, A_val=None):
         """
         Args:
+            This function computes the saliency maps (gradients) which measure the importance of each feature to the prediction score of 'class_of_interest'
+            for node 'node_id'.
+
             node_id (int): The node ID in the StellarGraph object.
             class_of_interest (int): The  class of interest for which the saliency maps are computed.
             X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
@@ -145,6 +148,9 @@ class GradientSaliencyGAT(object):
         self, alpha, node_id, class_of_interest, non_exist_edge, X_val=None, A_val=None
     ):
         """
+        This function computes the saliency maps (gradients) which measure the importance of each edge to the prediction score of 'class_of_interest'
+        for node 'node_id'.
+
         Args:
             alpha (float): The path position parameter to support integrated gradient computation.
             node_id (int): The node ID in the StellarGraph object.
