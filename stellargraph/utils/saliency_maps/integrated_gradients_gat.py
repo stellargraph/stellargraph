@@ -42,21 +42,28 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         super().__init__(model, generator)
 
     def get_integrated_node_masks(
-        self, node_id, class_of_interest, X_baseline=None, steps=20
+        self, node_id, class_of_interest, X_baseline=None, steps=20, non_exist_feature=False
     ):
         """
+        This function computes the integrated gradients which measure the importance of each feature to the prediction score of 'class_of_interest'
+        for node 'node_id'.
+
         Args:
         node_id (int): The node ID in the StellarGraph object.
         class_of_interest (int): The  class of interest for which the saliency maps are computed.
         X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
                                               matrix with the size of the original feature matrix.
         steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
-
+        non_exist_feature (bool): Setting it to True allows to compute the importance of features that are 0.
         return (Numpy array): Integrated gradients for the node features.
         """
         X_val = self.X
         if X_baseline is None:
-            X_baseline = np.zeros(X_val.shape)
+            if not non_exist_feature:
+                X_baseline = np.zeros(X_val.shape)
+            else:
+                X_baseline = X_val
+                X_val = np.ones_like(X_val)
         X_diff = X_val - X_baseline
         total_gradients = np.zeros(X_val.shape)
 
@@ -71,6 +78,9 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         self, node_id, class_of_interest, steps=20, non_exist_edge=False
     ):
         """
+        This function computes the integrated gradients which measure the importance of each edge to the prediction score of 'class_of_interest'
+        for node 'node_id'.
+
         Args:
         node_id (int): The node ID in the StellarGraph object.
         class_of_interest (int): The  class of interest for which the saliency maps are computed.
