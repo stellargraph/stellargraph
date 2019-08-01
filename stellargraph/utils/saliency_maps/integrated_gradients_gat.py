@@ -42,12 +42,12 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         super().__init__(model, generator)
 
     def get_integrated_node_masks(
-        self, node_idx, class_of_interest, X_baseline=None, steps=20
+        self, node_id, class_of_interest, X_baseline=None, steps=20
     ):
         """
         Args:
-        X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
-                                                   which are used to compute the vanilla gradients.
+        node_id (int): The node ID in the StellarGraph object.
+        class_of_interest (int): The  class of interest for which the saliency maps are computed.
         X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
                                               matrix with the size of the original feature matrix.
         steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
@@ -63,21 +63,18 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         for alpha in np.linspace(1.0 / steps, 1, steps):
             X_step = X_baseline + alpha * X_diff
             total_gradients += super(IntegratedGradientsGAT, self).get_node_masks(
-                node_idx, class_of_interest, X_val=X_step
+                node_id, class_of_interest, X_val=X_step
             )
         return np.squeeze(total_gradients * X_diff, 0)
 
     def get_link_importance(
-        self, node_idx, class_of_interest, steps=20, non_exist_edge=False
+        self, node_id, class_of_interest, steps=20, non_exist_edge=False
     ):
         """
         Args:
-        X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
-                                                   which are used to compute the vanilla gradients.
-        X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
-                                              matrix with the size of the original adjacency matrix.
+        node_id (int): The node ID in the StellarGraph object.
+        class_of_interest (int): The  class of interest for which the saliency maps are computed.
         steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.\
-
         non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
             adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
             could only accurately measure the importance of existing edges.
@@ -95,7 +92,7 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
             if self.is_sparse:
                 A_val = sp.lil_matrix(A_val)
             tmp = super(IntegratedGradientsGAT, self).get_link_masks(
-                alpha, node_idx, class_of_interest, int(non_exist_edge)
+                alpha, node_id, class_of_interest, int(non_exist_edge)
             )
             if self.is_sparse:
                 tmp = sp.csr_matrix(
@@ -104,7 +101,7 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
             total_gradients += tmp
         return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
 
-    def get_node_importance(self, node_idx, class_of_interest, steps=20):
+    def get_node_importance(self, node_id, class_of_interest, steps=20):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
@@ -114,6 +111,6 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         return (float): Importance score for the node.
         """
         gradients = self.get_integrated_node_masks(
-            node_idx, class_of_interest, steps=steps
+            node_id, class_of_interest, steps=steps
         )
         return np.sum(gradients, axis=1)
