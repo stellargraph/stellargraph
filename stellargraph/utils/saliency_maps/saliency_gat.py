@@ -36,6 +36,10 @@ class GradientSaliencyGAT(object):
     """
 
     def __init__(self, model, generator):
+        """
+        Args:
+            generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matirx.
+        """
         # The placeholders for features and adjacency matrix (model input):
         if not isinstance(generator, FullBatchNodeSequence):
             raise TypeError(
@@ -58,7 +62,7 @@ class GradientSaliencyGAT(object):
         self.X = generator.features
 
         # The placeholder for the node index of interest. It is typically the index of the target test node.
-        self.node_idx = K.placeholder(shape=(), dtype="int32")
+        self.node_id = K.placeholder(shape=(), dtype="int32")
 
         # The placeholder for the class of interest. One will generally use the winning class.
         self.class_of_interest = K.placeholder(shape=(), dtype="int32")
@@ -83,7 +87,7 @@ class GradientSaliencyGAT(object):
         if self.is_sparse:
             print("adjacency matrix tensor is sparse")
             self.link_gradients = model.optimizer.get_gradients(
-                K.gather(K.gather(output, self.node_idx), self.class_of_interest),
+                K.gather(K.gather(output, self.node_id), self.class_of_interest),
                 adj_t.values,
             )
 
@@ -112,14 +116,17 @@ class GradientSaliencyGAT(object):
         for edge_var in self.non_exist_edges:
             K.set_value(edge_var, edge_value)
 
-    def get_node_masks(self, node_idx, class_of_interest, X_val=None, A_val=None):
+    def get_node_masks(self, node_id, class_of_interest, X_val=None, A_val=None):
         """
         Args:
-            X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
+            node_id (int): The node ID in the StellarGraph object.
+            class_of_interest (int): The  class of interest for which the saliency maps are computed.
+            X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
+            A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
-        out_indices = np.array([[node_idx]])
+        out_indices = np.array([[node_id]])
 
         if X_val is None:
             X_val = self.X
@@ -135,15 +142,22 @@ class GradientSaliencyGAT(object):
         return gradients[0]
 
     def get_link_masks(
-        self, alpha, node_idx, class_of_interest, non_exist_edge, X_val=None, A_val=None
+        self, alpha, node_id, class_of_interest, non_exist_edge, X_val=None, A_val=None
     ):
         """
         Args:
-            X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
+            alpha (float): The path position parameter to support integrated gradient computation.
+            node_id (int): The node ID in the StellarGraph object.
+            class_of_interest (int): The  class of interest for which the saliency maps are computed.
+            non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
+                adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
+                could only accurately measure the importance of existing edges.
+            X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
+            A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
-        out_indices = np.array([[node_idx]])
+        out_indices = np.array([[node_id]])
 
         if X_val is None:
             X_val = self.X
@@ -159,7 +173,7 @@ class GradientSaliencyGAT(object):
         return gradients[0]
 
     def get_node_importance(
-        self, alpha, node_idx, class_of_interest, X_val=None, A_val=None
+        self, node_id, class_of_interest, X_val=None, A_val=None
     ):
         """
         For nodes, the saliency mask we get gives us the importance of each features. For visualization purpose, we may
@@ -167,13 +181,17 @@ class GradientSaliencyGAT(object):
         all the partial gradients w.r.t its features.
 
         Args:
-            X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
-        Returns:
-            (Numpy array): Each element indicates the importance of a node.
+            node_id (int): The node ID in the StellarGraph object.
+            class_of_interest (int): The  class of interest for which the saliency maps are computed.
+            non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
+                adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
+                could only accurately measure the importance of existing edges.
+            X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
+            A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.        Returns:
         """
         if X_val is None:
             X_val = self.X
         if A_val is None:
             A_val = self.A
-        gradients = self.get_node_masks(X_val, A_val, node_idx, class_of_interest)[0]
+        gradients = self.get_node_masks(X_val, A_val, node_id, class_of_interest)[0]
         return np.sum(gradients, axis=1)
