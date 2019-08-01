@@ -172,9 +172,7 @@ class GradientSaliencyGAT(object):
         )
         return gradients[0]
 
-    def get_node_importance(
-        self, node_id, class_of_interest, X_val=None, A_val=None
-    ):
+    def get_node_importance(self, node_id, class_of_interest, X_val=None, A_val=None):
         """
         For nodes, the saliency mask we get gives us the importance of each features. For visualization purpose, we may
         want to see a summary of the importance for the node. The importance of each node can be defined as the sum of
