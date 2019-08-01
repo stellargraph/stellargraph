@@ -42,7 +42,12 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         super().__init__(model, generator)
 
     def get_integrated_node_masks(
-        self, node_id, class_of_interest, X_baseline=None, steps=20, non_exist_feature=False
+        self,
+        node_id,
+        class_of_interest,
+        X_baseline=None,
+        steps=20,
+        non_exist_feature=False,
     ):
         """
         This function computes the integrated gradients which measure the importance of each feature to the prediction score of 'class_of_interest'
