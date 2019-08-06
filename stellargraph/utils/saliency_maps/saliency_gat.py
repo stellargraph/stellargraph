@@ -38,6 +38,7 @@ class GradientSaliencyGAT(object):
     def __init__(self, model, generator):
         """
         Args:
+            model (Keras model object): The Keras GAT model.
             generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matirx.
         """
         # The placeholders for features and adjacency matrix (model input):
@@ -193,6 +194,7 @@ class GradientSaliencyGAT(object):
             X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
             A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.        Returns:
         """
+
         if X_val is None:
             X_val = self.X
         if A_val is None:

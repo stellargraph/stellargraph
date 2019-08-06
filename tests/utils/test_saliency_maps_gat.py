@@ -106,11 +106,13 @@ def test_ig_saliency_map():
         if "ig_non_exist_edge" in var.name:
             assert K.get_value(var) == 0.0
 
-    ig_saliency = IntegratedGradientsGAT(keras_model_gat, train_gen)
-    target_idx = 0
+    ig_saliency = IntegratedGradientsGAT(
+        keras_model_gat, train_gen, generator.node_list
+    )
+    target_id = 0
     class_of_interest = 0
     ig_link_importance = ig_saliency.get_link_importance(
-        target_idx, class_of_interest, steps=200
+        target_id, class_of_interest, steps=200
     )
     print(ig_link_importance)
 
@@ -131,7 +133,7 @@ def test_ig_saliency_map():
     non_zero_edge_importance = np.sum(np.abs(ig_link_importance) > 1e-11)
     assert 8 == non_zero_edge_importance
     ig_node_importance = ig_saliency.get_node_importance(
-        target_idx, class_of_interest, steps=200
+        target_id, class_of_interest, steps=200
     )
     print(ig_node_importance)
     assert pytest.approx(ig_node_importance, np.array([-13.06, -9.32, -7.46, -3.73, 0]))
