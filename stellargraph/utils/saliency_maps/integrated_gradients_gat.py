@@ -38,7 +38,8 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
     A SaliencyMask class that implements the integrated gradients method.
     """
 
-    def __init__(self, model, generator):
+    def __init__(self, model, generator, node_list):
+        self.node_list = node_list
         super().__init__(model, generator)
 
     def get_integrated_node_masks(
@@ -62,6 +63,8 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         non_exist_feature (bool): Setting it to True allows to compute the importance of features that are 0.
         return (Numpy array): Integrated gradients for the node features.
         """
+        node_idx = self.node_list.index(node_id)
+
         X_val = self.X
         if X_baseline is None:
             if not non_exist_feature:
@@ -74,8 +77,8 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
 
         for alpha in np.linspace(1.0 / steps, 1, steps):
             X_step = X_baseline + alpha * X_diff
-            total_gradients += super(IntegratedGradientsGAT, self).get_node_masks(
-                node_id, class_of_interest, X_val=X_step
+            total_gradients += super().get_node_masks(
+                node_idx, class_of_interest, X_val=X_step
             )
         return np.squeeze(total_gradients * X_diff, 0)
 
@@ -96,6 +99,8 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
 
         return (Numpy array): shape the same with A_val. Integrated gradients for the links.
         """
+        node_idx = self.node_list.index(node_id)
+
         A_val = self.A
         total_gradients = np.zeros(A_val.shape)
         A_diff = (
@@ -106,8 +111,8 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             if self.is_sparse:
                 A_val = sp.lil_matrix(A_val)
-            tmp = super(IntegratedGradientsGAT, self).get_link_masks(
-                alpha, node_id, class_of_interest, int(non_exist_edge)
+            tmp = super().get_link_masks(
+                alpha, node_idx, class_of_interest, int(non_exist_edge)
             )
             if self.is_sparse:
                 tmp = sp.csr_matrix(
