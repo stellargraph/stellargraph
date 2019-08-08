@@ -171,7 +171,7 @@ class Test_GraphAttention:
         assert np.allclose(actual.squeeze(), expected)
 
     def test_apply_average_with_neighbours(self):
-        gat = self.layer(
+        gat_saliency = self.layer(
             units=self.F_out,
             attn_heads=self.attn_heads,
             attn_heads_reduction="average",
@@ -180,14 +180,31 @@ class Test_GraphAttention:
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
             final_layer=False,
+            saliency_map_support=True,
         )
+
+        gat_origin = self.layer(
+            units=self.F_out,
+            attn_heads=self.attn_heads,
+            attn_heads_reduction="average",
+            activation=self.activation,
+            kernel_initializer="ones",
+            attn_kernel_initializer="zeros",
+            bias_initializer="zeros",
+            final_layer=False,
+            saliency_map_support=False,
+        )
+
         x_inp, layer_inp = self.get_inputs()
 
         # Instantiate layer with squeezed matrix
-        x_out = gat(layer_inp)
+        x_out_saliency = gat_saliency(layer_inp)
+        x_out_origin = gat_origin(layer_inp)
 
-        model = keras.Model(inputs=x_inp, outputs=x_out)
-        assert model.output_shape[-1] == self.F_out
+        model_origin = keras.Model(inputs=x_inp, outputs=x_out_origin)
+        model_saliency = keras.Model(inputs=x_inp, outputs=x_out_saliency)
+        assert model_origin.output_shape[-1] == self.F_out
+        assert model_saliency.output_shape[-1] == self.F_out
 
         X = np.zeros((1, self.N, self.F_in))  # features
         for i in range(self.N):
@@ -199,9 +216,10 @@ class Test_GraphAttention:
 
         expected = (X * self.F_in)[..., : self.F_out]
         expected[:, :2] = self.F_in / 2
-        actual = model.predict([X, all_indices] + As)
-
-        assert np.allclose(expected, actual)
+        actual_origin = model_origin.predict([X, all_indices] + As)
+        actual_saliency = model_saliency.predict([X, all_indices] + As)
+        assert np.allclose(expected, actual_origin)
+        assert np.allclose(expected, actual_saliency)
 
     def test_layer_config(self):
         layer = self.layer(
