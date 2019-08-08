@@ -35,4 +35,4 @@ G. S. Corrado, and J. Dean.  In Advances in Neural Information Processing System
 **5.** Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
 [cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
 
-**6.** Attributed Network Embedding Via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095, [cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
+**6.** Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095, [cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
