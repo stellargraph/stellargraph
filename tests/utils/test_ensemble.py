@@ -386,7 +386,14 @@ def test_BaggingEnsemble_fit_generator():
 
         # This is a BaggingEnsemble so the generator in the below call is of the wrong type.
         with pytest.raises(ValueError):
-            ens.fit_generator(train_gen, epochs=10, verbose=0, shuffle=False)
+            ens.fit_generator(
+                train_gen,
+                train_data=train_data,
+                train_targets=train_targets,
+                epochs=10,
+                verbose=0,
+                shuffle=False,
+            )
 
         with pytest.raises(ValueError):
             ens.fit_generator(

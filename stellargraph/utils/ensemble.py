@@ -299,7 +299,7 @@ class Ensemble(object):
     def evaluate_generator(
         self,
         generator,
-        test_data=None,  # Should I still allow test_data and test_targets?
+        test_data=None,
         test_targets=None,
         max_queue_size=10,
         workers=1,
@@ -535,6 +535,8 @@ class BaggingEnsemble(Ensemble):
     def fit_generator(
         self,
         generator,
+        train_data,
+        train_targets,
         steps_per_epoch=None,
         epochs=1,
         verbose=1,
@@ -546,10 +548,6 @@ class BaggingEnsemble(Ensemble):
         use_multiprocessing=False,
         shuffle=True,
         initial_epoch=0,
-        train_data=None,
-        train_targets=None,
-        # validation_data=None,
-        # validation_targets=None,
         bag_size=None,
         use_early_stopping=False,
         early_stopping_monitor="val_loss",
@@ -563,7 +561,7 @@ class BaggingEnsemble(Ensemble):
         also stop early with the best model as evaluated on the validation data, if use_early_stopping is enabled.
 
         Each model in the ensemble is trained using a bootstrapped sample of the data (the train data are re-sampled
-        with replacement.) The number of bootstrap samples is can be specified via the bag_size parameter; by default,
+        with replacement.) The number of bootstrap samples can be specified via the bag_size parameter; by default,
         the number of bootstrap samples equals the number of training points.
 
         For detail descriptions of Keras-specific parameters consult the Keras documentation
@@ -573,6 +571,10 @@ class BaggingEnsemble(Ensemble):
             generator: The generator object for training data. It should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator.
+            train_data (iterable): It is an iterable, e.g. list, that specifies the data
+                to train the model with.
+            train_targets (iterable): It is an iterable, e.g. list, that specifies the target
+                values for the train data.
             steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
             epochs (int): (Keras-specific parameter) The number of training epochs.
@@ -594,10 +596,6 @@ class BaggingEnsemble(Ensemble):
                 beginning of each training epoch.
             initial_epoch (int): (Keras-specific parameter) Epoch at which to start training (useful for resuming a
                 previous training run).
-            train_data (iterable): It is an iterable, e.g. list, that specifies the data
-                to train the model with.
-            train_targets (iterable): It is an iterable, e.g. list, that specifies the target
-                values for the train data.
             bag_size (None or int): The number of samples in a bootstrap sample. If None and bagging is used, then
                 the number of samples is equal to the number of training points.
             use_early_stopping (bool): If set to True, then early stopping is used when training each model
@@ -639,9 +637,7 @@ class BaggingEnsemble(Ensemble):
 
         self.history = []
 
-        num_points_per_bag = len(train_data)
-        if bag_size is not None:
-            num_points_per_bag = bag_size
+        num_points_per_bag = bag_size if bag_size is not None else len(train_data)
 
         # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
         # datasets.
@@ -650,15 +646,13 @@ class BaggingEnsemble(Ensemble):
                 len(train_data), size=num_points_per_bag
             )  # sample with replacement
             di_train = train_data[di_index]
-            di_targets = None
-            if train_targets is not None:
-                di_targets = train_targets[di_index]
 
-            val_gen = validation_data
+            di_targets = train_targets[di_index]
+
             di_gen = generator.flow(di_train, di_targets)
 
             es_callback = None
-            if use_early_stopping and val_gen is not None:
+            if use_early_stopping and validation_data is not None:
                 es_callback = [
                     EarlyStopping(
                         monitor=early_stopping_monitor,
@@ -674,7 +668,7 @@ class BaggingEnsemble(Ensemble):
                     epochs=epochs,
                     verbose=verbose,
                     callbacks=es_callback,
-                    validation_data=val_gen,
+                    validation_data=validation_data,
                     validation_steps=validation_steps,
                     class_weight=class_weight,
                     max_queue_size=max_queue_size,
