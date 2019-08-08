@@ -109,17 +109,17 @@ class IntegratedGradients(GradientSaliency):
             A_val = self.A
         if A_baseline is None:
             if non_exist_edge:
-                A_baseline = A_val
-                A_val = np.ones(A_baseline.shape)
+                A_baseline = A_val.astype("float64")
+                A_val = np.ones(A_baseline.shape, dtype="float64")
             else:
-                A_baseline = np.zeros(A_val.shape)
+                A_baseline = np.zeros(A_val.shape, dtype="float64")
         A_diff = A_val - A_baseline
-        total_gradients = np.zeros_like(A_val)
+        total_gradients = np.zeros_like(A_val, dtype="float64")
         if self.is_sparse:
             A_dense_shape = csr_matrix(
                 (A_val[0], (A_index[0, :, 0], A_index[0, :, 1]))
             ).shape
-            total_gradients = csr_matrix(A_dense_shape)
+            total_gradients = csr_matrix(A_dense_shape, dtype="float64")
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
             tmp = self.get_link_masks(
@@ -131,10 +131,12 @@ class IntegratedGradients(GradientSaliency):
                 A_index,
                 A_step,
             )
+            print("is_sparse: {}, tmp = {}".format(self.is_sparse, tmp))
             total_gradients += tmp
-
         if self.is_sparse:
-            A_diff = csr_matrix((A_diff[0], (A_index[0, :, 0], A_index[0, :, 1])))
+            A_diff = csr_matrix(
+                (A_diff[0], (A_index[0, :, 0], A_index[0, :, 1])), dtype="float64"
+            )
             total_gradients = total_gradients.multiply(A_diff) / steps
         else:
             total_gradients = np.squeeze(

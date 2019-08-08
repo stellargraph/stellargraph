@@ -519,8 +519,7 @@ class GraphAttentionSparse(GraphAttention):
             # HW: Implementing integrated gradients here is a bit tricky. Support adding edge feature will lose the
             # benefit of sparse tensors. Hence, we only support the integrated gradients for the existing edges only for now.
             if self.saliency_map_support:
-                a = self.delta * A_sparse.values
-                a = K.tf.multiply(a, K.exp(dropout_attn))
+                a = self.delta * A_sparse.values*K.exp(dropout_attn)*(1 - self.non_exist_edge)
                 sparse_attn = K.tf.sparse.SparseTensor(
                     A_indices, values=a, dense_shape=[n_nodes, n_nodes]
                 )
