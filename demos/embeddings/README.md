@@ -10,7 +10,7 @@ The notebooks demonstrate the following algorithms.
 - `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs
 - `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm [2] for representation learning on heterogeneous graphs.
 - `embeddings-unsupervised-graphsage-cora.ipynb` The **Unsupervised GraphSAGE** algorithm [5] for representation learning on homogeneous graphs with node features.
-- `embeddings-attri2vec-DBLP.ipynb` The **attri2vec** algorithm [6] for representation learning on homogeneous graphs with node features.
+- `stellargraph-attri2vec-DBLP.ipynb` The **attri2vec** algorithm [6] for representation learning on homogeneous graphs with node features.
 
 All examples demonstrate how to calculate embedding vectors for a graph's nodes in just a few lines of Python code. 
 The learned node representations can be used in numerous downstream tasks such as node attribute inference, link
