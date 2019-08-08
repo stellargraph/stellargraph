@@ -24,7 +24,7 @@ __all__ = [
     "OnDemandLinkSequence",
     "GraphSAGELinkGenerator",
     "HinSAGELinkGenerator",
-    "attri2vecLinkGenerator"
+    "attri2vecLinkGenerator",
 ]
 
 import random
@@ -208,16 +208,16 @@ class OnDemandLinkSequence(Sequence):
 
             if isinstance(self.generator, GraphSAGELinkGenerator):
                 print(
-                        "Running GraphSAGELinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
-                                round(self.data_size / self.generator.batch_size)
-                       )
-                     )
+                    "Running GraphSAGELinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
+                        round(self.data_size / self.generator.batch_size)
+                    )
+                )
             else:
                 print(
-                        "Running attri2vecLinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
-                                round(self.data_size / self.generator.batch_size)
-                       )
-                     )
+                    "Running attri2vecLinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
+                        round(self.data_size / self.generator.batch_size)
+                    )
+                )
 
             self._gen = self.walker.generator(
                 self.generator.batch_size
@@ -616,6 +616,7 @@ class HinSAGELinkGenerator:
 
         return LinkSequence(self, link_ids, targets, shuffle)
 
+
 class attri2vecLinkGenerator:
     """
     A data generator for link prediction with Homogeneous attri2vec models
@@ -643,7 +644,7 @@ class attri2vecLinkGenerator:
         name, optional: Name of generator
     """
 
-    def __init__(self, G, batch_size, num_samples=[1,1], seed=None, name=None):
+    def __init__(self, G, batch_size, num_samples=[1, 1], seed=None, name=None):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
@@ -656,9 +657,6 @@ class attri2vecLinkGenerator:
 
         # We need a schema for compatibility with HinSAGE
         self.schema = G.create_graph_schema(create_type_maps=True)
-
-        # The sampler used to generate random samples of neighbours
-        #self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
 
     def sample_features(self, head_links, sampling_schema):
         """
