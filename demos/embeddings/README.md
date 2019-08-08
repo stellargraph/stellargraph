@@ -4,7 +4,7 @@ This folder contains three [Jupyter](http://jupyter.org/) python notebooks demon
 
 **Node2Vec** and **Metapath2Vec** notebooks demonstrate the combined use of `stellargraph` and `Gensim` [4] libraries for representation learning on homogeneous and heterogeneous graphs. 
 **Unsupervised GraphSAGE** notebook demonstrates the use of `Stellargraph` library's GraphSAGE implementation for unsupervised learning of node embeddings for homogeneous graphs with node features.
-**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for its ablity to infer the representations of out-of-sample nodes with the out-of-sample node link prediction task.   
+**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for its ability to infer the representations of out-of-sample nodes with the out-of-sample node link prediction task.   
 
 The notebooks demonstrate the following algorithms.
 - `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs
