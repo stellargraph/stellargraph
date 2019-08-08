@@ -9,7 +9,8 @@
 - 
 
 **Refactoring:**
-- 
+- Refactored Ensemble class into Ensemble and BaggingEnsemble. The former implements naive ensembles and the latter
+bagging ensemble such that each model in the ensemble is trained on a bootst:wqrap sample of the training data.
 
 **Fixed bugs:**
 - 
