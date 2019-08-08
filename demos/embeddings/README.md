@@ -4,11 +4,13 @@ This folder contains three [Jupyter](http://jupyter.org/) python notebooks demon
 
 **Node2Vec** and **Metapath2Vec** notebooks demonstrate the combined use of `stellargraph` and `Gensim` [4] libraries for representation learning on homogeneous and heterogeneous graphs. 
 **Unsupervised GraphSAGE** notebook demonstrates the use of `Stellargraph` library's GraphSAGE implementation for unsupervised learning of node embeddings for homogeneous graphs with node features.
+**attri2vec** notebooks demonstrate the implementation of `attri2vec` with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for inferring representations for out-of-sample nodes.
 
 The notebooks demonstrate the following algorithms.
 - `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs
 - `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm [2] for representation learning on heterogeneous graphs.
 - `embeddings-unsupervised-graphsage-cora.ipynb` The **Unsupervised GraphSAGE** algorithm [5] for representation learning on homogeneous graphs with node features.
+- `embeddings-attri2vec-DBLP.ipynb` The **attri2vec** algorithm [6] for representation learning on homogeneous graphs with node features.
 
 All examples demonstrate how to calculate embedding vectors for a graph's nodes in just a few lines of Python code. 
 The learned node representations can be used in numerous downstream tasks such as node attribute inference, link
@@ -32,3 +34,5 @@ G. S. Corrado, and J. Dean.  In Advances in Neural Information Processing System
 
 **5.** Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
 [cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
+
+**6.** Attributed Network Embedding Via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095, [cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
