@@ -60,7 +60,7 @@ Ensembles
 ------------------------
 
 .. automodule:: stellargraph.utils.ensemble
-  :members: Ensemble
+  :members: Ensemble, BaggingEnsemble
 
 
 Calibration
