@@ -659,9 +659,8 @@ class SampledBreadthFirstWalk(GraphSampler):
                         neighbours = self.neighbors(cur_node) if cur_node is not None else []
                         if len(neighbours) == 0:
                             # walk has ended abruptly
-                            break
-                            # TODO Return instead neighbourhood of correct size
-                            #neighbours = [None] * n_size[cur_depth]
+                            # Return neighbourhood of correct size
+                            neighbours = [None] * n_size[cur_depth]
                         else:
                             # sample with replacement
                             neighbours = [
