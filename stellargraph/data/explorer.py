@@ -696,7 +696,7 @@ class SampledBreadthFirstWalk(GraphSampler):
 
 class DirectedBreadthFirstNeighbours(GraphSampler):
     """
-    Breadth First Walk that generates a sampled number of paths from a starting node.
+    Breadth First sampler that generates the composite of a number of sampled paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
@@ -772,7 +772,7 @@ class DirectedBreadthFirstNeighbours(GraphSampler):
         return samples
 
     def _sample_neighbours(self, rs, node, idx, size):
-        fn = self.in_edges if idx == 0 else self.out_edges
+        fn = self.graph.in_edges if idx == 0 else self.graph.out_edges
         neighbours = [n[idx] for n in list(fn(node))] if node is not None else []
         if len(neighbours) == 0:
             # walk has ended abruptly
