@@ -50,9 +50,7 @@ class GraphSampler(object):
 
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraphBase):
-            raise TypeError(
-                "Graph must be a StellarGraph or StellarDiGraph."
-            )
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         if not graph_schema:
             self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
@@ -101,9 +99,7 @@ class GraphSampler(object):
             The random state as determined by the seed.
         """
         if nodes is None:
-            self._raise_error(
-                "A list of root node IDs was not provided."
-            )
+            self._raise_error("A list of root node IDs was not provided.")
         if not is_real_iterable(nodes):
             self._raise_error("Nodes parameter should be an iterable of node IDs.")
         if (
@@ -125,9 +121,7 @@ class GraphSampler(object):
             )
 
         if type(length) != int:
-            self._raise_error(
-                "The walk length, length, should be integer type."
-            )
+            self._raise_error("The walk length, length, should be integer type.")
         if length < 0:
             self._raise_error(
                 "The walk length, length, should be a non-negative integer."
@@ -156,7 +150,7 @@ class GraphSampler(object):
         if type(n_size) != list:
             self._raise_error(err_msg)
 
-        #if len(n_size) == 0:
+        # if len(n_size) == 0:
         #    self._raise_error(
         #        "The neighbourhood size should not be empty."
         #    )
@@ -280,8 +274,7 @@ class BiasedRandomWalk(GraphSampler):
 
         """
         rs = self._check_parameter_values(
-            nodes, n, p, q, length, seed,
-            weighted, edge_weight_label
+            nodes, n, p, q, length, seed, weighted, edge_weight_label
         )
 
         if weighted:
@@ -410,14 +403,10 @@ class BiasedRandomWalk(GraphSampler):
         rs = super()._check_parameter_values(nodes, n, length, seed)
 
         if p <= 0.0:
-            self._raise_error(
-                "Parameter p should be greater than 0."
-            )
+            self._raise_error("Parameter p should be greater than 0.")
 
         if q <= 0.0:
-            self._raise_error(
-                "Parameter q should be greater than 0."
-            )
+            self._raise_error("Parameter q should be greater than 0.")
 
         if type(weighted) != bool:
             self._raise_error(
@@ -425,9 +414,7 @@ class BiasedRandomWalk(GraphSampler):
             )
 
         if not isinstance(edge_weight_label, str):
-            self._raise_error(
-                "The edge weight property label has to be of type string"
-            )
+            self._raise_error("The edge weight property label has to be of type string")
 
         return rs
 
@@ -443,7 +430,7 @@ class HeterogeneousGraphSampler(GraphSampler):
         # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
         # TODO: this could be better placed inside StellarGraph class
         edge_types = self.graph_schema.edge_types
-        self.adj = { et: defaultdict(lambda: [None]) for et in edge_types }
+        self.adj = {et: defaultdict(lambda: [None]) for et in edge_types}
 
         for n1, nbrdict in graph.adjacency():
             for et in edge_types:
@@ -490,9 +477,7 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphSampler):
             <list> List of lists of nodes ids for each of the random walks generated
         """
         rs = self._check_parameter_values(
-            nodes, n, length,
-            metapaths, node_type_attribute,
-            seed
+            nodes, n, length, metapaths, node_type_attribute, seed
         )
 
         walks = []
@@ -565,24 +550,16 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphSampler):
         rs = super()._check_parameter_values(nodes, n, length, seed)
 
         if type(metapaths) != list:
-            self._raise_error(
-                "The metapaths parameter must be a list of lists."
-            )
+            self._raise_error("The metapaths parameter must be a list of lists.")
         for metapath in metapaths:
             if type(metapath) != list:
-                self._raise_error(
-                    "Each metapath must be list type of node labels"
-                )
+                self._raise_error("Each metapath must be list type of node labels")
             if len(metapath) < 2:
-                self._raise_error(
-                    "Each metapath must specify at least two node types"
-                )
+                self._raise_error("Each metapath must specify at least two node types")
 
             for node_label in metapath:
                 if type(node_label) != str:
-                    self._raise_error(
-                        "Node labels in metapaths must be string type."
-                    )
+                    self._raise_error("Node labels in metapaths must be string type.")
             if metapath[0] != metapath[-1]:
                 self._raise_error(
                     "The first and last node type in a metapath should be the same."
@@ -649,7 +626,9 @@ class SampledBreadthFirstWalk(GraphSampler):
 
                     # consider the subgraph up to and including depth d from root node
                     if depth <= d:
-                        neighbours = self.neighbors(cur_node) if cur_node is not None else []
+                        neighbours = (
+                            self.neighbors(cur_node) if cur_node is not None else []
+                        )
                         if len(neighbours) == 0:
                             # walk has ended abruptly
                             # Return neighbourhood of correct size
@@ -728,14 +707,15 @@ class DirectedBreadthFirstNeighbours(GraphSampler):
         """
         rs = self._check_parameter_values(nodes, n, in_size, out_size, seed)
         max_hops = len(in_size)
-        max_slots = 2**(max_hops + 1) - 1
+        max_slots = 2 ** (max_hops + 1) - 1
 
         samples = []
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = list()  # the queue of neighbours
-                sample = [[] for _ in range(max_slots)]  # the list of sampled node-lists
+                # the list of sampled node-lists:
+                sample = [[] for _ in range(max_slots)]
                 # Add node to queue as (node, depth, slot)
                 q.append((node, 0, 0))
 
@@ -749,15 +729,23 @@ class DirectedBreadthFirstNeighbours(GraphSampler):
                     # consider the subgraph up to and including depth d from root node
                     if depth <= max_hops:
                         # get in-nodes
-                        neighbours = self._sample_neighbours(rs, cur_node, 0, in_size[cur_depth])
+                        neighbours = self._sample_neighbours(
+                            rs, cur_node, 0, in_size[cur_depth]
+                        )
                         # add them to the back of the queue
                         slot = 2 * cur_slot + 1
-                        q.extend([(sampled_node, depth, slot) for sampled_node in neighbours])
+                        q.extend(
+                            [(sampled_node, depth, slot) for sampled_node in neighbours]
+                        )
                         # get out-nodes
-                        neighbours = self._sample_neighbours(rs, cur_node, 1, out_size[cur_depth])
+                        neighbours = self._sample_neighbours(
+                            rs, cur_node, 1, out_size[cur_depth]
+                        )
                         # add them to the back of the queue
                         slot = slot + 1
-                        q.extend([(sampled_node, depth, slot) for sampled_node in neighbours])
+                        q.extend(
+                            [(sampled_node, depth, slot) for sampled_node in neighbours]
+                        )
 
                 # finished multi-hop neighbourhood sampling
                 samples.append(sample)
@@ -772,9 +760,7 @@ class DirectedBreadthFirstNeighbours(GraphSampler):
             return [None] * size
         else:
             # sample with replacement
-            return [
-                rs.choice(neighbours) for _ in range(size)
-            ]
+            return [rs.choice(neighbours) for _ in range(size)]
 
     def _check_parameter_values(self, nodes, n, in_size, out_size, seed):
         """
@@ -824,9 +810,7 @@ class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphSampler):
             A list of lists such that each list element is a sequence of ids corresponding to a sampled Heterogeneous
             BFW.
         """
-        rs = self._check_parameter_values(
-            nodes, n, n_size, self.graph_schema, seed
-        )
+        rs = self._check_parameter_values(nodes, n, n_size, self.graph_schema, seed)
 
         walks = []
         d = len(n_size)  # depth of search

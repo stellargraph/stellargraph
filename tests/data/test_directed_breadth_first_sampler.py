@@ -20,6 +20,7 @@ import networkx as nx
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
 
+
 def create_simple_graph():
     """
     Creates a simple directed graph for testing. The node ids are string or integers.
@@ -34,7 +35,7 @@ def create_simple_graph():
         ("root", "0"),
         (2, "c2.1"),
         (2, "c2.2"),
-        (1, "c1.1")
+        (1, "c1.1"),
     ]
     g.add_edges_from(edges)
     return StellarDiGraph(g)
@@ -142,11 +143,21 @@ class TestDirectedBreadthFirstNeighbours(object):
         with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size, seed=-1235)
         with pytest.raises(ValueError):
-            bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size, seed=10.987665)
+            bfw.run(
+                nodes=nodes, n=n, in_size=in_size, out_size=out_size, seed=10.987665
+            )
         with pytest.raises(ValueError):
-            bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size, seed=-982.4746)
+            bfw.run(
+                nodes=nodes, n=n, in_size=in_size, out_size=out_size, seed=-982.4746
+            )
         with pytest.raises(ValueError):
-            bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size, seed="don't be random")
+            bfw.run(
+                nodes=nodes,
+                n=n,
+                in_size=in_size,
+                out_size=out_size,
+                seed="don't be random",
+            )
 
         # If no root nodes are given, an empty list is returned, which is not an error.
         nodes = []
@@ -222,14 +233,14 @@ class TestDirectedBreadthFirstNeighbours(object):
         for grandchild in subgraph[0][6]:
             assert grandchild in [None, "c1.1", "c2.1", "c2.2"]
         for idx, child in enumerate(subgraph[0][2]):
-            grandchildren = subgraph[0][6][(2*idx):(2*idx+2)]
+            grandchildren = subgraph[0][6][(2 * idx) : (2 * idx + 2)]
             if child == "0":
                 for grandchild in grandchildren:
                     assert grandchild is None
             elif child == 1:
                 for grandchild in grandchildren:
                     assert grandchild == "c1.1"
-            else: # child == 2
+            else:  # child == 2
                 for grandchild in grandchildren:
                     assert grandchild in ["c2.1", "c2.2"]
         # - Check structure size for multiple start nodes
@@ -241,7 +252,7 @@ class TestDirectedBreadthFirstNeighbours(object):
         assert len(subgraph) == len(nodes)
         for node_graph in subgraph:
             assert len(node_graph) == 7
-            assert len(node_graph[0]) == 1 # 1 start node
+            assert len(node_graph[0]) == 1  # 1 start node
             assert len(node_graph[1]) == in_size[0]
             assert len(node_graph[2]) == out_size[0]
             assert len(node_graph[3]) == in_size[0] * in_size[1]
@@ -259,7 +270,7 @@ class TestDirectedBreadthFirstNeighbours(object):
             out_size = [random.randint(0, 2) for _ in range(3)]
             subgraph = bfw.run(nodes=[node], n=1, in_size=in_size, out_size=out_size)
             assert len(subgraph) == 1
-            assert len(subgraph[0]) == 15 # 2**(num_hops+1) - 1 = 15
+            assert len(subgraph[0]) == 15  # 2**(num_hops+1) - 1 = 15
             assert len(subgraph[0][0]) == 1
             assert len(subgraph[0][1]) == in_size[0]
             assert len(subgraph[0][2]) == out_size[0]
