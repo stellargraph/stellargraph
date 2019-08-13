@@ -121,6 +121,12 @@ class TestBreadthFirstWalk(object):
         with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=n_size, seed="don't be random")
 
+        # If no neighbours are sampled, then just the start node should be returned.
+        subgraph = bfw.run(nodes=["0"], n=1, n_size=[])
+        assert len(subgraph) == 1
+        assert len(subgraph[0]) == 1
+        assert subgraph[0][0] == "0"
+
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
         # is the best for checking this behaviour.
         nodes = []

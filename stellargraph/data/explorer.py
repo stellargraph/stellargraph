@@ -128,9 +128,9 @@ class GraphSampler(object):
             self._raise_error(
                 "The walk length, length, should be integer type."
             )
-        if length <= 0:
+        if length < 0:
             self._raise_error(
-                "The walk length, length, should be positive integer."
+                "The walk length, length, should be a non-negative integer."
             )
 
         if seed is not None:
@@ -150,29 +150,22 @@ class GraphSampler(object):
             return self._random_state
 
     def _check_sizes(self, n_size):
+        err_msg = "The neighbourhood size must be a list of non-negative integers."
         if n_size is None:
-            self._raise_error(
-                "The neighbourhood size, n_size, must be a list of integers not None."
-            )
+            self._raise_error(err_msg)
         if type(n_size) != list:
-            self._raise_error(
-                "The neighbourhood size, n_size, must be a list of integers."
-            )
+            self._raise_error(err_msg)
 
-        if len(n_size) == 0:
-            self._raise_error(
-                "The neighbourhood size, n_size, should not be empty list."
-            )
+        #if len(n_size) == 0:
+        #    self._raise_error(
+        #        "The neighbourhood size should not be empty."
+        #    )
 
         for d in n_size:
             if type(d) != int:
-                self._raise_error(
-                    "The neighbourhood size, n_size, must be list of positive integers or 0."
-                )
+                self._raise_error(err_msg)
             if d < 0:
-                self._raise_error(
-                    "The neighbourhood size, n_size, must be list of positive integers or 0."
-                )
+                self._raise_error(err_msg)
 
 
 class UniformRandomWalk(GraphSampler):
