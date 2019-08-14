@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -365,13 +365,6 @@ class GraphSAGELinkGenerator:
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self.sampler.run(nodes=hns, n=1, n_size=self.num_samples)
-
-            # Isolated nodes will return only themselves in the sample list
-            # let's correct for this by padding with None (the dummy node ID)
-            node_samples = [
-                ns + [None] * num_full_samples if len(ns) == 1 else ns
-                for ns in node_samples
-            ]
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
 

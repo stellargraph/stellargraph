@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ __all__ = [
     "UniformRandomWalk",
     "BiasedRandomWalk",
     "UniformRandomMetaPathWalk",
-    "DepthFirstWalk",
-    "BreadthFirstWalk",
     "SampledBreadthFirstWalk",
     "SampledHeterogeneousBreadthFirstWalk",
 ]
@@ -732,26 +730,6 @@ class UniformRandomMetaPathWalk(GraphWalk):
                 )
 
 
-class DepthFirstWalk(GraphWalk):
-    """
-    Depth First Walk that generates all paths from a starting node to a given depth.
-    It can be used to extract, in a memory efficient way, a sub-graph starting from a node and up to a given depth.
-    """
-
-    # TODO: Implement the run method
-    pass
-
-
-class BreadthFirstWalk(GraphWalk):
-    """
-    Breadth First Walk that generates all paths from a starting node to a given depth.
-    It can be used to extract a sub-graph starting from a node and up to a given depth.
-    """
-
-    # TODO: Implement the run method
-    pass
-
-
 class SampledBreadthFirstWalk(GraphWalk):
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
@@ -777,7 +755,7 @@ class SampledBreadthFirstWalk(GraphWalk):
         self._check_parameter_values(nodes=nodes, n=n, n_size=n_size, seed=seed)
 
         walks = []
-        d = len(n_size)  # depth of search
+        max_hops = len(n_size)  # depth of search
 
         if seed:
             # seed the random number generator
@@ -791,24 +769,27 @@ class SampledBreadthFirstWalk(GraphWalk):
                 q = list()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
                 # extend() needs iterable as parameter; we use list of tuples (node id, depth)
-                q.extend([(node, 0)])
+                q.append((node, 0))
 
                 while len(q) > 0:
                     # remove the top element in the queue
                     # index 0 pop the item from the front of the list
-                    frontier = q.pop(0)
-                    depth = frontier[1] + 1  # the depth of the neighbouring nodes
-                    walk.extend([frontier[0]])  # add to the walk
+                    cur_node, cur_depth = q.pop(0)
+                    depth = cur_depth + 1  # the depth of the neighbouring nodes
+                    walk.append(cur_node)  # add to the walk
 
                     # consider the subgraph up to and including depth d from root node
-                    if depth <= d:
-                        neighbours = self.neighbors(frontier[0])
+                    if depth <= max_hops:
+                        neighbours = (
+                            self.neighbors(cur_node) if cur_node is not None else []
+                        )
                         if len(neighbours) == 0:
-                            break
+                            # Either node is unconnected or is in directed graph with no out-nodes.
+                            neighbours = [None] * n_size[cur_depth]
                         else:
                             # sample with replacement
                             neighbours = [
-                                rs.choice(neighbours) for _ in range(n_size[depth - 1])
+                                rs.choice(neighbours) for _ in range(n_size[cur_depth])
                             ]
 
                         # add them to the back of the queue
