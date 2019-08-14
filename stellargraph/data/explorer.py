@@ -778,22 +778,23 @@ class SampledBreadthFirstWalk(GraphWalk):
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
                     walk.append(cur_node)  # add to the walk
 
-                    # consider the subgraph up to and including depth d from root node
-                    if depth <= max_hops:
-                        neighbours = (
-                            self.neighbors(cur_node) if cur_node is not None else []
-                        )
-                        if len(neighbours) == 0:
-                            # Either node is unconnected or is in directed graph with no out-nodes.
-                            neighbours = [None] * n_size[cur_depth]
-                        else:
-                            # sample with replacement
-                            neighbours = [
-                                rs.choice(neighbours) for _ in range(n_size[cur_depth])
-                            ]
+                    # consider the subgraph up to and including max_hops from root node
+                    if depth > max_hops:
+                        continue
+                    neighbours = (
+                        self.neighbors(cur_node) if cur_node is not None else []
+                    )
+                    if len(neighbours) == 0:
+                        # Either node is unconnected or is in directed graph with no out-nodes.
+                        neighbours = [None] * n_size[cur_depth]
+                    else:
+                        # sample with replacement
+                        neighbours = [
+                            rs.choice(neighbours) for _ in range(n_size[cur_depth])
+                        ]
 
-                        # add them to the back of the queue
-                        q.extend([(sampled_node, depth) for sampled_node in neighbours])
+                    # add them to the back of the queue
+                    q.extend([(sampled_node, depth) for sampled_node in neighbours])
 
                 # finished i-th walk from node so add it to the list of walks as a list
                 walks.append(walk)
