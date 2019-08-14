@@ -243,7 +243,8 @@ def naive_weighted_choices(rs, weights):
     subinterval_ends = []
     running_total = 0
     for w in weights:
-        assert w >= 0
+        if w < 0:
+            raise ValueError("Detected negative weight: {}".format(w))
         running_total += w
         subinterval_ends.append(running_total)
 
