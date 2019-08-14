@@ -177,19 +177,13 @@ class GraphWalk(object):
     # For neighbourhood sampling
     def _check_sizes(self, n_size):
         err_msg = "The neighbourhood size must be a list of non-negative integers."
-        if n_size is None:
+        if n_size is None or type(n_size) != list:
             self._raise_error(err_msg)
-        if type(n_size) != list:
-            self._raise_error(err_msg)
-
         if len(n_size) == 0:
-            # Technically, length 0 should be okay, but by consensus is invalid.
+            # Technically, length 0 should be okay, but by consensus it is invalid.
             self._raise_error("The neighbourhood size should not be empty.")
-
         for d in n_size:
-            if type(d) != int:
-                self._raise_error(err_msg)
-            if d < 0:
+            if type(d) != int or d < 0:
                 self._raise_error(err_msg)
 
 
@@ -1242,26 +1236,27 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
                     sample[cur_slot].append(cur_node)  # add to the walk
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
 
-                    # consider the subgraph up to and including depth d from root node
-                    if depth <= max_hops:
-                        # get in-nodes
-                        neighbours = self._sample_neighbours(
-                            rs, cur_node, 0, in_size[cur_depth]
-                        )
-                        # add them to the back of the queue
-                        slot = 2 * cur_slot + 1
-                        q.extend(
-                            [(sampled_node, depth, slot) for sampled_node in neighbours]
-                        )
-                        # get out-nodes
-                        neighbours = self._sample_neighbours(
-                            rs, cur_node, 1, out_size[cur_depth]
-                        )
-                        # add them to the back of the queue
-                        slot = slot + 1
-                        q.extend(
-                            [(sampled_node, depth, slot) for sampled_node in neighbours]
-                        )
+                    # consider the subgraph up to and including max_hops from root node
+                    if depth > max_hops:
+                        continue
+                    # get in-nodes
+                    neighbours = self._sample_neighbours(
+                        rs, cur_node, 0, in_size[cur_depth]
+                    )
+                    # add them to the back of the queue
+                    slot = 2 * cur_slot + 1
+                    q.extend(
+                        [(sampled_node, depth, slot) for sampled_node in neighbours]
+                    )
+                    # get out-nodes
+                    neighbours = self._sample_neighbours(
+                        rs, cur_node, 1, out_size[cur_depth]
+                    )
+                    # add them to the back of the queue
+                    slot = slot + 1
+                    q.extend(
+                        [(sampled_node, depth, slot) for sampled_node in neighbours]
+                    )
 
                 # finished multi-hop neighbourhood sampling
                 samples.append(sample)
@@ -1269,14 +1264,16 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         return samples
 
     def _sample_neighbours(self, rs, node, idx, size):
-        fn = self.graph.in_edges if idx == 0 else self.graph.out_edges
-        neighbours = [n[idx] for n in list(fn(node))] if node is not None else []
-        if len(neighbours) == 0:
-            # walk has ended abruptly
+        if node is None:
+            # Non-node, e.g. previously sampled from empty neighbourhood
             return [None] * size
-        else:
-            # sample with replacement
-            return [rs.choice(neighbours) for _ in range(size)]
+        fn = self.graph.in_edges if idx == 0 else self.graph.out_edges
+        neighbours = [n[idx] for n in list(fn(node))]
+        if len(neighbours) == 0:
+            # Sampling from empty neighbourhood
+            return [None] * size
+        # Sample with replacement
+        return [rs.choice(neighbours) for _ in range(size)]
 
     def _check_parameter_values(self, nodes, n, in_size, out_size, seed):
         """
