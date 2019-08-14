@@ -220,7 +220,8 @@ def naive_weighted_choices(rs, weights):
     subinterval_ends = []
     running_total = 0
     for w in weights:
-        assert w >= 0
+        if w < 0:
+            raise ValueError("Detected negative weight: {}".format(w))
         running_total += w
         subinterval_ends.append(running_total)
 
@@ -606,7 +607,7 @@ class SampledBreadthFirstWalk(GraphSampler):
         rs = self._check_parameter_values(nodes, n, n_size, seed)
 
         walks = []
-        d = len(n_size)  # depth of search
+        max_hops = len(n_size)  # depth of search
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -622,23 +623,24 @@ class SampledBreadthFirstWalk(GraphSampler):
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
                     walk.append(cur_node)  # add to the walk
 
-                    # consider the subgraph up to and including depth d from root node
-                    if depth <= d:
-                        neighbours = (
-                            self.neighbors(cur_node) if cur_node is not None else []
-                        )
-                        if len(neighbours) == 0:
-                            # walk has ended abruptly
-                            # Return neighbourhood of correct size
-                            neighbours = [None] * n_size[cur_depth]
-                        else:
-                            # sample with replacement
-                            neighbours = [
-                                rs.choice(neighbours) for _ in range(n_size[cur_depth])
-                            ]
+                    # consider the subgraph up to and including max_hops from root node
+                    if depth > max_hops:
+                        continue
+                    neighbours = (
+                        self.neighbors(cur_node) if cur_node is not None else []
+                    )
+                    if len(neighbours) == 0:
+                        # walk has ended abruptly
+                        # Return neighbourhood of correct size
+                        neighbours = [None] * n_size[cur_depth]
+                    else:
+                        # sample with replacement
+                        neighbours = [
+                            rs.choice(neighbours) for _ in range(n_size[cur_depth])
+                        ]
 
-                        # add them to the back of the queue
-                        q.extend([(sampled_node, depth) for sampled_node in neighbours])
+                    # add them to the back of the queue
+                    q.extend([(sampled_node, depth) for sampled_node in neighbours])
 
                 # finished i-th walk from node so add it to the list of walks as a list
                 walks.append(walk)
@@ -724,26 +726,27 @@ class DirectedBreadthFirstNeighbours(GraphSampler):
                     sample[cur_slot].append(cur_node)  # add to the walk
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
 
-                    # consider the subgraph up to and including depth d from root node
-                    if depth <= max_hops:
-                        # get in-nodes
-                        neighbours = self._sample_neighbours(
-                            rs, cur_node, 0, in_size[cur_depth]
-                        )
-                        # add them to the back of the queue
-                        slot = 2 * cur_slot + 1
-                        q.extend(
-                            [(sampled_node, depth, slot) for sampled_node in neighbours]
-                        )
-                        # get out-nodes
-                        neighbours = self._sample_neighbours(
-                            rs, cur_node, 1, out_size[cur_depth]
-                        )
-                        # add them to the back of the queue
-                        slot = slot + 1
-                        q.extend(
-                            [(sampled_node, depth, slot) for sampled_node in neighbours]
-                        )
+                    # consider the subgraph up to and including max_hops from root node
+                    if depth > max_hops:
+                        continue
+                    # get in-nodes
+                    neighbours = self._sample_neighbours(
+                        rs, cur_node, 0, in_size[cur_depth]
+                    )
+                    # add them to the back of the queue
+                    slot = 2 * cur_slot + 1
+                    q.extend(
+                        [(sampled_node, depth, slot) for sampled_node in neighbours]
+                    )
+                    # get out-nodes
+                    neighbours = self._sample_neighbours(
+                        rs, cur_node, 1, out_size[cur_depth]
+                    )
+                    # add them to the back of the queue
+                    slot = slot + 1
+                    q.extend(
+                        [(sampled_node, depth, slot) for sampled_node in neighbours]
+                    )
 
                 # finished multi-hop neighbourhood sampling
                 samples.append(sample)
