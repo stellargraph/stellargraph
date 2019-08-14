@@ -122,10 +122,9 @@ class GraphSampler(object):
 
         if type(length) != int:
             self._raise_error("The walk length, length, should be integer type.")
-        if length < 0:
-            self._raise_error(
-                "The walk length, length, should be a non-negative integer."
-            )
+        if length <= 0:
+            # Technically, length 0 should be okay, but by consensus is invalid.
+            self._raise_error("The walk length, length, should be a positive integer.")
 
         if seed is not None:
             if type(seed) != int:
@@ -150,10 +149,9 @@ class GraphSampler(object):
         if type(n_size) != list:
             self._raise_error(err_msg)
 
-        # if len(n_size) == 0:
-        #    self._raise_error(
-        #        "The neighbourhood size should not be empty."
-        #    )
+        if len(n_size) == 0:
+            # Technically, length 0 should be okay, but by consensus is invalid.
+            self._raise_error("The neighbourhood size should not be empty.")
 
         for d in n_size:
             if type(d) != int:
@@ -167,7 +165,7 @@ class UniformRandomWalk(GraphSampler):
     Performs uniform random walks on the given graph
     """
 
-    def run(self, nodes=None, n=None, length=None, seed=None):
+    def run(self, nodes=None, n=0, length=0, seed=None):
         """
         Perform a random walk starting from the root nodes.
 

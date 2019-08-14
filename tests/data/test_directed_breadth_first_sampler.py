@@ -167,11 +167,12 @@ class TestDirectedBreadthFirstNeighbours(object):
     def test_zero_hops(self):
         g = create_simple_graph()
         bfw = DirectedBreadthFirstNeighbours(g)
-        # Check basic data structure
-        # - The following case should be [[["root"]]]
-        subgraph = bfw.run(nodes=["root"], n=1, in_size=[], out_size=[])
-        assert len(subgraph) == 1
-        assert len(subgraph[0]) == 1
+        # By consensus, a zero-length walk raises an error.
+        with pytest.raises(ValueError):
+            subgraph = bfw.run(nodes=["root"], n=1, in_size=[], out_size=[])
+        # Otherwise, the case should be [[["root"]]].
+        # assert len(subgraph) == 1
+        # assert len(subgraph[0]) == 1
 
     def test_one_hop(self):
         g = create_simple_graph()
