@@ -105,6 +105,93 @@ class GraphWalk(object):
         """
         raise NotImplementedError
 
+    def _raise_error(self, msg):
+        full = "({}) " + msg
+        raise ValueError(full.format(type(self).__name__))
+
+    def _check_parameter_values(self, nodes=None, n=0, length=0, seed=None):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        Args:
+            nodes: <list> A list of root node ids such that from each node a uniform random walk of up to length l
+            will be generated.
+            n: <int> Number of walks per node id.
+            length: <int> Maximum length of walk measured as the number of edges followed from root node.
+            seed: <int> Random number generator seed
+        Returns:
+            The random state as determined by the seed.
+        """
+        self._check_nodes(nodes)
+        self._check_repetitions(n)
+        self._check_length(length)
+        return self._check_seed(seed)
+
+    def _check_nodes(self, nodes):
+        if nodes is None:
+            self._raise_error("A list of root node IDs was not provided.")
+        if not is_real_iterable(nodes):
+            self._raise_error("Nodes parameter should be an iterable of node IDs.")
+        if (
+                len(nodes) == 0
+        ):  # this is not an error but maybe a warning should be printed to inform the caller
+            print(
+                "({}) WARNING: No root node IDs given. An empty list will be returned as a result.".format(
+                    type(self).__name__
+                )
+            )
+
+    def _check_repetitions(self, n):
+        if type(n) != int:
+            self._raise_error(
+                "The number of walks per root node, n, should be integer type."
+            )
+        if n <= 0:
+            self._raise_error(
+                "The number of walks per root node, n, should be a positive integer."
+            )
+
+    def _check_length(self, length):
+        if type(length) != int:
+            self._raise_error("The walk length, length, should be integer type.")
+        if length <= 0:
+            # Technically, length 0 should be okay, but by consensus is invalid.
+            self._raise_error("The walk length, length, should be a positive integer.")
+
+    def _check_seed(self, seed):
+        if seed is None:
+            # Restore the random state
+            return self._random_state
+        if type(seed) != int:
+            self._raise_error(
+                "The random number generator seed value, seed, should be integer type or None."
+            )
+        if seed < 0:
+            self._raise_error(
+                "The random number generator seed value, seed, should be non-negative integer or None."
+            )
+        # seed the random number generator
+        return random.Random(seed)
+
+    # For neighbourhood sampling
+    def _check_sizes(self, n_size):
+        err_msg = "The neighbourhood size must be a list of non-negative integers."
+        if n_size is None:
+            self._raise_error(err_msg)
+        if type(n_size) != list:
+            self._raise_error(err_msg)
+
+        if len(n_size) == 0:
+            # Technically, length 0 should be okay, but by consensus is invalid.
+            self._raise_error("The neighbourhood size should not be empty.")
+
+        for d in n_size:
+            if type(d) != int:
+                self._raise_error(err_msg)
+            if d < 0:
+                self._raise_error(err_msg)
+
 
 class UniformRandomWalk(GraphWalk):
     """
@@ -1094,3 +1181,122 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         type(self).__name__
                     )
                 )
+
+class DirectedBreadthFirstNeighbours(GraphWalk):
+    """
+    Breadth First sampler that generates the composite of a number of sampled paths from a starting node.
+    It can be used to extract a random sub-graph starting from a set of initial nodes.
+    """
+
+    def __init__(self, graph, graph_schema=None, seed=None):
+        super().__init__(graph, graph_schema, seed)
+        if not graph.is_directed():
+            self._raise_error("Graph must be directed")
+
+    def run(self, nodes=None, n=1, in_size=None, out_size=None, seed=None):
+        """
+        Performs a sampled breadth-first walk starting from the root nodes.
+
+        Args:
+            nodes:  <list> A list of root node ids such that from each node n BFWs will be generated up to the
+            given depth d.
+            n: <int> Number of walks per node id.
+            in_size: <list> The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size: <list> The number of out-directed nodes to sample with replacement at each depth of the walk.
+            seed: <int> Random number generator seed; default is None
+
+
+        Returns:
+            A list of multi-hop neighbourhood samples. Each sample expresses multiple undirected walks, but the in-node
+            neighbours and out-node neighbours are sampled separately. Each sample has the format:
+
+                [[node]
+                 [in_1...in_n]  [out_1...out_m]
+                 [in_1.in_1...in_n.in_p] [in_1.out_1...in_n.out_q]
+                    [out_1.in_1...out_m.in_p] [out_1.out_1...out_m.out_q]
+                 [in_1.in_1.in_1...in_n.in_p.in_r] [in_1.in_1.out_1...in_n.in_p.out_s] ...
+                 ...]
+
+            where a single, undirected walk might be, for example:
+
+                [node out_i  out_i.in_j  out_i.in_j.in_k ...]
+        """
+        rs = self._check_parameter_values(nodes, n, in_size, out_size, seed)
+        max_hops = len(in_size)
+        max_slots = 2 ** (max_hops + 1) - 1
+
+        samples = []
+
+        for node in nodes:  # iterate over root nodes
+            for _ in range(n):  # do n bounded breadth first walks from each root node
+                q = list()  # the queue of neighbours
+                # the list of sampled node-lists:
+                sample = [[] for _ in range(max_slots)]
+                # Add node to queue as (node, depth, slot)
+                q.append((node, 0, 0))
+
+                while len(q) > 0:
+                    # remove the top element in the queue
+                    # index 0 pop the item from the front of the list
+                    cur_node, cur_depth, cur_slot = q.pop(0)
+                    sample[cur_slot].append(cur_node)  # add to the walk
+                    depth = cur_depth + 1  # the depth of the neighbouring nodes
+
+                    # consider the subgraph up to and including depth d from root node
+                    if depth <= max_hops:
+                        # get in-nodes
+                        neighbours = self._sample_neighbours(
+                            rs, cur_node, 0, in_size[cur_depth]
+                        )
+                        # add them to the back of the queue
+                        slot = 2 * cur_slot + 1
+                        q.extend(
+                            [(sampled_node, depth, slot) for sampled_node in neighbours]
+                        )
+                        # get out-nodes
+                        neighbours = self._sample_neighbours(
+                            rs, cur_node, 1, out_size[cur_depth]
+                        )
+                        # add them to the back of the queue
+                        slot = slot + 1
+                        q.extend(
+                            [(sampled_node, depth, slot) for sampled_node in neighbours]
+                        )
+
+                # finished multi-hop neighbourhood sampling
+                samples.append(sample)
+
+        return samples
+
+    def _sample_neighbours(self, rs, node, idx, size):
+        fn = self.graph.in_edges if idx == 0 else self.graph.out_edges
+        neighbours = [n[idx] for n in list(fn(node))] if node is not None else []
+        if len(neighbours) == 0:
+            # walk has ended abruptly
+            return [None] * size
+        else:
+            # sample with replacement
+            return [rs.choice(neighbours) for _ in range(size)]
+
+    def _check_parameter_values(self, nodes, n, in_size, out_size, seed):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        Args:
+            nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
+            given depth d.
+            n: <int> Number of walks per node id.
+            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
+            seed: <int> Random number generator seed; default is None
+
+        Returns:
+            The random state as determined by the seed.
+        """
+        self._check_sizes(in_size)
+        self._check_sizes(out_size)
+        if len(in_size) != len(out_size):
+            self._raise_error(
+                "The number of hops for the in and out neighbourhoods must be the same."
+            )
+        return super()._check_parameter_values(nodes, n, len(in_size), seed)
