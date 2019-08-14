@@ -134,7 +134,7 @@ class GraphWalk(object):
         if not is_real_iterable(nodes):
             self._raise_error("Nodes parameter should be an iterable of node IDs.")
         if (
-                len(nodes) == 0
+            len(nodes) == 0
         ):  # this is not an error but maybe a warning should be printed to inform the caller
             print(
                 "({}) WARNING: No root node IDs given. An empty list will be returned as a result.".format(
@@ -1175,6 +1175,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                         type(self).__name__
                     )
                 )
+
 
 class DirectedBreadthFirstNeighbours(GraphWalk):
     """
