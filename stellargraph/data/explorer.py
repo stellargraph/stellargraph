@@ -49,41 +49,17 @@ class GraphWalk(object):
 
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraphBase):
-            raise TypeError(
-                "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
-            )
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         if not graph_schema:
             self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
         else:
             self.graph_schema = graph_schema
 
-        if self.graph_schema is not None and type(self.graph_schema) is not GraphSchema:
-            raise ValueError(
-                "({}) The parameter graph_schema should be either None or of type GraphSchema.".format(
-                    type(self).__name__
-                )
+        if type(self.graph_schema) is not GraphSchema:
+            self._raise_error(
+                "The parameter graph_schema should be either None or of type GraphSchema."
             )
-
-        # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-        # TODO: this could be better placed inside StellarGraph class
-        edge_types = self.graph_schema.edge_types
-        self.adj = dict()
-        for et in edge_types:
-            self.adj.update({et: defaultdict(lambda: [None])})
-
-        for n1, nbrdict in graph.adjacency():
-            for et in edge_types:
-                neigh_et = [
-                    n2
-                    for n2, nkeys in nbrdict.items()
-                    for k in iter(nkeys)
-                    if self.graph_schema.is_of_edge_type((n1, n2, k), et)
-                ]
-                # Create adjacency list in lexographical order
-                # Otherwise sampling methods will not be deterministic
-                # even when the seed is set.
-                self.adj[et][n1] = sorted(neigh_et, key=str)
 
     def neighbors(self, node):
         if node not in self.graph:
@@ -187,6 +163,33 @@ class GraphWalk(object):
                 self._raise_error(err_msg)
 
 
+class HeterogeneousGraphWalk(GraphWalk):
+    """
+    Base class for exploring graphs with heterogeneous edge types.
+    """
+
+    def __init__(self, graph, graph_schema=None, seed=None):
+        super().__init__(graph, graph_schema, seed)
+
+        # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
+        # TODO: this could be better placed inside StellarGraph class
+        edge_types = self.graph_schema.edge_types
+        self.adj = {et: defaultdict(lambda: [None]) for et in edge_types}
+
+        for n1, nbrdict in graph.adjacency():
+            for et in edge_types:
+                neigh_et = [
+                    n2
+                    for n2, nkeys in nbrdict.items()
+                    for k in iter(nkeys)
+                    if self.graph_schema.is_of_edge_type((n1, n2, k), et)
+                ]
+                # Create adjacency list in lexographical order
+                # Otherwise sampling methods will not be deterministic
+                # even when the seed is set.
+                self.adj[et][n1] = sorted(neigh_et, key=str)
+
+
 class UniformRandomWalk(GraphWalk):
     """
     Performs uniform random walks on the given graph
@@ -206,14 +209,7 @@ class UniformRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        self._check_parameter_values(nodes=nodes, n=n, length=length, seed=seed)
-
-        if seed:
-            # seed the random number generator
-            rs = random.Random(seed)
-        else:
-            # Restore the random state
-            rs = self._random_state
+        rs = self._check_parameter_values(nodes, n, length, seed)
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -234,76 +230,6 @@ class UniformRandomWalk(GraphWalk):
                 walks.append(walk)
 
         return walks
-
-    def _check_parameter_values(self, nodes, n, length, seed):
-        """
-        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
-        parameter (the first one encountered in the checks) with invalid value.
-
-        Args:
-            nodes: <list> A list of root node ids such that from each node a uniform random walk of up to length l
-            will be generated.
-            n: <int> Number of walks per node id.
-            length: <int> Maximum length of walk measured as the number of edges followed from root node.
-            seed: <int> Random number generator seed
-
-        """
-        if nodes is None:
-            raise ValueError(
-                "({}) A list of root node IDs was not provided.".format(
-                    type(self).__name__
-                )
-            )
-        if not is_real_iterable(nodes):
-            raise ValueError("nodes parameter should be an iterable of node IDs.")
-        if (
-            len(nodes) == 0
-        ):  # this is not an error but maybe a warning should be printed to inform the caller
-            print(
-                "WARNING: ({}) No root node IDs given. An empty list will be returned as a result.".format(
-                    type(self).__name__
-                )
-            )
-
-        if type(n) != int:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
-
-        if type(length) != int:
-            raise ValueError(
-                "({}) The walk length, length, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-        if length <= 0:
-            raise ValueError(
-                "({}) The walk length, length, should be positive integer.".format(
-                    type(self).__name__
-                )
-            )
-
-        if seed is not None:
-            if type(seed) != int:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
-                        type(self).__name__
-                    )
-                )
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
 
 
 def naive_weighted_choices(rs, weights):
@@ -376,23 +302,9 @@ class BiasedRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        self._check_parameter_values(
-            nodes=nodes,
-            n=n,
-            p=p,
-            q=q,
-            length=length,
-            seed=seed,
-            weighted=weighted,
-            edge_weight_label=edge_weight_label,
+        rs = self._check_parameter_values(
+            nodes, n, p, q, length, seed, weighted, edge_weight_label
         )
-
-        if seed:
-            # seed a new random number generator
-            rs = random.Random(seed)
-        else:
-            # Restore the random state
-            rs = self._random_state
 
         if weighted:
             # Check that all edge weights are greater than or equal to 0.
@@ -405,19 +317,19 @@ class BiasedRandomWalk(GraphWalk):
                     for k, v in self.graph[node][neighbor].items():
                         weight = v.get(edge_weight_label)
                         if weight is None or np.isnan(weight) or weight == np.inf:
-                            raise ValueError(
+                            self._raise_error(
                                 "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
                                     weight, node, neighbor
                                 )
                             )
                         if not isinstance(weight, (int, float)):
-                            raise ValueError(
+                            self._raise_error(
                                 "Edge weight between nodes ({}) and ({}) is not numeric ({}).".format(
                                     node, neighbor, weight
                                 )
                             )
                         if weight < 0:  # check if edge has a negative weight
-                            raise ValueError(
+                            self._raise_error(
                                 "An edge weight between nodes ({}) and ({}) is negative ({}).".format(
                                     node, neighbor, weight
                                 )
@@ -427,7 +339,7 @@ class BiasedRandomWalk(GraphWalk):
                     if (
                         len(wts) > 1
                     ):  # multigraph with different weights on edges between same pair of nodes
-                        raise ValueError(
+                        self._raise_error(
                             "({}) and ({}) have multiple edges with weights ({}). Ambiguous to choose an edge for the random walk.".format(
                                 node, neighbor, list(wts)
                             )
@@ -514,92 +426,29 @@ class BiasedRandomWalk(GraphWalk):
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
             edge_weight_label: <string> Label of the edge weight property.
 
-        """
-        if nodes is None:
-            raise ValueError(
-                "({}) A list of root node IDs was not provided.".format(
-                    type(self).__name__
-                )
-            )
-        if not is_real_iterable(nodes):
-            raise ValueError("nodes parameter should be an iterableof node IDs.")
-        if (
-            len(nodes) == 0
-        ):  # this is not an error but maybe a warning should be printed to inform the caller
-            print(
-                "WARNING: ({}) No root node IDs given. An empty list will be returned as a result.".format(
-                    type(self).__name__
-                )
-            )
-
-        if type(n) != int:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
+         Returns:
+            The random state as determined by the seed.
+       """
+        rs = super()._check_parameter_values(nodes, n, length, seed)
 
         if p <= 0.0:
-            raise ValueError(
-                "({}) Parameter p should be greater than 0.".format(type(self).__name__)
-            )
+            self._raise_error("Parameter p should be greater than 0.")
 
         if q <= 0.0:
-            raise ValueError(
-                "({}) Parameter q should be greater than 0.".format(type(self).__name__)
-            )
-
-        if type(length) != int:
-            raise ValueError(
-                "({}) The walk length, length, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-
-        if length <= 0:
-            raise ValueError(
-                "({}) The walk length, length, should be positive integer.".format(
-                    type(self).__name__
-                )
-            )
-
-        if seed is not None:
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
-            if type(seed) != int:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
-                        type(self).__name__
-                    )
-                )
+            self._raise_error("Parameter q should be greater than 0.")
 
         if type(weighted) != bool:
-            raise ValueError(
-                "({}) Parameter weighted has to be either False (unweighted random walks) or True (weighted random walks).".format(
-                    type(self).__name__
-                )
+            self._raise_error(
+                "Parameter weighted has to be either False (unweighted random walks) or True (weighted random walks)."
             )
 
         if not isinstance(edge_weight_label, str):
-            raise ValueError(
-                "({}) The edge weight property label has to be of type string".format(
-                    type(self).__name__
-                )
-            )
+            self._raise_error("The edge weight property label has to be of type string")
+
+        return rs
 
 
-class UniformRandomMetaPathWalk(GraphWalk):
+class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
@@ -629,21 +478,9 @@ class UniformRandomMetaPathWalk(GraphWalk):
         Returns:
             <list> List of lists of nodes ids for each of the random walks generated
         """
-        self._check_parameter_values(
-            nodes=nodes,
-            n=n,
-            length=length,
-            metapaths=metapaths,
-            node_type_attribute=node_type_attribute,
-            seed=seed,
+        rs = self._check_parameter_values(
+            nodes, n, length, metapaths, node_type_attribute, seed
         )
-
-        if seed:
-            # seed the random number generator
-            rs = random.Random(seed)
-        else:
-            # Restore the random state
-            rs = self._random_state
 
         walks = []
 
@@ -709,107 +546,35 @@ class UniformRandomMetaPathWalk(GraphWalk):
             node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed
 
+        Returns:
+            The random state as determined by the seed.
         """
-        if nodes is None:
-            raise ValueError(
-                "({}) A list of starting node IDs was not provided (parameter nodes is None).".format(
-                    type(self).__name__
-                )
-            )
-        if not is_real_iterable(nodes):
-            raise ValueError(
-                "({}) The nodes parameter should be an iterable of node IDs.".format(
-                    type(self).__name__
-                )
-            )
-        if (
-            len(nodes) == 0
-        ):  # this is not an error but maybe a warning should be printed to inform the caller
-            print(
-                "WARNING: ({}) No starting node IDs given. An empty list will be returned as a result.".format(
-                    type(self).__name__
-                )
-            )
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per starting node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
-        if type(n) != int:
-            raise ValueError(
-                "({}) The number of walks per starting node, n, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-
-        if length <= 0:
-            raise ValueError(
-                "({}) The walk length parameter, length, should be positive integer.".format(
-                    type(self).__name__
-                )
-            )
-        if type(length) != int:
-            raise ValueError(
-                "({}) The walk length parameter, length, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
+        rs = super()._check_parameter_values(nodes, n, length, seed)
 
         if type(metapaths) != list:
-            raise ValueError(
-                "({}) The metapaths parameter must be a list of lists.".format(
-                    type(self).__name__
-                )
-            )
+            self._raise_error("The metapaths parameter must be a list of lists.")
         for metapath in metapaths:
             if type(metapath) != list:
-                raise ValueError(
-                    "({}) Each metapath must be list type of node labels".format(
-                        type(self).__name__
-                    )
-                )
+                self._raise_error("Each metapath must be list type of node labels")
             if len(metapath) < 2:
-                raise ValueError(
-                    "({}) Each metapath must specify at least two node types".format(
-                        type(self).__name__
-                    )
-                )
+                self._raise_error("Each metapath must specify at least two node types")
 
             for node_label in metapath:
                 if type(node_label) != str:
-                    raise ValueError(
-                        "({}) Node labels in metapaths must be string type.".format(
-                            type(self).__name__
-                        )
-                    )
+                    self._raise_error("Node labels in metapaths must be string type.")
             if metapath[0] != metapath[-1]:
-                raise ValueError(
-                    "({} The first and last node type in a metapath should be the same.".format(
-                        type(self).__name__
-                    )
+                self._raise_error(
+                    "The first and last node type in a metapath should be the same."
                 )
 
         if type(node_type_attribute) != str:
-            raise ValueError(
-                "({}) The parameter label should be string type not {} as given".format(
-                    type(self).__name__, type(node_type_attribute).__name__
+            self._raise_error(
+                "The parameter label should be string type not {} as given".format(
+                    type(node_type_attribute).__name__
                 )
             )
 
-        if seed is not None:
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
-            if type(seed) != int:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
-                        type(self).__name__
-                    )
-                )
+        return rs
 
 
 class SampledBreadthFirstWalk(GraphWalk):
@@ -834,17 +599,10 @@ class SampledBreadthFirstWalk(GraphWalk):
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        self._check_parameter_values(nodes=nodes, n=n, n_size=n_size, seed=seed)
+        rs = self._check_parameter_values(nodes, n, n_size, seed)
 
         walks = []
         max_hops = len(n_size)  # depth of search
-
-        if seed:
-            # seed the random number generator
-            rs = random.Random(seed)
-        else:
-            # Restore the random state
-            rs = self._random_state
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -895,92 +653,14 @@ class SampledBreadthFirstWalk(GraphWalk):
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
             seed: <int> Random number generator seed; default is None
 
+        Returns:
+            The random state as determined by the seed.
         """
-        if nodes is None:
-            raise ValueError(
-                "({}) A list of root node IDs was not provided (nodes parameter is None).".format(
-                    type(self).__name__
-                )
-            )
-        if not is_real_iterable(nodes):
-            raise ValueError(
-                "({}) The nodes parameter should be an iterable of node IDs.".format(
-                    type(self).__name__
-                )
-            )
-        if (
-            len(nodes) == 0
-        ):  # this is not an error but maybe a warning should be printed to inform the caller
-            print(
-                "WARNING: ({}) No root node IDs given. An empty list will be returned as a result.".format(
-                    type(self).__name__
-                )
-            )
-
-        if type(n) != int:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
-
-        if n_size is None:
-            raise ValueError(
-                "({}) The neighbourhood size, n_size, must be a list of integers not None.".format(
-                    type(self).__name__
-                )
-            )
-        if type(n_size) != list:
-            raise ValueError(
-                "({}) The neighbourhood size, n_size, must be a list of integers.".format(
-                    type(self).__name__
-                )
-            )
-
-        if len(n_size) == 0:
-            raise ValueError(
-                "({}) The neighbourhood size, n_size, should not be empty list.".format(
-                    type(self).__name__
-                )
-            )
-
-        for d in n_size:
-            if type(d) != int:
-                raise ValueError(
-                    "({}) The neighbourhood size, n_size, must be list of positive integers or 0.".format(
-                        type(self).__name__
-                    )
-                )
-            if d < 0:
-                raise ValueError(
-                    "({}) The neighbourhood size, n_size, must be list of positive integers or 0.".format(
-                        type(self).__name__
-                    )
-                )
-
-        if seed is not None:
-            if type(seed) != int:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
-                        type(self).__name__
-                    )
-                )
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
+        self._check_sizes(n_size)
+        return super()._check_parameter_values(nodes, n, len(n_size), seed)
 
 
-class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
+class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
     """
     Breadth First Walk for heterogeneous graphs that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes.
@@ -1004,19 +684,10 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
             A list of lists such that each list element is a sequence of ids corresponding to a sampled Heterogeneous
             BFW.
         """
-        self._check_parameter_values(
-            nodes=nodes, n=n, n_size=n_size, graph_schema=self.graph_schema, seed=seed
-        )
+        rs = self._check_parameter_values(nodes, n, n_size, self.graph_schema, seed)
 
         walks = []
         d = len(n_size)  # depth of search
-
-        if seed:
-            # seed the random number generator
-            rs = random.Random(seed)
-        else:
-            # Restore the random state
-            rs = self._random_state
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
@@ -1085,96 +756,17 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
             graph_schema: <GraphSchema> None or a stellargraph graph schema object
             seed: <int> Random number generator seed; default is None
 
+        Returns:
+            The random state as determined by the seed.
         """
-        if nodes is None:
-            raise ValueError(
-                "({}) A list of root node IDs was not provided (nodes parameter is None).".format(
-                    type(self).__name__
-                )
-            )
-        if not is_real_iterable(nodes):
-            raise ValueError(
-                "({}) The nodes parameter should be an iterable of node IDs.".format(
-                    type(self).__name__
-                )
-            )
-        if (
-            len(nodes) == 0
-        ):  # this is not an error but maybe a warning should be printed to inform the caller
-            print(
-                "WARNING: ({}) No root node IDs given. An empty list will be returned as a result.".format(
-                    type(self).__name__
-                )
-            )
-
-        if type(n) != int:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be integer type.".format(
-                    type(self).__name__
-                )
-            )
-
-        if n <= 0:
-            raise ValueError(
-                "({}) The number of walks per root node, n, should be a positive integer.".format(
-                    type(self).__name__
-                )
-            )
-
-        if n_size is None:
-            raise ValueError(
-                "({}) The neighbourhood size, n_size, must be a list of integers not None.".format(
-                    type(self).__name__
-                )
-            )
-        if type(n_size) != list:
-            raise ValueError(
-                "({}) The neighbourhood size, n_size, must be a list of integers.".format(
-                    type(self).__name__
-                )
-            )
-
-        if len(n_size) == 0:
-            raise ValueError(
-                "({}) The neighbourhood size, n_size, should not be empty list.".format(
-                    type(self).__name__
-                )
-            )
-
-        for d in n_size:
-            if type(d) != int:
-                raise ValueError(
-                    "({}) The neighbourhood size, n_size, must be list of integers.".format(
-                        type(self).__name__
-                    )
-                )
-            if d < 0:
-                raise ValueError(
-                    "({}) n_sie should be positive integer or 0.".format(
-                        type(self).__name__
-                    )
-                )
+        self._check_sizes(n_size)
 
         if graph_schema is not None and type(graph_schema) is not GraphSchema:
-            raise ValueError(
-                "({}) The parameter graph_schema should be either None or of type GraphSchema.".format(
-                    type(self).__name__
-                )
+            self._raise_error(
+                "The parameter graph_schema should be either None or of type GraphSchema."
             )
 
-        if seed is not None:
-            if type(seed) != int:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be integer type or None.".format(
-                        type(self).__name__
-                    )
-                )
-            if seed < 0:
-                raise ValueError(
-                    "({}) The random number generator seed value, seed, should be positive integer or None.".format(
-                        type(self).__name__
-                    )
-                )
+        return super()._check_parameter_values(nodes, n, len(n_size), seed)
 
 
 class DirectedBreadthFirstNeighbours(GraphWalk):
