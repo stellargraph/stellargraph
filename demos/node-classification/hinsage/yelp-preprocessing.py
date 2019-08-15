@@ -48,7 +48,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from keras.utils.generic_utils import Progbar
+from tensorflow.keras.utils import Progbar
 from sklearn import preprocessing, feature_extraction, pipeline
 
 user_feature_names = [

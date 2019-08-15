@@ -24,8 +24,8 @@ from stellargraph.layer import *
 __all__ = ["Ensemble", "BaggingEnsemble"]
 
 import numpy as np
-import keras as K
-from keras.callbacks import EarlyStopping
+from tensorflow import keras as K
+from tensorflow.keras.callbacks import EarlyStopping
 
 import stellargraph as sg
 

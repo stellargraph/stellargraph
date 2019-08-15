@@ -23,12 +23,10 @@ from stellargraph.core.graph import StellarGraph
 from stellargraph.mapper.node_mappers import GraphSAGENodeGenerator
 from stellargraph.layer.graphsage import *
 
-import keras
+from tensorflow import keras
 import numpy as np
 import networkx as nx
 import pytest
-
-from keras.engine import saving
 
 
 def example_graph_1(feature_size=None):

@@ -30,7 +30,7 @@ actual input. Therefore, it could solve the problem we described above and give 
 import numpy as np
 from .saliency_gat import GradientSaliencyGAT
 import scipy.sparse as sp
-import keras.backend as K
+from tensorflow.keras import backend as K
 
 
 class IntegratedGradientsGAT(GradientSaliencyGAT):
