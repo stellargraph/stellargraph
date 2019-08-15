@@ -20,9 +20,9 @@ Definition of Graph Attention Network (GAT) layer, and GAT class that is a stack
 __all__ = ["GraphAttention", "GraphAttentionSparse", "GAT"]
 
 import warnings
-from keras import backend as K
-from keras import activations, constraints, initializers, regularizers
-from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
+from tensorflow.keras import backend as K
+from tensorflow.keras import activations, constraints, initializers, regularizers
+from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
 from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion

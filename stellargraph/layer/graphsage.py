@@ -28,12 +28,12 @@ __all__ = [
 ]
 
 import numpy as np
-from keras.engine.topology import Layer
-from keras import Input
-from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
-from keras.utils import Sequence
-from keras import activations
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import Input
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras import activations
 from typing import List, Tuple, Callable, AnyStr
 import warnings
 

@@ -24,9 +24,9 @@ from stellargraph.mapper.node_mappers import (
 )
 from stellargraph.layer import *
 
-import keras
-import keras.backend as K
-from keras.layers import Input
+from tensorflow import keras
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Input
 
 import numpy as np
 import networkx as nx

@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from keras import backend as K
-from keras import activations, initializers, constraints, regularizers
-from keras.layers import Input, Layer, Lambda, Dropout, Reshape
+from tensorflow.keras import backend as K
+from tensorflow.keras import activations, initializers, constraints, regularizers
+from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion

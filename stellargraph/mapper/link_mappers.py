@@ -35,8 +35,8 @@ import collections
 from functools import reduce
 import threading
 
-import keras
-from keras.utils import Sequence
+from tensorflow import keras
+from tensorflow.keras.utils import Sequence
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,

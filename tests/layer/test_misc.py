@@ -23,7 +23,7 @@ GCN tests
 from stellargraph.layer.misc import *
 
 import numpy as np
-import keras
+from tensorflow import keras
 import scipy.sparse as sps
 import pytest
 

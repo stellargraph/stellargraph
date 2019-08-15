@@ -21,11 +21,11 @@ Heterogeneous GraphSAGE and compatible aggregator layers
 """
 __all__ = ["HinSAGE", "MeanHinAggregator"]
 
-from keras.engine.topology import Layer
-from keras import backend as K, Input
-from keras.layers import Lambda, Dropout, Reshape
-from keras.utils import Sequence
-from keras import activations
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import backend as K, Input
+from tensorflow.keras.layers import Lambda, Dropout, Reshape
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras import activations
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
 import itertools as it
 import operator as op
