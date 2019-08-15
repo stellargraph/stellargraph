@@ -33,6 +33,7 @@ import itertools as it
 import operator
 import collections
 from functools import reduce
+import threading
 
 import keras
 from keras.utils import Sequence
@@ -185,6 +186,8 @@ class OnDemandLinkSequence(Sequence):
 
     def __init__(self, generator, walker):
 
+        self.lock = threading.Lock()
+
         self.generator = generator  # graphlinkgenerator instance
 
         self.head_node_types = self.generator.schema.node_types * 2
@@ -240,7 +243,9 @@ class OnDemandLinkSequence(Sequence):
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
         # Get head nodes and labels
+        self.lock.acquire()
         head_ids, batch_targets = next(self._gen)
+        self.lock.release()
 
         if self.head_node_types is None:
 
