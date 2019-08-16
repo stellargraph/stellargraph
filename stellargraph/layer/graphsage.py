@@ -45,10 +45,14 @@ class GraphSAGEAggregator(Layer):
 
     Args:
         output_dim (int): Output dimension
-        bias (bool): Optional bias
+        bias (bool): Optional flag indicating whether (True) or not (False; default)
+            a bias term should be included.
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
-
+        share_weights (bool): Optional flag indicating whether (True; default) or not
+            (False) to use the same weight tensor for all multi-dimensional neighbourhoods.
+        neigh_dim (int): Optional value indicating the maximum number of multi-dimensional
+            neighbourhoods; defaults to 1.
     """
 
     def __init__(
@@ -56,6 +60,8 @@ class GraphSAGEAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Callable or AnyStr = "relu",
+        share_weights: bool = True,
+        neigh_dim: int = 1,
         **kwargs
     ):
         # Ensure the output dimension is divisible by 2
@@ -69,6 +75,8 @@ class GraphSAGEAggregator(Layer):
         self.w_self = None
         self.bias = None
         self._initializer = "glorot_uniform"
+        self.share_weights = share_weights
+        self.neigh_dim = neigh_dim
         super().__init__(**kwargs)
 
     def get_config(self):
@@ -130,29 +138,16 @@ class GraphSAGEAggregator(Layer):
 
         super().build(input_shape)
 
-    def apply_mlp(self, x, **kwargs):
-        """
-        Create MLP on input self tensor, x
-
-        Args:
-          x (List[Tensor]): Tensor giving the node features
-                shape: (batch_size, head size, feature_size)
-
-        Returns:
-            Keras Tensor representing the aggregated embeddings in the input.
-
-        """
-        h_out = K.dot(x, self.w_self)
-
-        if self.has_bias:
-            h_out = self.act(h_out + self.bias)
-        else:
-            h_out = self.act(h_out)
-        return h_out
-
-    def aggregate_neighbours(self, x_neigh):
+    def aggregate_neighbours(self, x_neigh, neigh_idx: int = 0):
         """
         Override with a method to aggregate tensors over neighbourhood.
+
+        Args:
+            x_neigh: The input tensor representing the sampled neighbour nodes.
+            neigh_idx: Optional neighbourhood index used for multi-dimensional hops.
+
+        Returns:
+            A tensor aggregation of the input nodes features.
         """
         raise NotImplementedError(
             "The GraphSAGEAggregator base class should not be directly instantiated"
@@ -170,27 +165,27 @@ class GraphSAGEAggregator(Layer):
 
         """
         # x[0]: self vector (batch_size, head size, feature_size)
-        # x[1]: neighbour vector (batch_size, head size, neighbours, feature_size)
-        x_self, x_neigh = x
-
-        if self._build_mlp_only:
-            return self.apply_mlp(x_self, **kwargs)
+        # x[1...n]: optional neighbour vectors (batch_size, head size, neighbours, feature_size)
+        x_self = x[0]
 
         # Weight maxtrix multiplied by self features
         from_self = K.dot(x_self, self.w_self)
 
         # If there are neighbours aggregate over them
-        from_neigh = self.aggregate_neighbours(x_neigh)
-
-        h_out = K.concatenate([from_self, from_neigh], axis=2)
-
-        # Finally, add bias and apply activation
-        if self.has_bias:
-            h_out = self.act(h_out + self.bias)
+        if not self._build_mlp_only and len(x) > 1:
+            sources = [from_self]
+            for i in range(1, len(x)):
+                sources.append(self.aggregate_neighbours(x[i], neigh_idx=i-1))
+            h_out = K.concatenate(sources, axis=2)
         else:
-            h_out = self.act(h_out)
+            h_out = from_self
 
-        return h_out
+        # Optionally add bias
+        if self.has_bias:
+            h_out = h_out + self.bias
+
+        # Finally, apply activation
+        return self.act(h_out)
 
     def compute_output_shape(self, input_shape):
         """
@@ -233,7 +228,7 @@ class MeanAggregator(GraphSAGEAggregator):
         if self._build_mlp_only:
             self.w_neigh = None
 
-        else:
+        elif self.share_weights:
             self.w_neigh = self.add_weight(
                 name="w_neigh",
                 shape=(input_shape[1][3], self.weight_output_size()),
@@ -241,9 +236,24 @@ class MeanAggregator(GraphSAGEAggregator):
                 trainable=True,
             )
 
-    def aggregate_neighbours(self, x_neigh):
-        from_neigh = K.dot(K.mean(x_neigh, axis=2), self.w_neigh)
-        return from_neigh
+        else:
+            in_size = input_shape[1][3]
+            out_size = self.weight_output_size()
+            self.w_neigh = []
+            for i in range(self.neigh_dim):
+                self.w_neigh.append(
+                    self.add_weight(
+                        name="w_neigh" + str(i),
+                        shape=(in_size, out_size),
+                        initializer=self._initializer,
+                        trainable=True,
+                    )
+                )
+
+    def aggregate_neighbours(self, x_neigh, neigh_idx=0):
+        if self.share_weights:
+            return K.dot(K.mean(x_neigh, axis=2), self.w_neigh)
+        return K.dot(K.mean(x_neigh, axis=2), self.w_neigh[neigh_idx])
 
 
 class MaxPoolingAggregator(GraphSAGEAggregator):
@@ -303,7 +313,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
                 trainable=True,
             )
 
-    def aggregate_neighbours(self, x_neigh):
+    def aggregate_neighbours(self, x_neigh, **kwargs):
         """
         Aggregates the neighbour tensors by max-pooling of neighbours
 
@@ -381,7 +391,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
                 trainable=True,
             )
 
-    def aggregate_neighbours(self, x_neigh):
+    def aggregate_neighbours(self, x_neigh, **kwargs):
         """
         Aggregates the neighbour tensors by mean-pooling of neighbours
 
@@ -847,14 +857,17 @@ class DirectedGraphSAGE:
         self.dropout = dropout
 
         # Feature dimensions for each layer
+        self.layer_sizes = layer_sizes
         self.dims = [self.input_feature_size] + layer_sizes
 
         # Aggregator functions for each layer
         self._aggs = [
             self._aggregator(
-                output_dim=self.dims[i + 1],
+                output_dim=layer_sizes[i],
                 bias=self.bias,
                 act="relu" if i < max_hops - 1 else "linear",
+                share_weights=False,
+                neigh_dim=2,
             )
             for i in range(max_hops)
         ]
@@ -872,6 +885,7 @@ class DirectedGraphSAGE:
         def aggregate_neighbours(tree: List, stage: int):
             # compute the number of slots with children in the binary tree
             num_slots = (len(tree) - 1) // 2
+            print("DEBUG: input tree length={}, output tree length={}".format(len(tree), num_slots))
             new_tree = [None] * num_slots
             for slot in range(num_slots):
                 # get parent nodes
@@ -879,13 +893,19 @@ class DirectedGraphSAGE:
                 parent = Dropout(self.dropout)(tree[slot])
                 # find in-nodes
                 child_slot = 2 * slot + 1
-                size = self.neighbourhood_sizes[child_slot] // num_head_nodes
+                size = (
+                        self.neighbourhood_sizes[child_slot] // num_head_nodes
+                        if num_head_nodes > 0 else 0
+                )
                 in_child = Dropout(self.dropout)(
                     Reshape((num_head_nodes, size, self.dims[stage]))(tree[child_slot])
                 )
                 # find out-nodes
                 child_slot = child_slot + 1
-                size = self.neighbourhood_sizes[child_slot] // num_head_nodes
+                size = (
+                        self.neighbourhood_sizes[child_slot] // num_head_nodes
+                        if num_head_nodes > 0 else 0
+                )
                 out_child = Dropout(self.dropout)(
                     Reshape((num_head_nodes, size, self.dims[stage]))(tree[child_slot])
                 )
@@ -903,8 +923,10 @@ class DirectedGraphSAGE:
 
         # Combine GraphSAGE layers in stages
         stage_tree = xin
-        for stage in range(self.max_hops + 1):
+        for stage in range(self.max_hops):
+            print("DEBUG: stage={}, input tree size={}".format(stage, len(stage_tree)))
             stage_tree = aggregate_neighbours(stage_tree, stage)
+            print("DEBUG: stage={}, output tree size={}".format(stage, len(stage_tree)))
         print("DEBUG: number of outputs = {}".format(len(stage_tree)))
         out_layer = stage_tree[0]
 
