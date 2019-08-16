@@ -25,6 +25,7 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchNodeSequence",
     "SparseFullBatchNodeSequence",
+    "DirectedGraphSAGENodeGenerator",
 ]
 
 import warnings
@@ -41,8 +42,9 @@ from keras.utils import Sequence
 from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
+    DirectedBreadthFirstNeighbours,
 )
-from ..core.graph import StellarGraphBase, GraphSchema
+from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op
 
@@ -124,8 +126,10 @@ class NodeSequence(Sequence):
 
         # Save head node type and generate sampling schema
         self.head_node_types = [head_node_type]
+        ### Experimental; for directed sampling
+        num_samples = getattr(generator, "num_samples", [])
         self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
+            self.head_node_types, num_samples
         )
 
     def __len__(self):
@@ -814,3 +818,169 @@ class FullBatchNodeGenerator:
             return FullBatchNodeSequence(
                 self.features, self.Aadj, targets, node_indices
             )
+
+
+class DirectedGraphSAGENodeGenerator:
+    """
+    A data generator for node prediction with homogeneous GraphSAGE models
+    on directed graphs.
+
+    At minimum, supply the StellarDiGraph, the batch size, and the number of
+    node samples (separately for in-nodes and out-nodes)
+    for each layer of the GraphSAGE model.
+
+    The supplied graph should be a StellarDiGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = DirectedGraphSAGENodeGenerator(G, 50, [10,5], [5,1])
+        train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+        test_data_gen = G_generator.flow(test_node_ids)
+
+    Args:
+        G (StellarDiGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        in_samples (list): The number of in-node samples per layer (hop) to take.
+        out_samples (list): The number of out-node samples per layer (hop) to take.
+        schema (GraphSchema): [Optional] Graph schema for G.
+        seed (int): [Optional] Random seed for the node sampler.
+        name (str or None): Name of the generator (optional)
+    """
+
+    def __init__(
+        self, G, batch_size, in_samples, out_samples, schema=None, seed=None, name=None
+    ):
+        if not isinstance(G, StellarDiGraph):
+            raise TypeError("Graph must be a StellarDiGraph object.")
+        # TODO Add checks for in- and out-nodes sizes
+
+        self.graph = G
+        self.in_samples = in_samples
+        self.out_samples = out_samples
+        self.batch_size = batch_size
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # We need a schema for compatibility with HinSAGE
+        if schema is None:
+            self.schema = G.create_graph_schema(create_type_maps=True)
+        elif isinstance(schema, GraphSchema):
+            self.schema = schema
+        else:
+            raise TypeError("Schema must be a GraphSchema object")
+
+        # Check that there is only a single node type for GraphSAGE
+        if len(self.schema.node_types) > 1:
+            print(
+                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            )
+
+        # Create sampler for GraphSAGE
+        self.sampler = DirectedBreadthFirstNeighbours(
+            G, graph_schema=self.schema, seed=seed
+        )
+
+    def sample_features(self, head_nodes, sampling_schema):
+        """
+        Sample neighbours recursively from the head nodes, collect the features of the
+        sampled nodes, and return these as a list of feature arrays for the GraphSAGE
+        algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+            sampling_schema: The sampling schema for the model
+
+        Returns:
+            A list of feature tensors from the sampled nodes at each layer, each of shape:
+            ``(len(head_nodes), num_sampled_at_layer, feature_size)``
+            where num_sampled_at_layer is the total number (cumulative product)
+            of nodes sampled at the given number of hops from each head node,
+            given the sequence of in/out directions.
+        """
+        node_samples = self.sampler.run(
+            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples
+        )
+
+        # Reshape node samples to sensible format
+        # Each 'slot' represents the list of nodes sampled from some neighbourhood, and will have a corresponding
+        # NN input layer. Every hop potentially generates both in-nodes and out-nodes, held separately,
+        # and thus the slot (or directed hop sequence) structure forms a binary tree.
+
+        node_type = sampling_schema[0][0][0]
+
+        max_hops = len(self.in_samples)
+        max_slots = 2 ** (max_hops + 1) - 1
+        features = [None] * max_slots  # flattened binary tree
+
+        for slot in range(max_slots):
+            nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
+            features_for_slot = self.graph.get_feature_for_nodes(
+                nodes_in_slot, node_type
+            )
+            resize = - 1 if np.size(features_for_slot) > 0 else 0
+            features[slot] = np.reshape(
+                features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
+            )
+
+        return features
+
+    def flow(self, node_ids, targets=None, shuffle=False):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        The node IDs are the nodes to train or inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset of the nodes in the graph.
+
+        The targets are an array of numeric targets corresponding to the
+        supplied node_ids to be used by the downstream task. They should
+        be given in the same order as the list of node IDs.
+        If they are not specified (for example, for use in prediction),
+        the targets will not be available to the downsteam task.
+
+        Note that the shuffle argument should be True for training and
+        False for prediction.
+
+        Args:
+            node_ids: an iterable of node IDs
+            targets: a 2D array of numeric targets with shape
+                `(len(node_ids), target_size)`
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
+        Returns:
+            A NodeSequence object to use with the GraphSAGE model
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
+
+        """
+        return NodeSequence(self, node_ids, targets, shuffle=shuffle)
+
+    def flow_from_dataframe(self, node_targets, shuffle=False):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_targets: a Pandas DataFrame of numeric targets indexed
+                by the node ID for that target.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
+        Returns:
+            A NodeSequence object to use with the GraphSAGE model
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
+
+        """
+        return NodeSequence(
+            self, node_targets.index, node_targets.values, shuffle=shuffle
+        )
