@@ -53,7 +53,8 @@ def example_graph_1(feature_size=None):
 def test_maxpool_agg_constructor():
     agg = MaxPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
-    assert agg.half_output_dim == 1
+    assert agg.self_output_dim == 1
+    assert agg.other_output_dim == 1
     assert agg.hidden_dim == 2
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
@@ -69,14 +70,11 @@ def test_maxpool_agg_constructor():
 def test_maxpool_agg_constructor_1():
     agg = MaxPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
-    assert agg.half_output_dim == 2
+    assert agg.self_output_dim == 2
+    assert agg.other_output_dim == 2
     assert agg.hidden_dim == 4
     assert agg.has_bias
     assert agg.act(2) == 3
-
-    # Test for output dim not divisible by 2
-    with pytest.raises(ValueError):
-        MaxPoolingAggregator(output_dim=3)
 
 
 def test_maxpool_agg_apply():
@@ -129,7 +127,8 @@ def test_maxpool_agg_zero_neighbours():
 def test_meanpool_agg_constructor():
     agg = MeanPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
-    assert agg.half_output_dim == 1
+    assert agg.self_output_dim == 1
+    assert agg.other_output_dim == 1
     assert agg.hidden_dim == 2
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
@@ -145,14 +144,11 @@ def test_meanpool_agg_constructor():
 def test_meanpool_agg_constructor_1():
     agg = MeanPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
-    assert agg.half_output_dim == 2
+    assert agg.self_output_dim == 2
+    assert agg.other_output_dim == 2
     assert agg.hidden_dim == 4
     assert agg.has_bias
     assert agg.act(2) == 3
-
-    # Test for output dim not divisible by 2
-    with pytest.raises(ValueError):
-        MeanPoolingAggregator(output_dim=3)
 
 
 def test_meanpool_agg_apply():
@@ -203,7 +199,8 @@ def test_meanpool_agg_zero_neighbours():
 def test_mean_agg_constructor():
     agg = MeanAggregator(2)
     assert agg.output_dim == 2
-    assert agg.half_output_dim == 1
+    assert agg.self_output_dim == 1
+    assert agg.other_output_dim == 1
     assert not agg.has_bias
 
     # Check config
@@ -216,13 +213,41 @@ def test_mean_agg_constructor():
 def test_mean_agg_constructor_1():
     agg = MeanAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
-    assert agg.half_output_dim == 2
+    assert agg.self_output_dim == 2
+    assert agg.other_output_dim == 2
     assert agg.has_bias
     assert agg.act(2) == 3
 
-    # Test for output dim not divisible by 2
-    with pytest.raises(ValueError):
-        MeanAggregator(output_dim=3)
+
+def test_mean_agg_constructor_2():
+    # Since we can now aggregate over more than one set of neighbours
+    # (e.g. in directed GraphSAGE), we must handle odd dimensions.
+    agg = MeanAggregator(11)
+    assert agg.output_dim == 11
+    assert agg.self_output_dim == 6
+    assert agg.other_output_dim == 5
+    assert not agg.has_bias
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 11
+    assert config["bias"] == False
+    assert config["act"] == "relu"
+
+
+def test_mean_agg_constructor_3():
+    # Ditto above, re multiple neighbour sets.
+    agg = MeanAggregator(12, neigh_dim=3)
+    assert agg.output_dim == 12
+    assert agg.self_output_dim == 3
+    assert agg.other_output_dim == 3
+    assert not agg.has_bias
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 12
+    assert config["bias"] == False
+    assert config["act"] == "relu"
 
 
 def test_mean_agg_apply():

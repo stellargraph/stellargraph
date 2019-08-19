@@ -64,19 +64,16 @@ class GraphSAGEAggregator(Layer):
         neigh_dim: int = 1,
         **kwargs
     ):
-        # Ensure the output dimension is divisible by 2
-        if output_dim % 2 != 0:
-            raise ValueError("Output dimension must be divisible by two in aggregator")
-
+        self.share_weights = share_weights
+        self.neigh_dim = neigh_dim
         self.output_dim = output_dim
-        self.half_output_dim = output_dim // 2
+        self.other_output_dim = output_dim // (neigh_dim + 1)
+        self.self_output_dim = output_dim - neigh_dim * self.other_output_dim
         self.has_bias = bias
         self.act = activations.get(act)
         self.w_self = None
         self.bias = None
         self._initializer = "glorot_uniform"
-        self.share_weights = share_weights
-        self.neigh_dim = neigh_dim
         super().__init__(**kwargs)
 
     def get_config(self):
@@ -105,7 +102,7 @@ class GraphSAGEAggregator(Layer):
         if self._build_mlp_only:
             weight_dim = self.output_dim
         else:
-            weight_dim = self.half_output_dim
+            weight_dim = self.self_output_dim
 
         return weight_dim
 
@@ -138,6 +135,26 @@ class GraphSAGEAggregator(Layer):
 
         super().build(input_shape)
 
+    def apply_mlp(self, x, **kwargs):
+        """
+        Create MLP on input self tensor, x
+
+        Args:
+          x (List[Tensor]): Tensor giving the node features
+                shape: (batch_size, head size, feature_size)
+
+        Returns:
+            Keras Tensor representing the aggregated embeddings in the input.
+
+        """
+        # Weight maxtrix multiplied by self features
+        h_out = K.dot(x, self.w_self)
+        # Optionally add bias
+        if self.has_bias:
+            h_out = h_out + self.bias
+        # Finally, apply activation
+        return self.act(h_out)
+
     def aggregate_neighbours(self, x_neigh, neigh_idx: int = 0):
         """
         Override with a method to aggregate tensors over neighbourhood.
@@ -168,11 +185,14 @@ class GraphSAGEAggregator(Layer):
         # x[1...n]: optional neighbour vectors (batch_size, head size, neighbours, feature_size)
         x_self = x[0]
 
+        if self._build_mlp_only:
+            return self.apply_mlp(x_self, **kwargs)
+
         # Weight maxtrix multiplied by self features
         from_self = K.dot(x_self, self.w_self)
 
         # If there are neighbours aggregate over them
-        if not self._build_mlp_only and len(x) > 1:
+        if len(x) > 1:
             sources = [from_self]
             for i in range(1, len(x)):
                 sources.append(self.aggregate_neighbours(x[i], neigh_idx=i-1))
@@ -231,14 +251,14 @@ class MeanAggregator(GraphSAGEAggregator):
         elif self.share_weights:
             self.w_neigh = self.add_weight(
                 name="w_neigh",
-                shape=(input_shape[1][3], self.weight_output_size()),
+                shape=(input_shape[1][3], self.other_output_dim),
                 initializer=self._initializer,
                 trainable=True,
             )
 
         else:
             in_size = input_shape[1][3]
-            out_size = self.weight_output_size()
+            out_size = self.other_output_dim
             self.w_neigh = []
             for i in range(self.neigh_dim):
                 self.w_neigh.append(
@@ -927,6 +947,8 @@ class DirectedGraphSAGE:
             print("DEBUG: stage={}, input tree size={}".format(stage, len(stage_tree)))
             stage_tree = aggregate_neighbours(stage_tree, stage)
             print("DEBUG: stage={}, output tree size={}".format(stage, len(stage_tree)))
+            for out_layer in stage_tree:
+                print("DEBUG: intermediate shape = {}".format(K.int_shape(out_layer)))
         print("DEBUG: number of outputs = {}".format(len(stage_tree)))
         out_layer = stage_tree[0]
 
