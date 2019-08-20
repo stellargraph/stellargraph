@@ -872,6 +872,22 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         return samples
 
     def _sample_neighbours(self, rs, node, idx, size):
+        """
+        Samples (with replacement) the specified number of nodes
+        from the directed neighbourhood of the given starting node.
+        If the neighbourhood is empty, then the result will contain
+        only None values.
+        Args:
+            rs: The random state used for sampling.
+            node: The starting node.
+            idx: <int> The index specifying the direction of the
+                neighbourhood to be sampled: 0 => in-nodes;
+                1 => out-nodes.
+            size: <int> The number of nodes to sample.
+        Returns:
+            The fixed-length list of neighbouring nodes (or None values
+            if the neighbourhood is empty).
+        """
         if node is None:
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [None] * size
