@@ -26,7 +26,7 @@ __all__ = [
 import networkx as nx
 import numpy as np
 import random
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraphBase
@@ -619,7 +619,7 @@ class SampledBreadthFirstWalk(GraphWalk):
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
-                q = list()  # the queue of neighbours
+                q = deque()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
                 # extend() needs iterable as parameter; we use list of tuples (node id, depth)
                 q.append((node, 0))
@@ -627,7 +627,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                 while len(q) > 0:
                     # remove the top element in the queue
                     # index 0 pop the item from the front of the list
-                    cur_node, cur_depth = q.pop(0)
+                    cur_node, cur_depth = q.popleft()
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
                     walk.append(cur_node)  # add to the walk
 
