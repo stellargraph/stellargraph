@@ -49,8 +49,6 @@ class GraphSAGEAggregator(Layer):
             a bias term should be included.
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
-        share_weights (bool): Optional flag indicating whether (True; default) or not
-            (False) to use the same weight tensor for all multi-dimensional neighbourhoods.
         neigh_dim (int): Optional value indicating the maximum number of multi-dimensional
             neighbourhoods; defaults to 1.
     """
@@ -60,11 +58,9 @@ class GraphSAGEAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Callable or AnyStr = "relu",
-        share_weights: bool = True,
         neigh_dim: int = 1,
         **kwargs
     ):
-        self.share_weights = share_weights
         self.neigh_dim = neigh_dim
         self.output_dim = output_dim
         self.other_output_dim = output_dim // (neigh_dim + 1)
@@ -248,14 +244,6 @@ class MeanAggregator(GraphSAGEAggregator):
         if self._build_mlp_only:
             self.w_neigh = None
 
-        elif self.share_weights:
-            self.w_neigh = self.add_weight(
-                name="w_neigh",
-                shape=(input_shape[1][3], self.other_output_dim),
-                initializer=self._initializer,
-                trainable=True,
-            )
-
         else:
             in_size = input_shape[1][3]
             out_size = self.other_output_dim
@@ -271,8 +259,6 @@ class MeanAggregator(GraphSAGEAggregator):
                 )
 
     def aggregate_neighbours(self, x_neigh, neigh_idx=0):
-        if self.share_weights:
-            return K.dot(K.mean(x_neigh, axis=2), self.w_neigh)
         return K.dot(K.mean(x_neigh, axis=2), self.w_neigh[neigh_idx])
 
 
@@ -806,7 +792,6 @@ class DirectedGraphSAGE:
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
         normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
-
     """
 
     def __init__(
@@ -886,7 +871,6 @@ class DirectedGraphSAGE:
                 output_dim=layer_sizes[i],
                 bias=self.bias,
                 act="relu" if i < max_hops - 1 else "linear",
-                share_weights=False,
                 neigh_dim=2,
             )
             for i in range(max_hops)
@@ -905,7 +889,6 @@ class DirectedGraphSAGE:
         def aggregate_neighbours(tree: List, stage: int):
             # compute the number of slots with children in the binary tree
             num_slots = (len(tree) - 1) // 2
-            print("DEBUG: input tree length={}, output tree length={}".format(len(tree), num_slots))
             new_tree = [None] * num_slots
             for slot in range(num_slots):
                 # get parent nodes
@@ -944,16 +927,10 @@ class DirectedGraphSAGE:
         # Combine GraphSAGE layers in stages
         stage_tree = xin
         for stage in range(self.max_hops):
-            print("DEBUG: stage={}, input tree size={}".format(stage, len(stage_tree)))
             stage_tree = aggregate_neighbours(stage_tree, stage)
-            print("DEBUG: stage={}, output tree size={}".format(stage, len(stage_tree)))
-            for out_layer in stage_tree:
-                print("DEBUG: intermediate shape = {}".format(K.int_shape(out_layer)))
-        print("DEBUG: number of outputs = {}".format(len(stage_tree)))
         out_layer = stage_tree[0]
 
         # Remove neighbourhood dimension from output tensors of the stack
-        print("DEBUG: final shape = {}".format(K.int_shape(out_layer)))
         out_layer = Reshape(K.int_shape(out_layer)[2:])(out_layer)
         return self._normalization(out_layer)
 
