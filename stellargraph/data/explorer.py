@@ -26,7 +26,7 @@ __all__ = [
 import networkx as nx
 import numpy as np
 import random
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraphBase
@@ -42,6 +42,7 @@ class GraphWalk(object):
         self.graph = graph
 
         # Initialize the random state
+        self._check_seed(seed)
         self._random_state = random.Random(seed)
 
         # Initialize a numpy random state (for numpy random methods)
@@ -61,10 +62,34 @@ class GraphWalk(object):
                 "The parameter graph_schema should be either None or of type GraphSchema."
             )
 
+    def _check_seed(self, seed):
+        if seed is not None:
+            if type(seed) != int:
+                self._raise_error(
+                    "The random number generator seed value, seed, should be integer type or None."
+                )
+            if seed < 0:
+                self._raise_error(
+                    "The random number generator seed value, seed, should be non-negative integer or None."
+                )
+
+    def _get_random_state(self, seed):
+        """
+        Args:
+            seed: The optional seed value for a given run.
+
+        Returns:
+            The random state as determined by the seed.
+        """
+        if seed is None:
+            # Restore the random state
+            return self._random_state
+        # seed the random number generator
+        return random.Random(seed)
+
     def neighbors(self, node):
         if node not in self.graph:
-            print("node {} not in graph".format(node))
-            print("Graph nodes {}".format(self.graph.nodes()))
+            self._raise_error("node {} not in graph".format(node))
         return list(nx.neighbors(self.graph, node))
 
     def run(self, **kwargs):
@@ -82,8 +107,7 @@ class GraphWalk(object):
         raise NotImplementedError
 
     def _raise_error(self, msg):
-        full = "({}) " + msg
-        raise ValueError(full.format(type(self).__name__))
+        raise ValueError("({}) {}".format(type(self).__name__, msg))
 
     def _check_parameter_values(self, nodes=None, n=0, length=0, seed=None):
         """
@@ -96,13 +120,11 @@ class GraphWalk(object):
             n: <int> Number of walks per node id.
             length: <int> Maximum length of walk measured as the number of edges followed from root node.
             seed: <int> Random number generator seed
-        Returns:
-            The random state as determined by the seed.
         """
         self._check_nodes(nodes)
         self._check_repetitions(n)
         self._check_length(length)
-        return self._check_seed(seed)
+        self._check_seed(seed)
 
     def _check_nodes(self, nodes):
         if nodes is None:
@@ -135,25 +157,10 @@ class GraphWalk(object):
             # Technically, length 0 should be okay, but by consensus is invalid.
             self._raise_error("The walk length, length, should be a positive integer.")
 
-    def _check_seed(self, seed):
-        if seed is None:
-            # Restore the random state
-            return self._random_state
-        if type(seed) != int:
-            self._raise_error(
-                "The random number generator seed value, seed, should be integer type or None."
-            )
-        if seed < 0:
-            self._raise_error(
-                "The random number generator seed value, seed, should be non-negative integer or None."
-            )
-        # seed the random number generator
-        return random.Random(seed)
-
     # For neighbourhood sampling
     def _check_sizes(self, n_size):
         err_msg = "The neighbourhood size must be a list of non-negative integers."
-        if n_size is None or type(n_size) != list:
+        if not isinstance(n_size, list):
             self._raise_error(err_msg)
         if len(n_size) == 0:
             # Technically, length 0 should be okay, but by consensus it is invalid.
@@ -181,7 +188,7 @@ class HeterogeneousGraphWalk(GraphWalk):
                 neigh_et = [
                     n2
                     for n2, nkeys in nbrdict.items()
-                    for k in iter(nkeys)
+                    for k in nkeys
                     if self.graph_schema.is_of_edge_type((n1, n2, k), et)
                 ]
                 # Create adjacency list in lexographical order
@@ -209,7 +216,8 @@ class UniformRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        rs = self._check_parameter_values(nodes, n, length, seed)
+        self._check_parameter_values(nodes, n, length, seed)
+        rs = self._get_random_state(seed)
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -302,9 +310,10 @@ class BiasedRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        rs = self._check_parameter_values(
+        self._check_parameter_values(
             nodes, n, p, q, length, seed, weighted, edge_weight_label
         )
+        rs = self._get_random_state(seed)
 
         if weighted:
             # Check that all edge weights are greater than or equal to 0.
@@ -429,7 +438,8 @@ class BiasedRandomWalk(GraphWalk):
          Returns:
             The random state as determined by the seed.
        """
-        rs = super()._check_parameter_values(nodes, n, length, seed)
+        super()._check_parameter_values(nodes, n, length, seed)
+        rs = self._get_random_state(seed)
 
         if p <= 0.0:
             self._raise_error("Parameter p should be greater than 0.")
@@ -478,9 +488,10 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
         Returns:
             <list> List of lists of nodes ids for each of the random walks generated
         """
-        rs = self._check_parameter_values(
+        self._check_parameter_values(
             nodes, n, length, metapaths, node_type_attribute, seed
         )
+        rs = self._get_random_state(seed)
 
         walks = []
 
@@ -549,7 +560,8 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
         Returns:
             The random state as determined by the seed.
         """
-        rs = super()._check_parameter_values(nodes, n, length, seed)
+        super()._check_parameter_values(nodes, n, length, seed)
+        rs = self._get_random_state(seed)
 
         if type(metapaths) != list:
             self._raise_error("The metapaths parameter must be a list of lists.")
@@ -599,14 +611,15 @@ class SampledBreadthFirstWalk(GraphWalk):
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        rs = self._check_parameter_values(nodes, n, n_size, seed)
+        self._check_parameter_values(nodes, n, n_size, seed)
+        rs = self._get_random_state(seed)
 
         walks = []
         max_hops = len(n_size)  # depth of search
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
-                q = list()  # the queue of neighbours
+                q = deque()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
                 # extend() needs iterable as parameter; we use list of tuples (node id, depth)
                 q.append((node, 0))
@@ -614,7 +627,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                 while len(q) > 0:
                     # remove the top element in the queue
                     # index 0 pop the item from the front of the list
-                    cur_node, cur_depth = q.pop(0)
+                    cur_node, cur_depth = q.popleft()
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
                     walk.append(cur_node)  # add to the walk
 
@@ -634,7 +647,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         ]
 
                     # add them to the back of the queue
-                    q.extend([(sampled_node, depth) for sampled_node in neighbours])
+                    q.extend((sampled_node, depth) for sampled_node in neighbours)
 
                 # finished i-th walk from node so add it to the list of walks as a list
                 walks.append(walk)
@@ -684,7 +697,8 @@ class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
             A list of lists such that each list element is a sequence of ids corresponding to a sampled Heterogeneous
             BFW.
         """
-        rs = self._check_parameter_values(nodes, n, n_size, self.graph_schema, seed)
+        self._check_parameter_values(nodes, n, n_size, self.graph_schema, seed)
+        rs = self._get_random_state(seed)
 
         walks = []
         d = len(n_size)  # depth of search
@@ -760,12 +774,6 @@ class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
             The random state as determined by the seed.
         """
         self._check_sizes(n_size)
-
-        if graph_schema is not None and type(graph_schema) is not GraphSchema:
-            self._raise_error(
-                "The parameter graph_schema should be either None or of type GraphSchema."
-            )
-
         return super()._check_parameter_values(nodes, n, len(n_size), seed)
 
 
@@ -808,8 +816,15 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
 
                 [node out_i  out_i.in_j  out_i.in_j.in_k ...]
         """
-        rs = self._check_parameter_values(nodes, n, in_size, out_size, seed)
+        self._check_parameter_values(nodes, n, in_size, out_size, seed)
+        rs = self._get_random_state(seed)
+
         max_hops = len(in_size)
+        # A binary tree is a graph of nodes; however, we wish to avoid overusing the term 'node'.
+        # Consider that each binary tree node carries some information.
+        # We uniquely and deterministically number every node in the tree, so we
+        # can represent the information stored in the tree via a flattened list of 'slots'.
+        # Each slot (and corresponding binary tree node) now has a unique index in the flattened list.
         max_slots = 2 ** (max_hops + 1) - 1
 
         samples = []
@@ -857,6 +872,22 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         return samples
 
     def _sample_neighbours(self, rs, node, idx, size):
+        """
+        Samples (with replacement) the specified number of nodes
+        from the directed neighbourhood of the given starting node.
+        If the neighbourhood is empty, then the result will contain
+        only None values.
+        Args:
+            rs: The random state used for sampling.
+            node: The starting node.
+            idx: <int> The index specifying the direction of the
+                neighbourhood to be sampled: 0 => in-nodes;
+                1 => out-nodes.
+            size: <int> The number of nodes to sample.
+        Returns:
+            The fixed-length list of neighbouring nodes (or None values
+            if the neighbourhood is empty).
+        """
         if node is None:
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [None] * size
