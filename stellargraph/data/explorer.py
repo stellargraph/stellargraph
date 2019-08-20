@@ -63,8 +63,7 @@ class GraphWalk(object):
 
     def neighbors(self, node):
         if node not in self.graph:
-            print("node {} not in graph".format(node))
-            print("Graph nodes {}".format(self.graph.nodes()))
+            self._raise_error("node {} not in graph".format(node))
         return list(nx.neighbors(self.graph, node))
 
     def run(self, **kwargs):
