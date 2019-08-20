@@ -75,9 +75,10 @@ class GraphWalk(object):
 
     def _get_random_state(self, seed):
         """
-        :param seed:
-            The optional seed value for a given run.
-        :return:
+        Args:
+            seed: The optional seed value for a given run.
+
+        Returns:
             The random state as determined by the seed.
         """
         if seed is None:
