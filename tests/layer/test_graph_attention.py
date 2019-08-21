@@ -235,8 +235,7 @@ class Test_GraphAttention:
         assert conf["attn_heads_reduction"] == "concat"
         assert conf["activation"] == self.activation
         assert conf["use_bias"] == True
-        assert conf["kernel_initializer"]["class_name"] == "VarianceScaling"
-        assert conf["kernel_initializer"]["config"]["distribution"] == "uniform"
+        assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
         assert conf["bias_initializer"]["class_name"] == "Zeros"
         assert conf["kernel_regularizer"] == None
         assert conf["bias_regularizer"] == None

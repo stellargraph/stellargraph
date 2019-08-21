@@ -155,7 +155,7 @@ class GraphConvolution(Layer):
 
         """
         feat_shape = input_shapes[0]
-        input_dim = feat_shape[-1]
+        input_dim = int(feat_shape[-1])
 
         self.kernel = self.add_weight(
             shape=(input_dim, self.units),
@@ -164,6 +164,7 @@ class GraphConvolution(Layer):
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
         )
+
         if self.use_bias:
             self.bias = self.add_weight(
                 shape=(self.units,),
@@ -208,7 +209,7 @@ class GraphConvolution(Layer):
         output = K.dot(h_graph, self.kernel)
 
         # Add optional bias & apply activation
-        if self.bias:
+        if self.bias is not None:
             output += self.bias
         output = self.activation(output)
 
@@ -359,7 +360,7 @@ class GCN:
         if self.use_sparse:
             A_indices, A_values = As
             Ainput = [
-                SqueezedSparseConversion(shape=(n_nodes, n_nodes))(
+                SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=A_values.dtype)(
                     [A_indices, A_values]
                 )
             ]

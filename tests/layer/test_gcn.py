@@ -46,8 +46,7 @@ def test_GraphConvolution_config():
     assert conf["units"] == 16
     assert conf["activation"] == "linear"
     assert conf["use_bias"] == True
-    assert conf["kernel_initializer"]["class_name"] == "VarianceScaling"
-    assert conf["kernel_initializer"]["config"]["distribution"] == "uniform"
+    assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
     assert conf["bias_initializer"]["class_name"] == "Zeros"
     assert conf["kernel_regularizer"] == None
     assert conf["bias_regularizer"] == None
@@ -111,7 +110,7 @@ def test_GraphConvolution_sparse():
     output_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
     # Test with final_layer=False
-    A_mat = SqueezedSparseConversion(shape=(n_nodes, n_nodes))([A_ind, A_val])
+    A_mat = SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=A_val.dtype)([A_ind, A_val])
     out = GraphConvolution(2, final_layer=False)([x_t, output_indices_t, A_mat])
 
     # Note we add a batch dimension of 1 to model inputs
