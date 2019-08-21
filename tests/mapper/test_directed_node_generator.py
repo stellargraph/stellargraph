@@ -31,10 +31,7 @@ def create_simple_graph():
     """
 
     g = nx.DiGraph()
-    edges = [
-        (1, 2),
-        (2, 3),
-    ]
+    edges = [(1, 2), (2, 3)]
     g.add_edges_from(edges)
     nodes = list(g.nodes())
     features = [(node, -1.0 * node) for node in nodes]
@@ -120,7 +117,9 @@ class TestDirectedNodeGenerator(object):
         g = create_simple_graph()
         nodes = list(g.nodes())
 
-        gen = DirectedGraphSAGENodeGenerator(g, batch_size=len(g), in_samples=[1, 1], out_samples=[1, 1])
+        gen = DirectedGraphSAGENodeGenerator(
+            g, batch_size=len(g), in_samples=[1, 1], out_samples=[1, 1]
+        )
         flow = gen.flow(node_ids=nodes, shuffle=False)
 
         features = flow.generator.sample_features(nodes, flow._sampling_schema)

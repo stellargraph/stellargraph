@@ -924,7 +924,7 @@ class DirectedGraphSAGENodeGenerator:
             features_for_slot = self.graph.get_feature_for_nodes(
                 nodes_in_slot, node_type
             )
-            resize = - 1 if np.size(features_for_slot) > 0 else 0
+            resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
             )

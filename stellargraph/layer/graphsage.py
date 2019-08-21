@@ -191,7 +191,7 @@ class GraphSAGEAggregator(Layer):
         if len(x) > 1:
             sources = [from_self]
             for i in range(1, len(x)):
-                sources.append(self.aggregate_neighbours(x[i], neigh_idx=i-1))
+                sources.append(self.aggregate_neighbours(x[i], neigh_idx=i - 1))
             h_out = K.concatenate(sources, axis=2)
         else:
             h_out = from_self
@@ -840,7 +840,9 @@ class DirectedGraphSAGE:
                 )
             self.input_feature_size = feature_sizes.popitem()[1]
 
-        elif in_samples is not None and out_samples is not None and input_dim is not None:
+        elif (
+            in_samples is not None and out_samples is not None and input_dim is not None
+        ):
             self.in_samples = in_samples
             self.out_samples = out_samples
             self.input_feature_size = input_dim
@@ -852,9 +854,17 @@ class DirectedGraphSAGE:
 
         self.max_hops = max_hops = len(layer_sizes)
         if len(self.in_samples) != max_hops:
-            raise ValueError("Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(self.in_samples, layer_sizes))
+            raise ValueError(
+                "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
+                    self.in_samples, layer_sizes
+                )
+            )
         if len(self.out_samples) != max_hops:
-            raise ValueError("Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(self.out_samples, layer_sizes))
+            raise ValueError(
+                "Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(
+                    self.out_samples, layer_sizes
+                )
+            )
 
         # Model parameters
         self.max_slots = 2 ** (max_hops + 1) - 1
@@ -886,6 +896,7 @@ class DirectedGraphSAGE:
         Returns:
             Output tensor
         """
+
         def aggregate_neighbours(tree: List, stage: int):
             # compute the number of slots with children in the binary tree
             num_slots = (len(tree) - 1) // 2
@@ -897,8 +908,9 @@ class DirectedGraphSAGE:
                 # find in-nodes
                 child_slot = 2 * slot + 1
                 size = (
-                        self.neighbourhood_sizes[child_slot] // num_head_nodes
-                        if num_head_nodes > 0 else 0
+                    self.neighbourhood_sizes[child_slot] // num_head_nodes
+                    if num_head_nodes > 0
+                    else 0
                 )
                 in_child = Dropout(self.dropout)(
                     Reshape((num_head_nodes, size, self.dims[stage]))(tree[child_slot])
@@ -906,8 +918,9 @@ class DirectedGraphSAGE:
                 # find out-nodes
                 child_slot = child_slot + 1
                 size = (
-                        self.neighbourhood_sizes[child_slot] // num_head_nodes
-                        if num_head_nodes > 0 else 0
+                    self.neighbourhood_sizes[child_slot] // num_head_nodes
+                    if num_head_nodes > 0
+                    else 0
                 )
                 out_child = Dropout(self.dropout)(
                     Reshape((num_head_nodes, size, self.dims[stage]))(tree[child_slot])
@@ -949,8 +962,7 @@ class DirectedGraphSAGE:
             i = num_hops[parent_slot]
             num_hops[slot] = i + 1
             num_nodes[slot] = (
-                self.in_samples[i] if slot % 2 == 1
-                else self.out_samples[i]
+                self.in_samples[i] if slot % 2 == 1 else self.out_samples[i]
             ) * num_nodes[parent_slot]
         return num_nodes
 
@@ -966,8 +978,7 @@ class DirectedGraphSAGE:
         """
         # Create tensor inputs for neighbourhood sampling;
         x_inp = [
-            Input(shape=(s, self.input_feature_size))
-            for s in self.neighbourhood_sizes
+            Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
         ]
 
         # Output from GraphSAGE model
