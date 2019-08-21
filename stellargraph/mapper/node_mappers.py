@@ -22,6 +22,7 @@ __all__ = [
     "NodeSequence",
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
+    "Attri2VecNodeGenerator",
     "FullBatchNodeGenerator",
     "FullBatchNodeSequence",
     "SparseFullBatchNodeSequence",
@@ -54,17 +55,22 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator`.
+    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator` 
+    or :class:`Attri2vecNodeGenerator`.
 
-    These Generators are classes that capture the graph structure
-    and the feature vectors of each node. These generator classes
-    are used within the NodeSequence to generate samples of k-hop
-    neighbourhoods in the graph and to return to this class the
-    features from the sampled neighbourhoods.
+    GraphSAGENodeGenerator and HinSAGENodeGenerator are classes that 
+    capture the graph structure and the feature vectors of each node. 
+    These generator classes are used within the NodeSequence to generate
+    samples of k-hop neighbourhoods in the graph and to return to this 
+    class the features from the sampled neighbourhoods.
+    
+    Attri2VecNodeGenerator is the class that captures node feature vectors
+    of each node.
 
     Args:
-        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator
-            The generator object containing the graph information.
+        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator or
+            Attri2VecNodeGenerator. The generator object containing the 
+            graph information.
         ids: list
             A list of the node_ids to be used as head-nodes in the
             downstream task.
@@ -502,6 +508,124 @@ class HinSAGENodeGenerator:
             A NodeSequence object to use with the GraphSAGE model
             in Keras methods `fit_generator`, `evaluate_generator`,
             and `predict_generator`.
+        """
+        return NodeSequence(
+            self, node_targets.index, node_targets.values, shuffle=shuffle
+        )
+
+
+class Attri2VecNodeGenerator:
+    """
+    A data generator for node prediction with attri2vec models
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Attri2VecNodeGenerator(G, 50)
+        train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+        test_data_gen = G_generator.flow(test_node_ids)
+
+    Args:
+        G (StellarGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.num_samples = [0]  # for compatibility with GraphSAGE
+        self.batch_size = batch_size
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # We need a schema for compatibility with HinSAGE
+        self.schema = G.create_graph_schema(create_type_maps=True)
+
+        # Check that there is only a single node type for Attri2Vec
+        if len(self.schema.node_types) > 1:
+            print(
+                "Warning: running homogeneous Attri2Vec on a graph with multiple node types"
+            )
+
+    def sample_features(self, head_nodes, sampling_schema):
+        """
+        Sample content features of the head nodes, and return these as a list of feature 
+        arrays for the attri2vec algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+            sampling_schema: The sampling schema for the model, for compatibility with GraphSAGE and HinSAGE.
+
+        Returns:
+            A list of feaure arrys, with each element being the feature of a
+            head node.
+        """
+
+        batch_feats = self.graph.get_feature_for_nodes(head_nodes)
+        return batch_feats
+
+    def flow(self, node_ids, targets=None, shuffle=False):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        The node IDs are the nodes to train or inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset of the nodes in the graph.
+
+        The targets are an array of numeric targets corresponding to the
+        supplied node_ids to be used by the downstream task. They should
+        be given in the same order as the list of node IDs.
+        If they are not specified (for example, for use in prediction),
+        the targets will not be available to the downsteam task.
+
+        Note that the shuffle argument should be True for training and
+        False for prediction.
+
+        Args:
+            node_ids: an iterable of node IDs.
+            targets: a 2D array of numeric targets with shape
+                `(len(node_ids), target_size)`.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
+        Returns:
+            A NodeSequence object to use with the Attri2Vec model
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``.
+
+        """
+        return NodeSequence(self, node_ids, targets, shuffle=shuffle)
+
+    def flow_from_dataframe(self, node_targets, shuffle=False):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_targets: a Pandas DataFrame of numeric targets indexed
+                by the node ID for that target.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
+        Returns:
+            A NodeSequence object to use with the Attri2Vec model
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``.
+
         """
         return NodeSequence(
             self, node_targets.index, node_targets.values, shuffle=shuffle
