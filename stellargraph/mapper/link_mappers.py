@@ -16,7 +16,7 @@
 
 """
 Generators that create batches of data from a machine-learnign ready graph
-for link prediction/link attribute inference problems using GraphSAGE and HinSAGE.
+for link prediction/link attribute inference problems using GraphSAGE, HinSAGE and Attri2Vec.
 
 """
 __all__ = [
@@ -24,7 +24,7 @@ __all__ = [
     "OnDemandLinkSequence",
     "GraphSAGELinkGenerator",
     "HinSAGELinkGenerator",
-    "attri2vecLinkGenerator",
+    "Attri2VecLinkGenerator",
 ]
 
 import random
@@ -56,11 +56,12 @@ class LinkSequence(Sequence):
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` .
+    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
     Args:
-        generator: An instance of :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator`.
+        generator: An instance of :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or 
+        :class:`Attri2VecLinkGenerator`.
         ids (list or iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
-            (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
+            (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE/Attri2Vec model.)
             These are the links that are to be used to train or inference, and the embeddings
             calculated for these links via a binary operator applied to their source and destination nodes,
             are passed to the downstream task of link prediction or link attribute inference.
@@ -176,10 +177,10 @@ class OnDemandLinkSequence(Sequence):
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` ` .
+    :class:`GraphSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
 
     Args:
-        generator: An instance of :class:`GraphSAGELinkGenerator` or 'attri2vecLink Generator'.
+        generator: An instance of :class:`GraphSAGELinkGenerator` or 'Attri2VecLinkGenerator'.
         sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph.
         The generator method of this class returns `batch_size` of positive and negative samples on demand.
     """
@@ -214,7 +215,7 @@ class OnDemandLinkSequence(Sequence):
                 )
             else:
                 print(
-                    "Running attri2vecLinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
+                    "Running Attri2VecLinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
                         round(self.data_size / self.generator.batch_size)
                     )
                 )
@@ -617,11 +618,11 @@ class HinSAGELinkGenerator:
         return LinkSequence(self, link_ids, targets, shuffle)
 
 
-class attri2vecLinkGenerator:
+class Attri2VecLinkGenerator:
     """
-    A data generator for link prediction with Homogeneous attri2vec models
+    A data generator for link/node pair prediction with attri2vec models
 
-    At minimum, supply the StellarGraph the batch size.
+    At minimum, supply the StellarGraph and the batch size.
 
     The supplied graph should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features for all
@@ -633,25 +634,23 @@ class attri2vecLinkGenerator:
 
     Example::
 
-        G_generator = attri2vecLinkGenerator(G, 50)
+        G_generator = Attri2VecLinkGenerator(G, 50)
         train_data_gen = G_generator.flow(edge_ids)
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
-        num_samples: for compatibility with GraphSAGE
-        seed (int or str), optional: Random seed for the sampling methods.
-        name, optional: Name of generator
+        name, optional: Name of generator.
     """
 
-    def __init__(self, G, batch_size, num_samples=[1, 1], seed=None, name=None):
+    def __init__(self, G, batch_size, name=None):
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         G.check_graph_for_ml(features=True)
 
         self.graph = G
-        self.num_samples = num_samples
+        self.num_samples = [0]  # for compatibility with GraphSAGE
         self.batch_size = batch_size
         self.name = name
 
@@ -665,16 +664,16 @@ class attri2vecLinkGenerator:
 
         Args:
             head_links: An iterable of edges to perform sampling for.
-            sampling_schema: The sampling schema for the model, for compatibility
-            with GraphSAGE and HinSAGE
+            sampling_schema: The sampling schema for the model, for compatibility with GraphSAGE and HinSAGE.
 
         Returns:
-            a list of feaure arrys, with each element being the feature of a
-            target node and the id of the corresponding context node
+            A list of feaure arrys, with each element being the feature of a
+            target node and the id of the corresponding context node.
         """
 
+        all_nodes = list(self.graph.nodes())
         target_ids = [head_link[0] for head_link in head_links]
-        context_ids = [head_link[1] for head_link in head_links]
+        context_ids = [all_nodes.index(head_link[1]) for head_link in head_links]
         target_feats = self.graph.get_feature_for_nodes(target_ids)
         batch_feats = [target_feats, np.array(context_ids)]
 
@@ -702,7 +701,7 @@ class attri2vecLinkGenerator:
                 specifying the edges or an UnsupervisedSampler object that has a generator
                 method to generate samples on the fly.
             targets (optional, array): a 2D array of numeric targets with shape
-                `(len(link_ids), target_size)`
+                `(len(link_ids), target_size)`.
             shuffle (optional, bool): If True the node_ids will be shuffled at each
                 epoch, if False the node_ids will be processed in order.
 
@@ -712,6 +711,10 @@ class attri2vecLinkGenerator:
         # Pass sampler to on-demand link sequence generation
         if isinstance(link_ids, UnsupervisedSampler):
             return OnDemandLinkSequence(self, link_ids)
+
+        # Otherwise pass iterable to standard LinkSequence
+        elif isinstance(link_ids, collections.Iterable):
+            return LinkSequence(self, link_ids, targets, shuffle)
 
         else:
             raise TypeError(
