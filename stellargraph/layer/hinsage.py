@@ -21,6 +21,7 @@ Heterogeneous GraphSAGE and compatible aggregator layers
 """
 __all__ = ["HinSAGE", "MeanHinAggregator"]
 
+import tensorflow as tf
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import backend as K, Input
 from tensorflow.keras.layers import Lambda, Dropout, Reshape
@@ -89,7 +90,7 @@ class MeanHinAggregator(Layer):
         self.w_neigh = [
             self.add_weight(
                 name="w_neigh_" + str(r),
-                shape=(input_shape[1 + r][3], self.half_output_dim),
+                shape=(int(input_shape[1 + r][3]), self.half_output_dim),
                 initializer=self._initializer,
                 trainable=True,
             )
@@ -101,7 +102,7 @@ class MeanHinAggregator(Layer):
         # Weight matrix for self
         self.w_self = self.add_weight(
             name="w_self",
-            shape=(input_shape[0][2], self.half_output_dim),
+            shape=(int(input_shape[0][2]), self.half_output_dim),
             initializer=self._initializer,
             trainable=True,
         )
@@ -145,7 +146,7 @@ class MeanHinAggregator(Layer):
             else:
                 z_shape = K.shape(z)
                 w_shape = self.half_output_dim
-                z_agg = K.zeros((z_shape[0], z_shape[1], w_shape))
+                z_agg = tf.zeros((z_shape[0], z_shape[1], w_shape))
 
             neigh_agg_by_relation.append(z_agg)
 

@@ -88,13 +88,13 @@ def test_ig_saliency_map():
         ),
         np.array([[0.71832293], [0.8542117]]),
         np.array([[0.46560588], [0.8165422]]),
-        1.0,
-        0.0,
+        np.array(1.0),
+        np.array(0.0),
         np.array([[0.4391179, 0.595691], [0.06000895, 0.2613866]]),
         np.array([[0.43496376], [0.02840129]]),
         np.array([[0.33972418], [0.22352563]]),
-        1.0,
-        0.0,
+        np.array(1.0),
+        np.array(0.0),
     ]
     keras_model_gat.set_weights(weights)
 

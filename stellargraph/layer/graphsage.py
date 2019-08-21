@@ -114,7 +114,7 @@ class GraphSAGEAggregator(Layer):
 
         self.w_self = self.add_weight(
             name="w_self",
-            shape=(input_shape[0][2], self.weight_output_size()),
+            shape=(int(input_shape[0][2]), self.weight_output_size()),
             initializer=self._initializer,
             trainable=True,
         )
@@ -235,7 +235,7 @@ class MeanAggregator(GraphSAGEAggregator):
         else:
             self.w_neigh = self.add_weight(
                 name="w_neigh",
-                shape=(input_shape[1][3], self.weight_output_size()),
+                shape=(int(input_shape[1][3]), self.weight_output_size()),
                 initializer=self._initializer,
                 trainable=True,
             )

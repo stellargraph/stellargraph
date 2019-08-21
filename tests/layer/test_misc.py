@@ -42,7 +42,7 @@ def test_squeezedsparseconversion():
     A_val = keras.Input(batch_shape=(1, None), dtype="float32")
 
     # Test with final_layer=False
-    A_mat = SqueezedSparseConversion(shape=(N, N))([A_ind, A_val])
+    A_mat = SqueezedSparseConversion(shape=(N, N), dtype=A_val.dtype)([A_ind, A_val])
 
     x_out = keras.layers.Lambda(
         lambda xin: K.expand_dims(K.dot(xin[0], K.squeeze(xin[1], 0)), 0)
@@ -94,7 +94,7 @@ def test_squeezedsparseconversion_axis():
     A_val_1 = keras.layers.Lambda(lambda A: K.reshape(A, (-1,)))(A_val)
 
     # Test with final_layer=False
-    A_mat = SqueezedSparseConversion(shape=(N, N), axis=None)([A_ind, A_val_1])
+    A_mat = SqueezedSparseConversion(shape=(N, N), axis=None, dtype=A_val_1.dtype)([A_ind, A_val_1])
 
     x_out = keras.layers.Lambda(lambda xin: K.dot(xin, K.ones((N, 1))))(A_mat)
 
