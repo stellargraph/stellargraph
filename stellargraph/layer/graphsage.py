@@ -63,8 +63,8 @@ class GraphSAGEAggregator(Layer):
     ):
         self.neigh_dim = neigh_dim
         self.output_dim = output_dim
-        self.other_output_dim = output_dim // (neigh_dim + 1)
-        self.self_output_dim = output_dim - neigh_dim * self.other_output_dim
+        self.neighbour_output_dim = output_dim // (neigh_dim + 1)
+        self.node_output_dim = output_dim - neigh_dim * self.neighbour_output_dim
         self.has_bias = bias
         self.act = activations.get(act)
         self.w_self = None
@@ -98,29 +98,31 @@ class GraphSAGEAggregator(Layer):
         if self._build_mlp_only:
             weight_dim = self.output_dim
         else:
-            weight_dim = self.self_output_dim
+            weight_dim = self.node_output_dim
 
         return weight_dim
 
     def build(self, input_shape):
         """
-        Builds layer
+        Builds the weight tensor corresponding to the features
+        of the initial nodes in sampled random walks.
+        Optionally builds the weight tensor(s) corresponding
+        to sampled neighbourhoods, if required.
+        Optionally builds the bias tensor, if requested.
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
                 and neighbour features
 
         """
-        # Build a MLP model if zero neighbours
-        self._build_mlp_only = input_shape[1][2] == 0
+        if not isinstance(input_shape, list):
+            raise ValueError("Expected a list of inputs, not {}".format(type(input_shape)))
+        if len(input_shape) != self.neigh_dim + 1:
+            raise ValueError(
+                "List of inputs must be of length {}, not {}".format(self.neigh_dim + 1, len(input_shape))
+            )
 
-        self.w_self = self.add_weight(
-            name="w_self",
-            shape=(input_shape[0][2], self.weight_output_size()),
-            initializer=self._initializer,
-            trainable=True,
-        )
-
+        # Configure bias vector, if used.
         if self.has_bias:
             self.bias = self.add_weight(
                 name="bias",
@@ -129,7 +131,38 @@ class GraphSAGEAggregator(Layer):
                 trainable=True,
             )
 
+        # If there are zero neighbours, back off to
+        # using only node features.
+        counter = 1
+        for neigh_shape in input_shape[1:]:
+            if neigh_shape[2] == 0:
+                counter = counter + 1
+        self._build_mlp_only = counter == len(input_shape)
+
+        # Configure weights for node features.
+        self.w_self = self.add_weight(
+            name="w_self",
+            shape=(input_shape[0][2], self.weight_output_size()),
+            initializer=self._initializer,
+            trainable=True,
+        )
+
+        # Configure weights for neighbouring nodes, if used.
+        self._build_neighbour_weights(input_shape)
+
+        # Signal that the build has completed.
         super().build(input_shape)
+
+    def _build_neighbour_weights(self, input_shape):
+        """
+        Builds the weight tensor(s) corresponding to the features
+        of the neighbouring nodes in sampled random walks.
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+                and neighbour features
+        """
+        pass
 
     def apply_mlp(self, x, **kwargs):
         """
@@ -143,7 +176,7 @@ class GraphSAGEAggregator(Layer):
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        # Weight maxtrix multiplied by self features
+        # Weight maxtrix multiplied by node features
         h_out = K.dot(x, self.w_self)
         # Optionally add bias
         if self.has_bias:
@@ -177,7 +210,7 @@ class GraphSAGEAggregator(Layer):
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        # x[0]: self vector (batch_size, head size, feature_size)
+        # x[0]: node vector (batch_size, head size, feature_size)
         # x[1...n]: optional neighbour vectors (batch_size, head size, neighbours, feature_size)
         x_self = x[0]
 
@@ -191,7 +224,8 @@ class GraphSAGEAggregator(Layer):
         if len(x) > 1:
             sources = [from_self]
             for i in range(1, len(x)):
-                sources.append(self.aggregate_neighbours(x[i], neigh_idx=i - 1))
+                neigh = self.aggregate_neighbours(x[i], neigh_idx=i - 1)
+                sources.append(neigh)
             h_out = K.concatenate(sources, axis=2)
         else:
             h_out = from_self
@@ -230,7 +264,7 @@ class MeanAggregator(GraphSAGEAggregator):
 
     """
 
-    def build(self, input_shape):
+    def _build_neighbour_weights(self, input_shape):
         """
         Builds layer
 
@@ -239,24 +273,21 @@ class MeanAggregator(GraphSAGEAggregator):
                 and neighbour features
 
         """
-        super().build(input_shape)
-
         if self._build_mlp_only:
             self.w_neigh = None
 
         else:
-            in_size = input_shape[1][3]
-            out_size = self.other_output_dim
-            self.w_neigh = []
+            self.w_neigh = [None] * self.neigh_dim
+            out_size = self.neighbour_output_dim
             for i in range(self.neigh_dim):
-                self.w_neigh.append(
-                    self.add_weight(
-                        name="w_neigh" + str(i),
-                        shape=(in_size, out_size),
-                        initializer=self._initializer,
-                        trainable=True,
-                    )
+                in_size = input_shape[i + 1][3]
+                weights = self.add_weight(
+                    name="w_neigh" + str(i),
+                    shape=(in_size, out_size),
+                    initializer=self._initializer,
+                    trainable=True,
                 )
+                self.w_neigh[i] = weights
 
     def aggregate_neighbours(self, x_neigh, neigh_idx=0):
         return K.dot(K.mean(x_neigh, axis=2), self.w_neigh[neigh_idx])
@@ -283,7 +314,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
         self.hidden_dim = self.output_dim
         self.hidden_act = activations.get("relu")
 
-    def build(self, input_shape):
+    def _build_neighbour_weights(self, input_shape):
         """
         Builds layer
 
@@ -292,8 +323,6 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
                 and neighbour features
 
         """
-        super().build(input_shape)
-
         if self._build_mlp_only:
             self.w_neigh = None
             self.w_pool = None
@@ -361,7 +390,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
         self.hidden_dim = self.output_dim
         self.hidden_act = activations.get("relu")
 
-    def build(self, input_shape):
+    def _build_neighbour_weights(self, input_shape):
         """
         Builds layer
 
@@ -370,8 +399,6 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
                 and neighbour features
 
         """
-        super().build(input_shape)
-
         if self._build_mlp_only:
             self.w_neigh = None
             self.w_pool = None
@@ -441,10 +468,7 @@ class AttentionalAggregator(GraphSAGEAggregator):
     def weight_output_size(self):
         return self.output_dim
 
-    def build(self, input_shape):
-        # Build the full model if non-zero neighbours
-        super().build(input_shape)
-
+    def _build_neighbour_weights(self, input_shape):
         self.a_self = self.add_weight(
             name="a_self",
             shape=(self.output_dim, 1),
