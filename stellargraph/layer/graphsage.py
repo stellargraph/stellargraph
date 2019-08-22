@@ -116,10 +116,14 @@ class GraphSAGEAggregator(Layer):
 
         """
         if not isinstance(input_shape, list):
-            raise ValueError("Expected a list of inputs, not {}".format(type(input_shape)))
+            raise ValueError(
+                "Expected a list of inputs, not {}".format(type(input_shape))
+            )
         if len(input_shape) != self.neigh_dim + 1:
             raise ValueError(
-                "List of inputs must be of length {}, not {}".format(self.neigh_dim + 1, len(input_shape))
+                "List of inputs must be of length {}, not {}".format(
+                    self.neigh_dim + 1, len(input_shape)
+                )
             )
 
         # Configure bias vector, if used.
