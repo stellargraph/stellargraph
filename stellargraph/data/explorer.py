@@ -62,6 +62,30 @@ class GraphWalk(object):
                 "The parameter graph_schema should be either None or of type GraphSchema."
             )
 
+    def get_adjacency_types(self):
+        # Allow additional info for heterogeneous graphs.
+        adj = getattr(self, "adj_types", None)
+        if not adj:
+            # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
+            # TODO: this could be better placed inside StellarGraph class
+            edge_types = self.graph_schema.edge_types
+            adj = {et: defaultdict(lambda: [None]) for et in edge_types}
+
+            for n1, nbrdict in self.graph.adjacency():
+                for et in edge_types:
+                    neigh_et = [
+                        n2
+                        for n2, nkeys in nbrdict.items()
+                        for k in nkeys
+                        if self.graph_schema.is_of_edge_type((n1, n2, k), et)
+                    ]
+                    # Create adjacency list in lexographical order
+                    # Otherwise sampling methods will not be deterministic
+                    # even when the seed is set.
+                    adj[et][n1] = sorted(neigh_et, key=str)
+            self.adj_types = adj
+        return adj
+
     def _check_seed(self, seed):
         if seed is not None:
             if type(seed) != int:
@@ -109,17 +133,16 @@ class GraphWalk(object):
     def _raise_error(self, msg):
         raise ValueError("({}) {}".format(type(self).__name__, msg))
 
-    def _check_parameter_values(self, nodes=None, n=0, length=0, seed=None):
+    def _check_common_parameters(self, nodes, n, length, seed):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
 
         Args:
-            nodes: <list> A list of root node ids such that from each node a uniform random walk of up to length l
-            will be generated.
+            nodes: <list> A list of root node ids from which to commence the random walks.
             n: <int> Number of walks per node id.
-            length: <int> Maximum length of walk measured as the number of edges followed from root node.
-            seed: <int> Random number generator seed
+            length: <int> Maximum length of each walk.
+            seed: <int> Random number generator seed.
         """
         self._check_nodes(nodes)
         self._check_repetitions(n)
@@ -170,33 +193,6 @@ class GraphWalk(object):
                 self._raise_error(err_msg)
 
 
-class HeterogeneousGraphWalk(GraphWalk):
-    """
-    Base class for exploring graphs with heterogeneous edge types.
-    """
-
-    def __init__(self, graph, graph_schema=None, seed=None):
-        super().__init__(graph, graph_schema, seed)
-
-        # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-        # TODO: this could be better placed inside StellarGraph class
-        edge_types = self.graph_schema.edge_types
-        self.adj = {et: defaultdict(lambda: [None]) for et in edge_types}
-
-        for n1, nbrdict in graph.adjacency():
-            for et in edge_types:
-                neigh_et = [
-                    n2
-                    for n2, nkeys in nbrdict.items()
-                    for k in nkeys
-                    if self.graph_schema.is_of_edge_type((n1, n2, k), et)
-                ]
-                # Create adjacency list in lexographical order
-                # Otherwise sampling methods will not be deterministic
-                # even when the seed is set.
-                self.adj[et][n1] = sorted(neigh_et, key=str)
-
-
 class UniformRandomWalk(GraphWalk):
     """
     Performs uniform random walks on the given graph
@@ -216,7 +212,7 @@ class UniformRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        self._check_parameter_values(nodes, n, length, seed)
+        self._check_common_parameters(nodes, n, length, seed)
         rs = self._get_random_state(seed)
 
         walks = []
@@ -310,9 +306,8 @@ class BiasedRandomWalk(GraphWalk):
             <list> List of lists of nodes ids for each of the random walks
 
         """
-        self._check_parameter_values(
-            nodes, n, p, q, length, seed, weighted, edge_weight_label
-        )
+        self._check_common_parameters(nodes, n, length, seed)
+        self._check_weights(p, q, weighted, edge_weight_label)
         rs = self._get_random_state(seed)
 
         if weighted:
@@ -417,30 +412,17 @@ class BiasedRandomWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(
-        self, nodes, n, p, q, length, seed, weighted, edge_weight_label
-    ):
+    def _check_weights(self, p, q, weighted, edge_weight_label):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
 
         Args:
-            nodes: <list> A list of root node ids such that from each node a uniform random walk of up to length l
-            will be generated.
-            n: <int> Number of walks per node id.
-            p: <float>
-            q: <float>
-            length: <int> Maximum length of walk measured as the number of edges followed from root node.
-            seed: <int> Random number generator seed.
+            p: <float> The backward walk 'penalty' factor.
+            q: <float> The forward walk 'penalty' factor.
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
             edge_weight_label: <string> Label of the edge weight property.
-
-         Returns:
-            The random state as determined by the seed.
        """
-        super()._check_parameter_values(nodes, n, length, seed)
-        rs = self._get_random_state(seed)
-
         if p <= 0.0:
             self._raise_error("Parameter p should be greater than 0.")
 
@@ -455,10 +437,8 @@ class BiasedRandomWalk(GraphWalk):
         if not isinstance(edge_weight_label, str):
             self._raise_error("The edge weight property label has to be of type string")
 
-        return rs
 
-
-class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
+class UniformRandomMetaPathWalk(GraphWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
@@ -488,9 +468,8 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
         Returns:
             <list> List of lists of nodes ids for each of the random walks generated
         """
-        self._check_parameter_values(
-            nodes, n, length, metapaths, node_type_attribute, seed
-        )
+        self._check_common_parameters(nodes, n, length, seed)
+        self._check_metapath_values(metapaths, node_type_attribute)
         rs = self._get_random_state(seed)
 
         walks = []
@@ -540,29 +519,17 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
 
         return walks
 
-    def _check_parameter_values(
-        self, nodes, n, length, metapaths, node_type_attribute, seed
-    ):
+    def _check_metapath_values(self, metapaths, node_type_attribute):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
 
         Args:
-            nodes: <list> The starting nodes as a list of node IDs.
-            n: <int> Number of walks per node id.
-            length: <int> Maximum length of of each random walk
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
-            [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
-            schemas of length 3 and 5 respectively.
+                [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+                schemas of length 3 and 5 respectively.
             node_type_attribute: <str> The node attribute name that stores the node's type
-            seed: <int> Random number generator seed
-
-        Returns:
-            The random state as determined by the seed.
         """
-        super()._check_parameter_values(nodes, n, length, seed)
-        rs = self._get_random_state(seed)
-
         if type(metapaths) != list:
             self._raise_error("The metapaths parameter must be a list of lists.")
         for metapath in metapaths:
@@ -585,8 +552,6 @@ class UniformRandomMetaPathWalk(HeterogeneousGraphWalk):
                     type(node_type_attribute).__name__
                 )
             )
-
-        return rs
 
 
 class SampledBreadthFirstWalk(GraphWalk):
@@ -611,7 +576,8 @@ class SampledBreadthFirstWalk(GraphWalk):
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        self._check_parameter_values(nodes, n, n_size, seed)
+        self._check_sizes(n_size)
+        self._check_common_parameters(nodes, n, len(n_size), seed)
         rs = self._get_random_state(seed)
 
         walks = []
@@ -654,26 +620,8 @@ class SampledBreadthFirstWalk(GraphWalk):
 
         return walks
 
-    def _check_parameter_values(self, nodes, n, n_size, seed):
-        """
-        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
-        parameter (the first one encountered in the checks) with invalid value.
 
-        Args:
-            nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
-            n: <int> Number of walks per node id.
-            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
-            seed: <int> Random number generator seed; default is None
-
-        Returns:
-            The random state as determined by the seed.
-        """
-        self._check_sizes(n_size)
-        return super()._check_parameter_values(nodes, n, len(n_size), seed)
-
-
-class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
+class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
     """
     Breadth First Walk for heterogeneous graphs that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes.
@@ -697,8 +645,11 @@ class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
             A list of lists such that each list element is a sequence of ids corresponding to a sampled Heterogeneous
             BFW.
         """
-        self._check_parameter_values(nodes, n, n_size, self.graph_schema, seed)
+        self._check_sizes(n_size)
+        self._check_common_parameters(nodes, n, len(n_size), seed)
         rs = self._get_random_state(seed)
+
+        adj = self.get_adjacency_types()
 
         walks = []
         d = len(n_size)  # depth of search
@@ -727,11 +678,11 @@ class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
 
                         # Create samples of neigbhours for all edge types
                         for et in current_edge_types:
-                            neigh_et = self.adj[et][current_node]
+                            neigh_et = adj[et][current_node]
 
                             # If there are no neighbours of this type then we return None
                             # in the place of the nodes that would have been sampled
-                            # YT update: with the new way to get neigh_et from self.adj[et][current_node], len(neigh_et) is always > 0.
+                            # YT update: with the new way to get neigh_et from adj[et][current_node], len(neigh_et) is always > 0.
                             # In case of no neighbours of the current node for et, neigh_et == [None],
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
@@ -756,25 +707,6 @@ class SampledHeterogeneousBreadthFirstWalk(HeterogeneousGraphWalk):
                 walks.append(walk)
 
         return walks
-
-    def _check_parameter_values(self, nodes, n, n_size, graph_schema, seed):
-        """
-        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
-        parameter (the first one encountered in the checks) with invalid value.
-
-        Args:
-            nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
-            n: <int> Number of walks per node id.
-            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
-            graph_schema: <GraphSchema> None or a stellargraph graph schema object
-            seed: <int> Random number generator seed; default is None
-
-        Returns:
-            The random state as determined by the seed.
-        """
-        self._check_sizes(n_size)
-        return super()._check_parameter_values(nodes, n, len(n_size), seed)
 
 
 class DirectedBreadthFirstNeighbours(GraphWalk):
@@ -816,7 +748,8 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
 
                 [node out_i  out_i.in_j  out_i.in_j.in_k ...]
         """
-        self._check_parameter_values(nodes, n, in_size, out_size, seed)
+        self._check_neighbourhood_sizes(in_size, out_size)
+        self._check_common_parameters(nodes, n, len(in_size), seed)
         rs = self._get_random_state(seed)
 
         max_hops = len(in_size)
@@ -899,7 +832,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         # Sample with replacement
         return [rs.choice(neighbours) for _ in range(size)]
 
-    def _check_parameter_values(self, nodes, n, in_size, out_size, seed):
+    def _check_neighbourhood_sizes(self, in_size, out_size):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -907,12 +840,8 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         Args:
             nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
-            n: <int> Number of walks per node id.
             n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
             seed: <int> Random number generator seed; default is None
-
-        Returns:
-            The random state as determined by the seed.
         """
         self._check_sizes(in_size)
         self._check_sizes(out_size)
@@ -920,4 +849,3 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             self._raise_error(
                 "The number of hops for the in and out neighbourhoods must be the same."
             )
-        return super()._check_parameter_values(nodes, n, len(in_size), seed)
