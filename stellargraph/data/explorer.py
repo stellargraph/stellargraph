@@ -52,7 +52,7 @@ class GraphWalk(object):
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraphBase):
             raise TypeError(
-                "Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
+                "Error: Graph must be a StellarGraph or StellarDiGraph to use heterogeneous sampling."
             )
 
         if not graph_schema:
