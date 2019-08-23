@@ -367,7 +367,7 @@ def test_graphsage_constructor():
         GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="unknown")
 
     # Check requirement for generator or n_samples
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         GraphSAGE(layer_sizes=[4])
 
     # Construction from generator

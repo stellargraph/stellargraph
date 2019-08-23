@@ -553,35 +553,26 @@ class GraphSAGE:
         layer_sizes (list): Hidden feature dimensions for each layer
         generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
             and input_dim will be taken from this object.
-        n_samples (list): (Optional: needs to be specified if no mapper
-            is provided.) The number of samples per layer in the model.
-        input_dim (int): The dimensions of the node features used as input to the model.
         aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
         normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
 
+    Note: If a generator is not specified, then additional keyword arguments must be supplied:
+        n_samples (list): The number of samples per layer in the model.
+        input_dim (int): The dimensions of the node features used as input to the model.
     """
 
     def __init__(
         self,
         layer_sizes,
         generator=None,
-        n_samples=None,
-        input_dim=None,
         aggregator=None,
         bias=True,
         dropout=0.0,
         normalize="l2",
+        **kwargs
     ):
-        # Set the aggregator layer used in the model
-        if aggregator is None:
-            self._aggregator = MeanAggregator
-        elif issubclass(aggregator, Layer):
-            self._aggregator = aggregator
-        else:
-            raise TypeError("Aggregator should be a subclass of Keras Layer")
-
         # Set the normalization layer used in the model
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
@@ -596,38 +587,61 @@ class GraphSAGE:
                 )
             )
 
-        # Get the input_dim and num_samples from the generator if it is given
-        # Use both the schema and head node type from the generator
-        # TODO: Refactor the horror of generator.generator.graph...
+        # Get the input_dim and num_samples
         self.generator = generator
         if generator is not None:
-            self.n_samples = generator.generator.num_samples
-            feature_sizes = generator.generator.graph.node_feature_sizes()
-            if len(feature_sizes) > 1:
-                raise RuntimeError(
-                    "GraphSAGE called on graph with more than one node type."
-                )
-
-            self.input_feature_size = feature_sizes.popitem()[1]
-
-        elif n_samples is not None and input_dim is not None:
-            self.n_samples = n_samples
-            self.input_feature_size = input_dim
-
+            self._get_sizes_from_generator(generator)
         else:
-            raise RuntimeError(
-                "If generator is not provided, n_samples and input_dim must be specified."
-            )
+            self._get_sizes_from_keywords(**kwargs)
 
         # Model parameters
-        self.n_layers = len(self.n_samples)
         self.bias = bias
         self.dropout = dropout
 
         # Feature dimensions for each layer
+        self.n_layers = len(layer_sizes)
+        self.layer_sizes = layer_sizes
         self.dims = [self.input_feature_size] + layer_sizes
 
+        # Set the aggregator layer used in the model
+        if aggregator is None:
+            self._aggregator = MeanAggregator
+        elif issubclass(aggregator, Layer):
+            self._aggregator = aggregator
+        else:
+            raise TypeError("Aggregator should be a subclass of Keras Layer")
+
         # Aggregator functions for each layer
+        self._build_aggregators()
+
+    def _get_sizes_from_generator(self, generator):
+        """
+        Sets n_samples and input_feature_size from the generator.
+        Args:
+             generator: The supplied generator.
+        """
+        self.n_samples = generator.generator.num_samples
+        feature_sizes = generator.generator.graph.node_feature_sizes()
+        if len(feature_sizes) > 1:
+            raise RuntimeError(
+                "GraphSAGE called on graph with more than one node type."
+            )
+        self.input_feature_size = feature_sizes.popitem()[1]
+
+    def _get_sizes_from_keywords(self, **kwargs):
+        """
+        Sets n_samples and input_feature_size from the keywords.
+        Args:
+             kwargs: The additional keyword arguments.
+        """
+        self.n_samples = kwargs.get("n_samples")
+        self.input_feature_size = kwargs.get("input_dim")
+        if self.n_samples is None or self.input_feature_size is None:
+            raise ValueError(
+                "If generator is not provided, n_samples and input_dim must be specified."
+            )
+
+    def _build_aggregators(self):
         self._aggs = [
             self._aggregator(
                 output_dim=self.dims[layer + 1],
@@ -794,7 +808,7 @@ class GraphSAGE:
         return self.build()
 
 
-class DirectedGraphSAGE:
+class DirectedGraphSAGE(GraphSAGE):
     """
     Implementation of a directed version of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
     see: http://snap.stanford.edu/graphsage/
@@ -809,104 +823,77 @@ class DirectedGraphSAGE:
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
-
-        Either:
-            generator (Sequence): A NodeSequence or LinkSequence.
-        Or:
-            in_samples (list): The number of in-node samples per layer in the model.
-            out_samples (list): The number of out-node samples per layer in the model.
-            input_dim (int): The dimensions of the node features used as input to the model.
+        generator (Sequence): A NodeSequence or LinkSequence.
         aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
         bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
         normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
+
+    Note: If a generator is not specified, then additional keyword arguments must be supplied:
+        in_samples (list): The number of in-node samples per layer in the model.
+        out_samples (list): The number of out-node samples per layer in the model.
+        input_dim (int): The dimensions of the node features used as input to the model.
+
     """
 
-    def __init__(
-        self,
-        layer_sizes,
-        generator=None,
-        in_samples=None,
-        out_samples=None,
-        input_dim=None,
-        aggregator=None,
-        bias=True,
-        dropout=0.0,
-        normalize="l2",
-    ):
-        # Set the aggregator layer used in the model
-        if aggregator is None:
-            self._aggregator = MeanAggregator
-        elif issubclass(aggregator, Layer):
-            self._aggregator = aggregator
-        else:
-            raise TypeError("Aggregator should be a subclass of Keras Layer")
-
-        # Set the normalization layer used in the model
-        if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
-        elif normalize is None or normalize == "none" or normalize == "None":
-            self._normalization = Lambda(lambda x: x)
-        else:
-            raise ValueError(
-                "Normalization should be either 'l2' or 'none'; received '{}'".format(
-                    normalize
-                )
-            )
-
-        # Get the input_dim and num_samples from the generator if it is given
-        # Use both the schema and head node type from the generator
-        # TODO: Refactor the horror of generator.generator.graph...
-        self.generator = generator
-        if generator is not None:
-            self.in_samples = generator.generator.in_samples
-            self.out_samples = generator.generator.out_samples
-            feature_sizes = generator.generator.graph.node_feature_sizes()
-            if len(feature_sizes) > 1:
-                raise RuntimeError(
-                    "GraphSAGE called on graph with more than one node type."
-                )
-            self.input_feature_size = feature_sizes.popitem()[1]
-
-        elif (
-            in_samples is not None and out_samples is not None and input_dim is not None
-        ):
-            self.in_samples = in_samples
-            self.out_samples = out_samples
-            self.input_feature_size = input_dim
-
-        else:
+    def _get_sizes_from_generator(self, generator):
+        """
+        Sets in_samples, out_samples and input_feature_size from the generator.
+        Args:
+             generator: The supplied generator.
+        """
+        self.in_samples = generator.generator.in_samples
+        self.out_samples = generator.generator.out_samples
+        feature_sizes = generator.generator.graph.node_feature_sizes()
+        if len(feature_sizes) > 1:
             raise RuntimeError(
-                "If generator is not provided, n_samples and input_dim must be specified."
+                "DirectedGraphSAGE called on graph with more than one node type."
+            )
+        self.input_feature_size = feature_sizes.popitem()[1]
+
+    def _get_sizes_from_keywords(self, **kwargs):
+        """
+        Sets in_samples, out_samples and input_feature_size from the keywords.
+        Args:
+             kwargs: The additional keyword arguments.
+        """
+        self.in_samples = kwargs.get("in_samples")
+        self.out_samples = kwargs.get("out_samples")
+        self.input_feature_size = kwargs.get("input_dim")
+        if (
+            self.in_samples is None
+            or self.out_samples is None
+            or self.input_feature_size is None
+        ):
+            raise ValueError(
+                "If generator is not provided, in_samples, out_samples and input_dim must be specified."
             )
 
-        self.max_hops = max_hops = len(layer_sizes)
+    def _build_aggregators(self):
+        # Model parameters
+        self.max_hops = max_hops = self.n_layers
+        self.max_slots = 2 ** (max_hops + 1) - 1
+
         if len(self.in_samples) != max_hops:
             raise ValueError(
                 "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
-                    self.in_samples, layer_sizes
+                    self.in_samples, self.layer_sizes
                 )
             )
         if len(self.out_samples) != max_hops:
             raise ValueError(
                 "Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(
-                    self.out_samples, layer_sizes
+                    self.out_samples, self.layer_sizes
                 )
             )
 
-        # Model parameters
-        self.max_slots = 2 ** (max_hops + 1) - 1
-        self.bias = bias
-        self.dropout = dropout
-
-        # Feature dimensions for each layer
-        self.layer_sizes = layer_sizes
-        self.dims = [self.input_feature_size] + layer_sizes
+        # Define sizes of the various neighbourhoods
+        self.neighbourhood_sizes = self._compute_input_sizes()
 
         # Aggregator functions for each layer
         self._aggs = [
             self._aggregator(
-                output_dim=layer_sizes[i],
+                output_dim=self.layer_sizes[i],
                 bias=self.bias,
                 act="relu" if i < max_hops - 1 else "linear",
                 neigh_dim=2,
@@ -1009,65 +996,8 @@ class DirectedGraphSAGE:
             Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
         ]
 
-        # Output from GraphSAGE model
+        # Output from DirectedGraphSAGE model
         x_out = self(x_inp)
 
+        # Returns inputs and outputs
         return x_inp, x_out
-
-    def link_model(self):
-        """
-        Builds a GraphSAGE model for link or node pair prediction
-
-        Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) node pairs
-            (where (src, dst) node inputs alternate),
-            and ``x_out`` is a list of output tensors for (src, dst) nodes in the node pairs
-
-        """
-        # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model()
-        x_inp_dst, x_out_dst = self.node_model()
-        # re-pack into a list where (source, target) inputs alternate, for link inputs:
-        x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
-        # same for outputs:
-        x_out = [x_out_src, x_out_dst]
-        return x_inp, x_out
-
-    def build(self):
-        """
-        Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
-        the model (whether it is a node or link/node pair generator).
-
-        Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1])
-
-        """
-        self.neighbourhood_sizes = self._compute_input_sizes()
-
-        if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
-            if len(self.generator._sampling_schema) == 1:
-                return self.node_model()
-            elif len(self.generator._sampling_schema) == 2:
-                return self.link_model()
-            else:
-                raise RuntimeError(
-                    "The generator used for model creation is neither a node nor a link generator, "
-                    "unable to figure out how to build the model. Consider using node_model or "
-                    "link_model method explicitly to build node or link prediction model, respectively."
-                )
-        else:
-            raise RuntimeError(
-                "Suitable generator is not provided at model creation time, unable to figure out how to build the model. "
-                "Consider either providing a generator, or using node_model or link_model method explicitly to build node or "
-                "link prediction model, respectively."
-            )
-
-    def default_model(self, flatten_output=True):
-        warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
-            PendingDeprecationWarning,
-        )
-        return self.build()
