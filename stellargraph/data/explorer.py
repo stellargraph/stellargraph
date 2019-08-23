@@ -164,7 +164,7 @@ class GraphWalk(object):
             self._raise_error(err_msg)
         if len(n_size) == 0:
             # Technically, length 0 should be okay, but by consensus it is invalid.
-            self._raise_error("The neighbourhood size should not be empty.")
+            self._raise_error("The neighbourhood size list should not be empty.")
         for d in n_size:
             if type(d) != int or d < 0:
                 self._raise_error(err_msg)
