@@ -16,8 +16,8 @@
 
 import pytest
 import pandas as pd
+import numpy as np
 from stellargraph.core.edge_data import *
-from stellargraph.globalvar import *
 
 
 def test_no_edges():
@@ -45,29 +45,28 @@ def test_pandas_data_use_index():
         edge_id=USE_PANDAS_INDEX,
     )
     assert ed.is_directed()
-    assert ed.is_homogeneous()
+    assert ed.is_homogeneous() == True
     assert ed.num_edges() == 2
-    # XXX Edge types should be unknown before iteration!
-    assert ed.edge_types() is None
+    assert ed.edge_types() == set([DEFAULT_EDGE_TYPE])
     it = iter(ed.edges())
     edge = next(it)
     assert edge.source_id == 1
     assert edge.target_id == 2
     assert edge.edge_id == "e1"
-    assert edge.edge_type == EDGE_TYPE_DEFAULT
+    assert edge.edge_type == DEFAULT_EDGE_TYPE
     edge = next(it)
     assert edge.source_id == 2
     assert edge.target_id == 1
     assert edge.edge_id == "e2"
-    assert edge.edge_type == EDGE_TYPE_DEFAULT
+    assert edge.edge_type == DEFAULT_EDGE_TYPE
     try:
         edge = next(it)
         assert False
     except StopIteration:
         assert True
-    # XXX Edge types should be known after iteration!
+    # XXX Edge types must be known after iteration!
     assert len(ed.edge_types()) == 1
-    assert ed.edge_types() == set([EDGE_TYPE_DEFAULT])
+    assert ed.edge_types() == set([DEFAULT_EDGE_TYPE])
 
 
 def test_pandas_data_not_use_index():
@@ -79,15 +78,12 @@ def test_pandas_data_not_use_index():
     )
     # Deliberately mix types of identifiers; do NOT use index for id
     ed = to_edge_data(
-        df,
-        is_directed=False,
-        source_id=0,
-        target_id=1,
-        edge_id=None,
-        edge_type="edge_type",
+        df, IS_UNDIRECTED, source_id=0, target_id=1, edge_id=None, edge_type="edge_type"
     )
     assert ed.is_undirected()
-    assert ed.is_heterogeneous()
+    # XXX Edge types should be unknown in advance.
+    assert ed.is_heterogeneous() is None
+    assert ed.is_homogeneous() is None
     assert ed.num_edges() == 3
     # XXX Edge types should be unknown before iteration!
     assert ed.edge_types() is None
@@ -102,6 +98,8 @@ def test_pandas_data_not_use_index():
     # XXX Edge types should be known after iteration!
     assert len(ed.edge_types()) == 3
     assert ed.edge_types() == set(["t1", "t2", "t3"])
+    assert ed.is_heterogeneous()
+    assert not ed.is_homogeneous()
 
 
 def test_pandas_data_explicit():
@@ -113,12 +111,11 @@ def test_pandas_data_explicit():
         (4, 5, "e4", "t1"),
     ]
     df = pd.DataFrame(data, columns=["source_id", "target_id", "edge_id", "edge_type"])
-    ed = to_edge_data(
-        df, is_directed=True, source_id=0, target_id=1, edge_id=2, edge_type=3
-    )
+    ed = to_edge_data(df, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3)
     assert ed.is_directed()
     # XXX Heterogeneity will change after iteration!
-    assert ed.is_heterogeneous()
+    assert ed.is_heterogeneous() is None
+    assert ed.is_homogeneous() is None
     assert ed.num_edges() == 4
     # XXX Edge types should be unknown before iteration!
     assert ed.edge_types() is None
@@ -135,3 +132,153 @@ def test_pandas_data_explicit():
     assert ed.edge_types() == set(["t1"])
     # We now know there is only 1 edge type!
     assert ed.is_homogeneous()
+    assert not ed.is_heterogeneous()
+
+
+def test_pandas_no_data():
+    data = pd.DataFrame([], columns=["source_id", "target_id"])
+    ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
+    assert ed.is_directed()
+    assert ed.is_homogeneous()
+    assert ed.num_edges() == 0
+    assert ed.edge_types() == set()
+    count = -1
+    for edge in ed.edges():
+        count += 1
+    assert count == -1
+
+
+def test_typed_pandas_data():
+    # Edge data for type t1:
+    edges1 = [(1, 2), (2, 3), (3, 4)]
+    df1 = pd.DataFrame(edges1, columns=["source_id", "target_id"])
+    # Edge data for type t2:
+    edges2 = [(2, 1), (3, 2), (4, 3)]
+    # XXX Column ordering is assumed same for all blocks of edge data!
+    df2 = pd.DataFrame(edges2, columns=["source_id", "target_id"])
+    data = {None: df1, "t2": df2}  # type will be mapped to default
+    ed = to_edge_data(
+        data, IS_DIRECTED, source_id=0, target_id=1, default_edge_type="t1"
+    )
+    assert ed.is_directed()
+    assert ed.is_heterogeneous()
+    assert len(ed.edge_types()) == 2
+    assert ed.edge_types() == set(["t1", "t2"])
+    assert ed.num_edges() == 6
+    _count = -1
+    for edge in ed.edges():
+        _count += 1
+        assert edge.edge_id == _count
+        edge_type = edge.edge_type
+        assert edge_type in ["t1", "t2"]
+        if edge_type == "t1":
+            assert edge.target_id == edge.source_id + 1
+        else:
+            assert edge.target_id == edge.source_id - 1
+    assert _count == 5
+    # XXX Size and heterogeneity should not have changed!
+    assert ed.is_heterogeneous()
+    assert ed.edge_types() == set(["t1", "t2"])
+    assert ed.num_edges() == 6
+
+
+def test_typed_pandas_partial_data():
+    # Edge data for type t1:
+    edges1 = []
+    df1 = pd.DataFrame(edges1, columns=["source_id", "target_id"])
+    # Edge data for type t2:
+    edges2 = [(2, 1), (3, 2), (4, 3)]
+    # XXX Column ordering is assumed same for all blocks of edge data!
+    df2 = pd.DataFrame(edges2, columns=["source_id", "target_id"])
+    data = {"t1": df1, "t2": df2}
+    ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
+    assert ed.is_directed()
+    # Since data blocks are of known size, types should be known.
+    assert not ed.is_heterogeneous()
+    assert ed.is_homogeneous()
+    assert len(ed.edge_types()) == 1
+    assert ed.edge_types() == set(["t2"])
+    assert ed.num_edges() == 3
+    _count = -1
+    for edge in ed.edges():
+        _count += 1
+        assert edge.edge_id == _count
+        edge_type = edge.edge_type
+        assert edge_type == "t2"
+        assert edge.target_id == edge.source_id - 1
+    assert _count == 2
+    # XXX Size and heterogeneity should not have changed!
+    assert ed.is_homogeneous()
+    assert len(ed.edge_types()) == 1
+    assert ed.edge_types() == set(["t2"])
+    assert ed.num_edges() == 3
+
+
+def test_numpy_data_explicit():
+    # Explicit edge id and type
+    data = np.array(
+        [
+            (1, 2, "e1", "t1"),
+            (2, 3, "e2", "t1"),
+            (3, 4, "e3", "t1"),
+            (4, 5, "e4", "t1"),
+        ],
+        dtype="object",
+    )
+    ed = to_edge_data(
+        data, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3
+    )
+    assert ed.is_directed()
+    # XXX Heterogeneity will change after iteration!
+    assert ed.is_heterogeneous() is None
+    assert ed.num_edges() == 4
+    # XXX Edge types should be unknown before iteration!
+    assert ed.edge_types() is None
+    count = -1
+    for edge in ed.edges():
+        count += 1
+        src_id = edge.source_id
+        assert src_id == count + 1
+        assert edge.target_id == src_id + 1
+        assert edge.edge_type == "t1"
+        assert edge.edge_id == "e" + str(src_id)
+    # XXX Edge types should be known after iteration!
+    assert len(ed.edge_types()) == 1
+    assert ed.edge_types() == set(["t1"])
+    # We now know there is only 1 edge type!
+    assert ed.is_homogeneous()
+    assert not ed.is_heterogeneous()
+
+
+def test_numpy_data_implicit():
+    # Explicit edge id and type
+    data = np.array([(1, 2), (2, 3), (3, 4), (4, 5)])
+    ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
+    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.is_directed()
+    assert ed.is_homogeneous()
+    assert ed.num_edges() == 4
+    # XXX Edge types should be known before iteration!
+    assert ed.edge_types() == set([DEFAULT_EDGE_TYPE])
+    count = -1
+    for edge in ed.edges():
+        count += 1
+        src_id = edge.source_id
+        assert src_id == count + 1
+        assert edge.target_id == src_id + 1
+        assert edge.edge_type == DEFAULT_EDGE_TYPE
+        assert edge.edge_id == count
+
+
+def test_numpy_no_data():
+    data = np.reshape([], (0, 2))
+    ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
+    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.is_directed()
+    assert ed.is_homogeneous()
+    assert ed.num_edges() == 0
+    assert ed.edge_types() == set()
+    count = -1
+    for edge in ed.edges():
+        count += 1
+    assert count == -1
