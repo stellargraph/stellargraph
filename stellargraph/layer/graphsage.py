@@ -49,8 +49,6 @@ class GraphSAGEAggregator(Layer):
             a bias term should be included.
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
-        neigh_dim (int): Optional value indicating the maximum number of multi-dimensional
-            neighbourhoods; defaults to 1.
     """
 
     def __init__(
@@ -58,17 +56,14 @@ class GraphSAGEAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Callable or AnyStr = "relu",
-        neigh_dim: int = 1,
-        **kwargs
+        **kwargs,
     ):
-        self.neigh_dim = neigh_dim
         self.output_dim = output_dim
-        self.neighbour_output_dim = output_dim // (neigh_dim + 1)
-        self.node_output_dim = output_dim - neigh_dim * self.neighbour_output_dim
         self.has_bias = bias
         self.act = activations.get(act)
         self.w_self = None
         self.bias = None
+        self.weight_dims = None
         self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
 
@@ -85,22 +80,43 @@ class GraphSAGEAggregator(Layer):
         base_config = super().get_config()
         return {**base_config, **config}
 
-    def weight_output_size(self):
+    def calculate_group_sizes(self, input_shape):
         """
-        Calculates the output size, according to
-        whether the model is building a MLP and
-        the method (concat or sum).
+        Calculates the output size for each input group. The results are stored in two variables:
+            self.included_weight_groups: if the corresponding entry is True then the input group
+                is valid and should be used.
+            self.weight_sizes: the size of the output from this group.
 
-        Returns:
-            int: size of the weight outputs.
-
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+                and neighbour features
         """
-        if self._build_mlp_only:
-            weight_dim = self.output_dim
-        else:
-            weight_dim = self.node_output_dim
+        # If the neighbours are zero-dimensional for any of the shapes
+        # in the input, do not use the input group in the model.
+        self.included_weight_groups = [
+            all(dim != 0 for dim in group_shape) for group_shape in input_shape
+        ]
 
-        return weight_dim
+        # The total number of enabled input groups
+        num_groups = np.sum(self.included_weight_groups)
+        if num_groups < 1:
+            raise ValueError(
+                "There must be at least one input with a non-zero neighbourhood dimension"
+            )
+
+        # Calculate the dimensionality of each group, and put remainder into the first group
+        # with non-zero dimensions, which should be the head node group.
+        group_output_dim = self.output_dim // num_groups
+        remainder_dim = self.output_dim - num_groups * group_output_dim
+        weight_dims = []
+        for g in self.included_weight_groups:
+            if g:
+                group_dim = group_output_dim + remainder_dim
+                remainder_dim = 0
+            else:
+                group_dim = 0
+            weight_dims.append(group_dim)
+        self.weight_dims = weight_dims
 
     def build(self, input_shape):
         """
@@ -119,12 +135,6 @@ class GraphSAGEAggregator(Layer):
             raise ValueError(
                 "Expected a list of inputs, not {}".format(type(input_shape))
             )
-        if len(input_shape) != self.neigh_dim + 1:
-            raise ValueError(
-                "List of inputs must be of length {}, not {}".format(
-                    self.neigh_dim + 1, len(input_shape)
-                )
-            )
 
         # Configure bias vector, if used.
         if self.has_bias:
@@ -135,66 +145,47 @@ class GraphSAGEAggregator(Layer):
                 trainable=True,
             )
 
-        # If there are zero neighbours, back off to
-        # using only node features.
-        counter = 1
-        for neigh_shape in input_shape[1:]:
-            if neigh_shape[2] == 0:
-                counter = counter + 1
-        self._build_mlp_only = counter == len(input_shape)
+        # Calculate weight size for each input group
+        self.calculate_group_sizes(input_shape)
 
-        # Configure weights for node features.
-        self.w_self = self.add_weight(
-            name="w_self",
-            shape=(input_shape[0][2], self.weight_output_size()),
-            initializer=self._initializer,
-            trainable=True,
-        )
-
-        # Configure weights for neighbouring nodes, if used.
-        self._build_neighbour_weights(input_shape)
+        # Configure weights for input groups, if used.
+        w_group = [None] * len(input_shape)
+        for ii, g_shape in enumerate(input_shape):
+            if self.included_weight_groups[ii]:
+                weight = self._build_group_weights(
+                    g_shape, self.weight_dims[ii], group_idx=ii
+                )
+                w_group[ii] = weight
+        self.w_group = w_group
 
         # Signal that the build has completed.
         super().build(input_shape)
 
-    def _build_neighbour_weights(self, input_shape):
+    def _build_group_weights(self, in_shape, out_size, group_idx=0):
         """
-        Builds the weight tensor(s) corresponding to the features
-        of the neighbouring nodes in sampled random walks.
+        Builds the weight tensor(s) corresponding to the features of the input groups.
 
         Args:
-            input_shape (list of list of int): Shape of input tensors for self
-                and neighbour features
-        """
-        pass
-
-    def apply_mlp(self, x, **kwargs):
-        """
-        Create MLP on input self tensor, x
-
-        Args:
-          x (List[Tensor]): Tensor giving the node features
-                shape: (batch_size, head size, feature_size)
-
-        Returns:
-            Keras Tensor representing the aggregated embeddings in the input.
+            in_shape (list of int): Shape of input tensor for single group
+            out_size (int): The size of the output vector for this group
+            group_idx (int): The index of the input group
 
         """
-        # Weight maxtrix multiplied by node features
-        h_out = K.dot(x, self.w_self)
-        # Optionally add bias
-        if self.has_bias:
-            h_out = h_out + self.bias
-        # Finally, apply activation
-        return self.act(h_out)
+        weight = self.add_weight(
+            shape=(in_shape[-1], out_size),
+            initializer=self._initializer,
+            trainable=True,
+            name=f"weight_g{group_idx}",
+        )
+        return weight
 
-    def aggregate_neighbours(self, x_neigh, neigh_idx: int = 0):
+    def aggregate_neighbours(self, x_neigh, group_idx: int = 0):
         """
         Override with a method to aggregate tensors over neighbourhood.
 
         Args:
             x_neigh: The input tensor representing the sampled neighbour nodes.
-            neigh_idx: Optional neighbourhood index used for multi-dimensional hops.
+            group_idx: Optional neighbourhood index used for multi-dimensional hops.
 
         Returns:
             A tensor aggregation of the input nodes features.
@@ -203,36 +194,30 @@ class GraphSAGEAggregator(Layer):
             "The GraphSAGEAggregator base class should not be directly instantiated"
         )
 
-    def call(self, x, **kwargs):
+    def call(self, inputs, **kwargs):
         """
-        Apply aggregator on input tensors, x
+        Apply aggregator on the input tensors, `inputs`
 
         Args:
-          x: Keras Tensor
+          inputs: List of Keras tensors
 
         Returns:
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        # x[0]: node vector (batch_size, head size, feature_size)
-        # x[1...n]: optional neighbour vectors (batch_size, head size, neighbours, feature_size)
-        x_self = x[0]
+        # If a neighbourhood dimension exists for the group, aggregate over the neighbours
+        # otherwise create a simple layer.
+        sources = []
+        for ii, x in enumerate(inputs):
+            # If the group is included, apply aggregation and collect the output tensor
+            # otherwise, this group is ignored
+            if self.included_weight_groups[ii]:
+                x_agg = self.group_aggregate(x, group_idx=ii)
+                sources.append(x_agg)
 
-        if self._build_mlp_only:
-            return self.apply_mlp(x_self, **kwargs)
-
-        # Weight maxtrix multiplied by self features
-        from_self = K.dot(x_self, self.w_self)
-
-        # If there are neighbours aggregate over them
-        if len(x) > 1:
-            sources = [from_self]
-            for i in range(1, len(x)):
-                neigh = self.aggregate_neighbours(x[i], neigh_idx=i - 1)
-                sources.append(neigh)
-            h_out = K.concatenate(sources, axis=2)
-        else:
-            h_out = from_self
+        # Concatenate outputs from all groups
+        # TODO: Generalize to sum a subset of groups.
+        h_out = K.concatenate(sources, axis=2)
 
         # Optionally add bias
         if self.has_bias:
@@ -251,9 +236,25 @@ class GraphSAGEAggregator(Layer):
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
-            An input shape tuple.
+            The output shape calculated from the input shape, this is of the form
+                (batch_num, head_num, output_dim)
         """
         return input_shape[0][0], input_shape[0][1], self.output_dim
+
+    def group_aggregate(self, x_neigh, group_idx=0):
+        """
+        Override with a method to aggregate tensors over the neighbourhood for each group.
+        
+        Args:
+            x_neigh (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
+            group_idx (int, optional): Group index.
+        
+        Returns:
+            [tf.Tensor]: A tensor aggregation of the input nodes features.
+        """
+        raise NotImplementedError(
+            "The GraphSAGEAggregator base class should not be directly instantiated"
+        )
 
 
 class MeanAggregator(GraphSAGEAggregator):
@@ -268,33 +269,24 @@ class MeanAggregator(GraphSAGEAggregator):
 
     """
 
-    def _build_neighbour_weights(self, input_shape):
+    def group_aggregate(self, x_group, group_idx=0):
         """
-        Builds layer
-
+        Mean aggregator for tensors over the neighbourhood for each group.
+        
         Args:
-            input_shape (list of list of int): Shape of input tensors for self
-                and neighbour features
-
+            x_group (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
+            group_idx (int, optional): Group index.
+        
+        Returns:
+            [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
-        if self._build_mlp_only:
-            self.w_neigh = None
-
+        # The first group is assumed to be the self-tensor and we do not aggregate over it
+        if group_idx == 0:
+            x_agg = x_group
         else:
-            self.w_neigh = [None] * self.neigh_dim
-            out_size = self.neighbour_output_dim
-            for i in range(self.neigh_dim):
-                in_size = input_shape[i + 1][3]
-                weights = self.add_weight(
-                    name="w_neigh" + str(i),
-                    shape=(in_size, out_size),
-                    initializer=self._initializer,
-                    trainable=True,
-                )
-                self.w_neigh[i] = weights
+            x_agg = K.mean(x_group, axis=2)
 
-    def aggregate_neighbours(self, x_neigh, neigh_idx=0):
-        return K.dot(K.mean(x_neigh, axis=2), self.w_neigh[neigh_idx])
+        return K.dot(x_agg, self.w_group[group_idx])
 
 
 class MaxPoolingAggregator(GraphSAGEAggregator):
@@ -318,59 +310,72 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
         self.hidden_dim = self.output_dim
         self.hidden_act = activations.get("relu")
 
-    def _build_neighbour_weights(self, input_shape):
+    def _build_group_weights(self, in_shape, out_size, group_idx=0):
         """
-        Builds layer
+        Builds the weight tensor(s) corresponding to the features of the input groups.
 
         Args:
-            input_shape (list of list of int): Shape of input tensors for self
-                and neighbour features
+            in_shape (list of int): Shape of input tensor for single group
+            out_size (int): The size of the output vector for this group
+            group_idx (int): The index of the input group
 
         """
-        if self._build_mlp_only:
-            self.w_neigh = None
-            self.w_pool = None
-            self.b_pool = None
-
+        if group_idx == 0:
+            weights = self.add_weight(
+                name=f"w_g{group_idx}",
+                shape=(in_shape[-1], out_size),
+                initializer=self._initializer,
+                trainable=True,
+            )
         else:
-            self.w_neigh = self.add_weight(
-                name="w_neigh",
-                shape=(self.hidden_dim, self.weight_output_size()),
+            w_group = self.add_weight(
+                name=f"w_g{group_idx}",
+                shape=(self.hidden_dim, out_size),
                 initializer=self._initializer,
                 trainable=True,
             )
-            self.w_pool = self.add_weight(
-                name="w_pool",
-                shape=(input_shape[1][3], self.hidden_dim),
+            w_pool = self.add_weight(
+                name=f"w_pool_g{group_idx}",
+                shape=(in_shape[-1], self.hidden_dim),
                 initializer=self._initializer,
                 trainable=True,
             )
-            self.b_pool = self.add_weight(
-                name="b_pool",
+            b_pool = self.add_weight(
+                name=f"b_pool_g{group_idx}",
                 shape=(self.hidden_dim,),
                 initializer=self._initializer,
                 trainable=True,
             )
+            weights = [w_group, w_pool, b_pool]
+        return weights
 
-    def aggregate_neighbours(self, x_neigh, **kwargs):
+    def group_aggregate(self, x_group, group_idx=0):
         """
-        Aggregates the neighbour tensors by max-pooling of neighbours
-
+        Aggregates the group tensors by max-pooling of neighbours
+        
         Args:
-            x_neigh (Tensor): Neighbour tensor of shape (n_batch, n_head, n_neighbour, n_feat)
-
+            x_group (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
+            group_idx (int, optional): Group index.
+        
         Returns:
-            Aggregated neighbour tensor of shape (n_batch, n_head, n_feat)
+            [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
-        # Pass neighbour features through a dense layer with self.w_pool, self.b_pool
-        xw_neigh = self.hidden_act(K.dot(x_neigh, self.w_pool) + self.b_pool)
+        if group_idx == 0:
+            # Do not aggregate features for head nodes
+            x_agg = K.dot(x_group, self.w_group[0])
 
-        # Take max of this tensor over neighbour dimension
-        neigh_agg = K.max(xw_neigh, axis=2)
+        else:
+            w_g, w_pool, b_pool = self.w_group[group_idx]
 
-        # Final output is a dense layer over the aggregated tensor
-        from_neigh = K.dot(neigh_agg, self.w_neigh)
-        return from_neigh
+            # Pass neighbour features through a dense layer with w_pool, b_pool
+            xw_neigh = self.hidden_act(K.dot(x_group, w_pool) + b_pool)
+
+            # Take max of this tensor over neighbour dimension
+            x_agg = K.max(xw_neigh, axis=2)
+
+            # Final output is a dense layer over the aggregated tensor
+            x_agg = K.dot(x_agg, w_g)
+        return x_agg
 
 
 class MeanPoolingAggregator(GraphSAGEAggregator):
@@ -394,59 +399,72 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
         self.hidden_dim = self.output_dim
         self.hidden_act = activations.get("relu")
 
-    def _build_neighbour_weights(self, input_shape):
+    def _build_group_weights(self, in_shape, out_size, group_idx=0):
         """
-        Builds layer
+        Builds the weight tensor(s) corresponding to the features of the input groups.
 
         Args:
-            input_shape (list of list of int): Shape of input tensors for self
-                and neighbour features
+            in_shape (list of int): Shape of input tensor for single group
+            out_size (int): The size of the output vector for this group
+            group_idx (int): The index of the input group
 
         """
-        if self._build_mlp_only:
-            self.w_neigh = None
-            self.w_pool = None
-            self.b_pool = None
-
+        if group_idx == 0:
+            weights = self.add_weight(
+                name=f"w_g{group_idx}",
+                shape=(in_shape[-1], out_size),
+                initializer=self._initializer,
+                trainable=True,
+            )
         else:
-            self.w_neigh = self.add_weight(
-                name="w_neigh",
-                shape=(self.hidden_dim, self.weight_output_size()),
+            w_group = self.add_weight(
+                name=f"w_g{group_idx}",
+                shape=(self.hidden_dim, out_size),
                 initializer=self._initializer,
                 trainable=True,
             )
-            self.w_pool = self.add_weight(
-                name="w_pool",
-                shape=(input_shape[1][3], self.hidden_dim),
+            w_pool = self.add_weight(
+                name=f"w_pool_g{group_idx}",
+                shape=(in_shape[-1], self.hidden_dim),
                 initializer=self._initializer,
                 trainable=True,
             )
-            self.b_pool = self.add_weight(
-                name="b_pool",
+            b_pool = self.add_weight(
+                name=f"b_pool_g{group_idx}",
                 shape=(self.hidden_dim,),
                 initializer=self._initializer,
                 trainable=True,
             )
+            weights = [w_group, w_pool, b_pool]
+        return weights
 
-    def aggregate_neighbours(self, x_neigh, **kwargs):
+    def group_aggregate(self, x_group, group_idx=0):
         """
-        Aggregates the neighbour tensors by mean-pooling of neighbours
-
+        Aggregates the group tensors by mean-pooling of neighbours
+        
         Args:
-            x_neigh (Tensor): Neighbour tensor of shape (n_batch, n_head, n_neighbour, n_feat)
-
+            x_group (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
+            group_idx (int, optional): Group index.
+        
         Returns:
-            Aggregated neighbour tensor of shape (n_batch, n_head, n_feat)
+            [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
-        # Pass neighbour features through a dense layer with self.hidden_act activations
-        xw_neigh = self.hidden_act(K.dot(x_neigh, self.w_pool) + self.b_pool)
+        if group_idx == 0:
+            # Do not aggregate features for head nodes
+            x_agg = K.dot(x_group, self.w_group[0])
 
-        # Aggregate over neighbour activations using mean
-        neigh_agg = K.mean(xw_neigh, axis=2)
+        else:
+            w_g, w_pool, b_pool = self.w_group[group_idx]
 
-        # Final output is a dense layer over the aggregated tensor
-        from_neigh = K.dot(neigh_agg, self.w_neigh)
-        return from_neigh
+            # Pass neighbour features through a dense layer with w_pool, b_pool
+            xw_neigh = self.hidden_act(K.dot(x_group, w_pool) + b_pool)
+
+            # Take max of this tensor over neighbour dimension
+            x_agg = K.mean(xw_neigh, axis=2)
+
+            # Final output is a dense layer over the aggregated tensor
+            x_agg = K.dot(x_agg, w_g)
+        return x_agg
 
 
 class AttentionalAggregator(GraphSAGEAggregator):
@@ -466,74 +484,158 @@ class AttentionalAggregator(GraphSAGEAggregator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # How can we expose these options to the user?
+        # TODO: How can we expose these options to the user?
+        self.hidden_dim = self.output_dim
         self.attn_act = LeakyReLU(0.2)
 
-    def weight_output_size(self):
-        return self.output_dim
+    def _build_group_weights(self, in_shape, out_size, group_idx=0):
+        """
+        Builds the weight tensor(s) corresponding to the features of the input groups.
 
-    def _build_neighbour_weights(self, input_shape):
-        self.a_self = self.add_weight(
-            name="a_self",
-            shape=(self.output_dim, 1),
-            initializer=self._initializer,
-            trainable=True,
-        )
+        Args:
+            in_shape (list of int): Shape of input tensor for single group
+            out_size (int): The size of the output vector for this group
+            group_idx (int): The index of the input group
 
-        if self._build_mlp_only:
-            self.a_neigh = None
+        """
+        if group_idx == 0:
+            print(out_size)
+            if out_size > 0:
+                weights = self.add_weight(
+                    name=f"w_self",
+                    shape=(in_shape[-1], out_size),
+                    initializer=self._initializer,
+                    trainable=True,
+                )
+            else:
+                weights = None
+
         else:
-            self.a_neigh = self.add_weight(
-                name="a_neigh",
-                shape=(self.output_dim, 1),
+            w_g = self.add_weight(
+                name=f"w_g{group_idx}",
+                shape=(in_shape[-1], out_size),
                 initializer=self._initializer,
                 trainable=True,
             )
+            w_attn_s = self.add_weight(
+                name=f"w_attn_s{group_idx}",
+                shape=(out_size, 1),
+                initializer=self._initializer,
+                trainable=True,
+            )
+            w_attn_g = self.add_weight(
+                name=f"w_attn_g{group_idx}",
+                shape=(out_size, 1),
+                initializer=self._initializer,
+                trainable=True,
+            )
+            weights = [w_g, w_attn_s, w_attn_g]
+        return weights
 
-    def call(self, x, **kwargs):
+    def calculate_group_sizes(self, input_shape):
         """
-        Apply aggregator on input tensors, x
+        Calculates the output size for each input group. The results are stored in two variables:
+            self.included_weight_groups: if the corresponding entry is True then the input group
+                is valid and should be used.
+            self.weight_sizes: the size of the output from this group.
+
+        The AttentionalAggregator is implemented to not use the first (head node) group. This makes
+        the implmentation different from other aggregators.
+
+        Args:
+            input_shape (list of list of int): Shape of input tensors for self
+                and neighbour features
+        """
+        # If the neighbours are zero-dimensional for any of the shapes
+        # in the input, do not use the input group in the model.
+        self.included_weight_groups = [
+            all(dim != 0 for dim in group_shape) for group_shape in input_shape
+        ]
+
+        # The total number of enabled input groups
+        num_groups = np.sum(self.included_weight_groups) - 1
+
+        # Calculate the dimensionality of each group, and put remainder into the first group
+        # with non-zero dimensions, which should be the head node group.
+        group_output_dim = self.output_dim // num_groups
+        remainder_dim = self.output_dim - num_groups * group_output_dim
+        weight_dims = []
+        for g in self.included_weight_groups:
+            if g:
+                group_dim = group_output_dim + remainder_dim
+                remainder_dim = 0
+            else:
+                group_dim = 0
+            weight_dims.append(group_dim)
+
+        # We do not assign any features to the head node group, unless this is the only group.
+        if num_groups > 1:
+            weight_dims[0] = 0
+        self.weight_dims = weight_dims
+
+    def call(self, inputs, **kwargs):
+        """
+        Apply aggregator on the input tensors, `inputs`
 
         Args:
           x (List[Tensor]): Tensors giving self and neighbour features
                 x[0]: self Tensor (batch_size, head size, feature_size)
-                x[1]: neighbour Tensor (batch_size, head size, neighbours, feature_size)
+                x[k>0]: group Tensors for neighbourhood (batch_size, head size, neighbours, feature_size)
 
         Returns:
             Keras Tensor representing the aggregated embeddings in the input.
 
         """
-        if self._build_mlp_only:
-            return self.apply_mlp(x[0], **kwargs)
+        # We require the self group to be included to calculate attention
+        if not self.included_weight_groups[0]:
+            raise ValueError("The head node group must have non-zero dimension")
 
-        # Calculate features for self & neighbours
-        xw_self = K.expand_dims(K.dot(x[0], self.w_self), axis=2)
-        xw_neigh = K.dot(x[1], self.w_self)
+        # If a neighbourhood dimension exists for the group, aggregate over the neighbours
+        # otherwise create a simple layer.
+        x_self = inputs[0]
+        group_sources = []
+        for ii, x_g in enumerate(inputs[1:]):
+            group_idx = ii + 1
+            if not self.included_weight_groups[group_idx]:
+                continue
 
-        # Concatenate self vector to neighbour vectors
-        # Shape is (n_b, n_h, n_neigh+1, n_feat)
-        xw_all = K.concatenate([xw_self, xw_neigh], axis=2)
+            # Get the weights for this group
+            w_g, w_attn_s, w_attn_g = self.w_group[group_idx]
 
-        # Calculate attention
-        attn_self = K.dot(xw_self, self.a_self)  # (n_b, n_h, 1)
-        attn_neigh = K.dot(xw_all, self.a_neigh)  # (n_b, n_h, n_neigh+1, 1)
+            # Group transform for self & neighbours
+            xw_self = K.expand_dims(K.dot(x_self, w_g), axis=2)
+            xw_neigh = K.dot(x_g, w_g)
 
-        # Add self and neighbour attn and apply activation
-        # Note: This broadcasts to (n_b, n_h, n_neigh + 1, 1)
-        attn_u = self.attn_act(attn_self + attn_neigh)
+            # Concatenate self vector to neighbour vectors
+            # Shape is (n_b, n_h, n_neigh+1, n_out[ii])
+            xw_all = K.concatenate([xw_self, xw_neigh], axis=2)
 
-        # Attn coefficients, softmax over the neighbours
-        attn = K.softmax(attn_u, axis=2)
+            # Calculate group attention
+            attn_self = K.dot(xw_self, w_attn_s)  # (n_b, n_h, 1)
+            attn_neigh = K.dot(xw_all, w_attn_g)  # (n_b, n_h, n_neigh+1, 1)
 
-        # Multiply attn coefficients by neighbours (and self) and aggregate
-        h_out = K.sum(attn * xw_all, axis=2)
+            # Add self and neighbour attn and apply activation
+            # Note: This broadcasts to (n_b, n_h, n_neigh + 1, 1)
+            attn_u = self.attn_act(attn_self + attn_neigh)
+
+            # Attn coefficients, softmax over the neighbours
+            attn = K.softmax(attn_u, axis=2)
+
+            # Multiply attn coefficients by neighbours (and self) and aggregate
+            h_out = K.sum(attn * xw_all, axis=2)
+            group_sources.append(h_out)
+
+        # If there are no groups with features built, fallback to a MLP on the head node features
+        if not group_sources:
+            group_sources = [K.dot(x_self, self.w_group[0])]
+
+        # Concatenate or sum the outputs from all groups
+        h_out = K.concatenate(group_sources, axis=2)
 
         if self.has_bias:
-            h_out = self.act(h_out + self.bias)
-        else:
-            h_out = self.act(h_out)
+            h_out = h_out + self.bias
 
-        return h_out
+        return self.act(h_out)
 
 
 class GraphSAGE:
@@ -571,7 +673,7 @@ class GraphSAGE:
         bias=True,
         dropout=0.0,
         normalize="l2",
-        **kwargs
+        **kwargs,
     ):
         # Set the normalization layer used in the model
         if normalize == "l2":
@@ -896,7 +998,6 @@ class DirectedGraphSAGE(GraphSAGE):
                 output_dim=self.layer_sizes[i],
                 bias=self.bias,
                 act="relu" if i < max_hops - 1 else "linear",
-                neigh_dim=2,
             )
             for i in range(max_hops)
         ]
@@ -962,23 +1063,20 @@ class DirectedGraphSAGE(GraphSAGE):
         out_layer = Reshape(K.int_shape(out_layer)[2:])(out_layer)
         return self._normalization(out_layer)
 
-    def _compute_input_sizes(self) -> List[int]:
+    def _compute_input_sizes(self):
         # Each hop has to sample separately from both the in-nodes
         # and the out-nodes. This gives rise to a binary tree of 'slots'.
         # Storage for the total (cumulative product) number of nodes sampled
         # at the corresponding neighbourhood for each slot:
-        num_nodes = [0] * self.max_slots
-        num_nodes[0] = 1
-        # Storage for the number of hops to reach
-        # the corresponding neighbourhood for each slot:
-        num_hops = [0] * self.max_slots
-        for slot in range(1, self.max_slots):
-            parent_slot = (slot + 1) // 2 - 1
-            i = num_hops[parent_slot]
-            num_hops[slot] = i + 1
-            num_nodes[slot] = (
-                self.in_samples[i] if slot % 2 == 1 else self.out_samples[i]
-            ) * num_nodes[parent_slot]
+        num_nodes = [1] + [
+            np.product(
+                [
+                    self.in_samples[kk] if d == "0" else self.out_samples[kk]
+                    for kk, d in enumerate(np.binary_repr(ii + 1)[1:])
+                ]
+            )
+            for ii in range(1, self.max_slots)
+        ]
         return num_nodes
 
     def node_model(self):

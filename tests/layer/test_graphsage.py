@@ -21,7 +21,14 @@ GraphSAGE tests
 """
 from stellargraph.core.graph import StellarGraph
 from stellargraph.mapper.node_mappers import GraphSAGENodeGenerator
-from stellargraph.layer.graphsage import *
+from stellargraph.layer.graphsage import (
+    GraphSAGE,
+    DirectedGraphSAGE,
+    MeanAggregator,
+    MaxPoolingAggregator,
+    MeanPoolingAggregator,
+    AttentionalAggregator,
+)
 
 import keras
 import numpy as np
@@ -47,14 +54,87 @@ def example_graph_1(feature_size=None):
         return StellarGraph(G)
 
 
+# Mean aggregator tests
+def test_mean_agg_constructor():
+    agg = MeanAggregator(2)
+    assert agg.output_dim == 2
+    assert not agg.has_bias
+
+    # Check config
+    config = agg.get_config()
+    assert config["output_dim"] == 2
+    assert config["bias"] is False
+    assert config["act"] == "relu"
+
+
+def test_mean_agg_constructor_1():
+    agg = MeanAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
+    assert agg.output_dim == 4
+    assert agg.has_bias
+    assert agg.act(2) == 3
+
+
+def test_mean_agg_apply():
+    agg = MeanAggregator(5, bias=True, act=lambda x: x)
+    agg._initializer = "ones"
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 2, 2))
+    out = agg([inp1, inp2])
+
+    assert agg.weight_dims == [3, 2]
+
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 2, 5, 5]]])
+    assert expected == pytest.approx(actual)
+
+
+def test_mean_agg_apply_groups():
+    agg = MeanAggregator(11, bias=True, act=lambda x: x)
+    agg._initializer = "ones"
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 2, 2))
+    inp3 = keras.Input(shape=(1, 2, 2))
+    out = agg([inp1, inp2, inp3])
+
+    assert agg.weight_dims == [5, 3, 3]
+
+    model = keras.Model(inputs=[inp1, inp2, inp3], outputs=out)
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+    x3 = np.array([[[[5, 5], [4, 4]]]])
+
+    actual = model.predict([x1, x2, x3])
+    print(actual)
+
+    expected = np.array([[[2] * 5 + [5] * 3 + [9] * 3]])
+    assert expected == pytest.approx(actual)
+
+
+def test_mean_agg_zero_neighbours():
+    agg = MeanAggregator(4, bias=False, act=lambda x: x)
+    agg._initializer = "ones"
+
+    inp1 = keras.Input(shape=(1, 2))
+    inp2 = keras.Input(shape=(1, 0, 2))
+
+    out = agg([inp1, inp2])
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+
+    x1 = np.array([[[1, 1]]])
+    x2 = np.zeros((1, 1, 0, 2))
+
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 2, 2, 2]]])
+    assert expected == pytest.approx(actual)
+
+
 # MaxPooling aggregator tests
-
-
 def test_maxpool_agg_constructor():
     agg = MaxPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
-    assert agg.node_output_dim == 1
-    assert agg.neighbour_output_dim == 1
     assert agg.hidden_dim == 2
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
@@ -70,8 +150,6 @@ def test_maxpool_agg_constructor():
 def test_maxpool_agg_constructor_1():
     agg = MaxPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
-    assert agg.node_output_dim == 2
-    assert agg.neighbour_output_dim == 2
     assert agg.hidden_dim == 4
     assert agg.has_bias
     assert agg.act(2) == 3
@@ -85,17 +163,19 @@ def test_maxpool_agg_apply():
     inp1 = keras.Input(shape=(1, 2))
     # Neighbour features
     inp2 = keras.Input(shape=(1, 2, 2))
+    out = agg([inp1, inp2])
+
+    # Check sizes
+    assert agg.weight_dims == [1, 1]
 
     # Numerical test values
     x1 = np.array([[[1, 1]]])
     x2 = np.array([[[[2, 2], [3, 3]]]])
+
     # Agg output:
-    # neigh_agg = max(relu(x2 · ones(2x2)) + 1, axis=1)
-    #   = max([[5,5],[7,7]]) = [[7,7]]
+    # neigh_agg = max(relu(x2 · ones(2x2)) + 1, axis=1) = max([[5,5],[7,7]]) = [[7,7]]
     # from_self = K.dot(x1, ones) = [[2]]
     # from_neigh = K.dot(neigh_agg, ones) = [[14]]
-
-    out = agg([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
     actual = model.predict([x1, x2])
     expected = np.array([[[2, 14]]])
@@ -122,13 +202,9 @@ def test_maxpool_agg_zero_neighbours():
 
 
 # MeanPooling aggregator tests
-
-
 def test_meanpool_agg_constructor():
     agg = MeanPoolingAggregator(2, bias=False)
     assert agg.output_dim == 2
-    assert agg.node_output_dim == 1
-    assert agg.neighbour_output_dim == 1
     assert agg.hidden_dim == 2
     assert not agg.has_bias
     assert agg.act.__name__ == "relu"
@@ -137,15 +213,13 @@ def test_meanpool_agg_constructor():
     # Check config
     config = agg.get_config()
     assert config["output_dim"] == 2
-    assert config["bias"] == False
+    assert config["bias"] is False
     assert config["act"] == "relu"
 
 
 def test_meanpool_agg_constructor_1():
     agg = MeanPoolingAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
     assert agg.output_dim == 4
-    assert agg.node_output_dim == 2
-    assert agg.neighbour_output_dim == 2
     assert agg.hidden_dim == 4
     assert agg.has_bias
     assert agg.act(2) == 3
@@ -160,16 +234,21 @@ def test_meanpool_agg_apply():
     # Neighbour features
     inp2 = keras.Input(shape=(1, 2, 2))
 
+    out = agg([inp1, inp2])
+
+    # Check sizes
+    assert agg.weight_dims == [1, 1]
+
     # Numerical test values
     x1 = np.array([[[1, 1]]])
     x2 = np.array([[[[2, 2], [3, 3]]]])
+
     # Agg output:
     # neigh_agg = mean(relu(x2 · ones(2x2)) + 1, axis=1)
     #   = mean([[5,5],[7,7]]) = [[6,6]]
     # from_self = K.dot(x1, ones) = [[2]]
     # from_neigh = K.dot(neigh_agg, ones) = [[12]]
 
-    out = agg([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
     actual = model.predict([x1, x2])
     expected = np.array([[[2, 12]]])
@@ -183,97 +262,13 @@ def test_meanpool_agg_zero_neighbours():
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 0, 2))
-
     out = agg([inp1, inp2])
+
+    # Now we have an input shape with a 0, the attention model switches to
+    # a MLP and the first group will have non-zero output size.
+    assert agg.weight_dims == [4, 0]
+
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
-
-    x1 = np.array([[[1, 1]]])
-    x2 = np.zeros((1, 1, 0, 2))
-
-    actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 2, 2]]])
-    assert expected == pytest.approx(actual)
-
-
-# Mean aggregator tests
-def test_mean_agg_constructor():
-    agg = MeanAggregator(2)
-    assert agg.output_dim == 2
-    assert agg.node_output_dim == 1
-    assert agg.neighbour_output_dim == 1
-    assert not agg.has_bias
-
-    # Check config
-    config = agg.get_config()
-    assert config["output_dim"] == 2
-    assert config["bias"] == False
-    assert config["act"] == "relu"
-
-
-def test_mean_agg_constructor_1():
-    agg = MeanAggregator(output_dim=4, bias=True, act=lambda x: x + 1)
-    assert agg.output_dim == 4
-    assert agg.node_output_dim == 2
-    assert agg.neighbour_output_dim == 2
-    assert agg.has_bias
-    assert agg.act(2) == 3
-
-
-def test_mean_agg_constructor_2():
-    # Since we can now aggregate over more than one set of neighbours
-    # (e.g. in directed GraphSAGE), we must handle odd dimensions.
-    agg = MeanAggregator(11)
-    assert agg.output_dim == 11
-    assert agg.node_output_dim == 6
-    assert agg.neighbour_output_dim == 5
-    assert not agg.has_bias
-
-    # Check config
-    config = agg.get_config()
-    assert config["output_dim"] == 11
-    assert config["bias"] == False
-    assert config["act"] == "relu"
-
-
-def test_mean_agg_constructor_3():
-    # Ditto above, re multiple neighbour sets.
-    agg = MeanAggregator(12, neigh_dim=3)
-    assert agg.output_dim == 12
-    assert agg.node_output_dim == 3
-    assert agg.neighbour_output_dim == 3
-    assert not agg.has_bias
-
-    # Check config
-    config = agg.get_config()
-    assert config["output_dim"] == 12
-    assert config["bias"] == False
-    assert config["act"] == "relu"
-
-
-def test_mean_agg_apply():
-    agg = MeanAggregator(4, bias=True, act=lambda x: x)
-    agg._initializer = "ones"
-    inp1 = keras.Input(shape=(1, 2))
-    inp2 = keras.Input(shape=(1, 2, 2))
-    out = agg([inp1, inp2])
-    model = keras.Model(inputs=[inp1, inp2], outputs=out)
-    x1 = np.array([[[1, 1]]])
-    x2 = np.array([[[[2, 2], [3, 3]]]])
-    actual = model.predict([x1, x2])
-    expected = np.array([[[2, 2, 5, 5]]])
-    assert expected == pytest.approx(actual)
-
-
-def test_mean_agg_zero_neighbours():
-    agg = MeanAggregator(4, bias=False, act=lambda x: x)
-    agg._initializer = "ones"
-
-    inp1 = keras.Input(shape=(1, 2))
-    inp2 = keras.Input(shape=(1, 0, 2))
-
-    out = agg([inp1, inp2])
-    model = keras.Model(inputs=[inp1, inp2], outputs=out)
-
     x1 = np.array([[[1, 1]]])
     x2 = np.zeros((1, 1, 0, 2))
 
@@ -293,7 +288,7 @@ def test_attn_agg_constructor():
     # Check config
     config = agg.get_config()
     assert config["output_dim"] == 2
-    assert config["bias"] == False
+    assert config["bias"] is False
     assert config["act"] == "relu"
 
 
@@ -305,14 +300,19 @@ def test_attn_agg_constructor_1():
 
 
 def test_attn_agg_apply():
-    agg = AttentionalAggregator(2, bias=True, act="linear")
+    agg = AttentionalAggregator(2, bias=False, act="linear")
     agg._initializer = "ones"
-    agg.attn_act = keras.activations.get("relu")
+    agg.attn_act = keras.activations.get("linear")
 
     # Self features
     inp1 = keras.Input(shape=(1, 2))
     # Neighbour features
     inp2 = keras.Input(shape=(1, 2, 2))
+    out = agg([inp1, inp2])
+
+    # The AttentionalAggregator implmentation is a hack at the moment, it doesn't
+    # assign any dimensions in the output to head-node features.
+    assert agg.weight_dims == [0, 2]
 
     # Numerical test values
     x1 = np.array([[[1, 1]]])
@@ -320,14 +320,13 @@ def test_attn_agg_apply():
 
     # Agg output:
     # hs = relu(x1 · ones(2x2)) = [2,2]
-    # hn = relu(x2 · ones(2x2)) =  [[2,2], [4,4],[6,6]]
+    # hn = relu(x2 · ones(2x2)) =  [[2,2], [4,4], [6,6]]
     # attn_u = ones(2) · hs +  ones(2) · hn = [8, 12, 16]
     # attn = softmax(attn_u) = [3.3e-4, 1.8e-4, 9.81e-1]
     # hout =  attn · hn = [5.96, 5.96]
-
-    out = agg([inp1, inp2])
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
     actual = model.predict([x1, x2])
+
     expected = np.array([[[5.963, 5.963]]])
 
     assert expected == pytest.approx(actual, rel=1e-4)
