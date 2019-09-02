@@ -555,22 +555,24 @@ class AttentionalAggregator(GraphSAGEAggregator):
         # The total number of enabled input groups
         num_groups = np.sum(self.included_weight_groups) - 1
 
-        # Calculate the dimensionality of each group, and put remainder into the first group
-        # with non-zero dimensions, which should be the head node group.
-        group_output_dim = self.output_dim // num_groups
-        remainder_dim = self.output_dim - num_groups * group_output_dim
-        weight_dims = []
-        for g in self.included_weight_groups:
-            if g:
-                group_dim = group_output_dim + remainder_dim
-                remainder_dim = 0
-            else:
-                group_dim = 0
-            weight_dims.append(group_dim)
-
         # We do not assign any features to the head node group, unless this is the only group.
-        if num_groups > 1:
-            weight_dims[0] = 0
+        if num_groups == 0:
+            weight_dims = [self.output_dim] + [0] * (len(input_shape) - 1)
+
+        else:
+            # Calculate the dimensionality of each group, and put remainder into the first group
+            # with non-zero dimensions.
+            group_output_dim = self.output_dim // num_groups
+            remainder_dim = self.output_dim - num_groups * group_output_dim
+            weight_dims = [0]
+            for g in self.included_weight_groups[1:]:
+                if g:
+                    group_dim = group_output_dim + remainder_dim
+                    remainder_dim = 0
+                else:
+                    group_dim = 0
+                weight_dims.append(group_dim)
+
         self.weight_dims = weight_dims
 
     def call(self, inputs, **kwargs):
