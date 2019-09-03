@@ -39,8 +39,8 @@ return correct values.
 Supported data input formats:
     - Pandas array
     - NumPy array
-    - collection of objects with fields
-    - collection of indexable objects
+    - [TODO] collection of objects with fields
+    - [TODO] collection of indexable objects
     - dictionary of edge type -> edge data pairs.
 
 Required attributes:
@@ -90,7 +90,7 @@ class EdgeDatum(tuple):
         return tuple.__new__(EdgeDatum, (source_id, target_id, edge_id, edge_type))
 
     def __repr__(self):
-        return "{}(src={}, dst={}, id={}, type={})".format(
+        return "{}(source={}, target={}, id={}, type={})".format(
             self.__class__.__name__, *self
         )
 
@@ -500,7 +500,7 @@ def to_edge_data(
     Args:
         data: The edge data in one of the standard formats.
         is_directed: <bool> Indicates whether the supplied edges are to
-            be interpreted as directed or undirected.
+            be interpreted as directed (True) or undirected (False).
         source_id: The position of the source node identifier.
         target_id: The position of the target node identifier.
         edge_id: The position of the edge identifier.
@@ -512,8 +512,9 @@ def to_edge_data(
     Returns:
         An EdgeData instance.
     """
-    if data is None:
-        return NoEdgeData(is_directed, default_edge_type=default_edge_type)
+    # Shortcut for empty data:
+    if hasattr(data, "__len__") and len(data) == 0:
+        return NoEdgeData(is_directed, default_edge_type)
     if isinstance(data, dict):
         return TypeDictEdgeData(
             data, is_directed, source_id, target_id, edge_id, default_edge_type
@@ -538,3 +539,16 @@ def to_edge_data(
             edge_type,
             default_edge_type,
         )
+
+
+def no_edge_data(is_directed=False, default_edge_type=None):
+    """
+    Args:
+        is_directed: <bool> Optionally indicates whether the supplied edges are to
+            be interpreted as directed (True) or undirected (False; default).
+        default_edge_type: The optional type to assign to edges without an explicit type.
+
+    Returns:
+        An EdgeData instance.
+    """
+    return NoEdgeData(is_directed, default_edge_type)
