@@ -271,7 +271,7 @@ def test_numpy_data_implicit():
     # Explicit edge id and type
     data = np.array([(1, 2), (2, 3), (3, 4), (4, 5)])
     ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
-    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_homogeneous()
     assert ed.num_edges() == 4
@@ -290,7 +290,7 @@ def test_numpy_data_implicit():
 def test_numpy_no_data():
     data = np.reshape([], (0, 2))
     ed = NumPyEdgeData(data, IS_DIRECTED, source_id=0, target_id=1)
-    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_homogeneous()
     assert ed.num_edges() == 0
@@ -403,7 +403,7 @@ def test_iterable_data_implicit():
     # Explicit edge id and type
     data = [(1, 2), (2, 3), (3, 4), (4, 5)]
     ed = to_edge_data(data, IS_DIRECTED, 0, 1)
-    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_homogeneous()
     assert ed.num_edges() == 4
@@ -422,7 +422,7 @@ def test_iterable_data_implicit():
 def test_iterable_no_data():
     data = []
     ed = IterableEdgeData(data, IS_DIRECTED, 0, 1)
-    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_homogeneous()
     assert ed.num_edges() == 0
@@ -482,7 +482,7 @@ def test_iterable_data_implicit_obj():
 
     data = [MyObj(1, 2), MyObj(2, 3), MyObj(3, 4), MyObj(4, 5)]
     ed = to_edge_data(data, IS_DIRECTED, "src_id", "dst_id")
-    assert ed._edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_unidentified()
     assert ed.is_untyped()

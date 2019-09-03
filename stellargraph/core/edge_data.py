@@ -61,7 +61,7 @@ Attribute specification:
     - For a collection of dictionary objects, it will be a key value.
     - For a collection of other indexable objects (such as a list of lists
         or a list of tuples, etc.), the 'position' will be an integer index value.
-    - For a edge-type dictionary of edge data objects, the source_id, target_id
+    - For an edge-type dictionary of edge data objects, the source_id, target_id
         and edge_id positions are assumed to be the same for each block of
         edge data.
 """
@@ -177,7 +177,7 @@ class EdgeData:
 
     def is_identified(self) -> bool:
         """
-        Indicates whether the edge identifies are explicit (True) or implicit (False).
+        Indicates whether the edge identifiers are explicit (True) or implicit (False).
 
         Returns:
              <bool> The Boolean flag.
@@ -186,7 +186,7 @@ class EdgeData:
 
     def is_unidentified(self) -> bool:
         """
-        Indicates whether the edge identifies are implicit (True) or explicit (False).
+        Indicates whether the edge identifiers are implicit (True) or explicit (False).
 
         Returns:
              <bool> The Boolean flag.
@@ -233,9 +233,9 @@ class EdgeData:
         """
         return not self._is_typed
 
-    def _edge_type(self, edge_type=None):
+    def default_edge_type(self, edge_type=None):
         """
-        Private method to supply the default edge type if
+        Helper method to supply the default edge type if
         one is not specified.
 
         Args:
@@ -312,7 +312,7 @@ class EdgeData:
 
 class RowEdgeData(EdgeData):
     """
-    Absract wrapper for an iterable collection of edges.
+    Abstract wrapper for an iterable collection of edges.
     It is assumed that it is more efficient here to
     iterate over all edges, rather than just look up edges
     by an implicit index.
@@ -382,7 +382,7 @@ class NoEdgeData(EdgeData):
 
 class TypeDictEdgeData(RowEdgeData):
     """
-    Wrapper for a dictionary of edge type -> edge data pairs.
+    Wrapper for a dictionary of edge-type -> edge-data pairs.
 
     Note that if edge_id is specified, the edge identifiers are
     assumed to be globally unique across all blocks of edge data;
@@ -406,7 +406,7 @@ class TypeDictEdgeData(RowEdgeData):
         edge_types = set()
         num_edges = 0
         for edge_type, edge_data in data.items():
-            edge_type = self._edge_type(edge_type)  # in case of None
+            edge_type = self.default_edge_type(edge_type)  # in case of None
             if edge_type in _data:  # in case of None and default
                 raise ValueError(
                     "Edge types contain both None and default '{}'".format(edge_type)
@@ -504,7 +504,9 @@ class PandasEdgeData(RowEdgeData):
         source_id = row[self._src_idx]
         target_id = row[self._dst_idx]
         edge_id = None if self._id_idx < 0 else row[self._id_idx]
-        edge_type = self._edge_type(None if self._type_idx < 0 else row[self._type_idx])
+        edge_type = self.default_edge_type(
+            None if self._type_idx < 0 else row[self._type_idx]
+        )
         return EdgeDatum(source_id, target_id, edge_id, edge_type)
 
 
@@ -569,7 +571,7 @@ class NumPyEdgeData(RowEdgeData):
         source_id = self._data[row, self._src_idx]
         target_id = self._data[row, self._dst_idx]
         edge_id = None if self._id_idx < 0 else self._data[row, self._id_idx]
-        edge_type = self._edge_type(
+        edge_type = self.default_edge_type(
             None if self._type_idx < 0 else self._data[row, self._type_idx]
         )
         return EdgeDatum(source_id, target_id, edge_id, edge_type)
@@ -622,7 +624,7 @@ class IterableEdgeData(RowEdgeData):
         source_id = row[self._src_idx]
         target_id = row[self._dst_idx]
         edge_id = None if self._id_idx is None else row[self._id_idx]
-        edge_type = self._edge_type(
+        edge_type = self.default_edge_type(
             None if self._type_idx is None else row[self._type_idx]
         )
         return EdgeDatum(source_id, target_id, edge_id, edge_type)
@@ -631,7 +633,7 @@ class IterableEdgeData(RowEdgeData):
         source_id = getattr(row, self._src_idx)
         target_id = getattr(row, self._dst_idx)
         edge_id = None if self._id_idx is None else getattr(row, self._id_idx)
-        edge_type = self._edge_type(
+        edge_type = self.default_edge_type(
             None if self._type_idx is None else getattr(row, self._type_idx)
         )
         return EdgeDatum(source_id, target_id, edge_id, edge_type)
