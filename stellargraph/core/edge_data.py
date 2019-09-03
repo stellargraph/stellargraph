@@ -37,11 +37,12 @@ After a full pass through the edge data, these method are guaranteed to
 return correct values.
 
 Supported data input formats:
-    - Pandas array
+    - Pandas data-frame
     - NumPy array
-    - [TODO] collection of objects with fields
-    - [TODO] collection of indexable objects
-    - dictionary of edge type -> edge data pairs.
+    - dictionary of edge-type -> edge-data pairs
+    - collection of indexable objects,
+        e.g. list, tuple, dict, etc.
+    - collection of objects with fields.
 
 Required attributes:
     - is_directed: Indicates whether the supplied edges are to
@@ -67,12 +68,15 @@ Attribute specification:
 
 import pandas as pd
 import numpy as np
+import itertools as it
 
 
 # Useful constants:
 DEFAULT_EDGE_TYPE = "edge"
 IS_DIRECTED = True
 IS_UNDIRECTED = False
+IS_IDENTIFIED = True
+IS_UNIDENTIFIED = False
 IS_TYPED = True
 IS_UNTYPED = False
 IS_HETEROGENEOUS = True
@@ -86,11 +90,19 @@ USE_PANDAS_INDEX = -1
 
 
 class EdgeDatum(tuple):
+    """
+    Encapsulates a single edge containing:
+        - source_id: The identifier of the node from which the edge commences.
+        - target_id: The identifier of the node at which the edge terminates.
+        - edge_id: The identifier of the edge.
+        - edge_type: The type of the edge.
+    """
+
     def __new__(cls, source_id, target_id, edge_id, edge_type):
         return tuple.__new__(EdgeDatum, (source_id, target_id, edge_id, edge_type))
 
     def __repr__(self):
-        return "{}(source={}, target={}, id={}, type={})".format(
+        return "{}(source_id={}, target_id={}, edge_id={}, edge_type={})".format(
             self.__class__.__name__, *self
         )
 
@@ -119,16 +131,23 @@ class EdgeData:
     The base class for all edge data wrappers.
     """
 
-    def __init__(self, is_directed, is_typed, default_edge_type):
+    def __init__(self, is_directed, is_identified, is_typed, default_edge_type):
         """
+        Initialises the base edge data structure.
+
         Args:
-            is_directed: <bool> Indicates whether the supplied edges are to
+            is_directed: <bool> Indicates whether the edges are to
                 be interpreted as directed (True) or undirected (False).
-            is_typed: <bool> Indicates whether (True) or not (False)
-                there are explicit edge types.
-            default_edge_type: The optional type to assign to edges without an explicit type.
+            is_identified: <bool> Indicates whether the edges have
+                explicit identifiers (True), or will be assigned implicit
+                identifiers (False).
+            is_typed: <bool> Indicates whether the edges have explicit
+                types (True), or will be assigned the default edge type (False).
+            default_edge_type: The optional type to assign to edges without an explicit type
+                (defaults to the constant DEFAULT_EDGE_TYPE).
         """
         self._is_directed = is_directed
+        self._is_identified = is_identified
         self._is_typed = is_typed
         self._default_edge_type = (
             default_edge_type if default_edge_type is not None else DEFAULT_EDGE_TYPE
@@ -140,7 +159,7 @@ class EdgeData:
 
     def is_directed(self) -> bool:
         """
-        Indicates whether the edges are directed (if True) or undirected (if False).
+        Indicates whether the edges are directed (True) or undirected (False).
 
         Returns:
              <bool> The Boolean flag.
@@ -149,14 +168,32 @@ class EdgeData:
 
     def is_undirected(self) -> bool:
         """
-        Indicates whether the edges are undirected (if True) or directed (if False).
+        Indicates whether the edges are undirected (True) or directed (False).
 
         Returns:
              <bool> The Boolean flag.
         """
         return not self._is_directed
 
-    def is_heterogeneous(self) -> bool:
+    def is_identified(self) -> bool:
+        """
+        Indicates whether the edge identifies are explicit (True) or implicit (False).
+
+        Returns:
+             <bool> The Boolean flag.
+        """
+        return self._is_identified
+
+    def is_unidentified(self) -> bool:
+        """
+        Indicates whether the edge identifies are implicit (True) or explicit (False).
+
+        Returns:
+             <bool> The Boolean flag.
+        """
+        return not self._is_identified
+
+    def is_heterogeneous(self) -> bool or None:
         """
         Indicates whether the edge types are known to be heterogeneous
         (True) or homogeneous (False); if this status is currently unknown,
@@ -167,7 +204,7 @@ class EdgeData:
         """
         return self._is_heterogeneous
 
-    def is_homogeneous(self) -> bool:
+    def is_homogeneous(self) -> bool or None:
         """
         Indicates whether the edge types are known to be homogeneous
         (True) or heterogeneous (False); if this status is currently unknown,
@@ -178,20 +215,38 @@ class EdgeData:
         """
         return None if self._is_heterogeneous is None else not self._is_heterogeneous
 
+    def is_typed(self) -> bool:
+        """
+        Indicates whether the edges have explicit (True) or implicit (False) types.
+
+        Returns:
+             <bool> The Boolean flag.
+        """
+        return self._is_typed
+
+    def is_untyped(self) -> bool:
+        """
+        Indicates whether the edges have implicit (True) or explicit (False) types.
+
+        Returns:
+             <bool> The Boolean flag.
+        """
+        return not self._is_typed
+
     def _edge_type(self, edge_type=None):
         """
         Private method to supply the default edge type if
         one is not specified.
 
         Args:
-            event_type: The optional event type.
+            edge_type: The optional edge type.
 
         Returns:
             A defined edge type.
         """
         return self._default_edge_type if edge_type is None else edge_type
 
-    def edge_types(self) -> set:
+    def edge_types(self) -> set or None:
         """
         Obtains the (possibly empty) collection of distinct edge types.
 
@@ -215,7 +270,7 @@ class EdgeData:
         self._edge_types = edge_types
         self._is_heterogeneous = len(edge_types) > 1
 
-    def num_edges(self) -> int:
+    def num_edges(self) -> int or None:
         """
         Obtains the number of edges in the edge data.
 
@@ -252,6 +307,59 @@ class EdgeData:
 
 
 #############################################
+# Base class for iterable collections of edges:
+
+
+class RowEdgeData(EdgeData):
+    """
+    Absract wrapper for an iterable collection of edges.
+    It is assumed that it is more efficient here to
+    iterate over all edges, rather than just look up edges
+    by an implicit index.
+    """
+
+    def edges(self):
+        is_uncertain = self.num_edges() is None or self.is_typed()
+        if is_uncertain:
+            edge_types = set()
+        _edge_id = -1
+        for row in self._iter_rows():
+            _edge_id += 1
+            edge = self._get_edge(row)
+            if self.is_unidentified():
+                edge = edge.with_id(_edge_id)
+            if is_uncertain:
+                edge_types.add(edge.edge_type)
+            yield edge
+        if is_uncertain:
+            self._set_num_edges(_edge_id + 1)
+            self._set_edge_types(edge_types)
+
+    def _iter_rows(self):
+        """
+        A private method for obtaining an iterator or generator
+        over the collection of raw edge data.
+
+        Returns:
+            The iterator or generator.
+        """
+        raise NotImplementedError
+
+    def _get_edge(self, row):
+        """
+        A private method for obtaining an EdgeDatum
+        from the raw row of data.
+
+        Args:
+            row: The row of attributes for the given edge.
+
+        Returns:
+             An EdgeDatum representation of the edge.
+        """
+        raise NotImplementedError
+
+
+#############################################
 # Default class for no edge data:
 
 
@@ -261,7 +369,7 @@ class NoEdgeData(EdgeData):
     """
 
     def __init__(self, is_directed=False, default_edge_type=None):
-        super().__init__(is_directed, IS_UNTYPED, default_edge_type)
+        super().__init__(is_directed, IS_UNIDENTIFIED, IS_UNTYPED, default_edge_type)
         super()._set_num_edges(0)
 
     def edges(self):
@@ -272,21 +380,27 @@ class NoEdgeData(EdgeData):
 # Dictionary of edge type -> edge data pairs:
 
 
-class TypeDictEdgeData(EdgeData):
+class TypeDictEdgeData(RowEdgeData):
     """
     Wrapper for a dictionary of edge type -> edge data pairs.
 
     Note that if edge_id is specified, the edge identifiers are
     assumed to be globally unique across all blocks of edge data;
     otherwise, we assume the inferred identifiers for each block
-     are local to that block.
+     are local to that block, and will be discarded in favour of
+     globally unique identifiers.
     """
 
     def __init__(
-        self, data, is_directed, source_id, target_id, edge_id, default_edge_type
+        self,
+        data,
+        is_directed,
+        source_id,
+        target_id,
+        edge_id=None,
+        default_edge_type=None,
     ):
-        super().__init__(is_directed, IS_TYPED, default_edge_type)
-        self._is_local = edge_id is None
+        super().__init__(is_directed, edge_id is not None, IS_TYPED, default_edge_type)
         self._data = _data = {}
         is_determined = True
         edge_types = set()
@@ -312,35 +426,28 @@ class TypeDictEdgeData(EdgeData):
             self._set_num_edges(num_edges)
             self._set_edge_types(edge_types)
 
-    def edges(self):
-        is_uncertain = self.num_edges() is None
-        if is_uncertain:
-            edge_types = set()
-        _edge_id = -1
-        for edge_data in self._data.values():
-            for edge in edge_data.edges():
-                _edge_id += 1
-                if self._is_local:
-                    edge = edge.with_id(_edge_id)
-                if is_uncertain:
-                    edge_types.add(edge.edge_type)
-                yield edge
-        if is_uncertain:
-            self._set_num_edges(_edge_id + 1)
-            self._set_edge_types(edge_types)
+    def _iter_rows(self):
+        # XXX The dictionary values are EdgeData objects.
+        iters = [ed.edges() for ed in self._data.values()]
+        return it.chain(*iters)
+
+    def _get_edge(self, row):
+        # XXX A row is already an EdgeDatum object.
+        return row
 
 
-class PandasEdgeData(EdgeData):
+#############################################
+# Pandas data-frame of edge data:
+
+
+class PandasEdgeData(RowEdgeData):
     """
     Wrapper for a Pandas data-frame.
 
-    The edge identifiers are explicit (cf implicit) if
-    edge_id is (cf is not) specified. The edge identifiers
-    are taken from the Pandas index if edge_id is set to
-    USE_PANDAS_INDEX.
-
-    The edge types are explicit (cf implicit) if
-    edge_type is (cf is not) specified.
+    The edge identifiers are taken from the Pandas index
+    if edge_id is set to USE_PANDAS_INDEX; otherwise,
+    if edge_id is defined the identifiers are taken from the
+    specified column, or else are enumerated for each edge.
     """
 
     def __init__(
@@ -349,11 +456,13 @@ class PandasEdgeData(EdgeData):
         is_directed,
         source_id,
         target_id,
-        edge_id,
-        edge_type,
-        default_edge_type,
+        edge_id=None,
+        edge_type=None,
+        default_edge_type=None,
     ):
-        super().__init__(is_directed, edge_type is not None, default_edge_type)
+        super().__init__(
+            is_directed, edge_id is not None, edge_type is not None, default_edge_type
+        )
         self._set_num_edges(len(data))
         self._data = data
         col_names = list(data.columns)
@@ -370,55 +479,45 @@ class PandasEdgeData(EdgeData):
 
     @staticmethod
     def __validate_position(name, value, is_nullable, col_names):
+        # XXX The Pandas tuple has the index value at position 0,
+        # so we have to offset all column positions by +1.
         if value is None:
             if is_nullable:
-                return None
+                return -1
         elif isinstance(value, int):
             if name == "edge_id" and value == USE_PANDAS_INDEX:
-                return -1
+                return 0
             if 0 <= value < len(col_names):
-                return value
+                return value + 1
         elif isinstance(value, str):
             idx = col_names.index(value)
             if idx >= 0:
-                return idx
+                return idx + 1
         # Everything else is invalid
         raise ValueError("Invalid {}: {}".format(name, value))
 
-    def edges(self):
-        # Offset indices to match Pandas row object
-        source_idx = self._src_idx + 1
-        target_idx = self._dst_idx + 1
-        id_idx = -1 if self._id_idx is None else self._id_idx + 1
-        type_idx = -1 if self._type_idx is None else self._type_idx + 1
+    def _iter_rows(self):
+        return self._data.itertuples()
 
-        if type_idx >= 0:
-            edge_types = set()
-        _edge_id = -1
-        for row in self._data.itertuples():
-            _edge_id += 1
-            source_id = row[source_idx]
-            target_id = row[target_idx]
-            edge_id = _edge_id if id_idx < 0 else row[id_idx]
-            if type_idx >= 0:
-                edge_type = self._edge_type(row[type_idx])
-                edge_types.add(edge_type)
-            else:
-                edge_type = self._default_edge_type
-            yield EdgeDatum(source_id, target_id, edge_id, edge_type)
-        if type_idx >= 0:
-            self._set_edge_types(edge_types)
+    def _get_edge(self, row):
+        # XXX Row is a Pandas tuple.
+        source_id = row[self._src_idx]
+        target_id = row[self._dst_idx]
+        edge_id = None if self._id_idx < 0 else row[self._id_idx]
+        edge_type = self._edge_type(None if self._type_idx < 0 else row[self._type_idx])
+        return EdgeDatum(source_id, target_id, edge_id, edge_type)
 
 
-class NumPyEdgeData(EdgeData):
+#############################################
+# NumPy array of edge data:
+
+
+class NumPyEdgeData(RowEdgeData):
     """
     Wrapper for a NumPy array.
 
-    The edge identifiers are explicit (cf implicit) if
-    edge_id is (cf is not) specified.
-
-    The edge types are explicit (cf implicit) if
-    edge_type is (cf is not) specified.
+    If edge_id is defined then the identifiers are taken from the
+    specified column; otherwise they are enumerated for each edge.
     """
 
     def __init__(
@@ -427,14 +526,15 @@ class NumPyEdgeData(EdgeData):
         is_directed,
         source_id,
         target_id,
-        edge_id,
-        edge_type,
-        default_edge_type,
+        edge_id=None,
+        edge_type=None,
+        default_edge_type=None,
     ):
         if len(data.shape) != 2:
             raise ValueError("Only two-dimensional arrays are supported!")
-        is_heterogeneous = edge_type is not None and len(data) > 1
-        super().__init__(is_directed, edge_type is not None, default_edge_type)
+        super().__init__(
+            is_directed, edge_id is not None, edge_type is not None, default_edge_type
+        )
         self._set_num_edges(len(data))
         self._data = data
         num_cols = data.shape[1]
@@ -460,27 +560,81 @@ class NumPyEdgeData(EdgeData):
         # Everything else is invalid
         raise ValueError("Invalid {}: {}".format(name, value))
 
-    def edges(self):
-        source_idx = self._src_idx
-        target_idx = self._dst_idx
-        id_idx = self._id_idx
-        type_idx = self._type_idx
-        data = self._data
+    def _iter_rows(self):
+        # Pretend to iterate over the rows.
+        return range(len(self._data))
 
-        if type_idx >= 0:
-            edge_types = set()
-        for _edge_id in range(len(data)):
-            source_id = data[_edge_id, source_idx]
-            target_id = data[_edge_id, target_idx]
-            edge_id = _edge_id if id_idx < 0 else data[_edge_id, id_idx]
-            if type_idx >= 0:
-                edge_type = self._edge_type(data[_edge_id, type_idx])
-                edge_types.add(edge_type)
-            else:
-                edge_type = self._default_edge_type
-            yield EdgeDatum(source_id, target_id, edge_id, edge_type)
-        if type_idx >= 0:
-            self._set_edge_types(edge_types)
+    def _get_edge(self, row):
+        # XXX The row is just the implicit edge index.
+        source_id = self._data[row, self._src_idx]
+        target_id = self._data[row, self._dst_idx]
+        edge_id = None if self._id_idx < 0 else self._data[row, self._id_idx]
+        edge_type = self._edge_type(
+            None if self._type_idx < 0 else self._data[row, self._type_idx]
+        )
+        return EdgeDatum(source_id, target_id, edge_id, edge_type)
+
+
+#############################################
+# Iterable collection of edge data:
+
+
+class IterableEdgeData(RowEdgeData):
+    """
+    Wrapper for an iterable collection of edges that might or might
+    not have a predefined length.
+
+    The individual edge objects are assumed to have attributes that
+    are individually extractable via an index or a field.
+    """
+
+    def __init__(
+        self,
+        data,
+        is_directed,
+        source_id,
+        target_id,
+        edge_id=None,
+        edge_type=None,
+        default_edge_type=None,
+    ):
+        super().__init__(
+            is_directed, edge_id is not None, edge_type is not None, default_edge_type
+        )
+        if hasattr(data, "__len__"):
+            self._set_num_edges(len(data))
+        self._data = data
+        self._src_idx = source_id
+        self._dst_idx = target_id
+        self._id_idx = edge_id
+        self._type_idx = edge_type
+
+    def _iter_rows(self):
+        # XXX Assumes iterable edge data
+        return iter(self._data)
+
+    def _get_edge(self, row):
+        if hasattr(row, "__getitem__"):
+            return self._get_values_by_index(row)
+        return self._get_values_by_field(row)
+
+    def _get_values_by_index(self, row):
+        source_id = row[self._src_idx]
+        target_id = row[self._dst_idx]
+        edge_id = None if self._id_idx is None else row[self._id_idx]
+        edge_type = self._edge_type(
+            None if self._type_idx is None else row[self._type_idx]
+        )
+        return EdgeDatum(source_id, target_id, edge_id, edge_type)
+
+    def _get_values_by_field(self, row):
+        source_id = getattr(row, self._src_idx)
+        target_id = getattr(row, self._dst_idx)
+        edge_id = None if self._id_idx is None else getattr(row, self._id_idx)
+        edge_type = self._edge_type(
+            None if self._type_idx is None else getattr(row, self._type_idx)
+        )
+        return EdgeDatum(source_id, target_id, edge_id, edge_type)
 
 
 #############################################
@@ -539,10 +693,23 @@ def to_edge_data(
             edge_type,
             default_edge_type,
         )
+    if hasattr(data, "__iter__") or hasattr(data, "__getitem__"):
+        return IterableEdgeData(
+            data,
+            is_directed,
+            source_id,
+            target_id,
+            edge_id,
+            edge_type,
+            default_edge_type,
+        )
+    raise ValueError("Unknown edge data type: {}".format(type(data)))
 
 
 def no_edge_data(is_directed=False, default_edge_type=None):
     """
+    Obtains valid edge data for the case where there are no edges.
+
     Args:
         is_directed: <bool> Optionally indicates whether the supplied edges are to
             be interpreted as directed (True) or undirected (False; default).
