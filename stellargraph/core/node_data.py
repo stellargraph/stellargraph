@@ -65,13 +65,6 @@ import numpy as np
 
 # Useful constants:
 DEFAULT_NODE_TYPE = "node"
-IS_IDENTIFIED = True
-IS_UNIDENTIFIED = False
-IS_TYPED = True
-IS_UNTYPED = False
-IS_HETEROGENEOUS = True
-IS_HOMOGENEOUS = False
-IS_UNDETERMINED = None
 PANDAS_INDEX = -1
 SINGLE_COLUMN = -2
 
@@ -259,7 +252,10 @@ class NodeData:
             node_types: The computed node types.
         """
         self._node_types = node_types
-        self._is_heterogeneous = len(node_types) > 1
+        num_types = len(node_types)
+        self._is_heterogeneous = num_types > 1
+        self._is_typed = self._is_typed and num_types > 0
+        self._is_identified = self._is_identified and num_types > 0
 
     def num_nodes(self) -> int or None:
         """
@@ -280,14 +276,9 @@ class NodeData:
         """
         self._num_nodes = num_nodes
         if num_nodes == 0:
-            self._is_heterogeneous = False
-            self._node_types = set()
-            # Override the following for consistency with NoNodeData:
-            self._is_typed = False
-            self._is_identified = False
+            self._set_node_types(set())
         elif not self._is_typed:
-            self._is_heterogeneous = False
-            self._node_types = set([self._default_node_type])
+            self._set_node_types(set([self._default_node_type]))
 
     def nodes(self):
         """
@@ -366,7 +357,9 @@ class NoNodeData(NodeData):
     """
 
     def __init__(self, default_node_type=None):
-        super().__init__(IS_UNIDENTIFIED, IS_UNTYPED, default_node_type)
+        super().__init__(
+            is_identified=False, is_typed=False, default_node_type=default_node_type
+        )
         super()._set_num_nodes(0)
 
     def nodes(self):
@@ -390,7 +383,9 @@ class TypeDictNodeData(RowNodeData):
 
     def __init__(self, data, node_id=None, default_node_type=None):
         _is_identified = node_id is not None
-        super().__init__(_is_identified, IS_TYPED, default_node_type)
+        super().__init__(
+            _is_identified, is_typed=True, default_node_type=default_node_type
+        )
         self._data = _data = {}
         is_determined = True
         node_types = set()

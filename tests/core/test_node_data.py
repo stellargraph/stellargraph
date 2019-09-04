@@ -414,3 +414,54 @@ def test_numpy_1d_no_data():
     for node in nd.nodes():
         count += 1
     assert count == nd.num_nodes()
+
+
+######################################################
+# Test wrapping of collections of node attributes:
+
+
+def test_iterable_data_explicit_tuple():
+    # Explicit node id and type
+    data = [
+        (1, 2, "n1", "t1"),
+        (2, 3, "n2", "t2"),
+        (3, 4, "n3", "t3"),
+        (4, 5, "n4", "t4"),
+    ]
+    nd = node_data(data, node_id=2, node_type=3)
+    assert nd.num_nodes() == 4
+    # XXX Heterogeneity will change after iteration!
+    assert nd.is_heterogeneous() is None
+    assert nd.node_types() is None
+    count = 0
+    for node in nd.nodes():
+        count += 1
+        assert node.node_id == "n" + str(count)
+        assert node.node_type == "t" + str(count)
+    # XXX Node types should be known after iteration!
+    assert len(nd.node_types()) == 4
+    assert nd.node_types() == set(["t1", "t2", "t3", "t4"])
+    assert not nd.is_homogeneous()
+    assert nd.is_heterogeneous()
+
+
+def test_iterable_data_implicit_tuple():
+    # Implicit node id and type
+    data = [
+        (1, 2, "n1", "t1"),
+        (2, 3, "n2", "t2"),
+        (3, 4, "n3", "t3"),
+        (4, 5, "n4", "t4"),
+    ]
+    nd = node_data(data)
+    assert nd.num_nodes() == 4
+    # XXX Heterogeneity ids known!
+    assert not nd.is_heterogeneous()
+    assert nd.node_types() == set([DEFAULT_NODE_TYPE])
+    assert nd.is_unidentified()
+    assert nd.is_untyped()
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_id == count
+        assert node.node_type == DEFAULT_NODE_TYPE
