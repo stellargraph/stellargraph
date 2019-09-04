@@ -61,7 +61,6 @@ Attribute specification:
 
 import pandas as pd
 import numpy as np
-import itertools as it
 
 
 # Useful constants:
@@ -96,14 +95,47 @@ class NodeDatum(tuple):
 
     @property
     def node_id(self):
+        """
+        Obtains the identifier of this node.
+
+        Returns:
+             The node identifier.
+        """
         return self[0]
 
     @property
     def node_type(self):
+        """
+        Obtains the type of this node.
+
+        Returns:
+             The node type.
+        """
         return self[1]
 
     def with_id(self, node_id):
+        """
+        Helper method to replace the node identifier.
+
+        Args:
+            node_id: The new node identifier.
+
+        Returns:
+            A new NodeDatum object.
+        """
         return NodeDatum(node_id, self[1])
+
+    def with_type(self, node_type):
+        """
+        Helper method to replace the node type.
+
+        Args:
+            node_type: The new node type.
+
+        Returns:
+            A new NodeDatum object.
+        """
+        return NodeDatum(self[0], node_type)
 
 
 class NodeData:
@@ -357,26 +389,31 @@ class TypeDictNodeData(RowNodeData):
     """
 
     def __init__(self, data, node_id=None, default_node_type=None):
-        super().__init__(node_id is not None, IS_TYPED, default_node_type)
+        _is_identified = node_id is not None
+        super().__init__(_is_identified, IS_TYPED, default_node_type)
         self._data = _data = {}
         is_determined = True
         node_types = set()
         num_nodes = 0
-        for node_type, block_data in data.items():
-            node_type = self.default_node_type(node_type)  # in case of None
+        for _node_type, block_data in data.items():
+            node_type = self.default_node_type(_node_type)  # in case of None
             if node_type in _data:  # in case of None and default
                 raise ValueError(
-                    "node types contain both None and default '{}'".format(node_type)
+                    "Node types contain both None and default '{}'".format(node_type)
                 )
-            if isinstance(block_data, dict):
-                raise ValueError("The type-specific node data cannot be a dictionary")
             # Wrap type-specific data
             _data[node_type] = block_data = node_data(
                 block_data, node_id, None, node_type
             )
             block_size = block_data.num_nodes()
             is_determined = is_determined and block_size is not None
-            if is_determined and block_size > 0:
+            if block_size is not None and block_size > 0:
+                if _is_identified and block_data.is_unidentified():
+                    raise ValueError(
+                        "Node data for type '{}' has local identifiers!".format(
+                            _node_type
+                        )
+                    )
                 num_nodes += block_size
                 node_types.add(node_type)
         if is_determined:
@@ -385,8 +422,12 @@ class TypeDictNodeData(RowNodeData):
 
     def _iter_rows(self):
         # XXX The dictionary values are NodeData objects.
-        iters = [nd.nodes() for nd in self._data.values()]
-        return it.chain(*iters)
+        for node_type, block_data in self._data.items():
+            for node in block_data.nodes():
+                # XXX Cannot guarantee the inner node type
+                if node.node_type != node_type:
+                    node = node.with_type(node_type)
+                yield node
 
     def _get_node(self, row):
         # XXX A row is already a NodeDatum object.
