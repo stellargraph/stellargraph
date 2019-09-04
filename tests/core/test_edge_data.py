@@ -28,6 +28,24 @@ def test_no_edges():
     assert not ed.is_identified()
     assert ed.is_untyped()
     assert not ed.is_typed()
+    assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
+    assert ed.is_homogeneous()
+    assert not ed.is_heterogeneous()
+    assert ed.num_edges() == 0
+    assert len(list(ed.edges())) == 0
+    assert len(ed.edge_types()) == 0
+
+    ed = edge_data(
+        is_directed=True, default_edge_type="fred", edge_id="yes", edge_type="yes"
+    )
+    assert isinstance(ed, NoEdgeData)
+    assert not ed.is_undirected()
+    assert ed.is_directed()  # XXX Is this at all useful?
+    assert ed.is_unidentified()
+    assert not ed.is_identified()
+    assert ed.is_untyped()
+    assert not ed.is_typed()
+    assert ed.default_edge_type() == "fred"
     assert ed.is_homogeneous()
     assert not ed.is_heterogeneous()
     assert ed.num_edges() == 0
@@ -41,12 +59,8 @@ def test_pandas_data_use_index():
     # Set edge id on index
     df = pd.DataFrame(data, columns=["source_id", "target_id"], index=["e1", "e2"])
     # Deliberately mix types of column identifiers; use index for id
-    ed = to_edge_data(
-        df,
-        is_directed=True,
-        source_id="source_id",
-        target_id=1,
-        edge_id=USE_PANDAS_INDEX,
+    ed = edge_data(
+        df, is_directed=True, source_id="source_id", target_id=1, edge_id=PANDAS_INDEX
     )
     assert ed.is_directed()
     assert ed.is_homogeneous() == True
@@ -81,7 +95,7 @@ def test_pandas_data_not_use_index():
         data, columns=["source_id", "target_id", "edge_type"], index=["e1", "e2", "e3"]
     )
     # Deliberately mix types of identifiers; do NOT use index for id
-    ed = to_edge_data(
+    ed = edge_data(
         df, IS_UNDIRECTED, source_id=0, target_id=1, edge_id=None, edge_type="edge_type"
     )
     assert ed.is_undirected()
@@ -115,7 +129,7 @@ def test_pandas_data_explicit():
         (4, 5, "e4", "t1"),
     ]
     df = pd.DataFrame(data, columns=["source_id", "target_id", "edge_id", "edge_type"])
-    ed = to_edge_data(df, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3)
+    ed = edge_data(df, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3)
     assert ed.is_directed()
     # XXX Heterogeneity will change after iteration!
     assert ed.is_heterogeneous() is None
@@ -161,9 +175,7 @@ def test_typed_pandas_data():
     # XXX Column ordering is assumed same for all blocks of edge data!
     df2 = pd.DataFrame(edges2, columns=["source_id", "target_id"])
     data = {None: df1, "t2": df2}  # type will be mapped to default
-    ed = to_edge_data(
-        data, IS_DIRECTED, source_id=0, target_id=1, default_edge_type="t1"
-    )
+    ed = edge_data(data, IS_DIRECTED, source_id=0, target_id=1, default_edge_type="t1")
     assert ed.is_directed()
     assert ed.is_heterogeneous()
     assert len(ed.edge_types()) == 2
@@ -208,7 +220,7 @@ def test_typed_pandas_partial_data():
     # XXX Column ordering is assumed same for all blocks of edge data!
     df2 = pd.DataFrame(edges2, columns=["source_id", "target_id"])
     data = {"t1": df1, "t2": df2}
-    ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
+    ed = edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
     assert ed.is_directed()
     # Since data blocks are of known size, types should be known.
     assert not ed.is_heterogeneous()
@@ -242,9 +254,7 @@ def test_numpy_data_explicit():
         ],
         dtype="object",
     )
-    ed = to_edge_data(
-        data, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3
-    )
+    ed = edge_data(data, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3)
     assert ed.is_directed()
     # XXX Heterogeneity will change after iteration!
     assert ed.is_heterogeneous() is None
@@ -270,7 +280,7 @@ def test_numpy_data_explicit():
 def test_numpy_data_implicit():
     # Explicit edge id and type
     data = np.array([(1, 2), (2, 3), (3, 4), (4, 5)])
-    ed = to_edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
+    ed = edge_data(data, IS_DIRECTED, source_id=0, target_id=1)
     assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_homogeneous()
@@ -309,7 +319,7 @@ def test_iterable_data_explicit_tuple():
         (3, 4, "e3", "t1"),
         (4, 5, "e4", "t1"),
     ]
-    ed = to_edge_data(data, IS_DIRECTED, *list(range(4)))
+    ed = edge_data(data, IS_DIRECTED, *list(range(4)))
     assert ed.is_directed()
     # XXX Heterogeneity will change after iteration!
     assert ed.is_heterogeneous() is None
@@ -343,9 +353,7 @@ def test_iterable_data_explicit_edge_datum():
     # XXX EdgeDatum has "__getitem__" so is treated as indexable rather than
     # an object with fields! Hence we must use integer positions NOT
     # the field names.
-    ed = to_edge_data(
-        data, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3
-    )
+    ed = edge_data(data, IS_DIRECTED, source_id=0, target_id=1, edge_id=2, edge_type=3)
     assert ed.is_directed()
     # XXX Heterogeneity will change after iteration!
     assert ed.is_heterogeneous() is None
@@ -376,7 +384,7 @@ def test_iterable_data_explicit_dict():
         {"s": 3, "d": 4, "i": "e3", "t": "t1"},
         {"s": 4, "d": 5, "i": "e4", "t": "t1"},
     ]
-    ed = to_edge_data(data, IS_DIRECTED, *["s", "d", "i", "t"])
+    ed = edge_data(data, IS_DIRECTED, *["s", "d", "i", "t"])
     assert ed.is_directed()
     # XXX Heterogeneity will change after iteration!
     assert ed.is_heterogeneous() is None
@@ -402,7 +410,7 @@ def test_iterable_data_explicit_dict():
 def test_iterable_data_implicit():
     # Explicit edge id and type
     data = [(1, 2), (2, 3), (3, 4), (4, 5)]
-    ed = to_edge_data(data, IS_DIRECTED, 0, 1)
+    ed = edge_data(data, IS_DIRECTED, 0, 1)
     assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_homogeneous()
@@ -448,7 +456,7 @@ def test_iterable_data_explicit_obj():
         MyObj(3, 4, "e3", "t1"),
         MyObj(4, 5, "e4", "t1"),
     ]
-    ed = to_edge_data(data, IS_DIRECTED, "src_id", "dst_id", "my_id", "my_type")
+    ed = edge_data(data, IS_DIRECTED, "src_id", "dst_id", "my_id", "my_type")
     assert ed.is_directed()
     assert ed.is_identified()
     assert ed.is_typed()
@@ -481,7 +489,7 @@ def test_iterable_data_implicit_obj():
             self.dst_id = target_id
 
     data = [MyObj(1, 2), MyObj(2, 3), MyObj(3, 4), MyObj(4, 5)]
-    ed = to_edge_data(data, IS_DIRECTED, "src_id", "dst_id")
+    ed = edge_data(data, IS_DIRECTED, "src_id", "dst_id")
     assert ed.default_edge_type() == DEFAULT_EDGE_TYPE
     assert ed.is_directed()
     assert ed.is_unidentified()

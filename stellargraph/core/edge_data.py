@@ -82,7 +82,7 @@ IS_UNTYPED = False
 IS_HETEROGENEOUS = True
 IS_HOMOGENEOUS = False
 IS_UNDETERMINED = None
-USE_PANDAS_INDEX = -1
+PANDAS_INDEX = -1
 
 
 #############################################
@@ -291,6 +291,9 @@ class EdgeData:
         if num_edges == 0:
             self._is_heterogeneous = False
             self._edge_types = set()
+            # Override the following for consistency with NoEdgeData:
+            self._is_typed = False
+            self._is_identified = False
         elif not self._is_typed:
             self._is_heterogeneous = False
             self._edge_types = set([self._default_edge_type])
@@ -405,17 +408,17 @@ class TypeDictEdgeData(RowEdgeData):
         is_determined = True
         edge_types = set()
         num_edges = 0
-        for edge_type, edge_data in data.items():
+        for edge_type, block_data in data.items():
             edge_type = self.default_edge_type(edge_type)  # in case of None
             if edge_type in _data:  # in case of None and default
                 raise ValueError(
                     "Edge types contain both None and default '{}'".format(edge_type)
                 )
-            if isinstance(edge_data, dict):
+            if isinstance(block_data, dict):
                 raise ValueError("The type-specific edge data cannot be a dictionary")
             # Wrap type-specific data
-            _data[edge_type] = block_data = to_edge_data(
-                edge_data, is_directed, source_id, target_id, edge_id, None, edge_type
+            _data[edge_type] = block_data = edge_data(
+                block_data, is_directed, source_id, target_id, edge_id, None, edge_type
             )
             block_size = block_data.num_edges()
             is_determined = is_determined and block_size is not None
@@ -445,7 +448,7 @@ class PandasEdgeData(RowEdgeData):
     Wrapper for a Pandas data-frame.
 
     The edge identifiers are taken from the Pandas index
-    if edge_id is set to USE_PANDAS_INDEX; otherwise,
+    if edge_id is set to PANDAS_INDEX; otherwise,
     if edge_id is defined the identifiers are taken from the
     specified column, or else are enumerated for each edge.
     """
@@ -485,7 +488,7 @@ class PandasEdgeData(RowEdgeData):
             if is_nullable:
                 return -1
         elif isinstance(value, int):
-            if name == "edge_id" and value == USE_PANDAS_INDEX:
+            if name == "edge_id" and value == PANDAS_INDEX:
                 return 0
             if 0 <= value < len(col_names):
                 return value + 1
@@ -613,7 +616,7 @@ class IterableEdgeData(RowEdgeData):
 
     def _iter_rows(self):
         # XXX Assumes iterable edge data
-        return iter(self._data)
+        return self._data
 
     def _get_edge(self, row):
         if hasattr(row, "__getitem__"):
@@ -643,18 +646,23 @@ class IterableEdgeData(RowEdgeData):
 # Main data wrapper method:
 
 
-def to_edge_data(
-    data,
-    is_directed,
-    source_id,
-    target_id,
+def edge_data(
+    data=None,
+    is_directed=False,
+    source_id=None,
+    target_id=None,
     edge_id=None,
     edge_type=None,
     default_edge_type=None,
-):
+) -> EdgeData:
     """
+    Wraps the edge data with an EdgeData object.
+    Has no effect if 'data' is already EdgeData.
+
     Args:
-        data: The edge data in one of the standard formats.
+        data: The edge data in one of the standard formats. This may be None or empty
+            if there are no edge attributes (parameters other than is_directed and
+            default_edge_type are then ignored).
         is_directed: <bool> Indicates whether the supplied edges are to
             be interpreted as directed (True) or undirected (False).
         source_id: The position of the source node identifier.
@@ -668,13 +676,26 @@ def to_edge_data(
     Returns:
         An EdgeData instance.
     """
-    # Shortcut for empty data:
+    # Check for known data:
+    if data is None:
+        return NoEdgeData(is_directed, default_edge_type)
+    if isinstance(data, EdgeData):
+        return data
+    # Check for empty data:
     if hasattr(data, "__len__") and len(data) == 0:
         return NoEdgeData(is_directed, default_edge_type)
+    if is_directed is None:
+        raise ValueError("Must specify is_directed")
+    if source_id is None:
+        raise ValueError("Must specify source_id")
+    if target_id is None:
+        raise ValueError("Must specify target_id")
+    # Check for dictionary of edge-type -> edge-data pairs:
     if isinstance(data, dict):
         return TypeDictEdgeData(
             data, is_directed, source_id, target_id, edge_id, default_edge_type
         )
+    # Check for Pandas data-frame:
     if isinstance(data, pd.DataFrame):
         return PandasEdgeData(
             data,
@@ -685,6 +706,7 @@ def to_edge_data(
             edge_type,
             default_edge_type,
         )
+    # Check for NumPy array:
     if isinstance(data, np.ndarray):
         return NumPyEdgeData(
             data,
@@ -695,6 +717,7 @@ def to_edge_data(
             edge_type,
             default_edge_type,
         )
+    # Check for arbitrary collection:
     if hasattr(data, "__iter__") or hasattr(data, "__getitem__"):
         return IterableEdgeData(
             data,
@@ -705,19 +728,5 @@ def to_edge_data(
             edge_type,
             default_edge_type,
         )
+    # Don't know this data type!
     raise ValueError("Unknown edge data type: {}".format(type(data)))
-
-
-def no_edge_data(is_directed=False, default_edge_type=None):
-    """
-    Obtains valid edge data for the case where there are no edges.
-
-    Args:
-        is_directed: <bool> Optionally indicates whether the supplied edges are to
-            be interpreted as directed (True) or undirected (False; default).
-        default_edge_type: The optional type to assign to edges without an explicit type.
-
-    Returns:
-        An EdgeData instance.
-    """
-    return NoEdgeData(is_directed, default_edge_type)
