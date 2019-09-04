@@ -20,6 +20,10 @@ import numpy as np
 from stellargraph.core.node_data import *
 
 
+######################################################
+# Test wrapper for empty data:
+
+
 def test_no_nodes():
     nd = NoNodeData()
     assert nd.default_node_type() == DEFAULT_NODE_TYPE
@@ -34,6 +38,10 @@ def test_no_nodes():
 
     nd = NoNodeData(default_node_type="fred")
     assert nd.default_node_type() == "fred"
+
+
+######################################################
+# Test wrapping of Pandas data-frames:
 
 
 def test_pandas_data_use_index_no_type():
@@ -164,6 +172,7 @@ def test_pandas_no_data():
 
 
 ######################################################
+# Test wrapping of node-type -> node-data dictionaries:
 
 
 def test_typed_pandas_data():
@@ -271,3 +280,137 @@ def test_typed_nested_data():
 
 
 ######################################################
+# Test wrapping of NumPy two-dimensional arrays:
+
+
+def test_numpy_data_explicit():
+    # Explicit node id and type
+    data = np.array(
+        [
+            (1, 2, "n1", "t1"),
+            (2, 3, "n2", "t2"),
+            (3, 4, "n3", "t3"),
+            (4, 5, "n4", "t4"),
+        ],
+        dtype="object",
+    )
+    nd = node_data(data, node_id=2, node_type=3)
+    # Not sure of types yet
+    assert nd.is_heterogeneous() is None
+    assert nd.node_types() is None
+    # But size is known
+    assert nd.num_nodes() == 4
+    count = 0
+    for node in nd.nodes():
+        count += 1
+        assert node.node_type == "t" + str(count)
+        assert node.node_id == "n" + str(count)
+    assert nd.num_nodes() == count
+    # XXX Node types should be known after iteration!
+    assert len(nd.node_types()) == 4
+    assert nd.node_types() == set(["t" + str(i) for i in range(1, 5)])
+    assert not nd.is_homogeneous()
+    assert nd.is_heterogeneous()
+
+
+def test_numpy_data_implicit():
+    # Explicit edge id and type
+    data = np.array([(1, 2), (2, 3), (3, 4), (4, 5)])
+    nd = node_data(data)
+    assert nd.default_node_type() == DEFAULT_NODE_TYPE
+    assert nd.is_homogeneous()
+    assert nd.num_nodes() == 4
+    # XXX Node types should be known before iteration!
+    assert nd.node_types() == set([DEFAULT_NODE_TYPE])
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_type == DEFAULT_NODE_TYPE
+        assert node.node_id == count
+
+
+def test_numpy_no_data():
+    data = np.reshape([], (0, 2))
+    nd = NumPy2NodeData(data, node_id=0, node_type=1, default_node_type="fred")
+    assert nd.default_node_type() == "fred"
+    assert nd.is_homogeneous()
+    assert nd.is_unidentified()
+    assert nd.is_untyped()
+    assert nd.num_nodes() == 0
+    assert nd.node_types() == set()
+    count = 0
+    for node in nd.nodes():
+        count += 1
+    assert count == nd.num_nodes()
+
+
+######################################################
+# Test wrapping of NumPy one-dimensional arrays:
+
+
+def test_numpy_data_explicit_type():
+    # Explicit node type, implicit id
+    data = np.array(["t" + str(i) for i in range(10)], dtype="object")
+    nd = node_data(data, node_type=SINGLE_COLUMN)
+    assert nd.is_unidentified()
+    assert nd.is_typed()
+    # Not sure of types yet
+    assert nd.is_heterogeneous() is None
+    assert nd.node_types() is None
+    # But size is known
+    assert nd.num_nodes() == len(data)
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_id == count
+        assert node.node_type == "t" + str(count)
+    assert nd.num_nodes() == count + 1
+    # XXX Node types should be known after iteration!
+    assert len(nd.node_types()) == len(data)
+    assert nd.node_types() == set(["t" + str(i) for i in range(10)])
+    assert not nd.is_homogeneous()
+    assert nd.is_heterogeneous()
+
+
+def test_numpy_data_explicit_id():
+    # Explicit node id, implicit type
+    data = np.array(["n" + str(i) for i in range(10)], dtype="object")
+    nd = node_data(data, node_id=SINGLE_COLUMN)
+    assert nd.is_identified()
+    assert nd.is_untyped()
+    assert nd.is_homogeneous()
+    assert nd.node_types() == set([DEFAULT_NODE_TYPE])
+    assert nd.num_nodes() == len(data)
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_type == DEFAULT_NODE_TYPE
+        assert node.node_id == "n" + str(count)
+    assert nd.num_nodes() == count + 1
+
+
+def test_numpy_1d_no_data():
+    data = np.array([])
+    nd = NumPy1NodeData(data, node_id=SINGLE_COLUMN, default_node_type="fred")
+    assert nd.default_node_type() == "fred"
+    assert nd.is_homogeneous()
+    assert nd.is_unidentified()
+    assert nd.is_untyped()
+    assert nd.num_nodes() == 0
+    assert nd.node_types() == set()
+    count = 0
+    for node in nd.nodes():
+        count += 1
+    assert count == nd.num_nodes()
+
+    nd = NumPy1NodeData(data, node_type=SINGLE_COLUMN)
+    assert nd.default_node_type() == DEFAULT_NODE_TYPE
+    assert nd.is_homogeneous()
+    assert nd.is_unidentified()
+    assert nd.is_untyped()
+    assert nd.num_nodes() == 0
+    assert nd.node_types() == set()
+    count = 0
+    for node in nd.nodes():
+        count += 1
+    assert count == nd.num_nodes()
