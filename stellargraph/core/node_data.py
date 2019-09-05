@@ -60,7 +60,8 @@ Attribute specification:
         position is assumed to be the same for each block of node data.
 """
 
-from typing import Optional
+from typing import Sized, Iterable, Optional
+
 import pandas as pd
 import numpy as np
 
@@ -287,7 +288,7 @@ class NodeData:
         if num_nodes == 0:
             self._set_node_types(set())
         elif not self._is_typed:
-            self._set_node_types(set([self._default_node_type]))
+            self._set_node_types({self._default_node_type})
 
     def nodes(self):
         """
@@ -712,7 +713,7 @@ def node_data(
     if isinstance(data, NodeData):
         return data
     # Check for empty data:
-    if hasattr(data, "__len__") and len(data) == 0:
+    if isinstance(data, Sized) and len(data) == 0:
         return NoNodeData(default_node_type)
     # Check for dictionary of node-type -> node-data pairs:
     if isinstance(data, dict):
@@ -728,7 +729,7 @@ def node_data(
         # Two-dimensional
         return NumPy2NodeData(data, node_id, node_type, default_node_type)
     # Check for arbitrary collection:
-    if hasattr(data, "__iter__") or hasattr(data, "__getitem__"):
+    if isinstance(data, Iterable) or hasattr(data, "__getitem__"):
         if node_id == SINGLE_COLUMN or node_type == SINGLE_COLUMN:
             # One-dimensional
             return Iterable1NodeData(data, node_id, node_type, default_node_type)
