@@ -15,8 +15,24 @@
 # limitations under the License.
 
 #  import pytest
+import pandas as pd
+import numpy as np
+
+# Public interface:
 from stellargraph.core.node_data import *
 
+# Private interface:
+from stellargraph.core.node_data import (
+    NodeDatum,
+    DEFAULT_NODE_TYPE,
+    NoNodeData,
+    PandasNodeData,
+    TypeDictNodeData,
+    NumPy1NodeData,
+    NumPy2NodeData,
+    Iterable1NodeData,
+    Iterable2NodeData,
+)
 
 ######################################################
 # Test wrapper for empty data:
@@ -51,8 +67,6 @@ def test_pandas_use_index_no_type():
     nd = node_data(df, node_id=PANDAS_INDEX, default_node_type="fred")
 
     assert isinstance(nd, PandasNodeData)
-    assert isinstance(nd, NodeData)
-    assert isinstance(nd, RowNodeData)
 
     assert nd.is_homogeneous()
     assert nd.num_nodes() == 2
@@ -323,7 +337,7 @@ def test_numpy_2d_explicit():
 
 
 def test_numpy_2d_implicit():
-    # Implicit edge id and type
+    # Implicit node id and type
     data = np.array([(1, 2), (2, 3), (3, 4), (4, 5)])
     nd = node_data(data)
     assert nd.default_node_type() == DEFAULT_NODE_TYPE
