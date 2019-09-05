@@ -44,7 +44,7 @@ def test_no_nodes():
 # Test wrapping of Pandas data-frames:
 
 
-def test_pandas_data_use_index_no_type():
+def test_pandas_use_index_no_type():
     # No explicit node id or type, just attributes
     data = [(1,), (2,)]
     # Set node id on index
@@ -71,7 +71,7 @@ def test_pandas_data_use_index_no_type():
     assert nd.node_types() == set(["fred"])
 
 
-def test_pandas_data_use_index_with_type():
+def test_pandas_use_index_with_type():
     # Explicit node type plus junk
     data = [("t1", 1), ("t2", 2)]
     # Set node id on index
@@ -80,8 +80,8 @@ def test_pandas_data_use_index_with_type():
     nd = node_data(df, node_id=PANDAS_INDEX, node_type="type", default_node_type="fred")
     assert nd.num_nodes() == 2
     # XXX Type heterogeneity should be unknown until after iteration!
-    assert nd.is_homogeneous() is None
-    assert nd.is_heterogeneous() is None
+    assert not nd.is_homogeneous()
+    assert nd.is_heterogeneous()
     assert nd.node_types() is None
     _count = -1
     for node in nd.nodes():
@@ -96,7 +96,7 @@ def test_pandas_data_use_index_with_type():
     assert nd.node_types() == set(["t1", "t2"])
 
 
-def test_pandas_data_not_use_index():
+def test_pandas_not_use_index():
     # No explicit node id but explicit type
     data = [(1, 2, "t1"), (2, 3, "t2"), (3, 4, "t3")]
     # Set node id on index - we won't use it!
@@ -106,11 +106,10 @@ def test_pandas_data_not_use_index():
     # Do NOT use index for id
     nd = node_data(df, node_id=None, node_type=2)
     # XXX Node types should be unknown in advance.
-    assert nd.is_heterogeneous() is None
-    assert nd.is_homogeneous() is None
-    assert nd.num_nodes() == 3
-    # XXX Node types should be unknown before iteration!
     assert nd.node_types() is None
+    assert nd.is_heterogeneous()
+    assert not nd.is_homogeneous()
+    assert nd.num_nodes() == 3
     count = -1
     for node in nd.nodes():
         count += 1
@@ -123,7 +122,7 @@ def test_pandas_data_not_use_index():
     assert not nd.is_homogeneous()
 
 
-def test_pandas_data_explicit():
+def test_pandas_explicit():
     # Explicit node id and single type
     data = [
         (1, 2, "n1", "t1"),
@@ -134,11 +133,10 @@ def test_pandas_data_explicit():
     df = pd.DataFrame(data, columns=["one", "two", "node_id", "node_type"])
     nd = node_data(df, node_id=2, node_type="node_type")
     # XXX Heterogeneity will change after iteration!
-    assert nd.is_heterogeneous() is None
-    assert nd.is_homogeneous() is None
-    assert nd.num_nodes() == 4
-    # XXX Node types should be unknown before iteration!
     assert nd.node_types() is None
+    assert nd.is_heterogeneous()
+    assert not nd.is_homogeneous()
+    assert nd.num_nodes() == 4
     count = 0
     for node in nd.nodes():
         count += 1
@@ -175,7 +173,7 @@ def test_pandas_no_data():
 # Test wrapping of node-type -> node-data dictionaries:
 
 
-def test_typed_pandas_data():
+def test_typed_pandas():
     # Node data for type t1:
     nodes1 = [(1, 2), (2, 3), (3, 4)]
     df1 = pd.DataFrame(nodes1, columns=["node_id", "one"])
@@ -220,7 +218,7 @@ def test_typed_no_data():
     assert count == 0
 
 
-def test_typed_pandas_partial_data():
+def test_typed_pandas_partial():
     # Empty node data for type t1:
     df1 = pd.DataFrame([], columns=["a", "b"])
     # Node data for type t2:
@@ -242,7 +240,7 @@ def test_typed_pandas_partial_data():
     assert _count == len(df2) - 1
 
 
-def test_typed_nested_data():
+def test_typed_nested():
     # The basic idea behind this test is that
     # the dictionary keys are the types AND
     # these types override any types from
@@ -283,7 +281,7 @@ def test_typed_nested_data():
 # Test wrapping of NumPy two-dimensional arrays:
 
 
-def test_numpy_data_explicit():
+def test_numpy_2d_explicit():
     # Explicit node id and type
     data = np.array(
         [
@@ -296,8 +294,9 @@ def test_numpy_data_explicit():
     )
     nd = node_data(data, node_id=2, node_type=3)
     # Not sure of types yet
-    assert nd.is_heterogeneous() is None
     assert nd.node_types() is None
+    assert nd.is_heterogeneous()
+    assert not nd.is_homogeneous()
     # But size is known
     assert nd.num_nodes() == 4
     count = 0
@@ -313,8 +312,8 @@ def test_numpy_data_explicit():
     assert nd.is_heterogeneous()
 
 
-def test_numpy_data_implicit():
-    # Explicit edge id and type
+def test_numpy_2d_implicit():
+    # Implicit edge id and type
     data = np.array([(1, 2), (2, 3), (3, 4), (4, 5)])
     nd = node_data(data)
     assert nd.default_node_type() == DEFAULT_NODE_TYPE
@@ -329,7 +328,7 @@ def test_numpy_data_implicit():
         assert node.node_id == count
 
 
-def test_numpy_no_data():
+def test_numpy_2d_no_data():
     data = np.reshape([], (0, 2))
     nd = NumPy2NodeData(data, node_id=0, node_type=1, default_node_type="fred")
     assert nd.default_node_type() == "fred"
@@ -348,15 +347,15 @@ def test_numpy_no_data():
 # Test wrapping of NumPy one-dimensional arrays:
 
 
-def test_numpy_data_explicit_type():
+def test_numpy_1d_explicit_type():
     # Explicit node type, implicit id
     data = np.array(["t" + str(i) for i in range(10)], dtype="object")
     nd = node_data(data, node_type=SINGLE_COLUMN)
     assert nd.is_unidentified()
     assert nd.is_typed()
     # Not sure of types yet
-    assert nd.is_heterogeneous() is None
     assert nd.node_types() is None
+    assert nd.is_heterogeneous()
     # But size is known
     assert nd.num_nodes() == len(data)
     count = -1
@@ -372,7 +371,7 @@ def test_numpy_data_explicit_type():
     assert nd.is_heterogeneous()
 
 
-def test_numpy_data_explicit_id():
+def test_numpy_1d_explicit_id():
     # Explicit node id, implicit type
     data = np.array(["n" + str(i) for i in range(10)], dtype="object")
     nd = node_data(data, node_id=SINGLE_COLUMN)
@@ -420,7 +419,7 @@ def test_numpy_1d_no_data():
 # Test wrapping of collections of node attributes:
 
 
-def test_iterable_data_explicit_tuple():
+def test_iterable_2d_explicit_tuple():
     # Explicit node id and type
     data = [
         (1, 2, "n1", "t1"),
@@ -430,9 +429,8 @@ def test_iterable_data_explicit_tuple():
     ]
     nd = node_data(data, node_id=2, node_type=3)
     assert nd.num_nodes() == 4
-    # XXX Heterogeneity will change after iteration!
-    assert nd.is_heterogeneous() is None
     assert nd.node_types() is None
+    assert nd.is_heterogeneous()
     count = 0
     for node in nd.nodes():
         count += 1
@@ -445,7 +443,7 @@ def test_iterable_data_explicit_tuple():
     assert nd.is_heterogeneous()
 
 
-def test_iterable_data_implicit_tuple():
+def test_iterable_2d_implicit_tuple():
     # Implicit node id and type
     data = [
         (1, 2, "n1", "t1"),
@@ -455,8 +453,9 @@ def test_iterable_data_implicit_tuple():
     ]
     nd = node_data(data)
     assert nd.num_nodes() == 4
-    # XXX Heterogeneity ids known!
+    # XXX Homogeneity is known!
     assert not nd.is_heterogeneous()
+    assert nd.is_homogeneous()
     assert nd.node_types() == set([DEFAULT_NODE_TYPE])
     assert nd.is_unidentified()
     assert nd.is_untyped()
@@ -465,3 +464,92 @@ def test_iterable_data_implicit_tuple():
         count += 1
         assert node.node_id == count
         assert node.node_type == DEFAULT_NODE_TYPE
+
+
+def test_iterable_2d_empty():
+    nd = Iterable2NodeData([], node_id=0, node_type=1)
+    assert nd.is_untyped()
+    assert not nd.is_typed()
+    assert nd.is_unidentified()
+    assert not nd.is_identified()
+    assert nd.is_homogeneous()
+    assert not nd.is_heterogeneous()
+    assert len(nd.node_types()) == 0
+    assert nd.node_types() == set()
+
+
+######################################################
+# Test wrapping of collections of single node attribute:
+
+
+def test_iterable_1d_node_ids():
+    data = ["n" + str(i) for i in range(10)]
+    nd = node_data(data, node_id=SINGLE_COLUMN)
+    assert nd.num_nodes() == len(data)
+    assert nd.is_untyped()
+    assert nd.is_homogeneous()
+    assert nd.is_identified()
+    assert nd.node_types() == set([DEFAULT_NODE_TYPE])
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_id == "n" + str(count)
+        assert node.node_type == DEFAULT_NODE_TYPE
+    assert nd.is_untyped()
+    assert nd.is_homogeneous()
+    assert nd.is_identified()
+
+
+def test_iterable_1d_node_types():
+    data = ["t" + str(i) for i in range(10)]
+    nd = node_data(data, node_type=SINGLE_COLUMN)
+    assert nd.num_nodes() == len(data)
+    assert nd.is_typed()
+    assert nd.is_heterogeneous()
+    assert nd.is_unidentified()
+    assert nd.node_types() is None
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_id == count
+        assert node.node_type == "t" + str(count)
+    assert nd.is_typed()
+    assert nd.is_heterogeneous()
+    assert nd.is_unidentified()
+    assert nd.node_types() == set(data)
+
+
+def test_iterable_1d_node_types_same():
+    data = ["t"] * 10
+    nd = node_data(data, node_type=SINGLE_COLUMN)
+    assert nd.num_nodes() == len(data)
+    # XXX Has explicit type, so initially looks heterogeneous
+    assert nd.is_typed()
+    assert nd.is_heterogeneous()
+    assert nd.is_unidentified()
+    assert nd.node_types() is None
+    count = -1
+    for node in nd.nodes():
+        count += 1
+        assert node.node_id == count
+        assert node.node_type == "t"
+    assert nd.num_nodes() == count + 1
+    assert nd.num_nodes() == count + 1
+    # Type info has changed; found only 1 type
+    assert nd.is_typed()
+    assert not nd.is_heterogeneous()
+    assert nd.is_homogeneous()
+    assert nd.is_unidentified()
+    assert nd.node_types() == set(data)
+
+
+def test_iterable_1d_empty():
+    nd = Iterable1NodeData([], node_id=SINGLE_COLUMN)
+    assert nd.is_untyped()
+    assert not nd.is_typed()
+    assert nd.is_unidentified()
+    assert not nd.is_identified()
+    assert nd.is_homogeneous()
+    assert not nd.is_heterogeneous()
+    assert len(nd.node_types()) == 0
+    assert nd.node_types() == set()

@@ -21,17 +21,18 @@ The general principal is that the data are iterable, with one
 node defined per element. Each node element should provide at least the node
 identifier and the type of the node (although one of these may be inferred).
 
-Preferably there should only be one pass through the node data for the
-purposes of efficiency, so the calculation of some properties might
-have to be deferred. In particular:
+The values of some properties might not be known until after a full
+pass through all of the data. For the purposes of efficiency, there
+should be only one such pass, so:
     - If the number of nodes cannot be known in advance, then num_nodes()
-        will return None.
-    - If the heterogeneity or homogeneity of the node types cannot
-        be determined in advance, then is_heterogenous() and is_homogeneous()
-        will return None.
+        will return -1, and is_typed() and is_identified(), and their
+        complements, will take on initial values as determined by the
+        input parameters - these values might change.
     - If the set of distinct node types cannot be determined in advance,
-        then node_types() will return None.
-After a full pass through the node data, these method are guaranteed to
+        then node_types() will return None, and is_heterogenous() and
+        is_homogeneous() will take on initial values as determined by the
+        input parameters - these values might change.
+After a full pass through the data, these methods are guaranteed to
 return correct values.
 
 Supported data input formats:
@@ -59,6 +60,7 @@ Attribute specification:
         position is assumed to be the same for each block of node data.
 """
 
+from typing import Optional
 import pandas as pd
 import numpy as np
 
@@ -136,7 +138,7 @@ class NodeData:
     The base class for all node data wrappers.
     """
 
-    def __init__(self, is_identified, is_typed, default_node_type):
+    def __init__(self, is_identified: bool, is_typed: bool, default_node_type):
         """
         Initialises the base node data structure.
 
@@ -149,19 +151,23 @@ class NodeData:
             default_node_type: The optional type to assign to nodes without an explicit type
                 (defaults to the constant DEFAULT_NODE_TYPE).
         """
-        self._is_identified = is_identified
-        self._is_typed = is_typed
         self._default_node_type = (
             default_node_type if default_node_type is not None else DEFAULT_NODE_TYPE
         )
+        # These values depend upon the number of nodes.
+        self._is_identified = is_identified
+        self._is_typed = is_typed
+        # This value also depends upon the data.
+        self._is_heterogeneous = is_typed
         # Currently undetermined values
-        self._is_heterogeneous = None
         self._node_types = None
-        self._num_nodes = None
+        self._num_nodes = -1
 
     def is_identified(self) -> bool:
         """
         Indicates whether the node identifiers are explicit (True) or implicit (False).
+        If True, this result will only change if the number of nodes is initially unknown
+        but later found to be zero.
 
         Returns:
              <bool> The Boolean flag.
@@ -171,37 +177,19 @@ class NodeData:
     def is_unidentified(self) -> bool:
         """
         Indicates whether the node identifiers are implicit (True) or explicit (False).
+        If False, this result will only change if the number of nodes is initially unknown
+        but later found to be zero.
 
         Returns:
              <bool> The Boolean flag.
         """
         return not self._is_identified
 
-    def is_heterogeneous(self) -> bool or None:
-        """
-        Indicates whether the node types are known to be heterogeneous
-        (True) or homogeneous (False); if this status is currently unknown,
-        then a value of None will be returned.
-
-        Returns:
-             The Boolean heterogeneity status if known, or a value of None.
-        """
-        return self._is_heterogeneous
-
-    def is_homogeneous(self) -> bool or None:
-        """
-        Indicates whether the node types are known to be homogeneous
-        (True) or heterogeneous (False); if this status is currently unknown,
-        then a value of None will be returned.
-
-        Returns:
-             The Boolean homogeneity status if known, or a value of None.
-        """
-        return None if self._is_heterogeneous is None else not self._is_heterogeneous
-
     def is_typed(self) -> bool:
         """
         Indicates whether the nodes have explicit (True) or implicit (False) types.
+        If True, this result will only change if the number of nodes is initially unknown
+        but later found to be zero.
 
         Returns:
              <bool> The Boolean flag.
@@ -211,11 +199,33 @@ class NodeData:
     def is_untyped(self) -> bool:
         """
         Indicates whether the nodes have implicit (True) or explicit (False) types.
+        If False, this result will only change if the number of nodes is initially unknown
+        but later found to be zero.
 
         Returns:
              <bool> The Boolean flag.
         """
         return not self._is_typed
+
+    def is_heterogeneous(self) -> bool:
+        """
+        Indicates whether the node types are heterogeneous (True) or homogeneous (False).
+        If True, this result might change after a complete pass through all of the nodes.
+
+        Returns:
+             The Boolean heterogeneity status.
+        """
+        return self._is_heterogeneous
+
+    def is_homogeneous(self) -> bool:
+        """
+        Indicates whether the node types are homogeneous (True) or heterogeneous (False).
+        If False, this result might change after a complete pass through all of the nodes.
+
+        Returns:
+             The Boolean homogeneity status.
+        """
+        return not self._is_heterogeneous
 
     def default_node_type(self, node_type=None):
         """
@@ -230,12 +240,11 @@ class NodeData:
         """
         return self._default_node_type if node_type is None else node_type
 
-    def node_types(self) -> set or None:
+    def node_types(self) -> Optional[set]:
         """
         Obtains the (possibly empty) collection of distinct node types.
-
-        Note: The calculation of this might be deferred until after a full
-        iteration through the node data.
+        If None, then the calculation of the types will be deferred until
+        after a full iteration through the node data.
 
         Returns:
             The set of distinct node types if known, or a value of None.
@@ -257,12 +266,12 @@ class NodeData:
         self._is_typed = self._is_typed and num_types > 0
         self._is_identified = self._is_identified and num_types > 0
 
-    def num_nodes(self) -> int or None:
+    def num_nodes(self) -> int:
         """
         Obtains the number of nodes in the node data.
 
         Returns:
-             The number of nodes if known, or a value of None.
+             The number of nodes if known, or a value of -1.
         """
         return self._num_nodes
 
@@ -304,7 +313,7 @@ class RowNodeData(NodeData):
     """
 
     def nodes(self):
-        is_uncertain = self.num_nodes() is None or self.is_typed()
+        is_uncertain = self.num_nodes() < 0 or self.is_typed()
         if is_uncertain:
             node_types = set()
         _node_id = -1
@@ -401,8 +410,8 @@ class TypeDictNodeData(RowNodeData):
                 block_data, node_id, None, node_type
             )
             block_size = block_data.num_nodes()
-            is_determined = is_determined and block_size is not None
-            if block_size is not None and block_size > 0:
+            is_determined = is_determined and block_size >= 0
+            if block_size > 0:
                 if _is_identified and block_data.is_unidentified():
                     raise ValueError(
                         "Node data for type '{}' has local identifiers!".format(
