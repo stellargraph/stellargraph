@@ -36,6 +36,8 @@ class APPNP:
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
+      - The size of the final fully connected layer must be equal to the number of classes
+
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack
         activations (list of str): list of activations applied to each fully connected layer's output
