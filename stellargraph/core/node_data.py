@@ -19,7 +19,7 @@ Provides a standarised way to access node data in a variety of formats.
 
 The general principal is that the data are iterable, with one
 node defined per element. Each node element should provide at least the node
-identifier and the type of the node (although one of these may be inferred).
+identifier and the type of the node (although these may be inferred).
 
 The values of some properties might not be known until after a full
 pass through all of the data. For the purposes of efficiency, there
@@ -60,18 +60,12 @@ Attribute specification:
         position is assumed to be the same for each block of node data.
 """
 
-__all__ = ["node_data", "PANDAS_INDEX", "SINGLE_COLUMN"]
+__all__ = ["to_node_data", "NodeData", "NodeDatum"]
 
 from typing import Sized, Iterable, Optional
 
 import pandas as pd
 import numpy as np
-
-
-# Useful constants:
-DEFAULT_NODE_TYPE = "node"
-PANDAS_INDEX = -1
-SINGLE_COLUMN = -2
 
 
 #############################################
@@ -141,6 +135,11 @@ class NodeData:
     The base class for all node data wrappers.
     """
 
+    # Useful constants:
+    DEFAULT_NODE_TYPE = "node"
+    PANDAS_INDEX = -1
+    SINGLE_COLUMN = -2
+
     def __init__(self, is_identified: bool, is_typed: bool, default_node_type):
         """
         Initialises the base node data structure.
@@ -155,7 +154,9 @@ class NodeData:
                 (defaults to the constant DEFAULT_NODE_TYPE).
         """
         self._default_node_type = (
-            default_node_type if default_node_type is not None else DEFAULT_NODE_TYPE
+            default_node_type
+            if default_node_type is not None
+            else self.DEFAULT_NODE_TYPE
         )
         # These values depend upon the number of nodes.
         self._is_identified = is_identified
@@ -409,7 +410,7 @@ class TypeDictNodeData(RowNodeData):
                     "Node types contain both None and default '{}'".format(node_type)
                 )
             # Wrap type-specific data
-            _data[node_type] = block_data = node_data(
+            _data[node_type] = block_data = to_node_data(
                 block_data, node_id, None, node_type
             )
             block_size = block_data.num_nodes()
@@ -475,7 +476,7 @@ class PandasNodeData(RowNodeData):
             if is_nullable:
                 return -1
         elif isinstance(value, int):
-            if name == "node_id" and value == PANDAS_INDEX:
+            if name == "node_id" and value == NodeData.PANDAS_INDEX:
                 return 0
             if 0 <= value < len(col_names):
                 return value + 1
@@ -566,9 +567,9 @@ class NumPy1NodeData(RowNodeData):
             raise ValueError("A NumPy ndarray is required!")
         if len(data.shape) != 1:
             raise ValueError("Only one-dimensional arrays are supported!")
-        if node_id == SINGLE_COLUMN and node_type is None:
+        if node_id == self.SINGLE_COLUMN and node_type is None:
             self._is_id = True
-        elif node_type == SINGLE_COLUMN and node_id is None:
+        elif node_type == self.SINGLE_COLUMN and node_id is None:
             self._is_id = False
         else:
             raise ValueError(
@@ -653,9 +654,9 @@ class Iterable1NodeData(RowNodeData):
     """
 
     def __init__(self, data, node_id=None, node_type=None, default_node_type=None):
-        if node_id == SINGLE_COLUMN and node_type is None:
+        if node_id == self.SINGLE_COLUMN and node_type is None:
             self._is_id = True
-        elif node_type == SINGLE_COLUMN and node_id is None:
+        elif node_type == self.SINGLE_COLUMN and node_id is None:
             self._is_id = False
         else:
             raise ValueError(
@@ -685,11 +686,11 @@ class Iterable1NodeData(RowNodeData):
 # Main data wrapper method:
 
 
-def node_data(
+def to_node_data(
     data=None, node_id=None, node_type=None, default_node_type=None
 ) -> NodeData:
     """
-    Wraps the node data with a NodeData object.
+    Wraps the user-supplied node data with a NodeData object.
     Has no effect if 'data' is already NodeData.
 
     Args:
@@ -725,14 +726,14 @@ def node_data(
         return PandasNodeData(data, node_id, node_type, default_node_type)
     # Check for NumPy array:
     if isinstance(data, np.ndarray):
-        if node_id == SINGLE_COLUMN or node_type == SINGLE_COLUMN:
+        if node_id == NodeData.SINGLE_COLUMN or node_type == NodeData.SINGLE_COLUMN:
             # One-dimensional
             return NumPy1NodeData(data, node_id, node_type, default_node_type)
         # Two-dimensional
         return NumPy2NodeData(data, node_id, node_type, default_node_type)
     # Check for arbitrary collection:
     if isinstance(data, Iterable) or hasattr(data, "__getitem__"):
-        if node_id == SINGLE_COLUMN or node_type == SINGLE_COLUMN:
+        if node_id == NodeData.SINGLE_COLUMN or node_type == NodeData.SINGLE_COLUMN:
             # One-dimensional
             return Iterable1NodeData(data, node_id, node_type, default_node_type)
         # Two-dimensional
