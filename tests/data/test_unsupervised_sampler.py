@@ -18,7 +18,7 @@ import pytest
 
 import numpy as np
 import networkx as nx
-import keras
+from tensorflow import keras
 
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.graph import StellarGraph
