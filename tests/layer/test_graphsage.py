@@ -354,7 +354,7 @@ def test_graphsage_constructor():
     gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="l2")
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
-    assert gs.n_layers == 1
+    assert gs.max_hops == 1
     assert gs.bias
     assert len(gs._aggs) == 1
 
@@ -376,7 +376,7 @@ def test_graphsage_constructor():
 
     assert gs.dims == [3, 4, 8]
     assert gs.n_samples == [2, 2]
-    assert gs.n_layers == 2
+    assert gs.max_hops == 2
     assert gs.bias
     assert len(gs._aggs) == 2
 
@@ -387,7 +387,7 @@ def test_graphsage_constructor_passing_aggregator():
     )
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
-    assert gs.n_layers == 1
+    assert gs.max_hops == 1
     assert gs.bias
     assert len(gs._aggs) == 1
 
@@ -401,7 +401,7 @@ def test_graphsage_constructor_1():
     )
     assert gs.dims == [2, 4, 6, 8]
     assert gs.n_samples == [2, 4, 6]
-    assert gs.n_layers == 3
+    assert gs.max_hops == 3
     assert gs.bias
     assert len(gs._aggs) == 3
 

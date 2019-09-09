@@ -35,7 +35,7 @@ from keras import backend as K
 from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from keras.utils import Sequence
 from keras import activations
-from typing import List, Tuple, Callable, AnyStr
+from typing import List, Callable, AnyStr
 import warnings
 
 
@@ -61,11 +61,14 @@ class GraphSAGEAggregator(Layer):
         self.output_dim = output_dim
         self.has_bias = bias
         self.act = activations.get(act)
-        self.w_self = None
-        self.bias = None
-        self.weight_dims = None
         self._initializer = "glorot_uniform"
         super().__init__(**kwargs)
+        # These will be filled in at build time
+        self.bias = None
+        self.w_self = None
+        self.w_group = None
+        self.weight_dims = None
+        self.included_weight_groups = None
 
     def get_config(self):
         """
@@ -580,7 +583,7 @@ class AttentionalAggregator(GraphSAGEAggregator):
         Apply aggregator on the input tensors, `inputs`
 
         Args:
-          x (List[Tensor]): Tensors giving self and neighbour features
+          inputs (List[Tensor]): Tensors giving self and neighbour features
                 x[0]: self Tensor (batch_size, head size, feature_size)
                 x[k>0]: group Tensors for neighbourhood (batch_size, head size, neighbours, feature_size)
 
@@ -677,6 +680,12 @@ class GraphSAGE:
         normalize="l2",
         **kwargs,
     ):
+        # Model parameters
+        self.layer_sizes = layer_sizes
+        self.max_hops = len(layer_sizes)
+        self.bias = bias
+        self.dropout = dropout
+
         # Set the normalization layer used in the model
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
@@ -698,14 +707,11 @@ class GraphSAGE:
         else:
             self._get_sizes_from_keywords(**kwargs)
 
-        # Model parameters
-        self.bias = bias
-        self.dropout = dropout
-
         # Feature dimensions for each layer
-        self.n_layers = len(layer_sizes)
-        self.layer_sizes = layer_sizes
         self.dims = [self.input_feature_size] + layer_sizes
+
+        # Compute size of each sampled neighbourhood
+        self._compute_neighbourhood_sizes()
 
         # Set the aggregator layer used in the model
         if aggregator is None:
@@ -725,6 +731,12 @@ class GraphSAGE:
              generator: The supplied generator.
         """
         self.n_samples = generator.generator.num_samples
+        if len(self.n_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
+                    self.n_samples, self.layer_sizes
+                )
+            )
         feature_sizes = generator.generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
             raise RuntimeError(
@@ -742,17 +754,36 @@ class GraphSAGE:
         self.input_feature_size = kwargs.get("input_dim")
         if self.n_samples is None or self.input_feature_size is None:
             raise ValueError(
-                "If generator is not provided, n_samples and input_dim must be specified."
+                "Generator not provided; n_samples and input_dim must be specified."
             )
+        if len(self.n_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
+                    self.n_samples, self.layer_sizes
+                )
+            )
+
+    def _compute_neighbourhood_sizes(self):
+        """
+        Computes the total (cumulative product) number of nodes
+        sampled at each neighbourhood.
+
+        Each hop samples from the neighbours of the previous nodes.
+        """
+
+        def size_at(i):
+            return np.product(self.n_samples[:i], dtype=int)
+
+        self.neighbourhood_sizes = [size_at(i) for i in range(self.max_hops + 1)]
 
     def _build_aggregators(self):
         self._aggs = [
             self._aggregator(
-                output_dim=self.dims[layer + 1],
+                output_dim=self.layer_sizes[layer],
                 bias=self.bias,
-                act="relu" if layer < self.n_layers - 1 else "linear",
+                act="relu" if layer < self.max_hops - 1 else "linear",
             )
-            for layer in range(self.n_layers)
+            for layer in range(self.max_hops)
         ]
 
     def __call__(self, xin: List):
@@ -760,36 +791,38 @@ class GraphSAGE:
         Apply aggregator layers
 
         Args:
-            x (list of Tensor): Batch input features
+            xin (list of Tensor): Batch input features
 
         Returns:
             Output tensor
         """
 
-        def apply_layer(x: List, layer: int):
+        def apply_layer(x: List, num_hops: int):
             """
             Compute the list of output tensors for a single GraphSAGE layer
 
             Args:
                 x (List[Tensor]): Inputs to the layer
-                layer (int): Layer index to construct
+                num_hops (int): Layer index to construct
 
             Returns:
                 Outputs of applying the aggregators as a list of Tensors
 
             """
             layer_out = []
-            for i in range(self.n_layers - layer):
+            for i in range(self.max_hops - num_hops):
                 head_shape = K.int_shape(x[i])[1]
 
                 # Reshape neighbours per node per layer
                 neigh_in = Dropout(self.dropout)(
-                    Reshape((head_shape, self.n_samples[i], self.dims[layer]))(x[i + 1])
+                    Reshape((head_shape, self.n_samples[i], self.dims[num_hops]))(
+                        x[i + 1]
+                    )
                 )
 
                 # Apply aggregator to head node and neighbour nodes
                 layer_out.append(
-                    self._aggs[layer]([Dropout(self.dropout)(x[i]), neigh_in])
+                    self._aggs[num_hops]([Dropout(self.dropout)(x[i]), neigh_in])
                 )
 
             return layer_out
@@ -797,7 +830,7 @@ class GraphSAGE:
         if not isinstance(xin, list):
             raise TypeError("Input features to GraphSAGE must be a list")
 
-        if len(xin) != self.n_layers + 1:
+        if len(xin) != self.max_hops + 1:
             raise ValueError(
                 "Length of input features should equal the number of GraphSAGE layers plus one"
             )
@@ -805,7 +838,7 @@ class GraphSAGE:
         # Form GraphSAGE layers iteratively
         self.layer_tensors = []
         h_layer = xin
-        for layer in range(0, self.n_layers):
+        for layer in range(0, self.max_hops):
             h_layer = apply_layer(h_layer, layer)
             self.layer_tensors.append(h_layer)
 
@@ -821,22 +854,6 @@ class GraphSAGE:
             else [self._normalization(xi) for xi in h_layer]
         )
 
-    def _input_shapes(self) -> List[Tuple[int, int]]:
-        """
-        Returns the input shapes for the tensors at each layer
-
-        Returns:
-            A list of tuples giving the shape (number of nodes, feature size) for
-            the corresponding layer
-
-        """
-
-        def shape_at(i: int) -> Tuple[int, int]:
-            return (np.product(self.n_samples[:i], dtype=int), self.input_feature_size)
-
-        input_shapes = [shape_at(i) for i in range(self.n_layers + 1)]
-        return input_shapes
-
     def node_model(self):
         """
         Builds a GraphSAGE model for node prediction
@@ -847,12 +864,15 @@ class GraphSAGE:
             for the GraphSAGE model output.
 
         """
-        # Create tensor inputs
-        x_inp = [Input(shape=s) for s in self._input_shapes()]
+        # Create tensor inputs for neighbourhood sampling
+        x_inp = [
+            Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
+        ]
 
         # Output from GraphSAGE model
         x_out = self(x_inp)
 
+        # Returns inputs and outputs
         return x_inp, x_out
 
     def link_model(self):
@@ -947,7 +967,19 @@ class DirectedGraphSAGE(GraphSAGE):
              generator: The supplied generator.
         """
         self.in_samples = generator.generator.in_samples
+        if len(self.in_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
+                    self.in_samples, self.layer_sizes
+                )
+            )
         self.out_samples = generator.generator.out_samples
+        if len(self.out_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(
+                    self.out_samples, self.layer_sizes
+                )
+            )
         feature_sizes = generator.generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
             raise RuntimeError(
@@ -972,36 +1004,37 @@ class DirectedGraphSAGE(GraphSAGE):
             raise ValueError(
                 "If generator is not provided, in_samples, out_samples and input_dim must be specified."
             )
-
-    def _build_aggregators(self):
-        # Model parameters
-        self.max_hops = max_hops = self.n_layers
-        self.max_slots = 2 ** (max_hops + 1) - 1
-
-        if len(self.in_samples) != max_hops:
+        if len(self.in_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
                     self.in_samples, self.layer_sizes
                 )
             )
-        if len(self.out_samples) != max_hops:
+        if len(self.out_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(
                     self.out_samples, self.layer_sizes
                 )
             )
 
-        # Define sizes of the various neighbourhoods
-        self.neighbourhood_sizes = self._compute_input_sizes()
+    def _compute_neighbourhood_sizes(self):
+        """
+        Computes the total (cumulative product) number of nodes
+        sampled at each neighbourhood.
 
-        # Aggregator functions for each layer
-        self._aggs = [
-            self._aggregator(
-                output_dim=self.layer_sizes[i],
-                bias=self.bias,
-                act="relu" if i < max_hops - 1 else "linear",
+        Each hop has to sample separately from both the in-nodes
+        and the out-nodes of the previous nodes.
+        This gives rise to a binary tree of directed neighbourhoods.
+        """
+        self.max_slots = 2 ** (self.max_hops + 1) - 1
+        self.neighbourhood_sizes = [1] + [
+            np.product(
+                [
+                    self.in_samples[kk] if d == "0" else self.out_samples[kk]
+                    for kk, d in enumerate(np.binary_repr(ii + 1)[1:])
+                ]
             )
-            for i in range(max_hops)
+            for ii in range(1, self.max_slots)
         ]
 
     def __call__(self, xin: List):
@@ -1009,7 +1042,7 @@ class DirectedGraphSAGE(GraphSAGE):
         Apply aggregator layers
 
         Args:
-            x (list of Tensor): Batch input features
+            xin (list of Tensor): Batch input features
 
         Returns:
             Output tensor
@@ -1064,40 +1097,3 @@ class DirectedGraphSAGE(GraphSAGE):
         # Remove neighbourhood dimension from output tensors of the stack
         out_layer = Reshape(K.int_shape(out_layer)[2:])(out_layer)
         return self._normalization(out_layer)
-
-    def _compute_input_sizes(self):
-        # Each hop has to sample separately from both the in-nodes
-        # and the out-nodes. This gives rise to a binary tree of 'slots'.
-        # Storage for the total (cumulative product) number of nodes sampled
-        # at the corresponding neighbourhood for each slot:
-        num_nodes = [1] + [
-            np.product(
-                [
-                    self.in_samples[kk] if d == "0" else self.out_samples[kk]
-                    for kk, d in enumerate(np.binary_repr(ii + 1)[1:])
-                ]
-            )
-            for ii in range(1, self.max_slots)
-        ]
-        return num_nodes
-
-    def node_model(self):
-        """
-        Builds a GraphSAGE model for node prediction
-
-        Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model and ``x_out`` is the Keras tensor
-            for the GraphSAGE model output.
-
-        """
-        # Create tensor inputs for neighbourhood sampling;
-        x_inp = [
-            Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
-        ]
-
-        # Output from DirectedGraphSAGE model
-        x_out = self(x_inp)
-
-        # Returns inputs and outputs
-        return x_inp, x_out
