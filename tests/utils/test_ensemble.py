@@ -36,9 +36,9 @@ from stellargraph.mapper import (
 from stellargraph.data.converter import *
 from stellargraph.utils import Ensemble, BaggingEnsemble
 
-from keras import layers, Model
-from keras.optimizers import Adam
-from keras.losses import categorical_crossentropy, binary_crossentropy
+from tensorflow.keras import layers, Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import categorical_crossentropy, binary_crossentropy
 
 
 def example_graph_1(feature_size=None):

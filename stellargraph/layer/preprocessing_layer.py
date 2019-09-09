@@ -19,10 +19,10 @@ Preprocessing as a layer in GCN. This is to ensure that the GCN model is differe
 """
 
 
-import keras.backend as K
+from tensorflow.keras import backend as K
 import tensorflow as tf
-from keras.engine.topology import Layer
-import keras
+from tensorflow.keras.layers import Layer
+from tensorflow import keras
 import numpy as np
 
 
