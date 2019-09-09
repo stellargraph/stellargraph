@@ -254,13 +254,6 @@ class GraphSAGENodeGenerator:
         # The number of samples for each head node (not including itself)
         num_full_samples = np.sum(np.cumprod(self.num_samples))
 
-        # Isolated nodes will return only themselves in the sample list
-        # let's correct for this by padding with None (the dummy node ID)
-        node_samples = [
-            ns + [None] * num_full_samples if len(ns) == 1 else ns
-            for ns in node_samples
-        ]
-
         # Reshape node samples to sensible format
         def get_levels(loc, lsize, samples_per_hop, walks):
             end_loc = loc + lsize
