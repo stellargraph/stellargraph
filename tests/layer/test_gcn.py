@@ -110,7 +110,9 @@ def test_GraphConvolution_sparse():
     output_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
     # Test with final_layer=False
-    A_mat = SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=A_val.dtype)([A_ind, A_val])
+    A_mat = SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=A_val.dtype)(
+        [A_ind, A_val]
+    )
     out = GraphConvolution(2, final_layer=False)([x_t, output_indices_t, A_mat])
 
     # Note we add a batch dimension of 1 to model inputs

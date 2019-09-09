@@ -526,9 +526,7 @@ class GraphAttentionSparse(GraphAttention):
             )
 
             # Apply softmax to get attention coefficients
-            sparse_attn = tf.sparse.softmax(
-                sparse_attn
-            )  # (N x N), Eq. 3 of the paper
+            sparse_attn = tf.sparse.softmax(sparse_attn)  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
             node_features = tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
