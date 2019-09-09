@@ -360,9 +360,9 @@ class GCN:
         if self.use_sparse:
             A_indices, A_values = As
             Ainput = [
-                SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=A_values.dtype)(
-                    [A_indices, A_values]
-                )
+                SqueezedSparseConversion(
+                    shape=(n_nodes, n_nodes), dtype=A_values.dtype
+                )([A_indices, A_values])
             ]
 
         # Otherwise, create dense matrix from input tensor
