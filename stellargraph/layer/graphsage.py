@@ -28,12 +28,12 @@ __all__ = [
 ]
 
 import numpy as np
-from keras.engine.topology import Layer
-from keras import Input
-from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
-from keras.utils import Sequence
-from keras import activations
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import Input
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras import activations
 from typing import List, Tuple, Callable, AnyStr
 import warnings
 
@@ -114,7 +114,7 @@ class GraphSAGEAggregator(Layer):
 
         self.w_self = self.add_weight(
             name="w_self",
-            shape=(input_shape[0][2], self.weight_output_size()),
+            shape=(int(input_shape[0][2]), self.weight_output_size()),
             initializer=self._initializer,
             trainable=True,
         )
@@ -235,7 +235,7 @@ class MeanAggregator(GraphSAGEAggregator):
         else:
             self.w_neigh = self.add_weight(
                 name="w_neigh",
-                shape=(input_shape[1][3], self.weight_output_size()),
+                shape=(int(input_shape[1][3]), self.weight_output_size()),
                 initializer=self._initializer,
                 trainable=True,
             )

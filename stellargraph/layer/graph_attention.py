@@ -20,9 +20,10 @@ Definition of Graph Attention Network (GAT) layer, and GAT class that is a stack
 __all__ = ["GraphAttention", "GraphAttentionSparse", "GAT"]
 
 import warnings
-from keras import backend as K
-from keras import activations, constraints, initializers, regularizers
-from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras import activations, constraints, initializers, regularizers
+from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
 from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion
@@ -210,7 +211,7 @@ class GraphAttention(Layer):
 
         """
         feat_shape = input_shapes[0]
-        input_dim = feat_shape[-1]
+        input_dim = int(feat_shape[-1])
 
         # Variables to support integrated gradients
         self.delta = self.add_weight(
@@ -463,7 +464,7 @@ class GraphAttentionSparse(GraphAttention):
         out_indices = inputs[1]  # output indices (1 x K)
         A_sparse = inputs[2]  # Adjacency matrix (1 x N x N)
 
-        if not isinstance(A_sparse, K.tf.SparseTensor):
+        if not isinstance(A_sparse, tf.SparseTensor):
             raise TypeError("A is not sparse")
 
         # Get undirected graph edges (E x 2)
@@ -504,10 +505,10 @@ class GraphAttentionSparse(GraphAttention):
             )  # (N x N) via broadcasting
 
             # Create sparse attention vector (All non-zero values of the matrix)
-            sparse_attn_self = K.tf.gather(
+            sparse_attn_self = tf.gather(
                 K.reshape(attn_for_self, [-1]), A_indices[:, 0], axis=0
             )
-            sparse_attn_neighs = K.tf.gather(
+            sparse_attn_neighs = tf.gather(
                 K.reshape(attn_for_neighs, [-1]), A_indices[:, 1], axis=0
             )
             attn_values = sparse_attn_self + sparse_attn_neighs
@@ -520,17 +521,17 @@ class GraphAttentionSparse(GraphAttention):
             dropout_attn = Dropout(self.attn_dropout_rate)(attn_values)  # (N x N)
 
             # Convert to sparse matrix
-            sparse_attn = K.tf.sparse.SparseTensor(
+            sparse_attn = tf.sparse.SparseTensor(
                 A_indices, values=dropout_attn, dense_shape=[n_nodes, n_nodes]
             )
 
             # Apply softmax to get attention coefficients
-            sparse_attn = K.tf.sparse.softmax(
+            sparse_attn = tf.sparse.softmax(
                 sparse_attn
             )  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
-            node_features = K.tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
+            node_features = tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
 
             if self.use_bias:
                 node_features = K.bias_add(node_features, self.biases[head])
@@ -810,6 +811,7 @@ class GAT:
 
         # Currently we require the batch dimension to be one for full-batch methods
         batch_dim, n_nodes, _ = K.int_shape(x_in)
+
         if batch_dim != 1:
             raise ValueError(
                 "Currently full-batch methods only support a batch dimension of one"

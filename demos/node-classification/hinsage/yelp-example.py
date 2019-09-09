@@ -33,9 +33,9 @@ import argparse
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, layers, metrics
-import keras.backend as K
+from tensorflow import keras
+from tensorflow.keras import optimizers, layers, metrics
+import tensorflow.keras.backend as K
 
 from stellargraph.core.graph import StellarGraph
 from stellargraph.layer.hinsage import HinSAGE

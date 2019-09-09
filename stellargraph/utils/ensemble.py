@@ -24,8 +24,8 @@ from stellargraph.layer import *
 __all__ = ["Ensemble", "BaggingEnsemble"]
 
 import numpy as np
-import keras as K
-from keras.callbacks import EarlyStopping
+from tensorflow import keras as K
+from tensorflow.keras.callbacks import EarlyStopping
 
 import stellargraph as sg
 
@@ -51,7 +51,7 @@ class Ensemble(object):
             n_estimators (int):  The number of estimators (aka models) in the ensemble.
             n_predictions (int):  The number of predictions per query point per estimator
         """
-        if not isinstance(model, K.engine.training.Model):
+        if not isinstance(model, K.Model):
             raise ValueError(
                 "({}) model must be a Keras model received object of type {}".format(
                     type(self).__name__, type(model)
