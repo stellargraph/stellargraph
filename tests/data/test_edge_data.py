@@ -19,10 +19,10 @@ import pandas as pd
 import numpy as np
 
 # Public interface:
-from stellargraph.core.edge_data import to_edge_data, EdgeData, EdgeDatum
+from stellargraph.data.edge_data import to_edge_data, EdgeData, EdgeDatum
 
 # Private interface:
-from stellargraph.core.edge_data import (
+from stellargraph.data.edge_data import (
     NoEdgeData,
     PandasEdgeData,
     TypeDictEdgeData,
