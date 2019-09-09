@@ -68,7 +68,8 @@ Attribute specification:
 """
 __all__ = ["to_edge_data", "EdgeData", "EdgeDatum"]
 
-from typing import Sized, Iterable, Optional
+from typing import Sized, Iterable, Optional, Union, Any
+from sys import maxsize as NO_POSITION
 import operator
 
 import pandas as pd
@@ -700,33 +701,40 @@ class IterableEdgeData(RowEdgeData):
 
 
 def to_edge_data(
-    data=None,
-    is_directed=False,
-    source_id=None,
-    target_id=None,
-    edge_id=None,
-    edge_type=None,
-    default_edge_type=None,
+    data: Any,
+    is_directed: bool,
+    source_id: Union[int, str] = NO_POSITION,
+    target_id: Union[int, str] = NO_POSITION,
+    edge_id: Optional[Union[int, str]] = None,
+    edge_type: Optional[Union[int, str]] = None,
+    default_edge_type: Optional[Any] = None,
 ) -> EdgeData:
     """
     Wraps the edge data with an EdgeData object.
     Has no effect if 'data' is already EdgeData.
 
     Args:
-        data: The edge data in one of the standard formats. This may be None or empty
+        data: any
+            The edge data in one of the standard formats. This may be None or empty
             if there are no edge attributes (in which case parameters other than
             is_directed and default_edge_type are then ignored).
-        is_directed: <bool> Indicates whether the supplied edges are to
-            be interpreted as directed (True) or undirected (False; default).
-        source_id: The position of the source node identifier. This is only
+        is_directed: bool
+            Indicates whether the supplied edges are to
+            be interpreted as directed (True) or undirected (False).
+        source_id: int or str
+            The position of the source node identifier. This is only
             optional if there are no data.
-        target_id: The position of the target node identifier. This is only
+        target_id: int or str
+            The position of the target node identifier. This is only
             optional if there are no data.
-        edge_id: The optional position of the edge identifier. If not specified,
+        edge_id: int or str, optional
+            The optional position of the edge identifier. If not specified,
             all edge identifiers will be obtained via enumeration.
-        edge_type: The optional position of the edge type. If not specified,
+        edge_type: int or str, optional
+            The optional position of the edge type. If not specified,
             all edges will be implicitly assigned the default edge type.
-        default_edge_type: The optional type to assign to edges without an explicit type,
+        default_edge_type: any, optional
+            The optional type to assign to edges without an explicit type,
             or to any edges with an edge type of None.
 
     Returns:
@@ -738,13 +746,11 @@ def to_edge_data(
     if isinstance(data, EdgeData):
         return data
     # Check for empty data:
-    if hasattr(data, "__len__") and len(data) == 0:
+    if isinstance(data, Sized) and len(data) == 0:
         return NoEdgeData(is_directed, default_edge_type)
-    if is_directed is None:
-        raise ValueError("Must specify is_directed")
-    if source_id is None:
+    if source_id is NO_POSITION:
         raise ValueError("Must specify source_id")
-    if target_id is None:
+    if target_id is NO_POSITION:
         raise ValueError("Must specify target_id")
     # Check for dictionary of edge-type -> edge-data pairs:
     if isinstance(data, dict):
@@ -774,7 +780,7 @@ def to_edge_data(
             default_edge_type,
         )
     # Check for arbitrary collection:
-    if hasattr(data, "__iter__") or hasattr(data, "__getitem__"):
+    if isinstance(data, Iterable) or hasattr(data, "__getitem__"):
         return IterableEdgeData(
             data,
             is_directed,
@@ -786,3 +792,7 @@ def to_edge_data(
         )
     # Don't know this data type!
     raise ValueError("Unknown edge data type: {}".format(type(data)))
+
+
+# Add helper method:
+EdgeData.from_data = to_edge_data

@@ -47,7 +47,11 @@ def test_no_edges():
     assert len(ed.edge_types()) == 0
 
     ed = to_edge_data(
-        is_directed=True, default_edge_type="fred", edge_id="yes", edge_type="yes"
+        data=None,
+        is_directed=True,
+        default_edge_type="fred",
+        edge_id="yes",
+        edge_type="yes",
     )
     assert isinstance(ed, NoEdgeData)
     assert not ed.is_undirected()
