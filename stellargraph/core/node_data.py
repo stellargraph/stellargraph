@@ -62,7 +62,8 @@ Attribute specification:
 
 __all__ = ["to_node_data", "NodeData", "NodeDatum"]
 
-from typing import Sized, Iterable, Optional
+from typing import Sized, Iterable, Optional, Union, Any
+import operator
 
 import pandas as pd
 import numpy as np
@@ -621,21 +622,10 @@ class Iterable2NodeData(RowNodeData):
         return self._data
 
     def _get_node(self, row):
-        if hasattr(row, "__getitem__"):
-            return self._get_values_by_index(row)
-        return self._get_values_by_field(row)
-
-    def _get_values_by_index(self, row):
-        node_id = None if self._id_idx is None else row[self._id_idx]
+        get = operator.getitem if hasattr(row, "__getitem__") else getattr
+        node_id = None if self._id_idx is None else get(row, self._id_idx)
         node_type = self.default_node_type(
-            None if self._type_idx is None else row[self._type_idx]
-        )
-        return NodeDatum(node_id, node_type)
-
-    def _get_values_by_field(self, row):
-        node_id = None if self._id_idx is None else getattr(row, self._id_idx)
-        node_type = self.default_node_type(
-            None if self._type_idx is None else getattr(row, self._type_idx)
+            None if self._type_idx is None else get(row, self._type_idx)
         )
         return NodeDatum(node_id, node_type)
 
@@ -687,25 +677,32 @@ class Iterable1NodeData(RowNodeData):
 
 
 def to_node_data(
-    data=None, node_id=None, node_type=None, default_node_type=None
+    data: Any,
+    node_id: Optional[Union[int, str]] = None,
+    node_type: Optional[Union[int, str]] = None,
+    default_node_type: Optional[Any] = None,
 ) -> NodeData:
     """
     Wraps the user-supplied node data with a NodeData object.
     Has no effect if 'data' is already NodeData.
 
     Args:
-        data: The node data in one of the standard formats. This may
+        data: any
+            The node data in one of the standard formats. This may
             be None or empty if there are no node attributes
             (parameters other than default_node_type are then ignored).
-        node_id: The position of the node identifier.
-            This is optional if the node_id can be inferred from the data type.
+        node_id: int or str, optional
+            The position of the node identifier. If not specified,
+            all node identifiers will be obtained via enumeration.
             Use the constant SINGLE_COLUMN if 'data' is a
             one-dimensional collection of node identifiers.
-        node_type: The optional position of the node type. If not specified,
+        node_type: int or str, optional
+            The optional position of the node type. If not specified,
             all nodes will be implicitly assigned the default node type.
             Use the constant SINGLE_COLUMN if 'data' is a
             one-dimensional collection of node types.
-        default_node_type: The optional type to assign to nodes without an explicit type.
+        default_node_type: any, optional
+            The optional type to assign to nodes without an explicit type.
 
     Returns:
         A NodeData instance.
@@ -740,3 +737,7 @@ def to_node_data(
         return Iterable2NodeData(data, node_id, node_type, default_node_type)
     # Don't know this data type!
     raise ValueError("Unknown node data type: {}".format(type(data)))
+
+
+# Add helper method
+NodeData.from_data = to_node_data
