@@ -24,9 +24,9 @@ from stellargraph.mapper.node_mappers import (
 )
 from stellargraph.layer import *
 
-import keras
-import keras.backend as K
-from keras.layers import Input
+from tensorflow import keras
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Input
 
 import numpy as np
 import networkx as nx
@@ -235,8 +235,7 @@ class Test_GraphAttention:
         assert conf["attn_heads_reduction"] == "concat"
         assert conf["activation"] == self.activation
         assert conf["use_bias"] == True
-        assert conf["kernel_initializer"]["class_name"] == "VarianceScaling"
-        assert conf["kernel_initializer"]["config"]["distribution"] == "uniform"
+        assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
         assert conf["bias_initializer"]["class_name"] == "Zeros"
         assert conf["kernel_regularizer"] == None
         assert conf["bias_regularizer"] == None

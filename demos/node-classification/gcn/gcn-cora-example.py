@@ -20,8 +20,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, losses, layers, metrics, regularizers
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, layers, metrics, regularizers
 from sklearn import feature_extraction, model_selection
 
 import stellargraph as sg

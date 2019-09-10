@@ -16,7 +16,7 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
-from keras.utils.np_utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from stellargraph.core.graph import StellarGraphBase
 
 
