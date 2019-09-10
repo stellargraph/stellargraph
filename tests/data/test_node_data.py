@@ -19,10 +19,10 @@ import pandas as pd
 import numpy as np
 
 # Public interface:
-from stellargraph.core.node_data import to_node_data, NodeData, NodeDatum
+from stellargraph.data.node_data import to_node_data, NodeData, NodeDatum
 
 # Private interface:
-from stellargraph.core.node_data import (
+from stellargraph.data.node_data import (
     NodeDatum,
     NoNodeData,
     PandasNodeData,
