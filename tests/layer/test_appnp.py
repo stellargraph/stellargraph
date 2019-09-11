@@ -5,7 +5,7 @@ from stellargraph.core.graph import StellarGraph
 import networkx as nx
 import pandas as pd
 import numpy as np
-import keras
+from tensorflow import keras
 import pytest
 
 

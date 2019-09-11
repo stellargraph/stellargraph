@@ -1,5 +1,6 @@
-from keras.layers import Dense, Lambda, Softmax, Dropout, Input
-import keras.backend as K
+from tensorflow.keras.layers import Dense, Lambda, Softmax, Dropout, Input
+import tensorflow.keras.backend as K
+import tensorflow as tf
 
 from . import GraphConvolution
 from ..mapper import FullBatchNodeGenerator
@@ -121,13 +122,14 @@ class APPNP:
             )
         #apply softmax
         self._layers.append(Softmax())
+
         #gather the nodes from the output indices - inputs = [all node predictions, output node indices]
         self._layers.append(
             Lambda(lambda inputs:
                K.expand_dims(
                    K.gather(
                        K.squeeze(inputs[0], 0),
-                       K.cast(K.squeeze(inputs[1], 0), K.tf.int32)
+                       tf.cast(K.squeeze(inputs[1], 0), tf.int32)
                     ),
                     0
                )
@@ -164,9 +166,9 @@ class APPNP:
         if self.use_sparse:
             A_indices, A_values = As
             Ainput = [
-                SqueezedSparseConversion(shape=(n_nodes, n_nodes))(
-                    [A_indices, A_values]
-                )
+                SqueezedSparseConversion(
+                    shape=(n_nodes, n_nodes), dtype=A_values.dtype
+                )([A_indices, A_values])
             ]
 
         # Otherwise, create dense matrix from input tensor

@@ -1,5 +1,6 @@
-from keras.layers import Dense, Lambda, Softmax, Dropout, Input
-import keras.backend as K
+from tensorflow.keras.layers import Dense, Lambda, Softmax, Dropout, Input
+import tensorflow.keras.backend as K
+import tensorflow as tf
 import numpy as np
 
 from ..mapper import FullBatchNodeGenerator
@@ -102,12 +103,12 @@ class PPNP:
         # propagation matrix is non-sparse : create and store at initalization to save time
         propogation_matrix = self.transport_probability * np.linalg.inv(np.eye(Aadj.shape[0]) -
                                                                   (1 - self.transport_probability) * Aadj)
-        propogation_matrix = K.tf.convert_to_tensor(propogation_matrix, K.tf.float32)
+        propogation_matrix = tf.convert_to_tensor(propogation_matrix, tf.float32)
 
         self._layers.append(Dropout(self.dropout))
         self._layers.append(Lambda(lambda x: K.dot(propogation_matrix, x[0, :])))
         self._layers.append(Softmax())
-        self._layers.append(Lambda(lambda x: K.gather(x[0], K.tf.cast(x[1], K.tf.int32))))
+        self._layers.append(Lambda(lambda x: K.gather(x[0], tf.cast(x[1], tf.int32))))
 
 
     def __call__(self, x):
