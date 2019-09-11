@@ -21,12 +21,12 @@ from stellargraph.layer import GraphAttention
 from stellargraph import StellarGraph
 from stellargraph.layer import GAT
 from stellargraph.mapper import FullBatchNodeGenerator
-from keras import Model
-from keras.optimizers import Adam
-from keras.losses import categorical_crossentropy
+from tensorflow.keras import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import categorical_crossentropy
 import networkx as nx
-import keras.backend as K
-import keras
+from tensorflow.keras import backend as K
+from tensorflow import keras
 
 
 def example_graph_1(feature_size=None):
@@ -88,13 +88,13 @@ def test_ig_saliency_map():
         ),
         np.array([[0.71832293], [0.8542117]]),
         np.array([[0.46560588], [0.8165422]]),
-        1.0,
-        0.0,
+        np.array(1.0),
+        np.array(0.0),
         np.array([[0.4391179, 0.595691], [0.06000895, 0.2613866]]),
         np.array([[0.43496376], [0.02840129]]),
         np.array([[0.33972418], [0.22352563]]),
-        1.0,
-        0.0,
+        np.array(1.0),
+        np.array(0.0),
     ]
     keras_model_gat.set_weights(weights)
 

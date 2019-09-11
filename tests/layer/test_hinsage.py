@@ -22,7 +22,7 @@ HinSAGE tests
 
 
 from stellargraph.layer.hinsage import *
-import keras
+from tensorflow import keras
 import numpy as np
 import pytest
 
