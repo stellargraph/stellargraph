@@ -20,7 +20,7 @@ Tests for link inference functions
 
 from stellargraph.layer.link_inference import *
 import tensorflow as tf
-import keras
+from tensorflow import keras
 import numpy as np
 import pytest
 
