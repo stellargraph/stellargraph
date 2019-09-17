@@ -23,6 +23,7 @@ __all__ = [
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
     "FullBatchNodeGenerator",
+    "ClusterNodeGenerator",
     "FullBatchNodeSequence",
     "SparseFullBatchNodeSequence",
 ]
@@ -790,6 +791,115 @@ class FullBatchNodeGenerator:
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
+
+        """
+        if targets is not None:
+            # Check targets is an iterable
+            if not is_real_iterable(targets):
+                raise TypeError("Targets must be an iterable or None")
+
+            # Check targets correct shape
+            if len(targets) != len(node_ids):
+                raise TypeError("Targets must be the same length as node_ids")
+
+        # The list of indices of the target nodes in self.node_list
+        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+
+        if self.use_sparse:
+            return SparseFullBatchNodeSequence(
+                self.features, self.Aadj, targets, node_indices
+            )
+        else:
+            return FullBatchNodeSequence(
+                self.features, self.Aadj, targets, node_indices
+            )
+
+
+class ClusterNodeGenerator:
+    """
+    A data generator for use with ClusterGCN models on homogeneous graphs.
+
+    The supplied graph G should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features to be available for all
+    nodes in the graph.
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
+
+    This generator will supply the features array and the adjacency matrix to a
+    mini-batch Keras graph ML model.
+
+    For these algorithms the adjacency matrix requires pre-processing and the
+    'method' option should be specified with the correct pre-processing for
+    each algorithm. The options are as follows:
+
+    Note: method can only be 'none' and the pre-processing will happen when the data
+    is returned. Since there is only one option for method, the user will not be able
+    to specify the method in the constructor.
+
+    [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
+
+    For more information, please see the ClusterGCN demo:
+        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+
+    Args:
+        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        name (str): an optional name of the generator
+        k (int): The number of clusters if parameter `clusters` is None. Otherwise it is ignored.
+        clusters (list): a list of lists of node IDs such that each list corresponds to a cluster of nodes
+        in G. The clusters should be non-overlaping. If None, the G is clustered into k clusters.
+    """
+
+    def __init__(self, G, name=None, k=1, clusters=None):
+
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.name = name
+        self.k = k
+        self.clusters = clusters
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # Create sparse adjacency matrix
+        self.node_list = list(G.nodes())
+        self.Aadj = nx.to_scipy_sparse_matrix(
+            G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
+        )
+
+        # we will use dense adjacency by default.
+        self.use_sparse = False
+
+        # We need a schema to check compatibility with ClusterGCN
+        self.schema = G.create_graph_schema(create_type_maps=True)
+
+        # Check that there is only a single node type
+        if len(self.schema.node_types) > 1:
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Get the features for the nodes
+        self.features = G.get_feature_for_nodes(self.node_list)
+
+    def flow(self, node_ids, targets=None):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_ids: and iterable of node ids for the nodes of interest
+                (e.g., training, validation, or test set nodes)
+            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+
+        Returns:
+            A NodeSequence object to use with ClusterGCN
             in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
             and :meth:`predict_generator`
 
