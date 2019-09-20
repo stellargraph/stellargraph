@@ -39,6 +39,8 @@ from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 
+from networkx.algorithms.community.asyn_fluid import asyn_fluidc
+
 from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
@@ -866,12 +868,13 @@ class ClusterNodeGenerator:
 
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
-        self.Aadj = nx.to_scipy_sparse_matrix(
-            G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
-        )
 
-        # we will use dense adjacency by default.
-        self.use_sparse = False
+        # self.Aadj = nx.to_scipy_sparse_matrix(
+        #     G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
+        # )
+        #
+        # # we will use dense adjacency by default.
+        # self.use_sparse = False
 
         # We need a schema to check compatibility with ClusterGCN
         self.schema = G.create_graph_schema(create_type_maps=True)
@@ -884,6 +887,10 @@ class ClusterNodeGenerator:
                     type(self).__name__
                 )
             )
+
+        if not clusters:
+            # graph clustering
+            self.clusters = [c for c in asyn_fluidc(G, k, max_iter=10)]
 
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
@@ -914,13 +921,81 @@ class ClusterNodeGenerator:
                 raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
-        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+        # node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
-        if self.use_sparse:
-            return SparseFullBatchNodeSequence(
-                self.features, self.Aadj, targets, node_indices
+        return ClusterNodeSequence(self.graph, self.clusters, targets=targets, node_ids=node_ids)
+
+
+class ClusterNodeSequence(Sequence):
+    """
+    Keras-compatible data generator for for node inference using Cluster GCN model.
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
+
+    This class should be created using the `.flow(...)` method of
+    :class:`ClusterNodeGenerator`.
+
+    Args:
+        graph (StellarGraph): The graph
+        clusters (list): A list of lists such that each sub-list indicates the nodes in a cluster.
+            The length of this list, len(clusters) indicates the number of batches in one epoch.
+        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
+            where C is the target size (e.g., number of classes for one-hot class targets)
+        node_ids (iterable, optional): The node IDs for the target nodes. Required if targets is not None.
+    """
+
+    use_sparse = False
+
+    def __init__(self, graph, clusters, targets=None, node_ids=None):
+
+        if (targets is not None) and (len(node_ids) != len(targets)):
+            raise ValueError(
+                "When passed together targets and indices should be the same length."
             )
+
+        self.clusters = clusters
+        self.graph = graph
+
+        # Store features and targets as np.ndarray
+        # self.features = np.asanyarray(features)
+        # self.target_indices = np.asanyarray(indices)
+        self.target_ids = node_ids
+
+        self.node_list = list(graph.nodes())
+
+        if targets is not None:
+            self.targets = np.asanyarray(targets)
         else:
-            return FullBatchNodeSequence(
-                self.features, self.Aadj, targets, node_indices
-            )
+            self.targets = None
+
+    def __len__(self):
+        return len(self.clusters)
+
+    def __getitem__(self, index):
+
+        # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
+        # and targets if available.
+        cluster = self.clusters[index]
+        g_cluster = self.graph.subgraph(cluster)  # Get the subgraph; returns SubGraph view
+        adj_cluster = nx.adjacency_matrix(g_cluster, nodelist=cluster).todense() # order is given by order of IDs in cluster
+
+        g_node_list = list(g_cluster.nodes())
+        # Determine the target nodes that exist in this cluster
+        target_nodes_in_cluster = set(self.target_ids).intersection(g_node_list)
+
+        # The list of indices of the target nodes in self.node_list
+        target_node_indices = np.array([g_node_list.index(n) for n in target_nodes_in_cluster])
+
+        cluster_targets = None
+        # Note: The below is wrong. What do I want to retrieve here? For training the model or for performance
+        # evaluation, I want to grab the indices of the target nodes, those target nodes in the current cluster.
+        #
+        if self.targets is not None:
+            # cluster_target_indices = np.array([self.node_list.index(n) for n in cluster])
+            cluster_target_indices = np.array([self.node_list.index(n) for n in target_nodes_in_cluster])
+            cluster_targets = self.targets[cluster_target_indices]
+
+        features = self.graph.get_feature_for_nodes(g_node_list)
+
+        return [features, target_node_indices, adj_cluster],  cluster_targets
