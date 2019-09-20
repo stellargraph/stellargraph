@@ -1,19 +1,16 @@
 # Change Log
 
-
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/develop)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.1...HEAD)
 
-**Implemented enhancements:**
-- 
+**Implemented enhancements:** 
 
 **Refactoring:**
 - Refactored Ensemble class into Ensemble and BaggingEnsemble. The former implements naive ensembles and the latter
 bagging ensemble such that each model in the ensemble is trained on a bootst:wqrap sample of the training data.
 
 **Fixed bugs:**
-- 
 
 
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
