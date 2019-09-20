@@ -19,6 +19,11 @@
 GraphSAGE tests
 
 """
+from tensorflow import keras
+import numpy as np
+import networkx as nx
+import pytest
+
 from stellargraph.core.graph import StellarGraph
 from stellargraph.mapper.node_mappers import GraphSAGENodeGenerator
 from stellargraph.layer.graphsage import (
@@ -29,11 +34,6 @@ from stellargraph.layer.graphsage import (
     MeanPoolingAggregator,
     AttentionalAggregator,
 )
-
-from tensorflow import keras
-import numpy as np
-import networkx as nx
-import pytest
 
 
 def example_graph_1(feature_size=None):

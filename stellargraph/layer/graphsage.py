@@ -96,8 +96,9 @@ class GraphSAGEAggregator(Layer):
         """
         # If the neighbours are zero-dimensional for any of the shapes
         # in the input, do not use the input group in the model.
+        # XXX Ignore batch size, since test dim != 0 evaluates to None!!
         self.included_weight_groups = [
-            all(dim != 0 for dim in group_shape) for group_shape in input_shape
+            all(dim != 0 for dim in group_shape[1:]) for group_shape in input_shape
         ]
 
         # The total number of enabled input groups
@@ -502,7 +503,6 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
         """
         if group_idx == 0:
-            print(out_size)
             if out_size > 0:
                 weights = self.add_weight(
                     name=f"w_self",
@@ -551,8 +551,9 @@ class AttentionalAggregator(GraphSAGEAggregator):
         """
         # If the neighbours are zero-dimensional for any of the shapes
         # in the input, do not use the input group in the model.
+        # XXX Ignore batch size, since dim != 0 results in None!!
         self.included_weight_groups = [
-            all(dim != 0 for dim in group_shape) for group_shape in input_shape
+            all(dim != 0 for dim in group_shape[1:]) for group_shape in input_shape
         ]
 
         # The total number of enabled input groups
