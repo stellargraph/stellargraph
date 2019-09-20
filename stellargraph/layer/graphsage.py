@@ -29,13 +29,13 @@ __all__ = [
 ]
 
 import numpy as np
-from keras.engine.topology import Layer
-from keras import Input
-from keras import backend as K
-from keras.layers import Lambda, Dropout, Reshape, LeakyReLU
-from keras.utils import Sequence
-from keras import activations
-from typing import List, Callable, AnyStr
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import Input
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras import activations
+from typing import List, Tuple, Callable, AnyStr
 import warnings
 
 
@@ -134,10 +134,22 @@ class GraphSAGEAggregator(Layer):
                 and neighbour features
 
         """
+<<<<<<< HEAD
         if not isinstance(input_shape, list):
             raise ValueError(
                 "Expected a list of inputs, not {}".format(type(input_shape))
             )
+=======
+        # Build a MLP model if zero neighbours
+        self._build_mlp_only = input_shape[1][2] == 0
+
+        self.w_self = self.add_weight(
+            name="w_self",
+            shape=(int(input_shape[0][2]), self.weight_output_size()),
+            initializer=self._initializer,
+            trainable=True,
+        )
+>>>>>>> develop
 
         # Configure bias vector, if used.
         if self.has_bias:
@@ -287,7 +299,16 @@ class MeanAggregator(GraphSAGEAggregator):
         if group_idx == 0:
             x_agg = x_group
         else:
+<<<<<<< HEAD
             x_agg = K.mean(x_group, axis=2)
+=======
+            self.w_neigh = self.add_weight(
+                name="w_neigh",
+                shape=(int(input_shape[1][3]), self.weight_output_size()),
+                initializer=self._initializer,
+                trainable=True,
+            )
+>>>>>>> develop
 
         return K.dot(x_agg, self.w_group[group_idx])
 

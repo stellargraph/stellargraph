@@ -16,7 +16,7 @@
 
 
 import numpy as np
-import keras.backend as K
+from tensorflow.keras import backend as K
 from scipy.sparse import csr_matrix
 from stellargraph.mapper.node_mappers import (
     SparseFullBatchNodeSequence,

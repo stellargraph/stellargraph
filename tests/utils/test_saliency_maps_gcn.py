@@ -21,12 +21,12 @@ from stellargraph.layer import GraphAttention
 from stellargraph import StellarGraph
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
-from keras import Model, regularizers
-from keras.optimizers import Adam
-from keras.losses import categorical_crossentropy
+from tensorflow.keras import Model, regularizers
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import categorical_crossentropy
 import networkx as nx
-import keras.backend as K
-import keras
+from tensorflow.keras import backend as K
+from tensorflow import keras
 
 
 def example_graph_1(feature_size=None):

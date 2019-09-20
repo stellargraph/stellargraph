@@ -35,9 +35,9 @@ import numpy as np
 import itertools as it
 import networkx as nx
 import scipy.sparse as sps
-import keras.backend as K
+from tensorflow.keras import backend as K
 from functools import reduce
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,

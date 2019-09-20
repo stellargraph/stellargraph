@@ -30,12 +30,10 @@ from stellargraph.layer.graphsage import (
     AttentionalAggregator,
 )
 
-import keras
+from tensorflow import keras
 import numpy as np
 import networkx as nx
 import pytest
-
-from keras.engine import saving
 
 
 def example_graph_1(feature_size=None):
