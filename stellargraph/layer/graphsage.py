@@ -176,7 +176,7 @@ class GraphSAGEAggregator(Layer):
 
         """
         weight = self.add_weight(
-            shape=(in_shape[-1], out_size),
+            shape=(int(in_shape[-1]), out_size),
             initializer=self._initializer,
             trainable=True,
             name=f"weight_g{group_idx}",
@@ -327,7 +327,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
         if group_idx == 0:
             weights = self.add_weight(
                 name=f"w_g{group_idx}",
-                shape=(in_shape[-1], out_size),
+                shape=(int(in_shape[-1]), out_size),
                 initializer=self._initializer,
                 trainable=True,
             )
@@ -340,7 +340,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             )
             w_pool = self.add_weight(
                 name=f"w_pool_g{group_idx}",
-                shape=(in_shape[-1], self.hidden_dim),
+                shape=(int(in_shape[-1]), self.hidden_dim),
                 initializer=self._initializer,
                 trainable=True,
             )
@@ -416,7 +416,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
         if group_idx == 0:
             weights = self.add_weight(
                 name=f"w_g{group_idx}",
-                shape=(in_shape[-1], out_size),
+                shape=(int(in_shape[-1]), out_size),
                 initializer=self._initializer,
                 trainable=True,
             )
@@ -429,7 +429,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
             )
             w_pool = self.add_weight(
                 name=f"w_pool_g{group_idx}",
-                shape=(in_shape[-1], self.hidden_dim),
+                shape=(int(in_shape[-1]), self.hidden_dim),
                 initializer=self._initializer,
                 trainable=True,
             )
@@ -506,7 +506,7 @@ class AttentionalAggregator(GraphSAGEAggregator):
             if out_size > 0:
                 weights = self.add_weight(
                     name=f"w_self",
-                    shape=(in_shape[-1], out_size),
+                    shape=(int(in_shape[-1]), out_size),
                     initializer=self._initializer,
                     trainable=True,
                 )
@@ -516,7 +516,7 @@ class AttentionalAggregator(GraphSAGEAggregator):
         else:
             w_g = self.add_weight(
                 name=f"w_g{group_idx}",
-                shape=(in_shape[-1], out_size),
+                shape=(int(in_shape[-1]), out_size),
                 initializer=self._initializer,
                 trainable=True,
             )
