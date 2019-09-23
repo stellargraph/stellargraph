@@ -1096,5 +1096,6 @@ class DirectedGraphSAGE(GraphSAGE):
         out_layer = stage_tree[0]
 
         # Remove neighbourhood dimension from output tensors of the stack
-        out_layer = Reshape(K.int_shape(out_layer)[2:])(out_layer)
+        if K.int_shape(out_layer)[1] == 1:
+            out_layer = Reshape(K.int_shape(out_layer)[2:])(out_layer)
         return self._normalization(out_layer)
