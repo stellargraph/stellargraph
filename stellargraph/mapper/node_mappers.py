@@ -947,7 +947,7 @@ class ClusterNodeSequence(Sequence):
 
     use_sparse = False
 
-    def __init__(self, graph, clusters, targets=None, node_ids=None):
+    def __init__(self, graph, clusters, targets=None, node_ids=None, normalize_adj=True):
 
         if (targets is not None) and (len(node_ids) != len(targets)):
             raise ValueError(
@@ -956,13 +956,9 @@ class ClusterNodeSequence(Sequence):
 
         self.clusters = clusters
         self.graph = graph
-
-        # Store features and targets as np.ndarray
-        # self.features = np.asanyarray(features)
-        # self.target_indices = np.asanyarray(indices)
-        self.target_ids = node_ids
-
+        self.target_ids = list(node_ids)
         self.node_list = list(graph.nodes())
+        self.normalize_adj = normalize_adj
 
         if targets is not None:
             self.targets = np.asanyarray(targets)
@@ -979,6 +975,10 @@ class ClusterNodeSequence(Sequence):
         cluster = self.clusters[index]
         g_cluster = self.graph.subgraph(cluster)  # Get the subgraph; returns SubGraph view
         adj_cluster = nx.adjacency_matrix(g_cluster, nodelist=cluster).todense() # order is given by order of IDs in cluster
+        if self.normalize_adj:
+            adj_cluster = adj_cluster+np.eye(adj_cluster.shape[0])  # add self-loops
+            degree_matrix = np.diag(adj_cluster.sum(axis=1))**(-.5)
+            adj_cluster = degree_matrix @ adj_cluster @ degree_matrix
 
         g_node_list = list(g_cluster.nodes())
         # Determine the target nodes that exist in this cluster
@@ -988,12 +988,9 @@ class ClusterNodeSequence(Sequence):
         target_node_indices = np.array([g_node_list.index(n) for n in target_nodes_in_cluster])
 
         cluster_targets = None
-        # Note: The below is wrong. What do I want to retrieve here? For training the model or for performance
-        # evaluation, I want to grab the indices of the target nodes, those target nodes in the current cluster.
         #
         if self.targets is not None:
-            # cluster_target_indices = np.array([self.node_list.index(n) for n in cluster])
-            cluster_target_indices = np.array([self.node_list.index(n) for n in target_nodes_in_cluster])
+            cluster_target_indices = np.array([self.target_ids.index(n) for n in target_nodes_in_cluster])
             cluster_targets = self.targets[cluster_target_indices]
 
         features = self.graph.get_feature_for_nodes(g_node_list)
