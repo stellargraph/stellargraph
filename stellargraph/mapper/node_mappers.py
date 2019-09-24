@@ -923,7 +923,9 @@ class ClusterNodeGenerator:
         # The list of indices of the target nodes in self.node_list
         # node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
-        return ClusterNodeSequence(self.graph, self.clusters, targets=targets, node_ids=node_ids)
+        return ClusterNodeSequence(
+            self.graph, self.clusters, targets=targets, node_ids=node_ids
+        )
 
 
 class ClusterNodeSequence(Sequence):
@@ -947,7 +949,9 @@ class ClusterNodeSequence(Sequence):
 
     use_sparse = False
 
-    def __init__(self, graph, clusters, targets=None, node_ids=None, normalize_adj=True):
+    def __init__(
+        self, graph, clusters, targets=None, node_ids=None, normalize_adj=True
+    ):
 
         if (targets is not None) and (len(node_ids) != len(targets)):
             raise ValueError(
@@ -973,26 +977,58 @@ class ClusterNodeSequence(Sequence):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
-        g_cluster = self.graph.subgraph(cluster)  # Get the subgraph; returns SubGraph view
-        adj_cluster = nx.adjacency_matrix(g_cluster, nodelist=cluster).todense() # order is given by order of IDs in cluster
+        g_cluster = self.graph.subgraph(
+            cluster
+        )  # Get the subgraph; returns SubGraph view
+        adj_cluster = nx.adjacency_matrix(
+            g_cluster, nodelist=cluster
+        ).todense()  # order is given by order of IDs in cluster
         if self.normalize_adj:
-            adj_cluster = adj_cluster+np.eye(adj_cluster.shape[0])  # add self-loops
-            degree_matrix = np.diag(adj_cluster.sum(axis=1))**(-.5)
-            adj_cluster = degree_matrix @ adj_cluster @ degree_matrix
+            adj_cluster = adj_cluster + np.eye(adj_cluster.shape[0])  # add self-loops
+            degree_matrix = np.diagflat((np.array(adj_cluster.sum(axis=1))) ** (-0.5))
+            adj_cluster = np.array(degree_matrix @ adj_cluster @ degree_matrix)
 
         g_node_list = list(g_cluster.nodes())
         # Determine the target nodes that exist in this cluster
         target_nodes_in_cluster = set(self.target_ids).intersection(g_node_list)
 
         # The list of indices of the target nodes in self.node_list
-        target_node_indices = np.array([g_node_list.index(n) for n in target_nodes_in_cluster])
+        target_node_indices = np.array(
+            [g_node_list.index(n) for n in target_nodes_in_cluster]
+        )[np.newaxis, :]
 
         cluster_targets = None
         #
         if self.targets is not None:
-            cluster_target_indices = np.array([self.target_ids.index(n) for n in target_nodes_in_cluster])
+            cluster_target_indices = np.array(
+                [self.target_ids.index(n) for n in target_nodes_in_cluster]
+            )
             cluster_targets = self.targets[cluster_target_indices]
+            cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
 
         features = self.graph.get_feature_for_nodes(g_node_list)
 
-        return [features, target_node_indices, adj_cluster],  cluster_targets
+        features = np.reshape(features, (1,) + features.shape)
+        adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
+        target_node_indices = np.reshape(
+            target_node_indices, (1,) + target_node_indices.shape
+        )
+
+        # I'm going to add dummy values to target_node_indices and cluster_targets to make the shapes equal to
+        # the other arrays.
+        # pad_width = features.shape[0] - cluster_targets.shape[0]
+        # target_node_indices = np.pad(
+        #     target_node_indices,
+        #     pad_width=(0, pad_width),
+        #     mode="constant",
+        #     constant_values=(-1,),
+        # )
+        #
+        # cluster_targets = np.pad(
+        #     cluster_targets,
+        #     pad_width=((0, pad_width), (0, 0)),
+        #     mode="constant",
+        #     constant_values=(-1,),
+        # )
+
+        return [features, target_node_indices, adj_cluster], cluster_targets
