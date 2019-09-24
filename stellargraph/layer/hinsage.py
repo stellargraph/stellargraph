@@ -210,7 +210,7 @@ class HinSAGE:
             input_dim: The input dimensions for each node type as a dictionary of the form
                 {node_type: feature_size}.
             aggregator: The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
-            bias (bool): If True a bias vector is learnt for each layer in the HinSAGE model
+            bias (bool): If True, a bias vector is learnt for each layer in the HinSAGE model
             dropout: The dropout supplied to each layer in the HinSAGE model.
             normalize: The normalization used after each layer, defaults to L2 normalization.
             activations (list of str): Activations applied to each layer's output;

@@ -273,28 +273,30 @@ class GCN:
             x_inp, predictions = gcn.node_model()
 
     Args:
-        layer_sizes (list of int): list of output sizes of GCN layers in the stack
-        activations (list of str): list of activations applied to each layer's output
-        generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
-        bias (bool): toggles an optional bias in GCN layers
-        dropout (float): dropout rate applied to input features of each GCN layer
-        kernel_regularizer (str): normalization applied to the kernels of GCN layers
+        layer_sizes (list of int): Output sizes of GCN layers in the stack.
+        generator (FullBatchNodeGenerator): The generator instance.
+        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
+        dropout (float): Dropout rate applied to input features of each GCN layer.
+        kernel_regularizer (str): Normalization applied to the kernels of GCN layers.
+        activations (list of str): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu', 'linear'].
     """
 
     def __init__(
         self,
         layer_sizes,
-        activations,
         generator,
         bias=True,
         dropout=0.0,
         kernel_regularizer=None,
+        activations=None,
     ):
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
         assert len(layer_sizes) == len(activations)
 
+        n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
         self.activations = activations
         self.bias = bias
@@ -311,8 +313,16 @@ class GCN:
                 num_of_nodes=self.generator.Aadj.shape[0]
             )
 
+        # Activation function for each layer
+        if activations is None:
+            activations = ["relu"] * (n_layers - 1) + ["linear"]
+        elif len(activations) != n_layers:
+            raise ValueError(
+                "Invalid number of activations; require one function per layer"
+            )
+        self.activations = activations
+
         # Initialize a stack of GCN layers
-        n_layers = len(self.layer_sizes)
         self._layers = []
         for ii in range(n_layers):
             l = self.layer_sizes[ii]
