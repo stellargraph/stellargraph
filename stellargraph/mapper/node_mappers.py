@@ -853,7 +853,7 @@ class ClusterNodeGenerator:
         in G. The clusters should be non-overlaping. If None, the G is clustered into k clusters.
     """
 
-    def __init__(self, G, name=None, k=1, clusters=None):
+    def __init__(self, G, name=None, k=1, q=1, clusters=None):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -861,7 +861,11 @@ class ClusterNodeGenerator:
         self.graph = G
         self.name = name
         self.k = k
+        self.q = q  # The number of clusters to sample per mini-batch
         self.clusters = clusters
+
+        if k % q != 0:
+            raise ValueError("k must be exactly divisible by q")
 
         # Check if the graph has features
         G.check_graph_for_ml()
@@ -892,6 +896,9 @@ class ClusterNodeGenerator:
             # graph clustering
             self.clusters = [c for c in asyn_fluidc(G, k, max_iter=10)]
 
+        print(f"Number of clusters {len(self.clusters)}")
+        for i, c in enumerate(self.clusters):
+            print(f"{i} cluster has size {len(c)}")
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
@@ -924,7 +931,7 @@ class ClusterNodeGenerator:
         # node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
         return ClusterNodeSequence(
-            self.graph, self.clusters, targets=targets, node_ids=node_ids
+            self.graph, self.clusters, targets=targets, node_ids=node_ids, q=self.q
         )
 
 
@@ -950,7 +957,7 @@ class ClusterNodeSequence(Sequence):
     use_sparse = False
 
     def __init__(
-        self, graph, clusters, targets=None, node_ids=None, normalize_adj=True
+        self, graph, clusters, targets=None, node_ids=None, normalize_adj=True, q=1
     ):
 
         if (targets is not None) and (len(node_ids) != len(targets)):
@@ -959,18 +966,23 @@ class ClusterNodeSequence(Sequence):
             )
 
         self.clusters = clusters
+        self.clusters_original = clusters
         self.graph = graph
         self.target_ids = list(node_ids)
         self.node_list = list(graph.nodes())
         self.normalize_adj = normalize_adj
+        self.q = q
 
         if targets is not None:
             self.targets = np.asanyarray(targets)
         else:
             self.targets = None
 
+        self.on_epoch_end()
+
     def __len__(self):
-        return len(self.clusters)
+        num_batches = len(self.clusters_original) // self.q
+        return num_batches
 
     def __getitem__(self, index):
 
@@ -990,12 +1002,12 @@ class ClusterNodeSequence(Sequence):
 
         g_node_list = list(g_cluster.nodes())
         # Determine the target nodes that exist in this cluster
-        target_nodes_in_cluster = set(self.target_ids).intersection(g_node_list)
+        target_nodes_in_cluster = np.asanyarray(list(set(self.target_ids).intersection(g_node_list)))
 
         # The list of indices of the target nodes in self.node_list
         target_node_indices = np.array(
             [g_node_list.index(n) for n in target_nodes_in_cluster]
-        )[np.newaxis, :]
+        )  # [np.newaxis, :]
 
         cluster_targets = None
         #
@@ -1010,25 +1022,33 @@ class ClusterNodeSequence(Sequence):
 
         features = np.reshape(features, (1,) + features.shape)
         adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
-        target_node_indices = np.reshape(
-            target_node_indices, (1,) + target_node_indices.shape
-        )
+        target_node_indices = target_node_indices[np.newaxis, :, np.newaxis]
+        # target_node_indices = np.reshape(
+        #     target_node_indices, (1,) + target_node_indices.shape
+        # )[:, np.newaxis]
 
-        # I'm going to add dummy values to target_node_indices and cluster_targets to make the shapes equal to
-        # the other arrays.
-        # pad_width = features.shape[0] - cluster_targets.shape[0]
-        # target_node_indices = np.pad(
-        #     target_node_indices,
-        #     pad_width=(0, pad_width),
-        #     mode="constant",
-        #     constant_values=(-1,),
-        # )
-        #
-        # cluster_targets = np.pad(
-        #     cluster_targets,
-        #     pad_width=((0, pad_width), (0, 0)),
-        #     mode="constant",
-        #     constant_values=(-1,),
-        # )
 
         return [features, target_node_indices, adj_cluster], cluster_targets
+
+    def on_epoch_end(self):
+        """
+         Shuffle all head (root) nodes at the end of each epoch
+        """
+        if self.q > 1:
+            # combine clusters
+            cluster_indices = list(range(len(self.clusters_original)))
+            #print(f"Number of clusters {len(cluster_indices)}")
+            random.shuffle(cluster_indices)
+            clusters = []
+
+            for i in range(0, len(cluster_indices)-1, self.q):
+                cc = cluster_indices[i:i+self.q]
+                tmp = []
+                for l in cc:
+                    tmp.extend(list(self.clusters_original[l]))
+                clusters.append(tmp)
+                #print(f"Cluster size {len(tmp)}")
+
+            self.clusters = clusters
+
+        random.shuffle(self.clusters)
