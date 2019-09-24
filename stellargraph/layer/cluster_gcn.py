@@ -202,11 +202,11 @@ class ClusterGraphConvolution(Layer):
         #     )
 
         # Remove singleton batch dimension
-        #features = K.squeeze(features, 0)
-        #out_indices = K.squeeze(out_indices, 0)
+        features = K.squeeze(features, 0)  #
+        out_indices = K.squeeze(K.squeeze(out_indices, 0), 0)  #
 
         # Calculate the layer operation of GCN
-        A = As[0]
+        A = As[0]  # K.squeeze(As[0], 0)
         h_graph = K.dot(A, features)
         output = K.dot(h_graph, self.kernel)
 
@@ -217,12 +217,13 @@ class ClusterGraphConvolution(Layer):
 
         # On the final layer we gather the nodes referenced by the indices
         if self.final_layer:
+            # Select the indices that are non-zero
             output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
         # print("BATCH DIM:", batch_dim)
         # if batch_dim == 1:
-        # output = K.expand_dims(output, 0)
+        output = K.expand_dims(output, 0)
 
         return output
 
@@ -356,16 +357,16 @@ class ClusterGCN:
         # batch_dim, n_nodes, _ = K.int_shape(x_in)
         # if batch_dim != 1:
         #     raise ValueError(
-        #         "Currently full-batch methods only support a batch dimension of one"
-        #     )
+        #          "Currently full-batch methods only support a batch dimension of one"
+        #      )
 
-        #Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
-        Ainput = [A for A in As]
+        Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+        #Ainput = [A for A in As]
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
             raise NotImplementedError(
-                "The GCN method currently only accepts a single matrix"
+                "The Cluster GCN method currently only accepts a single matrix for each minibatch"
             )
 
         h_layer = x_in
@@ -392,15 +393,15 @@ class ClusterGCN:
             and `x_out` is a Keras tensor for the GCN model output.
         """
         # Placeholder for node features
-        N_nodes = self.generator.features.shape[0]
+        # N_nodes = self.generator.features.shape[0]
         N_feat = self.generator.features.shape[1]
 
         # Inputs for features & target indices
-        # x_t = Input(batch_shape=(1, N_nodes, N_feat))
-        # x_t = Input(batch_shape=(None, None, N_feat))
-        # out_indices_t = Input(batch_shape=(None, None), dtype="int32")
-        x_t = Input(batch_shape=(None, N_feat))
-        out_indices_t = Input(batch_shape=(None,), dtype="int32")
+        x_t = Input(batch_shape=(1, None, N_feat))
+        #x_t = Input(batch_shape=(None, None, N_feat))
+        out_indices_t = Input(batch_shape=(1, None, None), dtype="int32")
+        # x_t = Input(batch_shape=(None, N_feat))
+        # out_indices_t = Input(batch_shape=(None,), dtype="int32")
 
 
         # Create inputs for sparse or dense matrices
@@ -413,7 +414,8 @@ class ClusterGCN:
         # else:
         # Placeholders for the dense adjacency matrix
         # A_m = Input(batch_shape=(None, None, None))
-        A_m = Input(batch_shape=(None, None))
+        #A_m = Input(batch_shape=(None, None))
+        A_m = Input(batch_shape=(1, None, None))
         A_placeholders = [A_m]
 
         x_inp = [x_t, out_indices_t] + A_placeholders
