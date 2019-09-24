@@ -61,8 +61,7 @@ def test_mean_hin_agg_constructor_1():
 
 
 def test_mean_hin_agg_apply():
-    agg = MeanHinAggregator(2, act=lambda z: z)
-    agg._initializer = "ones"
+    agg = MeanHinAggregator(2, act=lambda z: z, kernel_initializer="ones")
     inp = [
         keras.Input(shape=(1, 2)),
         keras.Input(shape=(1, 2, 2)),
@@ -83,10 +82,8 @@ def test_mean_hin_agg_apply():
 
 
 def test_mean_hin_agg_apply_2():
-    agg1 = MeanHinAggregator(2, act=lambda z: z)
-    agg1._initializer = "ones"
-    agg2 = MeanHinAggregator(2, act=lambda z: z + 1)
-    agg2._initializer = "ones"
+    agg1 = MeanHinAggregator(2, act=lambda z: z, kernel_initializer="ones")
+    agg2 = MeanHinAggregator(2, act=lambda z: z + 1, kernel_initializer="ones")
 
     inp = [
         keras.Input(shape=(1, 2)),
@@ -110,8 +107,7 @@ def test_mean_hin_agg_apply_2():
 
 
 def test_mean_hin_zero_neighbours():
-    agg = MeanHinAggregator(2, bias=False, act=lambda z: z)
-    agg._initializer = "ones"
+    agg = MeanHinAggregator(2, bias=False, act=lambda z: z, kernel_initializer="ones")
     inp = [
         keras.Input(shape=(1, 2)),
         keras.Input(shape=(1, 0, 2)),
@@ -236,10 +232,8 @@ def test_hinsage_apply():
         ],
         input_dim={"1": 2, "2": 4},
         normalize="none",
+        kernel_initializer="ones",
     )
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     inp = [
         keras.Input(shape=(1, 2)),
@@ -281,11 +275,8 @@ def test_hinsage_default_model():
         ],
         input_dim={"1": 2, "2": 4},
         normalize="none",
+        kernel_initializer="ones",
     )
-
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
@@ -363,11 +354,8 @@ def test_hinsage_zero_neighbours():
         ],
         input_dim={"1": 2, "2": 4},
         normalize="none",
+        kernel_initializer="ones",
     )
-
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
@@ -401,11 +389,8 @@ def test_hinsage_aggregators():
         input_dim={"1": 2, "2": 4},
         aggregator=MeanHinAggregator,
         normalize="none",
+        kernel_initializer="ones",
     )
-
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
