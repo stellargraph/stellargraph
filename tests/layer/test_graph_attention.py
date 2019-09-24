@@ -302,9 +302,17 @@ class Test_GAT:
     def test_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
-        # test error if no activations are passed:
-        with pytest.raises(TypeError):
-            gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
+        # test default if no activations are passed:
+        gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
+        assert gat.activations == self.activations
+
+        # test error if too many activations:
+        with pytest.raises(ValueError):
+            gat = GAT(layer_sizes=[10], activations=self.activations, generator=gen)
+
+        # test error if too few activations:
+        with pytest.raises(ValueError):
+            gat = GAT(layer_sizes=[10, 10], activations=["relu"], generator=gen)
 
         # test error where layer_sizes is not a list:
         with pytest.raises(TypeError):
