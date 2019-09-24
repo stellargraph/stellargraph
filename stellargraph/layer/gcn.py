@@ -294,8 +294,6 @@ class GCN:
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
-        assert len(layer_sizes) == len(activations)
-
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
         self.activations = activations

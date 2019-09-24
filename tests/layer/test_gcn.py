@@ -205,3 +205,38 @@ def test_GCN_apply_sparse():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+
+def test_GCN_activations():
+    G, features = create_graph_features()
+    adj = nx.to_numpy_array(G)[None, :, :]
+    n_nodes = features.shape[0]
+
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_features=node_features)
+
+    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
+
+    gcn = GCN([2], generator)
+    assert gcn.activations == ["linear"]
+
+    gcn = GCN([2, 2], generator)
+    assert gcn.activations == ["relu", "linear"]
+
+    gcn = GCN([2], generator, activations=["relu"])
+    assert gcn.activations == ["relu"]
+
+    with pytest.raises(ValueError):
+        # More regularisers than layers
+        gcn = GCN([2], generator, activations=["relu", "linear"])
+
+    with pytest.raises(ValueError):
+        # Fewer regularisers than layers
+        gcn = GCN([2, 2], generator, activations=["relu"])
+
+    with pytest.raises(ValueError):
+        # Unknown regularisers
+        gcn = GCN([2], generator, activations=["bleach"])
