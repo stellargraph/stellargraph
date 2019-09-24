@@ -73,8 +73,7 @@ def test_mean_agg_constructor_1():
 
 
 def test_mean_agg_apply():
-    agg = MeanAggregator(5, bias=True, act=lambda x: x)
-    agg._initializer = "ones"
+    agg = MeanAggregator(5, bias=True, act=lambda x: x, kernel_initializer="ones")
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 2, 2))
     out = agg([inp1, inp2])
@@ -90,8 +89,7 @@ def test_mean_agg_apply():
 
 
 def test_mean_agg_apply_groups():
-    agg = MeanAggregator(11, bias=True, act=lambda x: x)
-    agg._initializer = "ones"
+    agg = MeanAggregator(11, bias=True, act=lambda x: x, kernel_initializer="ones")
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 2, 2))
     inp3 = keras.Input(shape=(1, 2, 2))
@@ -112,8 +110,7 @@ def test_mean_agg_apply_groups():
 
 
 def test_mean_agg_zero_neighbours():
-    agg = MeanAggregator(4, bias=False, act=lambda x: x)
-    agg._initializer = "ones"
+    agg = MeanAggregator(4, bias=False, act=lambda x: x, kernel_initializer="ones")
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 0, 2))
@@ -154,8 +151,7 @@ def test_maxpool_agg_constructor_1():
 
 
 def test_maxpool_agg_apply():
-    agg = MaxPoolingAggregator(2, bias=True, act="linear")
-    agg._initializer = "ones"
+    agg = MaxPoolingAggregator(2, bias=True, act="linear", kernel_initializer="ones")
 
     # Self features
     inp1 = keras.Input(shape=(1, 2))
@@ -182,8 +178,7 @@ def test_maxpool_agg_apply():
 
 
 def test_maxpool_agg_zero_neighbours():
-    agg = MaxPoolingAggregator(4, bias=False, act="linear")
-    agg._initializer = "ones"
+    agg = MaxPoolingAggregator(4, bias=False, act="linear", kernel_initializer="ones")
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 0, 2))
@@ -224,8 +219,7 @@ def test_meanpool_agg_constructor_1():
 
 
 def test_meanpool_agg_apply():
-    agg = MeanPoolingAggregator(2, bias=True, act="linear")
-    agg._initializer = "ones"
+    agg = MeanPoolingAggregator(2, bias=True, act="linear", kernel_initializer="ones")
 
     # Self features
     inp1 = keras.Input(shape=(1, 2))
@@ -255,8 +249,7 @@ def test_meanpool_agg_apply():
 
 
 def test_meanpool_agg_zero_neighbours():
-    agg = MeanPoolingAggregator(4, bias=False, act="linear")
-    agg._initializer = "ones"
+    agg = MeanPoolingAggregator(4, bias=False, act="linear", kernel_initializer="ones")
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 0, 2))
@@ -298,8 +291,7 @@ def test_attn_agg_constructor_1():
 
 
 def test_attn_agg_apply():
-    agg = AttentionalAggregator(2, bias=False, act="linear")
-    agg._initializer = "ones"
+    agg = AttentionalAggregator(2, bias=False, act="linear", kernel_initializer="ones")
     agg.attn_act = keras.activations.get("linear")
 
     # Self features
@@ -331,8 +323,7 @@ def test_attn_agg_apply():
 
 
 def test_attn_agg_zero_neighbours():
-    agg = AttentionalAggregator(4, bias=False, act="linear")
-    agg._initializer = "ones"
+    agg = AttentionalAggregator(4, bias=False, act="linear", kernel_initializer="ones")
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(1, 0, 2))
@@ -406,10 +397,13 @@ def test_graphsage_constructor_1():
 
 def test_graphsage_apply():
     gs = GraphSAGE(
-        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+        layer_sizes=[4],
+        n_samples=[2],
+        bias=False,
+        input_dim=2,
+        normalize=None,
+        kernel_initializer="ones",
     )
-    for agg in gs._aggs:
-        agg._initializer = "ones"
 
     inp1 = keras.Input(shape=(1, 2))
     inp2 = keras.Input(shape=(2, 2))
@@ -424,9 +418,8 @@ def test_graphsage_apply_1():
         bias=False,
         input_dim=2,
         normalize=None,
+        kernel_initializer="ones",
     )
-    for agg in gs._aggs:
-        agg._initializer = "ones"
 
     inp = [keras.Input(shape=(i, 2)) for i in [1, 2, 4, 8]]
     out = gs(inp)
@@ -482,11 +475,13 @@ def test_graphsage_serialize():
 
 def test_graphsage_zero_neighbours():
     gs = GraphSAGE(
-        layer_sizes=[2, 2], n_samples=[0, 0], bias=False, input_dim=2, normalize="none"
+        layer_sizes=[2, 2],
+        n_samples=[0, 0],
+        bias=False,
+        input_dim=2,
+        normalize="none",
+        kernel_initializer="ones",
     )
-
-    for agg in gs._aggs:
-        agg._initializer = "ones"
 
     inp = [keras.Input(shape=(i, 2)) for i in [1, 0, 0]]
     out = gs(inp)
@@ -540,3 +535,10 @@ def test_graphsage_passing_activations():
         activations=["linear"] * 3,
     )
     assert gs.activations == ["linear"] * 3
+
+
+def test_graphsage_passing_regularisers():
+    with pytest.raises(ValueError):
+        GraphSAGE(
+            layer_sizes=[4], n_samples=[2], input_dim=2, kernel_initializer="fred"
+        )

@@ -34,8 +34,8 @@ from tensorflow.keras import Input
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from tensorflow.keras.utils import Sequence
-from tensorflow.keras import activations
-from typing import List, Tuple, Callable, AnyStr
+from tensorflow.keras import activations, initializers, constraints, regularizers
+from typing import List, Tuple, Callable, AnyStr, Union
 import warnings
 
 
@@ -49,19 +49,27 @@ class GraphSAGEAggregator(Layer):
             a bias term should be included.
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
+
+    Additional Args:
+        kernel_initializer (str): The initialiser to use for the weights.
+        kernel_regularizer (str): The regulariser to use for the weights.
+        kernel_constraint (str): The constraint to use for the weights.
+        bias_initializer (str): The initialiser to use for the bias.
+        bias_regularizer (str): The regulariser to use for the bias.
+        bias_constraint (str): The constraint to use for the bias.
     """
 
     def __init__(
         self,
         output_dim: int = 0,
         bias: bool = False,
-        act: Callable or AnyStr = "relu",
+        act: Union[Callable, AnyStr] = "relu",
         **kwargs,
     ):
         self.output_dim = output_dim
         self.has_bias = bias
         self.act = activations.get(act)
-        self._initializer = "glorot_uniform"
+        self._get_regularisers_from_keywords(kwargs)
         super().__init__(**kwargs)
         # These will be filled in at build time
         self.bias = None
@@ -69,6 +77,20 @@ class GraphSAGEAggregator(Layer):
         self.w_group = None
         self.weight_dims = None
         self.included_weight_groups = None
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        self.kernel_initializer = initializers.get(
+            kwargs.pop("kernel_initializer", "glorot_uniform")
+        )
+        self.kernel_regularizer = regularizers.get(
+            kwargs.pop("kernel_regularizer", None)
+        )
+        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
+        self.bias_initializer = initializers.get(
+            kwargs.pop("bias_initializer", "zeros")
+        )
+        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
+        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
 
     def get_config(self):
         """
@@ -79,6 +101,12 @@ class GraphSAGEAggregator(Layer):
             "output_dim": self.output_dim,
             "bias": self.has_bias,
             "act": activations.serialize(self.act),
+            "kernel_initializer": initializers.serialize(self.kernel_initializer),
+            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+            "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "bias_initializer": initializers.serialize(self.bias_initializer),
+            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
+            "bias_constraint": constraints.serialize(self.bias_constraint),
         }
         base_config = super().get_config()
         return {**base_config, **config}
@@ -145,7 +173,9 @@ class GraphSAGEAggregator(Layer):
             self.bias = self.add_weight(
                 name="bias",
                 shape=(self.output_dim,),
-                initializer="zeros",
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
                 trainable=True,
             )
 
@@ -177,7 +207,9 @@ class GraphSAGEAggregator(Layer):
         """
         weight = self.add_weight(
             shape=(int(in_shape[-1]), out_size),
-            initializer=self._initializer,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
             trainable=True,
             name=f"weight_g{group_idx}",
         )
@@ -328,26 +360,34 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             weights = self.add_weight(
                 name=f"w_g{group_idx}",
                 shape=(int(in_shape[-1]), out_size),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
         else:
             w_group = self.add_weight(
                 name=f"w_g{group_idx}",
                 shape=(self.hidden_dim, out_size),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             w_pool = self.add_weight(
                 name=f"w_pool_g{group_idx}",
                 shape=(int(in_shape[-1]), self.hidden_dim),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             b_pool = self.add_weight(
                 name=f"b_pool_g{group_idx}",
                 shape=(self.hidden_dim,),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             weights = [w_group, w_pool, b_pool]
@@ -417,26 +457,34 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
             weights = self.add_weight(
                 name=f"w_g{group_idx}",
                 shape=(int(in_shape[-1]), out_size),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
         else:
             w_group = self.add_weight(
                 name=f"w_g{group_idx}",
                 shape=(self.hidden_dim, out_size),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             w_pool = self.add_weight(
                 name=f"w_pool_g{group_idx}",
                 shape=(int(in_shape[-1]), self.hidden_dim),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             b_pool = self.add_weight(
                 name=f"b_pool_g{group_idx}",
                 shape=(self.hidden_dim,),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             weights = [w_group, w_pool, b_pool]
@@ -507,7 +555,9 @@ class AttentionalAggregator(GraphSAGEAggregator):
                 weights = self.add_weight(
                     name=f"w_self",
                     shape=(int(in_shape[-1]), out_size),
-                    initializer=self._initializer,
+                    initializer=self.kernel_initializer,
+                    regularizer=self.kernel_regularizer,
+                    constraint=self.kernel_constraint,
                     trainable=True,
                 )
             else:
@@ -517,19 +567,25 @@ class AttentionalAggregator(GraphSAGEAggregator):
             w_g = self.add_weight(
                 name=f"w_g{group_idx}",
                 shape=(int(in_shape[-1]), out_size),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             w_attn_s = self.add_weight(
                 name=f"w_attn_s{group_idx}",
                 shape=(out_size, 1),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             w_attn_g = self.add_weight(
                 name=f"w_attn_g{group_idx}",
                 shape=(out_size, 1),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             weights = [w_g, w_attn_s, w_attn_g]
@@ -671,6 +727,14 @@ class GraphSAGE:
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         n_samples (list): The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
+
+    Additional Args:
+        kernel_initializer (str): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str): The regulariser to use for the weights of each layer.
+        kernel_constraint (str): The constraint to use for the weights of each layer.
+        bias_initializer (str): The initialiser to use for the bias of each layer.
+        bias_regularizer (str): The regulariser to use for the bias of each layer.
+        bias_constraint (str): The constraint to use for the bias of each layer.
     """
 
     def __init__(
@@ -709,7 +773,7 @@ class GraphSAGE:
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
-            self._get_sizes_from_keywords(**kwargs)
+            self._get_sizes_from_keywords(kwargs)
 
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
@@ -734,6 +798,9 @@ class GraphSAGE:
             )
         self.activations = activations
 
+        # Optional regulariser, etc. for weights and biases
+        self._get_regularisers_from_keywords(kwargs)
+
         # Aggregator functions for each layer
         self._build_aggregators()
 
@@ -757,14 +824,14 @@ class GraphSAGE:
             )
         self.input_feature_size = feature_sizes.popitem()[1]
 
-    def _get_sizes_from_keywords(self, **kwargs):
+    def _get_sizes_from_keywords(self, kwargs):
         """
         Sets n_samples and input_feature_size from the keywords.
         Args:
              kwargs: The additional keyword arguments.
         """
-        self.n_samples = kwargs.get("n_samples")
-        self.input_feature_size = kwargs.get("input_dim")
+        self.n_samples = kwargs.pop("n_samples", None)
+        self.input_feature_size = kwargs.pop("input_dim", None)
         if self.n_samples is None or self.input_feature_size is None:
             raise ValueError(
                 "Generator not provided; n_samples and input_dim must be specified."
@@ -775,6 +842,21 @@ class GraphSAGE:
                     self.n_samples, self.layer_sizes
                 )
             )
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        regularisers = {}
+        for param_name in [
+            "kernel_initializer",
+            "kernel_regularizer",
+            "kernel_constraint",
+            "bias_initializer",
+            "bias_regularizer",
+            "bias_constraint",
+        ]:
+            param_value = kwargs.pop(param_name, None)
+            if param_value is not None:
+                regularisers[param_name] = param_value
+        self._regularisers = regularisers
 
     def _compute_neighbourhood_sizes(self):
         """
@@ -795,6 +877,7 @@ class GraphSAGE:
                 output_dim=self.layer_sizes[layer],
                 bias=self.bias,
                 act=self.activations[layer],
+                **self._regularisers,
             )
             for layer in range(self.max_hops)
         ]
