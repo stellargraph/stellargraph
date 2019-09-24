@@ -203,7 +203,10 @@ class ClusterGraphConvolution(Layer):
 
         # Remove singleton batch dimension
         features = K.squeeze(features, 0)  #
-        out_indices = K.squeeze(K.squeeze(out_indices, 0), 0)  #
+        #out_indices = K.squeeze(K.squeeze(out_indices, 0), 0)  #
+
+        out_indices = K.squeeze(out_indices, 0)  #
+
 
         # Calculate the layer operation of GCN
         A = As[0]  # K.squeeze(As[0], 0)
@@ -223,7 +226,8 @@ class ClusterGraphConvolution(Layer):
         # Add batch dimension back if we removed it
         # print("BATCH DIM:", batch_dim)
         # if batch_dim == 1:
-        output = K.expand_dims(output, 0)
+        else:
+            output = K.expand_dims(output, 0)
 
         return output
 
@@ -393,28 +397,15 @@ class ClusterGCN:
             and `x_out` is a Keras tensor for the GCN model output.
         """
         # Placeholder for node features
-        # N_nodes = self.generator.features.shape[0]
         N_feat = self.generator.features.shape[1]
 
         # Inputs for features & target indices
         x_t = Input(batch_shape=(1, None, N_feat))
-        #x_t = Input(batch_shape=(None, None, N_feat))
-        out_indices_t = Input(batch_shape=(1, None, None), dtype="int32")
+        out_indices_t = Input(batch_shape=(1, None, None), dtype="int32")  # was (1, None, None)
         # x_t = Input(batch_shape=(None, N_feat))
         # out_indices_t = Input(batch_shape=(None,), dtype="int32")
 
-
-        # Create inputs for sparse or dense matrices
-        # if self.use_sparse:
-        #     # Placeholders for the sparse adjacency matrix
-        #     A_indices_t = Input(batch_shape=(1, None, 2), dtype="int64")
-        #     A_values_t = Input(batch_shape=(1, None))
-        #     A_placeholders = [A_indices_t, A_values_t]
-        #
-        # else:
         # Placeholders for the dense adjacency matrix
-        # A_m = Input(batch_shape=(None, None, None))
-        #A_m = Input(batch_shape=(None, None))
         A_m = Input(batch_shape=(1, None, None))
         A_placeholders = [A_m]
 
@@ -422,9 +413,9 @@ class ClusterGCN:
         x_out = self(x_inp)
 
         # Flatten output by removing singleton batch dimension
-        if x_out.shape[0] == 1:
-            self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
-        else:
-            self.x_out_flat = x_out
+        # if x_out.shape[0] == 1:
+        #     self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
+        # else:
+        #     self.x_out_flat = x_out
 
         return x_inp, x_out
