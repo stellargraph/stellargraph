@@ -50,7 +50,7 @@ class GraphSAGEAggregator(Layer):
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
 
-    Additional Args:
+    Optional Args:
         kernel_initializer (str or func): The initialiser to use for the weights.
         kernel_regularizer (str or func): The regulariser to use for the weights.
         kernel_constraint (str or func): The constraint to use for the weights.
