@@ -1,7 +1,7 @@
 ## Node classification using attri2vec [1]
 
 This folder contains two [Jupyter](http://jupyter.org/) python notebooks demonstrating the combined use of
-`stellargraph` (this library), `Scikit-learn` [3] libraries for node classification in two homogeneous graphs
+`stellargraph` (this library), `Scikit-learn` [2] libraries for node classification in two homogeneous graphs
 attached with node attributes.
 
 The first example demonstrates node representation learning and node classification using the citeseer
@@ -61,3 +61,5 @@ and pass this location as a command line argument to this script.
 
 **1.** Attributed Network Embedding via Subspace Discovery. D. Zhang, J, Yin, X. Zhu and C. Zhang, arXiv:1901.04095,
 [cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
+
+**2.** Scikit-learn: Machine learning in Python ([link](http://scikit-learn.org/stable/))
