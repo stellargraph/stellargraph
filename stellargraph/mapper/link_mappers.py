@@ -35,8 +35,7 @@ import operator
 import collections
 from functools import reduce
 
-import keras
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,
@@ -92,7 +91,19 @@ class LinkSequence(Sequence):
         if targets is not None and len(ids) != len(targets):
             raise ValueError("Length of link ids must match length of link targets")
 
-        self.generator = generator
+        if (
+            isinstance(generator, GraphSAGELinkGenerator)
+            or isinstance(generator, HinSAGELinkGenerator)
+            or isinstance(generator, Attri2VecLinkGenerator)
+        ):
+            self.generator = generator
+        else:
+            raise TypeError(
+                "({}) GraphSAGELinkGenerator, HinSAGELinkGenerator or Attri2VecLinkGenerator is required.".format(
+                    type(self).__name__
+                )
+            )
+
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -100,17 +111,20 @@ class LinkSequence(Sequence):
         # Shuffle the IDs to begin
         self.on_epoch_end()
 
-        # Get head node types from all src, dst nodes extracted from all links,
-        # and make sure there's only one pair of node types:
-        self.head_node_types = self._infer_head_node_types(generator.schema)
+        if isinstance(self.generator, GraphSAGELinkGenerator) or isinstance(
+            self.generator, HinSAGELinkGenerator
+        ):
+            # Get head node types from all src, dst nodes extracted from all links,
+            # and make sure there's only one pair of node types:
+            self.head_node_types = self._infer_head_node_types(generator.schema)
 
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
+            self._sampling_schema = generator.schema.sampling_layout(
+                self.head_node_types, generator.num_samples
+            )
 
-        self.type_adjacency_list = generator.schema.type_adjacency_list(
-            self.head_node_types, len(generator.num_samples)
-        )
+            self.type_adjacency_list = generator.schema.type_adjacency_list(
+                self.head_node_types, len(generator.num_samples)
+            )
 
     def _infer_head_node_types(self, schema):
         """Get head node types from all src, dst nodes extracted from all links in self.ids"""
@@ -156,8 +170,16 @@ class LinkSequence(Sequence):
         # Get targets for nodes
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        if isinstance(self.generator, GraphSAGELinkGenerator) or isinstance(
+            self.generator, HinSAGELinkGenerator
+        ):
+            # Get sampled nodes for GraphSAGELinkGenerator and HinSAGELinkGenerator
+            batch_feats = self.generator.sample_features(
+                head_ids, self._sampling_schema
+            )
+        else:
+            # Get sampled nodes for Attri2VecLinkGenerator
+            batch_feats = self.generator.sample_features(head_ids)
 
         return batch_feats, batch_targets
 
@@ -187,14 +209,23 @@ class OnDemandLinkSequence(Sequence):
 
     def __init__(self, generator, walker):
 
-        self.generator = generator  # graphlinkgenerator instance
+        if isinstance(generator, GraphSAGELinkGenerator) or isinstance(
+            generator, Attri2VecLinkGenerator
+        ):
+            self.generator = generator
+        else:
+            raise TypeError(
+                "({}) GraphSAGELinkGenerator or Attri2VecLinkGenerator is required.".format(
+                    type(self).__name__
+                )
+            )
 
-        self.head_node_types = self.generator.schema.node_types * 2
-
-        # YT: we need to have self._sampling_schema for GraphSAGE.build() method to work
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
+        if isinstance(self.generator, GraphSAGELinkGenerator):
+            self.head_node_types = self.generator.schema.node_types * 2
+            # YT: we need to have self._sampling_schema for GraphSAGE.build() method to work
+            self._sampling_schema = generator.schema.sampling_layout(
+                self.head_node_types, generator.num_samples
+            )
 
         if isinstance(walker, UnsupervisedSampler):
 
@@ -251,24 +282,30 @@ class OnDemandLinkSequence(Sequence):
         # Get head nodes and labels
         head_ids, batch_targets = next(self._gen)
 
-        if self.head_node_types is None:
+        if isinstance(self.generator, GraphSAGELinkGenerator):
+            if self.head_node_types is None:
 
-            # Get head node types from all src, dst nodes extracted from all links,
-            # and make sure there's only one pair of node types:
-            self.head_node_types = self._infer_head_node_types(
-                self.generator.schema, head_ids
+                # Get head node types from all src, dst nodes extracted from all links,
+                # and make sure there's only one pair of node types:
+                self.head_node_types = self._infer_head_node_types(
+                    self.generator.schema, head_ids
+                )
+
+                self._sampling_schema = self.generator.schema.sampling_layout(
+                    self.head_node_types, self.generator.num_samples
+                )
+
+                self.type_adjacency_list = self.generator.schema.type_adjacency_list(
+                    self.head_node_types, len(self.generator.num_samples)
+                )
+
+            # Get sampled nodes for GraphSAGELinkGenerator
+            batch_feats = self.generator.sample_features(
+                head_ids, self._sampling_schema
             )
-
-            self._sampling_schema = self.generator.schema.sampling_layout(
-                self.head_node_types, self.generator.num_samples
-            )
-
-            self.type_adjacency_list = self.generator.schema.type_adjacency_list(
-                self.head_node_types, len(self.generator.num_samples)
-            )
-
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        else:
+            # Get sampled nodes for Attri2VecLinkGenerator
+            batch_feats = self.generator.sample_features(head_ids)
 
         return batch_feats, batch_targets
 
@@ -650,32 +687,27 @@ class Attri2VecLinkGenerator:
         G.check_graph_for_ml(features=True)
 
         self.graph = G
-        self.num_samples = [0]  # for compatibility with GraphSAGE
         self.batch_size = batch_size
         self.name = name
 
-        # We need a schema for compatibility with HinSAGE
-        self.schema = G.create_graph_schema(create_type_maps=True)
-
-    def sample_features(self, head_links, sampling_schema):
+    def sample_features(self, head_links):
         """
         Sample content features of the target nodes and the ids of the context nodes
         and return these as a list of feature arrays for the attri2vec algorithm.
 
         Args:
             head_links: An iterable of edges to perform sampling for.
-            sampling_schema: The sampling schema for the model, for compatibility with GraphSAGE and HinSAGE.
 
         Returns:
             A list of feaure arrys, with each element being the feature of a
             target node and the id of the corresponding context node.
         """
 
-        all_nodes = list(self.graph.nodes())
         target_ids = [head_link[0] for head_link in head_links]
-        context_ids = [all_nodes.index(head_link[1]) for head_link in head_links]
+        context_ids = [head_link[1] for head_link in head_links]
         target_feats = self.graph.get_feature_for_nodes(target_ids)
-        batch_feats = [target_feats, np.array(context_ids)]
+        context_feats = self.graph.get_index_for_nodes(context_ids)
+        batch_feats = [target_feats, np.array(context_feats)]
 
         return batch_feats
 
@@ -702,8 +734,10 @@ class Attri2VecLinkGenerator:
                 method to generate samples on the fly.
             targets (optional, array): a 2D array of numeric targets with shape
                 `(len(link_ids), target_size)`.
-            shuffle (optional, bool): If True the node_ids will be shuffled at each
-                epoch, if False the node_ids will be processed in order.
+            shuffle (optional, bool): The value of 'shuffle' is only relevant if 'link_ids' 
+                is an Iterable and it is ignored if the latter is an instance of UnsupervisedSampler. 
+                If True the node_ids will be shuffled at each epoch, if False the node_ids will be 
+                processed in order.
 
         Returns:
             An OnDemandLinkSequence object to use with the attri2vec model.
