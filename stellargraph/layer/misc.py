@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from keras.engine import Layer
-from keras import backend as K
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import backend as K
 
 
 class SqueezedSparseConversion(Layer):
@@ -39,12 +39,12 @@ class SqueezedSparseConversion(Layer):
     """
 
     def __init__(self, shape, axis=0, dtype=None):
-        super().__init__()
+        super().__init__(dtype=dtype)
 
         self.trainable = False
         self.supports_masking = True
         self.matrix_shape = shape
-        self.dtype = dtype
+        # self.dtype = dtype
         self.axis = axis
 
         # Check backend
@@ -81,7 +81,7 @@ class SqueezedSparseConversion(Layer):
             indices = inputs[0]
             values = inputs[1]
 
-        if self.dtype:
+        if self.dtype is not None:
             values = K.cast(values, self.dtype)
 
         # Import tensorflow here so that the backend check will work without

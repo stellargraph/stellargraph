@@ -27,7 +27,7 @@ from stellargraph.utils.calibration import (
     plot_reliability_diagram,
     expected_calibration_error,
 )
-from stellargraph.utils.ensemble import Ensemble
+from stellargraph.utils.ensemble import Ensemble, BaggingEnsemble
 
 # Custom layers for keras deserialization:
 custom_keras_layers = {

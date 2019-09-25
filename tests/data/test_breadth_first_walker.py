@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import SampledBreadthFirstWalk
-from stellargraph.core.graph import StellarGraph
+from stellargraph.core.graph import StellarGraph, StellarDiGraph
 
 
 def create_test_graph():
@@ -25,7 +25,7 @@ def create_test_graph():
     Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers.
 
     :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
-    networkx format.
+    StellarGraph format.
     """
     g = nx.Graph()
     edges = [
@@ -122,6 +122,15 @@ class TestBreadthFirstWalk(object):
         with pytest.raises(ValueError):
             bfw.run(nodes=nodes, n=n, n_size=n_size, seed="don't be random")
 
+        # If no neighbours are sampled, then just the start node should be returned, e.g.:
+        # subgraph = bfw.run(nodes=["0"], n=1, n_size=[])
+        # assert len(subgraph) == 1
+        # assert len(subgraph[0]) == 1
+        # assert subgraph[0][0] == "0"
+        # However, by consensus this is an error:
+        with pytest.raises(ValueError):
+            bfw.run(nodes=["0"], n=1, n_size=[])
+
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method
         # is the best for checking this behaviour.
         nodes = []
@@ -144,19 +153,25 @@ class TestBreadthFirstWalk(object):
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
-        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert len(subgraphs[0]) == expected_bfw_size(n_size)  # "loner" plus None
         assert subgraphs[0][0] == "loner"
+        assert subgraphs[0][1] is None
 
         n_size = [2, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
-        assert len(subgraphs[0]) == 1  # all elements should the same node
+        # "loner" plus 2 * None + 2 * 2 * None
+        assert len(subgraphs[0]) == expected_bfw_size(n_size)
         assert subgraphs[0][0] == "loner"
+        assert subgraphs[0][1] is None
+        assert subgraphs[0][2] is None
+        assert subgraphs[0][6] is None
 
         n_size = [3, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
-        assert len(subgraphs[0]) == 1  # all elements should the same node
+        # "loner" plus 3 * None + 3 * 2 * None
+        assert len(subgraphs[0]) == expected_bfw_size(n_size)
         assert subgraphs[0][0] == "loner"
 
         n = 3
@@ -172,7 +187,8 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         for subgraph in subgraphs:
-            assert len(subgraph) == 1  # root node only
+            # "loner" plus None
+            assert len(subgraph) == expected_bfw_size(n_size)
             assert subgraph[0] == "loner"
 
         n = 99
@@ -180,7 +196,8 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         for subgraph in subgraphs:
-            assert len(subgraph) == 1  # root node only
+            # "loner" plus 2 * None + 2 * 2 * None
+            assert len(subgraph) == expected_bfw_size(n_size)
             assert subgraph[0] == "loner"
 
         n = 17
@@ -188,8 +205,113 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         for subgraph in subgraphs:
-            assert len(subgraph) == 1  # root node only
+            # "loner" plus 3 * None + 3 * 2 * None
+            assert len(subgraph) == expected_bfw_size(n_size)
             assert subgraph[0] == "loner"
+
+    def test_directed_walk_generation_single_root_node(self):
+
+        g = nx.DiGraph()
+        edges = [
+            ("root", 2),
+            ("root", 1),
+            ("root", "0"),
+            (2, "c2.1"),
+            (2, "c2.2"),
+            (1, "c1.1"),
+        ]
+        g.add_edges_from(edges)
+        g = StellarDiGraph(g)
+
+        def _check_directed_walk(walk, n_size):
+            if len(n_size) > 1 and n_size[0] > 0 and n_size[1] > 0:
+                for child_pos in range(n_size[0]):
+                    child = walk[child_pos + 1]
+                    grandchildren_start = 1 + n_size[0] + child_pos * n_size[1]
+                    grandchildren_end = grandchildren_start + n_size[1]
+                    grandchildren = walk[grandchildren_start:grandchildren_end]
+                    if child == "0":  # node without children
+                        for grandchild in grandchildren:
+                            assert grandchild is None
+                    elif child == 1:  # node with single child
+                        for grandchild in grandchildren:
+                            assert grandchild == "c1.1"
+                    elif child == 2:  # node with two children
+                        for grandchild in grandchildren:
+                            assert grandchild == "c2.1" or grandchild == "c2.2"
+                    else:
+                        assert 1 == 0
+
+        bfw = SampledBreadthFirstWalk(g)
+
+        nodes = ["root"]
+        n = 1
+        n_size = [0]
+
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert subgraphs[0][0] == "root"
+
+        n_size = [1]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        assert len(subgraphs[0]) == expected_bfw_size(n_size)  # "root" plus child
+        assert subgraphs[0][0] == "root"
+
+        n_size = [2, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        # "root" plus 2 * child + 2 * 2 * grandchild or None
+        assert len(subgraphs[0]) == expected_bfw_size(n_size)
+        assert subgraphs[0][0] == "root"
+        assert subgraphs[0][1] is not None
+        assert subgraphs[0][2] is not None
+        _check_directed_walk(subgraphs[0], n_size)
+
+        n_size = [3, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        # "root" plus 3 * child + 3 * 2 * grandchild or None
+        assert len(subgraphs[0]) == expected_bfw_size(n_size)
+        assert subgraphs[0][0] == "root"
+        _check_directed_walk(subgraphs[0], n_size)
+
+        n = 3
+        n_size = [0]
+
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            assert len(subgraph) == 1  # root node only
+            assert subgraph[0] == "root"
+
+        n_size = [1]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            # "root" plus child
+            assert len(subgraph) == expected_bfw_size(n_size)
+            assert subgraph[0] == "root"
+
+        n = 99
+        n_size = [2, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            # "root" plus 2 * child + 2 * 2 * grandchild or None
+            assert len(subgraph) == expected_bfw_size(n_size)
+            assert subgraph[0] == "root"
+            _check_directed_walk(subgraph, n_size)
+
+        n = 17
+        n_size = [3, 2]
+        subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
+        assert len(subgraphs) == n
+        for subgraph in subgraphs:
+            # "root" plus 3 * child + 3 * 2 * grandchild or None
+            assert len(subgraph) == expected_bfw_size(n_size)
+            assert subgraph[0] == "root"
 
     def test_walk_generation_single_root_node_self_loner(self):
         g = create_test_graph()
@@ -201,25 +323,25 @@ class TestBreadthFirstWalk(object):
         n_size = [0]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n_size = [2, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n_size = [3, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n = 3
@@ -227,21 +349,21 @@ class TestBreadthFirstWalk(object):
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n * len(nodes)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n * len(nodes)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n_size = [2, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n * len(nodes)
         assert len(subgraphs[0]) == expected_bfw_size(n_size=n_size)
-        assert len(set(subgraphs[0])) == 1  # all elements should the same node
+        assert len(set(subgraphs[0])) == 1  # all elements should be same node
         assert nodes[0] in set(subgraphs[0])
 
         n_size = [3, 2]
@@ -469,7 +591,7 @@ class TestBreadthFirstWalk(object):
         assert len(w0) == len(w1)
         assert w0 == w1
 
-    def test_benchmark_sampledbreadthfirstwalk(self, benchmark):
+    def test_benchmark_bfs_walk(self, benchmark):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
