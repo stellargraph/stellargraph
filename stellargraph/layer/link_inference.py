@@ -20,7 +20,7 @@ link attribute inference (regression)
 """
 
 from typing import AnyStr, Optional, List, Tuple
-from keras.layers import (
+from tensorflow.keras.layers import (
     Layer,
     Concatenate,
     Dense,
@@ -30,7 +30,7 @@ from keras.layers import (
     Reshape,
     Activation,
 )
-from keras import backend as K
+from tensorflow.keras import backend as K
 import warnings
 
 
