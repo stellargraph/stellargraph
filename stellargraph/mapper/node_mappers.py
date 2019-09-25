@@ -1010,18 +1010,27 @@ class ClusterNodeSequence(Sequence):
         ).todense())  # order is given by order of IDs in cluster
         if self.normalize_adj:
             adj_cluster = adj_cluster + np.eye(adj_cluster.shape[0], dtype=np.int)  # add self-loops
-            degree_matrix = np.diag((np.array(adj_cluster.sum(axis=1))) ** (-0.5))
-            adj_cluster = degree_matrix @ adj_cluster @ degree_matrix
+            # degree_matrix = np.diag(adj_cluster.sum(axis=1)) + np.eye(adj_cluster.shape[0], dtype=np.int)
+            degree_matrix = adj_cluster.sum(axis=1) + 1
+            degree_matrix = np.diag(1. / degree_matrix)
+            #degree_matrix = np.diag((np.array(adj_cluster.sum(axis=1))) ** (-0.5))
+            #adj_cluster = degree_matrix @ adj_cluster @ degree_matrix
+            adj_cluster = degree_matrix @ adj_cluster
+            adj_cluster_diagonal = np.diag(adj_cluster)
+
+            adj_cluster = adj_cluster + 0.1*np.diag(adj_cluster_diagonal)
+
+
 
         g_node_list = list(g_cluster.nodes())
+
         # Determine the target nodes that exist in this cluster
-        # target_nodes_in_cluster = np.asanyarray(list(set(self.target_ids).intersection(g_node_list)))
         target_nodes_in_cluster = np.asanyarray(list(set(g_node_list).intersection(self.target_ids)))
 
         # The list of indices of the target nodes in cluster
         target_node_indices = np.array(
             [g_node_list.index(n) for n in target_nodes_in_cluster]
-        )  # [np.newaxis, :]
+        )
 
         cluster_targets = None
         #
