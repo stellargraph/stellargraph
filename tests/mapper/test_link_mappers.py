@@ -837,7 +837,6 @@ class Test_Attri2VecLinkGenerator:
             nf, nl = mapper[batch]
 
             assert len(nf) == 2
-            assert len(set(mapper.head_node_types)) == 1
 
             assert nf[0].shape == (min(self.batch_size, mapper.data_size), self.n_feat)
             assert nf[1].shape == (min(self.batch_size, mapper.data_size),)
