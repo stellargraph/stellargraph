@@ -51,12 +51,12 @@ class GraphSAGEAggregator(Layer):
             Keras activation function), or alternatively, a TensorFlow operation.
 
     Additional Args:
-        kernel_initializer (str): The initialiser to use for the weights.
-        kernel_regularizer (str): The regulariser to use for the weights.
-        kernel_constraint (str): The constraint to use for the weights.
-        bias_initializer (str): The initialiser to use for the bias.
-        bias_regularizer (str): The regulariser to use for the bias.
-        bias_constraint (str): The constraint to use for the bias.
+        kernel_initializer (str or func): The initialiser to use for the weights.
+        kernel_regularizer (str or func): The regulariser to use for the weights.
+        kernel_constraint (str or func): The constraint to use for the weights.
+        bias_initializer (str or func): The initialiser to use for the bias.
+        bias_regularizer (str or func): The regulariser to use for the bias.
+        bias_constraint (str or func): The constraint to use for the bias.
     """
 
     def __init__(
@@ -714,27 +714,27 @@ class GraphSAGE:
     :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
     Args:
-        layer_sizes (list): Hidden feature dimensions for each layer
+        layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
             and input_dim will be taken from this object.
-        aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
-        bias (bool): If True, a bias vector is learnt for each layer in the GraphSAGE model
-        dropout (float): The dropout supplied to each layer in the GraphSAGE model.
-        normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
-        activations (list of str): Activations applied to each layer's output;
+        aggregator (class): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
+        bias (bool): If True (default), a bias vector is learnt for each layer.
+        dropout (float): The dropout supplied to each layer; defaults to no dropout.
+        normalize (str or None): The normalization used after each layer; defaults to L2 normalization.
+        activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
 
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         n_samples (list): The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
 
-    Additional Args:
-        kernel_initializer (str): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str): The regulariser to use for the weights of each layer.
-        kernel_constraint (str): The constraint to use for the weights of each layer.
-        bias_initializer (str): The initialiser to use for the bias of each layer.
-        bias_regularizer (str): The regulariser to use for the bias of each layer.
-        bias_constraint (str): The constraint to use for the bias of each layer.
+    Optional Args:
+        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func): The constraint to use for the weights of each layer.
+        bias_initializer (str or func): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func): The constraint to use for the bias of each layer.
     """
 
     def __init__(
@@ -1041,18 +1041,25 @@ class DirectedGraphSAGE(GraphSAGE):
     :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
     Args:
-        layer_sizes (list): Hidden feature dimensions for each layer
+        layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence.
-        aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
-        bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
-        dropout (float): The dropout supplied to each layer in the GraphSAGE model.
-        normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
+        aggregator (class, optional): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
+        bias (bool, optional): If True (default), a bias vector is learnt for each layer.
+        dropout (float, optional): The dropout supplied to each layer; defaults to no dropout.
+        normalize (str, optional): The normalization used after each layer; defaults to L2 normalization.
 
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         in_samples (list): The number of in-node samples per layer in the model.
         out_samples (list): The number of out-node samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
 
+    Optional Args:
+        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func): The constraint to use for the weights of each layer.
+        bias_initializer (str or func): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func): The constraint to use for the bias of each layer.
     """
 
     def _get_sizes_from_generator(self, generator):

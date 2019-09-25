@@ -513,12 +513,9 @@ class Test_GAT:
             generator=gen,
             bias=True,
             normalize="l2",
+            kernel_initializer="ones",
+            attn_kernel_initializer="ones",
         )
-
-        gat._layers[1].kernel_initializer = keras.initializers.get("ones")
-        gat._layers[1].attn_kernel_initializer = keras.initializers.get("ones")
-        gat._layers[3].kernel_initializer = keras.initializers.get("ones")
-        gat._layers[3].attn_kernel_initializer = keras.initializers.get("ones")
 
         x_in, x_out = gat.node_model()
 
@@ -542,12 +539,9 @@ class Test_GAT:
             generator=gen,
             bias=True,
             normalize=None,
+            kernel_initializer="ones",
+            attn_kernel_initializer="ones",
         )
-
-        gat._layers[1].kernel_initializer = keras.initializers.get("ones")
-        gat._layers[1].attn_kernel_initializer = keras.initializers.get("ones")
-        gat._layers[3].kernel_initializer = keras.initializers.get("ones")
-        gat._layers[3].attn_kernel_initializer = keras.initializers.get("ones")
 
         x_in, x_out = gat.node_model()
 

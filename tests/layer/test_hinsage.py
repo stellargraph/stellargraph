@@ -23,6 +23,7 @@ HinSAGE tests
 
 from stellargraph.layer.hinsage import *
 from tensorflow import keras
+from tensorflow.keras import regularizers
 import numpy as np
 import pytest
 
@@ -472,3 +473,40 @@ def test_hinsage_passing_activations():
         activations=["linear"] * 2,
     )
     assert hs.activations == ["linear"] * 2
+
+
+def test_hinsage_regularisers():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+        normalize="none",
+        kernel_initializer="ones",
+        kernel_regularizer=regularizers.l2(0.01),
+    )
+
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 2],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 4},
+            normalize="none",
+            kernel_initializer="ones",
+            kernel_regularizer="fred",
+        )

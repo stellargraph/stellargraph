@@ -20,6 +20,8 @@ GraphSAGE tests
 
 """
 from tensorflow import keras
+from tensorflow.keras import initializers, regularizers
+
 import numpy as np
 import networkx as nx
 import pytest
@@ -541,4 +543,25 @@ def test_graphsage_passing_regularisers():
     with pytest.raises(ValueError):
         GraphSAGE(
             layer_sizes=[4], n_samples=[2], input_dim=2, kernel_initializer="fred"
+        )
+
+    GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, kernel_initializer="ones")
+
+    GraphSAGE(
+        layer_sizes=[4],
+        n_samples=[2],
+        input_dim=2,
+        kernel_initializer=initializers.ones(),
+    )
+
+    GraphSAGE(
+        layer_sizes=[4],
+        n_samples=[2],
+        input_dim=2,
+        kernel_regularizer=regularizers.l2(0.01),
+    )
+
+    with pytest.raises(ValueError):
+        GraphSAGE(
+            layer_sizes=[4], n_samples=[2], input_dim=2, kernel_regularizer="wilma"
         )

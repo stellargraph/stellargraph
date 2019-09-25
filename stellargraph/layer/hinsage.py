@@ -42,13 +42,13 @@ class MeanHinAggregator(Layer):
         act (Callable or str): name of the activation function to use (must be a Keras
             activation function), or alternatively, a TensorFlow operation.
 
-    Additional Args:
-        kernel_initializer (str): The initialiser to use for the weights.
-        kernel_regularizer (str): The regulariser to use for the weights.
-        kernel_constraint (str): The constraint to use for the weights.
-        bias_initializer (str): The initialiser to use for the bias.
-        bias_regularizer (str): The regulariser to use for the bias.
-        bias_constraint (str): The constraint to use for the bias.
+    Optional Args:
+        kernel_initializer (str or func): The initialiser to use for the weights.
+        kernel_regularizer (str or func): The regulariser to use for the weights.
+        kernel_constraint (str or func): The constraint to use for the weights.
+        bias_initializer (str or func): The initialiser to use for the bias.
+        bias_regularizer (str or func): The regulariser to use for the bias.
+        bias_constraint (str or func): The constraint to use for the bias.
     """
 
     def __init__(
@@ -227,20 +227,20 @@ class HinSAGE:
             subtree to be created by the HinSAGE model.
         input_dim: The input dimensions for each node type as a dictionary of the form
             {node_type: feature_size}.
-        aggregator: The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
-        bias (bool): If True, a bias vector is learnt for each layer in the HinSAGE model
-        dropout: The dropout supplied to each layer in the HinSAGE model.
-        normalize: The normalization used after each layer, defaults to L2 normalization.
-        activations (list of str): Activations applied to each layer's output;
+        aggregator: The HinSAGE aggregator to use; defaults to the `MeanHinAggregator`.
+        bias (bool): If True (default), a bias vector is learnt for each layer.
+        dropout: The dropout supplied to each layer; defaults to no dropout.
+        normalize: The normalization used after each layer; defaults to L2 normalization.
+        activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
 
     Additional Args:
-        kernel_initializer (str): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str): The regulariser to use for the weights of each layer.
-        kernel_constraint (str): The constraint to use for the weights of each layer.
-        bias_initializer (str): The initialiser to use for the bias of each layer.
-        bias_regularizer (str): The regulariser to use for the bias of each layer.
-        bias_constraint (str): The constraint to use for the bias of each layer.
+        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func): The constraint to use for the weights of each layer.
+        bias_initializer (str or func): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func): The constraint to use for the bias of each layer.
     """
 
     def __init__(
