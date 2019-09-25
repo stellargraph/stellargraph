@@ -20,9 +20,10 @@ Definition of Graph Attention Network (GAT) layer, and GAT class that is a stack
 __all__ = ["GraphAttention", "GraphAttentionSparse", "GAT"]
 
 import warnings
-from keras import backend as K
-from keras import activations, constraints, initializers, regularizers
-from keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras import activations, constraints, initializers, regularizers
+from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
 from ..mapper import FullBatchNodeGenerator
 from .misc import SqueezedSparseConversion
@@ -98,6 +99,7 @@ class GraphAttention(Layer):
         kernel_constraint=None,
         bias_constraint=None,
         attn_kernel_constraint=None,
+        saliency_map_support=False,
         **kwargs
     ):
 
@@ -130,6 +132,7 @@ class GraphAttention(Layer):
         self.bias_constraint = constraints.get(bias_constraint)
         self.attn_kernel_constraint = constraints.get(attn_kernel_constraint)
 
+        self.saliency_map_support = saliency_map_support
         # Populated by build()
         self.kernels = []  # Layer kernels for attention heads
         self.biases = []  # Layer biases for attention heads
@@ -208,7 +211,18 @@ class GraphAttention(Layer):
 
         """
         feat_shape = input_shapes[0]
-        input_dim = feat_shape[-1]
+        input_dim = int(feat_shape[-1])
+
+        # Variables to support integrated gradients
+        self.delta = self.add_weight(
+            name="ig_delta", shape=(), trainable=False, initializer=initializers.ones()
+        )
+        self.non_exist_edge = self.add_weight(
+            name="ig_non_exist_edge",
+            shape=(),
+            trainable=False,
+            initializer=initializers.zeros(),
+        )
 
         # Initialize weights for each attention head
         for head in range(self.attn_heads):
@@ -279,6 +293,7 @@ class GraphAttention(Layer):
         X = inputs[0]  # Node features (1 x N x F)
         out_indices = inputs[1]  # output indices (1 x K)
         A = inputs[2]  # Adjacency matrix (N x N)
+        N = K.int_shape(A)[-1]
 
         batch_dim, n_nodes, _ = K.int_shape(X)
         if batch_dim != 1:
@@ -322,11 +337,25 @@ class GraphAttention(Layer):
             # YT: this only works for 'binary' A, not for 'weighted' A!
             # YT: if A does not have self-loops, the node itself will be masked, so A should have self-loops
             # YT: this is ensured by setting the diagonal elements of A tensor to 1 above
-            mask = -10e9 * (1.0 - A)
-            dense += mask
+            if not self.saliency_map_support:
+                mask = -10e9 * (1.0 - A)
+                self.A = A
+                dense += mask
+                dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
 
-            # Apply softmax to get attention coefficients
-            dense = K.softmax(dense, axis=1)  # (N x N), Eq. 3 of the paper
+            else:
+                # dense = dense - tf.reduce_max(dense)
+                # GAT with support for saliency calculations
+                W = (self.delta * A) * K.exp(
+                    dense - K.max(dense, axis=1, keepdims=True)
+                ) * (1 - self.non_exist_edge) + self.non_exist_edge * (
+                    A
+                    + self.delta * (K.ones(shape=[N, N], dtype="float") - A)
+                    + K.eye(N)
+                ) * K.exp(
+                    dense - K.max(dense, axis=1, keepdims=True)
+                )
+                dense = W / K.sum(W, axis=1, keepdims=True)
 
             # Apply dropout to features and attention coefficients
             dropout_feat = Dropout(self.in_dropout_rate)(features)  # (N x F')
@@ -435,7 +464,7 @@ class GraphAttentionSparse(GraphAttention):
         out_indices = inputs[1]  # output indices (1 x K)
         A_sparse = inputs[2]  # Adjacency matrix (1 x N x N)
 
-        if not isinstance(A_sparse, K.tf.SparseTensor):
+        if not isinstance(A_sparse, tf.SparseTensor):
             raise TypeError("A is not sparse")
 
         # Get undirected graph edges (E x 2)
@@ -476,10 +505,10 @@ class GraphAttentionSparse(GraphAttention):
             )  # (N x N) via broadcasting
 
             # Create sparse attention vector (All non-zero values of the matrix)
-            sparse_attn_self = K.tf.gather(
+            sparse_attn_self = tf.gather(
                 K.reshape(attn_for_self, [-1]), A_indices[:, 0], axis=0
             )
-            sparse_attn_neighs = K.tf.gather(
+            sparse_attn_neighs = tf.gather(
                 K.reshape(attn_for_neighs, [-1]), A_indices[:, 1], axis=0
             )
             attn_values = sparse_attn_self + sparse_attn_neighs
@@ -492,17 +521,15 @@ class GraphAttentionSparse(GraphAttention):
             dropout_attn = Dropout(self.attn_dropout_rate)(attn_values)  # (N x N)
 
             # Convert to sparse matrix
-            sparse_attn = K.tf.sparse.SparseTensor(
+            sparse_attn = tf.sparse.SparseTensor(
                 A_indices, values=dropout_attn, dense_shape=[n_nodes, n_nodes]
             )
 
             # Apply softmax to get attention coefficients
-            sparse_attn = K.tf.sparse.softmax(
-                sparse_attn
-            )  # (N x N), Eq. 3 of the paper
+            sparse_attn = tf.sparse.softmax(sparse_attn)  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
-            node_features = K.tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
+            node_features = tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
 
             if self.use_bias:
                 node_features = K.bias_add(node_features, self.biases[head])
@@ -600,12 +627,13 @@ class GAT:
         attn_dropout=0.0,
         normalize=None,
         generator=None,
+        saliency_map_support=False,
     ):
         self.bias = bias
         self.in_dropout = in_dropout
         self.attn_dropout = attn_dropout
         self.generator = generator
-
+        self.saliency_map_support = saliency_map_support
         # Check layer_sizes (must be list of int):
         # check type:
         if not isinstance(layer_sizes, list):
@@ -760,6 +788,7 @@ class GAT:
                     activation=self.activations[ii],
                     use_bias=self.bias,
                     final_layer=ii == (n_layers - 1),
+                    saliency_map_support=self.saliency_map_support,
                 )
             )
 
@@ -780,6 +809,7 @@ class GAT:
 
         # Currently we require the batch dimension to be one for full-batch methods
         batch_dim, n_nodes, _ = K.int_shape(x_in)
+
         if batch_dim != 1:
             raise ValueError(
                 "Currently full-batch methods only support a batch dimension of one"

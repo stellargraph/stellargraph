@@ -29,8 +29,8 @@ import networkx as nx
 import pandas as pd
 from typing import AnyStr, List
 
-import keras
-from keras import optimizers, losses, metrics
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, metrics
 
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter

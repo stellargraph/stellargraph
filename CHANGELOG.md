@@ -1,18 +1,30 @@
 # Change Log
 
-
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/develop)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.1...HEAD)
 
-**Implemented enhancements:**
-- 
+**Implemented enhancements:** 
+- Added directed GraphSAGE algorithm [\#479](https://github.com/stellargraph/stellargraph/pull/479)
+- New demo of node classification on Twitter hateful users [\430](https://github.com/stellargraph/stellargraph/pull/430)
+- New demo of graph saliency on Twitter hateful users [\#448](https://github.com/stellargraph/stellargraph/pull/448)
+- Graph saliency maps for classificaiton interpretation implemented for GAT [\#435](https://github.com/stellargraph/stellargraph/pull/435)
 
 **Refactoring:**
-- 
+- Refactored Ensemble class into Ensemble and BaggingEnsemble. The former implements naive ensembles and the latter bagging ensembles. [\#459](https://github.com/stellargraph/stellargraph/pull/459)
+- Changed from `keras` to use `tensorflow.keras` [\#471](https://github.com/stellargraph/stellargraph/pull/471)
+- Removed `flatten_output` arguments for all models [\#447](https://github.com/stellargraph/stellargraph/pull/447)
+
 
 **Fixed bugs:**
-- 
+- Updated Yelp example to support new dataset version [\#442](https://github.com/stellargraph/stellargraph/pull/442)
+- Fixed bug where some nodes and edges did not get a default type [\#451](https://github.com/stellargraph/stellargraph/pull/451)
+
+
+## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
+
+Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements, 
+to avoid errors due to API changes in the recent versions of Keras and Tensorflow.
 
 
 ## [0.7.1](https://github.com/stellargraph/stellargraph/tree/v0.7.1)

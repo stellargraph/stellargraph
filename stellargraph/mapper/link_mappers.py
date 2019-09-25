@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,9 @@ import itertools as it
 import operator
 import collections
 from functools import reduce
+import threading
 
+from tensorflow import keras
 from tensorflow.keras.utils import Sequence
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import (
@@ -219,6 +221,11 @@ class OnDemandLinkSequence(Sequence):
                     type(self).__name__
                 )
             )
+        self.lock = threading.Lock()
+
+        #self.generator = generator  # graphlinkgenerator instance
+
+        self.head_node_types = self.generator.schema.node_types * 2
 
         if isinstance(self.generator, GraphSAGELinkGenerator):
             self.head_node_types = self.generator.schema.node_types * 2
@@ -280,7 +287,9 @@ class OnDemandLinkSequence(Sequence):
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
         # Get head nodes and labels
+        self.lock.acquire()
         head_ids, batch_targets = next(self._gen)
+        self.lock.release()
 
         if isinstance(self.generator, GraphSAGELinkGenerator):
             if self.head_node_types is None:
@@ -411,13 +420,6 @@ class GraphSAGELinkGenerator:
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self.sampler.run(nodes=hns, n=1, n_size=self.num_samples)
-
-            # Isolated nodes will return only themselves in the sample list
-            # let's correct for this by padding with None (the dummy node ID)
-            node_samples = [
-                ns + [None] * num_full_samples if len(ns) == 1 else ns
-                for ns in node_samples
-            ]
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
 
