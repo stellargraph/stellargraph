@@ -35,9 +35,9 @@ import numpy as np
 import itertools as it
 import networkx as nx
 import scipy.sparse as sps
-import keras.backend as K
+import tensorflow.keras.backend as K
 from functools import reduce
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,
@@ -105,22 +105,20 @@ class NodeSequence(Sequence):
                 "Head nodes supplied to generator contain IDs not found in graph"
             )
 
-        # Infer head_node_type
         if (
-            generator.schema.node_type_map is None
-            or generator.schema.edge_type_map is None
+            isinstance(generator, GraphSAGENodeGenerator)
+            or isinstance(generator, HinSAGENodeGenerator)
+            or isinstance(generator, Attri2VecNodeGenerator)
         ):
-            raise RuntimeError("Schema must have node and edge type maps.")
+            self.generator = generator
         else:
-            head_node_types = {generator.schema.get_node_type(n) for n in ids}
-        if len(head_node_types) > 1:
-            raise ValueError(
-                "Only a single head node type is currently supported for HinSAGE models"
+            raise TypeError(
+                "({}) GraphSAGENodeGenerator, HinSAGENodeGenerator or Attri2VecNodeGenerator is required.".format(
+                    type(self).__name__
+                )
             )
-        head_node_type = head_node_types.pop()
 
         # Store the generator to draw samples from graph
-        self.generator = generator
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -128,11 +126,28 @@ class NodeSequence(Sequence):
         # Shuffle IDs to start
         self.on_epoch_end()
 
-        # Save head node type and generate sampling schema
-        self.head_node_types = [head_node_type]
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
+        if isinstance(self.generator, GraphSAGENodeGenerator) or isinstance(
+            self.generator, HinSAGENodeGenerator
+        ):
+            # Infer head_node_type
+            if (
+                generator.schema.node_type_map is None
+                or generator.schema.edge_type_map is None
+            ):
+                raise RuntimeError("Schema must have node and edge type maps.")
+            else:
+                head_node_types = {generator.schema.get_node_type(n) for n in ids}
+            if len(head_node_types) > 1:
+                raise ValueError(
+                    "Only a single head node type is currently supported for HinSAGE models"
+                )
+            head_node_type = head_node_types.pop()
+
+            # Save head node type and generate sampling schema
+            self.head_node_types = [head_node_type]
+            self._sampling_schema = generator.schema.sampling_layout(
+                self.head_node_types, generator.num_samples
+            )
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
@@ -166,8 +181,16 @@ class NodeSequence(Sequence):
         # Get corresponding targets
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        if isinstance(self.generator, GraphSAGENodeGenerator) or isinstance(
+            self.generator, HinSAGENodeGenerator
+        ):
+            # Get sampled nodes for GraphSAGENodeGenerator and HinSAGENodeGenerator
+            batch_feats = self.generator.sample_features(
+                head_ids, self._sampling_schema
+            )
+        else:
+            # Get sampled nodes for Attri2VecNodeGenerator
+            batch_feats = self.generator.sample_features(head_ids)
 
         return batch_feats, batch_targets
 
@@ -544,23 +567,13 @@ class Attri2VecNodeGenerator:
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
-        self.num_samples = [0]  # for compatibility with GraphSAGE
         self.batch_size = batch_size
         self.name = name
 
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # We need a schema for compatibility with HinSAGE
-        self.schema = G.create_graph_schema(create_type_maps=True)
-
-        # Check that there is only a single node type for Attri2Vec
-        if len(self.schema.node_types) > 1:
-            print(
-                "Warning: running homogeneous Attri2Vec on a graph with multiple node types"
-            )
-
-    def sample_features(self, head_nodes, sampling_schema):
+    def sample_features(self, head_nodes):
         """
         Sample content features of the head nodes, and return these as a list of feature 
         arrays for the attri2vec algorithm.
