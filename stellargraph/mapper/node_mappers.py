@@ -37,7 +37,6 @@ import itertools as it
 import networkx as nx
 import scipy.sparse as sps
 from tensorflow.keras import backend as K
-
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 
@@ -58,11 +57,11 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator` 
-    or :class:`Attri2vecNodeGenerator`.
+    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator` 
+    or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
 
-    GraphSAGENodeGenerator and HinSAGENodeGenerator are classes that 
-    capture the graph structure and the feature vectors of each node. 
+    GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator,and HinSAGENodeGenerator 
+    are classes that capture the graph structure and the feature vectors of each node. 
     These generator classes are used within the NodeSequence to generate
     samples of k-hop neighbourhoods in the graph and to return to this 
     class the features from the sampled neighbourhoods.
@@ -71,9 +70,9 @@ class NodeSequence(Sequence):
     of each node.
 
     Args:
-        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator or
-            Attri2VecNodeGenerator. The generator object containing the 
-            graph information.
+        generator: GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator or 
+            HinSAGENodeGenerator or Attri2VecNodeGenerator. The generator object 
+            containing the graph information.
         ids: list
             A list of the node_ids to be used as head-nodes in the
             downstream task.
@@ -108,20 +107,22 @@ class NodeSequence(Sequence):
                 "Head nodes supplied to generator contain IDs not found in graph"
             )
 
+        # Store the generator to draw samples from graph
         if (
             isinstance(generator, GraphSAGENodeGenerator)
+            or isinstance(generator, DirectedGraphSAGENodeGenerator)
             or isinstance(generator, HinSAGENodeGenerator)
             or isinstance(generator, Attri2VecNodeGenerator)
         ):
             self.generator = generator
         else:
             raise TypeError(
-                "({}) GraphSAGENodeGenerator, HinSAGENodeGenerator or Attri2VecNodeGenerator is required.".format(
+                "({}) GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, HinSAGENodeGenerator or Attri2VecNodeGenerator is required.".format(
                     type(self).__name__
                 )
             )
 
-        # Store the generator to draw samples from graph
+        
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -129,8 +130,10 @@ class NodeSequence(Sequence):
         # Shuffle IDs to start
         self.on_epoch_end()
 
-        if isinstance(self.generator, GraphSAGENodeGenerator) or isinstance(
-            self.generator, HinSAGENodeGenerator
+        if (
+            isinstance(self.generator, GraphSAGENodeGenerator) 
+            or isinstance(self.generator, DirectedGraphSAGENodeGenerator)
+            or isinstance(self.generator, HinSAGENodeGenerator)
         ):
             # Infer head_node_type
             if (
@@ -148,12 +151,12 @@ class NodeSequence(Sequence):
 
             # Save head node type and generate sampling schema
             self.head_node_types = [head_node_type]
+            ### Experimental; for directed sampling
+            num_samples = getattr(generator, "num_samples", [])
             self._sampling_schema = generator.schema.sampling_layout(
-                self.head_node_types, generator.num_samples
+                self.head_node_types, num_samples
             )
-	if isinstance(self.generator, GraphSAGENodeGenerator):
-        	### Experimental; for directed sampling
-        	num_samples = getattr(generator, "num_samples", [])
+            
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
