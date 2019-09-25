@@ -210,6 +210,8 @@ class OnDemandLinkSequence(Sequence):
     """
 
     def __init__(self, generator, walker):
+        
+        self.lock = threading.Lock()
 
         if isinstance(generator, GraphSAGELinkGenerator) or isinstance(
             generator, Attri2VecLinkGenerator
@@ -221,14 +223,11 @@ class OnDemandLinkSequence(Sequence):
                     type(self).__name__
                 )
             )
-        self.lock = threading.Lock()
-
-        #self.generator = generator  # graphlinkgenerator instance
-
-        self.head_node_types = self.generator.schema.node_types * 2
 
         if isinstance(self.generator, GraphSAGELinkGenerator):
+            
             self.head_node_types = self.generator.schema.node_types * 2
+            
             # YT: we need to have self._sampling_schema for GraphSAGE.build() method to work
             self._sampling_schema = generator.schema.sampling_layout(
                 self.head_node_types, generator.num_samples
@@ -292,6 +291,7 @@ class OnDemandLinkSequence(Sequence):
         self.lock.release()
 
         if isinstance(self.generator, GraphSAGELinkGenerator):
+            
             if self.head_node_types is None:
 
                 # Get head node types from all src, dst nodes extracted from all links,
