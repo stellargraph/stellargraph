@@ -202,11 +202,8 @@ class ClusterGraphConvolution(Layer):
         #     )
 
         # Remove singleton batch dimension
-        features = K.squeeze(features, 0)  #
-        #out_indices = K.squeeze(K.squeeze(out_indices, 0), 0)  #
-
-        out_indices = K.squeeze(out_indices, 0)  #
-
+        features = K.squeeze(features, 0)
+        out_indices = K.squeeze(out_indices, 0)
 
         # Calculate the layer operation of GCN
         A = As[0]  # K.squeeze(As[0], 0)
@@ -411,11 +408,5 @@ class ClusterGCN:
 
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
-
-        # Flatten output by removing singleton batch dimension
-        # if x_out.shape[0] == 1:
-        #     self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
-        # else:
-        #     self.x_out_flat = x_out
 
         return x_inp, x_out
