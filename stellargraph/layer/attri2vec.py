@@ -21,10 +21,9 @@ attri2vec
 """
 __all__ = ["Attri2Vec"]
 
-from keras import Input
-from keras import backend as K
-from keras.layers import Input, Dense, Lambda, Dropout, Reshape
-from keras.layers.embeddings import Embedding
+from tensorflow.keras import Input
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Dense, Lambda, Reshape, Embedding
 import warnings
 
 
@@ -42,8 +41,9 @@ class Attri2Vec:
         input_dim (int): The dimensions of the node features used as input to the model.
         node_num (int): The number of nodes in the given graph.
         bias (bool): If True a bias vector is learnt for each layer in the attri2vec model, default to False.
-        dropout (float): The dropout supplied to each layer in the attri2vec model, default to 0.0.
-        normalize (str or None): The normalization used after each layer, default to None.
+        activation (str): The activation function of each layer in the attri2vec model, which takes values from 
+        "linear", "relu" and "sigmoid"(default).
+        normalize ("l2" or None): The normalization used after each layer, default to None.
 
     """
 
@@ -54,25 +54,33 @@ class Attri2Vec:
         input_dim=None,
         node_num=None,
         bias=False,
-        dropout=0.0,
+        activation="sigmoid",
         normalize=None,
     ):
+
+        if activation == "linear" or activation == "relu" or activation == "sigmoid":
+            self.activation = activation
+        else:
+            raise ValueError(
+                "Activation should be either 'linear', 'relu' or 'sigmoid'; received '{}'".format(
+                    activation
+                )
+            )
 
         if normalize == "l2":
             self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
 
-        elif normalize is None or normalize == "none" or normalize == "None":
+        elif normalize is None:
             self._normalization = Lambda(lambda x: x)
 
         else:
             raise ValueError(
-                "Normalization should be either 'l2' or 'none'; received '{}'".format(
+                "Normalization should be either 'l2' or None; received '{}'".format(
                     normalize
                 )
             )
 
         # Get the input_dim and node_num from the generator if it is given
-        # Use both the schema and head node type from the generator
         self.generator = generator
         if generator is not None:
             feature_sizes = generator.generator.graph.node_feature_sizes()
@@ -96,11 +104,6 @@ class Attri2Vec:
         # Model parameters
         self.n_layers = len(layer_sizes)
         self.bias = bias
-        self.dropout = dropout
-        self.activation = "sigmoid"  # the activation fuction used in hidden layers
-        self.initializer = (
-            "glorot_uniform"
-        )  # the initializer for the weights to construct hidden layers
 
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
@@ -118,12 +121,8 @@ class Attri2Vec:
         # Form Attri2Vec layers iteratively
         h_layer = xin
         for layer in range(0, self.n_layers):
-            h_layer = Dropout(self.dropout)(h_layer)
             h_layer = Dense(
-                self.dims[layer + 1],
-                activation=self.activation,
-                kernel_initializer=self.initializer,
-                use_bias=self.bias,
+                self.dims[layer + 1], activation=self.activation, use_bias=self.bias
             )(h_layer)
             h_layer = self._normalization(h_layer)
 
@@ -185,23 +184,7 @@ class Attri2Vec:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
-            if len(self.generator._sampling_schema) == 1:
-                return self.node_model()
-            elif len(self.generator._sampling_schema) == 2:
-                return self.link_model()
-            else:
-                raise RuntimeError(
-                    "The generator used for model creation is neither a node nor a link generator, "
-                    "unable to figure out how to build the model. Consider using node_model or "
-                    "link_model method explicitly to build node or link prediction model, respectively."
-                )
-        else:
-            raise RuntimeError(
-                "Suitable generator is not provided at model creation time, unable to figure out how to build the model. "
-                "Consider either providing a generator, or using node_model or link_model method explicitly to build node or "
-                "link prediction model, respectively."
-            )
+        return self.link_model()
 
     def default_model(self, flatten_output=True):
         warnings.warn(
