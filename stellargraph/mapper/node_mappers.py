@@ -122,7 +122,6 @@ class NodeSequence(Sequence):
                 )
             )
 
-        
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -131,7 +130,7 @@ class NodeSequence(Sequence):
         self.on_epoch_end()
 
         if (
-            isinstance(self.generator, GraphSAGENodeGenerator) 
+            isinstance(self.generator, GraphSAGENodeGenerator)
             or isinstance(self.generator, DirectedGraphSAGENodeGenerator)
             or isinstance(self.generator, HinSAGENodeGenerator)
         ):
@@ -156,7 +155,6 @@ class NodeSequence(Sequence):
             self._sampling_schema = generator.schema.sampling_layout(
                 self.head_node_types, num_samples
             )
-            
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
