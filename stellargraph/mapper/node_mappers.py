@@ -532,7 +532,7 @@ class SparseFullBatchNodeSequence(Sequence):
 
     use_sparse = True
 
-    def __init__(self, features, A, targets=None, indices=None):
+    def __init__(self, features, A, targets=None, indices=None, sample_weight=None):
 
         if (targets is not None) and (len(indices) != len(targets)):
             raise ValueError(
@@ -566,17 +566,27 @@ class SparseFullBatchNodeSequence(Sequence):
             self.A_values,
         ]
 
+        # Add batch dimension to targets
         if targets is not None:
             self.targets = np.asanyarray(targets)
             self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
         else:
             self.targets = None
 
+        # Add batch dimension to sample_weights
+        if sample_weight is not None:
+            self.sample_weight = np.asanyarray(sample_weight)
+            self.sample_weight = np.reshape(
+                self.sample_weight, (1,) + self.sample_weight.shape
+            )
+        else:
+            self.sample_weight = None
+
     def __len__(self):
         return 1
 
     def __getitem__(self, index):
-        return self.inputs, self.targets
+        return self.inputs, self.targets, self.sample_weight
 
 
 class FullBatchNodeSequence(Sequence):
@@ -602,7 +612,7 @@ class FullBatchNodeSequence(Sequence):
 
     use_sparse = False
 
-    def __init__(self, features, A, targets=None, indices=None):
+    def __init__(self, features, A, targets=None, indices=None, sample_weight=None):
 
         if (targets is not None) and (len(indices) != len(targets)):
             raise ValueError(
@@ -632,9 +642,19 @@ class FullBatchNodeSequence(Sequence):
 
         self.inputs = [self.features, self.target_indices, self.A_dense]
 
+        # Add batch dimension to targets
         if targets is not None:
             self.targets = np.asanyarray(targets)
             self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        else:
+            self.targets = None
+
+        # Add batch dimension to sample_weights
+        if sample_weight is not None:
+            self.sample_weight = np.asanyarray(sample_weight)
+            self.sample_weight = np.reshape(
+                self.sample_weight, (1,) + self.sample_weight.shape
+            )
         else:
             self.targets = None
 
@@ -642,7 +662,7 @@ class FullBatchNodeSequence(Sequence):
         return 1
 
     def __getitem__(self, index):
-        return self.inputs, self.targets
+        return self.inputs, self.targets, self.sample_weight
 
 
 class FullBatchNodeGenerator:
@@ -705,6 +725,7 @@ class FullBatchNodeGenerator:
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
+        class_weights (dict): 
 
     """
 
@@ -755,6 +776,7 @@ class FullBatchNodeGenerator:
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
+        # Transform the adjacency matrix according to the method
         if transform is not None:
             if callable(transform):
                 self.features, self.Aadj = transform(
@@ -782,15 +804,16 @@ class FullBatchNodeGenerator:
                 "Accepted: 'gcn' (default), 'chebyshev','sgc', and 'self_loops'."
             )
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, sample_weight=None):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
 
         Args:
-            node_ids: and iterable of node ids for the nodes of interest
+            node_ids (iterable): and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets (np.ndarray): a 2D array of numeric node targets of shape `(len(node_ids), target_size)`
+            sample_weight (iterable): A 1D array of weights for the targets of length `len(node_ids)`.
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -807,16 +830,25 @@ class FullBatchNodeGenerator:
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
+        if sample_weight is not None:
+            # Check targets is an iterable
+            if not is_real_iterable(sample_weight):
+                raise TypeError("Sample weights must be an iterable or None")
+
+            # Check targets correct shape
+            if len(sample_weight) != len(node_ids):
+                raise TypeError("Sample weights must be the same length as node_ids")
+
         # The list of indices of the target nodes in self.node_list
         node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
         if self.use_sparse:
             return SparseFullBatchNodeSequence(
-                self.features, self.Aadj, targets, node_indices
+                self.features, self.Aadj, targets, node_indices, sample_weight
             )
         else:
             return FullBatchNodeSequence(
-                self.features, self.Aadj, targets, node_indices
+                self.features, self.Aadj, targets, node_indices, sample_weight
             )
 
 

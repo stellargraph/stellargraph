@@ -23,7 +23,7 @@ Please follow these steps to report a bug:
 In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). You will 
 be guided through the process of digitally signing our CLA when you create a pull request. 
 
-### Be Friendly ###
+### Be Friendly
  
 StellarGraph considers courtesy and respect for others an essential part of the community, and we strongly encourage everyone to be friendly when engaging with others. Please be helpful when people are asking questions, and on technical disagreements ensure that the issues are discussed in a respectful manner.
 
@@ -46,22 +46,108 @@ StellarGraph considers courtesy and respect for others an essential part of the 
 3. If you choose to implement the demo you can do so by forking the StellarGraph repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the `develop` branch of the main StellarGraph repository. See the next section for more details on submitting your pull request.
 
 
-### Pull Requests
+## StellarGraph Development Guidelines
 
-1. If your pull request will make a large change to the functionality of StellarGraph it is best that you discuss this first with the developers and the community. Please post a description of the changes to the StellarGraph as an issue in GitHub.
+### General notes
 
-2. Start checking out or updating the develop branch of StellarGraph on GitHub. Create a new branch for your feature or bugfix named 'feature/XXX' or 'bugfix/XXX' where XXX is a short but descriptive name.
+* If your pull request will make a large change to the functionality of StellarGraph it is best that you discuss this first with the developers and the community. Please post a description of the changes to the StellarGraph as an issue in GitHub.
 
-3. Make sure that any new features or bugfixes are tested by creating appropriate scripts in the tests directory. New features without relevant testing will not be approved.
+* Start checking out or updating the develop branch of StellarGraph on GitHub. Create a new branch for your feature or bugfix named 'feature/XXX' or 'bugfix/XXX' where XXX is a short but descriptive name.
 
-4. Run the entire test suite by running `py.test tests/` in the top-level directory and ensure all tests pass. You will need to install the test requirements first: `pip install -e .[tests]`.
+* Make sure that any new features or bugfixes are tested by creating appropriate scripts in the tests directory. New features without relevant testing will not be approved.
 
-5. Ensure that any new function or class you introduce has proper docstrings and documentation. Make sure any code you have changed also has updated dostrings and documentation. Docstrings should follow the same style as the library, we follow the Google style (https://github.com/google/styleguide/blob/gh-pages/pyguide.md), examples of Google style docstrings can be found [here](http://www.sphinx-doc.org/en/master/usage/extensions/example_google.html#example-google).
+* When committing, use descriptive commit messages.
 
-6. All code in StellarGraph is formatted using the Black style engine (https://github.com/ambv/black). The automated tests include checking for Black formatted code, so make sure that you run black on all your code before submitting a pull request.
+* Create a pull request on GitHub from your branch to `develop` branch. If you have already discussed the new features on GitHub with the developers and they are aware of what the pull request contains, then the developers will endeavour to approve the pull request promptly.
 
-7. When committing, use descriptive commit messages.
 
-8. Update the documentation. If introducing new functionality, make sure you include code snippets demonstrating the usage of your new feature.
+### Developing features & bugfixes: from issue to PR
 
-9. Create a pull request on GitHub from your branch to `develop` branch. If you have already discussed the new features on GitHub with the developers and they are aware of what the pull request contains, then the developers will endeavour to approve the pull request promptly.
+This assumes an issue ticket has been created in GitHub, with comprehensive description and checklist as describe above.
+
+1. Ensure that you start work from a recently updated `develop` branch:
+    ```
+    git checkout develop
+    git pull
+    ```
+
+2. Create a new branch for your feature or bugfix named 'feature/XXX' or 'bugfix/XXX' where XXX is a short but descriptive name.
+
+3. Implement the code .. the easy bit! Remember to commit frequently and use descriptive commit messages.
+
+4. Remember to write unit tests and check them:
+   ```
+   py.test tests -W ignore::DeprecationWarning --sw
+   ```
+
+   The options I use are:
+    *  `-W ignore::DeprecationWarning`: will prevent deprecation warnings from being printed. 
+    * `-sw`: will exit on the first error and continue from that test when next run (good for debugging unit tests).
+
+5. Ensure the code is formatted using black, check this with:
+    ```
+    black --check tests stellargraph
+    ```
+
+6. Run all demos to check they do not break down due to any code changes. This requires installing the `treon` package.
+
+	From within the stellargraph directory run:
+	```
+	python scripts/test_demos.py
+	```
+
+7. Update the API docs in the docstrings of all classes, methods and functions. Add any new classes you have added to the documentation in `docs/api.txt` and if introducing new functionality, make sure you include code snippets demonstrating the usage of your new feature. Check that the API docs are well formatted and correct by building the docs on your system:
+    ```
+    cd docs
+    make html
+    open _build/html/index.html
+    ```
+
+8. Push the branch and create a pull request (PR). If you create a branch in StellarGraph check the following:
+    * Ensure all CI checks complete successfully.
+    * Click "Show all checks" to see details of CI checks.
+    * Check that the coverage has not decreased.
+    * Link to original issue when creating the PR. This will automatically change the status of the issue to `Review/QA` in Zenhub.
+
+9. Add the changes to the CHANGELOG.md, referencing the PR, in either the new enhancements (features) or bugfixes area of the current (HEAD) section, for example:
+    ```
+    - Updated to support Python 3.7 [\#348](https://github.com/stellargraph/stellargraph/pull/348)
+    ```
+ 
+10. Check off issue checkboxes! The definition of "done" should be defined in the issue.
+
+11. Assign reviewers and make sure to add them to assignees as well as reviewers.
+
+12. Implement reviewers' suggestions, if any; push the update.
+
+13. Once all reviewers are happy with your implementation, and all CI checks have passed, merge the PR, and delete the branch in GitHub.
+
+### Code style
+
+**Docstrings**
+Docstrings should follow the Google style reccommendations (https://github.com/google/styleguide/blob/gh-pages/pyguide.md), examples of Google style docstrings can be found [here](http://www.sphinx-doc.org/en/master/usage/extensions/example_google.html#example-google).
+
+The docstrings are used to create 
+
+**Type hints**
+Currently we do not use type hinting [PEP 484](https://www.python.org/dev/peps/pep-0484/). This may change in the future and we should consider adding `mypy` type checking support first in order to ensure the type hints are sensible.
+
+**Black formatting**
+
+All code in StellarGraph is formatted using the Black style engine (https://github.com/ambv/black). The automated tests include checking for Black formatted code, so make sure that you run black on all your code before submitting a pull request.
+
+To check your code for correct types, install black and run the following check:
+```
+black --check stellargraph tests
+```
+
+To format all code in these directories, do the following:
+```
+black stellargraph tests
+```
+
+TODO: Demos
+
+
+
+
