@@ -23,6 +23,7 @@ GCN tests
 from stellargraph.layer.gcn import *
 from stellargraph.mapper.node_mappers import FullBatchNodeGenerator
 from stellargraph.core.graph import StellarGraph
+from stellargraph.core.utils import GCN_Aadj_feats_op
 
 import networkx as nx
 import pandas as pd
@@ -179,9 +180,13 @@ def test_GCN_apply_dense():
 
 
 def test_GCN_apply_sparse():
+
     G, features = create_graph_features()
-    adj = nx.to_numpy_array(G)[None, :, :]
-    n_nodes = features.shape[0]
+    adj = nx.to_scipy_sparse_matrix(G)
+    features, adj = GCN_Aadj_feats_op(features, adj)
+    adj = adj.tocoo()
+    A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
+    A_values = np.expand_dims(adj.data, 0)
 
     nodes = G.nodes()
     node_features = pd.DataFrame.from_dict(
@@ -189,7 +194,7 @@ def test_GCN_apply_sparse():
     )
     G = StellarGraph(G, node_features=node_features)
 
-    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
+    generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
     gcnModel = GCN([2], ["relu"], generator=generator, dropout=0.5)
 
     x_in, x_out = gcnModel.node_model()
@@ -197,7 +202,7 @@ def test_GCN_apply_sparse():
 
     # Check fit method
     out_indices = np.array([[0, 1]], dtype="int32")
-    preds_1 = model.predict([features[None, :, :], out_indices, adj])
+    preds_1 = model.predict([features[None, :, :], out_indices, A_indices, A_values])
     assert preds_1.shape == (1, 2, 2)
 
     # Check fit_generator method
