@@ -123,6 +123,14 @@ def chebyshev_polynomial(X, k):
     return T_k
 
 
+def PPNP_Aadj_feats_op(features, A, k=1, a=0.1, method="gcn"):
+    A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
+    A = A + sp.diags(np.ones(A.shape[0]) - A.diagonal())
+    A = normalize_adj(A, symmetric=True)
+    A = a * sp.linalg.inv(sp.eye(A.shape[0]) - ((1 - a) * A))
+    return features, A.tocsr()
+
+
 def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
 
     """
