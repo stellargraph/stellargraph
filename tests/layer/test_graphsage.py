@@ -497,3 +497,46 @@ def test_graphsage_zero_neighbours():
     actual = model.predict(x)
     expected = np.array([[5, 5]])
     assert actual == pytest.approx(expected)
+
+
+def test_graphsage_passing_activations():
+    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2)
+    assert gs.activations == ["linear"]
+
+    gs = GraphSAGE(layer_sizes=[4, 4], n_samples=[2, 2], input_dim=2)
+    assert gs.activations == ["relu", "linear"]
+
+    gs = GraphSAGE(layer_sizes=[4, 4, 4], n_samples=[2, 2, 2], input_dim=2)
+    assert gs.activations == ["relu", "relu", "linear"]
+
+    with pytest.raises(ValueError):
+        GraphSAGE(
+            layer_sizes=[4, 4, 4],
+            n_samples=[2, 2, 2],
+            input_dim=2,
+            activations=["relu"],
+        )
+
+    with pytest.raises(ValueError):
+        GraphSAGE(
+            layer_sizes=[4, 4, 4],
+            n_samples=[2, 2, 2],
+            input_dim=2,
+            activations=["relu"] * 2,
+        )
+
+    with pytest.raises(ValueError):
+        GraphSAGE(
+            layer_sizes=[4, 4, 4],
+            n_samples=[2, 2, 2],
+            input_dim=2,
+            activations=["fred", "wilma", "barney"],
+        )
+
+    gs = GraphSAGE(
+        layer_sizes=[4, 4, 4],
+        n_samples=[2, 2, 2],
+        input_dim=2,
+        activations=["linear"] * 3,
+    )
+    assert gs.activations == ["linear"] * 3
