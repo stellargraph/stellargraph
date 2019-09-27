@@ -49,14 +49,18 @@ class GraphSAGEAggregator(Layer):
             a bias term should be included.
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights.
-        kernel_regularizer (str or func): The regulariser to use for the weights.
-        kernel_constraint (str or func): The constraint to use for the weights.
-        bias_initializer (str or func): The initialiser to use for the bias.
-        bias_regularizer (str or func): The regulariser to use for the bias.
-        bias_constraint (str or func): The constraint to use for the bias.
+        kernel_initializer (str or func): The initialiser to use for the weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the bias;
+            defaults to 'zeros'.
+        bias_regularizer (str or func): The regulariser to use for the bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the bias;
+            defaults to None.
     """
 
     def __init__(
@@ -385,9 +389,9 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             b_pool = self.add_weight(
                 name=f"b_pool_g{group_idx}",
                 shape=(self.hidden_dim,),
-                initializer=self.kernel_initializer,
-                regularizer=self.kernel_regularizer,
-                constraint=self.kernel_constraint,
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
                 trainable=True,
             )
             weights = [w_group, w_pool, b_pool]
@@ -482,9 +486,9 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
             b_pool = self.add_weight(
                 name=f"b_pool_g{group_idx}",
                 shape=(self.hidden_dim,),
-                initializer=self.kernel_initializer,
-                regularizer=self.kernel_regularizer,
-                constraint=self.kernel_constraint,
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
                 trainable=True,
             )
             weights = [w_group, w_pool, b_pool]
@@ -723,18 +727,12 @@ class GraphSAGE:
         normalize (str or None): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
+            defaults to None.
 
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         n_samples (list): The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
-        kernel_constraint (str or func): The constraint to use for the weights of each layer.
-        bias_initializer (str or func): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
-        bias_constraint (str or func): The constraint to use for the bias of each layer.
     """
 
     def __init__(
@@ -1047,19 +1045,13 @@ class DirectedGraphSAGE(GraphSAGE):
         bias (bool, optional): If True (default), a bias vector is learnt for each layer.
         dropout (float, optional): The dropout supplied to each layer; defaults to no dropout.
         normalize (str, optional): The normalization used after each layer; defaults to L2 normalization.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer;
+            defaults to None.
 
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         in_samples (list): The number of in-node samples per layer in the model.
         out_samples (list): The number of out-node samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
-        kernel_constraint (str or func): The constraint to use for the weights of each layer.
-        bias_initializer (str or func): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
-        bias_constraint (str or func): The constraint to use for the bias of each layer.
     """
 
     def _get_sizes_from_generator(self, generator):

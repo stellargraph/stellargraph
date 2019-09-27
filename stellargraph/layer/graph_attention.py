@@ -66,18 +66,26 @@ class GraphAttention(Layer):
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
         use_bias (bool): toggles an optional bias
-        saliency_map_support (bool): XXX???; defaults to False.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the head weights.
-        kernel_regularizer (str or func): The regulariser to use for the head weights.
-        kernel_constraint (str or func): The constraint to use for the head weights.
-        bias_initializer (str or func): The initialiser to use for the head bias.
-        bias_regularizer (str or func): The regulariser to use for the head bias.
-        bias_constraint (str or func): The constraint to use for the head bias.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights.
+        saliency_map_support (bool): If calculating saliency maps using the tools in
+            stellargraph.utils.saliency_maps this should be True. Otherwise this should be False (default).
+        kernel_initializer (str or func): The initialiser to use for the head weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the head weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the head weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the head bias;
+            defaults to 'zeros'.
+        bias_regularizer (str or func): The regulariser to use for the head bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the head bias;
+            defaults to None.
+        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
+            defaults to 'glorot_uniform'.
+        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
+            defaults to None.
+        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
+            defaults to None.
     """
 
     def __init__(
@@ -433,18 +441,26 @@ class GraphAttentionSparse(GraphAttention):
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
         use_bias (bool): toggles an optional bias
-        saliency_map_support (bool): XXX???; defaults to False.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the head weights.
-        kernel_regularizer (str or func): The regulariser to use for the head weights.
-        kernel_constraint (str or func): The constraint to use for the head weights.
-        bias_initializer (str or func): The initialiser to use for the head bias.
-        bias_regularizer (str or func): The regulariser to use for the head bias.
-        bias_constraint (str or func): The constraint to use for the head bias.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights.
+        saliency_map_support (bool): If calculating saliency maps using the tools in
+            stellargraph.utils.saliency_maps this should be True. Otherwise this should be False (default).
+        kernel_initializer (str or func): The initialiser to use for the head weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the head weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the head weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the head bias;
+            defaults to 'zeros'.
+        bias_regularizer (str or func): The regulariser to use for the head bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the head bias;
+            defaults to None.
+        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
+            defaults to 'glorot_uniform'.
+        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
+            defaults to None.
+        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
+            defaults to None.
     """
 
     def call(self, inputs, **kwargs):
@@ -618,19 +634,12 @@ class GAT:
         attn_dropout (float): dropout rate applied to attention maps
         normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
         activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
-        saliency_map_support (bool): XXX What is this?
-
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the head weights.
-        kernel_regularizer (str or func): The regulariser to use for the head weights.
-        kernel_constraint (str or func): The constraint to use for the head weights.
-        bias_initializer (str or func): The initialiser to use for the head bias.
-        bias_regularizer (str or func): The regulariser to use for the head bias.
-        bias_constraint (str or func): The constraint to use for the head bias.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights.
+        saliency_map_support (bool): If calculating saliency maps using the tools in
+            stellargraph.utils.saliency_maps this should be True. Otherwise this should be False (default).
+        kernel_regularizer (str or func): The regulariser to use for the head weights;
+            defaults to None.
+        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
+            defaults to None.
     """
 
     def __init__(

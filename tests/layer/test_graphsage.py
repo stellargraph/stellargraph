@@ -152,8 +152,14 @@ def test_maxpool_agg_constructor_1():
     assert agg.act(2) == 3
 
 
-def test_maxpool_agg_apply():
-    agg = MaxPoolingAggregator(2, bias=True, act="linear", kernel_initializer="ones")
+def test_maxpool_agg_apply_hidden_bias():
+    # Specifying bias_initializer="ones" initialises all bias terms to ones;
+    # using bias=False turns of outer bias but retains hidden bias.
+    agg = MaxPoolingAggregator(
+        2, bias=False, act="linear", kernel_initializer="ones", bias_initializer="ones"
+    )
+    assert agg.get_config()["kernel_initializer"]["class_name"] == "Ones"
+    assert agg.get_config()["bias_initializer"]["class_name"] == "Ones"
 
     # Self features
     inp1 = keras.Input(shape=(1, 2))
@@ -169,12 +175,42 @@ def test_maxpool_agg_apply():
     x2 = np.array([[[[2, 2], [3, 3]]]])
 
     # Agg output:
-    # neigh_agg = max(relu(x2 · ones(2x2)) + 1, axis=1) = max([[5,5],[7,7]]) = [[7,7]]
+    # neigh_agg = max(relu(x2 · ones(2x2)) + ones(2)), axis=1) = max([[5,5],[7,7]]) = [[7,7]]
     # from_self = K.dot(x1, ones) = [[2]]
     # from_neigh = K.dot(neigh_agg, ones) = [[14]]
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
     actual = model.predict([x1, x2])
     expected = np.array([[[2, 14]]])
+
+    assert expected == pytest.approx(actual)
+
+
+def test_maxpool_agg_apply_no_bias():
+    # By default, bias_initializers="zeros", so all bias terms are initialised to zeros.
+    agg = MaxPoolingAggregator(2, act="linear", kernel_initializer="ones")
+    assert agg.get_config()["kernel_initializer"]["class_name"] == "Ones"
+    assert agg.get_config()["bias_initializer"]["class_name"] == "Zeros"
+
+    # Self features
+    inp1 = keras.Input(shape=(1, 2))
+    # Neighbour features
+    inp2 = keras.Input(shape=(1, 2, 2))
+    out = agg([inp1, inp2])
+
+    # Check sizes
+    assert agg.weight_dims == [1, 1]
+
+    # Numerical test values
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+
+    # Agg output:
+    # neigh_agg = max(relu(x2 · ones(2x2)) + zeros(2)), axis=1) = max([[4,4],[6,6]]) = [[6,6]]
+    # from_self = K.dot(x1, ones) = [[2]]
+    # from_neigh = K.dot(neigh_agg, ones) = [[12]]
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 12]]])
 
     assert expected == pytest.approx(actual)
 
@@ -220,8 +256,14 @@ def test_meanpool_agg_constructor_1():
     assert agg.act(2) == 3
 
 
-def test_meanpool_agg_apply():
-    agg = MeanPoolingAggregator(2, bias=True, act="linear", kernel_initializer="ones")
+def test_meanpool_agg_apply_hidden_bias():
+    # Specifying bias_initializer="ones" initialises all bias terms to ones;
+    # using bias=False turns of outer bias but retains hidden bias.
+    agg = MeanPoolingAggregator(
+        2, bias=False, act="linear", kernel_initializer="ones", bias_initializer="ones"
+    )
+    assert agg.get_config()["kernel_initializer"]["class_name"] == "Ones"
+    assert agg.get_config()["bias_initializer"]["class_name"] == "Ones"
 
     # Self features
     inp1 = keras.Input(shape=(1, 2))
@@ -238,14 +280,47 @@ def test_meanpool_agg_apply():
     x2 = np.array([[[[2, 2], [3, 3]]]])
 
     # Agg output:
-    # neigh_agg = mean(relu(x2 · ones(2x2)) + 1, axis=1)
+    # neigh_agg = mean(relu(x2 · ones(2x2) + ones(2)), axis=1)
     #   = mean([[5,5],[7,7]]) = [[6,6]]
     # from_self = K.dot(x1, ones) = [[2]]
-    # from_neigh = K.dot(neigh_agg, ones) = [[12]]
+    # from_neigh = K.dot(neigh_agg, ones(2x1)) = [[12]]
 
     model = keras.Model(inputs=[inp1, inp2], outputs=out)
     actual = model.predict([x1, x2])
     expected = np.array([[[2, 12]]])
+
+    assert expected == pytest.approx(actual)
+
+
+def test_meanpool_agg_apply_no_bias():
+    # By default, bias_initializers="zeros", so all bias terms are initialised to zeros.
+    agg = MeanPoolingAggregator(2, act="linear", kernel_initializer="ones")
+    assert agg.get_config()["kernel_initializer"]["class_name"] == "Ones"
+    assert agg.get_config()["bias_initializer"]["class_name"] == "Zeros"
+
+    # Self features
+    inp1 = keras.Input(shape=(1, 2))
+    # Neighbour features
+    inp2 = keras.Input(shape=(1, 2, 2))
+
+    out = agg([inp1, inp2])
+
+    # Check sizes
+    assert agg.weight_dims == [1, 1]
+
+    # Numerical test values
+    x1 = np.array([[[1, 1]]])
+    x2 = np.array([[[[2, 2], [3, 3]]]])
+
+    # Agg output:
+    # neigh_agg = mean(relu(x2 · ones(2x2) + zeros(2)), axis=1)
+    #   = mean([[4,4],[6,6]]) = [[5,5]]
+    # from_self = K.dot(x1, ones) = [[2]]
+    # from_neigh = K.dot(neigh_agg, ones) = [[10]]
+
+    model = keras.Model(inputs=[inp1, inp2], outputs=out)
+    actual = model.predict([x1, x2])
+    expected = np.array([[[2, 10]]])
 
     assert expected == pytest.approx(actual)
 

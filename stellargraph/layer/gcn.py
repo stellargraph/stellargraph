@@ -63,7 +63,7 @@ class GraphConvolution(Layer):
         kernel_constraint (str or func): The constraint to use for the weights;
             defaults to None.
         bias_initializer (str or func): The initialiser to use for the bias;
-            defaults to "zeros".
+            defaults to 'zeros'.
         bias_regularizer (str or func): The regulariser to use for the bias;
             defaults to None.
         bias_constraint (str or func): The constraint to use for the bias;

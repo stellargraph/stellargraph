@@ -41,14 +41,18 @@ class MeanHinAggregator(Layer):
         bias (bool): Use bias in layer or not (Default False)
         act (Callable or str): name of the activation function to use (must be a Keras
             activation function), or alternatively, a TensorFlow operation.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights.
-        kernel_regularizer (str or func): The regulariser to use for the weights.
-        kernel_constraint (str or func): The constraint to use for the weights.
-        bias_initializer (str or func): The initialiser to use for the bias.
-        bias_regularizer (str or func): The regulariser to use for the bias.
-        bias_constraint (str or func): The constraint to use for the bias.
+        kernel_initializer (str or func): The initialiser to use for the weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the bias;
+            defaults to 'zeros'.
+        bias_regularizer (str or func): The regulariser to use for the bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the bias;
+            defaults to None.
     """
 
     def __init__(
@@ -233,14 +237,8 @@ class HinSAGE:
         normalize: The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
-
-    Additional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
-        kernel_constraint (str or func): The constraint to use for the weights of each layer.
-        bias_initializer (str or func): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
-        bias_constraint (str or func): The constraint to use for the bias of each layer.
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
+            defaults to None.
     """
 
     def __init__(
