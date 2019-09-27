@@ -1,16 +1,151 @@
-from tensorflow.keras.layers import Dense, Lambda, Softmax, Dropout, Input
+from tensorflow.keras.layers import Dense, Lambda, Layer, Dropout, Input
 import tensorflow.keras.backend as K
 import tensorflow as tf
 import numpy as np
 
+from .misc import SqueezedSparseConversion
 from ..mapper import FullBatchNodeGenerator
 from .preprocessing_layer import GraphPreProcessingLayer
+
+
+class PPNPPropagationLayer(Layer):
+
+    """
+    Implementation of Personalized Propagation of Neural Predictions (PPNP)
+    as in https://arxiv.org/abs/1810.05997.
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1:
+        Keras requires this batch dimension, and for full-batch methods
+        we only have a single "batch".
+
+      - There are three inputs required, the node features, the output
+        indices (the nodes that are to be selected in the final layer)
+        and the graph propagation matrix
+
+      - This class assumes that the propagation matrix (specified in paper) matrix is passed as
+        input to the Keras methods.
+
+      - The output indices are used when ``final_layer=True`` and the returned outputs
+        are the final-layer features for the nodes indexed by output indices.
+
+      - If ``final_layer=False`` all the node features are output in the same ordering as
+        given by the adjacency matrix.
+
+
+    Args:
+        units (int): dimensionality of output feature vectors
+        final_layer (bool): If False the layer returns output for all nodes,
+                            if True it returns the subset specified by the indices passed to it.
+    """
+
+    def __init__(
+        self,
+        units,
+        final_layer=False,
+        **kwargs
+    ):
+        if "input_shape" not in kwargs and "input_dim" in kwargs:
+            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+
+        super().__init__(**kwargs)
+
+        self.units = units
+        self.final_layer = final_layer
+
+    def get_config(self):
+        """
+        Gets class configuration for Keras serialization.
+        Used by keras model serialization.
+
+        Returns:
+            A dictionary that contains the config of the layer
+        """
+
+        config = {
+            "units": self.units,
+            "final_layer": self.final_layer,
+        }
+
+        base_config = super().get_config()
+        return {**base_config, **config}
+
+    def compute_output_shape(self, input_shapes):
+        """
+        Computes the output shape of the layer.
+        Assumes the following inputs:
+
+        Args:
+            input_shapes (tuple of ints)
+                Shape tuples can include None for free dimensions, instead of an integer.
+
+        Returns:
+            An input shape tuple.
+        """
+        feature_shape, out_shape, *As_shapes = input_shapes
+
+        batch_dim = feature_shape[0]
+        if self.final_layer:
+            out_dim = out_shape[1]
+        else:
+            out_dim = feature_shape[1]
+
+        return batch_dim, out_dim, self.units
+
+    def build(self, input_shapes):
+        """
+        Builds the layer
+
+        Args:
+            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
+        """
+        self.built = True
+
+    def call(self, inputs):
+        """
+        Applies the layer.
+
+        Args:
+            inputs (list): a list of 3 input tensors that includes
+                node features (size 1 x N x F),
+                output indices (size 1 x M)
+                graph adjacency matrix (size N x N),
+                where N is the number of nodes in the graph, and
+                F is the dimensionality of node features.
+
+        Returns:
+            Keras Tensor that represents the output of the layer.
+        """
+        features, out_indices, *As = inputs
+        batch_dim, n_nodes, _ = K.int_shape(features)
+        if batch_dim != 1:
+            raise ValueError(
+                "Currently full-batch methods only support a batch dimension of one"
+            )
+
+        # Remove singleton batch dimension
+        features = K.squeeze(features, 0)
+        out_indices = K.squeeze(out_indices, 0)
+
+        # Calculate the layer operation of GCN
+        A = As[0]
+        output = K.dot(A, features)
+
+        # On the final layer we gather the nodes referenced by the indices
+        if self.final_layer:
+            output = K.gather(output, out_indices)
+
+        # Add batch dimension back if we removed it
+        if batch_dim == 1:
+            output = K.expand_dims(output, 0)
+
+        return output
 
 
 class PPNP:
     """
     Implementation of Personalized Propagation of Neural Predictions (PPNP)
-    as in https://openreview.net/pdf?id=H1gL-2A9Ym.
+    as in https://arxiv.org/abs/1810.05997.
 
     The model minimally requires specification of the fully connected layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer,
@@ -20,22 +155,24 @@ class PPNP:
     should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
     pre-processing the generator object should be instantiated as follows::
 
-        generator = FullBatchNodeGenerator(G, method="gcn")
+        generator = FullBatchNodeGenerator(G, method="ppnp")
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`FullBatchNodeGenerator` object.
 
-      - This assumes that the normalized Lapalacian matrix is provided as input to
+      - This assumes that the propagation matrix is provided as input to
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
-        ``method='gcn'`` argument to do this pre-processing.
+        ``method='ppnp'`` argument to do this pre-processing.
+
+      - ''method='ppnp'`` requires that use_spare=False and generates a dense propagtaion matrix
 
       - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
-      - The size of the final fully connected layer must be equal to the number of classes
+      - The size of the final fully connected layer must be equal to the number of classes of classes to predict.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack
@@ -62,7 +199,8 @@ class PPNP:
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
-        assert len(layer_sizes) == len(activations)
+        if not len(layer_sizes) == len(activations):
+            raise ValueError("The number of layers should equal the number of activations")
 
         self.layer_sizes = layer_sizes
         self.transport_probability = transport_probability
@@ -76,14 +214,11 @@ class PPNP:
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
-        if self.method == "none":
-            self.graph_norm_layer = GraphPreProcessingLayer(
-                num_of_nodes=self.generator.Aadj.shape[0]
-            )
 
         # Initialize a stack of fully connected layers
         n_layers = len(self.layer_sizes)
         self._layers = []
+
         for ii in range(n_layers):
             l = self.layer_sizes[ii]
             a = self.activations[ii]
@@ -97,18 +232,8 @@ class PPNP:
                 )
             )
 
-        # Create propogation matrix and propogation layer
-        Aadj = generator.Aadj.todense()
-
-        # propagation matrix is non-sparse : create and store at initalization to save time
-        propogation_matrix = self.transport_probability * np.linalg.inv(np.eye(Aadj.shape[0]) -
-                                                                  (1 - self.transport_probability) * Aadj)
-        propogation_matrix = tf.convert_to_tensor(propogation_matrix, tf.float32)
-
         self._layers.append(Dropout(self.dropout))
-        self._layers.append(Lambda(lambda x: K.dot(propogation_matrix, x[0, :])))
-        self._layers.append(Softmax())
-        self._layers.append(Lambda(lambda x: K.gather(x[0], tf.cast(x[1], tf.int32))))
+        self._layers.append(PPNPPropagationLayer(self.layer_sizes[-1], final_layer=True))
 
 
     def __call__(self, x):
@@ -121,6 +246,7 @@ class PPNP:
             Adjacency values (1, E),
             Output indices (1, O)
         ]
+
         where N is the number of nodes, F the number of input features,
               E is the number of edges, O the number of output nodes.
         Args:
@@ -128,6 +254,8 @@ class PPNP:
         Returns:
             Output tensor
         """
+
+
         x_in, out_indices, *As = x
 
         # Currently we require the batch dimension to be one for full-batch methods
@@ -137,10 +265,31 @@ class PPNP:
                 "Currently full-batch methods only support a batch dimension of one"
             )
 
+        # Convert input indices & values to a sparse matrix
+        if self.use_sparse:
+            A_indices, A_values = As
+            Ainput = [
+                SqueezedSparseConversion(
+                    shape=(n_nodes, n_nodes), dtype=A_values.dtype
+                )([A_indices, A_values])
+            ]
+
+        # Otherwise, create dense matrix from input tensor
+        else:
+            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+
+        # TODO: Support multiple matrices?
+        if len(Ainput) != 1:
+            raise NotImplementedError(
+                "The APPNP method currently only accepts a single matrix"
+            )
+
         h_layer = x_in
-        for layer in self._layers[:-1]:
-            h_layer = layer(h_layer)
-        h_layer = self._layers[-1]([h_layer, out_indices])
+        for layer in self._layers:
+            if isinstance(layer, PPNPPropagationLayer):
+                h_layer = layer([h_layer, out_indices] + Ainput)
+            else:
+                h_layer = layer(h_layer)
 
         return h_layer
 

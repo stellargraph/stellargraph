@@ -42,9 +42,10 @@ from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
 )
+
 from ..core.graph import StellarGraphBase, GraphSchema
 from ..core.utils import is_real_iterable
-from ..core.utils import GCN_Aadj_feats_op
+from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
 
 class NodeSequence(Sequence):
@@ -336,7 +337,7 @@ class GraphSAGENodeGenerator:
 
 
 class HinSAGENodeGenerator:
-    """Keras-compatible data mapper for Heterogeneous GraphSAGE (HinSAGE)
+    """Keras-compatible data mapper for Heterogeprop_generator.Aadjneous GraphSAGE (HinSAGE)
 
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the HinSAGE model.
@@ -704,7 +705,7 @@ class FullBatchNodeGenerator:
 
     """
 
-    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
+    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None, a=0.1):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -712,6 +713,7 @@ class FullBatchNodeGenerator:
         self.graph = G
         self.name = name
         self.k = k
+        self.a = a
         self.method = method
 
         # Check if the graph has features
@@ -768,6 +770,14 @@ class FullBatchNodeGenerator:
             self.Aadj = self.Aadj + sps.diags(
                 np.ones(self.Aadj.shape[0]) - self.Aadj.diagonal()
             )
+
+        elif self.method in ["ppnp"]:
+            if self.use_sparse:
+                raise ValueError(
+                    "use_sparse=true' is incompatible with 'ppnp'."
+                    "Set 'use_sparse=True' or consider using the APPNP model instead.")
+            self.features, self.Aadj = PPNP_Aadj_feats_op(
+                features=self.features, A=self.Aadj, a=self.a, method=self.method, )
 
         elif self.method in [None, "none"]:
             pass
