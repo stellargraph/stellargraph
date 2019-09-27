@@ -304,7 +304,7 @@ class Test_GAT:
         gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         # test default if no activations are passed:
         gat = GAT(layer_sizes=self.layer_sizes, generator=gen, bias=True)
-        assert gat.activations == ['elu', 'elu']
+        assert gat.activations == ["elu", "elu"]
 
         # test error if too many activations:
         with pytest.raises(ValueError):
