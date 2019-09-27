@@ -220,13 +220,13 @@ def test_GCN_activations():
     generator = FullBatchNodeGenerator(G, sparse=False, method="none")
 
     gcn = GCN([2], generator)
-    assert gcn.activations == ["linear"]
+    assert gcn.activations == ["relu"]
 
     gcn = GCN([2, 2], generator)
-    assert gcn.activations == ["relu", "linear"]
+    assert gcn.activations == ["relu", "relu"]
 
-    gcn = GCN([2], generator, activations=["relu"])
-    assert gcn.activations == ["relu"]
+    gcn = GCN([2], generator, activations=["linear"])
+    assert gcn.activations == ["linear"]
 
     with pytest.raises(ValueError):
         # More regularisers than layers

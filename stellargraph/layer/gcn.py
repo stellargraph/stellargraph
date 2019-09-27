@@ -52,18 +52,22 @@ class GraphConvolution(Layer):
 
     Args:
         units (int): dimensionality of output feature vectors
-        activation (str): nonlinear activation applied to layer's output to obtain output features
+        activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights.
-        kernel_regularizer (str or func): The regulariser to use for the weights.
-        kernel_constraint (str or func): The constraint to use for the weights.
-        bias_initializer (str or func): The initialiser to use for the bias.
-        bias_regularizer (str or func): The regulariser to use for the bias.
-        bias_constraint (str or func): The constraint to use for the bias.
+        kernel_initializer (str or func): The initialiser to use for the weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the bias;
+            defaults to "zeros".
+        bias_regularizer (str or func): The regulariser to use for the bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the bias;
+            defaults to None.
     """
 
     def __init__(
@@ -271,16 +275,10 @@ class GCN:
         generator (FullBatchNodeGenerator): The generator instance.
         bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
         dropout (float): Dropout rate applied to input features of each GCN layer.
-        activations (list of str): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu', 'linear'].
-
-    Optional Args:
-        kernel_initializer (str or func): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer.
-        kernel_constraint (str or func): The constraint to use for the weights of each layer.
-        bias_initializer (str or func): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func): The regulariser to use for the bias of each layer.
-        bias_constraint (str or func): The constraint to use for the bias of each layer.
+        activations (list of str or func): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu'].
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
+            defaults to None.
     """
 
     def __init__(
@@ -307,7 +305,7 @@ class GCN:
 
         # Activation function for each layer
         if activations is None:
-            activations = ["relu"] * (n_layers - 1) + ["linear"]
+            activations = ["relu"] * n_layers
         elif len(activations) != n_layers:
             raise ValueError(
                 "Invalid number of activations; require one function per layer"

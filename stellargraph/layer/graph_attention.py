@@ -617,7 +617,7 @@ class GAT:
         in_dropout (float): dropout rate applied to input features of each GAT layer
         attn_dropout (float): dropout rate applied to attention maps
         normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
-        activations (list of str): list of activations applied to each layer's output; defaults to ['relu', ..., 'relu', 'linear'].
+        activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
         saliency_map_support (bool): XXX What is this?
 
 
@@ -738,7 +738,7 @@ class GAT:
         # Check activations (list of str):
         # check type:
         if activations is None:
-            activations = ["relu"] * (n_layers - 1) + ["linear"]
+            activations = ["elu"] * n_layers
         if not isinstance(activations, list):
             raise TypeError(
                 "{}: activations should be a list of strings; received {} instead".format(
