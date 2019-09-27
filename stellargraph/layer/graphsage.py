@@ -662,9 +662,11 @@ class GraphSAGE:
         generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
             and input_dim will be taken from this object.
         aggregator (class): The GraphSAGE aggregator to use. Defaults to the `MeanAggregator`.
-        bias (bool): If True a bias vector is learnt for each layer in the GraphSAGE model
+        bias (bool): If True, a bias vector is learnt for each layer in the GraphSAGE model
         dropout (float): The dropout supplied to each layer in the GraphSAGE model.
         normalize (str or None): The normalization used after each layer, defaults to L2 normalization.
+        activations (list of str): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu', 'linear'].
 
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         n_samples (list): The number of samples per layer in the model.
@@ -679,6 +681,7 @@ class GraphSAGE:
         bias=True,
         dropout=0.0,
         normalize="l2",
+        activations=None,
         **kwargs,
     ):
         # Model parameters
@@ -721,6 +724,15 @@ class GraphSAGE:
             self._aggregator = aggregator
         else:
             raise TypeError("Aggregator should be a subclass of Keras Layer")
+
+        # Activation function for each layer
+        if activations is None:
+            activations = ["relu"] * (self.max_hops - 1) + ["linear"]
+        elif len(activations) != self.max_hops:
+            raise ValueError(
+                "Invalid number of activations; require one function per layer"
+            )
+        self.activations = activations
 
         # Aggregator functions for each layer
         self._build_aggregators()
@@ -782,7 +794,7 @@ class GraphSAGE:
             self._aggregator(
                 output_dim=self.layer_sizes[layer],
                 bias=self.bias,
-                act="relu" if layer < self.max_hops - 1 else "linear",
+                act=self.activations[layer],
             )
             for layer in range(self.max_hops)
         ]
@@ -837,16 +849,15 @@ class GraphSAGE:
             )
 
         # Form GraphSAGE layers iteratively
-        self.layer_tensors = []
         h_layer = xin
         for layer in range(0, self.max_hops):
             h_layer = apply_layer(h_layer, layer)
-            self.layer_tensors.append(h_layer)
 
         # Remove neighbourhood dimension from output tensors of the stack
         # note that at this point h_layer contains the output tensor of the top (last applied) layer of the stack
         h_layer = [
-            Reshape(K.int_shape(x)[2:])(x) for x in h_layer if K.int_shape(x)[1] == 1
+            Reshape(K.int_shape(x)[2:])(x) if K.int_shape(x)[1] == 1 else x
+            for x in h_layer
         ]
 
         return (

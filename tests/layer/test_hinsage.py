@@ -422,3 +422,68 @@ def test_hinsage_aggregators():
     actual = model.predict(x)
     expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
+
+
+def test_hinsage_passing_activations():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
+    )
+    assert hs.activations == ["relu", "linear"]
+
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 2],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 2},
+            activations=["fred", "wilma"],
+        )
+
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 2],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 2},
+            activations=["relu"],
+        )
+
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
+        activations=["linear"] * 2,
+    )
+    assert hs.activations == ["linear"] * 2

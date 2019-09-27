@@ -196,6 +196,7 @@ class HinSAGE:
         bias=True,
         dropout=0.0,
         normalize="l2",
+        activations=None,
     ):
         """
         Args:
@@ -209,9 +210,11 @@ class HinSAGE:
             input_dim: The input dimensions for each node type as a dictionary of the form
                 {node_type: feature_size}.
             aggregator: The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
-            bias: If True a bias vector is learnt for each layer in the HinSAGE model
+            bias (bool): If True, a bias vector is learnt for each layer in the HinSAGE model
             dropout: The dropout supplied to each layer in the HinSAGE model.
             normalize: The normalization used after each layer, defaults to L2 normalization.
+            activations (list of str): Activations applied to each layer's output;
+                defaults to ['relu', ..., 'relu', 'linear'].
         """
 
         def eval_neigh_tree_per_layer(input_tree):
@@ -310,13 +313,20 @@ class HinSAGE:
             for layer, dim in enumerate([self.input_dims] + layer_sizes)
         ]
 
+        # Activation function for each layer
+        if activations is None:
+            activations = ["relu"] * (self.n_layers - 1) + ["linear"]
+        elif len(activations) != self.n_layers:
+            raise ValueError(
+                "Invalid number of activations; require one function per layer"
+            )
+        self.activations = activations
+
         # Dict of {node type: aggregator} per layer
         self._aggs = [
             {
                 node_type: self._aggregator(
-                    output_dim,
-                    bias=self.bias,
-                    act="relu" if layer < self.n_layers - 1 else "linear",
+                    output_dim, bias=self.bias, act=self.activations[layer]
                 )
                 for node_type, output_dim in self.dims[layer + 1].items()
             }
