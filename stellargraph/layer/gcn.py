@@ -279,7 +279,7 @@ class GCN:
         dropout (float): Dropout rate applied to input features of each GCN layer.
         kernel_regularizer (str): Normalization applied to the kernels of GCN layers.
         activations (list of str): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu', 'linear'].
+            defaults to ['relu', ..., 'relu'].
     """
 
     def __init__(
@@ -313,7 +313,7 @@ class GCN:
 
         # Activation function for each layer
         if activations is None:
-            activations = ["relu"] * (n_layers - 1) + ["linear"]
+            activations = ["relu"] * n_layers
         elif len(activations) != n_layers:
             raise ValueError(
                 "Invalid number of activations; require one function per layer"
