@@ -255,9 +255,6 @@ class HinSAGE:
         activations=None,
         **kwargs
     ):
-        """
-         """
-
         def eval_neigh_tree_per_layer(input_tree):
             """
             Function to evaluate the neighbourhood tree structure for every layer. The tree
