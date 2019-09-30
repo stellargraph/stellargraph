@@ -26,7 +26,7 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras import backend as K, Input
 from tensorflow.keras.layers import Lambda, Dropout, Reshape
 from tensorflow.keras.utils import Sequence
-from tensorflow.keras import activations
+from tensorflow.keras import activations, initializers, regularizers, constraints
 from typing import List, Callable, Tuple, Dict, Union, AnyStr
 import itertools as it
 import operator as op
@@ -41,6 +41,18 @@ class MeanHinAggregator(Layer):
         bias (bool): Use bias in layer or not (Default False)
         act (Callable or str): name of the activation function to use (must be a Keras
             activation function), or alternatively, a TensorFlow operation.
+        kernel_initializer (str or func): The initialiser to use for the weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the bias;
+            defaults to 'zeros'.
+        bias_regularizer (str or func): The regulariser to use for the bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the bias;
+            defaults to None.
     """
 
     def __init__(
@@ -59,8 +71,22 @@ class MeanHinAggregator(Layer):
         self.w_neigh = []
         self.w_self = None
         self.bias = None
-        self._initializer = "glorot_uniform"
+        self._get_regularisers_from_keywords(kwargs)
         super().__init__(**kwargs)
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        self.kernel_initializer = initializers.get(
+            kwargs.pop("kernel_initializer", "glorot_uniform")
+        )
+        self.kernel_regularizer = regularizers.get(
+            kwargs.pop("kernel_regularizer", None)
+        )
+        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
+        self.bias_initializer = initializers.get(
+            kwargs.pop("bias_initializer", "zeros")
+        )
+        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
+        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
 
     def get_config(self):
         """
@@ -71,6 +97,12 @@ class MeanHinAggregator(Layer):
             "output_dim": self.output_dim,
             "bias": self.has_bias,
             "act": activations.serialize(self.act),
+            "kernel_initializer": initializers.serialize(self.kernel_initializer),
+            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+            "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "bias_initializer": initializers.serialize(self.bias_initializer),
+            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
+            "bias_constraint": constraints.serialize(self.bias_constraint),
         }
         base_config = super().get_config()
         return {**base_config, **config}
@@ -91,7 +123,9 @@ class MeanHinAggregator(Layer):
             self.add_weight(
                 name="w_neigh_" + str(r),
                 shape=(int(input_shape[1 + r][3]), self.half_output_dim),
-                initializer=self._initializer,
+                initializer=self.kernel_initializer,
+                regularizer=self.kernel_regularizer,
+                constraint=self.kernel_constraint,
                 trainable=True,
             )
             if input_shape[1 + r][2] > 0
@@ -103,7 +137,9 @@ class MeanHinAggregator(Layer):
         self.w_self = self.add_weight(
             name="w_self",
             shape=(int(input_shape[0][2]), self.half_output_dim),
-            initializer=self._initializer,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
             trainable=True,
         )
 
@@ -112,7 +148,9 @@ class MeanHinAggregator(Layer):
             self.bias = self.add_weight(
                 name="bias",
                 shape=[self.output_dim],
-                initializer="zeros",
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
                 trainable=True,
             )
 
@@ -183,6 +221,24 @@ class HinSAGE:
     """
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
 
+    Args:
+        layer_sizes (list): Hidden feature dimensions for each layer
+        generator (Sequence): A NodeSequence or LinkSequence. If specified, n_samples,
+            input_neighbour_tree and input_dim will be taken from this object.
+        n_samples: (Optional: needs to be specified if no mapper is provided.)
+            The number of samples per layer in the model.
+        input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
+            subtree to be created by the HinSAGE model.
+        input_dim: The input dimensions for each node type as a dictionary of the form
+            {node_type: feature_size}.
+        aggregator: The HinSAGE aggregator to use; defaults to the `MeanHinAggregator`.
+        bias (bool): If True (default), a bias vector is learnt for each layer.
+        dropout: The dropout supplied to each layer; defaults to no dropout.
+        normalize: The normalization used after each layer; defaults to L2 normalization.
+        activations (list): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu', 'linear'].
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
+            defaults to None.
     """
 
     def __init__(
@@ -197,26 +253,8 @@ class HinSAGE:
         dropout=0.0,
         normalize="l2",
         activations=None,
+        **kwargs
     ):
-        """
-        Args:
-            layer_sizes (list): Hidden feature dimensions for each layer
-            generator (Sequence): A NodeSequence or LinkSequence. If specified, n_samples,
-                input_neighbour_tree and input_dim will be taken from this object.
-            n_samples: (Optional: needs to be specified if no mapper is provided.)
-                The number of samples per layer in the model.
-            input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
-                subtree to be created by the HinSAGE model.
-            input_dim: The input dimensions for each node type as a dictionary of the form
-                {node_type: feature_size}.
-            aggregator: The HinSAGE aggregator to use. Defaults to the `MeanHinAggregator`.
-            bias (bool): If True, a bias vector is learnt for each layer in the HinSAGE model
-            dropout: The dropout supplied to each layer in the HinSAGE model.
-            normalize: The normalization used after each layer, defaults to L2 normalization.
-            activations (list of str): Activations applied to each layer's output;
-                defaults to ['relu', ..., 'relu', 'linear'].
-        """
-
         def eval_neigh_tree_per_layer(input_tree):
             """
             Function to evaluate the neighbourhood tree structure for every layer. The tree
@@ -322,11 +360,36 @@ class HinSAGE:
             )
         self.activations = activations
 
+        # Optional regulariser, etc. for weights and biases
+        self._get_regularisers_from_keywords(kwargs)
+
+        # Aggregator functions for each layer
+        self._build_aggregators()
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        regularisers = {}
+        for param_name in [
+            "kernel_initializer",
+            "kernel_regularizer",
+            "kernel_constraint",
+            "bias_initializer",
+            "bias_regularizer",
+            "bias_constraint",
+        ]:
+            param_value = kwargs.pop(param_name, None)
+            if param_value is not None:
+                regularisers[param_name] = param_value
+        self._regularisers = regularisers
+
+    def _build_aggregators(self):
         # Dict of {node type: aggregator} per layer
         self._aggs = [
             {
                 node_type: self._aggregator(
-                    output_dim, bias=self.bias, act=self.activations[layer]
+                    output_dim,
+                    bias=self.bias,
+                    act=self.activations[layer],
+                    **self._regularisers
                 )
                 for node_type, output_dim in self.dims[layer + 1].items()
             }

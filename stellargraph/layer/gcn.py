@@ -52,51 +52,50 @@ class GraphConvolution(Layer):
 
     Args:
         units (int): dimensionality of output feature vectors
-        activation (str): nonlinear activation applied to layer's output to obtain output features
+        activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
-        kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
-        bias_initializer (str): name of the initializer for bias
-        attn_kernel_initializer (str): name of the initializer for attention kernel
-        kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
-        bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
-        activity_regularizer (str): not used in the current implementation
-        kernel_constraint (str): constraint applied to layer's kernel
-        bias_constraint (str): constraint applied to layer's bias
+        kernel_initializer (str or func): The initialiser to use for the weights;
+            defaults to 'glorot_uniform'.
+        kernel_regularizer (str or func): The regulariser to use for the weights;
+            defaults to None.
+        kernel_constraint (str or func): The constraint to use for the weights;
+            defaults to None.
+        bias_initializer (str or func): The initialiser to use for the bias;
+            defaults to 'zeros'.
+        bias_regularizer (str or func): The regulariser to use for the bias;
+            defaults to None.
+        bias_constraint (str or func): The constraint to use for the bias;
+            defaults to None.
     """
 
     def __init__(
-        self,
-        units,
-        activation=None,
-        use_bias=True,
-        final_layer=False,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs
+        self, units, activation=None, use_bias=True, final_layer=False, **kwargs
     ):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
-        super().__init__(**kwargs)
-
         self.units = units
         self.activation = activations.get(activation)
         self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
-        self.activity_regularizer = regularizers.get(activity_regularizer)
-        self.kernel_constraint = constraints.get(kernel_constraint)
-        self.bias_constraint = constraints.get(bias_constraint)
         self.final_layer = final_layer
+        self._get_regularisers_from_keywords(kwargs)
+        super().__init__(**kwargs)
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        self.kernel_initializer = initializers.get(
+            kwargs.pop("kernel_initializer", "glorot_uniform")
+        )
+        self.kernel_regularizer = regularizers.get(
+            kwargs.pop("kernel_regularizer", None)
+        )
+        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
+        self.bias_initializer = initializers.get(
+            kwargs.pop("bias_initializer", "zeros")
+        )
+        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
+        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
 
     def get_config(self):
         """
@@ -113,11 +112,10 @@ class GraphConvolution(Layer):
             "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
-            "bias_initializer": initializers.serialize(self.bias_initializer),
             "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
-            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
-            "activity_regularizer": regularizers.serialize(self.activity_regularizer),
             "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "bias_initializer": initializers.serialize(self.bias_initializer),
+            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
             "bias_constraint": constraints.serialize(self.bias_constraint),
         }
 
@@ -277,19 +275,14 @@ class GCN:
         generator (FullBatchNodeGenerator): The generator instance.
         bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
         dropout (float): Dropout rate applied to input features of each GCN layer.
-        kernel_regularizer (str): Normalization applied to the kernels of GCN layers.
-        activations (list of str): Activations applied to each layer's output;
+        activations (list of str or func): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu'].
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
+            defaults to None.
     """
 
     def __init__(
-        self,
-        layer_sizes,
-        generator,
-        bias=True,
-        dropout=0.0,
-        kernel_regularizer=None,
-        activations=None,
+        self, layer_sizes, generator, bias=True, dropout=0.0, activations=None, **kwargs
     ):
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
@@ -299,7 +292,6 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
         self.method = generator.method
@@ -320,21 +312,37 @@ class GCN:
             )
         self.activations = activations
 
+        # Optional regulariser, etc. for weights and biases
+        self._get_regularisers_from_keywords(kwargs)
+
         # Initialize a stack of GCN layers
         self._layers = []
         for ii in range(n_layers):
-            l = self.layer_sizes[ii]
-            a = self.activations[ii]
             self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 GraphConvolution(
-                    l,
-                    activation=a,
+                    self.layer_sizes[ii],
+                    activation=self.activations[ii],
                     use_bias=self.bias,
-                    kernel_regularizer=self.kernel_regularizer,
                     final_layer=ii == (n_layers - 1),
+                    **self._regularisers
                 )
             )
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        regularisers = {}
+        for param_name in [
+            "kernel_initializer",
+            "kernel_regularizer",
+            "kernel_constraint",
+            "bias_initializer",
+            "bias_regularizer",
+            "bias_constraint",
+        ]:
+            param_value = kwargs.pop(param_name, None)
+            if param_value is not None:
+                regularisers[param_name] = param_value
+        self._regularisers = regularisers
 
     def __call__(self, x):
         """
