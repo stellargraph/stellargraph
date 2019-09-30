@@ -50,7 +50,6 @@ def test_GraphConvolution_config():
     assert conf["bias_initializer"]["class_name"] == "Zeros"
     assert conf["kernel_regularizer"] == None
     assert conf["bias_regularizer"] == None
-    assert conf["activity_regularizer"] == None
     assert conf["kernel_constraint"] == None
     assert conf["bias_constraint"] == None
 
@@ -240,3 +239,33 @@ def test_GCN_activations():
     with pytest.raises(ValueError):
         # Unknown regularisers
         gcn = GCN([2], generator, activations=["bleach"])
+
+
+def test_GCN_regularisers():
+    G, features = create_graph_features()
+    adj = nx.to_numpy_array(G)[None, :, :]
+    n_nodes = features.shape[0]
+
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_features=node_features)
+
+    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
+
+    gcn = GCN([2], generator)
+
+    gcn = GCN([2], generator, kernel_initializer="ones")
+
+    gcn = GCN([2], generator, kernel_initializer=initializers.ones())
+
+    with pytest.raises(ValueError):
+        gcn = GCN([2], generator, kernel_initializer="fred")
+
+    gcn = GCN([2], generator, bias_initializer="zeros")
+
+    gcn = GCN([2], generator, bias_initializer=initializers.zeros())
+
+    with pytest.raises(ValueError):
+        gcn = GCN([2], generator, bias_initializer="barney")
