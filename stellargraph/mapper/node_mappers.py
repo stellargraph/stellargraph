@@ -591,7 +591,7 @@ class Attri2VecNodeGenerator:
 
     def flow(self, node_ids):
         """
-        Creates a generator/sequence object for evaluation
+        Creates a generator/sequence object for node representation prediction
         with the supplied node ids.
 
         The node IDs are the nodes to inference on: the embeddings
@@ -610,11 +610,11 @@ class Attri2VecNodeGenerator:
 
     def flow_from_dataframe(self, node_ids):
         """
-        Creates a generator/sequence object for training or evaluation
+        Creates a generator/sequence object for node representation prediction
         with the supplied node ids.
 
         Args:
-            node_targets: a Pandas DataFrame of node_ids.
+            node_ids: a Pandas DataFrame of node_ids.
 
         Returns:
             A NodeSequence object to use with the Attri2Vec model
