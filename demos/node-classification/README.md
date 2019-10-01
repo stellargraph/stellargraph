@@ -9,12 +9,12 @@ Each folder contains one or more examples of using the StellarGraph implementati
 state-of-the-art algorithms, attri2vec[4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], SGC [9], Node2Vec [1], and Metapath2Vec [2].
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
-Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks and learns node
+Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks, and learns node
 representations by performing a mapping on node attributes.
 
 The examples folder structure is shown below.
 
-* [`/attri2vec`] (https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
+* [`/attri2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/graphsage)
 
     Examples of supervised node classification for two homogeneous networks with attributes, using the attri2vec algorithm [4].
 
@@ -24,15 +24,15 @@ The examples folder structure is shown below.
 
 * [`/gcn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn)
 
-    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm [5].
+    Example of semi-supervised node classification for a homogeneous network, using the GCN algorithm [6].
 
 * [`/sgc`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/sgc)
 
-    Example of semi-supervised node classification for a homogeneous network, using the SGC algorithm [8].
+    Example of semi-supervised node classification for a homogeneous network, using the SGC algorithm [9].
 
 * [`/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
-    Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [6].
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [7].
 
 * [`/node2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/node2vec)
 
