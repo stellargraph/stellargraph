@@ -36,13 +36,12 @@ class Attri2Vec:
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
     Args:
-        layer_sizes (list): Hidden feature dimensions for each layer
+        layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence. 
         input_dim (int): The dimensions of the node features used as input to the model.
         node_num (int): The number of nodes in the given graph.
         bias (bool): If True a bias vector is learnt for each layer in the attri2vec model, default to False.
-        activation (str): The activation function of each layer in the attri2vec model, which takes values from 
-        "linear", "relu" and "sigmoid"(default).
+        activation (str): The activation function of each layer in the attri2vec model, which takes values from "linear", "relu" and "sigmoid"(default).
         normalize ("l2" or None): The normalization used after each layer, default to None.
 
     """
@@ -148,7 +147,7 @@ class Attri2Vec:
 
     def link_model(self):
         """
-        Builds a Attri2Vec model for link or node pair prediction
+        Builds a Attri2Vec model for context node prediction
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) nodes in the node pairs
