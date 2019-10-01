@@ -10,7 +10,8 @@ Each folder contains one or more examples of using the StellarGraph implementati
 state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Node2Vec [1], and Metapath2Vec [2].
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
-Word2Vec [5] algorithm.
+Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks, and learns node
+representations by performing a mapping on node attributes.
 
 The examples folder structure is shown below.
 
