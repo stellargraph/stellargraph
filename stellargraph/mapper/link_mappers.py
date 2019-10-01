@@ -659,7 +659,7 @@ class HinSAGELinkGenerator:
 
 class Attri2VecLinkGenerator:
     """
-    A data generator for context node prediction with attri2vec models.
+    A data generator for context node prediction with the attri2vec model.
 
     At minimum, supply the StellarGraph and the batch size.
 
@@ -674,7 +674,7 @@ class Attri2VecLinkGenerator:
     Example::
 
         G_generator = Attri2VecLinkGenerator(G, 50)
-        train_data_gen = G_generator.flow(edge_ids)
+        train_data_gen = G_generator.flow(edge_ids, edge_labels)
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
