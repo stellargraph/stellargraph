@@ -4,7 +4,7 @@ This is an example of using the attri2vec [1] model, with a link classifier on t
 to predict links for out-of-sample nodes in a homogeneous citation network.
 
 In this demo, we first train the attri2vec model on the in-sample subgraph and infer
-representations for out-of-sample nodes with the trained attri2vec model. The we use the
+representations for out-of-sample nodes with the trained attri2vec model. Then we use the
 obtained node representations to perform link prediction for out-of-sample nodes.
 
 The link prediction problem is treated as a supervised binary classification problem for
