@@ -37,7 +37,7 @@ import threading
 
 from tensorflow import keras
 from tensorflow.keras.utils import Sequence
-from stellargraph.core.graph import StellarGraphBase
+from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
@@ -316,8 +316,8 @@ class GraphSAGELinkGenerator:
     """
 
     def __init__(self, G, batch_size, num_samples, seed=None, name=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         G.check_graph_for_ml(features=True)
 
@@ -473,8 +473,8 @@ class HinSAGELinkGenerator:
     """
 
     def __init__(self, G, batch_size, num_samples, seed=None, name=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDigraph object.")
 
         G.check_graph_for_ml(features=True)
 

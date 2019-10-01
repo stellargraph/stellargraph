@@ -44,7 +44,7 @@ from ..data.explorer import (
     SampledHeterogeneousBreadthFirstWalk,
     DirectedBreadthFirstNeighbours,
 )
-from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
+from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op
 
@@ -208,8 +208,8 @@ class GraphSAGENodeGenerator:
     """
 
     def __init__(self, G, batch_size, num_samples, schema=None, seed=None, name=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
         self.num_samples = num_samples
@@ -380,8 +380,8 @@ class HinSAGENodeGenerator:
         self.name = name
 
         # We require a StellarGraph
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         G.check_graph_for_ml(features=True)
 
@@ -710,8 +710,8 @@ class FullBatchNodeGenerator:
 
     def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
 
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
         self.name = name
@@ -859,7 +859,7 @@ class DirectedGraphSAGENodeGenerator:
     def __init__(
         self, G, batch_size, in_samples, out_samples, schema=None, seed=None, name=None
     ):
-        if not isinstance(G, StellarDiGraph):
+        if not isinstance(G, StellarGraph) or not G.is_directed():
             raise TypeError("Graph must be a StellarDiGraph object.")
         # TODO Add checks for in- and out-nodes sizes
 

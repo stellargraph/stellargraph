@@ -28,7 +28,7 @@ import random
 from collections import defaultdict, deque
 
 from ..core.schema import GraphSchema
-from ..core.graph import StellarGraphBase
+from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 
 
@@ -48,7 +48,7 @@ class GraphWalk(object):
         self._np_random_state = np.random.RandomState(seed=seed)
 
         # We require a StellarGraph for this
-        if not isinstance(graph, StellarGraphBase):
+        if not isinstance(graph, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         if not graph_schema:

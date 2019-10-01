@@ -21,7 +21,7 @@ __all__ = ["UnsupervisedSampler"]
 import random
 
 from stellargraph.core.utils import is_real_iterable
-from stellargraph.core.graph import StellarGraphBase
+from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
 
 
@@ -45,9 +45,9 @@ class UnsupervisedSampler:
     """
 
     def __init__(self, G, nodes=None, length=2, number_of_walks=1, seed=None):
-        if not isinstance(G, StellarGraphBase):
+        if not isinstance(G, StellarGraph):
             raise ValueError(
-                "({}) Graph must be a StellarGraph object.".format(type(self).__name__)
+                "({}) Graph must be a StellarGraph or StellarDigraph object.".format(type(self).__name__)
             )
         else:
             self.graph = G

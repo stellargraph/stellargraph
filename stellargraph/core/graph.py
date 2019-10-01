@@ -19,7 +19,7 @@ The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
 
 """
-__all__ = ["StellarGraph", "StellarDiGraph", "StellarGraphBase"]
+__all__ = ["StellarGraph", "StellarDiGraph"]
 
 from stellargraph.core.schema import EdgeType
 
@@ -237,9 +237,104 @@ def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
     return data_index, data_arrays
 
 
-class StellarGraphCore:
+class StellarGraphFactory(type):
+    def __call__(cls, *args, **kwargs):
+        if cls is StellarGraph:
+            return NetworkXStellarGraph(*args, is_directed=False, **kwargs)
+        elif cls is StellarDiGraph:
+            return NetworkXStellarGraph(*args, is_directed=True, **kwargs)
+        else:
+            return type.__call__(cls, *args, **kwargs)
+
+
+class StellarGraph(metaclass=StellarGraphFactory):
     """
-    The public interface for all Stellar graph implementations.
+    StellarGraph class for directed or undirected graph ML models. It stores both
+    graph information from a NetworkX Graph object as well as features
+    for machine learning.
+
+    To create a StellarGraph object ready for machine learning, at a
+    minimum pass the graph structure to the StellarGraph as a NetworkX
+    graph:
+
+    For undirected models::
+
+        Gs = StellarGraph(nx_graph)
+
+
+    For directed models::
+
+        Gs = StellarDiGraph(nx_graph)
+
+
+    To create a StellarGraph object with node features, supply the features
+    as a numeric feature vector for each node.
+
+    To take the feature vectors from a node attribute in the original NetworkX
+    graph, supply the attribute name to the ``node_features`` argument::
+
+        Gs = StellarGraph(nx_graph, node_features="feature")
+
+
+    where the nx_graph contains nodes that have a "feature" attribute containing
+    the feature vector for the node. All nodes of the same type must have
+    the same size feature vectors.
+
+    Alternatively, supply the node features as Pandas DataFrame objects with
+    the of the DataFrame set to the node IDs. For graphs with a single node
+    type, you can supply the DataFrame object directly to StellarGraph::
+
+        node_data = pd.DataFrame(
+            [feature_vector_1, feature_vector_2, ..],
+            index=[node_id_1, node_id_2, ...])
+        Gs = StellarGraph(nx_graph, node_features=node_data)
+
+    For graphs with multiple node types, provide the node features as Pandas
+    DataFrames for each type separately, as a dictionary by node type.
+    This allows node features to have different sizes for each node type::
+
+        node_data = {
+            node_type_1: pd.DataFrame(...),
+            node_type_2: pd.DataFrame(...),
+        }
+        Gs = StellarGraph(nx_graph, node_features=node_data)
+
+
+    You can also supply the node feature vectors as an iterator of `node_id`
+    and feature vector pairs, for graphs with single and multiple node types::
+
+        node_data = zip([node_id_1, node_id_2, ...],
+            [feature_vector_1, feature_vector_2, ..])
+        Gs = StellarGraph(nx_graph, node_features=node_data)
+
+
+    Args:
+        graph: The NetworkX graph instance.
+        node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            This is the name for the node types that StellarGraph uses
+            when processing heterogeneous graphs. StellarGraph will
+            look for this attribute in the nodes of the graph to determine
+            their type.
+
+        node_type_default: str, optional (default=globals.NODE_TYPE_DEFAULT)
+            This is the default node type to use for nodes that do not have
+            an explicit type.
+
+        edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            This is the name for the edge types that StellarGraph uses
+            when processing heterogeneous graphs. StellarGraph will
+            look for this attribute in the edges of the graph to determine
+            their type.
+
+        edge_type_default: str, optional (default=globals.EDGE_TYPE_DEFAULT)
+            This is the default edge type to use for edges that do not have
+            an explicit type.
+
+        node_features: str, dict, list or DataFrame optional (default=None)
+            This tells StellarGraph where to find the node feature information
+            required by some graph models. These are expected to be
+            a numeric feature vector for each node in the graph.
+
     """
 
     def is_directed(self) -> bool:
@@ -351,101 +446,22 @@ class StellarGraphCore:
         raise NotImplementedError
 
 
-class StellarGraphBase(StellarGraphCore):
+class StellarDiGraph(StellarGraph):
+    pass
+
+
+class NetworkXStellarGraph(StellarGraph):
     """
-    StellarGraph class for directed or undirected graph ML models. It stores both
-    graph information from a NetworkX Graph object as well as features
-    for machine learning.
-
-    To create a StellarGraph object ready for machine learning, at a
-    minimum pass the graph structure to the StellarGraph as a NetworkX
-    graph:
-
-    For undirected models::
-
-        Gs = StellarGraph(nx_graph)
-
-
-    For directed models::
-
-        Gs = StellarDiGraph(nx_graph)
-
-
-    To create a StellarGraph object with node features, supply the features
-    as a numeric feature vector for each node.
-
-    To take the feature vectors from a node attribute in the original NetworkX
-    graph, supply the attribute name to the ``node_features`` argument::
-
-        Gs = StellarGraph(nx_graph, node_features="feature")
-
-
-    where the nx_graph contains nodes that have a "feature" attribute containing
-    the feature vector for the node. All nodes of the same type must have
-    the same size feature vectors.
-
-    Alternatively, supply the node features as Pandas DataFrame objects with
-    the of the DataFrame set to the node IDs. For graphs with a single node
-    type, you can supply the DataFrame object directly to StellarGraph::
-
-        node_data = pd.DataFrame(
-            [feature_vector_1, feature_vector_2, ..],
-            index=[node_id_1, node_id_2, ...])
-        Gs = StellarGraph(nx_graph, node_features=node_data)
-
-    For graphs with multiple node types, provide the node features as Pandas
-    DataFrames for each type separately, as a dictionary by node type.
-    This allows node features to have different sizes for each node type::
-
-        node_data = {
-            node_type_1: pd.DataFrame(...),
-            node_type_2: pd.DataFrame(...),
-        }
-        Gs = StellarGraph(nx_graph, node_features=node_data)
-
-
-    You can also supply the node feature vectors as an iterator of `node_id`
-    and feature vector pairs, for graphs with single and multiple node types::
-
-        node_data = zip([node_id_1, node_id_2, ...],
-            [feature_vector_1, feature_vector_2, ..])
-        Gs = StellarGraph(nx_graph, node_features=node_data)
-
-
-    Args:
-        graph: The NetworkX graph instance.
-        node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
-            This is the name for the node types that StellarGraph uses
-            when processing heterogeneous graphs. StellarGraph will
-            look for this attribute in the nodes of the graph to determine
-            their type.
-
-        node_type_default: str, optional (default=globals.NODE_TYPE_DEFAULT)
-            This is the default node type to use for nodes that do not have
-            an explicit type.
-
-        edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
-            This is the name for the edge types that StellarGraph uses
-            when processing heterogeneous graphs. StellarGraph will
-            look for this attribute in the edges of the graph to determine
-            their type.
-
-        edge_type_default: str, optional (default=globals.EDGE_TYPE_DEFAULT)
-            This is the default edge type to use for edges that do not have
-            an explicit type.
-
-        node_features: str, dict, list or DataFrame optional (default=None)
-            This tells StellarGraph where to find the node feature information
-            required by some graph models. These are expected to be
-            a numeric feature vector for each node in the graph.
-
+    Implementation based on encapsulating a NetworkX graph.
     """
 
-    def __init__(self, graph, **attr):
-        if not isinstance(graph, nx.MultiGraph) and not isinstance(
-            graph, nx.MultiDiGraph
-        ):
-            raise TypeError("Require MultiGraph or MultiDiGraph instance")
+    def __init__(self, graph=None, is_directed=False, **attr):
+        if is_directed:
+            if not isinstance(graph, nx.MultiDiGraph):
+                graph = nx.MultiDiGraph(graph)
+        else:
+            if not isinstance(graph, nx.MultiGraph):
+                graph = nx.MultiGraph(graph)
         self._graph = graph
 
         # Names of attributes that store the type of nodes and edges
@@ -864,7 +880,7 @@ class StellarGraphBase(StellarGraphCore):
         return gs
 
     ######################################################################
-    # Deprecated access to NetworkX graph:
+    # Deprecated, legacy access to NetworkX graph:
 
     def get_networkx_graph(self):
         return self._graph
@@ -909,17 +925,3 @@ class StellarGraphBase(StellarGraphCore):
         if self.is_directed():
             return {e[1] for e in self._graph.out_edges(node)}
         return nx.neighbors(self._graph, node)
-
-
-class StellarGraph(StellarGraphBase):
-    def __init__(self, graph=None, **attr):
-        if not isinstance(graph, nx.MultiGraph):
-            graph = nx.MultiGraph(graph)
-        super().__init__(graph, **attr)
-
-
-class StellarDiGraph(StellarGraphBase):
-    def __init__(self, graph=None, **attr):
-        if not isinstance(graph, nx.MultiDiGraph):
-            graph = nx.MultiDiGraph(graph)
-        super().__init__(graph, **attr)

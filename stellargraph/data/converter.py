@@ -17,7 +17,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from tensorflow.keras.utils import to_categorical
-from stellargraph.core.graph import StellarGraphBase
+from stellargraph.core.graph import StellarGraph
 
 
 class NodeAttributeSpecification:
@@ -147,8 +147,8 @@ class NodeAttributeSpecification:
             raise TypeError(
                 "Converter should be a subclass of StellarAttributeConverter"
             )
-        if not isinstance(graph, StellarGraphBase):
-            raise TypeError("Graph should be a StellarGraph")
+        if not isinstance(graph, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDigraph object")
 
         # Go through graph to find node attributes
         gx = graph.get_networkx_graph()
