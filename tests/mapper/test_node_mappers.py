@@ -751,20 +751,88 @@ def test_attri2vec_nodemapper_1():
         Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
 
 
-def test_attri2vec_nodemapper_2():
+def test_attri2vec_nodemapper_shuffle():
     n_feat = 1
     n_batch = 2
 
     G = example_graph_2(feature_size=n_feat)
     nodes = list(G.nodes())
 
+    # With shuffle
+    random.seed(15)
+    mapper = Attri2VecNodeGenerator(G, batch_size=n_batch).flow(
+        nodes, nodes, shuffle=True
+    )
+
+    expected_node_batches = [[5, 4], [3, 1], [2]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+    # This should re-shuffle the IDs
+    mapper.on_epoch_end()
+    expected_node_batches = [[4, 3], [1, 5], [2]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
     # With no shuffle
-    mapper = Attri2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
+    mapper = Attri2VecNodeGenerator(G, batch_size=n_batch).flow(
+        nodes, nodes, shuffle=False
+    )
     expected_node_batches = [[1, 2], [3, 4], [5]]
     assert len(mapper) == 3
     for ii in range(len(mapper)):
         nf, nl = mapper[ii]
         assert all(np.ravel(nf) == expected_node_batches[ii])
+        assert all(np.array(nl) == expected_node_batches[ii])
+
+
+def test_attri2vec_nodemapper_with_labels():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G2 = example_graph_2(n_feat)
+    nodes = list(G2)
+    labels = [n * 2 for n in nodes]
+
+    gen = Attri2VecNodeGenerator(G2, batch_size=n_batch).flow(nodes, labels)
+    assert len(gen) == 3
+
+    for ii in range(3):
+        nf, nl = gen[ii]
+
+        # Check sizes - note batch sizes are (2,2,1) for each iteration
+        assert nf.shape[1:] == (n_feat,)
+
+        # Check labels
+        assert all(int(a) == int(2 * b) for a, b in zip(nl, nf[:, 0]))
+
+    # Check beyond the graph lengh
+    with pytest.raises(IndexError):
+        nf, nl = gen[len(gen)]
+
+
+def test_attri2vec_nodemapper_incorrect_targets():
+    """
+    Tests checks on target shape
+    """
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G = example_graph_1(feature_size=n_feat)
+
+    with pytest.raises(TypeError):
+        Attri2VecNodeGenerator(G, batch_size=n_batch).flow(list(G), 1)
+
+    with pytest.raises(ValueError):
+        Attri2VecNodeGenerator(G, batch_size=n_batch).flow(list(G), targets=[])
 
 
 def create_graph_features():

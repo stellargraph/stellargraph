@@ -747,26 +747,30 @@ class Test_Attri2VecLinkGenerator:
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
 
-    def test_edge_consistency(self):
-        G = example_Graph_2(1)
-        edges = list(G.edges())
-        nodes = list(G.nodes())
-        edge_labels = list(range(len(edges)))
+    def test_Attri2VecLinkGenerator_shuffle(self):
+        def test_edge_consistency(shuffle):
+            G = example_Graph_2(1)
+            edges = list(G.edges())
+            nodes = list(G.nodes())
+            edge_labels = list(range(len(edges)))
 
-        mapper = Attri2VecLinkGenerator(G, batch_size=2).flow(
-            edges, edge_labels
-        )
+            mapper = Attri2VecLinkGenerator(G, batch_size=2).flow(
+                edges, edge_labels, shuffle=shuffle
+            )
 
-        assert len(mapper) == 2
+            assert len(mapper) == 2
 
-        for batch in range(len(mapper)):
-            nf, nl = mapper[batch]
-            e1 = edges[nl[0]]
-            e2 = edges[nl[1]]
-            assert nf[0][0, 0] == e1[0]
-            assert nf[1][0] == nodes.index(e1[1])
-            assert nf[0][1, 0] == e2[0]
-            assert nf[1][1] == nodes.index(e2[1])
+            for batch in range(len(mapper)):
+                nf, nl = mapper[batch]
+                e1 = edges[nl[0]]
+                e2 = edges[nl[1]]
+                assert nf[0][0, 0] == e1[0]
+                assert nf[1][0] == nodes.index(e1[1])
+                assert nf[0][1, 0] == e2[0]
+                assert nf[1][1] == nodes.index(e2[1])
+
+        test_edge_consistency(True)
+        test_edge_consistency(False)
 
     def test_Attri2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
