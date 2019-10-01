@@ -6,7 +6,7 @@ examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, attri2vec[4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Node2Vec [1], and Metapath2Vec [2].
+state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Node2Vec [1], and Metapath2Vec [2].
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
 Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks and learns node
@@ -29,7 +29,7 @@ The examples folder structure is shown below.
     Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types,
     using the HinSAGE algorithm.
 
-* [`/attri2vec`] (https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/attri2vec)
+* [`/attri2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/attri2vec)
 
     Example of link prediction for out-of-sample nodes for a homogeneous network with attributed nodes,
     using the attri2vec algorithm.
