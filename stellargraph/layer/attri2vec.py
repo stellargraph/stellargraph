@@ -30,7 +30,7 @@ import warnings
 class Attri2Vec:
     """
     Implementation of the attri2vec algorithm of Zhang et al. with Keras layers.
-    see: https://arxiv.org/abs/1901.04095
+    see: https://arxiv.org/abs/1901.04095.
 
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer and a generator object.
@@ -129,7 +129,7 @@ class Attri2Vec:
 
     def node_model(self):
         """
-        Builds a Attri2Vec model for node prediction
+        Builds a Attri2Vec model for node representation prediction.
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
@@ -147,7 +147,7 @@ class Attri2Vec:
 
     def link_model(self):
         """
-        Builds a Attri2Vec model for context node prediction
+        Builds a Attri2Vec model for context node prediction.
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a list of Keras input tensors for (src, dst) nodes in the node pairs
@@ -174,13 +174,12 @@ class Attri2Vec:
 
     def build(self):
         """
-        Builds a Attri2Vec model for node or link/node pair prediction, depending on the generator used to construct
-        the model (whether it is a node or link/node pair generator).
+        Builds a Attri2Vec model for context node prediction.
 
         Returns:
             tuple: (x_inp, x_out), where ``x_inp`` contains Keras input tensor(s)
-            for the specified Attri2Vec model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1])
+            for the Attri2Vec model to perform context node prediction and ``x_out`` contains
+            model output tensor(s) of shape (batch_size, layer_sizes[-1]).
 
         """
         return self.link_model()
