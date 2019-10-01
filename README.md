@@ -193,7 +193,7 @@ The StellarGraph library currently includes the following algorithms for graph m
   The current implementation supports mean aggregation of neighbour nodes,
   taking into account their types and the types of links between them.
 
-* Attri2vec [4]
+* attri2vec [4]
   - Supports node representation learning, node classification, and out-of-sample node link prediction for homogeneous graphs with node attributes.
 
 * The Graph ATtention Network (GAT) [5]
