@@ -892,7 +892,6 @@ class ClusterNodeGenerator:
                 )
             )
 
-        import math
         if not clusters:
             # graph clustering
             # We are going to split the graph into self.k random clusters
@@ -905,8 +904,6 @@ class ClusterNodeGenerator:
                 # cluster with the second last one
                 self.clusters[-2].extend(self.clusters[-1])
                 del self.clusters[-1]
-
-            #self.clusters = [c for c in asyn_fluidc(G, k, max_iter=10)]
 
         print(f"Number of clusters {len(self.clusters)}")
         for i, c in enumerate(self.clusters):
@@ -984,6 +981,7 @@ class ClusterNodeSequence(Sequence):
         self.node_list = list(graph.nodes())
         self.normalize_adj = normalize_adj
         self.q = q
+        self.node_order = node_ids  # initially it should be in this order
 
         if targets is not None:
             self.targets = np.asanyarray(targets)
@@ -998,6 +996,8 @@ class ClusterNodeSequence(Sequence):
 
     def __getitem__(self, index):
 
+        if index == 0:
+            self.node_order = []
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
@@ -1010,22 +1010,19 @@ class ClusterNodeSequence(Sequence):
         ).todense())  # order is given by order of IDs in cluster
         if self.normalize_adj:
             adj_cluster = adj_cluster + np.eye(adj_cluster.shape[0], dtype=np.int)  # add self-loops
-            # degree_matrix = np.diag(adj_cluster.sum(axis=1)) + np.eye(adj_cluster.shape[0], dtype=np.int)
             degree_matrix = adj_cluster.sum(axis=1) + 1
             degree_matrix = np.diag(1. / degree_matrix)
-            #degree_matrix = np.diag((np.array(adj_cluster.sum(axis=1))) ** (-0.5))
-            #adj_cluster = degree_matrix @ adj_cluster @ degree_matrix
             adj_cluster = degree_matrix @ adj_cluster
             adj_cluster_diagonal = np.diag(adj_cluster)
 
             adj_cluster = adj_cluster + 0.1*np.diag(adj_cluster_diagonal)
 
-
-
         g_node_list = list(g_cluster.nodes())
 
         # Determine the target nodes that exist in this cluster
         target_nodes_in_cluster = np.asanyarray(list(set(g_node_list).intersection(self.target_ids)))
+
+        self.node_order.extend(target_nodes_in_cluster)
 
         # The list of indices of the target nodes in cluster
         target_node_indices = np.array(
@@ -1056,7 +1053,6 @@ class ClusterNodeSequence(Sequence):
         if self.q > 1:
             # combine clusters
             cluster_indices = list(range(len(self.clusters_original)))
-            #print(f"Number of clusters {len(cluster_indices)}")
             random.shuffle(cluster_indices)
             clusters = []
 
@@ -1066,7 +1062,6 @@ class ClusterNodeSequence(Sequence):
                 for l in cc:
                     tmp.extend(list(self.clusters_original[l]))
                 clusters.append(tmp)
-                #print(f"Cluster size {len(tmp)}")
 
             self.clusters = clusters
 
