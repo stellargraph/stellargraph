@@ -453,7 +453,7 @@ class GraphSAGELinkGenerator:
         supplied link_ids to be used by the downstream task. They should
         be given in the same order as the list of link IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
@@ -631,7 +631,7 @@ class HinSAGELinkGenerator:
         supplied link_ids to be used by the downstream task. They should
         be given in the same order as the list of link IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
@@ -659,7 +659,7 @@ class HinSAGELinkGenerator:
 
 class Attri2VecLinkGenerator:
     """
-    A data generator for link/node pair prediction with attri2vec models
+    A data generator for context node prediction with attri2vec models.
 
     At minimum, supply the StellarGraph and the batch size.
 
@@ -667,7 +667,7 @@ class Attri2VecLinkGenerator:
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    Use the :meth:`.flow` method supplying the nodes and targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
@@ -686,6 +686,7 @@ class Attri2VecLinkGenerator:
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
+        # Check if the graph has features
         G.check_graph_for_ml(features=True)
 
         self.graph = G
@@ -701,7 +702,7 @@ class Attri2VecLinkGenerator:
             head_links: An iterable of edges to perform sampling for.
 
         Returns:
-            A list of feaure arrys, with each element being the feature of a
+            A list of feature arrays, with each element being the feature of a
             target node and the id of the corresponding context node.
         """
 
@@ -713,22 +714,17 @@ class Attri2VecLinkGenerator:
 
         return batch_feats
 
-    def flow(self, link_ids, targets=None, shuffle=False):
+    def flow(self, link_ids, targets=None):
         """
-        Creates a generator/sequence object for training or evaluation
+        Creates a generator/sequence object for training
         with the supplied edge IDs and numeric targets.
 
-        The edge IDs are the edges to train or inference on. They are
+        The edge IDs are the edges to train. They are
         expected to by tuples of (source_id, destination_id).
 
         The targets are an array of numeric targets corresponding to the
-        supplied link_ids to be used by the downstream task. They should
-        be given in the same order as the list of link IDs.
-        If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
-
-        Note that the shuffle argument should be True for training and
-        False for prediction.
+        supplied link_ids to be used by the attri2vec context node prediction task. 
+        They should be given in the same order as the list of link IDs.
 
         Args:
             link_ids (list or UnsupervisedSampler): an iterable of (src_id, dst_id) tuples
@@ -736,10 +732,6 @@ class Attri2VecLinkGenerator:
                 method to generate samples on the fly.
             targets (optional, array): a 2D array of numeric targets with shape
                 `(len(link_ids), target_size)`.
-            shuffle (optional, bool): The value of 'shuffle' is only relevant if 'link_ids' 
-                is an Iterable and it is ignored if the latter is an instance of UnsupervisedSampler. 
-                If True the node_ids will be shuffled at each epoch, if False the node_ids will be 
-                processed in order.
 
         Returns:
             An OnDemandLinkSequence object to use with the attri2vec model.
@@ -750,7 +742,7 @@ class Attri2VecLinkGenerator:
 
         # Otherwise pass iterable to standard LinkSequence
         elif isinstance(link_ids, collections.Iterable):
-            return LinkSequence(self, link_ids, targets, shuffle)
+            return LinkSequence(self, link_ids, targets, shuffle=True)
 
         else:
             raise TypeError(
