@@ -52,6 +52,10 @@ def test_attri2vec_constructor():
     assert attri2vec.n_layers == 1
     assert attri2vec.bias == False
 
+    # Check incorrect activation flag
+    with pytest.raises(ValueError):
+        Attri2Vec(layer_sizes=[4], input_dim=2, node_num=4, activation="unknown")
+        
     # Check incorrect normalization flag
     with pytest.raises(ValueError):
         Attri2Vec(layer_sizes=[4], input_dim=2, node_num=4, normalize=lambda x: x)
