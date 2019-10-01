@@ -51,7 +51,9 @@ class TestDirectedNodeGenerator(object):
 
         in_samples = [num_in_samples]
         out_samples = [num_out_samples]
-        gen = DirectedGraphSAGENodeGenerator(g, len(g), in_samples, out_samples)
+        gen = DirectedGraphSAGENodeGenerator(
+            g, g.number_of_nodes(), in_samples, out_samples
+        )
         flow = gen.flow(node_ids=nodes, shuffle=False)
 
         # Obtain tree of sampled features
@@ -118,7 +120,7 @@ class TestDirectedNodeGenerator(object):
         nodes = list(g.nodes())
 
         gen = DirectedGraphSAGENodeGenerator(
-            g, batch_size=len(g), in_samples=[1, 1], out_samples=[1, 1]
+            g, batch_size=g.number_of_nodes(), in_samples=[1, 1], out_samples=[1, 1]
         )
         flow = gen.flow(node_ids=nodes, shuffle=False)
 

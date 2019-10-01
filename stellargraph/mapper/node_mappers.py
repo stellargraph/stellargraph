@@ -96,7 +96,7 @@ class NodeSequence(Sequence):
             self.targets = None
 
         # Check all IDs are actually in the graph
-        if any(n not in generator.graph for n in ids):
+        if any(not generator.graph.has_node(n) for n in ids):
             raise KeyError(
                 "Head nodes supplied to generator contain IDs not found in graph"
             )
@@ -724,7 +724,11 @@ class FullBatchNodeGenerator:
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
         self.Aadj = nx.to_scipy_sparse_matrix(
-            G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
+            G.get_networkx_graph(),
+            nodelist=self.node_list,
+            dtype="float32",
+            weight="weight",
+            format="coo",
         )
 
         # Power-user feature: make the generator yield dense adjacency matrix instead

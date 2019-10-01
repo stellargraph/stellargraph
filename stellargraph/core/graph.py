@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,10 +28,9 @@ import itertools as it
 
 import pandas as pd
 import numpy as np
-from networkx.classes.multigraph import MultiGraph
-from networkx.classes.multidigraph import MultiDiGraph
+import networkx as nx
 
-from collections import Iterable, Iterator
+from typing import Iterable, Iterator, Any, Mapping
 
 from .. import globalvar
 from .schema import GraphSchema
@@ -238,9 +237,123 @@ def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
     return data_index, data_arrays
 
 
-class StellarGraphBase:
+class StellarGraphCore:
     """
-    StellarGraph class for undirected graph ML models. It stores both
+    The public interface for all Stellar graph implementations.
+    """
+
+    def is_directed(self) -> bool:
+        """
+        Indicates whether the graph is directed (True) or undirected (False).
+
+        Returns:
+             bool: The graph directedness status.
+        """
+        raise NotImplementedError
+
+    def number_of_nodes(self) -> int:
+        """
+        Obtains the number of nodes in the graph.
+
+        Returns:
+             int: The number of nodes.
+        """
+        raise NotImplementedError
+
+    def number_of_edges(self) -> int:
+        """
+        Obtains the number of edges in the graph.
+
+        Returns:
+             int: The number of edges.
+        """
+        raise NotImplementedError
+
+    def nodes(self) -> Iterable[Any]:
+        """
+        Obtains the collection of nodes in the graph.
+
+        Returns:
+            The graph nodes.
+        """
+        raise NotImplementedError
+
+    def edges(self) -> Iterable[Any]:
+        """
+        Obtains the collection of edges in the graph.
+
+        Returns:
+            The graph edges.
+        """
+        raise NotImplementedError
+
+    def has_node(self, node: Any) -> bool:
+        """
+        Indicates whether or not the graph contains the specified node.
+
+        Args:
+            node (any): The node.
+
+        Returns:
+             bool: A value of True (cf False) if the node is
+             (cf is not) in the graph.
+        """
+        raise NotImplementedError
+
+    def node_degrees(self) -> Mapping[Any, int]:
+        """
+        Obtains a map from node to node degree.
+
+        Returns:
+            The degree of each node.
+        """
+        raise NotImplementedError
+
+    def neighbour_nodes(self, node: Any) -> Iterable[Any]:
+        """
+        Obtains the collection of neighbouring nodes connected
+        to the given node.
+
+        Args:
+            node (any): The node in question.
+
+        Returns:
+            iterable: The neighbouring nodes.
+        """
+        raise NotImplementedError
+
+    def in_nodes(self, node: Any) -> Iterable[Any]:
+        """
+        Obtains the collection of neighbouring nodes with edges
+        directed to the given node. For an undirected graph,
+        neighbours are treated as both in-nodes and out-nodes.
+
+        Args:
+            node (any): The node in question.
+
+        Returns:
+            iterable: The neighbouring in-nodes.
+        """
+        raise NotImplementedError
+
+    def out_nodes(self, node: Any) -> Iterable[Any]:
+        """
+        Obtains the collection of neighbouring nodes with edges
+        directed from the given node. For an undirected graph,
+        neighbours are treated as both in-nodes and out-nodes.
+
+        Args:
+            node (any): The node in question.
+
+        Returns:
+            iterable: The neighbouring out-nodes.
+        """
+        raise NotImplementedError
+
+
+class StellarGraphBase(StellarGraphCore):
+    """
+    StellarGraph class for directed or undirected graph ML models. It stores both
     graph information from a NetworkX Graph object as well as features
     for machine learning.
 
@@ -300,6 +413,7 @@ class StellarGraphBase:
 
 
     Args:
+        graph: The NetworkX graph instance.
         node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
             This is the name for the node types that StellarGraph uses
             when processing heterogeneous graphs. StellarGraph will
@@ -327,9 +441,12 @@ class StellarGraphBase:
 
     """
 
-    def __init__(self, incoming_graph_data=None, **attr):
-        # TODO: add doc string
-        super().__init__(incoming_graph_data, **attr)
+    def __init__(self, graph, **attr):
+        if not isinstance(graph, nx.MultiGraph) and not isinstance(
+            graph, nx.MultiDiGraph
+        ):
+            raise TypeError("Require MultiGraph or MultiDiGraph instance")
+        self._graph = graph
 
         # Names of attributes that store the type of nodes and edges
         self._node_type_attr = attr.get("node_type_name", globalvar.TYPE_ATTR_NAME)
@@ -352,12 +469,12 @@ class StellarGraphBase:
         # TODO: This requires traversing all nodes and edges. Is there another way?
         node_types = set()
         type_for_node = {}
-        for n, ndata in self.nodes(data=True):
+        for n, ndata in graph.nodes(data=True):
             type_for_node[n] = self._get_node_type(ndata)
             node_types.add(type_for_node[n])
 
         edge_types = set()
-        for n1, n2, k, edata in self.edges(keys=True, data=True):
+        for n1, n2, k, edata in graph.edges(keys=True, data=True):
             edge_types.add(self._get_edge_type(edata))
 
         # New style: we are passed numpy arrays or pandas arrays of the feature vectors
@@ -367,7 +484,7 @@ class StellarGraphBase:
         # If node_features is a string, load features from this attribute of the nodes in the graph
         if isinstance(node_features, str):
             data_index_maps, data_arrays = _convert_from_node_attribute(
-                self,
+                graph,
                 node_features,
                 node_types,
                 self._node_type_attr,
@@ -454,7 +571,7 @@ class StellarGraphBase:
         # Get the node type if not specified.
         if node_type is None:
             node_types = {
-                self._get_node_type(self.node[n]) for n in nodes if n is not None
+                self._get_node_type(self._graph.node[n]) for n in nodes if n is not None
             }
 
             if len(node_types) > 1:
@@ -530,7 +647,7 @@ class StellarGraphBase:
         else:
             return [
                 n
-                for n, ndata in self.nodes(data=True)
+                for n, ndata in self._graph.nodes(data=True)
                 if self._get_node_type(ndata) == node_type
             ]
 
@@ -544,7 +661,7 @@ class StellarGraphBase:
         Returns:
             Node type
         """
-        return self._get_node_type(self.node[node])
+        return self._get_node_type(self._graph.node[node])
 
     @property
     def node_types(self):
@@ -559,7 +676,9 @@ class StellarGraphBase:
         if len(self._node_attribute_arrays) > 0:
             return set(self._node_attribute_arrays.keys())
         else:
-            return {self._get_node_type(ndata) for n, ndata in self.nodes(data=True)}
+            return {
+                self._get_node_type(ndata) for n, ndata in self._graph.nodes(data=True)
+            }
 
     def info(self, show_attributes=True, sample=None):
         """
@@ -584,7 +703,7 @@ class StellarGraphBase:
 
         # Sample the nodes for our analysis
         if sample:
-            all_nodes = list(self.nodes)
+            all_nodes = list(self._graph.nodes)
             snodes = random.sample(all_nodes, sample)
         else:
             snodes = None
@@ -593,9 +712,9 @@ class StellarGraphBase:
 
         def is_of_edge_type(e, edge_type):
             et2 = (
-                self._get_node_type(self.node[e[0]]),
-                self._get_edge_type(self.edges[e]),
-                self._get_node_type(self.node[e[1]]),
+                self._get_node_type(self._graph.node[e[0]]),
+                self._get_edge_type(self._graph.edges[e]),
+                self._get_node_type(self._graph.node[e[1]]),
             )
             return et2 == edge_type
 
@@ -605,7 +724,7 @@ class StellarGraphBase:
             # Filter nodes by type
             nt_nodes = [
                 ndata
-                for n, ndata in self.nodes(data=True)
+                for n, ndata in self._graph.nodes(data=True)
                 if self._get_node_type(ndata) == nt
             ]
             s += "  {}: [{}]\n".format(nt, len(nt_nodes))
@@ -624,7 +743,7 @@ class StellarGraphBase:
             # Filter edges by type
             et_edges = [
                 e[3]
-                for e in self.edges(keys=True, data=True)
+                for e in self._graph.edges(keys=True, data=True)
                 if is_of_edge_type(e[:3], et)
             ]
             if len(et_edges) > 0:
@@ -664,28 +783,30 @@ class StellarGraphBase:
         """
 
         if nodes is None:
-            nodes = self.nodes()
-            edges = self.edges(keys=True)
+            nodes = self._graph.nodes()
+            edges = self._graph.edges(keys=True)
 
         elif create_type_maps is False:
-            edges = self.edges(nodes, keys=True)
+            edges = self._graph.edges(nodes, keys=True)
 
         else:
             raise ValueError("Creating type maps for subsampled nodes is not supported")
 
         # Create node type index list
-        node_types = sorted({self._get_node_type(self.node[n]) for n in nodes}, key=str)
+        node_types = sorted(
+            {self._get_node_type(self._graph.node[n]) for n in nodes}, key=str
+        )
 
         graph_schema = {nt: set() for nt in node_types}
 
         # Create edge type index list
         edge_types = set()
         for n1, n2, k in edges:
-            edata = self.adj[n1][n2][k]
+            edata = self._graph.adj[n1][n2][k]
 
             # Edge type tuple
-            node_type_1 = self._get_node_type(self.node[n1])
-            node_type_2 = self._get_node_type(self.node[n2])
+            node_type_1 = self._get_node_type(self._graph.node[n1])
+            node_type_2 = self._get_node_type(self._graph.node[n2])
             edge_type = self._get_edge_type(edata)
 
             # Add edge type to node_type_1 data
@@ -724,7 +845,7 @@ class StellarGraphBase:
         if create_type_maps:
             node_type_map = {
                 n: node_types.index(self._get_node_type(ndata))
-                for n, ndata in self.nodes(data=True)
+                for n, ndata in self._graph.nodes(data=True)
             }
             edge_type_map = {
                 (edge[0], edge[1], edge[2]): edge_types.index(
@@ -734,7 +855,7 @@ class StellarGraphBase:
                         node_types[node_type_map[edge[1]]],
                     )
                 )
-                for edge in self.edges(keys=True, data=True)
+                for edge in self._graph.edges(keys=True, data=True)
             }
 
             gs.node_type_map = node_type_map
@@ -742,12 +863,63 @@ class StellarGraphBase:
 
         return gs
 
+    ######################################################################
+    # Deprecated access to NetworkX graph:
 
-class StellarGraph(StellarGraphBase, MultiGraph):
-    def __init__(self, incoming_graph_data=None, **attr):
-        super().__init__(incoming_graph_data, **attr)
+    def get_networkx_graph(self):
+        return self._graph
+
+    ######################################################################
+    # Generic graph interface:
+
+    def is_directed(self) -> bool:
+        return self._graph.is_directed()
+
+    def number_of_nodes(self) -> int:
+        return self._graph.number_of_nodes()
+
+    def number_of_edges(self) -> int:
+        return self._graph.number_of_edges()
+
+    def nodes(self) -> Iterable[Any]:
+        return self._graph.nodes()
+
+    def edges(self) -> Iterable[Any]:
+        return self._graph.edges()
+
+    def has_node(self, node: Any) -> bool:
+        return self._graph.__contains__(node)
+
+    def node_degrees(self) -> Mapping[Any, int]:
+        return self._graph.degree()
+
+    def neighbour_nodes(self, node: Any) -> Iterable[Any]:
+        if self.is_directed():
+            in_nodes = {e[0] for e in self._graph.in_edges(node)}
+            out_nodes = {e[1] for e in self._graph.out_edges(node)}
+            return in_nodes | out_nodes
+        return nx.neighbors(self._graph, node)
+
+    def in_nodes(self, node: Any) -> Iterable[Any]:
+        if self.is_directed():
+            return {e[0] for e in self._graph.in_edges(node)}
+        return nx.neighbors(self._graph, node)
+
+    def out_nodes(self, node: Any) -> Iterable[Any]:
+        if self.is_directed():
+            return {e[1] for e in self._graph.out_edges(node)}
+        return nx.neighbors(self._graph, node)
 
 
-class StellarDiGraph(StellarGraphBase, MultiDiGraph):
-    def __init__(self, incoming_graph_data=None, **attr):
-        super().__init__(incoming_graph_data, **attr)
+class StellarGraph(StellarGraphBase):
+    def __init__(self, graph=None, **attr):
+        if not isinstance(graph, nx.MultiGraph):
+            graph = nx.MultiGraph(graph)
+        super().__init__(graph, **attr)
+
+
+class StellarDiGraph(StellarGraphBase):
+    def __init__(self, graph=None, **attr):
+        if not isinstance(graph, nx.MultiDiGraph):
+            graph = nx.MultiDiGraph(graph)
+        super().__init__(graph, **attr)

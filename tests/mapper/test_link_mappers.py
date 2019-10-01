@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -437,7 +437,7 @@ class Test_GraphSAGELinkGenerator:
             feature_size=n_feat, n_nodes=6, n_isolates=2, n_edges=10
         )
 
-        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes)
+        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes())
 
         gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
             unsupervisedSamples

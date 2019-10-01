@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -151,8 +151,9 @@ class NodeAttributeSpecification:
             raise TypeError("Graph should be a StellarGraph")
 
         # Go through graph to find node attributes
+        gx = graph.get_networkx_graph()
         all_attrs = set(
-            k for v in graph.nodes_of_type(node_type) for k in graph.node[v].keys()
+            k for v in graph.nodes_of_type(node_type) for k in gx.node[v].keys()
         )
 
         # Remove any ignored attributes

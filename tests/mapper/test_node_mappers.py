@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -199,7 +199,7 @@ def test_nodemapper_constructor():
 
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
-    mapper = generator.flow(list(G))
+    mapper = generator.flow(list(G.nodes()))
 
     assert generator.batch_size == 2
     assert mapper.data_size == 4
@@ -296,7 +296,7 @@ def test_nodemapper_with_labels():
 
     # test graph
     G2 = example_graph_2(n_feat)
-    nodes = list(G2)
+    nodes = list(G2.nodes())
     labels = [n * 2 for n in nodes]
 
     gen = GraphSAGENodeGenerator(G2, batch_size=n_batch, num_samples=[2, 2]).flow(
@@ -365,11 +365,11 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    ccs = list(nx.connected_components(G))
+    ccs = list(nx.connected_components(G.get_networkx_graph()))
     assert len(ccs) == 2
 
     n_isolates = [5]
-    assert nx.degree(G, n_isolates[0]) == 0
+    assert nx.degree(G.get_networkx_graph(), n_isolates[0]) == 0
 
     # Check both isolated and non-isolated nodes have same sampled feature shape
     for head_nodes in [[1], [2], n_isolates]:
@@ -409,7 +409,7 @@ def test_nodemapper_manual_schema():
     # Create manual schema
     schema = G.create_graph_schema(create_type_maps=True)
     GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        list(G)
+        list(G.nodes())
     )
 
     # Create manual schema without type maps
@@ -418,7 +418,7 @@ def test_nodemapper_manual_schema():
     with pytest.raises(RuntimeError):
         GraphSAGENodeGenerator(
             G, schema=schema, batch_size=n_batch, num_samples=[1]
-        ).flow(list(G))
+        ).flow(list(G.nodes()))
 
 
 def test_nodemapper_incorrect_targets():
@@ -432,11 +432,13 @@ def test_nodemapper_incorrect_targets():
     G = example_graph_1(feature_size=n_feat)
 
     with pytest.raises(TypeError):
-        GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(list(G), 1)
+        GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+            list(G.nodes()), 1
+        )
 
     with pytest.raises(ValueError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
-            list(G), targets=[]
+            list(G.nodes()), targets=[]
         )
 
 
@@ -708,7 +710,7 @@ class Test_FullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = FullBatchNodeGenerator(nx.Graph(self.G))
+            generator = FullBatchNodeGenerator(self.G.get_networkx_graph())
 
     def test_generator_constructor_hin(self):
         feature_sizes = {"t1": 1, "t2": 1}
@@ -720,7 +722,7 @@ class Test_FullBatchNodeGenerator:
         self, G, node_ids, node_targets, sparse=False, method="none", k=1
     ):
         generator = FullBatchNodeGenerator(G, sparse=sparse, method=method, k=k)
-        n_nodes = len(G)
+        n_nodes = G.number_of_nodes()
 
         gen = generator.flow(node_ids, node_targets)
         if sparse:
@@ -842,12 +844,12 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
 
-        A = nx.to_numpy_array(G)
+        A = nx.to_numpy_array(G.get_networkx_graph())
         assert np.array_equal(A.dot(A), generator.Aadj.toarray())
 
     def test_generator_methods(self):
         node_ids = list(self.G.nodes())
-        Aadj = nx.to_numpy_array(self.G)
+        Aadj = nx.to_numpy_array(self.G.get_networkx_graph())
         Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
         Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
         Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)

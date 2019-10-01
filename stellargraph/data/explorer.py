@@ -23,7 +23,6 @@ __all__ = [
 ]
 
 
-import networkx as nx
 import numpy as np
 import random
 from collections import defaultdict, deque
@@ -71,7 +70,7 @@ class GraphWalk(object):
             edge_types = self.graph_schema.edge_types
             adj = {et: defaultdict(lambda: [None]) for et in edge_types}
 
-            for n1, nbrdict in self.graph.adjacency():
+            for n1, nbrdict in self.graph.get_networkx_graph().adjacency():
                 for et in edge_types:
                     neigh_et = [
                         n2
@@ -112,9 +111,9 @@ class GraphWalk(object):
         return random.Random(seed)
 
     def neighbors(self, node):
-        if node not in self.graph:
+        if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return list(nx.neighbors(self.graph, node))
+        return list(self.graph.neighbour_nodes(node))
 
     def run(self, **kwargs):
         """
@@ -315,10 +314,11 @@ class BiasedRandomWalk(GraphWalk):
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
             for node in self.graph.nodes():
-                for neighbor in self.neighbors(node):
+                # TODO Encapsulate edge weights
+                for neighbor in self.graph.neighbour_nodes(node):
 
                     wts = set()
-                    for k, v in self.graph[node][neighbor].items():
+                    for k, v in self.graph.get_networkx_graph()[node][neighbor].items():
                         weight = v.get(edge_weight_label)
                         if weight is None or np.isnan(weight) or weight == np.inf:
                             self._raise_error(
@@ -370,9 +370,10 @@ class BiasedRandomWalk(GraphWalk):
                 ):
 
                     if weighted:
-                        weight_cn = self.graph[current_node][nn][0].get(
-                            edge_weight_label
-                        )
+                        # TODO Encapsulate edge weights
+                        weight_cn = self.graph.get_networkx_graph()[current_node][nn][
+                            0
+                        ].get(edge_weight_label)
                     else:
                         weight_cn = 1.0
 
@@ -474,9 +475,10 @@ class UniformRandomMetaPathWalk(GraphWalk):
 
         walks = []
 
+        gx = self.graph.get_networkx_graph()
         for node in nodes:
             # retrieve node type
-            label = self.graph.node[node][node_type_attribute]
+            label = gx.node[node][node_type_attribute]
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -504,8 +506,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if self.graph.node[n_node][node_type_attribute]
-                            == metapath[d]
+                            if gx.node[n_node][node_type_attribute] == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
@@ -824,8 +825,9 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         if node is None:
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [None] * size
-        fn = self.graph.in_edges if idx == 0 else self.graph.out_edges
-        neighbours = [n[idx] for n in list(fn(node))]
+        neighbours = list(
+            self.graph.in_nodes(node) if idx == 0 else self.graph.out_nodes(node)
+        )
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
             return [None] * size
