@@ -55,7 +55,7 @@ def test_PPNP_apply_dense():
     G, features = create_graph_features()
     adj = nx.to_scipy_sparse_matrix(G)
     features, adj = PPNP_Aadj_feats_op(features, adj)
-    adj = adj.todense()[None, :, :]
+    adj = adj[None, :, :]
 
     nodes = G.nodes()
     node_features = pd.DataFrame.from_dict(

@@ -58,16 +58,16 @@ def test_APPNP_edge_cases():
     assert str(error) == "approx_iter should be a positive integer"
 
     try:
-        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., transport_probability=1.2)
+        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., teleport_probability=1.2)
     except ValueError as e:
         error = e
-    assert str(error) == "transport_probability should be between 0 and 1 (inclusive)"
+    assert str(error) == "teleport_probability should be between 0 and 1 (inclusive)"
 
     try:
-        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., transport_probability=1.2)
+        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., teleport_probability=1.2)
     except ValueError as e:
         error = e
-    assert str(error) == "transport_probability should be between 0 and 1 (inclusive)"
+    assert str(error) == "teleport_probability should be between 0 and 1 (inclusive)"
 
 
 def test_APPNP_apply_dense():

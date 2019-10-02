@@ -19,9 +19,9 @@ class APPNPPropagationLayer(Layer):
 
       - There are three inputs required, the node features, the output
         indices (the nodes that are to be selected in the final layer)
-        and the graph propagation matrix
+        and the normalized graph Laplacian matrix
 
-      - This class assumes that the propagation matrix (specified in paper) matrix is passed as
+      - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
       - The output indices are used when ``final_layer=True`` and the returned outputs
@@ -34,11 +34,14 @@ class APPNPPropagationLayer(Layer):
         units (int): dimensionality of output feature vectors
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
+        teleport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
+        the paper (alpha in the paper)
     """
 
     def __init__(
         self,
         units,
+        teleport_probability=0.1,
         final_layer=False,
         **kwargs
     ):
@@ -48,6 +51,7 @@ class APPNPPropagationLayer(Layer):
         super().__init__(**kwargs)
 
         self.units = units
+        self.teleport_probability = teleport_probability
         self.final_layer = final_layer
 
     def get_config(self):
@@ -62,6 +66,7 @@ class APPNPPropagationLayer(Layer):
         config = {
             "units": self.units,
             "final_layer": self.final_layer,
+            "teleport_probability": self.teleport_probability
         }
 
         base_config = super().get_config()
@@ -126,9 +131,9 @@ class APPNPPropagationLayer(Layer):
         propagated_features = K.squeeze(propagated_features, 0)
         out_indices = K.squeeze(out_indices, 0)
 
-        # Calculate the layer operation of GCN
+        # Propagate the node features
         A = As[0]
-        output = K.dot(A, propagated_features) + features
+        output = K.dot(A, propagated_features) + self.teleport_probability * features
 
         # On the final layer we gather the nodes referenced by the indices
         if self.final_layer:
@@ -179,7 +184,7 @@ class APPNP:
         bias (bool): toggles an optional bias in fully connected layers
         dropout (float): dropout rate applied to input features of each layer
         kernel_regularizer (str): normalization applied to the kernels of fully connetcted layers
-        transport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
+        teleport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
         the paper (alpha in the paper)
         approx_iter: number of iterations to approximate PPNP as described in the paper (K in the paper)
     """
@@ -191,7 +196,7 @@ class APPNP:
             generator,
             bias=True,
             dropout=0.0,
-            transport_probability=0.1,
+            teleport_probability=0.1,
             kernel_regularizer=None,
             approx_iter=10
     ):
@@ -205,11 +210,11 @@ class APPNP:
         if not isinstance(approx_iter, int) or approx_iter <= 0:
             raise ValueError("approx_iter should be a positive integer")
 
-        if (transport_probability > 1.0) or (transport_probability < 0.0):
-            raise ValueError("transport_probability should be between 0 and 1 (inclusive)")
+        if (teleport_probability > 1.0) or (teleport_probability < 0.0):
+            raise ValueError("teleport_probability should be between 0 and 1 (inclusive)")
 
         self.layer_sizes = layer_sizes
-        self.transport_probability = transport_probability
+        self.teleport_probability = teleport_probability
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
@@ -243,12 +248,13 @@ class APPNP:
                 )
             )
 
-        self._layers.append(Dropout(self.dropout))
         feature_dim = self.layer_sizes[-1]
         for ii in range(approx_iter):
+            self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 APPNPPropagationLayer(
                     feature_dim,
+                    teleport_probability=self.teleport_probability,
                     final_layer=(ii == (self.approx_iter - 1))
                 )
             )
@@ -316,7 +322,7 @@ class APPNP:
 
     def node_model(self):
         """
-        Builds a APPNP model for node
+        Builds a APPNP model for node prediction
 
         Returns:
             tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the APPNP model (containing node features and graph adjacency),
@@ -357,14 +363,16 @@ class APPNP:
 
     def propagate_model(self, base_model):
         '''
-        Propagates a trained model to create a node model.
+        Propagates a trained kera model to create a node model.
         Args:
             base_model (keras Model): trained model with node features as input, predicted classes as output
+
         returns:
             tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors
             for the APPNP model (containing node features and graph adjacency),
             and `x_out` is a Keras tensor for the APPNP model output.
         '''
+
         N_nodes = self.generator.features.shape[0]
         N_feat = self.generator.features.shape[1]
 
@@ -407,6 +415,8 @@ class APPNP:
         for layer in self._layers:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices_t] + Ainput)
+            elif isinstance(layer, Dropout):
+                h_layer = layer(h_layer)
 
         x_out = h_layer
         return x_inp, x_out
