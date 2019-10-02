@@ -21,9 +21,9 @@ class PPNPPropagationLayer(Layer):
 
       - There are three inputs required, the node features, the output
         indices (the nodes that are to be selected in the final layer)
-        and the graph propagation matrix
+        and the graph personalized page rank matrix
 
-      - This class assumes that the propagation matrix (specified in paper) matrix is passed as
+      - This class assumes that the personalized page rank matrix (specified in paper) matrix is passed as
         input to the Keras methods.
 
       - The output indices are used when ``final_layer=True`` and the returned outputs
@@ -109,7 +109,7 @@ class PPNPPropagationLayer(Layer):
             inputs (list): a list of 3 input tensors that includes
                 node features (size 1 x N x F),
                 output indices (size 1 x M)
-                graph adjacency matrix (size N x N),
+                graph personalized page rank matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
 
@@ -127,7 +127,7 @@ class PPNPPropagationLayer(Layer):
         features = K.squeeze(features, 0)
         out_indices = K.squeeze(out_indices, 0)
 
-        # Calculate the layer operation of GCN
+        # Propagate the features
         A = As[0]
         output = K.dot(A, features)
 
@@ -161,11 +161,11 @@ class PPNP:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`FullBatchNodeGenerator` object.
 
-      - This assumes that the propagation matrix is provided as input to
+      - This assumes that the personalized page rank matrix is provided as input to
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
         ``method='ppnp'`` argument to do this pre-processing.
 
-      - ''method='ppnp'`` requires that use_spare=False and generates a dense propagtaion matrix
+      - ''method='ppnp'`` requires that use_spare=False and generates a dense personalized page rank matrix matrix
 
       - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
@@ -181,8 +181,6 @@ class PPNP:
         bias (bool): toggles an optional bias in fully connected layers
         dropout (float): dropout rate applied to input features of each layer
         kernel_regularizer (str): normalization applied to the kernels of fully connetcted layers
-        transport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
-        the paper (alpha in the paper)
     """
 
     def __init__(
@@ -192,7 +190,6 @@ class PPNP:
             generator,
             bias=True,
             dropout=0.0,
-            transport_probability=0.1,
             kernel_regularizer=None
     ):
 
@@ -203,7 +200,6 @@ class PPNP:
             raise ValueError("The number of layers should equal the number of activations")
 
         self.layer_sizes = layer_sizes
-        self.transport_probability = transport_probability
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
