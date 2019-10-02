@@ -26,7 +26,7 @@ GraphSAGE model
 ----------------
 
 .. automodule:: stellargraph.layer.graphsage
-  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+  :members: GraphSAGE, DirectedGraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
 
 
 HinSAGE model
