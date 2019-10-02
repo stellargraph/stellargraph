@@ -717,9 +717,9 @@ class Test_FullBatchNodeGenerator:
             generator = FullBatchNodeGenerator(Ghin)
 
     def generator_flow(
-        self, G, node_ids, node_targets, sparse=False, method="none", k=1, a=0.1
+        self, G, node_ids, node_targets, sparse=False, method="none", k=1, teleport_probability=0.1
     ):
-        generator = FullBatchNodeGenerator(G, sparse=sparse, method=method, k=k, a=a)
+        generator = FullBatchNodeGenerator(G, sparse=sparse, method=method, k=k, teleport_probability=teleport_probability)
         n_nodes = len(G)
 
         gen = generator.flow(node_ids, node_targets)
@@ -900,14 +900,14 @@ class Test_FullBatchNodeGenerator:
         assert np.allclose(A_dense, Agcn.dot(Agcn))
 
         A_dense, _, _ = self.generator_flow(
-            self.G, node_ids, None, sparse=False, method="ppnp", a=0.1
+            self.G, node_ids, None, sparse=False, method="ppnp", teleport_probability=0.1
         )
         assert np.allclose(A_dense, Appnp)
 
         ppnp_sparse_failed = False
         try:
             A_dense, _, _ = self.generator_flow(
-                self.G, node_ids, None, sparse=True, method="ppnp", a=0.1
+                self.G, node_ids, None, sparse=True, method="ppnp", teleport_probability=0.1
             )
         except ValueError as e:
             ppnp_sparse_failed = True
