@@ -31,6 +31,7 @@ __all__ = [
 import warnings
 import operator
 import random
+import copy
 import numpy as np
 import itertools as it
 import networkx as nx
@@ -898,7 +899,10 @@ class ClusterNodeGenerator:
             all_nodes = list(G.nodes())
             random.shuffle(all_nodes)
             cluster_size = len(all_nodes) // self.k
-            self.clusters = [all_nodes[i:i+cluster_size] for i in range(0, len(all_nodes), cluster_size)]
+            self.clusters = [
+                all_nodes[i : i + cluster_size]
+                for i in range(0, len(all_nodes), cluster_size)
+            ]
             if len(self.clusters) > self.k:
                 # for the case that the number of nodes is not exactly divisible by k, we combine the last
                 # cluster with the second last one
@@ -911,7 +915,7 @@ class ClusterNodeGenerator:
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, name=None):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -940,7 +944,7 @@ class ClusterNodeGenerator:
         # node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
         return ClusterNodeSequence(
-            self.graph, self.clusters, targets=targets, node_ids=node_ids, q=self.q
+            self.graph, self.clusters, targets=targets, node_ids=node_ids, q=self.q, name=name
         )
 
 
@@ -966,7 +970,7 @@ class ClusterNodeSequence(Sequence):
     use_sparse = False
 
     def __init__(
-        self, graph, clusters, targets=None, node_ids=None, normalize_adj=True, q=1
+        self, graph, clusters, targets=None, node_ids=None, normalize_adj=True, q=1, name=None
     ):
 
         if (targets is not None) and (len(node_ids) != len(targets)):
@@ -974,14 +978,17 @@ class ClusterNodeSequence(Sequence):
                 "When passed together targets and indices should be the same length."
             )
 
-        self.clusters = clusters
-        self.clusters_original = clusters
+        self.name = name
+        self.clusters = list()  # clusters
+        self.clusters_original = copy.deepcopy(clusters)
         self.graph = graph
         self.target_ids = list(node_ids)
         self.node_list = list(graph.nodes())
         self.normalize_adj = normalize_adj
         self.q = q
-        self.node_order = node_ids  # initially it should be in this order
+        self.node_order = list()  # node_ids  # initially it should be in this order
+        self._node_order_in_progress = list()
+        self.__node_buffer = dict()
 
         if targets is not None:
             self.targets = np.asanyarray(targets)
@@ -992,12 +999,13 @@ class ClusterNodeSequence(Sequence):
 
     def __len__(self):
         num_batches = len(self.clusters_original) // self.q
+        # num_batches = len(self.clusters)  # len(self.clusters_original) // self.q
         return num_batches
 
     def __getitem__(self, index):
 
-        if index == 0:
-            self.node_order = []
+        # print(f"{self.name}  index={index}")
+
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
@@ -1005,29 +1013,38 @@ class ClusterNodeSequence(Sequence):
             cluster
         )  # Get the subgraph; returns SubGraph view
 
-        adj_cluster = np.array(nx.adjacency_matrix(
-            g_cluster, # nodelist=cluster
-        ).todense())  # order is given by order of IDs in cluster
+        adj_cluster = np.array(
+            nx.adjacency_matrix(g_cluster).todense()  # nodelist=cluster
+        )  # order is given by order of IDs in cluster
         if self.normalize_adj:
-            adj_cluster = adj_cluster + np.eye(adj_cluster.shape[0], dtype=np.int)  # add self-loops
+            adj_cluster = adj_cluster + np.eye(
+                adj_cluster.shape[0], dtype=np.int
+            )  # add self-loops
             degree_matrix = adj_cluster.sum(axis=1) + 1
-            degree_matrix = np.diag(1. / degree_matrix)
+            degree_matrix = np.diag(1.0 / degree_matrix)
             adj_cluster = degree_matrix @ adj_cluster
             adj_cluster_diagonal = np.diag(adj_cluster)
 
-            adj_cluster = adj_cluster + 0.1*np.diag(adj_cluster_diagonal)
+            adj_cluster = adj_cluster + 0.1 * np.diag(adj_cluster_diagonal)
 
         g_node_list = list(g_cluster.nodes())
 
         # Determine the target nodes that exist in this cluster
-        target_nodes_in_cluster = np.asanyarray(list(set(g_node_list).intersection(self.target_ids)))
+        target_nodes_in_cluster = np.asanyarray(
+            list(set(g_node_list).intersection(self.target_ids))
+        )
 
-        self.node_order.extend(target_nodes_in_cluster)
+        # self._node_order_in_progress.extend(target_nodes_in_cluster)
+        self.__node_buffer[index] = target_nodes_in_cluster
 
         # The list of indices of the target nodes in cluster
         target_node_indices = np.array(
             [g_node_list.index(n) for n in target_nodes_in_cluster]
         )
+
+        if index == (len(self.clusters_original) // self.q)-1:
+            # last batch
+            self.__node_buffer_dict_to_list()
 
         cluster_targets = None
         #
@@ -1046,6 +1063,17 @@ class ClusterNodeSequence(Sequence):
 
         return [features, target_node_indices, adj_cluster], cluster_targets
 
+    def __node_buffer_dict_to_list(self):
+        self.node_order = []  # [v for k, v in self.__node_buffer.items()]
+        for k, v in self.__node_buffer.items():
+            self.node_order.extend(v)
+
+    # def __node_buffer_length(self):
+    #     total = 0;
+    #     for k, v in self.__node_buffer.items():
+    #         total += len(v)
+    #     return total
+
     def on_epoch_end(self):
         """
          Shuffle all head (root) nodes at the end of each epoch
@@ -1054,15 +1082,18 @@ class ClusterNodeSequence(Sequence):
             # combine clusters
             cluster_indices = list(range(len(self.clusters_original)))
             random.shuffle(cluster_indices)
-            clusters = []
+            self.clusters = []
 
-            for i in range(0, len(cluster_indices)-1, self.q):
-                cc = cluster_indices[i:i+self.q]
+            for i in range(0, len(cluster_indices) - 1, self.q):
+                cc = cluster_indices[i : i + self.q]
                 tmp = []
                 for l in cc:
                     tmp.extend(list(self.clusters_original[l]))
-                clusters.append(tmp)
+                self.clusters.append(tmp)
 
-            self.clusters = clusters
+            # self.clusters = clusters
+            print(f"{self.name} Number of clusters at epoch end :: {len(self.clusters)}")
+
+        self.__node_buffer = dict()
 
         random.shuffle(self.clusters)
