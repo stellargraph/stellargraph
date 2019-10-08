@@ -23,7 +23,7 @@ from tensorflow import keras
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.mapper.link_mappers import *
+from stellargraph.mapper import *
 from stellargraph.layer import GraphSAGE, link_classification
 
 

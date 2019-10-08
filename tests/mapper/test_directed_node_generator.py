@@ -18,7 +18,7 @@ import random
 import pytest
 import networkx as nx
 import pandas as pd
-from stellargraph.mapper.node_mappers import DirectedGraphSAGENodeGenerator
+from stellargraph.mapper import DirectedGraphSAGENodeGenerator
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
 
 

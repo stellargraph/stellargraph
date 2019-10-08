@@ -20,7 +20,7 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
-from stellargraph.mapper.node_mappers import *
+from stellargraph.mapper import *
 
 import networkx as nx
 import numpy as np
@@ -446,9 +446,11 @@ def test_hinnodemapper_constructor():
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
-        HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow(G.nodes())
+        HinSAGENodeGenerator(
+            G, batch_size=2, num_samples=[2, 2], head_node_type="A"
+        ).flow(G.nodes())
 
-    gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
+    gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
     mapper = gen.flow([0, 1, 2, 3])
     assert gen.batch_size == 2
     assert mapper.data_size == 4
@@ -459,7 +461,7 @@ def test_hinnodemapper_constructor_all_options():
     feature_sizes = {"A": 10, "B": 10}
     G = example_hin_1(feature_sizes)
 
-    gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
+    gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
 
     nodes_of_type_a = G.nodes_of_type("A")
     mapper = gen.flow(nodes_of_type_a)
@@ -470,9 +472,9 @@ def test_hinnodemapper_constructor_all_options():
 def test_hinnodemapper_constructor_no_features():
     G = example_hin_1(feature_size_by_type=None)
     with pytest.raises(RuntimeError):
-        mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow(
-            G.nodes()
-        )
+        mapper = HinSAGENodeGenerator(
+            G, batch_size=2, num_samples=[2, 2], head_node_type="A"
+        ).flow(G.nodes())
 
 
 def test_hinnodemapper_constructor_nx_graph():
@@ -489,9 +491,9 @@ def test_hinnodemapper_level_1():
     feature_sizes = {"t1": 1, "t2": 2}
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
 
-    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2]).flow(
-        nodes_type_2
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[2], head_node_type="t2"
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 1)
@@ -515,9 +517,9 @@ def test_hinnodemapper_level_2():
     feature_sizes = {"t1": 1, "t2": 2}
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
 
-    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2, 3]).flow(
-        nodes_type_2
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[2, 3], head_node_type="t2"
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 2)
@@ -547,9 +549,9 @@ def test_hinnodemapper_shuffle():
     feature_sizes = {"t1": 1, "t2": 4}
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
 
-    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0]).flow(
-        nodes_type_1, nodes_type_1, shuffle=True
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[0], head_node_type="t1"
+    ).flow(nodes_type_1, nodes_type_1, shuffle=True)
 
     expected_node_batches = [[3, 2], [1, 0]]
     assert len(mapper) == 2
@@ -568,9 +570,9 @@ def test_hinnodemapper_shuffle():
         assert all(np.array(nl) == expected_node_batches[ii])
 
     # With no shuffle
-    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0]).flow(
-        nodes_type_1, nodes_type_1, shuffle=False
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[0], head_node_type="t1"
+    ).flow(nodes_type_1, nodes_type_1, shuffle=False)
     expected_node_batches = [[0, 1], [2, 3]]
     assert len(mapper) == 2
     for ii in range(len(mapper)):
@@ -586,9 +588,9 @@ def test_hinnodemapper_with_labels():
 
     labels = [n * 2 for n in nodes_type_1]
 
-    gen = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2, 3]).flow(
-        nodes_type_1, labels, shuffle=False
-    )
+    gen = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[2, 3], head_node_type="t1"
+    ).flow(nodes_type_1, labels, shuffle=False)
     assert len(gen) == 2
 
     for ii in range(2):
@@ -618,16 +620,16 @@ def test_hinnodemapper_manual_schema():
 
     # Create manual schema
     schema = G.create_graph_schema(create_type_maps=True)
-    HinSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        nodes_type_1
-    )
+    HinSAGENodeGenerator(
+        G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
+    ).flow(nodes_type_1)
 
     # Create manual schema without type maps
     # Currently this raises an error
     schema = G.create_graph_schema(create_type_maps=False)
     with pytest.raises(RuntimeError):
         HinSAGENodeGenerator(
-            G, schema=schema, batch_size=n_batch, num_samples=[1]
+            G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
         ).flow(nodes_type_1)
 
 
@@ -636,9 +638,9 @@ def test_hinnodemapper_zero_samples():
     feature_sizes = {"t1": 1, "t2": 1}
     G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
 
-    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[0, 0]).flow(
-        nodes_type_2
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[0, 0], head_node_type="t2"
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 2)
@@ -655,9 +657,9 @@ def test_hinnodemapper_no_neighbors():
     feature_sizes = {"t1": 1, "t2": 1}
     G, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
 
-    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=[2, 1]).flow(
-        nodes_type_2
-    )
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=batch_size, num_samples=[2, 1], head_node_type="t2"
+    ).flow(nodes_type_2)
 
     schema = G.create_graph_schema()
     sampling_adj = schema.type_adjacency_list(["t2"], 2)

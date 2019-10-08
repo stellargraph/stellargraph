@@ -28,6 +28,7 @@ __all__ = [
     "DirectedGraphSAGE",
 ]
 
+import warnings
 import numpy as np
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import Input
@@ -36,7 +37,7 @@ from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from typing import List, Tuple, Callable, AnyStr, Union
-import warnings
+from ..mapper import GraphSAGENodeGenerator, GraphSAGELinkGenerator
 
 
 class GraphSAGEAggregator(Layer):
@@ -719,8 +720,8 @@ class GraphSAGE:
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
-        generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
-            and input_dim will be taken from this object.
+        generator (GraphSAGENodeGenerator or GraphSAGELinkGenerator, optional)
+            If specified `n_samples` and `input_dim` will be extracted from this object.
         aggregator (class): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
         bias (bool): If True (default), a bias vector is learnt for each layer.
         dropout (float): The dropout supplied to each layer; defaults to no dropout.
@@ -733,6 +734,8 @@ class GraphSAGE:
     Note: If a generator is not specified, then additional keyword arguments must be supplied:
         n_samples (list): The number of samples per layer in the model.
         input_dim (int): The dimensions of the node features used as input to the model.
+        multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
+            and 2 for link inference (currently no others are supported).
     """
 
     def __init__(
@@ -767,11 +770,18 @@ class GraphSAGE:
             )
 
         # Get the input_dim and num_samples
-        self.generator = generator
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
             self._get_sizes_from_keywords(kwargs)
+
+        # Check the number of samples and the layer sizes are consistent
+        if len(self.n_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
+                    self.n_samples, self.layer_sizes
+                )
+            )
 
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
@@ -808,14 +818,14 @@ class GraphSAGE:
         Args:
              generator: The supplied generator.
         """
-        self.n_samples = generator.generator.num_samples
-        if len(self.n_samples) != self.max_hops:
-            raise ValueError(
-                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
-                    self.n_samples, self.layer_sizes
-                )
+        if not isinstance(generator, (GraphSAGELinkGenerator, GraphSAGENodeGenerator)):
+            raise TypeError(
+                "Generator should be an instance of GraphSAGELinkGenerator or GraphSAGENodeGenerator"
             )
-        feature_sizes = generator.generator.graph.node_feature_sizes()
+
+        self.n_samples = generator.num_samples
+        self.multiplicity = generator.multiplicity
+        feature_sizes = generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
             raise RuntimeError(
                 "GraphSAGE called on graph with more than one node type."
@@ -828,17 +838,14 @@ class GraphSAGE:
         Args:
              kwargs: The additional keyword arguments.
         """
-        self.n_samples = kwargs.pop("n_samples", None)
-        self.input_feature_size = kwargs.pop("input_dim", None)
-        if self.n_samples is None or self.input_feature_size is None:
+        try:
+            self.n_samples = kwargs["n_samples"]
+            self.input_feature_size = kwargs["input_dim"]
+            self.multiplicity = kwargs["multiplicity"]
+
+        except KeyError:
             raise ValueError(
-                "Generator not provided; n_samples and input_dim must be specified."
-            )
-        if len(self.n_samples) != self.max_hops:
-            raise ValueError(
-                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
-                    self.n_samples, self.layer_sizes
-                )
+                "Generator not provided; n_samples, multiplicity, and input_dim must be specified."
             )
 
     def _get_regularisers_from_keywords(self, kwargs):
@@ -998,22 +1005,14 @@ class GraphSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
-            if len(self.generator._sampling_schema) == 1:
-                return self.node_model()
-            elif len(self.generator._sampling_schema) == 2:
-                return self.link_model()
-            else:
-                raise RuntimeError(
-                    "The generator used for model creation is neither a node nor a link generator, "
-                    "unable to figure out how to build the model. Consider using node_model or "
-                    "link_model method explicitly to build node or link prediction model, respectively."
-                )
+        if self.multiplicity == 1:
+            return self.node_model()
+        elif self.multiplicity == 2:
+            return self.link_model()
         else:
             raise RuntimeError(
-                "Suitable generator is not provided at model creation time, unable to figure out how to build the model. "
-                "Consider either providing a generator, or using node_model or link_model method explicitly to build node or "
-                "link prediction model, respectively."
+                "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
+                "link_model method explicitly to build node or link prediction model, respectively."
             )
 
     def default_model(self, flatten_output=True):

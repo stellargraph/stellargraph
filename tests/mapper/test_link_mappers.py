@@ -29,15 +29,14 @@ GraphSAGELinkMapper(
     )
 g
 """
-from stellargraph.mapper.link_mappers import *
-from stellargraph.core.graph import *
-from stellargraph.data.explorer import *
-from stellargraph.data.unsupervised_sampler import *
-
 import numpy as np
 import networkx as nx
 import pytest
 import random
+from stellargraph.mapper import *
+from stellargraph.core.graph import *
+from stellargraph.data.explorer import *
+from stellargraph.data.unsupervised_sampler import *
 
 
 def example_Graph_1(feature_size=None):
@@ -515,7 +514,10 @@ class Test_HinSAGELinkGenerator(object):
         link_labels = [0] * len(links)
 
         mapper = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["user", "user"],
         ).flow(links, link_labels)
 
         assert mapper.data_size == len(links)
@@ -528,7 +530,10 @@ class Test_HinSAGELinkGenerator(object):
         link_labels = [0] * len(links)
 
         mapper = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["movie", "user"],
         ).flow(links, link_labels)
 
         assert mapper.data_size == len(links)
@@ -548,7 +553,10 @@ class Test_HinSAGELinkGenerator(object):
 
         with pytest.raises(RuntimeError):
             HinSAGELinkGenerator(
-                G, batch_size=self.batch_size, num_samples=self.num_samples
+                G,
+                batch_size=self.batch_size,
+                num_samples=self.num_samples,
+                head_node_types=["movie", "user"],
             ).flow(links, link_labels)
 
         links = G.edges()  # all edges in G, which have multiple link types
@@ -556,7 +564,10 @@ class Test_HinSAGELinkGenerator(object):
 
         with pytest.raises(RuntimeError):
             HinSAGELinkGenerator(
-                G, batch_size=self.batch_size, num_samples=self.num_samples
+                G,
+                batch_size=self.batch_size,
+                num_samples=self.num_samples,
+                head_node_types=["user", "user"],
             ).flow(links, link_labels)
 
     def test_HinSAGELinkGenerator_1(self):
@@ -566,7 +577,10 @@ class Test_HinSAGELinkGenerator(object):
         link_labels = [0] * data_size
 
         mapper = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["movie", "user"],
         ).flow(links, link_labels)
 
         assert len(mapper) == 2
@@ -627,9 +641,9 @@ class Test_HinSAGELinkGenerator(object):
             data_size = len(edges)
             edge_labels = np.arange(data_size)
 
-            mapper = HinSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
-                edges, edge_labels, shuffle=shuffle
-            )
+            mapper = HinSAGELinkGenerator(
+                G, batch_size=2, num_samples=[0], head_node_types=["movie", "user"]
+            ).flow(edges, edge_labels, shuffle=shuffle)
 
             assert len(mapper) == 2
             for batch in range(len(mapper)):
@@ -653,7 +667,10 @@ class Test_HinSAGELinkGenerator(object):
         data_size = len(links)
 
         gen = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["movie", "user"],
         ).flow(links)
         for i in range(len(gen)):
             assert gen[i][1] is None
@@ -675,9 +692,9 @@ class Test_HinSAGELinkGenerator(object):
 
         # Non-isolate + isolate
         head_links = [(hnodes["A"][0], hnodes["B"][-1])]
-        gen = HinSAGELinkGenerator(Gh, batch_size=n_batch, num_samples=n_samples).flow(
-            head_links
-        )
+        gen = HinSAGELinkGenerator(
+            Gh, batch_size=n_batch, num_samples=n_samples, head_node_types=["A", "B"]
+        ).flow(head_links)
 
         ne, nl = gen[0]
         assert len(gen._sampling_schema[0]) == len(ne)
@@ -685,9 +702,9 @@ class Test_HinSAGELinkGenerator(object):
 
         # Two isolates
         head_links = [(hnodes["B"][-2], hnodes["B"][-1])]
-        gen = HinSAGELinkGenerator(Gh, batch_size=n_batch, num_samples=n_samples).flow(
-            head_links
-        )
+        gen = HinSAGELinkGenerator(
+            Gh, batch_size=n_batch, num_samples=n_samples, head_node_types=["B", "B"]
+        ).flow(head_links)
 
         ne, nl = gen[0]
         assert len(gen._sampling_schema[0]) == len(ne)
