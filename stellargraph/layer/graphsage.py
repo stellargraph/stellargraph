@@ -598,11 +598,13 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
     def calculate_group_sizes(self, input_shape):
         """
-        Calculates the output size for each input group. The results are stored in two variables:
-            self.included_weight_groups: if the corresponding entry is True then the input group
-                is valid and should be used.
-            self.weight_sizes: the size of the output from this group.
-
+        Calculates the output size for each input group. 
+        
+        The results are stored in two variables:
+            * self.included_weight_groups: if the corresponding entry is True then the input group
+              is valid and should be used.
+            * self.weight_sizes: the size of the output from this group.
+        
         The AttentionalAggregator is implemented to not use the first (head node) group. This makes
         the implmentation different from other aggregators.
 
@@ -718,6 +720,27 @@ class GraphSAGE:
     either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
     :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
+    To use this class as a Keras model, the features and graph should be supplied using the
+    :class:`GraphSAGENodeGenerator` class for node inference models or the 
+    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.build` method should
+    be used to create a Keras model from the `GraphSAGE` object.
+
+    Examples:
+        Creating a two-level GrapSAGE node classification model with hidden node sizes of 8 and 4
+        and 10 neighbours sampled at each layer using an existing :class:`StellarGraph` object `G`
+        containing the graph and node features::
+
+            generator = GraphSAGENodeGenerator(G, batch_size=50, num_samples=[10,10])
+            gat = GraphSAGE(
+                    layer_sizes=[8, 4],
+                    activations=["relu","softmax"],
+                    generator=generator,
+                )
+            x_inp, predictions = gat.build()
+
+    For more details, please see the GraphSAGE demo notebooks:
+    demos/node-classification/graphsage/graphsage-cora-node-classification-example.ipynb
+
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
         generator (GraphSAGENodeGenerator or GraphSAGELinkGenerator, optional)
@@ -731,11 +754,15 @@ class GraphSAGE:
         kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
             defaults to None.
 
-    Note: If a generator is not specified, then additional keyword arguments must be supplied:
-        n_samples (list): The number of samples per layer in the model.
-        input_dim (int): The dimensions of the node features used as input to the model.
-        multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
-            and 2 for link inference (currently no others are supported).
+    Note::
+        If a generator is not specified, then additional keyword arguments must be supplied:
+
+        * n_samples (list): The number of samples per layer in the model.
+        
+        * input_dim (int): The dimensions of the node features used as input to the model.
+        
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+          and 2 for link inference (currently no others are supported).
     """
 
     def __init__(
@@ -1047,11 +1074,17 @@ class DirectedGraphSAGE(GraphSAGE):
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer;
             defaults to None.
 
-    Note: If a generator is not specified, then additional keyword arguments must be supplied:
-        in_samples (list): The number of in-node samples per layer in the model.
-        out_samples (list): The number of out-node samples per layer in the model.
-        input_dim (int): The dimensions of the node features used as input to the model.
-    """
+    Note::
+        If a generator is not specified, then additional keyword arguments must be supplied:
+
+        * in_samples (list): The number of in-node samples per layer in the model.
+
+        * out_samples (list): The number of out-node samples per layer in the model.
+
+        * input_dim (int): The dimensions of the node features used as input to the model.
+
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+          and 2 for link inference (currently no others are supported).    """
 
     def _get_sizes_from_generator(self, generator):
         """
