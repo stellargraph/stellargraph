@@ -32,6 +32,8 @@ import itertools as it
 import operator as op
 import warnings
 
+from ..mapper import HinSAGENodeGenerator, HinSAGELinkGenerator
+
 
 class MeanHinAggregator(Layer):
     """Mean Aggregator for HinSAGE implemented with Keras base layer
@@ -63,8 +65,9 @@ class MeanHinAggregator(Layer):
         **kwargs
     ):
         self.output_dim = output_dim
-        assert output_dim % 2 == 0
-        self.half_output_dim = int(output_dim / 2)
+        if output_dim % 2 != 0:
+            raise ValueError("The output_dim must be a multiple of two.")
+        self.half_output_dim = output_dim // 2
         self.has_bias = bias
         self.act = activations.get(act)
         self.nr = None
@@ -245,9 +248,6 @@ class HinSAGE:
         self,
         layer_sizes,
         generator=None,
-        n_samples=None,
-        input_neighbor_tree=None,
-        input_dim=None,
         aggregator=None,
         bias=True,
         dropout=0.0,
@@ -255,29 +255,6 @@ class HinSAGE:
         activations=None,
         **kwargs
     ):
-        def eval_neigh_tree_per_layer(input_tree):
-            """
-            Function to evaluate the neighbourhood tree structure for every layer. The tree
-            structure at each layer is a truncated version of the previous layer.
-
-            Args:
-              input_tree: Neighbourhood tree for the input batch
-
-            Returns:
-              List of neighbourhood trees
-
-            """
-            reduced = [
-                li
-                for li in input_tree
-                if all(li_neigh < len(input_tree) for li_neigh in li[1])
-            ]
-            return (
-                [input_tree]
-                if len(reduced) == 0
-                else [input_tree] + eval_neigh_tree_per_layer(reduced)
-            )
-
         # Set the aggregator layer used in the model
         if aggregator is None:
             self._aggregator = MeanHinAggregator
@@ -300,30 +277,12 @@ class HinSAGE:
                 )
             )
 
-        # Get the sampling tree, input_dim, and num_samples from the generator if it is given
-        # Use both the schema and head node type from the generator
-        # TODO: Refactor the horror of generator.generator.graph...
+        # Get the sampling tree, input_dim, and num_samples from the generator
+        # if no generator these must be supplied in kwargs
         if generator is not None:
-            self.n_samples = generator.generator.num_samples
-            self.subtree_schema = generator.generator.schema.type_adjacency_list(
-                generator.head_node_types, len(self.n_samples)
-            )
-            self.input_dims = generator.generator.graph.node_feature_sizes()
-
-        elif (
-            input_neighbor_tree is not None
-            and n_samples is not None
-            and input_dim is not None
-        ):
-            self.subtree_schema = input_neighbor_tree
-            self.n_samples = n_samples
-            self.input_dims = input_dim
-
+            self._get_sizes_from_generator(generator)
         else:
-            raise RuntimeError(
-                "If generator is not provided, input_neighbour_tree, n_samples,"
-                " and input_dim must be specified."
-            )
+            self._get_sizes_from_keywords(kwargs)
 
         # Set parameters for the model
         self.n_layers = len(self.n_samples)
@@ -331,7 +290,7 @@ class HinSAGE:
         self.dropout = dropout
 
         # Neighbourhood info per layer
-        self.neigh_trees = eval_neigh_tree_per_layer(
+        self.neigh_trees = self._eval_neigh_tree_per_layer(
             [li for li in self.subtree_schema if len(li[1]) > 0]
         )
 
@@ -365,6 +324,65 @@ class HinSAGE:
 
         # Aggregator functions for each layer
         self._build_aggregators()
+
+    def _get_sizes_from_generator(self, generator):
+        """
+        Sets n_samples and input_feature_size from the generator.
+        Args:
+             generator: The supplied generator.
+        """
+        if not isinstance(generator, (HinSAGELinkGenerator, HinSAGENodeGenerator)):
+            raise TypeError(
+                "Generator should be an instance of HinSAGELinkGenerator or HinSAGENodeGenerator"
+            )
+        self.n_samples = generator.num_samples
+        self.subtree_schema = generator.schema.type_adjacency_list(
+            generator.head_node_types, len(self.n_samples)
+        )
+        self.input_dims = generator.graph.node_feature_sizes()
+        self.multiplicity = generator.multiplicity
+
+    def _get_sizes_from_keywords(self, kwargs):
+        """
+        Sets n_samples and input_feature_size from the keywords.
+        Args:
+             kwargs: The additional keyword arguments.
+        """
+        try:
+            self.n_samples = kwargs["n_samples"]
+            self.input_dims = kwargs["input_dim"]
+            self.multiplicity = kwargs["multiplicity"]
+            self.subtree_schema = kwargs["input_neighbor_tree"]
+
+        except KeyError:
+            raise ValueError(
+                "Generator not provided: "
+                "n_samples, input_dim, multiplicity, and input_neighbour_tree must be specified."
+            )
+
+    @staticmethod
+    def _eval_neigh_tree_per_layer(input_tree):
+        """
+        Function to evaluate the neighbourhood tree structure for every layer. The tree
+        structure at each layer is a truncated version of the previous layer.
+
+        Args:
+            input_tree: Neighbourhood tree for the input batch
+
+        Returns:
+            List of neighbourhood trees
+
+        """
+        reduced = [
+            li
+            for li in input_tree
+            if all(li_neigh < len(input_tree) for li_neigh in li[1])
+        ]
+        return (
+            [input_tree]
+            if len(reduced) == 0
+            else [input_tree] + HinSAGE._eval_neigh_tree_per_layer(reduced)
+        )
 
     def _get_regularisers_from_keywords(self, kwargs):
         regularisers = {}
