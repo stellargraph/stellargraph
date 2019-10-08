@@ -944,7 +944,12 @@ class ClusterNodeGenerator:
         # node_indices = np.array([self.node_list.index(n) for n in node_ids])
 
         return ClusterNodeSequence(
-            self.graph, self.clusters, targets=targets, node_ids=node_ids, q=self.q, name=name
+            self.graph,
+            self.clusters,
+            targets=targets,
+            node_ids=node_ids,
+            q=self.q,
+            name=name,
         )
 
 
@@ -970,7 +975,14 @@ class ClusterNodeSequence(Sequence):
     use_sparse = False
 
     def __init__(
-        self, graph, clusters, targets=None, node_ids=None, normalize_adj=True, q=1, name=None
+        self,
+        graph,
+        clusters,
+        targets=None,
+        node_ids=None,
+        normalize_adj=True,
+        q=1,
+        name=None,
     ):
 
         if (targets is not None) and (len(node_ids) != len(targets)):
@@ -999,7 +1011,6 @@ class ClusterNodeSequence(Sequence):
 
     def __len__(self):
         num_batches = len(self.clusters_original) // self.q
-        # num_batches = len(self.clusters)  # len(self.clusters_original) // self.q
         return num_batches
 
     def __getitem__(self, index):
@@ -1042,7 +1053,7 @@ class ClusterNodeSequence(Sequence):
             [g_node_list.index(n) for n in target_nodes_in_cluster]
         )
 
-        if index == (len(self.clusters_original) // self.q)-1:
+        if index == (len(self.clusters_original) // self.q) - 1:
             # last batch
             self.__node_buffer_dict_to_list()
 
@@ -1064,15 +1075,9 @@ class ClusterNodeSequence(Sequence):
         return [features, target_node_indices, adj_cluster], cluster_targets
 
     def __node_buffer_dict_to_list(self):
-        self.node_order = []  # [v for k, v in self.__node_buffer.items()]
+        self.node_order = []
         for k, v in self.__node_buffer.items():
             self.node_order.extend(v)
-
-    # def __node_buffer_length(self):
-    #     total = 0;
-    #     for k, v in self.__node_buffer.items():
-    #         total += len(v)
-    #     return total
 
     def on_epoch_end(self):
         """
@@ -1090,9 +1095,6 @@ class ClusterNodeSequence(Sequence):
                 for l in cc:
                     tmp.extend(list(self.clusters_original[l]))
                 self.clusters.append(tmp)
-
-            # self.clusters = clusters
-            print(f"{self.name} Number of clusters at epoch end :: {len(self.clusters)}")
 
         self.__node_buffer = dict()
 
