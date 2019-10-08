@@ -205,10 +205,7 @@ class HinSAGELinkGenerator:
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    Note that you don't need to pass link_type (target link type) to the link mapper, considering that:
-
-    * The mapper actually only cares about (src,dst) node types, and these can be inferred from the passed
-      link ids (although this might be expensive, as it requires parsing the links ids passed - yet only once)
+    The generator should be given the (src,dst) node types usng
 
     * It's possible to do link prediction on a graph where that link type is completely removed from the graph
       (e.g., "same_as" links in ER)
@@ -218,7 +215,8 @@ class HinSAGELinkGenerator:
         g (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
-        seed (int or str), optional: Random seed for the sampling methods.
+        head_node_types (list): List of the types (str) of the two head nodes forming the node pair.
+        seed (int or str, optional): Random seed for the sampling methods.
 
     Example::
 
@@ -279,13 +277,12 @@ class HinSAGELinkGenerator:
         algorithm.
 
         Args:
-            head_links: An iterable of edges to perform sampling for.
-            sampling_schema: The sampling schema for the model
+            head_links (list): An iterable of edges to perform sampling for.
+            sampling_schema (dict): The sampling schema for the model
 
         Returns:
             A list of the same length as `num_samples` of collected features from
-            the sampled nodes of shape:
-                `(len(head_nodes), num_sampled_at_layer, feature_size)`
+            the sampled nodes of shape: `(len(head_nodes), num_sampled_at_layer, feature_size)`
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """

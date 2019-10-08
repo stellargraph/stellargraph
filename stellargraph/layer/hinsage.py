@@ -34,8 +34,10 @@ import warnings
 
 from ..mapper import HinSAGENodeGenerator, HinSAGELinkGenerator
 
+HinSAGEAggregator = Layer
 
-class MeanHinAggregator(Layer):
+
+class MeanHinAggregator(HinSAGEAggregator):
     """Mean Aggregator for HinSAGE implemented with Keras base layer
 
     Args:
@@ -224,24 +226,78 @@ class HinSAGE:
     """
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
 
+    To use this class as a Keras model, the features and graph should be supplied using the
+    :class:`HinSAGENodeGenerator` class for node inference models or the 
+    :class:`HinSAGELinkGenerator` class for link inference models.  The `.build` method should
+    be used to create a Keras model from the `GraphSAGE` object.
+
+    Currently the class supports node or link prediction models which are built depending on whether
+    a `HinSAGENodeGenerator` or `HinSAGELinkGenerator` object is specified.
+    The models are built for a single node or link type. For example if you have nodes of types 'A' and 'B'
+    you can build a link model for only a single pair of node types, for example ('A', 'B'), which should 
+    be specified in the `HinSAGELinkGenerator`.
+
+    If you feed links into the model that do not have these node types (in correct order) an error will be
+    raised.
+
+    Examples:
+        Creating a two-level GrapSAGE node classification model on nodes of type 'A' with hidden node sizes of 8 and 4
+        and 10 neighbours sampled at each layer using an existing :class:`StellarGraph` object `G`
+        containing the graph and node features::
+
+            generator = HinSAGENodeGenerator(
+                G, batch_size=50, num_samples=[10,10], head_node_type='A'
+                )
+            gat = HinSAGE(
+                    layer_sizes=[8, 4],
+                    activations=["relu","softmax"],
+                    generator=generator,
+                )
+            x_inp, predictions = gat.build()
+
+        Creating a two-level GrapSAGE link classification model on nodes pairs of type ('A', 'B') 
+        with hidden node sizes of 8 and 4 and 5 neighbours sampled at each layer::
+
+            generator = HinSAGELinkGenerator(
+                G, batch_size=50, num_samples=[5,5], head_node_types=('A','B')
+                )
+            gat = HinSAGE(
+                    layer_sizes=[8, 4],
+                    activations=["relu","softmax"],
+                    generator=generator,
+                )
+            x_inp, predictions = gat.build()
+
+
+    For more details, please see the HinSAGE demo notebooks:
+    demos/node-classification/hinsage/yelp-example.py
+
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
-        generator (Sequence): A NodeSequence or LinkSequence. If specified, n_samples,
+        generator (HinSAGEGenerator): A HinSAGENodeGenerator or HinSAGELinkGenerator. If specified, n_samples,
             input_neighbour_tree and input_dim will be taken from this object.
-        n_samples: (Optional: needs to be specified if no mapper is provided.)
-            The number of samples per layer in the model.
-        input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
-            subtree to be created by the HinSAGE model.
-        input_dim: The input dimensions for each node type as a dictionary of the form
-            {node_type: feature_size}.
-        aggregator: The HinSAGE aggregator to use; defaults to the `MeanHinAggregator`.
+        aggregator (HinSAGEAggregator): The HinSAGE aggregator to use; defaults to the `MeanHinAggregator`.
         bias (bool): If True (default), a bias vector is learnt for each layer.
-        dropout: The dropout supplied to each layer; defaults to no dropout.
-        normalize: The normalization used after each layer; defaults to L2 normalization.
+        dropout (float): The dropout supplied to each layer; defaults to no dropout.
+        normalize (str): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
         kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
             defaults to None.
+
+    Note::
+        If a generator is not specified, then additional keyword arguments must be supplied:
+
+        * n_samples (list): The number of samples per layer in the model.
+
+        * input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
+          subtree to be created by the HinSAGE model.
+        
+        * input_dim (dict): The input dimensions for each node type as a dictionary of the form
+          `{node_type: feature_size}`.
+        
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+          and 2 for link inference (currently no others are supported).
     """
 
     def __init__(
