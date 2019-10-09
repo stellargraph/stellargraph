@@ -14,7 +14,7 @@
 - Refactored Ensemble class into Ensemble and BaggingEnsemble. The former implements naive ensembles and the latter bagging ensembles. [\#459](https://github.com/stellargraph/stellargraph/pull/459)
 - Changed from `keras` to use `tensorflow.keras` [\#471](https://github.com/stellargraph/stellargraph/pull/471)
 - Removed `flatten_output` arguments for all models [\#447](https://github.com/stellargraph/stellargraph/pull/447)
-
+- Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models [\#498](https://github.com/stellargraph/stellargraph/pull/498)
 
 **Fixed bugs:**
 - Updated Yelp example to support new dataset version [\#442](https://github.com/stellargraph/stellargraph/pull/442)
