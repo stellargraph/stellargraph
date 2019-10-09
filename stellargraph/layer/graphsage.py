@@ -37,7 +37,11 @@ from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from typing import List, Tuple, Callable, AnyStr, Union
-from ..mapper import GraphSAGENodeGenerator, GraphSAGELinkGenerator
+from ..mapper import (
+    GraphSAGENodeGenerator,
+    GraphSAGELinkGenerator,
+    DirectedGraphSAGENodeGenerator,
+)
 
 
 class GraphSAGEAggregator(Layer):
@@ -802,14 +806,6 @@ class GraphSAGE:
         else:
             self._get_sizes_from_keywords(kwargs)
 
-        # Check the number of samples and the layer sizes are consistent
-        if len(self.n_samples) != self.max_hops:
-            raise ValueError(
-                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
-                    self.n_samples, self.layer_sizes
-                )
-            )
-
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
 
@@ -851,6 +847,14 @@ class GraphSAGE:
             )
 
         self.n_samples = generator.num_samples
+        # Check the number of samples and the layer sizes are consistent
+        if len(self.n_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
+                    self.n_samples, self.layer_sizes
+                )
+            )
+
         self.multiplicity = generator.multiplicity
         feature_sizes = generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
@@ -871,8 +875,16 @@ class GraphSAGE:
             self.multiplicity = kwargs["multiplicity"]
 
         except KeyError:
-            raise ValueError(
+            raise KeyError(
                 "Generator not provided; n_samples, multiplicity, and input_dim must be specified."
+            )
+
+        # Check the number of samples and the layer sizes are consistent
+        if len(self.n_samples) != self.max_hops:
+            raise ValueError(
+                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
+                    self.n_samples, self.layer_sizes
+                )
             )
 
     def _get_regularisers_from_keywords(self, kwargs):
@@ -1092,26 +1104,33 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              generator: The supplied generator.
         """
-        self.in_samples = generator.generator.in_samples
+
+        if not isinstance(generator, (DirectedGraphSAGENodeGenerator,)):
+            raise TypeError(
+                "Generator should be an instance of DirectedGraphSAGELinkGenerator or DirectedGraphSAGENodeGenerator"
+            )
+
+        self.in_samples = generator.in_samples
         if len(self.in_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
                     self.in_samples, self.layer_sizes
                 )
             )
-        self.out_samples = generator.generator.out_samples
+        self.out_samples = generator.out_samples
         if len(self.out_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(
                     self.out_samples, self.layer_sizes
                 )
             )
-        feature_sizes = generator.generator.graph.node_feature_sizes()
+        feature_sizes = generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
             raise RuntimeError(
                 "DirectedGraphSAGE called on graph with more than one node type."
             )
         self.input_feature_size = feature_sizes.popitem()[1]
+        self.multiplicity = generator.multiplicity
 
     def _get_sizes_from_keywords(self, **kwargs):
         """
@@ -1119,17 +1138,18 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              kwargs: The additional keyword arguments.
         """
-        self.in_samples = kwargs.get("in_samples")
-        self.out_samples = kwargs.get("out_samples")
-        self.input_feature_size = kwargs.get("input_dim")
-        if (
-            self.in_samples is None
-            or self.out_samples is None
-            or self.input_feature_size is None
-        ):
-            raise ValueError(
-                "If generator is not provided, in_samples, out_samples and input_dim must be specified."
+        try:
+            self.in_samples = kwargs["in_samples"]
+            self.out_samples = kwargs["out_samples"]
+            self.input_feature_size = kwargs["input_dim"]
+            self.multiplicity = kwargs["multiplicity"]
+
+        except KeyError:
+            raise KeyError(
+                "If generator is not provided, in_samples, out_samples, "
+                "input_dim, and multiplicity must be specified."
             )
+
         if len(self.in_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
