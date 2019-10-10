@@ -462,15 +462,6 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def to_networkx(self):
-        """
-        Obtains a NetworkX representation of the StellarGraph.
-
-        Returns:
-             A NetworkX graph.
-        """
-        raise NotImplementedError
-
 
 class StellarDiGraph(StellarGraph):
     pass
@@ -986,9 +977,6 @@ class NetworkXStellarGraph(StellarGraph):
 
     ########################################################################
     # Heavy duty methods:
-
-    def to_networkx(self):
-        return self._graph
 
     def node_degrees(self) -> Mapping[Any, int]:
         return self._graph.degree()
