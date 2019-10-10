@@ -799,7 +799,7 @@ class Test_Attri2VecLinkGenerator:
             feature_size=n_feat, n_nodes=6, n_isolates=2, n_edges=10
         )
 
-        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes)
+        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes())
 
         gen = Attri2VecLinkGenerator(G, batch_size=n_batch).flow(unsupervisedSamples)
 

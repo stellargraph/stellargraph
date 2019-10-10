@@ -615,7 +615,7 @@ class NetworkXStellarGraph(StellarGraph):
         # Get the node type if not specified.
         if node_type is None:
             node_types = {
-                self._get_node_type(self.node[n]) for n in nodes if n is not None
+                self._get_node_type(self._graph.node[n]) for n in nodes if n is not None
             }
 
             if len(node_types) > 1:

@@ -563,8 +563,8 @@ class Attri2VecNodeGenerator:
     """
 
     def __init__(self, G, batch_size, name=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDigraph object.")
 
         self.graph = G
         self.batch_size = batch_size

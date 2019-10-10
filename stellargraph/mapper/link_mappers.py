@@ -683,8 +683,8 @@ class Attri2VecLinkGenerator:
     """
 
     def __init__(self, G, batch_size, name=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDigraph object.")
 
         # Check if the graph has features
         G.check_graph_for_ml(features=True)
