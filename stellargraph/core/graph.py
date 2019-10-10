@@ -595,6 +595,44 @@ class NetworkXStellarGraph(StellarGraph):
 
         # TODO: check the feature node_ids against the graph node ids?
 
+    def get_index_for_nodes(self, nodes, node_type=None):
+        """
+        Get the indices for the specified node or nodes.
+        If the node type is not specified the node types will be found
+        for all nodes. It is therefore important to supply the ``node_type``
+        for this method to be fast.
+
+        Args:
+            n: (list or hashable) Node ID or list of node IDs
+            node_type: (hashable) the type of the nodes.
+
+        Returns:
+            Numpy array containing the indices for the requested nodes.
+        """
+        if not is_real_iterable(nodes):
+            nodes = [nodes]
+
+        # Get the node type if not specified.
+        if node_type is None:
+            node_types = {
+                self._get_node_type(self.node[n]) for n in nodes if n is not None
+            }
+
+            if len(node_types) > 1:
+                raise ValueError("All nodes must be of the same type.")
+
+            if len(node_types) == 0:
+                raise ValueError(
+                    "At least one node must be given if node_type not specified"
+                )
+
+            node_type = node_types.pop()
+
+        # Get index for nodes of this type
+        nt_id_to_index = self._node_index_maps[node_type]
+        node_indices = [nt_id_to_index.get(n) for n in nodes]
+        return node_indices
+
     def get_feature_for_nodes(self, nodes, node_type=None):
         """
         Get the numeric feature vectors for the specified node or nodes.
