@@ -682,6 +682,91 @@ def test_hinnodemapper_no_neighbors():
     assert np.all(batch_feats[3][:, 0, 0] == np.array([12, 0, 0]))
 
 
+def test_attri2vec_nodemapper_constructor_nx():
+    """
+    Attri2VecNodeGenerator requires a StellarGraph object
+    """
+    G = nx.Graph()
+    G.add_nodes_from(range(4))
+
+    with pytest.raises(TypeError):
+        Attri2VecNodeGenerator(G, batch_size=2)
+
+
+def test_attri2vec_nodemapper_constructor_no_feats():
+    """
+    Attri2VecNodeGenerator requires the graph to have features
+    """
+
+    G = example_graph_1()
+    with pytest.raises(RuntimeError):
+        Attri2VecNodeGenerator(G, batch_size=2)
+
+
+def test_attri2vec_nodemapper_constructor():
+    n_feat = 4
+
+    G = example_graph_1(feature_size=n_feat)
+
+    generator = Attri2VecNodeGenerator(G, batch_size=2)
+
+    mapper = generator.flow(list(G))
+
+    assert generator.batch_size == 2
+    assert mapper.data_size == 4
+    assert len(mapper.ids) == 4
+
+
+def test_attri2vec_nodemapper_1():
+    n_feat = 4
+    n_batch = 2
+
+    # test graph
+    G1 = example_graph_1(n_feat)
+
+    mapper1 = Attri2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
+    assert len(mapper1) == 2
+
+    G2 = example_graph_2(n_feat)
+
+    mapper2 = Attri2VecNodeGenerator(G2, batch_size=n_batch).flow(G2.nodes())
+    assert len(mapper2) == 3
+
+    for mapper in [mapper1, mapper2]:
+        for ii in range(2):
+            nf, nl = mapper[ii]
+            assert nf.shape == (n_batch, n_feat)
+            assert nl is None
+
+    # Check beyond the graph lengh
+    with pytest.raises(IndexError):
+        nf, nl = mapper1[len(mapper1)]
+
+    # Check the last batch
+    nf, nl = mapper2[len(mapper2) - 1]
+    assert nf.shape == (1, n_feat)
+
+    # This will fail as the nodes are not in the graph
+    with pytest.raises(KeyError):
+        Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
+
+
+def test_attri2vec_nodemapper_2():
+    n_feat = 1
+    n_batch = 2
+
+    G = example_graph_2(feature_size=n_feat)
+    nodes = list(G.nodes())
+
+    # With no shuffle
+    mapper = Attri2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
+    expected_node_batches = [[1, 2], [3, 4], [5]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf) == expected_node_batches[ii])
+
+
 def create_graph_features():
     G = nx.Graph()
     G.add_nodes_from(["a", "b", "c"])
