@@ -723,13 +723,7 @@ class FullBatchNodeGenerator:
 
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
-        self.Aadj = nx.to_scipy_sparse_matrix(
-            G.get_networkx_graph(),
-            nodelist=self.node_list,
-            dtype="float32",
-            weight="weight",
-            format="coo",
-        )
+        self.Aadj = G.adjacency_weights()
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.

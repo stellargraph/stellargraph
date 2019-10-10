@@ -66,23 +66,7 @@ class GraphWalk(object):
         adj = getattr(self, "adj_types", None)
         if not adj:
             # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-            # TODO: this could be better placed inside StellarGraph class
-            edge_types = self.graph_schema.edge_types
-            adj = {et: defaultdict(lambda: [None]) for et in edge_types}
-
-            for n1, nbrdict in self.graph.get_networkx_graph().adjacency():
-                for et in edge_types:
-                    neigh_et = [
-                        n2
-                        for n2, nkeys in nbrdict.items()
-                        for k in nkeys
-                        if self.graph_schema.is_of_edge_type((n1, n2, k), et)
-                    ]
-                    # Create adjacency list in lexographical order
-                    # Otherwise sampling methods will not be deterministic
-                    # even when the seed is set.
-                    adj[et][n1] = sorted(neigh_et, key=str)
-            self.adj_types = adj
+            self.adj_types = adj = self.graph.adjacency_types(self.graph_schema)
         return adj
 
     def _check_seed(self, seed):
@@ -277,15 +261,7 @@ class BiasedRandomWalk(GraphWalk):
     """
 
     def run(
-        self,
-        nodes=None,
-        n=None,
-        p=1.0,
-        q=1.0,
-        length=None,
-        seed=None,
-        weighted=False,
-        edge_weight_label="weight",
+        self, nodes=None, n=None, p=1.0, q=1.0, length=None, seed=None, weighted=False
     ):
 
         """
@@ -299,14 +275,13 @@ class BiasedRandomWalk(GraphWalk):
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
             weighted: <False or True> Indicates whether the walk is unweighted or weighted
-            edge_weight_label: <string> Label of the edge weight property.
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-        self._check_weights(p, q, weighted, edge_weight_label)
+        self._check_weights(p, q, weighted)
         rs = self._get_random_state(seed)
 
         if weighted:
@@ -318,8 +293,7 @@ class BiasedRandomWalk(GraphWalk):
                 for neighbor in self.graph.neighbour_nodes(node):
 
                     wts = set()
-                    for k, v in self.graph.get_networkx_graph()[node][neighbor].items():
-                        weight = v.get(edge_weight_label)
+                    for weight in self.graph.edge_weights(node, neighbor):
                         if weight is None or np.isnan(weight) or weight == np.inf:
                             self._raise_error(
                                 "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
@@ -340,9 +314,8 @@ class BiasedRandomWalk(GraphWalk):
                             )
 
                         wts.add(weight)
-                    if (
-                        len(wts) > 1
-                    ):  # multigraph with different weights on edges between same pair of nodes
+                    if len(wts) > 1:
+                        # multigraph with different weights on edges between same pair of nodes
                         self._raise_error(
                             "({}) and ({}) have multiple edges with weights ({}). Ambiguous to choose an edge for the random walk.".format(
                                 node, neighbor, list(wts)
@@ -365,15 +338,11 @@ class BiasedRandomWalk(GraphWalk):
 
                 # calculate the appropriate unnormalised transition
                 # probability, given the history of the walk
-                def transition_probability(
-                    nn, current_node, weighted, edge_weight_label
-                ):
+                def transition_probability(nn, current_node, weighted):
 
                     if weighted:
                         # TODO Encapsulate edge weights
-                        weight_cn = self.graph.get_networkx_graph()[current_node][nn][
-                            0
-                        ].get(edge_weight_label)
+                        weight_cn = self.graph.edge_weights(current_node, nn)[0]
                     else:
                         weight_cn = 1.0
 
@@ -398,9 +367,7 @@ class BiasedRandomWalk(GraphWalk):
                         choice = naive_weighted_choices(
                             rs,
                             (
-                                transition_probability(
-                                    nn, current_node, weighted, edge_weight_label
-                                )
+                                transition_probability(nn, current_node, weighted)
                                 for nn in neighbours
                             ),
                         )
@@ -413,7 +380,7 @@ class BiasedRandomWalk(GraphWalk):
 
         return walks
 
-    def _check_weights(self, p, q, weighted, edge_weight_label):
+    def _check_weights(self, p, q, weighted):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -422,7 +389,6 @@ class BiasedRandomWalk(GraphWalk):
             p: <float> The backward walk 'penalty' factor.
             q: <float> The forward walk 'penalty' factor.
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
-            edge_weight_label: <string> Label of the edge weight property.
        """
         if p <= 0.0:
             self._raise_error("Parameter p should be greater than 0.")
@@ -435,24 +401,13 @@ class BiasedRandomWalk(GraphWalk):
                 "Parameter weighted has to be either False (unweighted random walks) or True (weighted random walks)."
             )
 
-        if not isinstance(edge_weight_label, str):
-            self._raise_error("The edge weight property label has to be of type string")
-
 
 class UniformRandomMetaPathWalk(GraphWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
 
-    def run(
-        self,
-        nodes=None,
-        n=None,
-        length=None,
-        metapaths=None,
-        node_type_attribute="label",
-        seed=None,
-    ):
+    def run(self, nodes=None, n=None, length=None, metapaths=None, seed=None):
         """
         Performs metapath-driven uniform random walks on heterogeneous graphs.
 
@@ -463,22 +418,20 @@ class UniformRandomMetaPathWalk(GraphWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
             [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
             schemas of length 3 and 5 respectively.
-            node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed; default is None
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks generated
         """
         self._check_common_parameters(nodes, n, length, seed)
-        self._check_metapath_values(metapaths, node_type_attribute)
+        self._check_metapath_values(metapaths)
         rs = self._get_random_state(seed)
 
         walks = []
 
-        gx = self.graph.get_networkx_graph()
         for node in nodes:
             # retrieve node type
-            label = gx.node[node][node_type_attribute]
+            label = self.graph.type_for_node(node)
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -506,7 +459,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if gx.node[n_node][node_type_attribute] == metapath[d]
+                            if self.graph.type_for_node(n_node) == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
@@ -520,7 +473,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
 
         return walks
 
-    def _check_metapath_values(self, metapaths, node_type_attribute):
+    def _check_metapath_values(self, metapaths):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -529,7 +482,6 @@ class UniformRandomMetaPathWalk(GraphWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
                 [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
                 schemas of length 3 and 5 respectively.
-            node_type_attribute: <str> The node attribute name that stores the node's type
         """
         if type(metapaths) != list:
             self._raise_error("The metapaths parameter must be a list of lists.")
@@ -546,13 +498,6 @@ class UniformRandomMetaPathWalk(GraphWalk):
                 self._raise_error(
                     "The first and last node type in a metapath should be the same."
                 )
-
-        if type(node_type_attribute) != str:
-            self._raise_error(
-                "The parameter label should be string type not {} as given".format(
-                    type(node_type_attribute).__name__
-                )
-            )
 
 
 class SampledBreadthFirstWalk(GraphWalk):

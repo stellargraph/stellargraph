@@ -25,12 +25,13 @@ from stellargraph.core.schema import EdgeType
 
 import random
 import itertools as it
+from collections import defaultdict
 
 import pandas as pd
 import numpy as np
 import networkx as nx
 
-from typing import Iterable, Iterator, Any, Mapping
+from typing import Iterable, Iterator, Any, Mapping, List, Set
 
 from .. import globalvar
 from .schema import GraphSchema
@@ -238,6 +239,11 @@ def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
 
 
 class StellarGraphFactory(type):
+    """
+    Private class for instantiating the StellarGraph interface from
+    user-supplied information.
+    """
+
     def __call__(cls, *args, **kwargs):
         if cls is StellarGraph:
             return NetworkXStellarGraph(*args, is_directed=False, **kwargs)
@@ -250,8 +256,7 @@ class StellarGraphFactory(type):
 class StellarGraph(metaclass=StellarGraphFactory):
     """
     StellarGraph class for directed or undirected graph ML models. It stores both
-    graph information from a NetworkX Graph object as well as features
-    for machine learning.
+    graph structure and features for machine learning.
 
     To create a StellarGraph object ready for machine learning, at a
     minimum pass the graph structure to the StellarGraph as a NetworkX
@@ -395,15 +400,6 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def node_degrees(self) -> Mapping[Any, int]:
-        """
-        Obtains a map from node to node degree.
-
-        Returns:
-            The degree of each node.
-        """
-        raise NotImplementedError
-
     def neighbour_nodes(self, node: Any) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
@@ -445,6 +441,36 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
+    ##################################################################
+    # Computationally intensive methods:
+
+    def node_degrees(self) -> Mapping[Any, int]:
+        """
+        Obtains a map from node to node degree.
+
+        Returns:
+            The degree of each node.
+        """
+        raise NotImplementedError
+
+    def adjacency_weights(self):
+        """
+        Obtains a SciPy sparse adjacency matrix of edge weights.
+
+        Returns:
+             The weighted adjacency matrix.
+        """
+        raise NotImplementedError
+
+    def to_networkx(self):
+        """
+        Obtains a NetworkX representation of the StellarGraph.
+
+        Returns:
+             A NetworkX graph.
+        """
+        raise NotImplementedError
+
 
 class StellarDiGraph(StellarGraph):
     pass
@@ -463,6 +489,9 @@ class NetworkXStellarGraph(StellarGraph):
             if not isinstance(graph, nx.MultiGraph):
                 graph = nx.MultiGraph(graph)
         self._graph = graph
+
+        # Name of optional attribute for edge weights
+        self._edge_weight_label = attr.get("edge_weight_label", "weight")
 
         # Names of attributes that store the type of nodes and edges
         self._node_type_attr = attr.get("node_type_name", globalvar.TYPE_ATTR_NAME)
@@ -880,12 +909,6 @@ class NetworkXStellarGraph(StellarGraph):
         return gs
 
     ######################################################################
-    # Deprecated, legacy access to NetworkX graph:
-
-    def get_networkx_graph(self):
-        return self._graph
-
-    ######################################################################
     # Generic graph interface:
 
     def is_directed(self) -> bool:
@@ -906,9 +929,6 @@ class NetworkXStellarGraph(StellarGraph):
     def has_node(self, node: Any) -> bool:
         return self._graph.__contains__(node)
 
-    def node_degrees(self) -> Mapping[Any, int]:
-        return self._graph.degree()
-
     def neighbour_nodes(self, node: Any) -> Iterable[Any]:
         if self.is_directed():
             in_nodes = {e[0] for e in self._graph.in_edges(node)}
@@ -925,3 +945,80 @@ class NetworkXStellarGraph(StellarGraph):
         if self.is_directed():
             return {e[1] for e in self._graph.out_edges(node)}
         return nx.neighbors(self._graph, node)
+
+    ########################################################################
+    # Heavy duty methods:
+
+    def to_networkx(self):
+        return self._graph
+
+    def node_degrees(self) -> Mapping[Any, int]:
+        return self._graph.degree()
+
+    def adjacency_weights(self):
+        return nx.to_scipy_sparse_matrix(
+            self._graph, dtype="float32", weight=self._edge_weight_label, format="coo"
+        )
+
+    # XXX This has not yet been standardised in the interface.
+    def adjacency_types(self, graph_schema: GraphSchema):
+        """
+        Obtains the edges in the form of the typed mapping:
+
+            {edge_type_triple: {source_node: [target_node, ...]}}
+
+        Args:
+            graph_schema: The graph schema.
+        Returns:
+             The edge types mapping.
+        """
+        edge_types = graph_schema.edge_types
+        adj = {et: defaultdict(lambda: [None]) for et in edge_types}
+        for n1, nbrdict in self._graph.adjacency():
+            for et in edge_types:
+                neigh_et = [
+                    n2
+                    for n2, nkeys in nbrdict.items()
+                    for k in nkeys
+                    if graph_schema.is_of_edge_type((n1, n2, k), et)
+                ]
+                # Create adjacency list in lexicographical order
+                # Otherwise sampling methods will not be deterministic
+                # even when the seed is set.
+                adj[et][n1] = sorted(neigh_et, key=str)
+        return adj
+
+    # XXX This has not yet been standardised in the interface.
+    def edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
+        """
+        Obtains the weights of edges between the given pair of nodes.
+
+        Args:
+            source_node (any): The source node.
+            target_node (any): The target node.
+
+        Returns:
+            list: The edge weights.
+        """
+        edge_weight_label = self._edge_weight_label
+        return [
+            v.get(edge_weight_label)
+            for v in self._graph[source_node][target_node].values()
+        ]
+
+    # XXX This has not yet been standardised in the interface.
+    def node_attributes(self, node: Any) -> Set[Any]:
+        """
+        Obtains the names of any (non-standard) node attributes that are
+        available in the user data.
+
+        Args:
+            node (any): The node of interest.
+
+        Returns:
+            set: The collection of node attributes.
+        """
+        attrs = set(self._graph.node[node].keys())
+        # Don't use node type as attribute:
+        attrs.discard(self._node_type_attr)
+        return attrs

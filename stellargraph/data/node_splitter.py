@@ -82,7 +82,9 @@ def train_val_test_split(
             nodes = list(G)
     else:
         if not isinstance(G, StellarGraph):
-            raise TypeError("Graph must be a StellarGraph or StellarDiGraph if node_type is not None.")
+            raise TypeError(
+                "Graph must be a StellarGraph or StellarDiGraph if node_type is not None."
+            )
         nodes = G.nodes_of_type(node_type)
 
     # Number of nodes and number without a label

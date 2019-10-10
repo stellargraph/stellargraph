@@ -159,27 +159,13 @@ class TestBiasedWeightedRandomWalk(object):
         with pytest.raises(ValueError):
             # weighted is boolean which is by default False. It is True if walk has to be weighted.
             biasedrw.run(
-                nodes=nodes,
-                n=n,
-                p=p,
-                q=q,
-                length=length,
-                seed=seed,
-                weighted="unknown",
-                edge_weight_label="weight",
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
             )
 
         with pytest.raises(ValueError):
             # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
             biasedrw.run(
-                nodes=nodes,
-                n=n,
-                p=p,
-                q=q,
-                length=length,
-                seed=seed,
-                weighted="unknown",
-                edge_weight_label=None,
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
             )
 
     def test_identity_unweighted_weighted_1_walks(self):
@@ -294,7 +280,7 @@ class TestBiasedWeightedRandomWalk(object):
         g[3][4]["w"] = 3
         g[4][1]["w"] = 4
 
-        g = StellarGraph(g)
+        g = StellarGraph(g, edge_weight_label="w")
 
         nodes = list(g.nodes())
         n = 1
@@ -308,14 +294,7 @@ class TestBiasedWeightedRandomWalk(object):
         assert (
             len(
                 biasedrw.run(
-                    nodes=nodes,
-                    n=n,
-                    p=p,
-                    q=q,
-                    length=length,
-                    seed=seed,
-                    weighted=True,
-                    edge_weight_label="w",
+                    nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
                 )
             )
             == 4
@@ -329,7 +308,8 @@ class TestBiasedWeightedRandomWalk(object):
         g[3][4]["wt"] = 3
         g[4][1]["wt"] = 4
 
-        g = StellarGraph(g)
+        # Deliberately use wrong name for edge weight!?
+        g = StellarGraph(g, edge_weight_label="w")
 
         nodes = list(g.nodes())
         n = 1
@@ -341,14 +321,7 @@ class TestBiasedWeightedRandomWalk(object):
         biasedrw = BiasedRandomWalk(g)
         with pytest.raises(ValueError):
             biasedrw.run(
-                nodes=nodes,
-                n=n,
-                p=p,
-                q=q,
-                length=length,
-                seed=seed,
-                weighted=True,
-                edge_weight_label="w",
+                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
             )
 
     def test_benchmark_biasedweightedrandomwalk(self, benchmark):

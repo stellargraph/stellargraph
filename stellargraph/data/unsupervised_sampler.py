@@ -47,7 +47,9 @@ class UnsupervisedSampler:
     def __init__(self, G, nodes=None, length=2, number_of_walks=1, seed=None):
         if not isinstance(G, StellarGraph):
             raise ValueError(
-                "({}) Graph must be a StellarGraph or StellarDigraph object.".format(type(self).__name__)
+                "({}) Graph must be a StellarGraph or StellarDigraph object.".format(
+                    type(self).__name__
+                )
             )
         else:
             self.graph = G

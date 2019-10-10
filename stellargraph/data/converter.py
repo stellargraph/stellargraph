@@ -151,16 +151,12 @@ class NodeAttributeSpecification:
             raise TypeError("Graph must be a StellarGraph or StellarDigraph object")
 
         # Go through graph to find node attributes
-        gx = graph.get_networkx_graph()
-        all_attrs = set(
-            k for v in graph.nodes_of_type(node_type) for k in gx.node[v].keys()
-        )
+        attrs = set()
+        for node in graph.nodes_of_type(node_type):
+            attrs = attrs | graph.node_attributes(node)
 
         # Remove any ignored attributes
-        attrs = all_attrs.difference(set(ignored_attributes))
-
-        # Don't use node type as attribute:
-        attrs.discard(graph._node_type_attr)
+        attrs = attrs.difference(set(ignored_attributes))
 
         # Set found attributes with converter
         self.add_attribute_list(node_type, attrs, converter, **conv_args)

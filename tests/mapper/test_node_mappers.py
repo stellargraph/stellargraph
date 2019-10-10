@@ -365,11 +365,12 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    ccs = list(nx.connected_components(G.get_networkx_graph()))
+    Gnx = G.to_networkx()
+    ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
     n_isolates = [5]
-    assert nx.degree(G.get_networkx_graph(), n_isolates[0]) == 0
+    assert nx.degree(Gnx, n_isolates[0]) == 0
 
     # Check both isolated and non-isolated nodes have same sampled feature shape
     for head_nodes in [[1], [2], n_isolates]:
@@ -710,7 +711,7 @@ class Test_FullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = FullBatchNodeGenerator(self.G.get_networkx_graph())
+            generator = FullBatchNodeGenerator(nx.Graph())
 
     def test_generator_constructor_hin(self):
         feature_sizes = {"t1": 1, "t2": 1}
@@ -844,12 +845,12 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
 
-        A = nx.to_numpy_array(G.get_networkx_graph())
+        A = G.adjacency_weights().toarray()
         assert np.array_equal(A.dot(A), generator.Aadj.toarray())
 
     def test_generator_methods(self):
         node_ids = list(self.G.nodes())
-        Aadj = nx.to_numpy_array(self.G.get_networkx_graph())
+        Aadj = self.G.adjacency_weights().toarray()
         Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
         Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
         Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)
