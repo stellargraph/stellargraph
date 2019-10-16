@@ -47,7 +47,7 @@ from ..data.explorer import (
 )
 from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
 from ..core.utils import is_real_iterable
-from ..core.utils import GCN_Aadj_feats_op
+from ..core.utils import GCN_Aadj_feats_op, normalize_adj
 
 
 class NodeSequence(Sequence):
@@ -1103,3 +1103,143 @@ class DirectedGraphSAGENodeGenerator:
         return NodeSequence(
             self, node_targets.index, node_targets.values, shuffle=shuffle
         )
+
+
+
+class RelationalSparseFullBatchNodeSequence(Sequence):
+    """
+    """
+
+    use_sparse = True
+
+    def __init__(self, features, As, targets=None, indices=None):
+
+        if (targets is not None) and (len(indices) != len(targets)):
+            raise ValueError(
+                "When passed together targets and indices should be the same length."
+            )
+
+        # Store features and targets as np.ndarray
+        self.features = np.asanyarray(features)
+        self.target_indices = np.asanyarray(indices)
+        self.A_indices = [np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As]
+        self.A_values = [np.expand_dims(A.data, 0) for A in As]
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.inputs = [self.features, self.target_indices] + self.A_indices + self.A_values
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+
+        if targets is not None:
+            self.targets = np.asanyarray(targets)
+            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        else:
+            self.targets = None
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        return self.inputs, self.targets
+
+
+class RelationalFullBatchNodeGenerator:
+    """
+    """
+
+    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
+
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.name = name
+        self.k = k
+        self.use_sparse = sparse
+        self.method = method
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # Create sparse adjacency matrix
+        self.node_list = list(G.nodes())
+
+        self.features = G.get_feature_for_nodes(self.node_list)
+
+        edge_types = sorted(set(e[-1] for e in G.edges))
+
+        node_index = dict(zip(self.node_list, range(len(self.node_list))))
+
+        self.As = []
+
+        for edge_type in edge_types:
+            col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
+            row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
+            data = np.ones(len(col_index), np.float64)
+
+            A = sps.coo_matrix(
+                (data, (row_index, col_index)),
+                shape=(len(self.node_list),
+                       len(self.node_list))
+            )
+
+            A = normalize_adj(A, symmetric=False)
+            A = A.tocoo()
+            self.As.append(A)
+
+
+        if self.use_sparse:
+            self.use_sparse = True
+        if not self.use_sparse:
+            raise NotImplementedError("")
+
+        # Get the features for the nodes
+        self.features = G.get_feature_for_nodes(self.node_list)
+
+        # TODO: add transform?
+
+    def flow(self, node_ids, targets=None):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_ids: and iterable of node ids for the nodes of interest
+                (e.g., training, validation, or test set nodes)
+            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+
+        Returns:
+            A NodeSequence object to use with GCN or GAT models
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
+
+        """
+        if targets is not None:
+            # Check targets is an iterable
+            if not is_real_iterable(targets):
+                raise TypeError("Targets must be an iterable or None")
+
+            # Check targets correct shape
+            if len(targets) != len(node_ids):
+                raise TypeError("Targets must be the same length as node_ids")
+
+        # The list of indices of the target nodes in self.node_list
+        # Use dictionary for faster look-up time
+        node_index = dict(zip(self.node_list, range(len(self.node_list))))
+        node_indices = np.array([node_index[n] for n in node_ids])
+
+        if self.use_sparse:
+            return RelationalSparseFullBatchNodeSequence(
+                self.features, self.As, targets, node_indices
+            )
+        else:
+            raise NotImplementedError("Currently only sparse adjacency matrices are supported.")
