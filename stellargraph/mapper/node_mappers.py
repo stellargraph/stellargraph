@@ -1109,7 +1109,7 @@ class DirectedGraphSAGENodeGenerator:
 class RelationalSparseFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
-    that require full-batch training (e.g., RGCN).
+    on relational graphs that require full-batch training (e.g., RGCN).
     Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
         :meth:`keras.Model.evaluate_generator`, and
         :meth:`keras.Model.predict_generator`,
@@ -1117,7 +1117,7 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
     This class uses sparse representations to send data to the models.
 
     This class should be created using the `.flow(...)` method of
-    :class:`FullBatchNodeGenerator`.
+    :class:`RelationalFullBatchNodeGenerator`.
 
     Args:
         features (np.ndarray): An array of node features of size (N x F),
@@ -1142,6 +1142,9 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
         self.target_indices = np.asanyarray(indices)
+
+        # convert the list of adjacency matrices to a list of index array
+        # and a list of value array - add batch dimension 1 to each index and value array
         self.A_indices = [np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As]
         self.A_values = [np.expand_dims(A.data, 0) for A in As]
 
@@ -1174,7 +1177,7 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
 
 class RelationalDenseFullBatchNodeSequence(Sequence):
     """
-    Keras-compatible data generator for for node inference models
+    Keras-compatible data generator for for node inference models on relational graphs
     that require full-batch training (e.g., RGCN).
     Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
         :meth:`keras.Model.evaluate_generator`, and
@@ -1183,7 +1186,7 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
     This class uses dense representations to send data to the models.
 
     This class should be created using the `.flow(...)` method of
-    :class:`FullBatchNodeGenerator`.
+    :class:`RelationalFullBatchNodeGenerator`.
 
     Args:
         features (np.ndarray): An array of node features of size (N x F),
@@ -1208,6 +1211,8 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
         self.target_indices = np.asanyarray(indices)
+
+        # Convert all adj matrices to dense and reshape to have batch dimension of 1
         self.As = [A.todense()[None, :, :] for A in As]
 
         # Reshape all inputs to have batch dimension of 1
@@ -1260,7 +1265,7 @@ class RelationalFullBatchNodeGenerator:
 
     Example::
 
-        G_generator = SparseFullBatchNodeGenerator(G)
+        G_generator = RelationalFullBatchNodeGenerator(G)
         train_data_gen = G_generator.flow(node_ids, node_targets)
 
         # Fetch the data from train_data_gen, and feed into a Keras model:
@@ -1289,7 +1294,7 @@ class RelationalFullBatchNodeGenerator:
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # Create sparse adjacency matrix
+        # extract node, feature, and edge type info from G
         self.node_list = list(G.nodes())
 
         self.features = G.get_feature_for_nodes(self.node_list)
@@ -1298,8 +1303,8 @@ class RelationalFullBatchNodeGenerator:
 
         node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
-        # create a list of adjacency matrices
-        # an adjacency matrix is created for each type from all edges of that type
+        # create a list of adjacency matrices - one adj matrix for each edge type
+        # an adjacency matrix is created for each edge type from all edges of that type
         self.As = []
 
         for edge_type in edge_types:
@@ -1320,6 +1325,7 @@ class RelationalFullBatchNodeGenerator:
                 A = normalize_adj(A, symmetric=False)
             else:
                 self.features, A = transform(self.features, A)
+
             A = A.tocoo()
             self.As.append(A)
 

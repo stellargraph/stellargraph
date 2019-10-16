@@ -41,7 +41,7 @@ REQUIRES = [
 #
 # Other demos do not have specific requirements
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "seaborn"],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib"],
     "test": ["pytest", "pytest-benchmark"],
 }
 

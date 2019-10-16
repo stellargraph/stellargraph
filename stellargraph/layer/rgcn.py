@@ -19,7 +19,7 @@ class RelationalGraphConvolution(Layer):
             Keras requires this batch dimension, and for full-batch methods
             we only have a single "batch".
 
-          - There are 2 + R inputs required - where R is the number of relationships, the node features, the output
+          - There are 2 + R inputs required (where R is the number of relationships): the node features, the output
             indices (the nodes that are to be selected in the final layer)
             and a normalized adjacency matrix for each relationship
 
@@ -171,7 +171,6 @@ class RelationalGraphConvolution(Layer):
             self.relational_kernels = [tf.einsum("ijk,k->ij", self.bases, coeff) for
                                        coeff in self.coefficients]
 
-
         else:
             self.bases = None
             self.coefficients = None
@@ -190,6 +189,7 @@ class RelationalGraphConvolution(Layer):
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
         )
+
         if self.use_bias:
             self.bias = self.add_weight(
                 shape=(self.units,),
@@ -200,6 +200,7 @@ class RelationalGraphConvolution(Layer):
             )
         else:
             self.bias = None
+
         self.built = True
 
     def call(self, inputs):
@@ -210,8 +211,8 @@ class RelationalGraphConvolution(Layer):
             inputs (list): a list of 2 + R input tensors that includes
                 node features (size 1 x N x F),
                 output indices (size 1 x M),
-                and a graph adjacency matrix (size N x N) for each relationaship,
-                where R is the number of relationships in the graph (edge type),
+                and a graph adjacency matrix (size N x N) for each relationship.
+                R is the number of relationships in the graph (edge type),
                 N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
 
@@ -246,7 +247,6 @@ class RelationalGraphConvolution(Layer):
             output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
-        # print("BATCH DIM:", batch_dim)
         if batch_dim == 1:
             output = K.expand_dims(output, 0)
 
@@ -255,16 +255,16 @@ class RelationalGraphConvolution(Layer):
 
 class RGCN:
     """
-    A stack of Relational Graph Convolutional layers that implement a relational graph convolution network model
-    as in https://arxiv.org/pdf/1703.06103.pdf
+    A stack of Relational Graph Convolutional layers that implement a relational graph
+    convolution neural network model as in https://arxiv.org/pdf/1703.06103.pdf
 
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`RelationalFullBatchNodeGenerator` class. To have the appropriate
-    pre-processing the generator object should be instantiated as follows::
+    should be supplied using the :class:`RelationalFullBatchNodeGenerator` class.
+    The generator object should be instantiated as follows::
 
         generator = RelationalFullBatchNodeGenerator(G)
 
@@ -272,7 +272,8 @@ class RGCN:
     matrices and the :class:`RelationalFullBatchNodeGenerator` will default to sparse.
 
     For more details, please see the RGCN demo notebook:
-    demos/node-classification/rgcn/
+
+    emos/node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -299,7 +300,7 @@ class RGCN:
 
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.
-        generator (FullBatchNodeGenerator): The generator instance.
+        generator (RelationalFullBatchNodeGenerator): The generator instance.
         num_bases (int): Specifies number of basis matrices to use for the weight matrics of the RGCN layer
             as in the paper. Defaults to 0 which specifies that no basis decomposition is used.
         bias (bool): If True, a bias vector is learnt for each layer in the RGCN model.
@@ -316,7 +317,7 @@ class RGCN:
         num_bases=0, dropout=0.0, activations=None, **kwargs
     ):
         if not isinstance(generator, RelationalFullBatchNodeGenerator):
-            raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
+            raise TypeError("Generator should be a instance of RelationalFullBatchNodeGenerator")
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
@@ -333,6 +334,7 @@ class RGCN:
         # Activation function for each layer
         if activations is None:
             activations = ["relu"] * n_layers
+
         elif len(activations) != n_layers:
             raise ValueError(
                 "Invalid number of activations; require one function per layer"
@@ -340,6 +342,7 @@ class RGCN:
 
         self.activations = activations
         self.num_bases = num_bases
+
         # Optional regulariser, etc. for weights and biases
         self._get_regularisers_from_keywords(kwargs)
 
