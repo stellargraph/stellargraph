@@ -50,6 +50,13 @@ GCN model
   :members: GCN, GraphConvolution
 
 
+RGCN model
+-------------
+
+.. automodule:: stellargraph.layer.rgcn
+  :members: RGCN, RelationalGraphConvolution
+
+
 GAT model
 -------------
 

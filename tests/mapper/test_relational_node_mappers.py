@@ -3,7 +3,6 @@ from stellargraph.mapper.node_mappers import RelationalFullBatchNodeGenerator
 
 import networkx as nx
 import numpy as np
-import random
 import pytest
 import pandas as pd
 import scipy.sparse as sps
