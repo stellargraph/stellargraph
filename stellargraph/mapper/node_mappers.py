@@ -1108,6 +1108,26 @@ class DirectedGraphSAGENodeGenerator:
 
 class RelationalSparseFullBatchNodeSequence(Sequence):
     """
+    Keras-compatible data generator for for node inference models
+    that require full-batch training (e.g., RGCN).
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
+
+    This class uses sparse representations to send data to the models.
+
+    This class should be created using the `.flow(...)` method of
+    :class:`FullBatchNodeGenerator`.
+
+    Args:
+        features (np.ndarray): An array of node features of size (N x F),
+            where N is the number of nodes in the graph, F is the node feature size
+        As (list of sparse matrices): A list of length R of adjacency matrices of the graph of size (N x N)
+            where R is the number of relationships in the graph.
+        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
+            where C is the target size (e.g., number of classes for one-hot class targets)
+        indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
+            of the targets. Required if targets is not None.
     """
 
     use_sparse = True
@@ -1154,6 +1174,26 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
 
 class RelationalDenseFullBatchNodeSequence(Sequence):
     """
+    Keras-compatible data generator for for node inference models
+    that require full-batch training (e.g., RGCN).
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
+
+    This class uses dense representations to send data to the models.
+
+    This class should be created using the `.flow(...)` method of
+    :class:`FullBatchNodeGenerator`.
+
+    Args:
+        features (np.ndarray): An array of node features of size (N x F),
+            where N is the number of nodes in the graph, F is the node feature size
+        As (list of sparse matrices): A list of length R of adjacency matrices of the graph of size (N x N)
+            where R is the number of relationships in the graph.
+        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
+            where C is the target size (e.g., number of classes for one-hot class targets)
+        indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
+            of the targets. Required if targets is not None.
     """
 
     use_sparse = False
@@ -1200,16 +1240,49 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
 
 class RelationalFullBatchNodeGenerator:
     """
+    A data generator for use with full-batch models on relational graphs e.g. RGCN.
+
+    The supplied graph G should be a StellarDiGraph object that is ready for
+    machine learning. Currently the model requires node features to be available for all
+    nodes in the graph.
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
+
+    This generator will supply the features array and the adjacency matrix to a
+    full-batch Keras graph ML model.  There is a choice to supply either a list of sparse
+    adjacency matrices (the default) or a list of dense adjacency matrices, with the `sparse`
+    argument.
+
+    For these algorithms the adjacency matrices require pre-processing and the default option is to
+    normalize each row of the adjacency matrix by the number.  For customization a transformation (callable)
+    can be passed that operates on a square sparse matrix and returns a square sparse matrix.
+
+    Example::
+
+        G_generator = SparseFullBatchNodeGenerator(G)
+        train_data_gen = G_generator.flow(node_ids, node_targets)
+
+        # Fetch the data from train_data_gen, and feed into a Keras model:
+        # Alternatively, use the generator itself with model.fit_generator:
+        model.fit_generator(train_gen, epochs=num_epochs, ...)
+
+    Args:
+        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        name (str): an optional name of the generator
+        transform (callable): an optional function to apply on features and adjacency matrix
+            the function takes (features, Aadj) as arguments.
+        sparse (bool): If True (default) a list of sparse adjacency matrices is used,
+            if False a list of dense adjacency matrices is used.
+
     """
 
-    def __init__(self, G, name=None, k=1, sparse=True):
+    def __init__(self, G, name=None, sparse=True, transform=None):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.name = name
-        self.k = k
         self.use_sparse = sparse
 
         # Check if the graph has features
@@ -1224,20 +1297,28 @@ class RelationalFullBatchNodeGenerator:
 
         node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
+        # create a list of adjacency matrices
+        # an adjacency matrix is created for each type from all edges of that type
         self.As = []
 
         for edge_type in edge_types:
+
             col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
             row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
             data = np.ones(len(col_index), np.float64)
 
+            # note that A is the transpose of the standard adjacency matrix
+            # this is to aggregate features from incoming nodes
             A = sps.coo_matrix(
                 (data, (row_index, col_index)),
                 shape=(len(self.node_list),
                        len(self.node_list))
             )
 
-            A = normalize_adj(A, symmetric=False)
+            if transform is None:
+                A = normalize_adj(A, symmetric=False)
+            else:
+                self.features, A = transform(self.features, A)
             A = A.tocoo()
             self.As.append(A)
 
@@ -1256,7 +1337,7 @@ class RelationalFullBatchNodeGenerator:
             targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
 
         Returns:
-            A NodeSequence object to use with GCN or GAT models
+            A NodeSequence object to use with RGCN models
             in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
             and :meth:`predict_generator`
 
@@ -1271,7 +1352,7 @@ class RelationalFullBatchNodeGenerator:
                 raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
-        # Use dictionary for faster look-up time
+        # use dictionary for faster index look-up time
         node_index = dict(zip(self.node_list, range(len(self.node_list))))
         node_indices = np.array([node_index[n] for n in node_ids])
 

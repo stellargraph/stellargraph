@@ -7,7 +7,50 @@ from ..mapper.node_mappers import RelationalFullBatchNodeGenerator
 
 
 class RelationalGraphConvolution(Layer):
+    """
+        Relational Graph Convolution (RGCN) Keras layer.
 
+        Original paper: Modeling Relational Data with Graph Convolutional Networks.
+        Thomas N. Kipf, Michael Schlichtkrull (2017).
+            https://arxiv.org/pdf/1703.06103.pdf
+
+        Notes:
+          - The inputs are tensors with a batch dimension of 1:
+            Keras requires this batch dimension, and for full-batch methods
+            we only have a single "batch".
+
+          - There are 2 + R inputs required - where R is the number of relationships, the node features, the output
+            indices (the nodes that are to be selected in the final layer)
+            and a normalized adjacency matrix for each relationship
+
+          - The output indices are used when ``final_layer=True`` and the returned outputs
+            are the final-layer features for the nodes indexed by output indices.
+
+          - If ``final_layer=False`` all the node features are output in the same ordering as
+            given by the adjacency matrix.
+
+        Args:
+            units (int): dimensionality of output feature vectors
+            num_relationships (int): the number of relationships in the graph
+            num_bases (int): the number of basis matrices to use for parameterizing the weight matrices as described in
+                the paper; defaults to 0.
+            activation (str or func): nonlinear activation applied to layer's output to obtain output features
+            use_bias (bool): toggles an optional bias
+            final_layer (bool): If False the layer returns output for all nodes,
+                                if True it returns the subset specified by the indices passed to it.
+            kernel_initializer (str or func): The initialiser to use for the weights;
+                defaults to 'glorot_uniform'.
+            kernel_regularizer (str or func): The regulariser to use for the weights;
+                defaults to None.
+            kernel_constraint (str or func): The constraint to use for the weights;
+                defaults to None.
+            bias_initializer (str or func): The initialiser to use for the bias;
+                defaults to 'zeros'.
+            bias_regularizer (str or func): The regulariser to use for the bias;
+                defaults to None.
+            bias_constraint (str or func): The constraint to use for the bias;
+                defaults to None.
+        """
     def __init__(
             self,
             units,
@@ -76,7 +119,6 @@ class RelationalGraphConvolution(Layer):
     def compute_output_shape(self, input_shapes):
         """
         Computes the output shape of the layer.
-        Assumes the following inputs:
 
         Args:
             input_shapes (tuple of ints)
@@ -100,7 +142,8 @@ class RelationalGraphConvolution(Layer):
         Builds the layer
 
         Args:
-            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
+            input_shapes (list of int): shapes of the layer's inputs
+            (node features, node_indices, and adjacency matrices)
 
         """
         feat_shape = input_shapes[0]
@@ -156,11 +199,12 @@ class RelationalGraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (list): a list of 3 input tensors that includes
+            inputs (list): a list of 2 + R input tensors that includes
                 node features (size 1 x N x F),
-                output indices (size 1 x M)
-                graph adjacency matrix (size N x N),
-                where N is the number of nodes in the graph, and
+                output indices (size 1 x M),
+                and a graph adjacency matrix (size N x N) for each relationaship,
+                where R is the number of relationships in the graph (edge type),
+                N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
 
         Returns:
@@ -177,7 +221,7 @@ class RelationalGraphConvolution(Layer):
         features = K.squeeze(features, 0)
         out_indices = K.squeeze(out_indices, 0)
 
-        # Calculate the layer operation of GCN
+        # Calculate the layer operation of RGCN
         output = K.dot(features, self.self_kernel)
 
         for i in range(self.num_relationships):
@@ -202,9 +246,62 @@ class RelationalGraphConvolution(Layer):
 
 
 class RGCN:
+    """
+    A stack of Relational Graph Convolutional layers that implement a relational graph convolution network model
+    as in https://arxiv.org/pdf/1703.06103.pdf
 
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer,
+    activation functions for each hidden layers, and a generator object.
+
+    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    should be supplied using the :class:`RelationalFullBatchNodeGenerator` class. To have the appropriate
+    pre-processing the generator object should be instantiated as follows::
+
+        generator = RelationalFullBatchNodeGenerator(G)
+
+    Note that currently the RGCN class is compatible with both sparse and dense adjacency
+    matrices and the :class:`RelationalFullBatchNodeGenerator` will default to sparse.
+
+    For more details, please see the RGCN demo notebook:
+    demos/node-classification/rgcn/
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`RelationalFullBatchNodeGenerator` object.
+
+      - The nodes provided to the :class:`RelationalFullBatchNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
+
+    Examples:
+        Creating a RGCN node classification model from an existing :class:`StellarDiGraph`
+        object ``G``::
+
+            generator = RelationalFullBatchNodeGenerator(G)
+            rgcn = RGCN(
+                    layer_sizes=[32, 4],
+                    activations=["elu","softmax"],
+                    bases=10,
+                    generator=generator,
+                    dropout=0.5
+                )
+            x_inp, predictions = rgcn.node_model()
+
+    Args:
+        layer_sizes (list of int): Output sizes of RGCN layers in the stack.
+        generator (FullBatchNodeGenerator): The generator instance.
+        num_bases (int): Specifies number of basis matrices to use for the weight matrics of the RGCN layer
+            as in the paper. Defaults to 0 which specifies that no basis decomposition is used.
+        bias (bool): If True, a bias vector is learnt for each layer in the RGCN model.
+        dropout (float): Dropout rate applied to input features of each RGCN layer.
+        activations (list of str or func): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu'].
+        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
+            defaults to None.
     """
-    """
+
 
     def __init__(
         self, layer_sizes, generator, bias=True,
@@ -238,7 +335,7 @@ class RGCN:
         # Optional regulariser, etc. for weights and biases
         self._get_regularisers_from_keywords(kwargs)
 
-        # Initialize a stack of GCN layers
+        # Initialize a stack of RGCN layers
         self._layers = []
         for ii in range(n_layers):
             self._layers.append(Dropout(self.dropout))
@@ -299,7 +396,7 @@ class RGCN:
 
         N_edge_types = len(self.generator.As)
 
-        # Convert input indices & values to a sparse matrix
+        # Convert input indices & values to sparse matrices
         if self.use_sparse:
 
             As_indices = As[:N_edge_types]
@@ -312,7 +409,7 @@ class RGCN:
                 for i in range(N_edge_types)
             ]
 
-        # Otherwise, create dense matrix from input tensor
+        # Otherwise, create dense matrices from input tensor
         else:
             Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A_) for A_ in As]
 
@@ -320,7 +417,7 @@ class RGCN:
 
         for layer in self._layers:
             if isinstance(layer, RelationalGraphConvolution):
-                # For a GCN layer add the matrix and output indices
+                # For an RGCN layer add the adjacency matrices and output indices
                 # Note that the output indices are only used if `final_layer=True`
                 h_layer = layer([h_layer, out_indices] + Ainput)
             else:
@@ -331,11 +428,13 @@ class RGCN:
 
     def node_model(self):
         """
-        Builds a GCN model for node prediction
+        Builds a RGCN model for node prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
-            and `x_out` is a Keras tensor for the GCN model output.
+            tuple: `(x_inp, x_out)`, where
+            `x_inp` is a list of Keras input tensors for the RGCN model (containing node features,
+             node indices, and the indices and values for the sparse adjacency matrices for each relationship),
+            and `x_out` is a Keras tensor for the RGCN model output.
         """
         # Placeholder for node features
         N_nodes = self.generator.features.shape[0]
