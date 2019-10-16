@@ -190,8 +190,16 @@ class RelationalGraphConvolution(Layer):
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
         )
-        # TODO: add bias
-        self.bias = None
+        if self.use_bias:
+            self.bias = self.add_weight(
+                shape=(self.units,),
+                initializer=self.bias_initializer,
+                name="bias",
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
+            )
+        else:
+            self.bias = None
         self.built = True
 
     def call(self, inputs):
