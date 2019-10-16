@@ -1152,11 +1152,57 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
+class RelationalDenseFullBatchNodeSequence(Sequence):
+    """
+    """
+
+    use_sparse = False
+
+    def __init__(self, features, As, targets=None, indices=None):
+
+        if (targets is not None) and (len(indices) != len(targets)):
+            raise ValueError(
+                "When passed together targets and indices should be the same length."
+            )
+
+        # Store features and targets as np.ndarray
+        self.features = np.asanyarray(features)
+        self.target_indices = np.asanyarray(indices)
+        self.As = [A.todense()[None, :, :] for A in As]
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.inputs = [self.features, self.target_indices] + self.As
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+
+        if targets is not None:
+            self.targets = np.asanyarray(targets)
+            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        else:
+            self.targets = None
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        return self.inputs, self.targets
+
+
+
 class RelationalFullBatchNodeGenerator:
     """
     """
 
-    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
+    def __init__(self, G, name=None, k=1, sparse=True):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -1165,7 +1211,6 @@ class RelationalFullBatchNodeGenerator:
         self.name = name
         self.k = k
         self.use_sparse = sparse
-        self.method = method
 
         # Check if the graph has features
         G.check_graph_for_ml()
@@ -1196,16 +1241,9 @@ class RelationalFullBatchNodeGenerator:
             A = A.tocoo()
             self.As.append(A)
 
-
-        if self.use_sparse:
-            self.use_sparse = True
-        if not self.use_sparse:
-            raise NotImplementedError("")
-
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
-        # TODO: add transform?
 
     def flow(self, node_ids, targets=None):
         """
@@ -1242,4 +1280,6 @@ class RelationalFullBatchNodeGenerator:
                 self.features, self.As, targets, node_indices
             )
         else:
-            raise NotImplementedError("Currently only sparse adjacency matrices are supported.")
+            return RelationalDenseFullBatchNodeSequence(
+                self.features, self.As, targets, node_indices
+            )

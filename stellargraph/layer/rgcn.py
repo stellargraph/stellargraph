@@ -221,7 +221,6 @@ class RGCN:
         self.dropout = dropout
         self.generator = generator
         self.support = 1
-        self.method = generator.method
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
@@ -315,7 +314,7 @@ class RGCN:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            raise NotImplementedError("Currently dense is not supported.")
+            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A_) for A_ in As]
 
         h_layer = x_in
 
@@ -356,10 +355,8 @@ class RGCN:
 
 
         else:
-            raise NotImplementedError("Dense is not currently supported.")
             # Placeholders for the dense adjacency matrix
-            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
-            A_placeholders = [A_m]
+            A_placeholders = [Input(batch_shape=(1, N_nodes, N_nodes)) for i in range(N_edge_types)]
 
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
