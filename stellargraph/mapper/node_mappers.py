@@ -1254,8 +1254,9 @@ class RelationalFullBatchNodeGenerator:
     argument.
 
     For these algorithms the adjacency matrices require pre-processing and the default option is to
-    normalize each row of the adjacency matrix by the number.  For customization a transformation (callable)
-    can be passed that operates on a square sparse matrix and returns a square sparse matrix.
+    normalize each row of the adjacency matrix so that it sums to 1.
+    For customization a transformation (callable) can be passed that
+    operates on the node features and adjacency matrix.
 
     Example::
 

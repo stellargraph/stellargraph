@@ -452,7 +452,6 @@ class RGCN:
             A_values_t = [Input(batch_shape=(1, None)) for i in range(N_edge_types)]
             A_placeholders = A_indices_t + A_values_t
 
-
         else:
             # Placeholders for the dense adjacency matrix
             A_placeholders = [Input(batch_shape=(1, N_nodes, N_nodes)) for i in range(N_edge_types)]
