@@ -66,9 +66,9 @@ def create_test_graph():
 
     for node in g.nodes():
         if type(node) == str:  # make these type s for string
-            g.node[node]["label"] = "s"
+            g.nodes[node]["label"] = "s"
         else:  # make these type n for number
-            g.node[node]["label"] = "n"
+            g.nodes[node]["label"] = "n"
 
     g = StellarGraph(g)
     return g

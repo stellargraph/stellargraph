@@ -37,10 +37,10 @@ def example_stellar_graph_1():
     G.add_edges_from(elist, label="")
 
     # Add some node attributes
-    G.node[1]["a1"] = 1
-    G.node[3]["a1"] = 1
-    G.node[1]["a2"] = 1
-    G.node[4]["a2"] = 1
+    G.nodes[1]["a1"] = 1
+    G.nodes[3]["a1"] = 1
+    G.nodes[1]["a2"] = 1
+    G.nodes[4]["a2"] = 1
     return G
 
 
