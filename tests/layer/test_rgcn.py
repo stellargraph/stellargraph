@@ -38,20 +38,18 @@ def test_RelationalGraphConvolution_config():
 
 
 def test_RelationalGraphConvolution_init():
-    gcn_layer = RelationalGraphConvolution(units=16,
-                                           num_relationships=5,
-                                           num_bases=0,
-                                           activation="relu")
+    gcn_layer = RelationalGraphConvolution(
+        units=16, num_relationships=5, num_bases=0, activation="relu"
+    )
 
     assert gcn_layer.units == 16
     assert gcn_layer.use_bias == True
     assert gcn_layer.num_bases == 0
     assert gcn_layer.get_config()["activation"] == "relu"
 
-    gcn_layer = RelationalGraphConvolution(units=16,
-                                           num_relationships=5,
-                                           num_bases=10,
-                                           activation="relu")
+    gcn_layer = RelationalGraphConvolution(
+        units=16, num_relationships=5, num_bases=10, activation="relu"
+    )
 
     assert gcn_layer.units == 16
     assert gcn_layer.use_bias == True
@@ -75,23 +73,26 @@ def test_RelationalGraphConvolution_sparse():
     # Create inputs for sparse or dense matrices
 
     # Placeholders for the sparse adjacency matrix
-    As_indices = [Input(batch_shape=(1, None, 2), dtype="int64") for i in range(n_edge_types)]
+    As_indices = [
+        Input(batch_shape=(1, None, 2), dtype="int64") for i in range(n_edge_types)
+    ]
     As_values = [Input(batch_shape=(1, None)) for i in range(n_edge_types)]
     A_placeholders = As_indices + As_values
 
-
     # Test with final_layer=False
     Ainput = [
-        SqueezedSparseConversion(
-            shape=(n_nodes, n_nodes), dtype=As_values[i].dtype
-        )([As_indices[i], As_values[i]])
-        for i in range(n_edge_types)]
+        SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=As_values[i].dtype)(
+            [As_indices[i], As_values[i]]
+        )
+        for i in range(n_edge_types)
+    ]
 
     x_inp_model = [x_t, out_indices_t] + A_placeholders
     x_inp_conv = [x_t, out_indices_t] + Ainput
 
-    out = RelationalGraphConvolution(2, num_relationships=n_edge_types,
-                                     final_layer=False)(x_inp_conv)
+    out = RelationalGraphConvolution(
+        2, num_relationships=n_edge_types, final_layer=False
+    )(x_inp_conv)
 
     # Note we add a batch dimension of 1 to model inputs
     As = []
@@ -103,16 +104,16 @@ def test_RelationalGraphConvolution_sparse():
         data = np.ones(len(col_index), np.float64)
 
         A = sps.coo_matrix(
-            (data, (row_index, col_index)),
-            shape=(len(node_list),
-                   len(node_list))
+            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
         )
 
         A = normalize_adj(A, symmetric=False)
         A = A.tocoo()
         As.append(A)
 
-    A_indices = [np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As]
+    A_indices = [
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+    ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
     out_indices = np.array([[0, 1]], dtype="int32")
@@ -123,7 +124,9 @@ def test_RelationalGraphConvolution_sparse():
     assert preds.shape == (1, 3, 2)
 
     # Now try with final_layer=True
-    out = RelationalGraphConvolution(2, num_relationships=n_edge_types, final_layer=True)(x_inp_conv)
+    out = RelationalGraphConvolution(
+        2, num_relationships=n_edge_types, final_layer=True
+    )(x_inp_conv)
     model = keras.Model(inputs=x_inp_model, outputs=out)
     preds = model.predict([x, out_indices] + A_indices + A_values, batch_size=1)
     assert preds.shape == (1, 2, 2)
@@ -145,15 +148,18 @@ def test_RelationalGraphConvolution_dense():
     # Create inputs for sparse or dense matrices
 
     # Placeholders for the sparse adjacency matrix
-    A_placeholders = [Input(batch_shape=(1, n_nodes, n_nodes)) for _ in range(n_edge_types)]
+    A_placeholders = [
+        Input(batch_shape=(1, n_nodes, n_nodes)) for _ in range(n_edge_types)
+    ]
 
     A_in = [Lambda(lambda A: K.squeeze(A, 0))(A_p) for A_p in A_placeholders]
 
     x_inp_model = [x_t, out_indices_t] + A_placeholders
     x_inp_conv = [x_t, out_indices_t] + A_in
 
-    out = RelationalGraphConvolution(2, num_relationships=n_edge_types,
-                                     final_layer=False)(x_inp_conv)
+    out = RelationalGraphConvolution(
+        2, num_relationships=n_edge_types, final_layer=False
+    )(x_inp_conv)
 
     # Note we add a batch dimension of 1 to model inputs
     As = []
@@ -165,9 +171,7 @@ def test_RelationalGraphConvolution_dense():
         data = np.ones(len(col_index), np.float64)
 
         A = sps.coo_matrix(
-            (data, (row_index, col_index)),
-            shape=(len(node_list),
-                   len(node_list))
+            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
         )
 
         A = normalize_adj(A, symmetric=False)
@@ -182,7 +186,9 @@ def test_RelationalGraphConvolution_dense():
     assert preds.shape == (1, 3, 2)
 
     # Now try with final_layer=True
-    out = RelationalGraphConvolution(2, num_relationships=n_edge_types, final_layer=True)(x_inp_conv)
+    out = RelationalGraphConvolution(
+        2, num_relationships=n_edge_types, final_layer=True
+    )(x_inp_conv)
     model = keras.Model(inputs=x_inp_model, outputs=out)
     preds = model.predict([x, out_indices] + As, batch_size=1)
     assert preds.shape == (1, 2, 2)
@@ -218,16 +224,16 @@ def test_RGCN_apply_sparse():
         data = np.ones(len(col_index), np.float64)
 
         A = sps.coo_matrix(
-            (data, (row_index, col_index)),
-            shape=(len(node_list),
-                   len(node_list))
+            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
         )
 
         A = normalize_adj(A, symmetric=False)
         A = A.tocoo()
         As.append(A)
 
-    A_indices = [np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As]
+    A_indices = [
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+    ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
     nodes = G.nodes()
@@ -267,9 +273,7 @@ def test_RGCN_apply_dense():
         data = np.ones(len(col_index), np.float64)
 
         A = sps.coo_matrix(
-            (data, (row_index, col_index)),
-            shape=(len(node_list),
-                   len(node_list))
+            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
         )
 
         A = normalize_adj(A, symmetric=False)

@@ -1105,7 +1105,6 @@ class DirectedGraphSAGENodeGenerator:
         )
 
 
-
 class RelationalSparseFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
@@ -1145,7 +1144,9 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
 
         # convert the list of adjacency matrices to a list of index array
         # and a list of value array - add batch dimension 1 to each index and value array
-        self.A_indices = [np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As]
+        self.A_indices = [
+            np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        ]
         self.A_values = [np.expand_dims(A.data, 0) for A in As]
 
         # Reshape all inputs to have batch dimension of 1
@@ -1154,7 +1155,9 @@ class RelationalSparseFullBatchNodeSequence(Sequence):
         )
 
         self.features = np.reshape(self.features, (1,) + self.features.shape)
-        self.inputs = [self.features, self.target_indices] + self.A_indices + self.A_values
+        self.inputs = (
+            [self.features, self.target_indices] + self.A_indices + self.A_values
+        )
 
         # Reshape all inputs to have batch dimension of 1
         self.target_indices = np.reshape(
@@ -1242,7 +1245,6 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-
 class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
@@ -1309,16 +1311,19 @@ class RelationalFullBatchNodeGenerator:
 
         for edge_type in edge_types:
 
-            col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-            row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
+            col_index = [
+                node_index[n1] for n1, n2, etype in G.edges if etype == edge_type
+            ]
+            row_index = [
+                node_index[n2] for n1, n2, etype in G.edges if etype == edge_type
+            ]
             data = np.ones(len(col_index), np.float64)
 
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
             A = sps.coo_matrix(
                 (data, (row_index, col_index)),
-                shape=(len(self.node_list),
-                       len(self.node_list))
+                shape=(len(self.node_list), len(self.node_list)),
             )
 
             if transform is None:
@@ -1331,7 +1336,6 @@ class RelationalFullBatchNodeGenerator:
 
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
-
 
     def flow(self, node_ids, targets=None):
         """
@@ -1347,8 +1351,8 @@ class RelationalFullBatchNodeGenerator:
             A NodeSequence object to use with RGCN models
             in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
             and :meth:`predict_generator`
-
         """
+
         if targets is not None:
             # Check targets is an iterable
             if not is_real_iterable(targets):

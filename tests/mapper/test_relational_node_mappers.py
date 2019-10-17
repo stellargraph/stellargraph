@@ -45,22 +45,23 @@ class Test_RelationalFullBatchNodeGenerator:
         with pytest.raises(TypeError):
             generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G))
 
-
-    def generator_flow(
-        self, G, node_ids, node_targets, sparse=False
-    ):
+    def generator_flow(self, G, node_ids, node_targets, sparse=False):
         generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)
         n_nodes = len(G)
 
         gen = generator.flow(node_ids, node_targets)
         if sparse:
             [X, tind, *As], y = gen[0]
-            As_indices = As[:self.num_relationships]
-            As_values = As[self.num_relationships:]
+            As_indices = As[: self.num_relationships]
+            As_values = As[self.num_relationships :]
 
-            As_sparse = [sps.coo_matrix(
-                (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])), shape=(n_nodes, n_nodes)
-            ) for A_ind, A_val in zip(As_indices, As_values)]
+            As_sparse = [
+                sps.coo_matrix(
+                    (A_val[0], (A_ind[0, :, 0], A_ind[0, :, 1])),
+                    shape=(n_nodes, n_nodes),
+                )
+                for A_ind, A_val in zip(As_indices, As_values)
+            ]
             As_dense = [A.toarray() for A in As_sparse]
 
         else:
@@ -77,25 +78,17 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_generator_flow_notargets(self):
         node_ids = list(self.G.nodes())[:3]
-        _, tind, y = self.generator_flow(
-            self.G, node_ids, None, sparse=False
-        )
+        _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=False)
         assert np.allclose(tind, range(3))
 
-        _, tind, y = self.generator_flow(
-            self.G, node_ids, None, sparse=True
-        )
+        _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=True)
         assert np.allclose(tind, range(3))
 
         node_ids = list(self.G.nodes())
-        _, tind, y = self.generator_flow(
-            self.G, node_ids, None, sparse=False
-        )
+        _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=False)
         assert np.allclose(tind, range(len(node_ids)))
 
-        _, tind, y = self.generator_flow(
-            self.G, node_ids, None, sparse=True
-        )
+        _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=True)
         assert np.allclose(tind, range(len(node_ids)))
 
     def test_generator_flow_withtargets(self):
@@ -178,16 +171,21 @@ class Test_RelationalFullBatchNodeGenerator:
         node_list = list(G.nodes)
         node_index = dict(zip(node_list, range(len(node_list))))
         for edge_type in edge_types:
-            col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-            row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
+            col_index = [
+                node_index[n1] for n1, n2, etype in G.edges if etype == edge_type
+            ]
+            row_index = [
+                node_index[n2] for n1, n2, etype in G.edges if etype == edge_type
+            ]
             data = np.ones(len(col_index), np.float64)
 
             A = sps.coo_matrix(
-                (data, (row_index, col_index)),
-                shape=(len(node_list),
-                       len(node_list))
+                (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
             )
 
             As.append(A)
 
-        assert all(np.array_equal(A_1.dot(A_1).todense(), A_2.todense()) for A_1, A_2 in zip(As, generator.As))
+        assert all(
+            np.array_equal(A_1.dot(A_1).todense(), A_2.todense())
+            for A_1, A_2 in zip(As, generator.As)
+        )

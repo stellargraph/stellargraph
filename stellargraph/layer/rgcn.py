@@ -51,22 +51,23 @@ class RelationalGraphConvolution(Layer):
             bias_constraint (str or func): The constraint to use for the bias;
                 defaults to None.
         """
+
     def __init__(
-            self,
-            units,
-            num_relationships,
-            num_bases=0,
-            activation=None,
-            use_bias=True,
-            final_layer=False,
-            kernel_initializer="glorot_uniform",
-            bias_initializer="zeros",
-            kernel_regularizer=None,
-            bias_regularizer=None,
-            activity_regularizer=None,
-            kernel_constraint=None,
-            bias_constraint=None,
-            **kwargs
+        self,
+        units,
+        num_relationships,
+        num_bases=0,
+        activation=None,
+        use_bias=True,
+        final_layer=False,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        **kwargs
     ):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
@@ -110,7 +111,7 @@ class RelationalGraphConvolution(Layer):
             "kernel_constraint": constraints.serialize(self.kernel_constraint),
             "bias_constraint": constraints.serialize(self.bias_constraint),
             "num_relationships": self.num_relationships,
-            "num_bases": self.num_bases
+            "num_bases": self.num_bases,
         }
 
         base_config = super().get_config()
@@ -161,15 +162,18 @@ class RelationalGraphConvolution(Layer):
 
             self.coefficients = [
                 self.add_weight(
-                    shape=(self.num_bases, ),  # hyperparametr B
+                    shape=(self.num_bases,),  # hyperparametr B
                     initializer=self.kernel_initializer,
                     name="coeff",
                     regularizer=self.kernel_regularizer,
                     constraint=self.kernel_constraint,
-                ) for _ in range(self.num_relationships)]
+                )
+                for _ in range(self.num_relationships)
+            ]
 
-            self.relational_kernels = [tf.einsum("ijk,k->ij", self.bases, coeff) for
-                                       coeff in self.coefficients]
+            self.relational_kernels = [
+                tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
+            ]
 
         else:
             self.bases = None
@@ -180,7 +184,8 @@ class RelationalGraphConvolution(Layer):
                     initializer=self.kernel_initializer,
                     regularizer=self.kernel_regularizer,
                     constraint=self.kernel_constraint,
-                ) for _ in range(self.num_relationships)
+                )
+                for _ in range(self.num_relationships)
             ]
 
         self.self_kernel = self.add_weight(
@@ -311,13 +316,20 @@ class RGCN:
             defaults to None.
     """
 
-
     def __init__(
-        self, layer_sizes, generator, bias=True,
-        num_bases=0, dropout=0.0, activations=None, **kwargs
+        self,
+        layer_sizes,
+        generator,
+        bias=True,
+        num_bases=0,
+        dropout=0.0,
+        activations=None,
+        **kwargs
     ):
         if not isinstance(generator, RelationalFullBatchNodeGenerator):
-            raise TypeError("Generator should be a instance of RelationalFullBatchNodeGenerator")
+            raise TypeError(
+                "Generator should be a instance of RelationalFullBatchNodeGenerator"
+            )
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
@@ -459,13 +471,18 @@ class RGCN:
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
             # Placeholders for the sparse adjacency matrix
-            A_indices_t = [Input(batch_shape=(1, None, 2), dtype="int64") for i in range(N_edge_types)]
+            A_indices_t = [
+                Input(batch_shape=(1, None, 2), dtype="int64")
+                for i in range(N_edge_types)
+            ]
             A_values_t = [Input(batch_shape=(1, None)) for i in range(N_edge_types)]
             A_placeholders = A_indices_t + A_values_t
 
         else:
             # Placeholders for the dense adjacency matrix
-            A_placeholders = [Input(batch_shape=(1, N_nodes, N_nodes)) for i in range(N_edge_types)]
+            A_placeholders = [
+                Input(batch_shape=(1, N_nodes, N_nodes)) for i in range(N_edge_types)
+            ]
 
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
@@ -477,4 +494,3 @@ class RGCN:
             self.x_out_flat = x_out
 
         return x_inp, x_out
-
