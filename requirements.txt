@@ -1,6 +1,6 @@
 networkx>=2.2,<2.4
 setuptools>=39.1.0
-tensorflow>=1.12.1,<2.0
+tensorflow>=1.12.1,<1.15
 numba>=0.39.0
 numpy>=1.14
 scipy>=1.1.0
