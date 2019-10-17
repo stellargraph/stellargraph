@@ -24,7 +24,7 @@ REQUIRES = [
     "tensorflow>=1.12,<2.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
-    "networkx>=2.2",
+    "networkx>=2.2, <=2.3",
     "scikit_learn>=0.20",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
@@ -42,7 +42,7 @@ REQUIRES = [
 # Other demos do not have specific requirements
 EXTRAS_REQURES = {
     "demos": ["numba", "jupyter", "seaborn", "rdflib"],
-    "test": ["pytest", "pytest-benchmark"],
+    "test": ["pytest<=3.9.3", "pytest-benchmark<=3.2.2"],
 }
 
 # Long description
