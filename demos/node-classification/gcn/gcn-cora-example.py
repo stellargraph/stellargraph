@@ -60,11 +60,11 @@ def train(
     val_gen = generator.flow(val_nodes, val_targets)
     gcnModel = GCN(
         layer_sizes,
-        activations,
-        generator=generator,
+        generator,
         bias=True,
         dropout=dropout,
         kernel_regularizer=regularizers.l2(5e-4),
+        activations=activations,
     )
 
     # Expose the input and output sockets of the model:

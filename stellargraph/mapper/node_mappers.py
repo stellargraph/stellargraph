@@ -22,6 +22,7 @@ __all__ = [
     "NodeSequence",
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
+    "Attri2VecNodeGenerator",
     "FullBatchNodeGenerator",
     "FullBatchNodeSequence",
     "SparseFullBatchNodeSequence",
@@ -56,17 +57,22 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator`.
+    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator` 
+    or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
 
-    These Generators are classes that capture the graph structure
-    and the feature vectors of each node. These generator classes
-    are used within the NodeSequence to generate samples of k-hop
-    neighbourhoods in the graph and to return to this class the
-    features from the sampled neighbourhoods.
+    GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator,and HinSAGENodeGenerator 
+    are classes that capture the graph structure and the feature vectors of each node. 
+    These generator classes are used within the NodeSequence to generate
+    samples of k-hop neighbourhoods in the graph and to return to this 
+    class the features from the sampled neighbourhoods.
+    
+    Attri2VecNodeGenerator is the class that captures node feature vectors
+    of each node.
 
     Args:
-        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator
-            The generator object containing the graph information.
+        generator: GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator or 
+            HinSAGENodeGenerator or Attri2VecNodeGenerator. The generator object 
+            containing the graph information.
         ids: list
             A list of the node_ids to be used as head-nodes in the
             downstream task.
@@ -101,22 +107,21 @@ class NodeSequence(Sequence):
                 "Head nodes supplied to generator contain IDs not found in graph"
             )
 
-        # Infer head_node_type
-        if (
-            generator.schema.node_type_map is None
-            or generator.schema.edge_type_map is None
-        ):
-            raise RuntimeError("Schema must have node and edge type maps.")
-        else:
-            head_node_types = {generator.schema.get_node_type(n) for n in ids}
-        if len(head_node_types) > 1:
-            raise ValueError(
-                "Only a single head node type is currently supported for HinSAGE models"
-            )
-        head_node_type = head_node_types.pop()
-
         # Store the generator to draw samples from graph
-        self.generator = generator
+        if (
+            isinstance(generator, GraphSAGENodeGenerator)
+            or isinstance(generator, DirectedGraphSAGENodeGenerator)
+            or isinstance(generator, HinSAGENodeGenerator)
+            or isinstance(generator, Attri2VecNodeGenerator)
+        ):
+            self.generator = generator
+        else:
+            raise TypeError(
+                "({}) GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, HinSAGENodeGenerator or Attri2VecNodeGenerator is required.".format(
+                    type(self).__name__
+                )
+            )
+
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -124,13 +129,32 @@ class NodeSequence(Sequence):
         # Shuffle IDs to start
         self.on_epoch_end()
 
-        # Save head node type and generate sampling schema
-        self.head_node_types = [head_node_type]
-        ### Experimental; for directed sampling
-        num_samples = getattr(generator, "num_samples", [])
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, num_samples
-        )
+        if (
+            isinstance(self.generator, GraphSAGENodeGenerator)
+            or isinstance(self.generator, DirectedGraphSAGENodeGenerator)
+            or isinstance(self.generator, HinSAGENodeGenerator)
+        ):
+            # Infer head_node_type
+            if (
+                generator.schema.node_type_map is None
+                or generator.schema.edge_type_map is None
+            ):
+                raise RuntimeError("Schema must have node and edge type maps.")
+            else:
+                head_node_types = {generator.schema.get_node_type(n) for n in ids}
+            if len(head_node_types) > 1:
+                raise ValueError(
+                    "Only a single head node type is currently supported for HinSAGE models"
+                )
+            head_node_type = head_node_types.pop()
+
+            # Save head node type and generate sampling schema
+            self.head_node_types = [head_node_type]
+            ### Experimental; for directed sampling
+            num_samples = getattr(generator, "num_samples", [])
+            self._sampling_schema = generator.schema.sampling_layout(
+                self.head_node_types, num_samples
+            )
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
@@ -164,8 +188,16 @@ class NodeSequence(Sequence):
         # Get corresponding targets
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        if isinstance(self.generator, GraphSAGENodeGenerator) or isinstance(
+            self.generator, HinSAGENodeGenerator
+        ):
+            # Get sampled nodes for GraphSAGENodeGenerator and HinSAGENodeGenerator
+            batch_feats = self.generator.sample_features(
+                head_ids, self._sampling_schema
+            )
+        else:
+            # Get sampled nodes for Attri2VecNodeGenerator
+            batch_feats = self.generator.sample_features(head_ids)
 
         return batch_feats, batch_targets
 
@@ -297,7 +329,7 @@ class GraphSAGENodeGenerator:
         supplied node_ids to be used by the downstream task. They should
         be given in the same order as the list of node IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
@@ -461,7 +493,7 @@ class HinSAGENodeGenerator:
         supplied node_ids to be used by the downstream task. They should
         be given in the same order as the list of node IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
@@ -503,6 +535,93 @@ class HinSAGENodeGenerator:
         return NodeSequence(
             self, node_targets.index, node_targets.values, shuffle=shuffle
         )
+
+
+class Attri2VecNodeGenerator:
+    """
+    A node feature generator for node representation prediction with the 
+    attri2vec model.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes to get an object 
+    that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Attri2VecNodeGenerator(G, 50)
+        data_gen = G_generator.flow(node_ids)
+
+    Args:
+        G (StellarGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.batch_size = batch_size
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+    def sample_features(self, head_nodes):
+        """
+        Sample content features of the head nodes, and return these as a list of feature 
+        arrays for the attri2vec algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+
+        Returns:
+            A list of feature arrays, with each element being the feature of a
+            head node.
+        """
+
+        batch_feats = self.graph.get_feature_for_nodes(head_nodes)
+        return batch_feats
+
+    def flow(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids.
+
+        The node IDs are the nodes to inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset/all of the nodes in the graph.
+
+        Args:
+            node_ids: an iterable of node IDs.
+
+        Returns:
+            A NodeSequence object to use with the Attri2Vec model
+            in the Keras method ``predict_generator``.
+
+        """
+        return NodeSequence(self, node_ids, shuffle=False)
+
+    def flow_from_dataframe(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids.
+
+        Args:
+            node_ids: a Pandas DataFrame of node_ids.
+
+        Returns:
+            A NodeSequence object to use with the Attri2Vec model
+            in the Keras method ``predict_generator``.
+
+        """
+        return NodeSequence(self, node_ids.index)
 
 
 class SparseFullBatchNodeSequence(Sequence):
@@ -976,7 +1095,7 @@ class DirectedGraphSAGENodeGenerator:
         supplied node_ids to be used by the downstream task. They should
         be given in the same order as the list of node IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
