@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.7.3](https://github.com/stellargraph/stellargraph/tree/v0.7.3)
+Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements, to avoid errors due to API changes
+in the recent versions of NetworkX and Tensorflow.
+
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
 Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements, to avoid errors due to API changes
 in the recent versions of Keras and Tensorflow.
