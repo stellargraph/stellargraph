@@ -133,7 +133,7 @@ class APPNPPropagationLayer(Layer):
 
         # Propagate the node features
         A = As[0]
-        output = K.dot(A, propagated_features) + self.teleport_probability * features
+        output = (1 - self.teleport_probability) * K.dot(A, propagated_features) + self.teleport_probability * features
 
         # On the final layer we gather the nodes referenced by the indices
         if self.final_layer:
