@@ -841,9 +841,9 @@ class GraphSAGE:
         Args:
              generator: The supplied generator.
         """
-        if not isinstance(generator, (GraphSAGELinkGenerator, GraphSAGENodeGenerator)):
+        if not isinstance(generator, (GraphSAGENodeGenerator, GraphSAGELinkGenerator)):
             raise TypeError(
-                "Generator should be an instance of GraphSAGELinkGenerator or GraphSAGENodeGenerator"
+                "Generator should be an instance of GraphSAGENodeGenerator or GraphSAGELinkGenerator"
             )
 
         self.n_samples = generator.num_samples
