@@ -20,6 +20,7 @@ __all__ = [
     "UniformRandomMetaPathWalk",
     "SampledBreadthFirstWalk",
     "SampledHeterogeneousBreadthFirstWalk",
+    "TemporalUniformRandomWalk",
 ]
 
 
@@ -273,7 +274,7 @@ def naive_weighted_choices(rs, weights):
 
 class BiasedRandomWalk(GraphWalk):
     """
-    Performs biased second order random walks (like those used in Node2Vec algorithm
+    Performs biased second order random walks (like those used in Node2Vec algorithm !!!!
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
@@ -849,3 +850,81 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             self._raise_error(
                 "The number of hops for the in and out neighbourhoods must be the same."
             )
+
+""" Temporal random walks """
+
+class TemporalUniformRandomWalk(GraphWalk):
+    """
+    Performs uniform random walks on the given graph
+    """
+
+    def run(self, nodes=None, n=None, length=None, bidirectional= False, seed=None):
+        """
+        Perform a time respecting random walk starting from the root nodes.
+
+        Args:
+            nodes: <list> The root nodes as a list of node IDs
+            n: <int> Total number of random walks per root node
+            length: <int> Maximum length of each random walk
+            bidirectional: <bool> Whether the walk extends on both direction.
+            seed: <int> Random number generator seed; default is None
+
+        Returns:
+            <list> List of lists of nodes ids for each of the random walks
+
+        """
+        self._check_common_parameters(nodes, n, length, seed)
+    #    rs = self._get_random_state(seed)
+
+        walks = []
+        for node in nodes:  # iterate over root nodes
+            for walk_number in range(n):  # generate n walks per root node
+                    start_edge = random.sample(list(self.neighbors(node, data="weight")),1) # sample a starting edge uniformly at random.
+                    current_forward_node = start_edge[0][1]  
+                    current_forward_time = start_edge[0][2]
+                    move_forwards = True
+                    
+                    if bidirectional:
+                        move_backwards = True
+                        current_backwards_node = node
+                        current_backwards_time = start_edge[0][2]
+                    else: 
+                        move_backwards = False
+                   
+                    walk = list()
+                    walk.append(node)   # start a walk
+                    walk.append(current_forward_node)
+                   
+                    while len(walk) < (length):
+                        if (move_forwards): #check to stop incase a dead end is reached moving forward
+                            forward_edges = []
+                            for _,neighbor,time in self.neighbors(current_forward_node, data='weight'):
+                                    if time > current_forward_time: # strictly look ahead of time to avoid being stuck in the current time
+                                        forward_edges.append((neighbor,time))
+                            if len(forward_edges) != 0:
+                                next_edge = random.sample(forward_edges, 1)
+                                current_forward_time = next_edge[0][1]
+                                current_forward_node = next_edge[0][0]
+                                walk.append(current_forward_node)
+                            else:
+                                move_forwards = False # reached a dead end at this walk
+        
+                        if (move_backwards): #check to stop incase a dead end is reached moving backwards
+                            backwards_edges = []
+                            for _,neighbor,time in self.neighbors(current_backwards_node, data='weight'):
+                                if time < current_backwards_time:
+                                    backwards_edges.append((neighbor,time))
+                            if len(backwards_edges) != 0:
+                                next_edge = random.sample(backwards_edges, 1)
+                                current_backwards_time = next_edge[0][1]
+                                current_backwards_node = next_edge[0][0]
+                                walk.insert(0,current_backwards_node)
+                            else:
+                                move_backwards = False # reached a dead end at this walk
+                        
+                        if ( (not move_backwards)  and  (not move_forwards)):  # if dead ends reached in both direction, stop walking.
+                            break
+                    walks.append(walk)
+
+
+        return walks
