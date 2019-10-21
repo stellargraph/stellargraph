@@ -19,14 +19,14 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator
+  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator
 
 
 GraphSAGE model
 ----------------
 
 .. automodule:: stellargraph.layer.graphsage
-  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+  :members: GraphSAGE, DirectedGraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
 
 
 HinSAGE model
@@ -34,6 +34,13 @@ HinSAGE model
 
 .. automodule:: stellargraph.layer.hinsage
   :members: HinSAGE, MeanHinAggregator
+
+
+Attri2Vec model
+----------------
+
+.. automodule:: stellargraph.layer.attri2vec
+  :members: Attri2Vec
 
 
 GCN model

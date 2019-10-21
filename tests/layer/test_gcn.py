@@ -50,7 +50,6 @@ def test_GraphConvolution_config():
     assert conf["bias_initializer"]["class_name"] == "Zeros"
     assert conf["kernel_regularizer"] == None
     assert conf["bias_regularizer"] == None
-    assert conf["activity_regularizer"] == None
     assert conf["kernel_constraint"] == None
     assert conf["bias_constraint"] == None
 
@@ -142,7 +141,7 @@ def test_GCN_init():
     G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
     generator = FullBatchNodeGenerator(G)
-    gcnModel = GCN([2], ["relu"], generator=generator, dropout=0.5)
+    gcnModel = GCN([2], generator, activations=["relu"], dropout=0.5)
 
     assert gcnModel.layer_sizes == [2]
     assert gcnModel.activations == ["relu"]
@@ -161,7 +160,7 @@ def test_GCN_apply_dense():
     G = StellarGraph(G, node_features=node_features)
 
     generator = FullBatchNodeGenerator(G, sparse=False, method="none")
-    gcnModel = GCN([2], ["relu"], generator=generator, dropout=0.5)
+    gcnModel = GCN([2], generator, activations=["relu"], dropout=0.5)
 
     x_in, x_out = gcnModel.node_model()
     model = keras.Model(inputs=x_in, outputs=x_out)
@@ -190,7 +189,7 @@ def test_GCN_apply_sparse():
     G = StellarGraph(G, node_features=node_features)
 
     generator = FullBatchNodeGenerator(G, sparse=False, method="none")
-    gcnModel = GCN([2], ["relu"], generator=generator, dropout=0.5)
+    gcnModel = GCN([2], generator, activations=["relu"], dropout=0.5)
 
     x_in, x_out = gcnModel.node_model()
     model = keras.Model(inputs=x_in, outputs=x_out)
@@ -205,3 +204,68 @@ def test_GCN_apply_sparse():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+
+def test_GCN_activations():
+    G, features = create_graph_features()
+    adj = nx.to_numpy_array(G)[None, :, :]
+    n_nodes = features.shape[0]
+
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_features=node_features)
+
+    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
+
+    gcn = GCN([2], generator)
+    assert gcn.activations == ["relu"]
+
+    gcn = GCN([2, 2], generator)
+    assert gcn.activations == ["relu", "relu"]
+
+    gcn = GCN([2], generator, activations=["linear"])
+    assert gcn.activations == ["linear"]
+
+    with pytest.raises(ValueError):
+        # More regularisers than layers
+        gcn = GCN([2], generator, activations=["relu", "linear"])
+
+    with pytest.raises(ValueError):
+        # Fewer regularisers than layers
+        gcn = GCN([2, 2], generator, activations=["relu"])
+
+    with pytest.raises(ValueError):
+        # Unknown regularisers
+        gcn = GCN([2], generator, activations=["bleach"])
+
+
+def test_GCN_regularisers():
+    G, features = create_graph_features()
+    adj = nx.to_numpy_array(G)[None, :, :]
+    n_nodes = features.shape[0]
+
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_features=node_features)
+
+    generator = FullBatchNodeGenerator(G, sparse=False, method="none")
+
+    gcn = GCN([2], generator)
+
+    gcn = GCN([2], generator, kernel_initializer="ones")
+
+    gcn = GCN([2], generator, kernel_initializer=initializers.ones())
+
+    with pytest.raises(ValueError):
+        gcn = GCN([2], generator, kernel_initializer="fred")
+
+    gcn = GCN([2], generator, bias_initializer="zeros")
+
+    gcn = GCN([2], generator, bias_initializer=initializers.zeros())
+
+    with pytest.raises(ValueError):
+        gcn = GCN([2], generator, bias_initializer="barney")
