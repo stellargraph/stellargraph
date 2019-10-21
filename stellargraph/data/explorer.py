@@ -877,12 +877,13 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-    #    rs = self._get_random_state(seed)
-
+        self._check_temporal_parameters(bidirectional,edge_time_label)
+        rs = self._get_random_state(seed)
+        
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                    start_edge = random.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
+                    start_edge = rs.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
                     current_forward_node = start_edge[0][1]  
                     current_forward_time = start_edge[0][2]
                     move_forwards = True
@@ -905,7 +906,7 @@ class TemporalUniformRandomWalk(GraphWalk):
                                     if time > current_forward_time: # strictly look ahead of time to avoid being stuck in the current time
                                         forward_edges.append((neighbor,time))
                             if len(forward_edges) != 0:
-                                next_edge = random.sample(forward_edges, 1)
+                                next_edge = rs.sample(forward_edges, 1)
                                 current_forward_time = next_edge[0][1]
                                 current_forward_node = next_edge[0][0]
                                 walk.append(current_forward_node)
@@ -918,7 +919,7 @@ class TemporalUniformRandomWalk(GraphWalk):
                                 if time < current_backwards_time:
                                     backwards_edges.append((neighbor,time))
                             if len(backwards_edges) != 0:
-                                next_edge = random.sample(backwards_edges, 1)
+                                next_edge = rs.sample(backwards_edges, 1)
                                 current_backwards_time = next_edge[0][1]
                                 current_backwards_node = next_edge[0][0]
                                 walk.insert(0,current_backwards_node)
@@ -932,10 +933,27 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         return walks
 
+    def _check_temporal_parameters(self,bidirectional, edge_time_label):
+            """
+            Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+            parameter (the first one encountered in the checks) with invalid value.
+    
+            Args:
+                bidirectional: <False or True> Indicates whether the temporal walk is in forward direction only or extends in both directions.
+                edge_time_label: <string> Label of the edge weight property.
+           """
+                
+            if type(bidirectional) != bool:
+                self._raise_error(
+                    "Parameter bidirectional has to be either False (temporal random walks forward in times) or True (temporal random walks extending in both directions)."
+                )
+    
+            if not isinstance(edge_time_label, str):
+                self._raise_error("The edge time property label has to be of type string")
 
 class TemporalBiasedRandomWalk(GraphWalk):
     """
-    Performs exponentially biased random walks on the given graph
+    Performs exponentially biased temporal random walks on the given graph
     """
 
     def run(self, nodes=None, n=None, length=None, bidirectional= False, edge_time_label="time",seed=None):
@@ -954,12 +972,13 @@ class TemporalBiasedRandomWalk(GraphWalk):
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-    #    rs = self._get_random_state(seed)
+        self._check_temporal_parameters(bidirectional,edge_time_label)
+        rs = self._get_random_state(seed)
 
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                    start_edge = random.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
+                    start_edge = rs.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
                     current_forward_node = start_edge[0][1]  
                     current_forward_time = start_edge[0][2]
                     move_forwards = True
@@ -985,7 +1004,7 @@ class TemporalBiasedRandomWalk(GraphWalk):
                             if len(forward_edges) != 0:
                                 neighbors,times = zip(*forward_edges)
                                 dist =self.get_exp_distribution(times,  current_forward_time, 'forward')  # exponential distribution
-                                forward_time = choice(times, 1, p = dist)
+                                forward_time = rs.choice(times, 1, p = dist)
                                 current_forward_time = forward_time[0]
                                 current_forward_node = neighbors[times.index(current_forward_time)]
                                 walk.append(current_forward_node)
@@ -1000,7 +1019,7 @@ class TemporalBiasedRandomWalk(GraphWalk):
                             if len(backwards_edges) != 0:
                                 neighbors,times = zip(*backwards_edges)
                                 dist = self.get_exp_distribution(times,  current_forward_time, 'backwards')   # exponential distribution
-                                backwards_time = choice(times, 1, p = dist)
+                                backwards_time = rs.choice(times, 1, p = dist)
                                 current_backwards_time = backwards_time[0]
                                 current_backwards_node = neighbors[times.index(current_backwards_time)]
                                 walk.insert(0,current_backwards_node)
@@ -1023,3 +1042,21 @@ class TemporalBiasedRandomWalk(GraphWalk):
         sum_time_dist = sum(time_dist)
         exp_dist = [t/sum_time_dist for t in time_dist] # exponential distribution
         return exp_dist
+    
+    def _check_temporal_parameters(self,bidirectional, edge_time_label):
+            """
+            Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+            parameter (the first one encountered in the checks) with invalid value.
+    
+            Args:
+                bidirectional: <False or True> Indicates whether the temporal walk is in forward direction only or extends in both directions.
+                edge_time_label: <string> Label of the edge weight property.
+           """
+                
+            if type(bidirectional) != bool:
+                self._raise_error(
+                    "Parameter bidirectional has to be either False (temporal random walks forward in times) or True (temporal random walks extending in both directions)."
+                )
+    
+            if not isinstance(edge_time_label, str):
+                self._raise_error("The edge time property label has to be of type string")
