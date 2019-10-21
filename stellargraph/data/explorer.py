@@ -858,7 +858,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
 
 class TemporalUniformRandomWalk(GraphWalk):
     """
-    Performs uniform random walks on the given graph
+    Performs uniform temporal random walks on the given graph
     """
 
     def run(self, nodes=None, n=None, length=None, bidirectional= False, edge_time_label="time",seed=None):
@@ -1004,7 +1004,8 @@ class TemporalBiasedRandomWalk(GraphWalk):
                             if len(forward_edges) != 0:
                                 neighbors,times = zip(*forward_edges)
                                 dist =self.get_exp_distribution(times,  current_forward_time, 'forward')  # exponential distribution
-                                forward_time = rs.choice(times, 1, p = dist)
+                                #forward_time = choice(times, 1,  p = dist) # np.random.choice, can this be replaced by 'naive_weighted_choices' method defined above
+                                forward_time = rs.choices(times, weights= dist, k=1) # can this be replaced by 'naive_weighted_choices' method defined above
                                 current_forward_time = forward_time[0]
                                 current_forward_node = neighbors[times.index(current_forward_time)]
                                 walk.append(current_forward_node)
@@ -1019,7 +1020,8 @@ class TemporalBiasedRandomWalk(GraphWalk):
                             if len(backwards_edges) != 0:
                                 neighbors,times = zip(*backwards_edges)
                                 dist = self.get_exp_distribution(times,  current_forward_time, 'backwards')   # exponential distribution
-                                backwards_time = rs.choice(times, 1, p = dist)
+                               # backwards_time = choice(times, 1,  p = dist) # np.random.choice, can this be replaced by 'naive_weighted_choices' method defined above?
+                                backwards_time = rs.choices(times, weights= dist, k=1) # can this be replaced by 'naive_weighted_choices' method defined above? 
                                 current_backwards_time = backwards_time[0]
                                 current_backwards_node = neighbors[times.index(current_backwards_time)]
                                 walk.insert(0,current_backwards_node)
