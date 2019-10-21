@@ -854,14 +854,24 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
                 "The number of hops for the in and out neighbourhoods must be the same."
             )
 
+
 """ Temporal random walks """
+
 
 class TemporalUniformRandomWalk(GraphWalk):
     """
     Performs uniform temporal random walks on the given graph
     """
 
-    def run(self, nodes=None, n=None, length=None, bidirectional= False, edge_time_label="time",seed=None):
+    def run(
+        self,
+        nodes=None,
+        n=None,
+        length=None,
+        bidirectional=False,
+        edge_time_label="time",
+        seed=None,
+    ):
         """
         Perform a time respecting random walk starting from the root nodes.
 
@@ -877,64 +887,77 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-        self._check_temporal_parameters(bidirectional,edge_time_label)
+        self._check_temporal_parameters(bidirectional, edge_time_label)
         rs = self._get_random_state(seed)
-        
+
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                    start_edge = rs.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
-                    current_forward_node = start_edge[0][1]  
-                    current_forward_time = start_edge[0][2]
-                    move_forwards = True
-                    
-                    if bidirectional:
-                        move_backwards = True
-                        current_backwards_node = node
-                        current_backwards_time = start_edge[0][2]
-                    else: 
-                        move_backwards = False
-                   
-                    walk = list()
-                    walk.append(node)   # start a walk
-                    walk.append(current_forward_node)
-                   
-                    while len(walk) < (length):
-                        if (move_forwards): #check to stop incase a dead end is reached moving forward
-                            forward_edges = []
-                            for _,neighbor,time in self.graph.edges(current_forward_node, data=edge_time_label):
-                                    if time > current_forward_time: # strictly look ahead of time to avoid being stuck in the current time
-                                        forward_edges.append((neighbor,time))
-                            if len(forward_edges) != 0:
-                                next_edge = rs.sample(forward_edges, 1)
-                                current_forward_time = next_edge[0][1]
-                                current_forward_node = next_edge[0][0]
-                                walk.append(current_forward_node)
-                            else:
-                                move_forwards = False # reached a dead end at this walk
-        
-                        if (move_backwards): #check to stop incase a dead end is reached moving backwards
-                            backwards_edges = []
-                            for _,neighbor,time in self.graph.edges(current_backwards_node, data=edge_time_label):
-                                if time < current_backwards_time:
-                                    backwards_edges.append((neighbor,time))
-                            if len(backwards_edges) != 0:
-                                next_edge = rs.sample(backwards_edges, 1)
-                                current_backwards_time = next_edge[0][1]
-                                current_backwards_node = next_edge[0][0]
-                                walk.insert(0,current_backwards_node)
-                            else:
-                                move_backwards = False # reached a dead end at this walk
-                        
-                        if ( (not move_backwards)  and  (not move_forwards)):  # if dead ends reached in both direction, stop walking.
-                            break
-                    walks.append(walk)
+                start_edge = rs.sample(
+                    list(self.graph.edges(node, data=edge_time_label)), 1
+                )  # sample a starting edge uniformly at random.
+                current_forward_node = start_edge[0][1]
+                current_forward_time = start_edge[0][2]
+                move_forwards = True
 
+                if bidirectional:
+                    move_backwards = True
+                    current_backwards_node = node
+                    current_backwards_time = start_edge[0][2]
+                else:
+                    move_backwards = False
+
+                walk = list()
+                walk.append(node)  # start a walk
+                walk.append(current_forward_node)
+
+                while len(walk) < (length):
+                    if (
+                        move_forwards
+                    ):  # check to stop incase a dead end is reached moving forward
+                        forward_edges = []
+                        for _, neighbor, time in self.graph.edges(
+                            current_forward_node, data=edge_time_label
+                        ):
+                            if (
+                                time > current_forward_time
+                            ):  # strictly look ahead of time to avoid being stuck in the current time
+                                forward_edges.append((neighbor, time))
+                        if len(forward_edges) != 0:
+                            next_edge = rs.sample(forward_edges, 1)
+                            current_forward_time = next_edge[0][1]
+                            current_forward_node = next_edge[0][0]
+                            walk.append(current_forward_node)
+                        else:
+                            move_forwards = False  # reached a dead end at this walk
+
+                    if (
+                        move_backwards
+                    ):  # check to stop incase a dead end is reached moving backwards
+                        backwards_edges = []
+                        for _, neighbor, time in self.graph.edges(
+                            current_backwards_node, data=edge_time_label
+                        ):
+                            if time < current_backwards_time:
+                                backwards_edges.append((neighbor, time))
+                        if len(backwards_edges) != 0:
+                            next_edge = rs.sample(backwards_edges, 1)
+                            current_backwards_time = next_edge[0][1]
+                            current_backwards_node = next_edge[0][0]
+                            walk.insert(0, current_backwards_node)
+                        else:
+                            move_backwards = False  # reached a dead end at this walk
+
+                    if (not move_backwards) and (
+                        not move_forwards
+                    ):  # if dead ends reached in both direction, stop walking.
+                        break
+                walks.append(walk)
 
         return walks
 
-    def _check_temporal_parameters(self,bidirectional, edge_time_label):
-            """
+    def _check_temporal_parameters(self, bidirectional, edge_time_label):
+        """
             Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
             parameter (the first one encountered in the checks) with invalid value.
     
@@ -942,21 +965,30 @@ class TemporalUniformRandomWalk(GraphWalk):
                 bidirectional: <False or True> Indicates whether the temporal walk is in forward direction only or extends in both directions.
                 edge_time_label: <string> Label of the edge weight property.
            """
-                
-            if type(bidirectional) != bool:
-                self._raise_error(
-                    "Parameter bidirectional has to be either False (temporal random walks forward in times) or True (temporal random walks extending in both directions)."
-                )
-    
-            if not isinstance(edge_time_label, str):
-                self._raise_error("The edge time property label has to be of type string")
+
+        if type(bidirectional) != bool:
+            self._raise_error(
+                "Parameter bidirectional has to be either False (temporal random walks forward in times) or True (temporal random walks extending in both directions)."
+            )
+
+        if not isinstance(edge_time_label, str):
+            self._raise_error("The edge time property label has to be of type string")
+
 
 class TemporalBiasedRandomWalk(GraphWalk):
     """
     Performs exponentially biased temporal random walks on the given graph
     """
 
-    def run(self, nodes=None, n=None, length=None, bidirectional= False, edge_time_label="time",seed=None):
+    def run(
+        self,
+        nodes=None,
+        n=None,
+        length=None,
+        bidirectional=False,
+        edge_time_label="time",
+        seed=None,
+    ):
         """
         Perform a time respecting random walk starting from the root nodes.
 
@@ -972,81 +1004,108 @@ class TemporalBiasedRandomWalk(GraphWalk):
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-        self._check_temporal_parameters(bidirectional,edge_time_label)
+        self._check_temporal_parameters(bidirectional, edge_time_label)
         rs = self._get_random_state(seed)
 
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                    start_edge = rs.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
-                    current_forward_node = start_edge[0][1]  
-                    current_forward_time = start_edge[0][2]
-                    move_forwards = True
-                    
-                    if (bidirectional):
-                        move_backwards = True    
-                        current_backwards_node = node
-                        current_backwards_time = start_edge[0][2]
-                    else:
-                        move_backwards = False   
-                    
-                    walk = list()
-                    walk.append(node)   # start a walk
-                    walk.append(current_forward_node)
-                   
-                    while len(walk) < (length):
-                        
-                        if (move_forwards): #check to stop incase a dead end is reached moving forward
-                            forward_edges = []
-                            for _,neighbor,time in self.graph.edges(current_forward_node, data=edge_time_label):
-                                    if time > current_forward_time: # strictly look ahead of time to avoid being stuck in the current time
-                                        forward_edges.append((neighbor,time))
-                            if len(forward_edges) != 0:
-                                neighbors,times = zip(*forward_edges)
-                                dist =self.get_exp_distribution(times,  current_forward_time, 'forward')  # exponential distribution
-                                #forward_time = choice(times, 1,  p = dist) # np.random.choice, can this be replaced by 'naive_weighted_choices' method defined above
-                                forward_time = rs.choices(times, weights= dist, k=1) # can this be replaced by 'naive_weighted_choices' method defined above
-                                current_forward_time = forward_time[0]
-                                current_forward_node = neighbors[times.index(current_forward_time)]
-                                walk.append(current_forward_node)
-                            else:
-                                move_forwards = False # reached a dead end at this walk
-        
-                        if (move_backwards): #check to stop incase a dead end is reached moving backwards
-                            backwards_edges = []
-                            for _,neighbor,time in self.graph.edges(current_backwards_node, data=edge_time_label):
-                                if time < current_backwards_time:
-                                    backwards_edges.append((neighbor,time))
-                            if len(backwards_edges) != 0:
-                                neighbors,times = zip(*backwards_edges)
-                                dist = self.get_exp_distribution(times,  current_forward_time, 'backwards')   # exponential distribution
-                               # backwards_time = choice(times, 1,  p = dist) # np.random.choice, can this be replaced by 'naive_weighted_choices' method defined above?
-                                backwards_time = rs.choices(times, weights= dist, k=1) # can this be replaced by 'naive_weighted_choices' method defined above? 
-                                current_backwards_time = backwards_time[0]
-                                current_backwards_node = neighbors[times.index(current_backwards_time)]
-                                walk.insert(0,current_backwards_node)
-                                
-                            else:
-                                move_backwards = False # reached a dead end at this walk
-                        
-                        if ( (not move_backwards)  and  (not move_forwards)):  # if dead ends reached in both direction, stop walking.
-                            break
-                    walks.append(walk)
+                start_edge = rs.sample(
+                    list(self.graph.edges(node, data=edge_time_label)), 1
+                )  # sample a starting edge uniformly at random.
+                current_forward_node = start_edge[0][1]
+                current_forward_time = start_edge[0][2]
+                move_forwards = True
 
+                if bidirectional:
+                    move_backwards = True
+                    current_backwards_node = node
+                    current_backwards_time = start_edge[0][2]
+                else:
+                    move_backwards = False
+
+                walk = list()
+                walk.append(node)  # start a walk
+                walk.append(current_forward_node)
+
+                while len(walk) < (length):
+
+                    if (
+                        move_forwards
+                    ):  # check to stop incase a dead end is reached moving forward
+                        forward_edges = []
+                        for _, neighbor, time in self.graph.edges(
+                            current_forward_node, data=edge_time_label
+                        ):
+                            if (
+                                time > current_forward_time
+                            ):  # strictly look ahead of time to avoid being stuck in the current time
+                                forward_edges.append((neighbor, time))
+                        if len(forward_edges) != 0:
+                            neighbors, times = zip(*forward_edges)
+                            dist = self.get_exp_distribution(
+                                times, current_forward_time, "forward"
+                            )  # exponential distribution
+                            # forward_time = choice(times, 1,  p = dist) # np.random.choice, can this be replaced by 'naive_weighted_choices' method defined above
+                            forward_time = rs.choices(
+                                times, weights=dist, k=1
+                            )  # can this be replaced by 'naive_weighted_choices' method defined above
+                            current_forward_time = forward_time[0]
+                            current_forward_node = neighbors[
+                                times.index(current_forward_time)
+                            ]
+                            walk.append(current_forward_node)
+                        else:
+                            move_forwards = False  # reached a dead end at this walk
+
+                    if (
+                        move_backwards
+                    ):  # check to stop incase a dead end is reached moving backwards
+                        backwards_edges = []
+                        for _, neighbor, time in self.graph.edges(
+                            current_backwards_node, data=edge_time_label
+                        ):
+                            if time < current_backwards_time:
+                                backwards_edges.append((neighbor, time))
+                        if len(backwards_edges) != 0:
+                            neighbors, times = zip(*backwards_edges)
+                            dist = self.get_exp_distribution(
+                                times, current_forward_time, "backwards"
+                            )  # exponential distribution
+                            # backwards_time = choice(times, 1,  p = dist) # np.random.choice, can this be replaced by 'naive_weighted_choices' method defined above?
+                            backwards_time = rs.choices(
+                                times, weights=dist, k=1
+                            )  # can this be replaced by 'naive_weighted_choices' method defined above?
+                            current_backwards_time = backwards_time[0]
+                            current_backwards_node = neighbors[
+                                times.index(current_backwards_time)
+                            ]
+                            walk.insert(0, current_backwards_node)
+
+                        else:
+                            move_backwards = False  # reached a dead end at this walk
+
+                    if (not move_backwards) and (
+                        not move_forwards
+                    ):  # if dead ends reached in both direction, stop walking.
+                        break
+                walks.append(walk)
 
         return walks
-    
-    def get_exp_distribution(self, times, current_time, orientation = 'forward'):
-        if orientation == 'forward':
-            time_dist = [math.exp(t - current_time) for t in times] # relative gap in time w.r.t current time (higher values for shorter gaps)
-        else: 
+
+    def get_exp_distribution(self, times, current_time, orientation="forward"):
+        if orientation == "forward":
+            time_dist = [
+                math.exp(t - current_time) for t in times
+            ]  # relative gap in time w.r.t current time (higher values for shorter gaps)
+        else:
             time_dist = [math.exp(current_time - t) for t in times]
         sum_time_dist = sum(time_dist)
-        exp_dist = [t/sum_time_dist for t in time_dist] # exponential distribution
+        exp_dist = [t / sum_time_dist for t in time_dist]  # exponential distribution
         return exp_dist
-    
-    def _check_temporal_parameters(self,bidirectional, edge_time_label):
-            """
+
+    def _check_temporal_parameters(self, bidirectional, edge_time_label):
+        """
             Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
             parameter (the first one encountered in the checks) with invalid value.
     
@@ -1054,11 +1113,11 @@ class TemporalBiasedRandomWalk(GraphWalk):
                 bidirectional: <False or True> Indicates whether the temporal walk is in forward direction only or extends in both directions.
                 edge_time_label: <string> Label of the edge weight property.
            """
-                
-            if type(bidirectional) != bool:
-                self._raise_error(
-                    "Parameter bidirectional has to be either False (temporal random walks forward in times) or True (temporal random walks extending in both directions)."
-                )
-    
-            if not isinstance(edge_time_label, str):
-                self._raise_error("The edge time property label has to be of type string")
+
+        if type(bidirectional) != bool:
+            self._raise_error(
+                "Parameter bidirectional has to be either False (temporal random walks forward in times) or True (temporal random walks extending in both directions)."
+            )
+
+        if not isinstance(edge_time_label, str):
+            self._raise_error("The edge time property label has to be of type string")
