@@ -21,11 +21,14 @@ __all__ = [
     "SampledBreadthFirstWalk",
     "SampledHeterogeneousBreadthFirstWalk",
     "TemporalUniformRandomWalk",
+    "TemporalBiasedRandomWalk",
 ]
 
 
 import networkx as nx
 import numpy as np
+from numpy.random import choice
+import math
 import random
 from collections import defaultdict, deque
 
@@ -274,7 +277,7 @@ def naive_weighted_choices(rs, weights):
 
 class BiasedRandomWalk(GraphWalk):
     """
-    Performs biased second order random walks (like those used in Node2Vec algorithm !!!!
+    Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
@@ -858,7 +861,7 @@ class TemporalUniformRandomWalk(GraphWalk):
     Performs uniform random walks on the given graph
     """
 
-    def run(self, nodes=None, n=None, length=None, bidirectional= False, seed=None):
+    def run(self, nodes=None, n=None, length=None, bidirectional= False, edge_time_label="time",seed=None):
         """
         Perform a time respecting random walk starting from the root nodes.
 
@@ -879,7 +882,7 @@ class TemporalUniformRandomWalk(GraphWalk):
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                    start_edge = random.sample(list(self.neighbors(node, data="weight")),1) # sample a starting edge uniformly at random.
+                    start_edge = random.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
                     current_forward_node = start_edge[0][1]  
                     current_forward_time = start_edge[0][2]
                     move_forwards = True
@@ -898,7 +901,7 @@ class TemporalUniformRandomWalk(GraphWalk):
                     while len(walk) < (length):
                         if (move_forwards): #check to stop incase a dead end is reached moving forward
                             forward_edges = []
-                            for _,neighbor,time in self.neighbors(current_forward_node, data='weight'):
+                            for _,neighbor,time in self.graph.edges(current_forward_node, data=edge_time_label):
                                     if time > current_forward_time: # strictly look ahead of time to avoid being stuck in the current time
                                         forward_edges.append((neighbor,time))
                             if len(forward_edges) != 0:
@@ -911,7 +914,7 @@ class TemporalUniformRandomWalk(GraphWalk):
         
                         if (move_backwards): #check to stop incase a dead end is reached moving backwards
                             backwards_edges = []
-                            for _,neighbor,time in self.neighbors(current_backwards_node, data='weight'):
+                            for _,neighbor,time in self.graph.edges(current_backwards_node, data=edge_time_label):
                                 if time < current_backwards_time:
                                     backwards_edges.append((neighbor,time))
                             if len(backwards_edges) != 0:
@@ -928,3 +931,95 @@ class TemporalUniformRandomWalk(GraphWalk):
 
 
         return walks
+
+
+class TemporalBiasedRandomWalk(GraphWalk):
+    """
+    Performs exponentially biased random walks on the given graph
+    """
+
+    def run(self, nodes=None, n=None, length=None, bidirectional= False, edge_time_label="time",seed=None):
+        """
+        Perform a time respecting random walk starting from the root nodes.
+
+        Args:
+            nodes: <list> The root nodes as a list of node IDs
+            n: <int> Total number of random walks per root node
+            length: <int> Maximum length of each random walk
+            bidirectional: <bool> Whether the walk extends on both direction.
+            seed: <int> Random number generator seed; default is None
+
+        Returns:
+            <list> List of lists of nodes ids for each of the random walks
+
+        """
+        self._check_common_parameters(nodes, n, length, seed)
+    #    rs = self._get_random_state(seed)
+
+        walks = []
+        for node in nodes:  # iterate over root nodes
+            for walk_number in range(n):  # generate n walks per root node
+                    start_edge = random.sample(list(self.graph.edges(node, data=edge_time_label)),1) # sample a starting edge uniformly at random.
+                    current_forward_node = start_edge[0][1]  
+                    current_forward_time = start_edge[0][2]
+                    move_forwards = True
+                    
+                    if (bidirectional):
+                        move_backwards = True    
+                        current_backwards_node = node
+                        current_backwards_time = start_edge[0][2]
+                    else:
+                        move_backwards = False   
+                    
+                    walk = list()
+                    walk.append(node)   # start a walk
+                    walk.append(current_forward_node)
+                   
+                    while len(walk) < (length):
+                        
+                        if (move_forwards): #check to stop incase a dead end is reached moving forward
+                            forward_edges = []
+                            for _,neighbor,time in self.graph.edges(current_forward_node, data=edge_time_label):
+                                    if time > current_forward_time: # strictly look ahead of time to avoid being stuck in the current time
+                                        forward_edges.append((neighbor,time))
+                            if len(forward_edges) != 0:
+                                neighbors,times = zip(*forward_edges)
+                                dist =self.get_exp_distribution(times,  current_forward_time, 'forward')  # exponential distribution
+                                forward_time = choice(times, 1, p = dist)
+                                current_forward_time = forward_time[0]
+                                current_forward_node = neighbors[times.index(current_forward_time)]
+                                walk.append(current_forward_node)
+                            else:
+                                move_forwards = False # reached a dead end at this walk
+        
+                        if (move_backwards): #check to stop incase a dead end is reached moving backwards
+                            backwards_edges = []
+                            for _,neighbor,time in self.graph.edges(current_backwards_node, data=edge_time_label):
+                                if time < current_backwards_time:
+                                    backwards_edges.append((neighbor,time))
+                            if len(backwards_edges) != 0:
+                                neighbors,times = zip(*backwards_edges)
+                                dist = self.get_exp_distribution(times,  current_forward_time, 'backwards')   # exponential distribution
+                                backwards_time = choice(times, 1, p = dist)
+                                current_backwards_time = backwards_time[0]
+                                current_backwards_node = neighbors[times.index(current_backwards_time)]
+                                walk.insert(0,current_backwards_node)
+                                
+                            else:
+                                move_backwards = False # reached a dead end at this walk
+                        
+                        if ( (not move_backwards)  and  (not move_forwards)):  # if dead ends reached in both direction, stop walking.
+                            break
+                    walks.append(walk)
+
+
+        return walks
+    
+    def get_exp_distribution(self, times, current_time, orientation = 'forward'):
+        if orientation == 'forward':
+            time_dist = [math.exp(t - current_time) for t in times] # relative gap in time w.r.t current time (higher values for shorter gaps)
+        else: 
+            time_dist = [math.exp(current_time - t) for t in times]
+        sum_time_dist = sum(time_dist)
+        exp_dist = [t/sum_time_dist for t in time_dist] # exponential distribution
+        return exp_dist
