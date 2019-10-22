@@ -20,6 +20,9 @@
 - Updated Yelp example to support new dataset version [\#442](https://github.com/stellargraph/stellargraph/pull/442)
 - Fixed bug where some nodes and edges did not get a default type [\#451](https://github.com/stellargraph/stellargraph/pull/451)
 
+## [0.7.3](https://github.com/stellargraph/stellargraph/tree/v0.7.3)
+Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements, to avoid errors due to API changes
+in the recent versions of NetworkX and Tensorflow.
 
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
 
