@@ -73,7 +73,7 @@ The StellarGraph library can be used to solve tasks using graph-structured data,
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
-- Interpretation of node classification through calculated importances of edges and neighbours for selected nodes [7].
+- Interpretation of node classification through calculated importances of edges and neighbours for selected nodes [8].
 
 We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve such tasks using several real-world datasets.
 
@@ -130,7 +130,7 @@ can be downloaded and installed from [python.org](https://python.org/). Alternat
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
 *Note*: while the library works on Python 3.7 it is based on Keras which does not officially support Python 3.7.
-Therefore, there may be unforseen bugs and you there are many warnings from the Python libraries that 
+Therefore, there may be unforseen bugs and you there are many warnings from the Python libraries that
 StellarGraph depends upon.
 
 <!--
@@ -172,7 +172,7 @@ pip install .[demos]
 
 * [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
 
-Images can be pulled via `docker pull stellargraph/stellargraph` 
+Images can be pulled via `docker pull stellargraph/stellargraph`
 
 
 ## Running the examples
@@ -193,13 +193,16 @@ The StellarGraph library currently includes the following algorithms for graph m
   The current implementation supports mean aggregation of neighbour nodes,
   taking into account their types and the types of links between them.
 
-* The Graph ATtention Network (GAT) [4]
+* attri2vec [4]
+  - Supports node representation learning, node classification, and out-of-sample node link prediction for homogeneous graphs with node attributes.
+
+* The Graph ATtention Network (GAT) [5]
   - The GAT algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph attention layer that support both sparse and dense adjacency matrices.
 
-* Graph Convolutional Network (GCN) [5]
+* Graph Convolutional Network (GCN) [6]
   - The GCN algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph convolutional layer that support both sparse and dense adjacency matrices.
 
-* Simplified Graph Convolutional network (SGC) [6]
+* Simplified Graph Convolutional network (SGC) [7]
   - The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers.
 
 * Node2Vec [2]
@@ -262,14 +265,17 @@ Neural Information Processing Systems (NIPS), 2017. ([link](https://arxiv.org/ab
 ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-4. Graph Attention Networks. P. Velickovic et al.
+4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095,
+[cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
+
+5. Graph Attention Networks. P. Velickovic et al.
 International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
 
-5. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
+6. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
 International Conference on Learning Representations (ICLR), 2017
 ([link](https://github.com/tkipf/gcn))
 
-6. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger. 
+7. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger.
 International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv.org/abs/1902.07153))
 
-7. Adversarial Examples on Graph Data: Deep Insights into Attack and Defense. H. Wu, C. Wang, Y. Tyshetskiy, A. Docherty, K. Lu, and L. Zhu. IJCAI 2019. ([link](https://arxiv.org/abs/1903.01610))
+8. Adversarial Examples on Graph Data: Deep Insights into Attack and Defense. H. Wu, C. Wang, Y. Tyshetskiy, A. Docherty, K. Lu, and L. Zhu. IJCAI 2019. ([link](https://arxiv.org/abs/1903.01610))
