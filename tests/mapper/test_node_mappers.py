@@ -396,31 +396,6 @@ def test_nodemapper_isolated_nodes():
     assert pytest.approx(nf[2][2:]) == 0
 
 
-def test_nodemapper_manual_schema():
-    """
-    Tests checks on head nodes
-    """
-    n_feat = 4
-    n_batch = 2
-
-    # test graph
-    G = example_graph_1(feature_size=n_feat)
-
-    # Create manual schema
-    schema = G.create_graph_schema(create_type_maps=True)
-    GraphSAGENodeGenerator(G, schema=schema, batch_size=n_batch, num_samples=[1]).flow(
-        list(G)
-    )
-
-    # Create manual schema without type maps
-    # Currently this raises an error:
-    schema = G.create_graph_schema(create_type_maps=False)
-    with pytest.raises(RuntimeError):
-        GraphSAGENodeGenerator(
-            G, schema=schema, batch_size=n_batch, num_samples=[1]
-        ).flow(list(G))
-
-
 def test_nodemapper_incorrect_targets():
     """
     Tests checks on target shape
@@ -624,14 +599,6 @@ def test_hinnodemapper_manual_schema():
         G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
     ).flow(nodes_type_1)
 
-    # Create manual schema without type maps
-    # Currently this raises an error
-    schema = G.create_graph_schema(create_type_maps=False)
-    with pytest.raises(RuntimeError):
-        HinSAGENodeGenerator(
-            G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
-        ).flow(nodes_type_1)
-
 
 def test_hinnodemapper_zero_samples():
     batch_size = 3
@@ -749,8 +716,8 @@ def test_attri2vec_nodemapper_1():
     assert nf.shape == (1, n_feat)
 
     # This will fail as the nodes are not in the graph
-    with pytest.raises(KeyError):
-        Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
+    #    with pytest.raises(KeyError):
+    Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
 
 
 def test_attri2vec_nodemapper_2():
@@ -898,8 +865,7 @@ class Test_FullBatchNodeGenerator:
         )
         G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-        generator = FullBatchNodeGenerator(G, name="test", method=None)
-        assert generator.name == "test"
+        generator = FullBatchNodeGenerator(G, method=None)
         assert np.array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):

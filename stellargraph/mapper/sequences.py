@@ -29,11 +29,12 @@ __all__ = [
 import warnings
 import operator
 import random
+import threading
+import collections
 import numpy as np
 import itertools as it
 import networkx as nx
 import scipy.sparse as sps
-import threading
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
@@ -48,29 +49,20 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator`.
+    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator` 
+    or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
 
-    These Generators are classes that capture the graph structure
-    and the feature vectors of each node. These generator classes
-    are used within the NodeSequence to generate samples of k-hop
-    neighbourhoods in the graph and to return to this class the
-    features from the sampled neighbourhoods.
+    These generator classes are used within the NodeSequence to generate
+    the required features for downstream ML tasks from the graph.
 
     Args:
-        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator
-            The generator object containing the graph information.
-        ids: list
-            A list of the node_ids to be used as head-nodes in the
-            downstream task.
-        targets: list, optional (default=None)
-            A list of targets or labels to be used in the downstream
-            class.
-
+        sample_function (Callable): A function that returns features for supplied head nodes.
+        ids (list): A list of the node_ids to be used as head-nodes in the downstream task.
+        targets (list, optional): A list of targets or labels to be used in the downstream task.
         shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
-
     """
 
-    def __init__(self, generator, ids, targets=None, shuffle=True):
+    def __init__(self, sample_function, batch_size, ids, targets=None, shuffle=True):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -87,46 +79,27 @@ class NodeSequence(Sequence):
         else:
             self.targets = None
 
-        # Check all IDs are actually in the graph
-        if any(n not in generator.graph for n in ids):
-            raise KeyError(
-                "Head nodes supplied to generator contain IDs not found in graph"
-            )
-
-        # Infer head_node_type
-        if (
-            generator.schema.node_type_map is None
-            or generator.schema.edge_type_map is None
-        ):
-            raise RuntimeError("Schema must have node and edge type maps.")
-        else:
-            head_node_types = {generator.schema.get_node_type(n) for n in ids}
-        if len(head_node_types) > 1:
-            raise ValueError(
-                "Only a single head node type is currently supported for HinSAGE models"
-            )
-        head_node_type = head_node_types.pop()
-
         # Store the generator to draw samples from graph
-        self.generator = generator
+        if isinstance(sample_function, collections.Callable):
+            self._sample_function = sample_function
+        else:
+            raise TypeError(
+                "({}) The sampling function expects a callable function.".format(
+                    type(self).__name__
+                )
+            )
+
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
+        self.batch_size = batch_size
 
         # Shuffle IDs to start
         self.on_epoch_end()
 
-        # Save head node type and generate sampling schema
-        self.head_node_types = [head_node_type]
-        ### Experimental; for directed sampling
-        num_samples = getattr(generator, "num_samples", [])
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, num_samples
-        )
-
     def __len__(self):
         """Denotes the number of batches per epoch"""
-        return int(np.ceil(self.data_size / self.generator.batch_size))
+        return int(np.ceil(self.data_size / self.batch_size))
 
     def __getitem__(self, batch_num):
         """
@@ -141,8 +114,8 @@ class NodeSequence(Sequence):
             batch_targets (list): Targets/labels for the batch.
 
         """
-        start_idx = self.generator.batch_size * batch_num
-        end_idx = start_idx + self.generator.batch_size
+        start_idx = self.batch_size * batch_num
+        end_idx = start_idx + self.batch_size
         if start_idx >= self.data_size:
             raise IndexError("Mapper: batch_num larger than length of data")
         # print("Fetching batch {} [{}]".format(batch_num, start_idx))
@@ -156,8 +129,8 @@ class NodeSequence(Sequence):
         # Get corresponding targets
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        # Get features for nodes
+        batch_feats = self._sample_function(head_ids)
 
         return batch_feats, batch_targets
 
@@ -176,21 +149,16 @@ class LinkSequence(Sequence):
     :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` .
+    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
+
     Args:
-        generator: An instance of :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator`.
-        ids (list or iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
-            (The graph nodes must have a "feature" attribute that is used as input to the GraphSAGE model.)
-            These are the links that are to be used to train or inference, and the embeddings
-            calculated for these links via a binary operator applied to their source and destination nodes,
-            are passed to the downstream task of link prediction or link attribute inference.
-            The source and target nodes of the links are used as head nodes for which subgraphs are sampled.
-            The subgraphs are sampled from all nodes.
-        targets (list or iterable): Labels corresponding to the above links, e.g., 0 or 1 for the link prediction problem.
+        sample_function (Callable): A function that returns features for supplied head nodes.
+        ids (iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
+        targets (list, optional): A list of targets or labels to be used in the downstream task.
         shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
     """
 
-    def __init__(self, generator, ids, targets=None, shuffle=True):
+    def __init__(self, sample_function, batch_size, ids, targets=None, shuffle=True):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -211,7 +179,17 @@ class LinkSequence(Sequence):
         if targets is not None and len(ids) != len(targets):
             raise ValueError("Length of link ids must match length of link targets")
 
-        self.generator = generator
+        # Store the generator to draw samples from graph
+        if isinstance(sample_function, collections.Callable):
+            self._sample_features = sample_function
+        else:
+            raise TypeError(
+                "({}) The sampling function expects a callable function.".format(
+                    type(self).__name__
+                )
+            )
+
+        self.batch_size = batch_size
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -219,40 +197,9 @@ class LinkSequence(Sequence):
         # Shuffle the IDs to begin
         self.on_epoch_end()
 
-        # Get head node types from all src, dst nodes extracted from all links,
-        # and make sure there's only one pair of node types:
-        self.head_node_types = self._infer_head_node_types(generator.schema)
-
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
-
-        self.type_adjacency_list = generator.schema.type_adjacency_list(
-            self.head_node_types, len(generator.num_samples)
-        )
-
-    def _infer_head_node_types(self, schema):
-        """Get head node types from all src, dst nodes extracted from all links in self.ids"""
-        try:
-            head_node_types = []
-            for src, dst in self.ids:  # loop over all edges in self.ids
-                head_node_types.append(
-                    tuple(schema.get_node_type(v) for v in (src, dst))
-                )
-            head_node_types = list(set(head_node_types))
-        except KeyError:
-            raise KeyError("All supplied nodes must be in the graph schema")
-
-        if len(head_node_types) != 1:
-            raise RuntimeError(
-                "All (src,dst) node types for inferred links must be of the same type!"
-            )
-
-        return head_node_types.pop()
-
     def __len__(self):
         """Denotes the number of batches per epoch"""
-        return int(np.ceil(self.data_size / self.generator.batch_size))
+        return int(np.ceil(self.data_size / self.batch_size))
 
     def __getitem__(self, batch_num):
         """
@@ -264,8 +211,8 @@ class LinkSequence(Sequence):
                 batch of the supplied IDs
             batch_targets (list): Targets/labels for the batch.
         """
-        start_idx = self.generator.batch_size * batch_num
-        end_idx = start_idx + self.generator.batch_size
+        start_idx = self.batch_size * batch_num
+        end_idx = start_idx + self.batch_size
 
         if start_idx >= self.data_size:
             raise IndexError("Mapper: batch_num larger than length of data")
@@ -280,8 +227,8 @@ class LinkSequence(Sequence):
         # Get targets for nodes
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        # Get node features for batch of link ids
+        batch_feats = self._sample_features(head_ids)
 
         return batch_feats, batch_targets
 
@@ -301,51 +248,44 @@ class OnDemandLinkSequence(Sequence):
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` ` .
+    :class:`GraphSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
 
     Args:
-        generator: An instance of :class:`GraphSAGELinkGenerator`.
-        sampler:  An instance of :class:`UnsupervisedSampler` that encapsulates the neighbourhood sampling of a graph.
-        The generator method of this class returns `batch_size` of positive and negative samples on demand.
+        sample_function (Callable): A function that returns features for supplied head nodes.
+        sampler (UnsupersizedSampler):  An object that encapsulates the neighbourhood sampling of a graph.
+            The generator method of this class returns a batch of positive and negative samples on demand.
     """
 
-    def __init__(self, generator, walker):
-
-        self.lock = threading.Lock()
-
-        self.generator = generator  # graphlinkgenerator instance
-
-        self.head_node_types = self.generator.schema.node_types * 2
-
-        # YT: we need to have self._sampling_schema for GraphSAGE.build() method to work
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
-
-        if isinstance(walker, UnsupervisedSampler):
-
-            self.walker = walker
-
-            self.data_size = (
-                2
-                * len(self.walker.nodes)
-                * self.walker.length
-                * self.walker.number_of_walks
-            )  # an estimate of the  upper bound on how many samples are generated in each epoch
-
-            print(
-                "Running GraphSAGELinkGenerator with an estimated {} batches generated on the fly per epoch.".format(
-                    round(self.data_size / self.generator.batch_size)
+    def __init__(self, sample_function, batch_size, walker, shuffle=True):
+        # Store the generator to draw samples from graph
+        if isinstance(sample_function, collections.Callable):
+            self._sample_features = sample_function
+        else:
+            raise TypeError(
+                "({}) The sampling function expects a callable function.".format(
+                    type(self).__name__
                 )
             )
 
-            self._gen = self.walker.generator(
-                self.generator.batch_size
-            )  # the generator method from the sampler with the batch-size from the link generator method
-        else:
+        if not isinstance(walker, UnsupervisedSampler):
             raise TypeError(
                 "({}) UnsupervisedSampler is required.".format(type(self).__name__)
             )
+
+        self.lock = threading.Lock()
+        self.batch_size = batch_size
+        self.walker = walker
+
+        # an estimate of the  upper bound on how many samples are generated in each epoch
+        self.data_size = (
+            2
+            * len(self.walker.nodes)
+            * self.walker.length
+            * self.walker.number_of_walks
+        )
+
+        # the generator method from the sampler with the batch-size from the link generator method
+        self._gen = self.walker.generator(self.batch_size)
 
     def __getitem__(self, batch_num):
         """
@@ -372,44 +312,14 @@ class OnDemandLinkSequence(Sequence):
         head_ids, batch_targets = next(self._gen)
         self.lock.release()
 
-        if self.head_node_types is None:
-
-            # Get head node types from all src, dst nodes extracted from all links,
-            # and make sure there's only one pair of node types:
-            self.head_node_types = self._infer_head_node_types(
-                self.generator.schema, head_ids
-            )
-
-            self._sampling_schema = self.generator.schema.sampling_layout(
-                self.head_node_types, self.generator.num_samples
-            )
-
-            self.type_adjacency_list = self.generator.schema.type_adjacency_list(
-                self.head_node_types, len(self.generator.num_samples)
-            )
-
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        # Obtain features for head ids
+        batch_feats = self._sample_features(head_ids)
 
         return batch_feats, batch_targets
 
-    def _infer_head_node_types(self, schema, head_ids):
-        """Get head node types from all src, dst nodes extracted from all links in self.ids"""
-        head_node_types = []
-        for src, dst in head_ids:  # loop over all edges in self.ids
-            head_node_types.append(tuple(schema.get_node_type(v) for v in (src, dst)))
-        head_node_types = list(set(head_node_types))
-
-        if len(head_node_types) != 1:
-            raise RuntimeError(
-                "All (src,dst) node types for inferred links must be of the same type!"
-            )
-
-        return head_node_types.pop()
-
     def __len__(self):
         """Denotes the number of batches per epoch"""
-        return int(np.ceil(self.data_size / self.generator.batch_size))
+        return int(np.ceil(self.data_size / self.batch_size))
 
 
 class FullBatchNodeSequence(Sequence):
