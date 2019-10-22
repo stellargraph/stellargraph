@@ -30,7 +30,8 @@ import scipy.sparse as sps
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
-from .sequences import FullBatchNodeSequence, SparseFullBatchNodeSequence
+
+from . import FullBatchNodeSequence, SparseFullBatchNodeSequence
 from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op
