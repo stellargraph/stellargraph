@@ -40,4 +40,6 @@ custom_keras_layers = {
     "MeanPoolingAggregator": layer.graphsage.MeanPoolingAggregator,
     "AttentionalAggregator": layer.graphsage.AttentionalAggregator,
     "MeanHinAggregator": layer.hinsage.MeanHinAggregator,
+    "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
+    "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer
 }
