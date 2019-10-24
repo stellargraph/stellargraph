@@ -34,7 +34,7 @@ def test_PPNP_edge_cases():
         generator = FullBatchNodeGenerator(G, sparse=True, method="ppnp")
     except ValueError as e:
         ppnp_sparse_failed = True
-    assert(ppnp_sparse_failed)
+    assert ppnp_sparse_failed
 
     generator = FullBatchNodeGenerator(G, sparse=False, method="ppnp")
 

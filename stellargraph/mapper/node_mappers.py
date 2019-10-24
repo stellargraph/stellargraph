@@ -830,7 +830,16 @@ class FullBatchNodeGenerator:
         starting node in the propagation step as in [4].
     """
 
-    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None, teleport_probability=0.1):
+    def __init__(
+        self,
+        G,
+        name=None,
+        method="gcn",
+        k=1,
+        sparse=True,
+        transform=None,
+        teleport_probability=0.1,
+    ):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -900,9 +909,12 @@ class FullBatchNodeGenerator:
             if self.use_sparse:
                 raise ValueError(
                     "use_sparse=true' is incompatible with 'ppnp'."
-                    "Set 'use_sparse=True' or consider using the APPNP model instead.")
+                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                )
             self.features, self.Aadj = PPNP_Aadj_feats_op(
-                features=self.features, A=self.Aadj, teleport_probability=self.teleport_probability
+                features=self.features,
+                A=self.Aadj,
+                teleport_probability=self.teleport_probability,
             )
 
         elif self.method in [None, "none"]:
