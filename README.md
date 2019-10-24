@@ -206,7 +206,7 @@ The StellarGraph library currently includes the following algorithms for graph m
   - The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers.
 
 * **(Approximate) Personalized Propagation of Neural Predictions (PPNP/APPNP)** [9]
-  - The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input and then the network generated predictions are diffused across the graph using a method based on Personalized PageRank.
+  - The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input. The predictions from the latter network are then diffused across the graph using a method based on Personalized PageRank.
 
 * **Node2Vec** [2]
   - The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec
