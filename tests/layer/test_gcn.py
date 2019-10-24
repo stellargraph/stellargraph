@@ -194,7 +194,9 @@ def test_GCN_apply_sparse():
     G = StellarGraph(G, node_features=node_features)
 
     generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
-    gcnModel = GCN(layer_sizes=[2], activations=["relu"], generator=generator, dropout=0.5)
+    gcnModel = GCN(
+        layer_sizes=[2], activations=["relu"], generator=generator, dropout=0.5
+    )
 
     x_in, x_out = gcnModel.node_model()
     model = keras.Model(inputs=x_in, outputs=x_out)

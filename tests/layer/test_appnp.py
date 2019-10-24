@@ -46,25 +46,33 @@ def test_APPNP_edge_cases():
     assert str(error) == "Generator should be a instance of FullBatchNodeGenerator"
 
     try:
-        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., approx_iter=-1)
+        appnpModel = APPNP(
+            [2], ["relu"], generator=generator, dropout=0.0, approx_iter=-1
+        )
     except ValueError as e:
         error = e
     assert str(error) == "approx_iter should be a positive integer"
 
     try:
-        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., approx_iter=1.2)
+        appnpModel = APPNP(
+            [2], ["relu"], generator=generator, dropout=0.0, approx_iter=1.2
+        )
     except ValueError as e:
         error = e
     assert str(error) == "approx_iter should be a positive integer"
 
     try:
-        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., teleport_probability=1.2)
+        appnpModel = APPNP(
+            [2], ["relu"], generator=generator, dropout=0.0, teleport_probability=1.2
+        )
     except ValueError as e:
         error = e
     assert str(error) == "teleport_probability should be between 0 and 1 (inclusive)"
 
     try:
-        appnpModel = APPNP([2], ["relu"], generator=generator, dropout=0., teleport_probability=1.2)
+        appnpModel = APPNP(
+            [2], ["relu"], generator=generator, dropout=0.0, teleport_probability=1.2
+        )
     except ValueError as e:
         error = e
     assert str(error) == "teleport_probability should be between 0 and 1 (inclusive)"
