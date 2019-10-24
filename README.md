@@ -182,46 +182,17 @@ See the [README](https://github.com/stellargraph/stellargraph/tree/master/demos/
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
 
-* **GraphSAGE** [1]
-  - Supports supervised as well as unsupervised representation learning, node classification/regression, and link prediction for homogeneous networks.
-  The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and
-  attentional aggregators.
-
-* **HinSAGE**
-  - Extension of GraphSAGE algorithm to heterogeneous networks.
-  Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs.
-  The current implementation supports mean aggregation of neighbour nodes,
-  taking into account their types and the types of links between them.
-
-* **attri2vec** [4]
-  - Supports node representation learning, node classification, and out-of-sample node link prediction for homogeneous graphs with node attributes.
-
-* **Graph ATtention Network (GAT)** [5]
-  - The GAT algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph attention layer that support both sparse and dense adjacency matrices.
-
-* **Graph Convolutional Network (GCN)** [6]
-  - The GCN algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph convolutional layer that support both sparse and dense adjacency matrices.
-
-* **Simplified Graph Convolutional network (SGC)** [7]
-  - The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers.
-
-* **(Approximate) Personalized Propagation of Neural Predictions (PPNP/APPNP)** [9]
-  - The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input. The predictions from the latter network are then diffused across the graph using a method based on Personalized PageRank.
-
-* **Node2Vec** [2]
-  - The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec
-  algorithm from [Gensim](https://radimrehurek.com/gensim/).
-  Learned node representations can be used in downstream machine learning models
-  implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/),
-  [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
-
-* **Metapath2Vec** [3]
-  - The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring
-  node attributes. The implementation combines StellarGraph's metapath-guided random walk
-  generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm.
-  As with node2vec, the learned node representations (node embeddings) can be used in
-  downstream machine learning models to solve tasks such as node classification, link prediction, etc,
-  for heterogeneous networks.
+| Algorithm | Description |
+| --- | --- |
+| GraphSAGE [1] | Supports supervised as well as unsupervised representation learning, node classification/regression, and link prediction for homogeneous networks. The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and attentional aggregators. |
+| HinSAGE | Extension of GraphSAGE algorithm to heterogeneous networks. Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs. The current implementation supports mean aggregation of neighbour nodes, taking into account their types and the types of links between them. |
+| attri2vec [4] | Supports node representation learning, node classification, and out-of-sample node link prediction for homogeneous graphs with node attributes. |
+| Graph ATtention Network (GAT) [5] | The GAT algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph attention layer that support both sparse and dense adjacency matrices. |
+| Graph Convolutional Network (GCN) [6] | The GCN algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph convolutional layer that support both sparse and dense adjacency matrices. |
+| Simplified Graph Convolutional network (SGC) [7] | The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers. |
+| (Approximate) Personalized Propagation of Neural Predictions (PPNP/APPNP) [9] | The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input. The predictions from the latter network are then diffused across the graph using a method based on Personalized PageRank. |
+| Node2Vec [2] | The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec algorithm from [Gensim](https://radimrehurek.com/gensim/). Learned node representations can be used in downstream machine learning models implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/), [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library. |
+| Metapath2Vec [3] | The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring node attributes. The implementation combines StellarGraph's metapath-guided random walk generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm. As with node2vec, the learned node representations (node embeddings) can be used in downstream machine learning models to solve tasks such as node classification, link prediction, etc, for heterogeneous networks. |
 
 
 ## Getting Help
