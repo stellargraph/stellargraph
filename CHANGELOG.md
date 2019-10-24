@@ -4,15 +4,20 @@
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.1...HEAD)
 
+**New algorithms:**
+- Directed GraphSAGE algorithm that is a generalisation of GraphSAGE to directed graphs [\#479](https://github.com/stellargraph/stellargraph/pull/479)
+- Attri2vec algorithm and demo [\#470](https://github.com/stellargraph/stellargraph/pull/470) [\#455](https://github.com/stellargraph/stellargraph/issues/455)
+- PPNP and APPNP algorithms + demos [\#485](https://github.com/stellargraph/stellargraph/pull/485)
+- GAT saliency maps for interpreting node classification with Graph Attention Networks [\#435](https://github.com/stellargraph/stellargraph/pull/435)
+
 **Implemented enhancements:** 
-- Added directed GraphSAGE algorithm [\#479](https://github.com/stellargraph/stellargraph/pull/479)
 - New demo of node classification on Twitter hateful users [\430](https://github.com/stellargraph/stellargraph/pull/430)
 - New demo of graph saliency on Twitter hateful users [\#448](https://github.com/stellargraph/stellargraph/pull/448)
-- Graph saliency maps for classificaiton interpretation implemented for GAT [\#435](https://github.com/stellargraph/stellargraph/pull/435)
+- Added optional regularisation on the weights for GraphSage and HinSage [\#172](https://github.com/stellargraph/stellargraph/issues/172)
 
 **Refactoring:**
 - Refactored Ensemble class into Ensemble and BaggingEnsemble. The former implements naive ensembles and the latter bagging ensembles. [\#459](https://github.com/stellargraph/stellargraph/pull/459)
-- Changed from `keras` to use `tensorflow.keras` [\#471](https://github.com/stellargraph/stellargraph/pull/471)
+- Changed from using `keras` to use `tensorflow.keras` [\#471](https://github.com/stellargraph/stellargraph/pull/471)
 - Removed `flatten_output` arguments for all models [\#447](https://github.com/stellargraph/stellargraph/pull/447)
 
 
