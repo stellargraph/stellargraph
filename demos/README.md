@@ -7,7 +7,8 @@ examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Node2Vec [1], and Metapath2Vec [2].
+state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], PPNP/APPNP [9], 
+Node2Vec [1], and Metapath2Vec [2].
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
 Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks, and learns node
@@ -74,3 +75,7 @@ ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
 
 8. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger.
 ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
+
+9. Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann,
+ 2018, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
+
