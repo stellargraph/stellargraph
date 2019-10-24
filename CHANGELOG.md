@@ -1,14 +1,14 @@
 # Change Log
 
-## [HEAD](https://github.com/stellargraph/stellargraph/tree/develop)
+## [0.8.0](https://github.com/stellargraph/stellargraph/tree/v0.8.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.1...HEAD)
 
 **New algorithms:**
-- Directed GraphSAGE algorithm that is a generalisation of GraphSAGE to directed graphs [\#479](https://github.com/stellargraph/stellargraph/pull/479)
-- Attri2vec algorithm and demo [\#470](https://github.com/stellargraph/stellargraph/pull/470) [\#455](https://github.com/stellargraph/stellargraph/issues/455)
+- Directed GraphSAGE algorithm (a generalisation of GraphSAGE to directed graphs) + demo [\#479](https://github.com/stellargraph/stellargraph/pull/479)
+- Attri2vec algorithm + demo [\#470](https://github.com/stellargraph/stellargraph/pull/470) [\#455](https://github.com/stellargraph/stellargraph/issues/455)
 - PPNP and APPNP algorithms + demos [\#485](https://github.com/stellargraph/stellargraph/pull/485)
-- GAT saliency maps for interpreting node classification with Graph Attention Networks [\#435](https://github.com/stellargraph/stellargraph/pull/435)
+- GAT saliency maps for interpreting node classification with Graph Attention Networks + demo [\#435](https://github.com/stellargraph/stellargraph/pull/435)
 
 **Implemented enhancements:** 
 - New demo of node classification on Twitter hateful users [\430](https://github.com/stellargraph/stellargraph/pull/430)
