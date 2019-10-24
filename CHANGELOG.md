@@ -35,8 +35,6 @@
 - IndexError: index 1 is out of bounds for axis 1 with size 1 in: demos/node-classification/hinsage [\#434](https://github.com/stellargraph/stellargraph/issues/434)
 - GraphSAGE and GAT/GCN predictions have different shapes [\#425](https://github.com/stellargraph/stellargraph/issues/425)
 
-**Miscellaneous:**
-- packaged `stellargraph` for Anaconda [\#406](https://github.com/stellargraph/stellargraph/issues/406)
 
 ## [0.7.3](https://github.com/stellargraph/stellargraph/tree/v0.7.3)
 Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements, to avoid errors due to API changes
