@@ -82,5 +82,4 @@ ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
 9. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger.
 arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
 
-10.	Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann,
- 2018, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
+10.	Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
