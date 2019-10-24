@@ -28,4 +28,4 @@ as a command line argument to this script.
 
 ## References
 
-[1]	Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, and S. Günnemann, S., 2018. ([link](https://arxiv.org/abs/1810.05997))
+[1]	Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, and S. Günnemann, S., ICLR, 2019. ([link](https://arxiv.org/abs/1810.05997))
