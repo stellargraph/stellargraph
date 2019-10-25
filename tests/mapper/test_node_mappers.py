@@ -805,9 +805,22 @@ class Test_FullBatchNodeGenerator:
             generator = FullBatchNodeGenerator(Ghin)
 
     def generator_flow(
-        self, G, node_ids, node_targets, sparse=False, method="none", k=1
+        self,
+        G,
+        node_ids,
+        node_targets,
+        sparse=False,
+        method="none",
+        k=1,
+        teleport_probability=0.1,
     ):
-        generator = FullBatchNodeGenerator(G, sparse=sparse, method=method, k=k)
+        generator = FullBatchNodeGenerator(
+            G,
+            sparse=sparse,
+            method=method,
+            k=k,
+            teleport_probability=teleport_probability,
+        )
         n_nodes = G.number_of_nodes()
 
         gen = generator.flow(node_ids, node_targets)
@@ -939,6 +952,7 @@ class Test_FullBatchNodeGenerator:
         Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
         Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
         Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)
+        Appnp = 0.1 * np.linalg.inv(np.eye(Agcn.shape[0]) - ((1 - 0.1) * Agcn))
 
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="none"
@@ -985,3 +999,28 @@ class Test_FullBatchNodeGenerator:
             self.G, node_ids, None, sparse=False, method="sgc", k=2
         )
         assert np.allclose(A_dense, Agcn.dot(Agcn))
+
+        A_dense, _, _ = self.generator_flow(
+            self.G,
+            node_ids,
+            None,
+            sparse=False,
+            method="ppnp",
+            teleport_probability=0.1,
+        )
+        assert np.allclose(A_dense, Appnp)
+
+        ppnp_sparse_failed = False
+        try:
+            A_dense, _, _ = self.generator_flow(
+                self.G,
+                node_ids,
+                None,
+                sparse=True,
+                method="ppnp",
+                teleport_probability=0.1,
+            )
+        except ValueError as e:
+            ppnp_sparse_failed = True
+
+        assert ppnp_sparse_failed

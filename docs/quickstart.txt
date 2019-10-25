@@ -12,7 +12,8 @@ The StellarGraph library implements several state-of-the-art algorithms for appl
 The StellarGraph library can be used to solve tasks using graph-structured data, such as:
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
-- Link prediction.
+- Link prediction;
+- Interpretation of node classification through calculated importances of edges and neighbour nodes for selected target nodes.
 
 We provide `Examples <https://github.com/stellargraph/stellargraph/tree/master/demos/>`_ of using ``StellarGraph`` to solve such tasks using several real-world datasets.
 
@@ -27,9 +28,9 @@ Requirements
 -------------
 Main requirements (all requirements are in ``requirements.txt``)
 
-* Python 3.6 (http://python.org)
+* Python 3.6 or 3.7 (http://python.org)
 
-* Keras (https://keras.io)
+* Tensorflow version<1.15 (https://tensorflow.org/)
 
 * NetworkX (https://networkx.github.io)
 
