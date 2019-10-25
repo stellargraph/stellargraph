@@ -1,28 +1,46 @@
 # Change Log
 
-## [HEAD](https://github.com/stellargraph/stellargraph/tree/develop)
+## [0.8.0](https://github.com/stellargraph/stellargraph/tree/v0.8.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.1...HEAD)
 
+**New algorithms:**
+- Directed GraphSAGE algorithm (a generalisation of GraphSAGE to directed graphs) + demo [\#479](https://github.com/stellargraph/stellargraph/pull/479)
+- Attri2vec algorithm + demo [\#470](https://github.com/stellargraph/stellargraph/pull/470) [\#455](https://github.com/stellargraph/stellargraph/issues/455)
+- PPNP and APPNP algorithms + demos [\#485](https://github.com/stellargraph/stellargraph/pull/485)
+- GAT saliency maps for interpreting node classification with Graph Attention Networks + demo [\#435](https://github.com/stellargraph/stellargraph/pull/435)
+
 **Implemented enhancements:** 
-- Added directed GraphSAGE algorithm [\#479](https://github.com/stellargraph/stellargraph/pull/479)
 - New demo of node classification on Twitter hateful users [\430](https://github.com/stellargraph/stellargraph/pull/430)
 - New demo of graph saliency on Twitter hateful users [\#448](https://github.com/stellargraph/stellargraph/pull/448)
-- Graph saliency maps for classificaiton interpretation implemented for GAT [\#435](https://github.com/stellargraph/stellargraph/pull/435)
+- Added Directed SampledBFS walks on directed graphs [\#464](https://github.com/stellargraph/stellargraph/issues/464)
+- Unified API of GCN, GAT, GraphSAGE, and HinSAGE classses by adding `build()` method to GCN and GAT classes [\#439](https://github.com/stellargraph/stellargraph/issues/439)
+- Added `activations` argument to GraphSAGE and HinSAGE classes [\#381](https://github.com/stellargraph/stellargraph/issues/381)
+- Unified activations for GraphSAGE, HinSAGE, GCN and GAT [\#493](https://github.com/stellargraph/stellargraph/pull/493) [\#381](https://github.com/stellargraph/stellargraph/issues/381)
+- Added optional regularisation on the weights for GCN, GraphSage, and HinSage [\#172](https://github.com/stellargraph/stellargraph/issues/172) [\#469](https://github.com/stellargraph/stellargraph/issues/469)
+- Unified regularisation of GraphSAGE, HinSAGE, GCN and GAT [\#494](https://github.com/stellargraph/stellargraph/pull/494) ([geoffj-d61](https://github.com/geoffj-d61))
+- Unsupervised GraphSage speed up via multithreading [\#474](https://github.com/stellargraph/stellargraph/issues/474) [\#477](https://github.com/stellargraph/stellargraph/pull/477)
+- Support of sparse generators in the GCN saliency map implementation. [\#432](https://github.com/stellargraph/stellargraph/issues/432)
 
 **Refactoring:**
 - Refactored Ensemble class into Ensemble and BaggingEnsemble. The former implements naive ensembles and the latter bagging ensembles. [\#459](https://github.com/stellargraph/stellargraph/pull/459)
-- Changed from `keras` to use `tensorflow.keras` [\#471](https://github.com/stellargraph/stellargraph/pull/471)
+- Changed from using `keras` to use `tensorflow.keras` [\#471](https://github.com/stellargraph/stellargraph/pull/471)
 - Removed `flatten_output` arguments for all models [\#447](https://github.com/stellargraph/stellargraph/pull/447)
-
 
 **Fixed bugs:**
 - Updated Yelp example to support new dataset version [\#442](https://github.com/stellargraph/stellargraph/pull/442)
 - Fixed bug where some nodes and edges did not get a default type [\#451](https://github.com/stellargraph/stellargraph/pull/451)
+- Inconsistency in `Ensemble.fit_generator()` argument [\#461](https://github.com/stellargraph/stellargraph/issues/461)
+- Fixed source--target node designations for code using Cora dataset [\#444](https://github.com/stellargraph/stellargraph/issues/444)
+- IndexError: index 1 is out of bounds for axis 1 with size 1 in: demos/node-classification/hinsage [\#434](https://github.com/stellargraph/stellargraph/issues/434)
+- GraphSAGE and GAT/GCN predictions have different shapes [\#425](https://github.com/stellargraph/stellargraph/issues/425)
 
+
+## [0.7.3](https://github.com/stellargraph/stellargraph/tree/v0.7.3)
+Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements, to avoid errors due to API changes
+in the recent versions of NetworkX and Tensorflow.
 
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
-
 Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements, 
 to avoid errors due to API changes in the recent versions of Keras and Tensorflow.
 
@@ -34,7 +52,6 @@ to avoid errors due to API changes in the recent versions of Keras and Tensorflo
 **Fixed bugs:**
 - Removed igraph and mplleaflet from `demos` requirements in `setup.py`. Python-igraph doesn't install on many systems and is only required for the clustering notebook. See the `README.md` in that directory for requirements and installation directions.
 - Updated GCN interpretability notebook to work with new FullBatchGenerator API [\#429](https://github.com/stellargraph/stellargraph/pull/429)
-
 
 ## [0.7.0](https://github.com/stellargraph/stellargraph/tree/v0.7.0)
 
