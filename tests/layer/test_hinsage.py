@@ -22,7 +22,8 @@ HinSAGE tests
 
 
 from stellargraph.layer.hinsage import *
-import keras
+from tensorflow import keras
+from tensorflow.keras import regularizers
 import numpy as np
 import pytest
 
@@ -61,8 +62,7 @@ def test_mean_hin_agg_constructor_1():
 
 
 def test_mean_hin_agg_apply():
-    agg = MeanHinAggregator(2, act=lambda z: z)
-    agg._initializer = "ones"
+    agg = MeanHinAggregator(2, act=lambda z: z, kernel_initializer="ones")
     inp = [
         keras.Input(shape=(1, 2)),
         keras.Input(shape=(1, 2, 2)),
@@ -83,10 +83,8 @@ def test_mean_hin_agg_apply():
 
 
 def test_mean_hin_agg_apply_2():
-    agg1 = MeanHinAggregator(2, act=lambda z: z)
-    agg1._initializer = "ones"
-    agg2 = MeanHinAggregator(2, act=lambda z: z + 1)
-    agg2._initializer = "ones"
+    agg1 = MeanHinAggregator(2, act=lambda z: z, kernel_initializer="ones")
+    agg2 = MeanHinAggregator(2, act=lambda z: z + 1, kernel_initializer="ones")
 
     inp = [
         keras.Input(shape=(1, 2)),
@@ -110,8 +108,7 @@ def test_mean_hin_agg_apply_2():
 
 
 def test_mean_hin_zero_neighbours():
-    agg = MeanHinAggregator(2, bias=False, act=lambda z: z)
-    agg._initializer = "ones"
+    agg = MeanHinAggregator(2, bias=False, act=lambda z: z, kernel_initializer="ones")
     inp = [
         keras.Input(shape=(1, 2)),
         keras.Input(shape=(1, 0, 2)),
@@ -236,10 +233,8 @@ def test_hinsage_apply():
         ],
         input_dim={"1": 2, "2": 4},
         normalize="none",
+        kernel_initializer="ones",
     )
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     inp = [
         keras.Input(shape=(1, 2)),
@@ -263,7 +258,7 @@ def test_hinsage_apply():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
 
 
@@ -281,11 +276,8 @@ def test_hinsage_default_model():
         ],
         input_dim={"1": 2, "2": 4},
         normalize="none",
+        kernel_initializer="ones",
     )
-
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
@@ -300,7 +292,7 @@ def test_hinsage_default_model():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
 
 
@@ -345,7 +337,7 @@ def test_hinsage_serialize():
         np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
     ]
     actual = model2.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
 
 
@@ -363,11 +355,8 @@ def test_hinsage_zero_neighbours():
         ],
         input_dim={"1": 2, "2": 4},
         normalize="none",
+        kernel_initializer="ones",
     )
-
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
@@ -382,7 +371,7 @@ def test_hinsage_zero_neighbours():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[2.5, 0]]])
+    expected = np.array([[2.5, 0]])
     assert actual == pytest.approx(expected)
 
 
@@ -401,11 +390,8 @@ def test_hinsage_aggregators():
         input_dim={"1": 2, "2": 4},
         aggregator=MeanHinAggregator,
         normalize="none",
+        kernel_initializer="ones",
     )
-
-    for aggs in hs._aggs:
-        for _, agg in aggs.items():
-            agg._initializer = "ones"
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
@@ -420,5 +406,107 @@ def test_hinsage_aggregators():
     ]
 
     actual = model.predict(x)
-    expected = np.array([[[12, 35.5]]])
+    expected = np.array([[12, 35.5]])
     assert actual == pytest.approx(expected)
+
+
+def test_hinsage_passing_activations():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
+    )
+    assert hs.activations == ["relu", "linear"]
+
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 2],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 2},
+            activations=["fred", "wilma"],
+        )
+
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 2],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 2},
+            activations=["relu"],
+        )
+
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 2},
+        activations=["linear"] * 2,
+    )
+    assert hs.activations == ["linear"] * 2
+
+
+def test_hinsage_regularisers():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        input_dim={"1": 2, "2": 4},
+        normalize="none",
+        kernel_initializer="ones",
+        kernel_regularizer=regularizers.l2(0.01),
+    )
+
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 2],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 4},
+            normalize="none",
+            kernel_initializer="ones",
+            kernel_regularizer="fred",
+        )

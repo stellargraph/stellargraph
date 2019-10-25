@@ -27,7 +27,7 @@ from stellargraph.utils.calibration import (
     plot_reliability_diagram,
     expected_calibration_error,
 )
-from stellargraph.utils.ensemble import Ensemble
+from stellargraph.utils.ensemble import Ensemble, BaggingEnsemble
 
 # Custom layers for keras deserialization:
 custom_keras_layers = {
@@ -40,4 +40,6 @@ custom_keras_layers = {
     "MeanPoolingAggregator": layer.graphsage.MeanPoolingAggregator,
     "AttentionalAggregator": layer.graphsage.AttentionalAggregator,
     "MeanHinAggregator": layer.hinsage.MeanHinAggregator,
+    "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
+    "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer,
 }
