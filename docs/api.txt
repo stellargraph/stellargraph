@@ -19,14 +19,14 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator
+  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator
 
 
 GraphSAGE model
 ----------------
 
 .. automodule:: stellargraph.layer.graphsage
-  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+  :members: GraphSAGE, DirectedGraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
 
 
 HinSAGE model
@@ -36,11 +36,32 @@ HinSAGE model
   :members: HinSAGE, MeanHinAggregator
 
 
+Attri2Vec model
+----------------
+
+.. automodule:: stellargraph.layer.attri2vec
+  :members: Attri2Vec
+
+
 GCN model
 -------------
 
 .. automodule:: stellargraph.layer.gcn
   :members: GCN, GraphConvolution
+
+
+PPNP model
+-------------
+
+.. automodule:: stellargraph.layer.ppnp
+  :members: PPNPPropagationLayer, PPNP
+
+
+APPNP model
+-------------
+
+.. automodule:: stellargraph.layer.appnp
+  :members: APPNPPropagationLayer, APPNP
 
 
 GAT model
@@ -60,7 +81,7 @@ Ensembles
 ------------------------
 
 .. automodule:: stellargraph.utils.ensemble
-  :members: Ensemble
+  :members: Ensemble, BaggingEnsemble
 
 
 Calibration

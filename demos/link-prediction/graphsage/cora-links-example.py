@@ -29,8 +29,8 @@ import networkx as nx
 import pandas as pd
 from typing import AnyStr, List
 
-import keras
-from keras import optimizers, losses, metrics
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, metrics
 
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
@@ -43,7 +43,7 @@ from sklearn import feature_extraction
 
 def load_data(graph_loc, ignore_attr):
     """
-    Load Cora dataset, and create a NetworkX graph
+    Load Cora dataset (in cited-paper, citing-paper ordering), and create a NetworkX graph
     Args:
         graph_loc: dataset path
 
@@ -53,7 +53,7 @@ def load_data(graph_loc, ignore_attr):
 
     # Load the edge list
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
+        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["target", "source"]
     )
 
     # Load node features

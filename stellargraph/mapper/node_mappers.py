@@ -22,9 +22,11 @@ __all__ = [
     "NodeSequence",
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
+    "Attri2VecNodeGenerator",
     "FullBatchNodeGenerator",
     "FullBatchNodeSequence",
     "SparseFullBatchNodeSequence",
+    "DirectedGraphSAGENodeGenerator",
 ]
 
 import warnings
@@ -34,17 +36,18 @@ import numpy as np
 import itertools as it
 import networkx as nx
 import scipy.sparse as sps
-import keras.backend as K
+from tensorflow.keras import backend as K
 from functools import reduce
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 
 from ..data.explorer import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
+    DirectedBreadthFirstNeighbours,
 )
-from ..core.graph import StellarGraphBase, GraphSchema
+from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
 from ..core.utils import is_real_iterable
-from ..core.utils import GCN_Aadj_feats_op
+from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
 
 class NodeSequence(Sequence):
@@ -54,17 +57,22 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`HinSAGENodeGenerator`.
+    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator` 
+    or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
 
-    These Generators are classes that capture the graph structure
-    and the feature vectors of each node. These generator classes
-    are used within the NodeSequence to generate samples of k-hop
-    neighbourhoods in the graph and to return to this class the
-    features from the sampled neighbourhoods.
+    GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator,and HinSAGENodeGenerator 
+    are classes that capture the graph structure and the feature vectors of each node. 
+    These generator classes are used within the NodeSequence to generate
+    samples of k-hop neighbourhoods in the graph and to return to this 
+    class the features from the sampled neighbourhoods.
+    
+    Attri2VecNodeGenerator is the class that captures node feature vectors
+    of each node.
 
     Args:
-        generator: GraphSAGENodeGenerator or HinSAGENodeGenerator
-            The generator object containing the graph information.
+        generator: GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator or 
+            HinSAGENodeGenerator or Attri2VecNodeGenerator. The generator object 
+            containing the graph information.
         ids: list
             A list of the node_ids to be used as head-nodes in the
             downstream task.
@@ -99,22 +107,21 @@ class NodeSequence(Sequence):
                 "Head nodes supplied to generator contain IDs not found in graph"
             )
 
-        # Infer head_node_type
-        if (
-            generator.schema.node_type_map is None
-            or generator.schema.edge_type_map is None
-        ):
-            raise RuntimeError("Schema must have node and edge type maps.")
-        else:
-            head_node_types = {generator.schema.get_node_type(n) for n in ids}
-        if len(head_node_types) > 1:
-            raise ValueError(
-                "Only a single head node type is currently supported for HinSAGE models"
-            )
-        head_node_type = head_node_types.pop()
-
         # Store the generator to draw samples from graph
-        self.generator = generator
+        if (
+            isinstance(generator, GraphSAGENodeGenerator)
+            or isinstance(generator, DirectedGraphSAGENodeGenerator)
+            or isinstance(generator, HinSAGENodeGenerator)
+            or isinstance(generator, Attri2VecNodeGenerator)
+        ):
+            self.generator = generator
+        else:
+            raise TypeError(
+                "({}) GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, HinSAGENodeGenerator or Attri2VecNodeGenerator is required.".format(
+                    type(self).__name__
+                )
+            )
+
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
@@ -122,11 +129,32 @@ class NodeSequence(Sequence):
         # Shuffle IDs to start
         self.on_epoch_end()
 
-        # Save head node type and generate sampling schema
-        self.head_node_types = [head_node_type]
-        self._sampling_schema = generator.schema.sampling_layout(
-            self.head_node_types, generator.num_samples
-        )
+        if (
+            isinstance(self.generator, GraphSAGENodeGenerator)
+            or isinstance(self.generator, DirectedGraphSAGENodeGenerator)
+            or isinstance(self.generator, HinSAGENodeGenerator)
+        ):
+            # Infer head_node_type
+            if (
+                generator.schema.node_type_map is None
+                or generator.schema.edge_type_map is None
+            ):
+                raise RuntimeError("Schema must have node and edge type maps.")
+            else:
+                head_node_types = {generator.schema.get_node_type(n) for n in ids}
+            if len(head_node_types) > 1:
+                raise ValueError(
+                    "Only a single head node type is currently supported for HinSAGE models"
+                )
+            head_node_type = head_node_types.pop()
+
+            # Save head node type and generate sampling schema
+            self.head_node_types = [head_node_type]
+            ### Experimental; for directed sampling
+            num_samples = getattr(generator, "num_samples", [])
+            self._sampling_schema = generator.schema.sampling_layout(
+                self.head_node_types, num_samples
+            )
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
@@ -160,8 +188,16 @@ class NodeSequence(Sequence):
         # Get corresponding targets
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get sampled nodes
-        batch_feats = self.generator.sample_features(head_ids, self._sampling_schema)
+        if isinstance(self.generator, GraphSAGENodeGenerator) or isinstance(
+            self.generator, HinSAGENodeGenerator
+        ):
+            # Get sampled nodes for GraphSAGENodeGenerator and HinSAGENodeGenerator
+            batch_feats = self.generator.sample_features(
+                head_ids, self._sampling_schema
+            )
+        else:
+            # Get sampled nodes for Attri2VecNodeGenerator
+            batch_feats = self.generator.sample_features(head_ids)
 
         return batch_feats, batch_targets
 
@@ -254,13 +290,6 @@ class GraphSAGENodeGenerator:
         # The number of samples for each head node (not including itself)
         num_full_samples = np.sum(np.cumprod(self.num_samples))
 
-        # Isolated nodes will return only themselves in the sample list
-        # let's correct for this by padding with None (the dummy node ID)
-        node_samples = [
-            ns + [None] * num_full_samples if len(ns) == 1 else ns
-            for ns in node_samples
-        ]
-
         # Reshape node samples to sensible format
         def get_levels(loc, lsize, samples_per_hop, walks):
             end_loc = loc + lsize
@@ -300,7 +329,7 @@ class GraphSAGENodeGenerator:
         supplied node_ids to be used by the downstream task. They should
         be given in the same order as the list of node IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
@@ -464,7 +493,7 @@ class HinSAGENodeGenerator:
         supplied node_ids to be used by the downstream task. They should
         be given in the same order as the list of node IDs.
         If they are not specified (for example, for use in prediction),
-        the targets will not be available to the downsteam task.
+        the targets will not be available to the downstream task.
 
         Note that the shuffle argument should be True for training and
         False for prediction.
@@ -508,6 +537,93 @@ class HinSAGENodeGenerator:
         )
 
 
+class Attri2VecNodeGenerator:
+    """
+    A node feature generator for node representation prediction with the 
+    attri2vec model.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes to get an object 
+    that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Attri2VecNodeGenerator(G, 50)
+        data_gen = G_generator.flow(node_ids)
+
+    Args:
+        G (StellarGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        if not isinstance(G, StellarGraphBase):
+            raise TypeError("Graph must be a StellarGraph object.")
+
+        self.graph = G
+        self.batch_size = batch_size
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+    def sample_features(self, head_nodes):
+        """
+        Sample content features of the head nodes, and return these as a list of feature 
+        arrays for the attri2vec algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+
+        Returns:
+            A list of feature arrays, with each element being the feature of a
+            head node.
+        """
+
+        batch_feats = self.graph.get_feature_for_nodes(head_nodes)
+        return batch_feats
+
+    def flow(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids.
+
+        The node IDs are the nodes to inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset/all of the nodes in the graph.
+
+        Args:
+            node_ids: an iterable of node IDs.
+
+        Returns:
+            A NodeSequence object to use with the Attri2Vec model
+            in the Keras method ``predict_generator``.
+
+        """
+        return NodeSequence(self, node_ids, shuffle=False)
+
+    def flow_from_dataframe(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids.
+
+        Args:
+            node_ids: a Pandas DataFrame of node_ids.
+
+        Returns:
+            A NodeSequence object to use with the Attri2Vec model
+            in the Keras method ``predict_generator``.
+
+        """
+        return NodeSequence(self, node_ids.index)
+
+
 class SparseFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
@@ -526,7 +642,7 @@ class SparseFullBatchNodeSequence(Sequence):
     Args:
         features (np.ndarray): An array of node features of size (N x F),
             where N is the number of nodes in the graph, F is the node feature size
-        A (np.ndarray or sparse matrix): An adjacency matrix of the graph of size (N x N).
+        A (sparse matrix): An adjacency matrix of the graph of size (N x N).
         targets (np.ndarray, optional): An optional array of node targets of size (N x C),
             where C is the target size (e.g., number of classes for one-hot class targets)
         indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
@@ -665,21 +781,23 @@ class FullBatchNodeGenerator:
 
     For these algorithms the adjacency matrix requires pre-processing and the
     'method' option should be specified with the correct pre-processing for
-    each algorhtm. The options are as follows:
+    each algorithm. The options are as follows:
 
     *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
     *   ``method='chebyshev'``: Implements the approximate spectral convolution
         operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
-        to implement the Simplified Graph Convolusions of Eq. 8 in [2].
+        to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
-        of the adjacency matrix to one, effectively adding self loops. This is
+        of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
+    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
     [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
     [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
 
     Example::
 
@@ -693,7 +811,7 @@ class FullBatchNodeGenerator:
         # Alternatively, use the generator itself with model.fit_generator:
         model.fit_generator(train_gen, epochs=num_epochs, ...)
 
-    For more information, please see the GCN/GAT and SGC demos:
+    For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
@@ -708,10 +826,20 @@ class FullBatchNodeGenerator:
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
-
+        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability" of returning to the
+        starting node in the propagation step as in [4].
     """
 
-    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
+    def __init__(
+        self,
+        G,
+        name=None,
+        method="gcn",
+        k=1,
+        sparse=True,
+        transform=None,
+        teleport_probability=0.1,
+    ):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -719,6 +847,7 @@ class FullBatchNodeGenerator:
         self.graph = G
         self.name = name
         self.k = k
+        self.teleport_probability = teleport_probability
         self.method = method
 
         # Check if the graph has features
@@ -776,6 +905,18 @@ class FullBatchNodeGenerator:
                 np.ones(self.Aadj.shape[0]) - self.Aadj.diagonal()
             )
 
+        elif self.method in ["ppnp"]:
+            if self.use_sparse:
+                raise ValueError(
+                    "use_sparse=true' is incompatible with 'ppnp'."
+                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                )
+            self.features, self.Aadj = PPNP_Aadj_feats_op(
+                features=self.features,
+                A=self.Aadj,
+                teleport_probability=self.teleport_probability,
+            )
+
         elif self.method in [None, "none"]:
             pass
 
@@ -821,3 +962,169 @@ class FullBatchNodeGenerator:
             return FullBatchNodeSequence(
                 self.features, self.Aadj, targets, node_indices
             )
+
+
+class DirectedGraphSAGENodeGenerator:
+    """
+    A data generator for node prediction with homogeneous GraphSAGE models
+    on directed graphs.
+
+    At minimum, supply the StellarDiGraph, the batch size, and the number of
+    node samples (separately for in-nodes and out-nodes)
+    for each layer of the GraphSAGE model.
+
+    The supplied graph should be a StellarDiGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = DirectedGraphSAGENodeGenerator(G, 50, [10,5], [5,1])
+        train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
+        test_data_gen = G_generator.flow(test_node_ids)
+
+    Args:
+        G (StellarDiGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        in_samples (list): The number of in-node samples per layer (hop) to take.
+        out_samples (list): The number of out-node samples per layer (hop) to take.
+        schema (GraphSchema): [Optional] Graph schema for G.
+        seed (int): [Optional] Random seed for the node sampler.
+        name (str or None): Name of the generator (optional)
+    """
+
+    def __init__(
+        self, G, batch_size, in_samples, out_samples, schema=None, seed=None, name=None
+    ):
+        if not isinstance(G, StellarDiGraph):
+            raise TypeError("Graph must be a StellarDiGraph object.")
+        # TODO Add checks for in- and out-nodes sizes
+
+        self.graph = G
+        self.in_samples = in_samples
+        self.out_samples = out_samples
+        self.batch_size = batch_size
+        self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
+        # We need a schema for compatibility with HinSAGE
+        if schema is None:
+            self.schema = G.create_graph_schema(create_type_maps=True)
+        elif isinstance(schema, GraphSchema):
+            self.schema = schema
+        else:
+            raise TypeError("Schema must be a GraphSchema object")
+
+        # Check that there is only a single node type for GraphSAGE
+        if len(self.schema.node_types) > 1:
+            print(
+                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            )
+
+        # Create sampler for GraphSAGE
+        self.sampler = DirectedBreadthFirstNeighbours(
+            G, graph_schema=self.schema, seed=seed
+        )
+
+    def sample_features(self, head_nodes, sampling_schema):
+        """
+        Sample neighbours recursively from the head nodes, collect the features of the
+        sampled nodes, and return these as a list of feature arrays for the GraphSAGE
+        algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+            sampling_schema: The sampling schema for the model
+
+        Returns:
+            A list of feature tensors from the sampled nodes at each layer, each of shape:
+            ``(len(head_nodes), num_sampled_at_layer, feature_size)``
+            where num_sampled_at_layer is the total number (cumulative product)
+            of nodes sampled at the given number of hops from each head node,
+            given the sequence of in/out directions.
+        """
+        node_samples = self.sampler.run(
+            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples
+        )
+
+        # Reshape node samples to sensible format
+        # Each 'slot' represents the list of nodes sampled from some neighbourhood, and will have a corresponding
+        # NN input layer. Every hop potentially generates both in-nodes and out-nodes, held separately,
+        # and thus the slot (or directed hop sequence) structure forms a binary tree.
+
+        node_type = sampling_schema[0][0][0]
+
+        max_hops = len(self.in_samples)
+        max_slots = 2 ** (max_hops + 1) - 1
+        features = [None] * max_slots  # flattened binary tree
+
+        for slot in range(max_slots):
+            nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
+            features_for_slot = self.graph.get_feature_for_nodes(
+                nodes_in_slot, node_type
+            )
+            resize = -1 if np.size(features_for_slot) > 0 else 0
+            features[slot] = np.reshape(
+                features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
+            )
+
+        return features
+
+    def flow(self, node_ids, targets=None, shuffle=False):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        The node IDs are the nodes to train or inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset of the nodes in the graph.
+
+        The targets are an array of numeric targets corresponding to the
+        supplied node_ids to be used by the downstream task. They should
+        be given in the same order as the list of node IDs.
+        If they are not specified (for example, for use in prediction),
+        the targets will not be available to the downstream task.
+
+        Note that the shuffle argument should be True for training and
+        False for prediction.
+
+        Args:
+            node_ids: an iterable of node IDs
+            targets: a 2D array of numeric targets with shape
+                `(len(node_ids), target_size)`
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
+        Returns:
+            A NodeSequence object to use with the GraphSAGE model
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
+
+        """
+        return NodeSequence(self, node_ids, targets, shuffle=shuffle)
+
+    def flow_from_dataframe(self, node_targets, shuffle=False):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_targets: a Pandas DataFrame of numeric targets indexed
+                by the node ID for that target.
+            shuffle (bool): If True the node_ids will be shuffled at each
+                epoch, if False the node_ids will be processed in order.
+
+        Returns:
+            A NodeSequence object to use with the GraphSAGE model
+            in Keras methods ``fit_generator``, ``evaluate_generator``,
+            and ``predict_generator``
+
+        """
+        return NodeSequence(
+            self, node_targets.index, node_targets.values, shuffle=shuffle
+        )

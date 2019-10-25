@@ -26,5 +26,9 @@ from .graphsage import *
 from .hinsage import *
 from .graph_attention import *
 from .link_inference import *
+from .ppnp import *
+from .appnp import *
 from .gcn import *
+from .attri2vec import *
 from .misc import SqueezedSparseConversion
+from .preprocessing_layer import GraphPreProcessingLayer

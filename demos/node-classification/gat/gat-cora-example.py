@@ -40,9 +40,9 @@ import pickle
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, losses, layers, metrics
-from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, layers, metrics
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GAT
@@ -160,7 +160,6 @@ def train(
         history = model.fit(
             x=inputs_train,
             y=y_train,
-            batch_size=N,
             shuffle=False,  # must be False, since shuffling data means shuffling the whole graph
             epochs=num_epochs,
             verbose=2,
@@ -318,7 +317,7 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
+    # Load the dataset - this assumes it is the CORA dataset (in 'cited-paper' <- 'citing-paper' order)
     # Load graph edgelist
     if args.location is not None:
         graph_loc = os.path.expanduser(args.location)
@@ -331,7 +330,7 @@ if __name__ == "__main__":
         os.path.join(graph_loc, "cora.cites"),
         sep="\t",
         header=None,
-        names=["source", "target"],
+        names=["target", "source"],
     )
 
     # Load node features

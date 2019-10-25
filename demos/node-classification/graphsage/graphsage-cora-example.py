@@ -40,8 +40,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, losses, layers, metrics
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import (
@@ -124,7 +124,7 @@ def train(
         aggregator=MeanAggregator,
     )
     # Expose the input and output sockets of the model:
-    x_inp, x_out = model.build(flatten_output=True)
+    x_inp, x_out = model.build()
 
     # Snap the final estimator layer to x_out
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)

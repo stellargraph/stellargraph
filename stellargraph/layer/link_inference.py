@@ -20,7 +20,7 @@ link attribute inference (regression)
 """
 
 from typing import AnyStr, Optional, List, Tuple
-from keras.layers import (
+from tensorflow.keras.layers import (
     Layer,
     Concatenate,
     Dense,
@@ -30,7 +30,8 @@ from keras.layers import (
     Reshape,
     Activation,
 )
-from keras import backend as K
+from tensorflow.keras import backend as K
+import warnings
 
 
 class LeakyClippedLinear(Layer):
@@ -111,6 +112,13 @@ def link_inference(
                 [x0, x1]
             )
             out = Activation(output_act)(out)
+            if output_dim != 1:
+                warnings.warn(
+                    "Inner product is a scalar, but output_dim is set to {}. Reverting output_dim to be 1.".format(
+                        output_dim
+                    )
+                )
+            out = Reshape((1,))(out)
 
         elif edge_embedding_method == "l1":
             # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
