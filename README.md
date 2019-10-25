@@ -80,8 +80,8 @@ We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/d
 
 ## Guiding Principles
 
-StellarGraph uses the [Keras](https://keras.io/) library and adheres to the same guiding principles
-as Keras: user-friendliness, modularity, and easy extendability. Modules and layers
+StellarGraph uses the [Keras](https://keras.io/) API as implemented in the [TensorFlow](https://tensorflow.org/) library and adheres to the same 
+guiding principles as Keras: user-friendliness, modularity, and easy extendability. Modules and layers
 of StellarGraph library are designed so that they can be used together with
 standard Keras layers and modules, if required. This enables flexibility in using existing
 or creating new models and workflows for machine learning on graphs.
