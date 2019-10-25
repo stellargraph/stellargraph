@@ -73,7 +73,7 @@ The StellarGraph library can be used to solve tasks using graph-structured data,
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
-- Interpretation of node classification through calculated importances of edges and neighbours for selected nodes [8].
+- Interpretation of node classification through calculated importances of edges and neighbour nodes for selected target nodes [8].
 
 We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve such tasks using several real-world datasets.
 
