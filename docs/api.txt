@@ -57,6 +57,20 @@ RGCN model
   :members: RGCN, RelationalGraphConvolution
 
 
+PPNP model
+-------------
+
+.. automodule:: stellargraph.layer.ppnp
+  :members: PPNPPropagationLayer, PPNP
+
+
+APPNP model
+-------------
+
+.. automodule:: stellargraph.layer.appnp
+  :members: APPNPPropagationLayer, APPNP
+
+
 GAT model
 -------------
 
