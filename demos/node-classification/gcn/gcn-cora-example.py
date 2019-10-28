@@ -39,7 +39,7 @@ def train(
     layer_sizes,
     learning_rate,
     activations,
-    num_epochs
+    num_epochs,
 ):
     """
 
@@ -60,11 +60,11 @@ def train(
     val_gen = generator.flow(val_nodes, val_targets)
     gcnModel = GCN(
         layer_sizes,
-        activations,
-        generator=generator,
+        generator,
         bias=True,
         dropout=dropout,
         kernel_regularizer=regularizers.l2(5e-4),
+        activations=activations,
     )
 
     # Expose the input and output sockets of the model:
@@ -74,7 +74,7 @@ def train(
     model = keras.Model(inputs=x_inp, outputs=x_out)
     model.compile(
         loss=losses.categorical_crossentropy,
-        weighted_metrics=[metrics.categorical_accuracy],
+        metrics=[metrics.categorical_accuracy],
         optimizer=optimizers.Adam(lr=learning_rate),
     )
 
@@ -103,7 +103,7 @@ def test(test_nodes, test_targets, generator, model_file):
     model = keras.models.load_model(model_file, custom_objects=sg.custom_keras_layers)
     model.compile(
         loss=losses.categorical_crossentropy,
-        weighted_metrics=[metrics.categorical_accuracy],
+        metrics=[metrics.categorical_accuracy],
         optimizer=optimizers.Adam(lr=0.01),
     )
     print(model.summary())
@@ -119,8 +119,10 @@ def test(test_nodes, test_targets, generator, model_file):
 def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs):
     # Load edges in order 'cited-paper' <- 'citing-paper'
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, 'cora.cites'), sep="\t", header=None, names=['target', 'source']
-
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["target", "source"],
     )
 
     # Load node features
@@ -128,11 +130,12 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs
     # (out of 1433 keywords) is found in the corresponding publication.
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
     # Also, there is a "subject" column
-    column_names = feature_names + ['subject']
+    column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, 'cora.content'), sep="\t", header=None, names=column_names
-
-
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
 
     target_encoding = feature_extraction.DictVectorizer(sparse=False)
@@ -176,7 +179,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs
         layer_sizes,
         learning_rate,
         activations,
-        num_epochs
+        num_epochs,
     )
 
     # Save the trained model
