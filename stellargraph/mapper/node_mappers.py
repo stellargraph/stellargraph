@@ -951,8 +951,11 @@ class FullBatchNodeGenerator:
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
+        # Dictionary to store node indices for quicker node index lookups
+        node_lookup = dict(zip(self.node_list, range(len(self.node_list))))
+
         # The list of indices of the target nodes in self.node_list
-        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+        node_indices = np.array([node_lookup[n] for n in node_ids])
 
         if self.use_sparse:
             return SparseFullBatchNodeSequence(
