@@ -38,13 +38,7 @@ class APPNPPropagationLayer(Layer):
         the paper (alpha in the paper)
     """
 
-    def __init__(
-        self,
-        units,
-        teleport_probability=0.1,
-        final_layer=False,
-        **kwargs
-    ):
+    def __init__(self, units, teleport_probability=0.1, final_layer=False, **kwargs):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
@@ -66,7 +60,7 @@ class APPNPPropagationLayer(Layer):
         config = {
             "units": self.units,
             "final_layer": self.final_layer,
-            "teleport_probability": self.teleport_probability
+            "teleport_probability": self.teleport_probability,
         }
 
         base_config = super().get_config()
@@ -133,7 +127,9 @@ class APPNPPropagationLayer(Layer):
 
         # Propagate the node features
         A = As[0]
-        output = K.dot(A, propagated_features) + self.teleport_probability * features
+        output = (1 - self.teleport_probability) * K.dot(
+            A, propagated_features
+        ) + self.teleport_probability * features
 
         # On the final layer we gather the nodes referenced by the indices
         if self.final_layer:
@@ -190,28 +186,32 @@ class APPNP:
     """
 
     def __init__(
-            self,
-            layer_sizes,
-            activations,
-            generator,
-            bias=True,
-            dropout=0.0,
-            teleport_probability=0.1,
-            kernel_regularizer=None,
-            approx_iter=10
+        self,
+        layer_sizes,
+        activations,
+        generator,
+        bias=True,
+        dropout=0.0,
+        teleport_probability=0.1,
+        kernel_regularizer=None,
+        approx_iter=10,
     ):
 
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
         if not len(layer_sizes) == len(activations):
-            raise ValueError("The number of layers should equal the number of activations")
+            raise ValueError(
+                "The number of layers should equal the number of activations"
+            )
 
         if not isinstance(approx_iter, int) or approx_iter <= 0:
             raise ValueError("approx_iter should be a positive integer")
 
         if (teleport_probability > 1.0) or (teleport_probability < 0.0):
-            raise ValueError("teleport_probability should be between 0 and 1 (inclusive)")
+            raise ValueError(
+                "teleport_probability should be between 0 and 1 (inclusive)"
+            )
 
         self.layer_sizes = layer_sizes
         self.teleport_probability = teleport_probability
@@ -255,11 +255,9 @@ class APPNP:
                 APPNPPropagationLayer(
                     feature_dim,
                     teleport_probability=self.teleport_probability,
-                    final_layer=(ii == (self.approx_iter - 1))
+                    final_layer=(ii == (self.approx_iter - 1)),
                 )
             )
-
-
 
     def __call__(self, x):
         """
@@ -319,7 +317,6 @@ class APPNP:
 
         return h_layer
 
-
     def node_model(self):
         """
         Builds a APPNP model for node prediction
@@ -360,9 +357,8 @@ class APPNP:
 
         return x_inp, x_out
 
-
     def propagate_model(self, base_model):
-        '''
+        """
         Propagates a trained kera model to create a node model.
         Args:
             base_model (keras Model): trained model with node features as input, predicted classes as output
@@ -371,7 +367,7 @@ class APPNP:
             tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors
             for the APPNP model (containing node features and graph adjacency),
             and `x_out` is a Keras tensor for the APPNP model output.
-        '''
+        """
 
         N_nodes = self.generator.features.shape[0]
         N_feat = self.generator.features.shape[1]
@@ -405,13 +401,13 @@ class APPNP:
         x_t = Input(batch_shape=(1, N_nodes, N_feat))
         x_inp = [x_t, out_indices_t] + A_placeholders
 
-        #pass the node features through the base model
+        # pass the node features through the base model
         feature_layer = x_t
         for layer in base_model.layers:
             feature_layer = layer(feature_layer)
 
         h_layer = feature_layer
-        #iterate through APPNPPropagation layers
+        # iterate through APPNPPropagation layers
         for layer in self._layers:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices_t] + Ainput)
