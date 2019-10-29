@@ -39,12 +39,7 @@ class PPNPPropagationLayer(Layer):
                             if True it returns the subset specified by the indices passed to it.
     """
 
-    def __init__(
-        self,
-        units,
-        final_layer=False,
-        **kwargs
-    ):
+    def __init__(self, units, final_layer=False, **kwargs):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
@@ -62,10 +57,7 @@ class PPNPPropagationLayer(Layer):
             A dictionary that contains the config of the layer
         """
 
-        config = {
-            "units": self.units,
-            "final_layer": self.final_layer,
-        }
+        config = {"units": self.units, "final_layer": self.final_layer}
 
         base_config = super().get_config()
         return {**base_config, **config}
@@ -184,20 +176,22 @@ class PPNP:
     """
 
     def __init__(
-            self,
-            layer_sizes,
-            activations,
-            generator,
-            bias=True,
-            dropout=0.0,
-            kernel_regularizer=None
+        self,
+        layer_sizes,
+        activations,
+        generator,
+        bias=True,
+        dropout=0.0,
+        kernel_regularizer=None,
     ):
 
         if not isinstance(generator, FullBatchNodeGenerator):
             raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
 
         if not len(layer_sizes) == len(activations):
-            raise ValueError("The number of layers should equal the number of activations")
+            raise ValueError(
+                "The number of layers should equal the number of activations"
+            )
 
         self.layer_sizes = layer_sizes
         self.activations = activations
@@ -229,8 +223,9 @@ class PPNP:
             )
 
         self._layers.append(Dropout(self.dropout))
-        self._layers.append(PPNPPropagationLayer(self.layer_sizes[-1], final_layer=True))
-
+        self._layers.append(
+            PPNPPropagationLayer(self.layer_sizes[-1], final_layer=True)
+        )
 
     def __call__(self, x):
         """
@@ -250,7 +245,6 @@ class PPNP:
         Returns:
             Output tensor
         """
-
 
         x_in, out_indices, *As = x
 
@@ -328,6 +322,3 @@ class PPNP:
             self.x_out_flat = x_out
 
         return x_inp, x_out
-
-
-
