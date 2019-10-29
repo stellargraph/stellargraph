@@ -1153,6 +1153,7 @@ class ClusterNodeSequence(Sequence):
 
         if targets is not None:
             self.targets = np.asanyarray(targets)
+            self.target_node_lookup = dict(zip(self.target_ids, range(len(self.target_ids))))
         else:
             self.targets = None
 
@@ -1201,10 +1202,16 @@ class ClusterNodeSequence(Sequence):
 
         self.__node_buffer[index] = target_nodes_in_cluster
 
+        # Dictionary to store node indices for quicker node index lookups
+        node_lookup = dict(zip(g_node_list, range(len(g_node_list))))
+
+        # The list of indices of the target nodes in self.node_list
+        target_node_indices = np.array([node_lookup[n] for n in target_nodes_in_cluster])
+
         # The list of indices of the target nodes in cluster
-        target_node_indices = np.array(
-            [g_node_list.index(n) for n in target_nodes_in_cluster]
-        )
+        # target_node_indices = np.array(
+        #     [g_node_list.index(n) for n in target_nodes_in_cluster]
+        # )
 
         if index == (len(self.clusters_original) // self.q) - 1:
             # last batch
@@ -1213,9 +1220,12 @@ class ClusterNodeSequence(Sequence):
         cluster_targets = None
         #
         if self.targets is not None:
-            cluster_target_indices = np.array(
-                [self.target_ids.index(n) for n in target_nodes_in_cluster]
-            )
+            # Dictionary to store node indices for quicker node index lookups
+            # The list of indices of the target nodes in self.node_list
+            cluster_target_indices = np.array([self.target_node_lookup[n] for n in target_nodes_in_cluster])
+            # cluster_target_indices = np.array(
+            #     [self.target_ids.index(n) for n in target_nodes_in_cluster]
+            # )
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
 
