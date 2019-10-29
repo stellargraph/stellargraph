@@ -41,6 +41,7 @@ import scipy.sparse as sps
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
+from scipy import sparse
 
 from networkx.algorithms.community.asyn_fluid import asyn_fluidc
 
@@ -1162,9 +1163,6 @@ class ClusterNodeSequence(Sequence):
         return num_batches
 
     def __getitem__(self, index):
-
-        # print(f"{self.name}  index={index}")
-
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
@@ -1172,19 +1170,27 @@ class ClusterNodeSequence(Sequence):
             cluster
         )  # Get the subgraph; returns SubGraph view
 
-        adj_cluster = np.array(
-            nx.adjacency_matrix(g_cluster).todense()  # nodelist=cluster
-        )  # order is given by order of IDs in cluster
-        if self.normalize_adj:
-            adj_cluster = adj_cluster + np.eye(
-                adj_cluster.shape[0], dtype=np.int
-            )  # add self-loops
-            degree_matrix = adj_cluster.sum(axis=1) + 1
-            degree_matrix = np.diag(1.0 / degree_matrix)
-            adj_cluster = degree_matrix @ adj_cluster
-            adj_cluster_diagonal = np.diag(adj_cluster)
+        # adj_cluster = np.array(
+        #     nx.adjacency_matrix(g_cluster).todense()
+        # )  # order is given by order of IDs in cluster
 
-            adj_cluster = adj_cluster + 0.1 * np.diag(adj_cluster_diagonal)
+        adj_cluster = nx.adjacency_matrix(g_cluster)  # order is given by order of IDs in cluster
+
+        # The operations to normalize the adjacency matrix are too slow.
+        # Either optimize this or implement as a layer(?)
+        if self.normalize_adj:
+            # add self loops
+            adj_cluster.setdiag(1)  # add self loops
+            degree_matrix_diag = 1.0 / (adj_cluster.sum(axis=1) + 1)
+            degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
+            # print(f"degree_matrix_diag shape: {degree_matrix_diag.shape}")
+            # print(f"degree_matric_diag type {type(degree_matrix_diag)}")
+            degree_matrix = sparse.lil_matrix(adj_cluster.shape)
+            degree_matrix.setdiag(degree_matrix_diag)
+            adj_cluster = degree_matrix.tocsr() @ adj_cluster
+            adj_cluster.setdiag(1.1 * adj_cluster.diagonal())
+
+        adj_cluster = adj_cluster.toarray()
 
         g_node_list = list(g_cluster.nodes())
 
@@ -1193,7 +1199,6 @@ class ClusterNodeSequence(Sequence):
             list(set(g_node_list).intersection(self.target_ids))
         )
 
-        # self._node_order_in_progress.extend(target_nodes_in_cluster)
         self.__node_buffer[index] = target_nodes_in_cluster
 
         # The list of indices of the target nodes in cluster
