@@ -1,8 +1,29 @@
 # Change Log
 
+## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.1)
+
+**New algorithms:**
+
+**Implemented enhancements:** 
+
+**Refactoring:**
+
+**Fixed bugs:**
+
+
+## [0.8.1](https://github.com/stellargraph/stellargraph/tree/v0.8.1)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.8.1...v0.8.0)
+
+**Fixed bugs:**
+- Reverted erroneous demo notebooks.
+
+
 ## [0.8.0](https://github.com/stellargraph/stellargraph/tree/v0.8.0)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.7.1...HEAD)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.8.0...v0.7.3)
 
 **New algorithms:**
 - Directed GraphSAGE algorithm (a generalisation of GraphSAGE to directed graphs) + demo [\#479](https://github.com/stellargraph/stellargraph/pull/479)
