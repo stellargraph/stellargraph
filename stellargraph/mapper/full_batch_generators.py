@@ -34,7 +34,7 @@ from tensorflow.keras.utils import Sequence
 from . import FullBatchNodeSequence, SparseFullBatchNodeSequence
 from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
 from ..core.utils import is_real_iterable
-from ..core.utils import GCN_Aadj_feats_op
+from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
 
 class FullBatchNodeGenerator:
@@ -65,10 +65,12 @@ class FullBatchNodeGenerator:
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
         of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
+    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
     [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
     [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
 
     Example::
 
@@ -82,7 +84,7 @@ class FullBatchNodeGenerator:
         # Alternatively, use the generator itself with model.fit_generator:
         model.fit_generator(train_gen, epochs=num_epochs, ...)
 
-    For more information, please see the GCN/GAT and SGC demos:
+    For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
@@ -97,10 +99,20 @@ class FullBatchNodeGenerator:
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
-
+        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability" of returning to the
+        starting node in the propagation step as in [4].
     """
 
-    def __init__(self, G, name=None, method="gcn", k=1, sparse=True, transform=None):
+    def __init__(
+        self,
+        G,
+        name=None,
+        method="gcn",
+        k=1,
+        sparse=True,
+        transform=None,
+        teleport_probability=0.1,
+    ):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -108,6 +120,7 @@ class FullBatchNodeGenerator:
         self.graph = G
         self.name = name
         self.k = k
+        self.teleport_probability = teleport_probability
         self.method = method
 
         # Check if the graph has features
@@ -165,6 +178,18 @@ class FullBatchNodeGenerator:
                 np.ones(self.Aadj.shape[0]) - self.Aadj.diagonal()
             )
 
+        elif self.method in ["ppnp"]:
+            if self.use_sparse:
+                raise ValueError(
+                    "use_sparse=true' is incompatible with 'ppnp'."
+                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                )
+            self.features, self.Aadj = PPNP_Aadj_feats_op(
+                features=self.features,
+                A=self.Aadj,
+                teleport_probability=self.teleport_probability,
+            )
+
         elif self.method in [None, "none"]:
             pass
 
@@ -199,8 +224,11 @@ class FullBatchNodeGenerator:
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
+        # Dictionary to store node indices for quicker node index lookups
+        node_lookup = dict(zip(self.node_list, range(len(self.node_list))))
+
         # The list of indices of the target nodes in self.node_list
-        node_indices = np.array([self.node_list.index(n) for n in node_ids])
+        node_indices = np.array([node_lookup[n] for n in node_ids])
 
         if self.use_sparse:
             return SparseFullBatchNodeSequence(
