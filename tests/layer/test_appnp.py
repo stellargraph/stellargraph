@@ -1,6 +1,6 @@
 from stellargraph.layer.appnp import *
-from stellargraph.mapper.node_mappers import FullBatchNodeGenerator
-from stellargraph.core.graph import StellarGraph
+from stellargraph.mapper import FullBatchNodeGenerator
+from stellargraph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
 import networkx as nx
