@@ -160,7 +160,6 @@ def train(
         history = model.fit(
             x=inputs_train,
             y=y_train,
-            batch_size=N,
             shuffle=False,  # must be False, since shuffling data means shuffling the whole graph
             epochs=num_epochs,
             verbose=2,
