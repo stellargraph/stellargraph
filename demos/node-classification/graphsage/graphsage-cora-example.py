@@ -118,7 +118,7 @@ def train(
     # GraphSAGE model
     model = GraphSAGE(
         layer_sizes=layer_size,
-        generator=train_gen,
+        generator=generator,
         bias=True,
         dropout=dropout,
         aggregator=MeanAggregator,
