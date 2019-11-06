@@ -1,4 +1,4 @@
-networkx>=2.2,<2.4
+networkx>=2.2
 setuptools>=39.1.0
 tensorflow>=1.12.1,<1.15
 numba>=0.39.0
