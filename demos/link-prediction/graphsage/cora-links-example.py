@@ -196,7 +196,7 @@ def train(
     history = model.fit_generator(
         train_flow,
         epochs=num_epochs,
-        validation_data=test_gen,
+        validation_data=test_flow,
         verbose=2,
         shuffle=False,
     )
