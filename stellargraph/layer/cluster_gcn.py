@@ -385,7 +385,7 @@ class ClusterGCN:
 
         return h_layer
 
-    def node_model(self):
+    def build(self):
         """
         Builds a GCN model for node prediction
 
@@ -399,8 +399,6 @@ class ClusterGCN:
         # Inputs for features & target indices
         x_t = Input(batch_shape=(1, None, N_feat))
         out_indices_t = Input(batch_shape=(1, None, None), dtype="int32")  # was (1, None, None)
-        # x_t = Input(batch_shape=(None, N_feat))
-        # out_indices_t = Input(batch_shape=(None,), dtype="int32")
 
         # Placeholders for the dense adjacency matrix
         A_m = Input(batch_shape=(1, None, None))
