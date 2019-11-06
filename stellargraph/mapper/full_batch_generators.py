@@ -228,7 +228,7 @@ class FullBatchNodeGenerator:
         node_lookup = dict(zip(self.node_list, range(len(self.node_list))))
 
         # The list of indices of the target nodes in self.node_list
-        node_indices = np.array([node_lookup[n] for n in node_ids])
+        node_indices = np.array([node_lookup[n] for n in node_ids], dtype="int32")
 
         if self.use_sparse:
             return SparseFullBatchNodeSequence(

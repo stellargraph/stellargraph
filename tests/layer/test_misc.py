@@ -19,13 +19,12 @@
 GCN tests
 
 """
-
-from stellargraph.layer.misc import *
-
-import numpy as np
+import tensorflow as tf
 from tensorflow import keras
+import numpy as np
 import scipy.sparse as sps
 import pytest
+from stellargraph.layer.misc import *
 
 
 def sparse_matrix_example(N=10, density=0.1):
@@ -78,7 +77,7 @@ def test_squeezedsparseconversion_dtype():
 
     z = model.predict([x, np.expand_dims(A_indices, 0), np.expand_dims(A_values, 0)])
 
-    assert np.dtype(z.dtype) == np.dtype("float64")
+    assert A_mat.dtype == tf.dtypes.float64
     assert np.allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7)
 
 

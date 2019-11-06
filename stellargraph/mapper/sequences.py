@@ -434,7 +434,9 @@ class SparseFullBatchNodeSequence(Sequence):
             raise ValueError("Adjacency matrix not in expected sparse format")
 
         # Convert matrices to list of indices & values
-        self.A_indices = np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
+        self.A_indices = np.expand_dims(
+            np.hstack((A.row[:, None], A.col[:, None])), 0
+        ).astype("int64")
         self.A_values = np.expand_dims(A.data, 0)
 
         # Reshape all inputs to have batch dimension of 1
