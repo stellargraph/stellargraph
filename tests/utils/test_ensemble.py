@@ -75,7 +75,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
     #     train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = GraphSAGE(
-        layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
+        layer_sizes=[8, 8], generator=generator, bias=True, dropout=0.5
     )
 
     if link_prediction:
@@ -104,15 +104,22 @@ def create_graphSAGE_model(graph, link_prediction=False):
 def create_HinSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
-        generator = HinSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 1])
+        generator = HinSAGELinkGenerator(
+            graph,
+            batch_size=2,
+            num_samples=[2, 1],
+            head_node_types=["default", "default"],
+        )
         edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
         train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
     else:
-        generator = HinSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
+        generator = HinSAGENodeGenerator(
+            graph, batch_size=2, num_samples=[2, 2], head_node_type="default"
+        )
         train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = HinSAGE(
-        layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
+        layer_sizes=[8, 8], generator=generator, bias=True, dropout=0.5
     )
 
     if link_prediction:
@@ -336,7 +343,7 @@ def test_Ensemble_fit_generator():
             optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
         )
 
-        ens.fit_generator(train_gen, epochs=10, verbose=0, shuffle=False)
+        ens.fit_generator(train_gen, epochs=1, verbose=0, shuffle=False)
 
         with pytest.raises(ValueError):
             ens.fit_generator(
@@ -378,7 +385,7 @@ def test_BaggingEnsemble_fit_generator():
             generator=generator,
             train_data=train_data,
             train_targets=train_targets,
-            epochs=10,
+            epochs=1,
             validation_data=train_gen,
             verbose=0,
             shuffle=False,
@@ -652,7 +659,7 @@ def test_evaluate_generator_link_prediction():
         keras_model = gnn_model[1]
         generator = gnn_model[2]
 
-        ens = Ensemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
@@ -694,7 +701,7 @@ def test_evaluate_generator_link_prediction():
         #
         # Repeat for BaggingEnsemble
 
-        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
@@ -750,7 +757,7 @@ def test_predict_generator_link_prediction():
         keras_model = gnn_model[1]
         generator = gnn_model[2]
 
-        ens = Ensemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
@@ -780,7 +787,7 @@ def test_predict_generator_link_prediction():
 
         #
         # Repeat for BaggingEnsemble
-        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]

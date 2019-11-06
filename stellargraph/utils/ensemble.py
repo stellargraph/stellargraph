@@ -439,9 +439,9 @@ class Ensemble(object):
             if not isinstance(
                 generator,
                 (
-                    sg.mapper.node_mappers.GraphSAGENodeGenerator,
-                    sg.mapper.node_mappers.HinSAGENodeGenerator,
-                    sg.mapper.node_mappers.FullBatchNodeGenerator,
+                    sg.mapper.GraphSAGENodeGenerator,
+                    sg.mapper.HinSAGENodeGenerator,
+                    sg.mapper.FullBatchNodeGenerator,
                 ),
             ):
                 raise ValueError(

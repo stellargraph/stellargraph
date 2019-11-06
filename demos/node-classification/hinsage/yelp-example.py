@@ -37,9 +37,9 @@ from tensorflow import keras
 from tensorflow.keras import optimizers, layers, metrics
 import tensorflow.keras.backend as K
 
-from stellargraph.core.graph import StellarGraph
-from stellargraph.layer.hinsage import HinSAGE
-from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
+from stellargraph.core import StellarGraph
+from stellargraph.layer import HinSAGE
+from stellargraph.mapper import HinSAGENodeGenerator
 
 from sklearn import model_selection
 from sklearn import metrics as sk_metrics
@@ -96,12 +96,12 @@ def train(
     print("Test targets:\n", test_targets.iloc[:, 0].value_counts())
 
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    generator = HinSAGENodeGenerator(G, batch_size, num_samples)
+    generator = HinSAGENodeGenerator(G, batch_size, num_samples, head_node_type="user")
     train_gen = generator.flow_from_dataframe(train_targets, shuffle=True)
     test_gen = generator.flow_from_dataframe(test_targets)
 
     # GraphSAGE model
-    model = HinSAGE(layer_size, train_gen, dropout=dropout)
+    model = HinSAGE(layer_sizes=layer_size, generator=generator, dropout=dropout)
     x_inp, x_out = model.build()
 
     # Final estimator layer
