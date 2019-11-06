@@ -21,7 +21,7 @@ GCN tests
 """
 
 from stellargraph.layer.gcn import *
-from stellargraph.mapper.node_mappers import FullBatchNodeGenerator
+from stellargraph.mapper import FullBatchNodeGenerator
 from stellargraph.core.graph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 

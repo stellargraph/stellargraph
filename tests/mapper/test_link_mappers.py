@@ -29,15 +29,14 @@ GraphSAGELinkMapper(
     )
 g
 """
-from stellargraph.mapper.link_mappers import *
-from stellargraph.core.graph import *
-from stellargraph.data.explorer import *
-from stellargraph.data.unsupervised_sampler import *
-
 import numpy as np
 import networkx as nx
 import pytest
 import random
+from stellargraph.mapper import *
+from stellargraph.core.graph import *
+from stellargraph.data.explorer import *
+from stellargraph.data.unsupervised_sampler import *
 
 
 def example_Graph_1(feature_size=None):
@@ -444,7 +443,7 @@ class Test_GraphSAGELinkGenerator:
         )
 
         # The flow method is not passed UnsupervisedSampler object or a list of samples is not passed
-        with pytest.raises(TypeError):
+        with pytest.raises(KeyError):
             gen = GraphSAGELinkGenerator(
                 G, batch_size=n_batch, num_samples=n_samples
             ).flow("not_a_list_of_samples_or_a_sample_generator")
@@ -461,19 +460,20 @@ class Test_GraphSAGELinkGenerator:
 
         unsupervisedSamples = UnsupervisedSampler(G)
 
-        mapper = GraphSAGELinkGenerator(
+        gen = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
-        ).flow(unsupervisedSamples)
+        )
+        mapper = gen.flow(unsupervisedSamples)
 
         assert mapper.data_size == 16
         assert self.batch_size == 2
         assert len(mapper) == 8
+        assert len(set(gen.head_node_types)) == 1
 
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
 
             assert len(nf) == 3 * 2
-            assert len(set(mapper.head_node_types)) == 1
 
             for ii in range(2):
                 assert nf[ii].shape == (
@@ -514,49 +514,61 @@ class Test_HinSAGELinkGenerator(object):
         links = [(1, 4), (1, 5), (0, 4), (5, 0)]  # ('user', 'user') links
         link_labels = [0] * len(links)
 
-        mapper = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
-        ).flow(links, link_labels)
+        gen = HinSAGELinkGenerator(
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["user", "user"],
+        )
+        mapper = gen.flow(links, link_labels)
 
         assert mapper.data_size == len(links)
         assert len(mapper.ids) == len(links)
-        assert mapper.head_node_types == ("user", "user")
+        assert tuple(gen.head_node_types) == ("user", "user")
 
         # Constructor with a heterogeneous graph:
         G = example_HIN_1(self.n_feat)
         links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # ('movie', 'user') links
         link_labels = [0] * len(links)
 
-        mapper = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
-        ).flow(links, link_labels)
+        gen = HinSAGELinkGenerator(
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["movie", "user"],
+        )
+        mapper = gen.flow(links, link_labels)
 
         assert mapper.data_size == len(links)
         assert len(mapper.ids) == len(links)
         assert mapper.data_size == len(link_labels)
-        assert mapper.head_node_types == ("movie", "user")
+        assert tuple(gen.head_node_types) == ("movie", "user")
 
     def test_HinSAGELinkGenerator_constructor_multiple_link_types(self):
         G = example_HIN_1(self.n_feat)
-        links = [
-            (1, 4),
-            (1, 5),
-            (0, 4),
-            (5, 0),
-        ]  # first 3 are ('movie', 'user') links, the last is ('user', 'movie') link.
+
+        # first 3 are ('movie', 'user') links, the last is ('user', 'movie') link.
+        links = [(1, 4), (1, 5), (0, 4), (5, 0)]
         link_labels = [0] * len(links)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             HinSAGELinkGenerator(
-                G, batch_size=self.batch_size, num_samples=self.num_samples
+                G,
+                batch_size=self.batch_size,
+                num_samples=self.num_samples,
+                head_node_types=["movie", "user"],
             ).flow(links, link_labels)
 
-        links = G.edges()  # all edges in G, which have multiple link types
+        # all edges in G, which have multiple link types
+        links = G.edges()
         link_labels = [0] * len(links)
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             HinSAGELinkGenerator(
-                G, batch_size=self.batch_size, num_samples=self.num_samples
+                G,
+                batch_size=self.batch_size,
+                num_samples=self.num_samples,
+                head_node_types=["user", "user"],
             ).flow(links, link_labels)
 
     def test_HinSAGELinkGenerator_1(self):
@@ -566,7 +578,10 @@ class Test_HinSAGELinkGenerator(object):
         link_labels = [0] * data_size
 
         mapper = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["movie", "user"],
         ).flow(links, link_labels)
 
         assert len(mapper) == 2
@@ -627,9 +642,9 @@ class Test_HinSAGELinkGenerator(object):
             data_size = len(edges)
             edge_labels = np.arange(data_size)
 
-            mapper = HinSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
-                edges, edge_labels, shuffle=shuffle
-            )
+            mapper = HinSAGELinkGenerator(
+                G, batch_size=2, num_samples=[0], head_node_types=["movie", "user"]
+            ).flow(edges, edge_labels, shuffle=shuffle)
 
             assert len(mapper) == 2
             for batch in range(len(mapper)):
@@ -653,7 +668,10 @@ class Test_HinSAGELinkGenerator(object):
         data_size = len(links)
 
         gen = HinSAGELinkGenerator(
-            G, batch_size=self.batch_size, num_samples=self.num_samples
+            G,
+            batch_size=self.batch_size,
+            num_samples=self.num_samples,
+            head_node_types=["movie", "user"],
         ).flow(links)
         for i in range(len(gen)):
             assert gen[i][1] is None
@@ -675,21 +693,23 @@ class Test_HinSAGELinkGenerator(object):
 
         # Non-isolate + isolate
         head_links = [(hnodes["A"][0], hnodes["B"][-1])]
-        gen = HinSAGELinkGenerator(Gh, batch_size=n_batch, num_samples=n_samples).flow(
-            head_links
+        gen = HinSAGELinkGenerator(
+            Gh, batch_size=n_batch, num_samples=n_samples, head_node_types=["A", "B"]
         )
+        flow = gen.flow(head_links)
 
-        ne, nl = gen[0]
+        ne, nl = flow[0]
         assert len(gen._sampling_schema[0]) == len(ne)
         assert pytest.approx([1, 1, 2, 2, 2, 4, 4, 4, 4, 4]) == [x.shape[1] for x in ne]
 
         # Two isolates
         head_links = [(hnodes["B"][-2], hnodes["B"][-1])]
-        gen = HinSAGELinkGenerator(Gh, batch_size=n_batch, num_samples=n_samples).flow(
-            head_links
+        gen = HinSAGELinkGenerator(
+            Gh, batch_size=n_batch, num_samples=n_samples, head_node_types=["B", "B"]
         )
+        flow = gen.flow(head_links)
 
-        ne, nl = gen[0]
+        ne, nl = flow[0]
         assert len(gen._sampling_schema[0]) == len(ne)
         assert pytest.approx([1, 1, 2, 2, 4, 4, 4, 4]) == [x.shape[1] for x in ne]
 
@@ -804,7 +824,7 @@ class Test_Attri2VecLinkGenerator:
         gen = Attri2VecLinkGenerator(G, batch_size=n_batch).flow(unsupervisedSamples)
 
         # The flow method is not passed UnsupervisedSampler object or a list of samples is not passed
-        with pytest.raises(TypeError):
+        with pytest.raises(KeyError):
             gen = Attri2VecLinkGenerator(G, batch_size=n_batch).flow(
                 "not_a_list_of_samples_or_a_sample_generator"
             )

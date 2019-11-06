@@ -16,8 +16,7 @@
 
 import random
 
-from stellargraph.mapper.link_mappers import *
-from stellargraph.mapper.node_mappers import *
+from stellargraph.mapper import *
 from stellargraph.core.graph import *
 
 import numpy as np
