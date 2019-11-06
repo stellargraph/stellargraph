@@ -9,7 +9,7 @@
 **Implemented enhancements:** 
 
 **Refactoring:**
-- Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models [\#498](https://github.com/stellargraph/stellargraph/pull/498)
+- Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
 
 **Fixed bugs:**
 

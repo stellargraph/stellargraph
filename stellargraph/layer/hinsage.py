@@ -268,14 +268,17 @@ class HinSAGE:
                 )
             x_inp, predictions = gat.build()
 
+    Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
+    as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
     For more details, please see the HinSAGE demo notebooks:
     demos/node-classification/hinsage/yelp-example.py
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
-        generator (HinSAGEGenerator): A HinSAGENodeGenerator or HinSAGELinkGenerator. If specified, n_samples,
-            input_neighbour_tree and input_dim will be taken from this object.
+        generator (HinSAGENodeGenerator or HinSAGELinkGenerator):
+            If specified, required model arguments such as the number of samples 
+            will be taken from the generator object. See note below.
         aggregator (HinSAGEAggregator): The HinSAGE aggregator to use; defaults to the `MeanHinAggregator`.
         bias (bool): If True (default), a bias vector is learnt for each layer.
         dropout (float): The dropout supplied to each layer; defaults to no dropout.
@@ -388,9 +391,14 @@ class HinSAGE:
              generator: The supplied generator.
         """
         if not isinstance(generator, (HinSAGELinkGenerator, HinSAGENodeGenerator)):
-            raise TypeError(
-                "Generator should be an instance of HinSAGELinkGenerator or HinSAGENodeGenerator"
-            )
+            errmsg = "Generator should be an instance of HinSAGELinkGenerator or HinSAGENodeGenerator"
+            if isinstance(generator, (NodeSequence, LinkSequence)):
+                errmsg = (
+                    "Passing a Sequence object as the generator to HinSAGE is no longer supported. "
+                    + errmsg
+                )
+            raise TypeError(errmsg)
+
         self.n_samples = generator.num_samples
         self.subtree_schema = generator.schema.type_adjacency_list(
             generator.head_node_types, len(self.n_samples)
