@@ -41,6 +41,8 @@ from ..mapper import (
     GraphSAGENodeGenerator,
     GraphSAGELinkGenerator,
     DirectedGraphSAGENodeGenerator,
+    NodeSequence,
+    LinkSequence,
 )
 
 
@@ -742,12 +744,15 @@ class GraphSAGE:
                 )
             x_inp, predictions = gat.build()
 
+    Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
+    as the `generator=` argument is now deprecated and the base generator object should be passed instead.
+
     For more details, please see the GraphSAGE demo notebooks:
     demos/node-classification/graphsage/graphsage-cora-node-classification-example.ipynb
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
-        generator (GraphSAGENodeGenerator or GraphSAGELinkGenerator, optional)
+        generator (GraphSAGENodeGenerator or GraphSAGELinkGenerator):
             If specified `n_samples` and `input_dim` will be extracted from this object.
         aggregator (class): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
         bias (bool): If True (default), a bias vector is learnt for each layer.
@@ -842,9 +847,13 @@ class GraphSAGE:
              generator: The supplied generator.
         """
         if not isinstance(generator, (GraphSAGENodeGenerator, GraphSAGELinkGenerator)):
-            raise TypeError(
-                "Generator should be an instance of GraphSAGENodeGenerator or GraphSAGELinkGenerator"
-            )
+            errmsg = "Generator should be an instance of GraphSAGENodeGenerator or GraphSAGELinkGenerator"
+            if isinstance(generator, (NodeSequence, LinkSequence)):
+                errmsg = (
+                    "Passing a Sequence object as the generator to GraphSAGE is no longer supported. "
+                    + errmsg
+                )
+            raise TypeError(errmsg)
 
         self.n_samples = generator.num_samples
         # Check the number of samples and the layer sizes are consistent
@@ -1078,7 +1087,8 @@ class DirectedGraphSAGE(GraphSAGE):
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
-        generator (Sequence): A NodeSequence or LinkSequence.
+        generator (DirectedGraphSAGENodeGenerator):
+            If specified `n_samples` and `input_dim` will be extracted from this object.
         aggregator (class, optional): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
         bias (bool, optional): If True (default), a bias vector is learnt for each layer.
         dropout (float, optional): The dropout supplied to each layer; defaults to no dropout.
@@ -1086,7 +1096,7 @@ class DirectedGraphSAGE(GraphSAGE):
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer;
             defaults to None.
 
-    Note::
+    Notes::
         If a generator is not specified, then additional keyword arguments must be supplied:
 
         * in_samples (list): The number of in-node samples per layer in the model.
@@ -1096,7 +1106,12 @@ class DirectedGraphSAGE(GraphSAGE):
         * input_dim (int): The dimensions of the node features used as input to the model.
 
         * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
-          and 2 for link inference (currently no others are supported).    """
+          and 2 for link inference (currently no others are supported).
+          
+        Passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
+        as the `generator=` argument is now deprecated and the base generator object should be passed instead.
+
+        """
 
     def _get_sizes_from_generator(self, generator):
         """
@@ -1104,11 +1119,14 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              generator: The supplied generator.
         """
-
         if not isinstance(generator, (DirectedGraphSAGENodeGenerator,)):
-            raise TypeError(
-                "Generator should be an instance of DirectedGraphSAGELinkGenerator or DirectedGraphSAGENodeGenerator"
-            )
+            errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"
+            if isinstance(generator, (NodeSequence, LinkSequence)):
+                errmsg = (
+                    "Passing a Sequence object as the generator to DirectedGraphSAGE is no longer supported. "
+                    + errmsg
+                )
+            raise TypeError(errmsg)
 
         self.in_samples = generator.in_samples
         if len(self.in_samples) != self.max_hops:
