@@ -1096,10 +1096,12 @@ class TemporalBiasedRandomWalk(GraphWalk):
     def get_exp_distribution(self, times, current_time, orientation="forward"):
         if orientation == "forward":
             time_dist = [
-                math.exp(t - current_time) for t in times
+                np.exp(t - current_time) for t in times
+                #math.exp(t - current_time) for t in times
             ]  # relative gap in time w.r.t current time (higher values for shorter gaps)
         else:
-            time_dist = [math.exp(current_time - t) for t in times]
+            time_dist = [np.exp(current_time - t) for t in times]
+            #time_dist = [math.exp(current_time - t) for t in times]
         sum_time_dist = sum(time_dist)
         exp_dist = [t / sum_time_dist for t in time_dist]  # exponential distribution
         return exp_dist
