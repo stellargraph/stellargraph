@@ -278,7 +278,11 @@ class ClusterGCN:
         if not isinstance(generator, ClusterNodeGenerator):
             raise TypeError("Generator should be a instance of ClusterNodeGenerator")
 
-        assert len(layer_sizes) == len(activations)
+        if len(layer_sizes) != len(activations):
+            raise AssertionError(
+                "The number of given layers should be the same as the number of activations."
+                "However given len(layer_sizes): {} vs len(activations): {}".format(len(layer_sizes), len(activations))
+            )
 
         self.layer_sizes = layer_sizes
         self.activations = activations
@@ -330,7 +334,7 @@ class ClusterGCN:
 
         if len(Ainput) != 1:
             raise NotImplementedError(
-                "The Cluster GCN method currently only accepts a single matrix for each minibatch"
+                "The Cluster GCN method currently only accepts a single matrix for each batch"
             )
 
         h_layer = x_in
