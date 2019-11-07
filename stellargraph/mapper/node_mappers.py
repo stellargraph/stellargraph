@@ -999,11 +999,12 @@ class ClusterNodeGenerator:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         k (int): The number of clusters if parameter `clusters` is None. Otherwise it is ignored.
+        lam (float): The mixture coeefficient for adjacenc matrix normalisation.
         clusters (list): a list of lists of node IDs such that each list corresponds to a cluster of nodes
         in G. The clusters should be non-overlaping. If None, the G is clustered into k clusters.
     """
 
-    def __init__(self, G, name=None, k=1, q=1, clusters=None):
+    def __init__(self, G, name=None, k=1, q=1, lam=0.1, clusters=None):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -1012,6 +1013,7 @@ class ClusterNodeGenerator:
         self.name = name
         self.k = k
         self.q = q  # The number of clusters to sample per mini-batch
+        self.lam = lam
         self.clusters = clusters
 
         if k % q != 0:
@@ -1119,6 +1121,13 @@ class ClusterNodeSequence(Sequence):
         targets (np.ndarray, optional): An optional array of node targets of size (N x C),
             where C is the target size (e.g., number of classes for one-hot class targets)
         node_ids (iterable, optional): The node IDs for the target nodes. Required if targets is not None.
+        normalize_adj (bool, optional): Specifies whether the adjacency matrix for each mini-batch should
+            be normalized or not. The default is True.
+        q (int, optional): The number of subgraphs to combine for each batch. The default value is
+            1 such that the generator treats each subgraph as a batch.
+        lam (float, optional): The mixture coefficient for adjacency matrix normalisation. Valid
+            values are in the interval [0, 1] and the default value is 0.1.
+        name (str, optional): An optional name for this generator object.
     """
 
     use_sparse = False
@@ -1131,6 +1140,7 @@ class ClusterNodeSequence(Sequence):
         node_ids=None,
         normalize_adj=True,
         q=1,
+        lam=0.1,
         name=None,
     ):
 
@@ -1147,13 +1157,16 @@ class ClusterNodeSequence(Sequence):
         self.node_list = list(graph.nodes())
         self.normalize_adj = normalize_adj
         self.q = q
+        self.lam = lam
         self.node_order = list()  # node_ids  # initially it should be in this order
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
 
         if targets is not None:
             self.targets = np.asanyarray(targets)
-            self.target_node_lookup = dict(zip(self.target_ids, range(len(self.target_ids))))
+            self.target_node_lookup = dict(
+                zip(self.target_ids, range(len(self.target_ids)))
+            )
         else:
             self.targets = None
 
@@ -1175,7 +1188,9 @@ class ClusterNodeSequence(Sequence):
         #     nx.adjacency_matrix(g_cluster).todense()
         # )  # order is given by order of IDs in cluster
 
-        adj_cluster = nx.adjacency_matrix(g_cluster)  # order is given by order of IDs in cluster
+        adj_cluster = nx.adjacency_matrix(
+            g_cluster
+        )  # order is given by order of IDs in cluster
 
         # The operations to normalize the adjacency matrix are too slow.
         # Either optimize this or implement as a layer(?)
@@ -1184,12 +1199,10 @@ class ClusterNodeSequence(Sequence):
             adj_cluster.setdiag(1)  # add self loops
             degree_matrix_diag = 1.0 / (adj_cluster.sum(axis=1) + 1)
             degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
-            # print(f"degree_matrix_diag shape: {degree_matrix_diag.shape}")
-            # print(f"degree_matric_diag type {type(degree_matrix_diag)}")
             degree_matrix = sparse.lil_matrix(adj_cluster.shape)
             degree_matrix.setdiag(degree_matrix_diag)
             adj_cluster = degree_matrix.tocsr() @ adj_cluster
-            adj_cluster.setdiag(1.1 * adj_cluster.diagonal())
+            adj_cluster.setdiag((1.0 + self.lam) * adj_cluster.diagonal())
 
         adj_cluster = adj_cluster.toarray()
 
@@ -1206,12 +1219,9 @@ class ClusterNodeSequence(Sequence):
         node_lookup = dict(zip(g_node_list, range(len(g_node_list))))
 
         # The list of indices of the target nodes in self.node_list
-        target_node_indices = np.array([node_lookup[n] for n in target_nodes_in_cluster])
-
-        # The list of indices of the target nodes in cluster
-        # target_node_indices = np.array(
-        #     [g_node_list.index(n) for n in target_nodes_in_cluster]
-        # )
+        target_node_indices = np.array(
+            [node_lookup[n] for n in target_nodes_in_cluster]
+        )
 
         if index == (len(self.clusters_original) // self.q) - 1:
             # last batch
@@ -1222,10 +1232,9 @@ class ClusterNodeSequence(Sequence):
         if self.targets is not None:
             # Dictionary to store node indices for quicker node index lookups
             # The list of indices of the target nodes in self.node_list
-            cluster_target_indices = np.array([self.target_node_lookup[n] for n in target_nodes_in_cluster])
-            # cluster_target_indices = np.array(
-            #     [self.target_ids.index(n) for n in target_nodes_in_cluster]
-            # )
+            cluster_target_indices = np.array(
+                [self.target_node_lookup[n] for n in target_nodes_in_cluster]
+            )
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
 
