@@ -1025,13 +1025,6 @@ class ClusterNodeGenerator:
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
 
-        # self.Aadj = nx.to_scipy_sparse_matrix(
-        #     G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
-        # )
-        #
-        # # we will use dense adjacency by default.
-        # self.use_sparse = False
-
         # We need a schema to check compatibility with ClusterGCN
         self.schema = G.create_graph_schema(create_type_maps=True)
 
@@ -1055,14 +1048,15 @@ class ClusterNodeGenerator:
                 for i in range(0, len(all_nodes), cluster_size)
             ]
             if len(self.clusters) > self.k:
-                # for the case that the number of nodes is not exactly divisible by k, we combine the last
-                # cluster with the second last one
+                # for the case that the number of nodes is not exactly divisible by k, we combine
+                # the last cluster with the second last one
                 self.clusters[-2].extend(self.clusters[-1])
                 del self.clusters[-1]
 
         print(f"Number of clusters {len(self.clusters)}")
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
+
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
 
@@ -1072,9 +1066,11 @@ class ClusterNodeGenerator:
         with the supplied node ids and numeric targets.
 
         Args:
-            node_ids: and iterable of node ids for the nodes of interest
+            node_ids (iterable): and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets (2d array, optional): a 2D array of numeric node targets with shape `(len(node_ids),
+                target_size)`
+            name (str, optional): An optional name for the returned generator object.
 
         Returns:
             A NodeSequence object to use with ClusterGCN
@@ -1125,7 +1121,8 @@ class ClusterNodeSequence(Sequence):
             be normalized or not. The default is True.
         q (int, optional): The number of subgraphs to combine for each batch. The default value is
             1 such that the generator treats each subgraph as a batch.
-        lam (float, optional): The mixture coefficient for adjacency matrix normalisation. Valid
+        lam (float, optional): The mixture coefficient for adjacency matrix normalisation (the
+        'diagonal enhancement' method). Valid
             values are in the interval [0, 1] and the default value is 0.1.
         name (str, optional): An optional name for this generator object.
     """
@@ -1183,10 +1180,6 @@ class ClusterNodeSequence(Sequence):
         g_cluster = self.graph.subgraph(
             cluster
         )  # Get the subgraph; returns SubGraph view
-
-        # adj_cluster = np.array(
-        #     nx.adjacency_matrix(g_cluster).todense()
-        # )  # order is given by order of IDs in cluster
 
         adj_cluster = nx.adjacency_matrix(
             g_cluster
