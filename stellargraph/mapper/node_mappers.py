@@ -997,14 +997,14 @@ class ClusterNodeGenerator:
 
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
-        name (str): an optional name of the generator
         k (int): The number of clusters if parameter `clusters` is None. Otherwise it is ignored.
-        lam (float): The mixture coeefficient for adjacenc matrix normalisation.
+        lam (float): The mixture coefficient for adjacency matrix normalisation.
         clusters (list): a list of lists of node IDs such that each list corresponds to a cluster of nodes
-        in G. The clusters should be non-overlaping. If None, the G is clustered into k clusters.
+        in G. The clusters should be non-overlapping. If None, the G is clustered into k clusters.
+        name (str): an optional name of the generator
     """
 
-    def __init__(self, G, name=None, k=1, q=1, lam=0.1, clusters=None):
+    def __init__(self, G, k=1, q=1, lam=0.1, clusters=None, name=None):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -1016,13 +1016,35 @@ class ClusterNodeGenerator:
         self.lam = lam
         self.clusters = clusters
 
+        if clusters:
+            self.k = len(clusters)
+
+        # Some error checking on the given parameter values
+        if lam < 0 or lam > 1 or not isinstance(lam, float):
+            raise ValueError(
+                "{}: lam must be a float in the range [0, 1].".format(
+                    type(self).__name__
+                )
+            )
+
+        if q <= 0 or not isinstance(q, int):
+            raise ValueError(
+                "{}: q must be a positive integer.".format(type(self).__name__)
+            )
+
+        if k <= 0 or not isinstance(k, int):
+            raise ValueError(
+                "{}: k must be a positive integer.".format(type(self).__name__)
+            )
+
         if k % q != 0:
-            raise ValueError("k must be exactly divisible by q")
+            raise ValueError(
+                "{}: k must be exactly divisible by q.".format(type(self).__name__)
+            )
 
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
 
         # We need a schema to check compatibility with ClusterGCN
@@ -1038,7 +1060,7 @@ class ClusterNodeGenerator:
             )
 
         if not clusters:
-            # graph clustering
+            # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
             all_nodes = list(G.nodes())
             random.shuffle(all_nodes)
@@ -1081,11 +1103,11 @@ class ClusterNodeGenerator:
         if targets is not None:
             # Check targets is an iterable
             if not is_real_iterable(targets):
-                raise TypeError("Targets must be an iterable or None")
+                raise TypeError("{}: Targets must be an iterable or None".format(type(self).__name__))
 
             # Check targets correct shape
             if len(targets) != len(node_ids):
-                raise TypeError("Targets must be the same length as node_ids")
+                raise TypeError("{}: Targets must be the same length as node_ids".format(type(self).__name__))
 
         # The list of indices of the target nodes in self.node_list
         # node_indices = np.array([self.node_list.index(n) for n in node_ids])
