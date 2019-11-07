@@ -19,15 +19,15 @@ from tensorflow.keras import activations, initializers, constraints, regularizer
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import ClusterNodeGenerator
-from .preprocessing_layer import GraphPreProcessingLayer
 
 
 class ClusterGraphConvolution(Layer):
 
     """
     Cluster Graph Convolution (GCN) Keras layer.
-    The implementation is based on the keras-gcn github repo https://github.com/tkipf/keras-gcn
-    GCN Keras layer.
+
+    The implementation is based on the GCN Keras layer of keras-gcn github
+    repo https://github.com/tkipf/keras-gcn
 
     Original paper: Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph
     Convolutional Networks, W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsieh,
@@ -199,8 +199,9 @@ class ClusterGraphConvolution(Layer):
         features = K.squeeze(features, 0)
         out_indices = K.squeeze(out_indices, 0)
 
-        # Calculate the layer operation of GCN
-        A = As[0]  # K.squeeze(As[0], 0)
+        # Calculate the layer operation of GCN multiplying the normalized adjacency matrix
+        # width the node features matrix.
+        A = As[0]
         h_graph = K.dot(A, features)
         output = K.dot(h_graph, self.kernel)
 
@@ -306,7 +307,7 @@ class ClusterGCN:
 
     def __call__(self, x):
         """
-        Apply a stack of GCN layers to the inputs.
+        Apply a stack of Cluster GCN layers to the inputs.
         The input tensors are expected to be a list of the following:
         [
             Node features shape (1, N, F),
