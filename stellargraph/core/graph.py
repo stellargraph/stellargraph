@@ -1052,7 +1052,7 @@ class NetworkXStellarGraph(StellarGraph):
         Returns:
             set: The collection of node attributes.
         """
-        attrs = set(self._graph.node[node].keys())
+        attrs = set(self._graph.nodes[node].keys())
         # Don't use node type as attribute:
         attrs.discard(self._node_type_attr)
         return attrs
