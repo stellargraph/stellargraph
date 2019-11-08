@@ -25,7 +25,7 @@ import networkx as nx
 import os
 
 
-@jit(nopython=True, parallel=True)
+@jit(nopython=True)
 def remap_ids(data, uid_map, mid_map, uid_inx=0, mid_inx=1):
     """
     Remap user and movie IDs

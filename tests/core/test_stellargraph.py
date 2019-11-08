@@ -40,7 +40,7 @@ def example_stellar_graph_1(feature_name=None, feature_size=10):
     # Add some numeric node attributes
     if feature_name:
         for v in G.nodes():
-            G.node[v][feature_name] = v * np.ones(feature_size)
+            G.nodes[v][feature_name] = v * np.ones(feature_size)
 
         return StellarGraph(G, node_features=feature_name)
     else:
@@ -60,8 +60,8 @@ def example_hin_1(feature_name=False, for_nodes=None, feature_sizes={}):
             for_nodes = list(G.nodes())
 
         for v in for_nodes:
-            fs = feature_sizes.get(G.node[v]["label"], 10)
-            G.node[v][feature_name] = v * np.ones(fs)
+            fs = feature_sizes.get(G.nodes[v]["label"], 10)
+            G.nodes[v][feature_name] = v * np.ones(fs)
 
         return StellarGraph(G, node_features=feature_name)
     else:
@@ -77,7 +77,7 @@ def example_stellar_graph_1_nx(feature_name=None):
     # Add some numeric node attributes
     if feature_name:
         for v in G.nodes():
-            G.node[v][feature_name] = v * np.ones(10)
+            G.nodes[v][feature_name] = v * np.ones(10)
 
     return G
 
@@ -91,7 +91,7 @@ def example_hin_1_nx(feature_name=False, for_nodes=[]):
 
     if feature_name:
         for v in for_nodes:
-            G.node[v][feature_name] = v * np.ones(10)
+            G.nodes[v][feature_name] = v * np.ones(10)
     return G
 
 

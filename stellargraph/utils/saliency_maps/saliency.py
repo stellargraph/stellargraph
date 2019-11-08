@@ -18,10 +18,7 @@
 import numpy as np
 from tensorflow.keras import backend as K
 from scipy.sparse import csr_matrix
-from stellargraph.mapper.node_mappers import (
-    SparseFullBatchNodeSequence,
-    FullBatchNodeSequence,
-)
+from stellargraph.mapper import SparseFullBatchNodeSequence, FullBatchNodeSequence
 
 
 class GradientSaliency:

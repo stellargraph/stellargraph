@@ -22,6 +22,8 @@ The mapper package contains classes and functions to map graph data to neural ne
 
 # __all__ = ["link_mappers", "node_mappers"]
 
-# Expose the mappers
-from .node_mappers import *
-from .link_mappers import *
+# Expose the generators
+from .sequences import *
+from .sampled_link_generators import *
+from .sampled_node_generators import *
+from .full_batch_generators import *
