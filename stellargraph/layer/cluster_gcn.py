@@ -273,7 +273,7 @@ class ClusterGCN:
         generator,
         bias=True,
         dropout=0.0,
-        kernel_regularizer=None,
+        **kwargs,
     ):
         if not isinstance(generator, ClusterNodeGenerator):
             raise TypeError("Generator should be a instance of ClusterNodeGenerator")
@@ -288,9 +288,11 @@ class ClusterGCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
+
+        # Optional regulariser, etc. for weights and biases
+        self._get_regularisers_from_keywords(kwargs)
 
         # Initialize a stack of Cluster GCN layers
         n_layers = len(self.layer_sizes)
@@ -304,10 +306,26 @@ class ClusterGCN:
                     l,
                     activation=a,
                     use_bias=self.bias,
-                    kernel_regularizer=self.kernel_regularizer,
                     final_layer=ii == (n_layers - 1),
+                    **self._regularisers,
                 )
             )
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        regularisers = {}
+        for param_name in [
+            "kernel_initializer",
+            "kernel_regularizer",
+            "kernel_constraint",
+            "bias_initializer",
+            "bias_regularizer",
+            "bias_constraint",
+        ]:
+            param_value = kwargs.pop(param_name, None)
+            if param_value is not None:
+                regularisers[param_name] = param_value
+        self._regularisers = regularisers
+
 
     def __call__(self, x):
         """
