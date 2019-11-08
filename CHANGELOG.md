@@ -2,7 +2,7 @@
 
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.1)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.2)
 
 **New algorithms:**
 
@@ -24,8 +24,6 @@ Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by p
 - Updated requirements to Tensorflow>=1.14, as tensorflow with lower versions causes errors with sparse full batch node methods: GCN, APPNP, and GAT. [\#519](https://github.com/stellargraph/stellargraph/issues/519)
 
 ## [0.8.1](https://github.com/stellargraph/stellargraph/tree/v0.8.1)
-
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.8.1...v0.8.0)
 
 **Fixed bugs:**
 - Reverted erroneous demo notebooks.
