@@ -1148,9 +1148,6 @@ class ClusterNodeSequence(Sequence):
             values are in the interval [0, 1] and the default value is 0.1.
         name (str, optional): An optional name for this generator object.
     """
-
-    use_sparse = False
-
     def __init__(
         self,
         graph,
@@ -1198,6 +1195,8 @@ class ClusterNodeSequence(Sequence):
     def __getitem__(self, index):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
+        # print(f"In __getitem_ index: {index}")
+        # print(f"self.clusters: {self.clusters}")
         cluster = self.clusters[index]
         g_cluster = self.graph.subgraph(
             cluster
@@ -1282,6 +1281,8 @@ class ClusterNodeSequence(Sequence):
                 for l in cc:
                     tmp.extend(list(self.clusters_original[l]))
                 self.clusters.append(tmp)
+        else:
+            self.clusters = copy.deepcopy(self.clusters_original)
 
         self.__node_buffer = dict()
 
