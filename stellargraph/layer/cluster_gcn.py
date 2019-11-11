@@ -78,7 +78,7 @@ class ClusterGraphConvolution(Layer):
         activity_regularizer=None,
         kernel_constraint=None,
         bias_constraint=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
@@ -267,13 +267,7 @@ class ClusterGCN:
     """
 
     def __init__(
-        self,
-        layer_sizes,
-        activations,
-        generator,
-        bias=True,
-        dropout=0.0,
-        **kwargs,
+        self, layer_sizes, activations, generator, bias=True, dropout=0.0, **kwargs
     ):
         if not isinstance(generator, ClusterNodeGenerator):
             raise TypeError("Generator should be a instance of ClusterNodeGenerator")
@@ -281,7 +275,9 @@ class ClusterGCN:
         if len(layer_sizes) != len(activations):
             raise AssertionError(
                 "The number of given layers should be the same as the number of activations."
-                "However given len(layer_sizes): {} vs len(activations): {}".format(len(layer_sizes), len(activations))
+                "However given len(layer_sizes): {} vs len(activations): {}".format(
+                    len(layer_sizes), len(activations)
+                )
             )
 
         self.layer_sizes = layer_sizes
@@ -325,7 +321,6 @@ class ClusterGCN:
             if param_value is not None:
                 regularisers[param_name] = param_value
         self._regularisers = regularisers
-
 
     def __call__(self, x):
         """
