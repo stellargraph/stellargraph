@@ -18,9 +18,7 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = [
-    "ClusterNodeGenerator",
-]
+__all__ = ["ClusterNodeGenerator"]
 
 import random
 import copy
@@ -167,11 +165,19 @@ class ClusterNodeGenerator:
         if targets is not None:
             # Check targets is an iterable
             if not is_real_iterable(targets):
-                raise TypeError("{}: Targets must be an iterable or None".format(type(self).__name__))
+                raise TypeError(
+                    "{}: Targets must be an iterable or None".format(
+                        type(self).__name__
+                    )
+                )
 
             # Check targets correct shape
             if len(targets) != len(node_ids):
-                raise TypeError("{}: Targets must be the same length as node_ids".format(type(self).__name__))
+                raise TypeError(
+                    "{}: Targets must be the same length as node_ids".format(
+                        type(self).__name__
+                    )
+                )
 
         # The list of indices of the target nodes in self.node_list
         # node_indices = np.array([self.node_list.index(n) for n in node_ids])
@@ -212,6 +218,7 @@ class ClusterNodeSequence(Sequence):
             values are in the interval [0, 1] and the default value is 0.1.
         name (str, optional): An optional name for this generator object.
     """
+
     def __init__(
         self,
         graph,
