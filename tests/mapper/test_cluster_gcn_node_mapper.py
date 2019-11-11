@@ -64,7 +64,43 @@ def test_ClusterNodeSequence_init():
     with pytest.raises(ValueError):
         ClusterNodeSequence(graph=G, clusters=[list(G.nodes())], q=2)
 
-    # __init__( self, graph, clusters, targets=None, node_ids=None, normalize_adj=True, q=1, lam=0.1,name=None, )
+
+def test_ClusterNodeSequence_getitem():
+    G, features = create_graph_features()
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+    nsg = ClusterNodeSequence(
+        graph=G, clusters=[["a"], ["b"], ["c"], ["d"]], node_ids=["a", "b", "d"]
+    )
+
+    # 4 clusters with each cluster having a single node
+    assert len(nsg) == 4
+
+    for cluster in list(nsg):
+        print(cluster)
+        assert len(cluster) == 2
+        # [features, target_node_indices, adj_cluster], cluster_targets
+        assert len(cluster[0][0]) == 1
+        assert len(cluster[0][1]) == 1
+        assert cluster[0][2].shape == (
+            1,
+            1,
+            1,
+        )  # one node per cluster so adjacency matrix is 1x1
+        assert cluster[1] is None  # no targets given
+
+    # only 3 node_ids were specified
+    assert len(nsg.node_order) == 3
+
+    nodes = set()
+    for node in nsg.node_order:
+        nodes.add(node)
+
+    assert len(nodes.intersection(["a", "b", "d"])) == 3
 
 
 def test_ClusterNodeGenerator_init():
@@ -160,4 +196,4 @@ def test_ClusterNodeSquence():
         # two nodes so that adjacency matrix is 2x2
         assert batch[0][2].shape == (1, 2, 2)
         # no targets given
-        assert batch[1] == None
+        assert batch[1] is None

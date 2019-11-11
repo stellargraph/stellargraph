@@ -243,9 +243,6 @@ class ClusterNodeSequence(Sequence):
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
 
-        print("len(clusters): {} and self.q: {}".format(len(clusters), self.q))
-        print("len(clusters) % self.q={}".format(len(clusters) % self.q))
-
         if len(clusters) % self.q != 0:
             raise ValueError(
                 "The number of clusters should be exactly divisible by q. However {} is not exactly divisible by {}".format(
