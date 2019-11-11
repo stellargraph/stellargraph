@@ -18,7 +18,7 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["ClusterNodeGenerator"]
+__all__ = ["ClusterNodeGenerator", "ClusterNodeSequence"]
 
 import random
 import copy
@@ -231,16 +231,10 @@ class ClusterNodeSequence(Sequence):
         name=None,
     ):
 
-        if (targets is not None) and (len(node_ids) != len(targets)):
-            raise ValueError(
-                "When passed together targets and indices should be the same length."
-            )
-
         self.name = name
         self.clusters = list()  # clusters
         self.clusters_original = copy.deepcopy(clusters)
         self.graph = graph
-        self.target_ids = list(node_ids)
         self.node_list = list(graph.nodes())
         self.normalize_adj = normalize_adj
         self.q = q
@@ -249,11 +243,36 @@ class ClusterNodeSequence(Sequence):
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
 
+        print("len(clusters): {} and self.q: {}".format(len(clusters), self.q))
+        print("len(clusters) % self.q={}".format(len(clusters) % self.q))
+
+        if len(clusters) % self.q != 0:
+            raise ValueError(
+                "The number of clusters should be exactly divisible by q. However {} is not exactly divisible by {}".format(
+                    len(clusters), q
+                )
+            )
+
+        if node_ids is not None:
+            self.target_ids = list(node_ids)
+
         if targets is not None:
+            if node_ids is None:
+                raise ValueError(
+                    "Since targets is not None, node_ids must be given and cannot be None."
+                )
+
+            if (targets is not None) and (len(node_ids) != len(targets)):
+                raise ValueError(
+                    "When passed together targets and indices should be the same length."
+                )
+
+            self.target_ids = list(node_ids)
             self.targets = np.asanyarray(targets)
             self.target_node_lookup = dict(
                 zip(self.target_ids, range(len(self.target_ids)))
             )
+            self.target_ids = list(node_ids)
         else:
             self.targets = None
 
