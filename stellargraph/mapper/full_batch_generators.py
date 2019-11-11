@@ -156,7 +156,7 @@ class FullBatchNodeGenerator:
             )
 
         # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
         if transform is not None:
             if callable(transform):

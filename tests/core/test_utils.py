@@ -104,7 +104,7 @@ def test_chebyshev_polynomial():
 def test_GCN_Aadj_feats_op():
     node_list = list(pytest.G.nodes())
     Aadj = pytest.G.adjacency_weights()
-    features = pytest.G.get_feature_for_nodes(node_list)
+    features = pytest.G.node_features(node_list)
 
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
     assert np.array_equal(features, features_)
