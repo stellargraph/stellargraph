@@ -62,7 +62,7 @@ def test_ClusterGraphConvolution_init():
     assert cluster_gcn_layer.get_config()["activation"] == "relu"
 
 
-def test_GraphConvolution_dense():
+def test_GraphConvolution():
     G, features = create_graph_features()
 
     # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work

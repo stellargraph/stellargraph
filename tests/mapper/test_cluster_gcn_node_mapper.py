@@ -13,17 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
-from tensorflow.keras import backend as K
-from stellargraph.layer.cluster_gcn import *
-from stellargraph.mapper import ClusterNodeGenerator
+from stellargraph.mapper import ClusterNodeGenerator, ClusterNodeSequence
 from stellargraph.core.graph import StellarGraph
 
 import networkx as nx
 import pandas as pd
 import numpy as np
-from tensorflow import keras
 import pytest
 
 
@@ -33,6 +28,43 @@ def create_graph_features():
     G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c"), ("b", "d")])
     G = G.to_undirected()
     return G, np.array([[1, 1], [1, 0], [0, 1], [0.5, 1]])
+
+
+def test_ClusterNodeSequence_init():
+    G, features = create_graph_features()
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+    nsg = ClusterNodeSequence(graph=G, clusters=[list(G.nodes())])
+    assert len(nsg) == 1
+
+    nsg = ClusterNodeSequence(graph=G, clusters=[["a"], ["b", "d"], ["c"]])
+    assert len(nsg) == 3
+
+    # If targets are given, so should node_ids that correspond to these targets
+    with pytest.raises(ValueError):
+        ClusterNodeSequence(
+            graph=G, clusters=[list(G.nodes())], q=1, targets=np.array([[0, 1]])
+        )
+
+    # targets and node_id should have the same length.
+    with pytest.raises(ValueError):
+        ClusterNodeSequence(
+            graph=G,
+            clusters=[list(G.nodes())],
+            q=1,
+            targets=np.array([[0, 1], [1, 0]]),
+            node_ids=["a"],
+        )
+
+    # len(clusters) is not exactly divisible by q
+    with pytest.raises(ValueError):
+        ClusterNodeSequence(graph=G, clusters=[list(G.nodes())], q=2)
+
+    # __init__( self, graph, clusters, targets=None, node_ids=None, normalize_adj=True, q=1, lam=0.1,name=None, )
 
 
 def test_ClusterNodeGenerator_init():
@@ -73,6 +105,16 @@ def test_ClusterNodeGenerator_init():
     generator = ClusterNodeGenerator(G, clusters=[["a", "d"], ["b", "c"]], q=1)
     assert generator.k == 2
     assert generator.q == 1
+
+    # lam has to be in the interval [0., 1.] and float
+    with pytest.raises(ValueError):
+        generator = ClusterNodeGenerator(G, k=1, q=1, lam=-1)
+
+    with pytest.raises(ValueError):
+        generator = ClusterNodeGenerator(G, k=1, q=1, lam=1)
+
+    with pytest.raises(ValueError):
+        generator = ClusterNodeGenerator(G, k=1, q=1, lam=2.5)
 
 
 def test_ClusterNodeSquence():
