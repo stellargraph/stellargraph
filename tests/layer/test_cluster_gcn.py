@@ -21,7 +21,7 @@ Cluster-GCN tests
 """
 from tensorflow.keras import backend as K
 from stellargraph.layer.cluster_gcn import *
-from stellargraph.mapper.node_mappers import ClusterNodeGenerator
+from stellargraph.mapper import ClusterNodeGenerator
 from stellargraph.core.graph import StellarGraph
 
 import networkx as nx
