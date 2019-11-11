@@ -18,7 +18,7 @@
 import numpy as np
 from tensorflow.keras import backend as K
 import scipy.sparse as sp
-from stellargraph.mapper.node_mappers import FullBatchNodeSequence
+from stellargraph.mapper import FullBatchNodeSequence
 
 
 class GradientSaliencyGAT(object):

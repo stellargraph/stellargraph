@@ -28,6 +28,7 @@ __all__ = [
     "DirectedGraphSAGE",
 ]
 
+import warnings
 import numpy as np
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import Input
@@ -36,7 +37,13 @@ from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from typing import List, Tuple, Callable, AnyStr, Union
-import warnings
+from ..mapper import (
+    GraphSAGENodeGenerator,
+    GraphSAGELinkGenerator,
+    DirectedGraphSAGENodeGenerator,
+    NodeSequence,
+    LinkSequence,
+)
 
 
 class GraphSAGEAggregator(Layer):
@@ -597,11 +604,13 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
     def calculate_group_sizes(self, input_shape):
         """
-        Calculates the output size for each input group. The results are stored in two variables:
-            self.included_weight_groups: if the corresponding entry is True then the input group
-                is valid and should be used.
-            self.weight_sizes: the size of the output from this group.
-
+        Calculates the output size for each input group. 
+        
+        The results are stored in two variables:
+            * self.included_weight_groups: if the corresponding entry is True then the input group
+              is valid and should be used.
+            * self.weight_sizes: the size of the output from this group.
+        
         The AttentionalAggregator is implemented to not use the first (head node) group. This makes
         the implmentation different from other aggregators.
 
@@ -717,10 +726,34 @@ class GraphSAGE:
     either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
     :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
+    To use this class as a Keras model, the features and graph should be supplied using the
+    :class:`GraphSAGENodeGenerator` class for node inference models or the 
+    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.build` method should
+    be used to create a Keras model from the `GraphSAGE` object.
+
+    Examples:
+        Creating a two-level GrapSAGE node classification model with hidden node sizes of 8 and 4
+        and 10 neighbours sampled at each layer using an existing :class:`StellarGraph` object `G`
+        containing the graph and node features::
+
+            generator = GraphSAGENodeGenerator(G, batch_size=50, num_samples=[10,10])
+            gat = GraphSAGE(
+                    layer_sizes=[8, 4],
+                    activations=["relu","softmax"],
+                    generator=generator,
+                )
+            x_inp, predictions = gat.build()
+
+    Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
+    as the `generator=` argument is now deprecated and the base generator object should be passed instead.
+
+    For more details, please see the GraphSAGE demo notebooks:
+    demos/node-classification/graphsage/graphsage-cora-node-classification-example.ipynb
+
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
-        generator (Sequence): A NodeSequence or LinkSequence. If specified the n_samples
-            and input_dim will be taken from this object.
+        generator (GraphSAGENodeGenerator or GraphSAGELinkGenerator):
+            If specified `n_samples` and `input_dim` will be extracted from this object.
         aggregator (class): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
         bias (bool): If True (default), a bias vector is learnt for each layer.
         dropout (float): The dropout supplied to each layer; defaults to no dropout.
@@ -730,9 +763,15 @@ class GraphSAGE:
         kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
             defaults to None.
 
-    Note: If a generator is not specified, then additional keyword arguments must be supplied:
-        n_samples (list): The number of samples per layer in the model.
-        input_dim (int): The dimensions of the node features used as input to the model.
+    Note::
+        If a generator is not specified, then additional keyword arguments must be supplied:
+
+        * n_samples (list): The number of samples per layer in the model.
+        
+        * input_dim (int): The dimensions of the node features used as input to the model.
+        
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+          and 2 for link inference (currently no others are supported).
     """
 
     def __init__(
@@ -767,7 +806,6 @@ class GraphSAGE:
             )
 
         # Get the input_dim and num_samples
-        self.generator = generator
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
@@ -808,14 +846,26 @@ class GraphSAGE:
         Args:
              generator: The supplied generator.
         """
-        self.n_samples = generator.generator.num_samples
+        if not isinstance(generator, (GraphSAGENodeGenerator, GraphSAGELinkGenerator)):
+            errmsg = "Generator should be an instance of GraphSAGENodeGenerator or GraphSAGELinkGenerator"
+            if isinstance(generator, (NodeSequence, LinkSequence)):
+                errmsg = (
+                    "Passing a Sequence object as the generator to GraphSAGE is no longer supported. "
+                    + errmsg
+                )
+            raise TypeError(errmsg)
+
+        self.n_samples = generator.num_samples
+        # Check the number of samples and the layer sizes are consistent
         if len(self.n_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
                     self.n_samples, self.layer_sizes
                 )
             )
-        feature_sizes = generator.generator.graph.node_feature_sizes()
+
+        self.multiplicity = generator.multiplicity
+        feature_sizes = generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
             raise RuntimeError(
                 "GraphSAGE called on graph with more than one node type."
@@ -828,12 +878,17 @@ class GraphSAGE:
         Args:
              kwargs: The additional keyword arguments.
         """
-        self.n_samples = kwargs.pop("n_samples", None)
-        self.input_feature_size = kwargs.pop("input_dim", None)
-        if self.n_samples is None or self.input_feature_size is None:
-            raise ValueError(
-                "Generator not provided; n_samples and input_dim must be specified."
+        try:
+            self.n_samples = kwargs["n_samples"]
+            self.input_feature_size = kwargs["input_dim"]
+            self.multiplicity = kwargs["multiplicity"]
+
+        except KeyError:
+            raise KeyError(
+                "Generator not provided; n_samples, multiplicity, and input_dim must be specified."
             )
+
+        # Check the number of samples and the layer sizes are consistent
         if len(self.n_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
@@ -998,22 +1053,14 @@ class GraphSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.generator is not None and hasattr(self.generator, "_sampling_schema"):
-            if len(self.generator._sampling_schema) == 1:
-                return self.node_model()
-            elif len(self.generator._sampling_schema) == 2:
-                return self.link_model()
-            else:
-                raise RuntimeError(
-                    "The generator used for model creation is neither a node nor a link generator, "
-                    "unable to figure out how to build the model. Consider using node_model or "
-                    "link_model method explicitly to build node or link prediction model, respectively."
-                )
+        if self.multiplicity == 1:
+            return self.node_model()
+        elif self.multiplicity == 2:
+            return self.link_model()
         else:
             raise RuntimeError(
-                "Suitable generator is not provided at model creation time, unable to figure out how to build the model. "
-                "Consider either providing a generator, or using node_model or link_model method explicitly to build node or "
-                "link prediction model, respectively."
+                "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
+                "link_model method explicitly to build node or link prediction model, respectively."
             )
 
     def default_model(self, flatten_output=True):
@@ -1040,7 +1087,8 @@ class DirectedGraphSAGE(GraphSAGE):
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
-        generator (Sequence): A NodeSequence or LinkSequence.
+        generator (DirectedGraphSAGENodeGenerator):
+            If specified `n_samples` and `input_dim` will be extracted from this object.
         aggregator (class, optional): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
         bias (bool, optional): If True (default), a bias vector is learnt for each layer.
         dropout (float, optional): The dropout supplied to each layer; defaults to no dropout.
@@ -1048,11 +1096,22 @@ class DirectedGraphSAGE(GraphSAGE):
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer;
             defaults to None.
 
-    Note: If a generator is not specified, then additional keyword arguments must be supplied:
-        in_samples (list): The number of in-node samples per layer in the model.
-        out_samples (list): The number of out-node samples per layer in the model.
-        input_dim (int): The dimensions of the node features used as input to the model.
-    """
+    Notes::
+        If a generator is not specified, then additional keyword arguments must be supplied:
+
+        * in_samples (list): The number of in-node samples per layer in the model.
+
+        * out_samples (list): The number of out-node samples per layer in the model.
+
+        * input_dim (int): The dimensions of the node features used as input to the model.
+
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+          and 2 for link inference (currently no others are supported).
+          
+        Passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
+        as the `generator=` argument is now deprecated and the base generator object should be passed instead.
+
+        """
 
     def _get_sizes_from_generator(self, generator):
         """
@@ -1060,26 +1119,36 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              generator: The supplied generator.
         """
-        self.in_samples = generator.generator.in_samples
+        if not isinstance(generator, (DirectedGraphSAGENodeGenerator,)):
+            errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"
+            if isinstance(generator, (NodeSequence, LinkSequence)):
+                errmsg = (
+                    "Passing a Sequence object as the generator to DirectedGraphSAGE is no longer supported. "
+                    + errmsg
+                )
+            raise TypeError(errmsg)
+
+        self.in_samples = generator.in_samples
         if len(self.in_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
                     self.in_samples, self.layer_sizes
                 )
             )
-        self.out_samples = generator.generator.out_samples
+        self.out_samples = generator.out_samples
         if len(self.out_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: out-node sample sizes {} versus layer sizes {}".format(
                     self.out_samples, self.layer_sizes
                 )
             )
-        feature_sizes = generator.generator.graph.node_feature_sizes()
+        feature_sizes = generator.graph.node_feature_sizes()
         if len(feature_sizes) > 1:
             raise RuntimeError(
                 "DirectedGraphSAGE called on graph with more than one node type."
             )
         self.input_feature_size = feature_sizes.popitem()[1]
+        self.multiplicity = generator.multiplicity
 
     def _get_sizes_from_keywords(self, **kwargs):
         """
@@ -1087,17 +1156,18 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              kwargs: The additional keyword arguments.
         """
-        self.in_samples = kwargs.get("in_samples")
-        self.out_samples = kwargs.get("out_samples")
-        self.input_feature_size = kwargs.get("input_dim")
-        if (
-            self.in_samples is None
-            or self.out_samples is None
-            or self.input_feature_size is None
-        ):
-            raise ValueError(
-                "If generator is not provided, in_samples, out_samples and input_dim must be specified."
+        try:
+            self.in_samples = kwargs["in_samples"]
+            self.out_samples = kwargs["out_samples"]
+            self.input_feature_size = kwargs["input_dim"]
+            self.multiplicity = kwargs["multiplicity"]
+
+        except KeyError:
+            raise KeyError(
+                "If generator is not provided, in_samples, out_samples, "
+                "input_dim, and multiplicity must be specified."
             )
+
         if len(self.in_samples) != self.max_hops:
             raise ValueError(
                 "Mismatched lengths: in-node sample sizes {} versus layer sizes {}".format(
