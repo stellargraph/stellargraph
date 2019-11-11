@@ -20,7 +20,7 @@ Attri2Vec tests
 
 """
 from stellargraph.core.graph import StellarGraph
-from stellargraph.mapper.node_mappers import Attri2VecNodeGenerator
+from stellargraph.mapper import Attri2VecNodeGenerator
 from stellargraph.layer.attri2vec import *
 
 from tensorflow import keras
@@ -38,7 +38,7 @@ def example_graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -46,7 +46,9 @@ def example_graph_1(feature_size=None):
 
 
 def test_attri2vec_constructor():
-    attri2vec = Attri2Vec(layer_sizes=[4], input_dim=2, node_num=4, normalize="l2")
+    attri2vec = Attri2Vec(
+        layer_sizes=[4], input_dim=2, node_num=4, multiplicity=2, normalize="l2"
+    )
     assert attri2vec.dims == [2, 4]
     assert attri2vec.input_node_num == 4
     assert attri2vec.n_layers == 1
@@ -54,22 +56,40 @@ def test_attri2vec_constructor():
 
     # Check incorrect activation flag
     with pytest.raises(ValueError):
-        Attri2Vec(layer_sizes=[4], input_dim=2, node_num=4, activation="unknown")
+        Attri2Vec(
+            layer_sizes=[4],
+            input_dim=2,
+            node_num=4,
+            multiplicity=2,
+            activation="unknown",
+        )
 
     # Check incorrect normalization flag
     with pytest.raises(ValueError):
-        Attri2Vec(layer_sizes=[4], input_dim=2, node_num=4, normalize=lambda x: x)
+        Attri2Vec(
+            layer_sizes=[4],
+            input_dim=2,
+            node_num=4,
+            multiplicity=2,
+            normalize=lambda x: x,
+        )
 
     with pytest.raises(ValueError):
-        Attri2Vec(layer_sizes=[4], input_dim=2, node_num=4, normalize="unknown")
+        Attri2Vec(
+            layer_sizes=[4],
+            input_dim=2,
+            node_num=4,
+            multiplicity=2,
+            normalize="unknown",
+        )
 
-    # Check requirement for generator or input_dim and node_num
-    with pytest.raises(RuntimeError):
+    # Check requirement for generator or input_dim and node_num & multiplicity
+    with pytest.raises(KeyError):
         Attri2Vec(layer_sizes=[4])
 
     # Construction from generator
     G = example_graph_1(feature_size=3)
-    gen = Attri2VecNodeGenerator(G, batch_size=2).flow([1, 2])
+    gen = Attri2VecNodeGenerator(G, batch_size=2)
     attri2vec = Attri2Vec(layer_sizes=[4, 8], generator=gen, bias=True)
 
     assert attri2vec.dims == [3, 4, 8]
@@ -84,6 +104,7 @@ def test_attri2vec_apply():
         bias=False,
         input_dim=2,
         node_num=4,
+        multiplicity=2,
         activation="linear",
         normalize=None,
     )
@@ -136,6 +157,7 @@ def test_attri2vec_serialize():
         bias=False,
         input_dim=2,
         node_num=4,
+        multiplicity=2,
         activation="linear",
         normalize=None,
     )

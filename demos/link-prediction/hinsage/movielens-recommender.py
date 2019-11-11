@@ -65,7 +65,9 @@ def read_graph(data_path, config_file):
         user_features[feature_names].to_dict("records")
     )
     # Assume that the age can be used as a continuous variable and rescale it
-    user_features_transformed[:, 0] = preprocessing.scale(user_features_transformed[:, 0])
+    user_features_transformed[:, 0] = preprocessing.scale(
+        user_features_transformed[:, 0]
+    )
 
     # Put features back in DataFrame
     user_features = pd.DataFrame(
@@ -148,9 +150,7 @@ class LinkInference(object):
         # The mappers essentially sample k-hop subgraphs of G with randomly selected head nodes, as required by
         # the HinSAGE algorithm, and generate minibatches of those samples to be fed to the input layer of the HinSAGE model.
         generator = HinSAGELinkGenerator(
-            self.g,
-            batch_size,
-            num_samples,
+            self.g, batch_size, num_samples, head_node_types=["user", "movie"]
         )
         train_gen = generator.flow(edgelist_train, labels_train)
         test_gen = generator.flow(edgelist_test, labels_test)
@@ -161,7 +161,7 @@ class LinkInference(object):
         ), "layer_size and num_samples must be of the same length! Stopping."
 
         hinsage = HinSAGE(
-            layer_sizes=layer_size, generator=train_gen, bias=use_bias, dropout=dropout
+            layer_sizes=layer_size, generator=generator, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:

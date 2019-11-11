@@ -331,7 +331,7 @@ class ClusterNodeSequence(Sequence):
 
     def on_epoch_end(self):
         """
-         Shuffle all head (root) nodes at the end of each epoch
+         Shuffle all nodes at the end of each epoch
         """
         if self.q > 1:
             # combine clusters
