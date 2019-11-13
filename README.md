@@ -139,8 +139,8 @@ The StellarGraph library requires [Keras](https://keras.io/), so you'll need to 
 
 The StellarGraph library can be installed in one of two ways, described next.
 
-#### Install StellarGraph using pip:
-To install StellarGraph library from [PyPi](https://pypi.org) using `pip`, execute the following command:
+#### Install StellarGraph using PyPI:
+To install StellarGraph library from [PyPI](https://pypi.org) using `pip`, execute the following command:
 ```
 pip install stellargraph
 ```
@@ -149,6 +149,14 @@ Some of the examples in the `demos` directory require installing additional depe
 ```
 pip install stellargraph[demos]
 ```
+
+
+#### Install StellarGraph in Anaconda Python:
+The StellarGraph library is available an [Anaconda Cloud](https://anaconda.org/stellargraph/stellargraph) and can be installed in [Anaconda Python](https://anaconda.com) using the command line `conda` tool, execute the following command:
+```
+conda install -c stellargraph stellargraph
+```
+
 
 #### Install StellarGraph from Github source:
 First, clone the StellarGraph repository using `git`:

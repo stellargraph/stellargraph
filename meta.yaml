@@ -1,0 +1,66 @@
+{% set name = "stellargraph" %}
+{% set version = "0.8.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: c9e5a69bb94e4edcbde544fed1c07861b432c6b07b1d8a7d63ca8f40892a246e
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+  skip: True  # [py<36]
+
+requirements:
+  host:
+    - gensim >=3.4.0
+    - matplotlib >=2.2
+    - networkx >=2.2,<2.4
+    - numpy >=1.14
+    - pandas >=0.24
+    - pip
+    - python
+    - scikit-learn >=0.20
+    - scipy >=1.1.0
+    - tensorflow 1.14.*
+    - ipython
+    - ipykernel
+  run:
+    - gensim >=3.4.0
+    - matplotlib >=2.2
+    - networkx >=2.2,<2.4
+    - numpy >=1.14
+    - pandas >=0.24
+    - python
+    - scikit-learn >=0.20
+    - scipy >=1.1.0
+    - tensorflow 1.14.*
+    - ipython
+    - ipykernel
+
+test:
+  imports:
+    - stellargraph
+    - stellargraph.core
+    - stellargraph.data
+    - stellargraph.layer
+    - stellargraph.mapper
+    - stellargraph.utils
+    - stellargraph.utils.saliency_maps
+
+about:
+  home: "https://github.com/stellargraph/stellargraph"
+  license: Apache Software
+  license_family: APACHE
+  license_file: LICENSE
+  summary: "Python library for machine learning on graphs"
+  doc_url: https://stellargraph.readthedocs.io/
+  dev_url: https://github.com/stellargraph/stellargraph
+
+extra:
+  recipe-maintainers:
+    - adocherty
