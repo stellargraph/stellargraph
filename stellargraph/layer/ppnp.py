@@ -157,14 +157,14 @@ class PPNP:
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
         ``method='ppnp'`` argument to do this pre-processing.
 
-      - ''method='ppnp'`` requires that use_spare=False and generates a dense personalized page rank matrix matrix
+      - ''method='ppnp'`` requires that use_sparse=False and generates a dense personalized page rank matrix
 
       - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
-      - The size of the final fully connected layer must be equal to the number of classes of classes to predict.
+      - The size of the final fully connected layer must be equal to the number of classes to predict.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack
