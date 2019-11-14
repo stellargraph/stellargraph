@@ -552,7 +552,9 @@ class TypeDictNodeData(DefaultNodeData):
 
     def node_features(self, node_ids: Iterable[Any], node_type: Any = None):
         if node_type is None:
-            node_types = {self.node_type(node_id) for node_id in node_ids}
+            node_types = {
+                self.node_type(node_id) for node_id in node_ids if node_id is not None
+            }
             if None in node_types:
                 raise ValueError("Unidentified node(s)")
             if len(node_types) != 1:
@@ -905,12 +907,14 @@ class PandasNodeData(MappedNodeData):
         if len(special_idxs) == len(node_idxs):
             # Exceptional case of all special nodes
             num_features = (
-                self._node_features.shape[1] if feature_columns is None
+                self._node_features.shape[1]
+                if feature_columns is None
                 else len(feature_columns)
             )
             return np.zeros((len(node_idxs), num_features))
         feature_mat = (
-            self._node_features[node_idxs, :] if feature_columns is None
+            self._node_features[node_idxs, :]
+            if feature_columns is None
             else self._node_features[node_idxs, feature_columns]
         )
         if len(special_idxs) > 0:
