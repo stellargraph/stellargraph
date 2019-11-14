@@ -33,7 +33,7 @@ from ..core.utils import is_real_iterable
 
 class ClusterNodeGenerator:
     """
-    A data generator for use with ClusterGCN models on homogeneous graphs.
+    A data generator for use with ClusterGCN models on homogeneous graphs, [1].
 
     The supplied graph G should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
@@ -43,14 +43,6 @@ class ClusterNodeGenerator:
 
     This generator will supply the features array and the adjacency matrix to a
     mini-batch Keras graph ML model.
-
-    For these algorithms the adjacency matrix requires pre-processing and the
-    'method' option should be specified with the correct pre-processing for
-    each algorithm. The options are as follows:
-
-    Note: method can only be 'none' and the pre-processing will happen when the data
-    is returned. Since there is only one option for method, the user will not be able
-    to specify the method in the constructor.
 
     [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
 
@@ -62,7 +54,7 @@ class ClusterNodeGenerator:
         k (int): The number of clusters if parameter `clusters` is None. Otherwise it is ignored.
         lam (float): The mixture coefficient for adjacency matrix normalisation.
         clusters (list): a list of lists of node IDs such that each list corresponds to a cluster of nodes
-        in G. The clusters should be non-overlapping. If None, the G is clustered into k clusters.
+            in G. The clusters should be non-overlapping. If None, the G is clustered into k clusters.
         name (str): an optional name of the generator
     """
 
@@ -146,20 +138,19 @@ class ClusterNodeGenerator:
 
     def flow(self, node_ids, targets=None, name=None):
         """
-        Creates a generator/sequence object for training or evaluation
+        Creates a generator/sequence object for training, evaluation, or prediction
         with the supplied node ids and numeric targets.
 
         Args:
-            node_ids (iterable): and iterable of node ids for the nodes of interest
+            node_ids (iterable): an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
             targets (2d array, optional): a 2D array of numeric node targets with shape `(len(node_ids),
                 target_size)`
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A NodeSequence object to use with ClusterGCN
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            A ClusterNodeSequence object to use with ClusterGCN in Keras
+            methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
 
         """
         if targets is not None:
@@ -179,9 +170,6 @@ class ClusterNodeGenerator:
                     )
                 )
 
-        # The list of indices of the target nodes in self.node_list
-        # node_indices = np.array([self.node_list.index(n) for n in node_ids])
-
         return ClusterNodeSequence(
             self.graph,
             self.clusters,
@@ -194,7 +182,7 @@ class ClusterNodeGenerator:
 
 class ClusterNodeSequence(Sequence):
     """
-    Keras-compatible data generator for for node inference using Cluster GCN model.
+    A Keras-compatible data generator for node inference using ClusterGCN model.
     Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
         :meth:`keras.Model.evaluate_generator`, and
         :meth:`keras.Model.predict_generator`,
@@ -214,8 +202,7 @@ class ClusterNodeSequence(Sequence):
         q (int, optional): The number of subgraphs to combine for each batch. The default value is
             1 such that the generator treats each subgraph as a batch.
         lam (float, optional): The mixture coefficient for adjacency matrix normalisation (the
-        'diagonal enhancement' method). Valid
-            values are in the interval [0, 1] and the default value is 0.1.
+            'diagonal enhancement' method). Valid values are in the interval [0, 1] and the default value is 0.1.
         name (str, optional): An optional name for this generator object.
     """
 
@@ -232,14 +219,14 @@ class ClusterNodeSequence(Sequence):
     ):
 
         self.name = name
-        self.clusters = list()  # clusters
+        self.clusters = list()
         self.clusters_original = copy.deepcopy(clusters)
         self.graph = graph
         self.node_list = list(graph.nodes())
         self.normalize_adj = normalize_adj
         self.q = q
         self.lam = lam
-        self.node_order = list()  # node_ids  # initially it should be in this order
+        self.node_order = list()
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
 
@@ -282,8 +269,6 @@ class ClusterNodeSequence(Sequence):
     def __getitem__(self, index):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
-        # print(f"In __getitem_ index: {index}")
-        # print(f"self.clusters: {self.clusters}")
         cluster = self.clusters[index]
         g_cluster = self.graph.subgraph(
             cluster

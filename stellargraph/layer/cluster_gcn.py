@@ -24,7 +24,7 @@ from ..mapper import ClusterNodeGenerator
 class ClusterGraphConvolution(Layer):
 
     """
-    Cluster Graph Convolution (GCN) Keras layer.
+    Cluster Graph Convolution (GCN) Keras layer. A stack of such layers can be used to create a Cluster-GCN model.
 
     The implementation is based on the GCN Keras layer of keras-gcn github
     repo https://github.com/tkipf/keras-gcn
@@ -180,13 +180,11 @@ class ClusterGraphConvolution(Layer):
         """
         Applies the layer.
 
-        ClusterGraphConvolution
-
         Args:
             inputs (list): a list of 3 input tensors that includes
-                node features (size N x F),
-                output indices (size M)
-                graph adjacency matrix (size N x N),
+                node features (size 1 x N x F),
+                output indices (size 1 x M)
+                graph adjacency matrix (size 1 x N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
 
@@ -258,12 +256,12 @@ class ClusterGCN:
             x_inp, predictions = cluster_gcn.build()
 
     Args:
-        layer_sizes (list of int): list of output sizes of GCN layers in the stack
+        layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack
         activations (list of str): list of activations applied to each layer's output
         generator (ClusterNodeGenerator): an instance of ClusterNodeGenerator class constructed on the graph of interest
-        bias (bool): toggles an optional bias in GCN layers
-        dropout (float): dropout rate applied to input features of each GCN layer
-        kernel_regularizer (str): normalization applied to the kernels of GCN layers
+        bias (bool): toggles an optional bias in graph convolutional layers
+        dropout (float): dropout rate applied to input features of each graph convolutional layer
+        kernel_regularizer (str): normalization applied to the kernels of graph convolutional layers
     """
 
     def __init__(
@@ -324,7 +322,7 @@ class ClusterGCN:
 
     def __call__(self, x):
         """
-        Apply a stack of Cluster GCN layers to the inputs.
+        Apply a stack of Cluster GCN-layers to the inputs.
         The input tensors are expected to be a list of the following:
         [
             Node features shape (1, N, F),
@@ -365,12 +363,12 @@ class ClusterGCN:
 
     def build(self):
         """
-        Builds a Cluster-GCN model for node prediction
+        Builds a Cluster-GCN model for node prediction.
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the
-            Cluster- GCN model (containing node features and normalized adjacency matrix),
-            and `x_out` is a Keras tensor for the Cluster-GCN model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two input tensors for the
+            Cluster-GCN model (containing node features and normalized adjacency matrix),
+            and `x_out` is a tensor for the Cluster-GCN model output.
         """
         # Placeholder for node features
         N_feat = self.generator.features.shape[1]
