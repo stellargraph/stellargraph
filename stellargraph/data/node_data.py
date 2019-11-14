@@ -99,14 +99,11 @@ class NodeDataFactory(type):
 
     @staticmethod
     def instantiate(data, kwargs):
-        # Check for null data:
-        if data is None:
-            return DefaultNodeData(kwargs.get("default_node_type"))
         # Check for pre-processed node data:
         if isinstance(data, NodeData):
             return data
-        # Check for empty data:
-        if isinstance(data, Sized) and len(data) == 0:
+        # Check for null data:
+        if data is None:
             return DefaultNodeData(kwargs.get("default_node_type"))
         # Check for dictionary of node-type -> node-data pairs:
         if isinstance(data, dict):
@@ -157,7 +154,7 @@ class NodeData(metaclass=NodeDataFactory):
     Args:
         data (any):
             The node data in one of the standard formats. This may
-            be None or empty if there are no node attributes
+            be None if there are no node attributes
             (parameters other than default_node_type are then ignored).
         node_id (str or int, optional):
             The name or position of the node identifier. If not specified,
@@ -413,7 +410,7 @@ class DefaultNodeData(NodeData):
     def node_type(self, node_id: Any) -> Optional[Any]:
         return self._default_node_type if node_id in self._external_ids else None
 
-    def type_features(self) -> Mapping[Any, List]:
+    def node_feature_sizes(self) -> Mapping[Any, List]:
         return {}
 
 
@@ -856,20 +853,67 @@ class PandasNodeData(MappedNodeData):
         if self._type_features is not None:
             # Features vary by node type
             if node_type is None:
-                # Compute node type
-                for node_id in node_ids:
-                    nt = self.node_type(node_id)
-                    if node_type is None:
-                        node_type = nt
-                    elif node_type != nt:
-                        raise ValueError(
-                            "Cannot obtain compatible features for multiple node types"
-                        )
+                node_type = self._compute_node_type(node_ids)
             feature_cols = self._type_features[node_type]
-            node_idxs = [self.node_index(node_id) for node_id in node_ids]
-            return self._node_features[node_idxs, feature_cols]
+            node_idxs, special_idxs = self._extract_indices(node_ids)
+            return self._extract_features(node_idxs, special_idxs, feature_cols)
         if self._node_features is not None:
             # Same features for all node types
-            node_idxs = [self.node_index(node_id) for node_id in node_ids]
-            return self._node_features[node_idxs, :]
+            node_idxs, special_idxs = self._extract_indices(node_ids)
+            return self._extract_features(node_idxs, special_idxs)
         raise ValueError("No node features have been defined")
+
+    def _compute_node_type(self, node_ids):
+        # Compute node type
+        node_type = None
+        for node_id in node_ids:
+            if node_id is None:
+                continue
+            nt = self.node_type(node_id)
+            if nt is None:
+                raise ValueError("Unknown node: {}".format(node_id))
+            if node_type is None:
+                node_type = nt
+            elif node_type != nt:
+                raise ValueError("Multiple node types")
+        if node_type is None:
+            raise ValueError("Cannot determine node type")
+        return node_type
+
+    def _extract_indices(self, node_ids):
+        # XXX Default and None nodes are special
+        num_nodes_with_features = self._node_features.shape[0]
+        node_idxs = []
+        special_idxs = []
+        for i, node_id in enumerate(node_ids):
+            if node_id is None:
+                special_idxs.append(i)
+                node_idxs.append(0)  # Fake index
+                continue
+            node_idx = self.node_index(node_id)
+            if node_idx < 0:
+                raise ValueError("Unknown node: {}".format(node_id))
+            if node_idx >= num_nodes_with_features:
+                special_idxs.append(i)
+                node_idxs.append(0)  # Fake index
+            else:
+                node_idxs.append(node_idx)
+        return node_idxs, special_idxs
+
+    def _extract_features(self, node_idxs, special_idxs, feature_columns=None):
+        # XXX Special nodes need to have zero-valued features
+        if len(special_idxs) == len(node_idxs):
+            # Exceptional case of all special nodes
+            num_features = (
+                self._node_features.shape[1] if feature_columns is None
+                else len(feature_columns)
+            )
+            return np.zeros((len(node_idxs), num_features))
+        feature_mat = (
+            self._node_features[node_idxs, :] if feature_columns is None
+            else self._node_features[node_idxs, feature_columns]
+        )
+        if len(special_idxs) > 0:
+            # Zero out special node features
+            feature_mat[special_idxs, :] = 0
+        return feature_mat

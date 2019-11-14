@@ -103,3 +103,29 @@ def test_typed_standard():
         counter += 1
         assert edge[2] in edge_ids
     assert len(edge_ids) == counter
+
+
+def example_stellar_graph_1(has_features=False, feature_size=10):
+    elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (3, 2)], columns=["src", "dst"])
+    if has_features:
+        nmat = np.zeros((4, 1 + feature_size))
+        for i in range(4):
+            nmat[i, 0] = i + 1
+            nmat[i, 1:] = (i + 1) * np.ones(feature_size)
+        feature_names = ["f{}".format(i) for i in range(feature_size)]
+        nlist = pd.DataFrame(nmat, columns=['id'] + feature_names)
+        return StellarGraph(
+            edges=elist, source_id='src', target_id='dst', default_edge_type='default',
+            nodes=nlist, node_id='id', node_features=feature_names, default_node_type='default',
+        )
+    else:
+        return StellarGraph(
+            edges=elist, source_id='src', target_id='dst', default_edge_type='default',
+        )
+
+
+def test_null_node_feature():
+    sg = example_stellar_graph_1(has_features=True, feature_size=6)
+    aa = sg.node_features([1, None, 2, None])
+    assert aa.shape == (4, 6)
+    assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
