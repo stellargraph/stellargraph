@@ -145,20 +145,9 @@ def test_ClusterGCN_apply():
     x_in, x_out = cluster_gcn_model.build()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
-    # Check fit method
-    out_indices = np.array([[0, 1, 2]], dtype="int32")
-    preds_1 = model.predict([features[None, :, :], out_indices[None, :, :], adj])
-    assert preds_1.shape == (1, 3, 2)
-
     # Check fit_generator method
     preds_2 = model.predict_generator(generator.flow(["a", "b", "c"]))
     assert preds_2.shape == (1, 3, 2)
-
-    # print(f"preds_1: {preds_1}")
-    # print(f"preds_2: {preds_2}")
-
-    # ToDo: Have a closer look at this. The predictions are not the same at the moment.
-    # assert preds_1 == pytest.approx(preds_2)
 
 
 def test_ClusterGCN_activations():
