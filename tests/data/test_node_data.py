@@ -37,6 +37,10 @@ class TestNodeData:
         assert list(nd.node_ids()) == list(node_ids)
         assert nd.node_type_set() == {NodeData.DEFAULT_NODE_TYPE}
         assert list(nd.node_types()) == [NodeData.DEFAULT_NODE_TYPE] * len(node_ids)
+        for node_id in range(5, 15):
+            assert nd.has_node(node_id)
+        assert not nd.has_node(42)
+        assert not nd.has_node(None)
 
     def test_id_column(self):
         node_ids = range(5, 15)
@@ -102,3 +106,29 @@ class TestNodeData:
             v = nd.node_features([i])
             assert v.shape == (1, num_features)
             assert list(v[0, :]) == list(x[i, 1:-1])
+
+    def test_type_dict(self):
+        type_data = {
+            "a": pd.DataFrame([1, 2, 3], columns=["id"]),
+            "b": pd.DataFrame([4, 5], columns=["id"]),
+            "c": pd.DataFrame([6], columns=["id"]),
+            "d": pd.DataFrame([], columns=["id"]),
+        }
+        nd = NodeData(type_data, node_id="id")
+        assert nd.num_nodes() == 6
+        assert nd.node_type_set() == {"a", "b", "c"}
+        assert set(nd.node_ids()) == set(range(1, 7))
+        assert len(list(nd.node_ids())) == 6
+        assert set(nd.node_types()) == {"a", "b", "c"}
+        for node_id in range(1, 7):
+            assert nd.has_node(node_id)
+        assert not nd.has_node(42)
+        assert not nd.has_node(None)
+
+    def test_type_dict_missing_ids(self):
+        type_data = {
+            "a": NodeData(pd.DataFrame([1, 2, 3], columns=["id"]), node_id="id"),
+            "b": NodeData(pd.DataFrame([4, 5], columns=["id"])),
+        }
+        with pytest.raises(ValueError):
+            NodeData(type_data, node_id="id")

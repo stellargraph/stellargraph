@@ -123,17 +123,8 @@ class EdgeDataFactory(type):
         # Check for Pandas data-frame:
         if isinstance(data, pd.DataFrame):
             return PandasEdgeData(data, **kwargs)
-        # Check for NumPy array:
-        if isinstance(data, np.ndarray):
-            if len(data.shape) == 2:
-                raise NotImplementedError("NumPy arrays are not yet supported")
-            else:
-                raise TypeError("Expected a two-dimensional NumPy array")
-        # Check for arbitrary collection:
-        if isinstance(data, Iterable) or hasattr(data, "__getitem__"):
-            raise NotImplementedError("Collections are not yet supported")
-        # Don't know this data type!
-        raise TypeError("Unknown edge data type: {}".format(type(data)))
+        # Cannot (yet) handle this data type!
+        raise TypeError("Unsupported edge data type: {}".format(type(data)))
 
 
 class EdgeData(metaclass=EdgeDataFactory):
@@ -175,6 +166,17 @@ class EdgeData(metaclass=EdgeDataFactory):
     DEFAULT_EDGE_TYPE = "edge"
     DEFAULT_EDGE_WEIGHT = 1.0
     PANDAS_INDEX = -1
+
+    def is_identified(self) -> bool:
+        """
+        Indicates whether or not the edge identifiers have been
+        explicitly given.
+
+        Returns:
+            bool: A value of True (cf False) if edge identifiers
+            are explicit (cf implicit).
+        """
+        raise NotImplementedError
 
     def num_edges(self) -> int:
         """
@@ -252,18 +254,6 @@ class EdgeData(metaclass=EdgeDataFactory):
         """
         raise NotImplementedError
 
-    def edge_index(self, edge_id: Any) -> int:
-        """
-        Obtains the ordered edge index corresponding to the given identifier.
-
-        Args:
-            edge_id (any): The edge identifier.
-
-        Returns:
-            int: The edge index, or a value of -1 if the edge is not in the graph.
-        """
-        raise NotImplementedError
-
     def has_edge(self, edge_id: Any) -> bool:
         """
         Determines whether or not the given edge is in the graph.
@@ -275,7 +265,7 @@ class EdgeData(metaclass=EdgeDataFactory):
             bool: A value of True (cd False) if the edge
             is (cd is not) in the graph.
         """
-        return self.edge_index(edge_id) >= 0
+        raise NotImplementedError
 
     def add_edge(self, source_id: Any, target_id: Any, edge_id: Any):
         """
@@ -443,6 +433,10 @@ class DefaultEdgeData(EdgeData):
         self._external_edges = []
         self._external_ids = {}
 
+    def is_identified(self) -> bool:
+        # Edges can only be added with explicit identifiers
+        return True
+
     def default_edge_type(self) -> Any:
         return self._default_edge_type
 
@@ -475,8 +469,20 @@ class DefaultEdgeData(EdgeData):
         self._external_edges.append((source_id, target_id, edge_id))
 
     def edge_index(self, edge_id: Any) -> int:
+        """
+        Obtains the ordered edge index corresponding to the given identifier.
+
+        Args:
+            edge_id (any): The edge identifier.
+
+        Returns:
+            int: The edge index, or a value of -1 if the edge is not in the graph.
+        """
         edge_idx = self._external_ids.get(edge_id, -1)
         return -1 if edge_idx < 0 else self._offset + edge_idx
+
+    def has_edge(self, edge_id: Any) -> bool:
+        return self.edge_index(edge_id) >= 0
 
     def edge_type_set(self) -> Set:
         return set() if len(self._external_ids) == 0 else {self._default_edge_type}
@@ -533,15 +539,12 @@ class TypeDictEdgeData(DefaultEdgeData):
         target_id (str or int):
             The name or position of the target node identifier.
         edge_id (str or int, optional):
-            The name or position of the edge identifier.
-            If specified, the edge identifiers are
-            assumed to be globally unique across all blocks of edge data.
-            If not specified,
-            all edge identifiers will be obtained via enumeration.
-            Use the constant SINGLE_COLUMN if the edge data are specified
-            by a one-dimensional collection of edge identifiers.
+            The name or position of the edge identifier; this is assumed
+            to be consistent across all blocks of edge data.
             Use the constant PANDAS_INDEX if the edge data are specified
             by a Pandas data-frame and its index provides the edge identifiers.
+            The edge identifiers must be explicitly given, and are assumed to be
+            globally unique across all blocks of edge data.
         edge_weight (str or int, optional):
             The name or position of the edge weight. If not specified,
             all edges will be implicitly assigned the default edge weight.
@@ -578,13 +581,17 @@ class TypeDictEdgeData(DefaultEdgeData):
             )
             ne = ed.num_edges()
             if ne > 0:
+                if not ed.is_identified():
+                    raise ValueError(
+                        "Edge data for type {} do not have explicit identifiers".format(
+                            edge_type
+                        )
+                    )
                 _num_edges += ne
                 _data[edge_type] = ed
         self._data = _data
         self._num_edges = _num_edges
         super().__init__(default_edge_type, default_edge_weight, _num_edges)
-        # Determine if edges have explicit identifiers
-        self._has_implicit_ids = edge_id is None
 
     def num_edges(self) -> int:
         return self._num_edges + super().num_edges()
@@ -598,9 +605,6 @@ class TypeDictEdgeData(DefaultEdgeData):
         return itertools.chain(*target_ids, super().target_ids())
 
     def edge_ids(self) -> Iterable[Any]:
-        if self._has_implicit_ids:
-            return itertools.chain(range(self._num_edges), super().edge_ids())
-        # Get explicit identifiers
         edge_ids = [ed.edge_ids() for ed in self._data.values()]
         return itertools.chain(*edge_ids, super().edge_ids())
 
@@ -614,66 +618,31 @@ class TypeDictEdgeData(DefaultEdgeData):
         edge_weights = [ed.edge_weights() for ed in self._data.values()]
         return itertools.chain(*edge_weights, super().edge_weights())
 
-    def edge_index(self, edge_id: Any) -> int:
-        if self._has_implicit_ids:
-            # Check implicit identifiers
-            if isinstance(edge_id, int) and 0 <= edge_id < self._num_edges:
-                return edge_id
-        else:
-            # Check explicit identifiers
-            _offset = 0
-            for ed in self._data.values():
-                edge_idx = ed.edge_index(edge_id)
-                if edge_idx >= 0:
-                    return _offset + edge_idx
-                _offset += ed.num_edges()
-        # Check external identifiers
-        return super().edge_index(edge_id)
+    def has_edge(self, edge_id: Any) -> bool:
+        for ne in self._data.values():
+            if ne.has_edge(edge_id):
+                return True
+        return super().has_edge(edge_id)
 
     def edge_type(self, edge_id: Any) -> Optional[Any]:
-        if self._has_implicit_ids:
-            # Check implicit identifiers
-            if isinstance(edge_id, int) and 0 <= edge_id < self._num_edges:
-                local_edge_id = edge_id
-                for et, ed in self._data.items():
-                    if local_edge_id < ed.num_edges():
-                        return et
-                    local_edge_id -= ed.num_edges()
-        else:
-            # Check explicit identifiers
-            for et, ed in self._data.items():
-                if ed.has_edge(edge_id):
-                    return et
+        # Check explicit identifiers
+        for et, ed in self._data.items():
+            if ed.has_edge(edge_id):
+                return et
         # Check external identifiers
         return super().edge_type(edge_id)
 
     def edge_weight(self, edge_id: Any) -> Optional[Number]:
-        if self._has_implicit_ids:
-            # Check implicit identifiers
-            if isinstance(edge_id, int) and 0 <= edge_id < self._num_edges:
-                local_edge_id = edge_id
-                for ed in self._data.values():
-                    if local_edge_id < ed.num_edges():
-                        return ed.edge_weight(local_edge_id)
-                    local_edge_id -= ed.num_edges()
-        else:
-            # Check explicit identifiers
-            for ed in self._data.values():
-                weight = ed.edge_weight(edge_id)
-                if weight is not None:
-                    return weight
+        # Check explicit identifiers
+        for ed in self._data.values():
+            weight = ed.edge_weight(edge_id)
+            if weight is not None:
+                return weight
         # Check external identifiers
         return super().edge_weight(edge_id)
 
     def edges(self, include_info: bool = False) -> Iterable[tuple]:
         edges = [ed.edges(include_info) for ed in self._data.values()]
-        if include_info and self._has_implicit_ids:
-            # Correct implicit identifiers from local to global
-            def f():
-                for i, e in enumerate(edges):
-                    yield e[0:2] + (i,) + e[3:]
-
-            edges = f()
         return itertools.chain(*edges, super().edges(include_info))
 
     def edge_type_set(self) -> Set[Any]:
@@ -731,6 +700,9 @@ class MappedEdgeData(DefaultEdgeData):
             self._edge_types = set() if _offset == 0 else {self.default_edge_type()}
         else:
             self._edge_types = set(edge_types)
+
+    def is_identified(self) -> bool:
+        return self._num_implicit_ids == 0
 
     def num_edges(self) -> int:
         return self._num_implicit_ids + len(self._explicit_ids) + super().num_edges()
@@ -937,7 +909,6 @@ class PandasEdgeData(MappedEdgeData):
         return itertools.chain(edge_weights, super().edge_weights())
 
     def neighbour_nodes(self, node_id: Any) -> Iterable[Any]:
-        # TODO Optionally use caching
         # XXX Self nodes will be repeated in this implementation!
         return itertools.chain(
             self._data.loc[
@@ -950,7 +921,6 @@ class PandasEdgeData(MappedEdgeData):
         )
 
     def in_nodes(self, node_id: Any) -> Iterable[Any]:
-        # TODO Optionally use caching
         return itertools.chain(
             self._data.loc[
                 self._data[self._target_id_col] == node_id, self._source_id_col
@@ -959,7 +929,6 @@ class PandasEdgeData(MappedEdgeData):
         )
 
     def out_nodes(self, node_id: Any) -> Iterable[Any]:
-        # TODO Optionally use caching
         return itertools.chain(
             self._data.loc[
                 self._data[self._source_id_col] == node_id, self._target_id_col

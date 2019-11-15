@@ -69,6 +69,9 @@ class TestEdgeData:
         assert ed.edge_type_set() == {EdgeData.DEFAULT_EDGE_TYPE}
         assert len(list(ed.edge_types())) == len(edge_ids)
         assert list(ed.edge_types()) == [EdgeData.DEFAULT_EDGE_TYPE] * len(edge_ids)
+        for edge_id in edge_ids:
+            assert ed.has_edge(edge_id)
+        assert not ed.has_edge(None)
 
     def test_id_column(self):
         src_ids, dst_ids, edge_ids, _ = self.create_data()
@@ -78,6 +81,9 @@ class TestEdgeData:
         assert list(ed.edge_ids()) == list(edge_ids)
         assert ed.edge_type_set() == {EdgeData.DEFAULT_EDGE_TYPE}
         assert list(ed.edge_types()) == [EdgeData.DEFAULT_EDGE_TYPE] * len(edge_ids)
+        for edge_id in edge_ids:
+            assert ed.has_edge(edge_id)
+        assert not ed.has_edge(None)
 
     def test_id_wrong_column(self):
         with pytest.raises(ValueError):
@@ -128,3 +134,28 @@ class TestEdgeData:
         assert set(ed.neighbour_nodes("r.2")) == {"r", "r.2.1"}
         assert set(ed.out_nodes("r")) == {"r.1", "r.2", "r.3"}
         assert set(ed.in_nodes("r.3.2")) == {"r.3"}
+
+    def test_type_dict(self):
+        type_data = {
+            "a": pd.DataFrame({"i": [1, 2, 3], "s": [1, 2, 3], "d": [3, 2, 1]}),
+            "b": pd.DataFrame({"i": [4, 5, 6], "s": [11, 12, 13], "d": [13, 12, 11]}),
+            "c": pd.DataFrame([], columns=["i", "s", "d"]),
+        }
+        ne = EdgeData(type_data, edge_id="i", source_id="s", target_id="d")
+        assert ne.num_edges() == 6
+        assert ne.edge_type_set() == {"a", "b"}
+        assert set(ne.edge_ids()) == set(range(1, 7))
+        assert len(list(ne.edge_ids())) == 6
+        assert set(ne.edge_types()) == {"a", "b"}
+        for edge_id in range(1, 7):
+            assert ne.has_edge(edge_id)
+        assert not ne.has_edge(42)
+        assert not ne.has_edge(None)
+
+    def test_type_dict_missing_ids(self):
+        type_data = {
+            "a": pd.DataFrame({"i": [1, 2, 3], "s": [1, 2, 3], "d": [3, 2, 1]}),
+            "b": pd.DataFrame({"i": [4, 5, 6], "s": [11, 12, 13], "d": [13, 12, 11]}),
+        }
+        with pytest.raises(ValueError):
+            EdgeData(type_data, source_id="s", target_id="d")

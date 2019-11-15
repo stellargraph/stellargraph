@@ -111,40 +111,8 @@ class NodeDataFactory(type):
         # Check for Pandas data-frame:
         if isinstance(data, pd.DataFrame):
             return PandasNodeData(data, **kwargs)
-        # Check for NumPy array:
-        if isinstance(data, np.ndarray):
-            if len(data.shape) == 1:
-                # One-dimensional
-                raise NotImplementedError(
-                    "One-dimensional NumPy arrays are not yet supported"
-                )
-            elif len(data.shape) == 2:
-                # Two-dimensional
-                raise NotImplementedError(
-                    "Two-dimensional NumPy arrays are not yet supported"
-                )
-            else:
-                raise TypeError("Expected a one- or two-dimensional NumPy array")
-        # Check for arbitrary collection:
-        if isinstance(data, Iterable) or hasattr(data, "__getitem__"):
-            if NodeDataFactory.is_single_column(kwargs):
-                # One-dimensional
-                raise NotImplementedError(
-                    "One-dimensional collections are not yet supported"
-                )
-            # Two-dimensional
-            raise NotImplementedError(
-                "Two-dimensional collections are not yet supported"
-            )
-        # Don't know this data type!
-        raise TypeError("Unknown node data type: {}".format(type(data)))
-
-    @staticmethod
-    def is_single_column(kwargs):
-        return (
-            kwargs.get("node_id") == NodeData.SINGLE_COLUMN
-            or kwargs.get("node_type") == NodeData.SINGLE_COLUMN
-        )
+        # Cannot (yet) handle this data type!
+        raise TypeError("Unsupported node data type: {}".format(type(data)))
 
 
 class NodeData(metaclass=NodeDataFactory):
@@ -159,16 +127,12 @@ class NodeData(metaclass=NodeDataFactory):
         node_id (str or int, optional):
             The name or position of the node identifier. If not specified,
             all node identifiers will be obtained via enumeration.
-            Use the constant SINGLE_COLUMN if the node data are specified
-            by a one-dimensional collection of node identifiers.
             Use the constant PANDAS_INDEX if the node data are specified
             by a Pandas data-frame and its index provides the node identifiers.
         node_type (str or int, optional):
             The name or position of the node type. If not specified,
             all nodes will be implicitly assigned the default node type,
             unless the node data are specified by a type -> nodes mapping.
-            Use the constant SINGLE_COLUMN if the node data form a
-            one-dimensional collection of node types.
         node_features (iterable or dict, optional):
             Either a collection of column names or positions that comprise
             the node features, or a mapping from node type to node feature columns.
@@ -180,7 +144,6 @@ class NodeData(metaclass=NodeDataFactory):
     # Useful constants:
     DEFAULT_NODE_TYPE = "node"
     PANDAS_INDEX = -1
-    SINGLE_COLUMN = -2
 
     def num_nodes(self) -> int:
         """
@@ -188,6 +151,17 @@ class NodeData(metaclass=NodeDataFactory):
 
         Returns:
              The number of nodes.
+        """
+        raise NotImplementedError
+
+    def is_identified(self) -> bool:
+        """
+        Indicates whether or not the node identifiers have been
+        explicitly given.
+
+        Returns:
+            bool: A value of True (cf False) if node identifiers
+            are explicit (cf implicit).
         """
         raise NotImplementedError
 
@@ -217,30 +191,6 @@ class NodeData(metaclass=NodeDataFactory):
             return zip(self.node_ids(), self.node_types())
         return self.node_ids()
 
-    def node_index(self, node_id: Any) -> int:
-        """
-        Obtains the ordered node index corresponding to the given identifier.
-
-        Args:
-            node_id (any): The node identifier.
-
-        Returns:
-            int: The node index, or a value of -1 if the node is not in the graph.
-        """
-        raise NotImplementedError
-
-    def node_id(self, node_idx: int) -> Optional[Any]:
-        """
-        Obtains the node identifier corresponding to the given ordered index.
-
-        Args:
-            node_idx (int): The node index.
-
-        Returns:
-            any: The node identifier, or a value of None if the node is not in the graph.
-        """
-        raise NotImplementedError
-
     def has_node(self, node_id: Any) -> bool:
         """
         Determines whether or not the given node is in the graph.
@@ -252,7 +202,7 @@ class NodeData(metaclass=NodeDataFactory):
             bool: A value of True (cd False) if the node
             is (cd is not) in the graph.
         """
-        return self.node_index(node_id) >= 0
+        raise NotImplementedError
 
     def add_node(self, node_id: Any):
         """
@@ -378,6 +328,10 @@ class DefaultNodeData(NodeData):
         self._offset = implicit_id_offset
         self._external_ids = {}
 
+    def is_identified(self) -> bool:
+        # Nodes can only be added with explicit identifiers
+        return True
+
     def default_node_type(self) -> Any:
         return self._default_node_type
 
@@ -391,9 +345,30 @@ class DefaultNodeData(NodeData):
         return DefaultIterable(len(self._external_ids), self._default_node_type)
 
     def node_index(self, node_id: Any) -> int:
+        """
+        Obtains the ordered node index corresponding to the given identifier.
+
+        Args:
+            node_id (any): The node identifier.
+
+        Returns:
+            int: The node index, or a value of -1 if the node is not in the graph.
+        """
         return self._external_ids.get(node_id, -1)
 
+    def has_node(self, node_id: Any) -> bool:
+        return self.node_index(node_id) >= 0
+
     def node_id(self, node_idx: int) -> Optional[Any]:
+        """
+        Obtains the node identifier corresponding to the given ordered index.
+
+        Args:
+            node_idx (int): The node index.
+
+        Returns:
+            any: The node identifier, or a value of None if the node is not in the graph.
+        """
         # Could optimise this by having an ordered list of ids.
         for node_id, _node_idx in self._external_ids.items():
             if _node_idx == node_idx:
@@ -425,16 +400,13 @@ class TypeDictNodeData(DefaultNodeData):
     Args:
         data (any):
             The node data in the form of a type -> block mapping.
-        node_id (str or int, optional):
-            The name or position of the node identifier.
-            If specified, the node identifiers are
-            assumed to be globally unique across all blocks of node data.
-            If not specified,
-            all node identifiers will be obtained via enumeration.
-            Use the constant SINGLE_COLUMN if the node data are specified
-            by a one-dimensional collection of node identifiers.
+        node_id (str or int):
+            The name or position of the node identifier; this is assumed
+            to be consistent across all blocks of node data.
             Use the constant PANDAS_INDEX if the node data are specified
             by a Pandas data-frame and its index provides the node identifiers.
+            The node identifiers must be explicitly given, and are assumed to be
+            globally unique across all blocks of node data.
         node_features (iterable or dict, optional):
             Either a collection of column names or positions that comprise
             the node features, or a mapping from node type to node feature columns.
@@ -461,35 +433,36 @@ class TypeDictNodeData(DefaultNodeData):
         # Analyse the data
         _data = {}
         self._node_feature_sizes = nfs = {}
-        self._offsets = _offsets = {}
         _num_nodes = 0
         for node_type, block_data in data.items():
             nf = None if node_features is None else _node_features[node_type]
             nd = NodeData(block_data, node_id=node_id, node_features=nf)
-            # TODO Add is_identified() method and check for consistency.
             nn = nd.num_nodes()
-            if nn <= 0:
-                # Ignore empty blocks
-                continue
-            _offsets[node_type] = _num_nodes
-            _num_nodes += nn
-            _data[node_type] = nd
-            if node_features is not None:
-                nfs[node_type] = len(nf)
+            if nn > 0:
+                if not nd.is_identified():
+                    raise ValueError(
+                        "Node data for type {} do not have explicit identifiers".format(
+                            node_type
+                        )
+                    )
+                _num_nodes += nn
+                _data[node_type] = nd
+                if node_features is not None:
+                    nfs[node_type] = len(nf)
         self._data = _data
         self._num_nodes = _num_nodes
         super().__init__(default_node_type, _num_nodes)
-        # Determine if nodes have explicit identifiers
-        self._has_implicit_ids = node_id is None
 
     def num_nodes(self) -> int:
         return self._num_nodes + super().num_nodes()
 
+    def has_node(self, node_id: Any) -> bool:
+        for nd in self._data.values():
+            if nd.has_node(node_id):
+                return True
+        return super().has_node(node_id)
+
     def node_ids(self) -> Iterable[Any]:
-        if self._has_implicit_ids:
-            # Global implicit identifiers
-            return itertools.chain(range(self._num_nodes), super().node_ids())
-        # Get explicit identifiers
         node_ids = [nd.node_ids() for nd in self._data.values()]
         return itertools.chain(*node_ids, super().node_ids())
 
@@ -500,49 +473,12 @@ class TypeDictNodeData(DefaultNodeData):
         return itertools.chain(*node_types, super().node_types())
 
     def node_type(self, node_id: Any) -> Optional[Any]:
-        if self._has_implicit_ids:
-            # Check implicit identifiers
-            if isinstance(node_id, int) and 0 <= node_id < self._num_nodes:
-                local_node_id = node_id
-                for nt, nd in self._data.items():
-                    if local_node_id < nd.num_nodes():
-                        return nt
-                    local_node_id -= nd.num_nodes()
-        else:
-            # Check explicit identifiers
-            for nt, nd in self._data.items():
-                if nd.has_node(node_id):
-                    return nt
+        # Check explicit identifiers
+        for nt, nd in self._data.items():
+            if nd.has_node(node_id):
+                return nt
         # Check external identifiers
         return super().node_type(node_id)
-
-    def node_index(self, node_id: Any) -> int:
-        if self._has_implicit_ids:
-            # Check implicit identifiers
-            if isinstance(node_id, int) and 0 <= node_id < self._num_nodes:
-                return node_id
-        else:
-            # Check explicit identifiers
-            _offset = 0
-            for nd in self._data.values():
-                node_idx = nd.node_index(node_id)
-                if node_idx >= 0:
-                    return _offset + node_idx
-                _offset += nd.num_nodes()
-        # Check external identifiers
-        return super().node_index(node_id)
-
-    def node_id(self, node_idx: int) -> Optional[Any]:
-        if 0 <= node_idx < self._num_nodes:
-            if self._has_implicit_ids:
-                # Index equals implicit identifier.
-                return node_idx
-            local_node_idx = node_idx
-            for nd in self._data.values():
-                if local_node_idx < nd.num_nodes():
-                    return nd.node_id(local_node_idx)
-                local_node_idx -= nd.num_nodes()
-        return super().node_id(node_idx)
 
     def node_type_set(self) -> Set[Any]:
         return self._data.keys() | super().node_type_set()
@@ -563,14 +499,6 @@ class TypeDictNodeData(DefaultNodeData):
         nd = self._data.get(node_type)
         if nd is None:
             raise ValueError("Unknown node type: {}".format(node_type))
-        if self._has_implicit_ids:
-            _offset = self._offsets[node_type]
-            if _offset > 0:
-                node_ids = [node_id - _offset for node_id in node_ids]
-            for nt, nd in self._data.items():
-                if nt == node_type:
-                    break
-                _offset += nd.num_nodes()
         return nd.node_features(node_ids)
 
 
@@ -622,6 +550,9 @@ class MappedNodeData(DefaultNodeData):
             self._node_types = set() if _offset == 0 else {self.default_node_type()}
         else:
             self._node_types = set(node_types)
+
+    def is_identified(self) -> bool:
+        return self._num_implicit_ids == 0
 
     def num_nodes(self) -> int:
         return self._num_implicit_ids + len(self._explicit_ids) + super().num_nodes()
