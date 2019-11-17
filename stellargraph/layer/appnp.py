@@ -231,15 +231,15 @@ class APPNP:
                 num_of_nodes=self.generator.Aadj.shape[0]
             )
 
-        self._layers = []
+        self._mlp_layers = []
 
         # Initialize a stack of fully connected layers
         n_layers = len(self.layer_sizes)
         for ii in range(n_layers):
             l = self.layer_sizes[ii]
             a = self.activations[ii]
-            self._layers.append(Dropout(self.dropout))
-            self._layers.append(
+            self._mlp_layers.append(Dropout(self.dropout))
+            self._mlp_layers.append(
                 Dense(
                     l,
                     activation=a,
@@ -248,10 +248,11 @@ class APPNP:
                 )
             )
 
+        self._propagation_layers = []
         feature_dim = self.layer_sizes[-1]
         for ii in range(approx_iter):
-            self._layers.append(Dropout(self.dropout))
-            self._layers.append(
+            self._propagation_layers.append(Dropout(self.dropout))
+            self._propagation_layers.append(
                 APPNPPropagationLayer(
                     feature_dim,
                     teleport_probability=self.teleport_probability,
@@ -305,12 +306,15 @@ class APPNP:
             )
 
         h_layer = x_in
-        for layer in self._layers:
+
+        for layer in self._mlp_layers:
+            h_layer = layer(h_layer)
+
+        feature_layer = h_layer
+
+        for layer in self._propagation_layers:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices] + Ainput)
-            elif isinstance(layer, Dense):
-                h_layer = layer(h_layer)
-                feature_layer = h_layer
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
@@ -403,15 +407,15 @@ class APPNP:
 
         # pass the node features through the base model
         feature_layer = x_t
-        for layer in base_model.layers:
+        for layer in base_model.layers[1:]:
             feature_layer = layer(feature_layer)
 
         h_layer = feature_layer
         # iterate through APPNPPropagation layers
-        for layer in self._layers:
+        for layer in self._propagation_layers:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices_t] + Ainput)
-            elif isinstance(layer, Dropout):
+            else:
                 h_layer = layer(h_layer)
 
         x_out = h_layer
