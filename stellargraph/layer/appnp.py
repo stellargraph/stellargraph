@@ -231,15 +231,15 @@ class APPNP:
                 num_of_nodes=self.generator.Aadj.shape[0]
             )
 
-        self._mlp_layers = []
+        self._layers = []
 
         # Initialize a stack of fully connected layers
         n_layers = len(self.layer_sizes)
         for ii in range(n_layers):
             l = self.layer_sizes[ii]
             a = self.activations[ii]
-            self._mlp_layers.append(Dropout(self.dropout))
-            self._mlp_layers.append(
+            self._layers.append(Dropout(self.dropout))
+            self._layers.append(
                 Dense(
                     l,
                     activation=a,
@@ -248,11 +248,9 @@ class APPNP:
                 )
             )
 
-        self._propagation_layers = []
         feature_dim = self.layer_sizes[-1]
         for ii in range(approx_iter):
-            self._propagation_layers.append(Dropout(self.dropout))
-            self._propagation_layers.append(
+            self._layers.append(
                 APPNPPropagationLayer(
                     feature_dim,
                     teleport_probability=self.teleport_probability,
@@ -307,12 +305,12 @@ class APPNP:
 
         h_layer = x_in
 
-        for layer in self._mlp_layers:
+        for layer in self._layers[:(2 * len(self.layer_sizes))]:
             h_layer = layer(h_layer)
 
         feature_layer = h_layer
 
-        for layer in self._propagation_layers:
+        for layer in self._layers[(2 * len(self.layer_sizes)):]:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices] + Ainput)
             else:
@@ -412,7 +410,7 @@ class APPNP:
 
         h_layer = feature_layer
         # iterate through APPNPPropagation layers
-        for layer in self._propagation_layers:
+        for layer in self._layers[(2 * len(self.layer_sizes)):]:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices_t] + Ainput)
             else:
