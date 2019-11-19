@@ -20,6 +20,7 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
+from stellargraph.core.graph import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
@@ -365,7 +366,8 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    Gnx = G._graph  # XXX Hack - Only works for NetworkXStellarGraph instances.
+    assert isinstance(G, NetworkXStellarGraph)  # XXX Hack - Only works for NetworkXStellarGraph instances
+    Gnx = G._graph
     ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
