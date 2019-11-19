@@ -157,13 +157,7 @@ class TestBiasedWeightedRandomWalk(object):
         seed = None
 
         with pytest.raises(ValueError):
-            # weighted is boolean which is by default False. It is True if walk has to be weighted.
-            biasedrw.run(
-                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
-            )
-
-        with pytest.raises(ValueError):
-            # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
+            # weighted must be a Boolean.
             biasedrw.run(
                 nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
             )
