@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-
+import argparse
 import nbformat
 import re
-
+from itertools import chain
 from traitlets import Set, Integer, Bool
 from traitlets.config import Config
 from pathlib import Path
@@ -20,15 +20,16 @@ class ClearWarningsPreprocessor(preprocessors.Preprocessor):
 
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == "code":
-            # Search and remove warnings in outputs
             pro_outputs = []
             for output in cell.outputs:
-                if "WARNING" in output.get("text", ""):
+                # Search for tensorflow warning and remove warnings in outputs
+                if "WARNING:tensorflow" in output.get("text", ""):
                     print(
                         f"Removing Tensorflow warning in code cell {cell.execution_count}"
                     )
                     output["text"] = self.sub_warn.sub("", output.get("text", ""))
 
+                # Clear std errors
                 if self.filter_all_stderr and output.get("name") == "stderr":
                     print(f"Removing stderr in code cell {cell.execution_count}")
                     continue
@@ -39,15 +40,12 @@ class ClearWarningsPreprocessor(preprocessors.Preprocessor):
 
 
 class RenumberCodeCellPreprocessor(preprocessors.Preprocessor):
-    code_index = 0
-
     def preprocess(self, nb, resources):
         self.code_index = 0
         return super().preprocess(nb, resources)
 
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == "code":
-            # Renumber code cells from 1
             self.code_index += 1
             cell.execution_count = self.code_index
         return cell, resources
@@ -101,30 +99,70 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
 
 
 if __name__ == "__main__":
-    # Configuration
-    # TODO: Move to environment variables or cmd args
-    top_path = Path(".")
-    format_code_cell = True     # Format code cells using black
-    renumber_code_cell = True   # Renumber all code cells starting from 1
-    set_default_kernel = True   # Set default kernel to "Python 3"
 
-    ignore_checkpoints = True   # 
-    overwrite_notebooks = False # Overwrite notebooks if True, otherwise save with ".mod"
-    write_notebook = True       # Write formatted notebooks
-    write_html = True           # Write formatted html
+    parser = argparse.ArgumentParser(description="Format Jupyter notebooks")
+    parser.add_argument(
+        "locations",
+        nargs="+",
+        help="Paths(s) to search for Jupyter notebooks to format",
+    )
+    parser.add_argument(
+        "-w",
+        "--clear_warnings",
+        action="store_true",
+        help="Clear Tensorflow  warnings and stderr in output",
+    )
+    parser.add_argument(
+        "-c",
+        "--format_code",
+        action="store_true",
+        help="Format all code cells (currently uses black)",
+    )
+    parser.add_argument(
+        "-n",
+        "--renumber",
+        action="store_true",
+        help="Renumber all code cells from the top, regardless of execution order",
+    )
+    parser.add_argument(
+        "-k",
+        "--set_kernel",
+        action="store_true",
+        help="Set kernel spec to default 'Python 3'",
+    )
+    parser.add_argument(
+        "-o",
+        "--overwrite",
+        action="store_true",
+        help="Overwrite original notebooks, otherwise a copy will be made with a .mod suffix",
+    )
+    parser.add_argument(
+        "--html", action="store_true", help="Save HTML as well as notebook output"
+    )
 
-    preprocessor_list = [ClearWarningsPreprocessor]
+    args, cmdline_args = parser.parse_known_args()
 
-    if set_default_kernel:
-        preprocessor_list.append(SetKernelSpecPreprocessor)
+    # Ignore any notebooks in .ipynb_checkpoint directories
+    ignore_checkpoints = True
 
-    if format_code_cell:
-        preprocessor_list.append(FormatCodeCellPreprocessor)
+    # Default to always writing the notebook
+    write_notebook = True
 
-    if renumber_code_cell:
+    # Add preprocessors
+    preprocessor_list = []
+    if args.renumber:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
-    # Specify our custom preprocessor
+    if args.clear_warnings:
+        preprocessor_list.append(ClearWarningsPreprocessor)
+
+    if args.set_kernel:
+        preprocessor_list.append(SetKernelSpecPreprocessor)
+
+    if args.format_code:
+        preprocessor_list.append(FormatCodeCellPreprocessor)
+
+    # Create the exporters with preprocessing
     c = Config()
     c.NotebookExporter.preprocessors = preprocessor_list
     c.HTMLExporter.preprocessors = preprocessor_list
@@ -132,11 +170,8 @@ if __name__ == "__main__":
     html_exporter = HTMLExporter(c)
     # html_exporter.template_file = 'basic'
 
-    # all_files = map(
-    #     Path,
-    #     ["demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb"],
-    # )
-    all_files = top_path.glob("**/*.ipynb")
+    # Find all Jupyter notebook files in the specified directory
+    all_files = chain.from_iterable(Path(p).glob("**/*.ipynb") for p in args.locations)
 
     # Go through all notebooks files in specified directory
     for file_loc in all_files:
@@ -147,7 +182,7 @@ if __name__ == "__main__":
         if ignore_checkpoints and ".ipynb_checkpoint" in str(file_loc):
             continue
 
-        print(f"\nProcessing file {file_loc}")
+        print(f"\033[1;33;40m \nProcessing file {file_loc}\033[0m")
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
         writer = writers.FilesWriter()
@@ -157,14 +192,14 @@ if __name__ == "__main__":
             (body, resources) = nb_exporter.from_notebook_node(in_notebook)
 
             # Write notebook file
-            if overwrite_notebooks:
+            if args.overwrite:
                 nb_file_loc = str(file_loc.with_suffix(""))
             else:
                 nb_file_loc = str(file_loc.with_suffix(".mod"))
             print(f"Writing notebook to {nb_file_loc}.ipynb")
             writer.write(body, resources, nb_file_loc)
 
-        if write_html:
+        if args.html:
             # Process the notebook to HTML
             (body, resources) = html_exporter.from_notebook_node(in_notebook)
 
