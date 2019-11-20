@@ -100,7 +100,11 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Format Jupyter notebooks")
+    parser = argparse.ArgumentParser(
+        description="Format and clean Jupyter notebooks by removing Tensorflow warnings "
+        "and stderr outputs, formatting and numbering the code cells, and setting the kernel. "
+        "See the options below to select which of these operations is performed."
+    )
     parser.add_argument(
         "locations",
         nargs="+",
@@ -131,6 +135,12 @@ if __name__ == "__main__":
         help="Set kernel spec to default 'Python 3'",
     )
     parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        help="Perform all formatting, equivalent to -wcnk",
+    )
+    parser.add_argument(
         "-o",
         "--overwrite",
         action="store_true",
@@ -145,21 +155,27 @@ if __name__ == "__main__":
     # Ignore any notebooks in .ipynb_checkpoint directories
     ignore_checkpoints = True
 
-    # Default to always writing the notebook
+    # Set other config from cmd args
     write_notebook = True
+    write_html = args.html
+    overwrite_notebook = args.overwrite
+    format_code = args.format_code or args.all
+    clear_warnings = args.clear_warnings or args.all
+    renumber_code = args.renumber or args.all
+    set_kernel = args.set_kernel or args.all
 
     # Add preprocessors
     preprocessor_list = []
-    if args.renumber:
+    if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
-    if args.clear_warnings:
+    if clear_warnings:
         preprocessor_list.append(ClearWarningsPreprocessor)
 
-    if args.set_kernel:
+    if set_kernel:
         preprocessor_list.append(SetKernelSpecPreprocessor)
 
-    if args.format_code:
+    if format_code:
         preprocessor_list.append(FormatCodeCellPreprocessor)
 
     # Create the exporters with preprocessing
@@ -192,14 +208,14 @@ if __name__ == "__main__":
             (body, resources) = nb_exporter.from_notebook_node(in_notebook)
 
             # Write notebook file
-            if args.overwrite:
+            if overwrite_notebook:
                 nb_file_loc = str(file_loc.with_suffix(""))
             else:
                 nb_file_loc = str(file_loc.with_suffix(".mod"))
             print(f"Writing notebook to {nb_file_loc}.ipynb")
             writer.write(body, resources, nb_file_loc)
 
-        if args.html:
+        if write_html:
             # Process the notebook to HTML
             (body, resources) = html_exporter.from_notebook_node(in_notebook)
 
