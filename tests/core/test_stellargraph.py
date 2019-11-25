@@ -450,7 +450,7 @@ def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types
     return G
 
 
-@pytest.mark.benchmark(group="StellarGraph")
+@pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
     g = example_benchmark_graph()
     num_nodes = g.number_of_nodes()
@@ -463,7 +463,7 @@ def test_benchmark_get_neighbours(benchmark):
     benchmark(f)
 
 
-@pytest.mark.benchmark(group="StellarGraph")
+@pytest.mark.benchmark(group="StellarGraph node features")
 @pytest.mark.parametrize("num_types", [1, 4])
 @pytest.mark.parametrize("lookup", ["individual", "bulk"])
 @pytest.mark.parametrize("type_arg", ["infer", "specify"])
