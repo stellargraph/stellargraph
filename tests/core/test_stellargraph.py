@@ -446,7 +446,9 @@ def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types
             G.nodes[v]["feature"] = np.ones(feature_size)
             G.nodes[v]["label"] = v % n_types
 
-    G = StellarGraph(G, node_features="feature")
+        G = StellarGraph(G, node_features="feature")
+    else:
+        G = StellarGraph(G)
     return G
 
 
