@@ -17,6 +17,7 @@
 import pytest
 import pandas as pd
 import networkx as nx
+import random
 from stellargraph.core.graph import *
 from stellargraph.data.converter import *
 
@@ -427,3 +428,69 @@ def test_feature_conversion_from_iterator():
     ab = gs.get_feature_for_nodes([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
+
+
+def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types=4):
+    G = nx.Graph()
+
+    G.add_nodes_from(range(n_nodes))
+    edges = [
+        (random.randint(0, n_nodes - 1), random.randint(0, n_nodes - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_edges_from(edges)
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.nodes[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["label"] = v % n_types
+
+    G = StellarGraph(G, node_features="feature")
+    return G
+
+
+@pytest.mark.benchmark(group="StellarGraph")
+def test_benchmark_get_neighbours(benchmark):
+    g = example_benchmark_graph()
+    num_nodes = g.number_of_nodes()
+
+    # get the neigbours of every node in the graph
+    def f():
+        for i in range(num_nodes):
+            g.neighbors(i)
+
+    benchmark(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph")
+@pytest.mark.parametrize("num_types", [1, 4])
+@pytest.mark.parametrize("lookup", ["individual", "bulk"])
+@pytest.mark.parametrize("type_arg", ["infer", "specify"])
+def test_benchmark_get_features(benchmark, num_types, lookup, type_arg):
+    g = example_benchmark_graph(feature_size=10, n_types=num_types)
+    num_nodes = g.number_of_nodes()
+
+    if type_arg == "specify":
+        # compute the type from the vertex ID
+        node_type = lambda v: v % num_types
+    else:
+        # leave the argument as None, and so use inference of the type
+        node_type = lambda v: None
+
+    # get the features for every node in the graph...
+    def individual():
+        # either one at a time...
+        for i in range(num_nodes):
+            g.get_feature_for_nodes(i, node_type(i))
+
+    def bulk():
+        # or, for all nodes of each type in a batch.
+        for ty in range(num_types):
+            nodes_of_type = range(ty, num_nodes, num_types)
+            g.get_feature_for_nodes(nodes_of_type, node_type(ty))
+
+    if lookup == "bulk":
+        benchmark(bulk)
+    else:
+        benchmark(individual)
