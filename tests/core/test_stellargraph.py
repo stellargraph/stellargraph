@@ -17,6 +17,7 @@
 import pytest
 import pandas as pd
 import networkx as nx
+import random
 from stellargraph.core.graph import *
 from stellargraph.data.converter import *
 from ..test_utils.alloc import snapshot, allocation_benchmark
