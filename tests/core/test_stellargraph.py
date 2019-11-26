@@ -19,6 +19,7 @@ import pandas as pd
 import networkx as nx
 from stellargraph.core.graph import *
 from stellargraph.data.converter import *
+from ..test_utils.alloc import snapshot, allocation_benchmark
 
 
 def create_graph_1(sg=StellarGraph()):
@@ -427,3 +428,44 @@ def test_feature_conversion_from_iterator():
     ab = gs.get_feature_for_nodes([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
+
+
+def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types=4):
+    G = nx.Graph()
+
+    G.add_nodes_from(range(n_nodes))
+    edges = [
+        (random.randint(0, n_nodes - 1), random.randint(0, n_nodes - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_edges_from(edges)
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.nodes[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["label"] = v % n_types
+
+        G = StellarGraph(G, node_features="feature")
+    else:
+        G = StellarGraph(G)
+    return G
+
+
+@pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
+# various element counts, to give an indication of the relationship
+# between those and memory use (0,0 gives the overhead of the
+# StellarGraph object itself, without any data)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 0), (100, 200)])
+# various feature sizes (including no features) to capture that cost
+@pytest.mark.parametrize("feature_size", [None, 1, 100])
+def test_benchmark_creation(allocation_benchmark, feature_size, num_nodes, num_edges):
+    g = example_benchmark_graph(feature_size, num_nodes, num_edges)
+
+    def f():
+        if feature_size is None:
+            return StellarGraph(g)
+        else:
+            return StellarGraph(g, node_features="feature")
+
+    allocation_benchmark(f)
