@@ -431,7 +431,9 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
-def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types=4):
+def example_benchmark_graph(
+    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
+):
     G = nx.Graph()
 
     G.add_nodes_from(range(n_nodes))
@@ -441,16 +443,26 @@ def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types
     ]
     G.add_edges_from(edges)
 
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-            G.nodes[v]["label"] = v % n_types
+    for v in G.nodes():
+        G.nodes[v]["label"] = v % n_types
 
-        G = StellarGraph(G, node_features="feature")
+    # Add example features
+    if feature_size is None:
+        node_features = None
+    elif features_in_nodes:
+        node_features = "feature"
+        for v in G.nodes():
+            G.nodes[v][node_features] = np.ones(feature_size)
     else:
-        G = StellarGraph(G)
-    return G
+        node_features = {}
+        for ty in range(n_types):
+            type_nodes = range(ty, n_nodes, n_types)
+            if len(type_nodes) > 0:
+                node_features[ty] = pd.DataFrame(
+                    [np.ones(feature_size)] * len(type_nodes), index=type_nodes
+                )
+
+    return G, node_features
 
 
 @pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
@@ -460,13 +472,16 @@ def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 0), (100, 200)])
 # various feature sizes (including no features) to capture that cost
 @pytest.mark.parametrize("feature_size", [None, 1, 100])
-def test_benchmark_creation_from_networkx(allocation_benchmark, feature_size, num_nodes, num_edges):
-    g = example_benchmark_graph(feature_size, num_nodes, num_edges)
+# test both features
+@pytest.mark.parametrize("features_in_nodes", [False, True])
+def test_benchmark_creation_from_networkx(
+    allocation_benchmark, feature_size, num_nodes, num_edges, features_in_nodes
+):
+    g, node_features = example_benchmark_graph(
+        feature_size, num_nodes, num_edges, features_in_nodes=features_in_nodes
+    )
 
     def f():
-        if feature_size is None:
-            return StellarGraph(g)
-        else:
-            return StellarGraph(g, node_features="feature")
+        return StellarGraph(g, node_features=node_features)
 
     allocation_benchmark(f)
