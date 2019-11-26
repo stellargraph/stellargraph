@@ -40,10 +40,12 @@ class MallocInstant:
         return sum(elem.size_diff for elem in diff)
 
 
-def snapshot() -> MallocInstant:
+def snapshot(gc_generation=0) -> MallocInstant:
     """
     Take a snapshot of the current "malloc instant", similar to an allocation version of time.perf_counter() (etc.).
     """
+    if gc_generation is not None:
+        gc.collect(gc_generation)
     return MallocInstant(tracemalloc.take_snapshot())
 
 
@@ -61,21 +63,26 @@ def allocation_benchmark(request, benchmark):
 
     benchmark.extra_info["allocation_benchmark"] = True
 
-    def setup():
-        # this is somewhat expensive, but dramatically increases
-        # consistency, by ensuring there's not many deallocations of
-        # "random" other objects that happen during the benchmark
-        # period: the standard deviation drops by 10-100x and IQR
-        # drops to 0, typically.
-        gc.collect()
-
     def run_it(f):
-        result = benchmark.pedantic(f, setup=setup, iterations=1, rounds=10)
+        result = benchmark.pedantic(f, iterations=1, rounds=20, warmup_rounds=3)
         if result is None:
             raise ValueError(
                 "benchmark function returned None: allocation benchmarking is only reliable if the object(s) of interest is created inside and returned from the function being benchmarked"
             )
 
+    # Running without a GC for an memory benchmark? This ensures that all objects created in the
+    # benchmarked function get placed into the young generation (0), and so cleaning those up to
+    # leave only the long-lived objects from each function execution is just a `gc.collect(0)` which
+    # is very fast (much faster than `gc.collect()`). For measuring peak memory use this gives the
+    # worst-case peak: the case when no GC runs at all during the benchmarked-function and so only
+    # obvious deallocations occur.
+    gc_was_enabled = gc.isenabled()
+    gc.disable()
     tracemalloc.start()
     yield run_it
     tracemalloc.stop()
+
+    if gc_was_enabled:
+        gc.enable()
+        # forcibly clean up anything left over in this benchmark
+        gc.collect()

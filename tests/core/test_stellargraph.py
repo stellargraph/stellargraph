@@ -474,7 +474,7 @@ def example_benchmark_graph(
 @pytest.mark.parametrize("feature_size", [None, 1, 100])
 # test both features
 @pytest.mark.parametrize("features_in_nodes", [False, True])
-def test_benchmark_creation_from_networkx(
+def test_allocation_benchmark_creation_from_networkx(
     allocation_benchmark, feature_size, num_nodes, num_edges, features_in_nodes
 ):
     g, node_features = example_benchmark_graph(
