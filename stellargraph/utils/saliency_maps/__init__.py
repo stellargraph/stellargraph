@@ -18,3 +18,5 @@ from .integrated_gradients import IntegratedGradients
 from .saliency import GradientSaliency
 from .integrated_gradients_gat import IntegratedGradientsGAT
 from .saliency_gat import GradientSaliencyGAT
+from .saliency_gsage import GradientSaliencyGSAGE
+from .integrated_gradients_gsage import IntegratedGradientsGSAGE

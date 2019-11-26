@@ -94,6 +94,11 @@ class NodeSequence(Sequence):
         self.shuffle = shuffle
         self.batch_size = batch_size
 
+        # Providing the sampled indices and features for ig
+        self.batch_nodes_indices = []
+        self.batch_features = []
+        self.num_samples = []
+
         # Shuffle IDs to start
         self.on_epoch_end()
 
@@ -130,8 +135,13 @@ class NodeSequence(Sequence):
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
         # Get features for nodes
-        batch_feats = self._sample_function(head_ids)
-
+        batch_feats, batch_ids = self._sample_function(head_ids)
+        self.batch_nodes_indices = batch_ids
+        self.batch_features = batch_feats
+        num_samples = []
+        for i in range(len(batch_ids) - 1):
+            num_samples.append(batch_ids[i+1].shape[1] // batch_ids[i].shape[1])
+        self.num_samples = num_samples
         return batch_feats, batch_targets
 
     def on_epoch_end(self):
