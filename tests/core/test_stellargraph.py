@@ -460,7 +460,7 @@ def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 0), (100, 200)])
 # various feature sizes (including no features) to capture that cost
 @pytest.mark.parametrize("feature_size", [None, 1, 100])
-def test_benchmark_creation(allocation_benchmark, feature_size, num_nodes, num_edges):
+def test_benchmark_creation_from_networkx(allocation_benchmark, feature_size, num_nodes, num_edges):
     g = example_benchmark_graph(feature_size, num_nodes, num_edges)
 
     def f():
