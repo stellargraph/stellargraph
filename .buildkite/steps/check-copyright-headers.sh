@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eux
+set -eu
 
 # FIXME: replace with git-bash image
 apk add git
@@ -31,7 +31,6 @@ echo "--- checking copyright headers are up to date"
 # year (grep -v $year), and then check (while read ....) whether there's been any commit touching
 # that file in the current year.
 year="$(date +%Y)"
-dayOfYear="$(date +%j)"
 
 find . -name "*.py" -exec grep "$copyrightRegex" {} + | grep -v "$year" | while read -r fileAndLine; do
   # grep prints `<filename>:<matching line>`, so remove everything from the first : to get the
