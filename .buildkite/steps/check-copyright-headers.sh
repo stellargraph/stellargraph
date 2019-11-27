@@ -1,6 +1,9 @@
 #!/bin/sh
 
-set -eu
+set -eux
+
+# FIXME: replace with git-bash image
+apk add git
 
 exitCode=0
 temp="$(mktemp)"
@@ -24,16 +27,29 @@ if [ -s "$temp" ]; then
 fi
 
 echo "--- checking copyright headers are up to date"
-# look for files that have been modified in the last year (-mtime -$dayOfYear), where their
-# copyright header (grep $copyrightRegex) doesn't mention the current year (grep -v $year).
+# look for files where their copyright header (grep $copyrightRegex) doesn't mention the current
+# year (grep -v $year), and then check (while read ....) whether there's been any commit touching
+# that file in the current year.
 year="$(date +%Y)"
 dayOfYear="$(date +%j)"
 
-find . -name "*.py" -mtime "-$dayOfYear" -exec grep "$copyrightRegex" {} + | grep -v "$year" | tee "$temp"
+find . -name "*.py" -exec grep "$copyrightRegex" {} + | grep -v "$year" | while read -r fileAndLine; do
+  # grep prints `<filename>:<matching line>`, so remove everything from the first : to get the
+  # filename
+  filename="${fileAndLine%%:*}"
+  # print the year (%Y) of the author dates (%ad) of each commit to the file in question, and then
+  # find the largest (most recent) one
+  lastModifiedYear=$(git log --pretty=tformat:%ad --date=format:%Y -- "$filename" | sort -nr | head -1)
+  if [ "$lastModifiedYear" -eq "$year" ]; then
+    # the file has been modified this year, but the copyright header doesn't mention it, uh oh!
+    # Print the line for follow up
+    echo "$fileAndLine"
+  fi
+done | tee "$temp"
 
 if [ -s "$temp" ]; then
   echo "^^^ +++"
-  echo "found files modified in $year (in the last $dayOfYear days) without $year in their copyright header"
+  echo "found files modified in $year (according to git) without $year in their copyright header"
   exitCode=1
 fi
 
