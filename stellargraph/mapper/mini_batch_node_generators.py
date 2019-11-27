@@ -74,21 +74,28 @@ class ClusterNodeGenerator:
             self.k = len(clusters)
 
         # Some error checking on the given parameter values
-        if lam < 0 or lam > 1 or not isinstance(lam, float):
+        if not isinstance(lam, float):
+            raise TypeError("{}: lam must be a float type.".format(type(self).__name__))
+
+        if lam < 0 or lam > 1:
             raise ValueError(
-                "{}: lam must be a float in the range [0, 1].".format(
-                    type(self).__name__
-                )
+                "{}: lam must be in the range [0, 1].".format(type(self).__name__)
             )
 
-        if q <= 0 or not isinstance(q, int):
+        if not isinstance(q, int):
+            raise TypeError("{}: q must be integer type.".format(type(self).__name__))
+
+        if q <= 0:
             raise ValueError(
-                "{}: q must be a positive integer.".format(type(self).__name__)
+                "{}: q must be greater than 0.".format(type(self).__name__)
             )
 
-        if k <= 0 or not isinstance(k, int):
+        if not isinstance(k, int):
+            raise TypeError("{}: k must be integer type.".format(type(self).__name__))
+
+        if k <= 0:
             raise ValueError(
-                "{}: k must be a positive integer.".format(type(self).__name__)
+                "{}: k must be greater than 0.".format(type(self).__name__)
             )
 
         if k % q != 0:
@@ -164,7 +171,7 @@ class ClusterNodeGenerator:
 
             # Check targets correct shape
             if len(targets) != len(node_ids):
-                raise TypeError(
+                raise ValueError(
                     "{}: Targets must be the same length as node_ids".format(
                         type(self).__name__
                     )
@@ -176,6 +183,7 @@ class ClusterNodeGenerator:
             targets=targets,
             node_ids=node_ids,
             q=self.q,
+            lam=self.lam,
             name=name,
         )
 
@@ -229,10 +237,11 @@ class ClusterNodeSequence(Sequence):
         self.node_order = list()
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
+        self.target_ids = list()
 
         if len(clusters) % self.q != 0:
             raise ValueError(
-                "The number of clusters should be exactly divisible by q. However {} is not exactly divisible by {}".format(
+                "The number of clusters should be exactly divisible by q. However, {} number of clusters is not exactly divisible by {}.".format(
                     len(clusters), q
                 )
             )
@@ -251,12 +260,10 @@ class ClusterNodeSequence(Sequence):
                     "When passed together targets and indices should be the same length."
                 )
 
-            self.target_ids = list(node_ids)
             self.targets = np.asanyarray(targets)
             self.target_node_lookup = dict(
                 zip(self.target_ids, range(len(self.target_ids)))
             )
-            self.target_ids = list(node_ids)
         else:
             self.targets = None
 
