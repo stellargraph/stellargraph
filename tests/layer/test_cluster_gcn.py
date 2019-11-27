@@ -39,6 +39,17 @@ def create_graph_features():
     return G, np.array([[1, 1], [1, 0], [0, 1]])
 
 
+def create_stellargraph():
+    Gnx, features = create_graph_features()
+    nodes = Gnx.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(Gnx, node_features=node_features)
+
+    return G
+
+
 def test_ClusterGraphConvolution_config():
     cluster_gcn_layer = ClusterGraphConvolution(units=16)
     conf = cluster_gcn_layer.get_config()
@@ -123,21 +134,11 @@ def test_ClusterGCN_init():
 
 
 def test_ClusterGCN_apply():
-    G, features = create_graph_features()
-    adj = nx.to_numpy_array(G)[None, :, :]
 
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
+    G = create_stellargraph()
 
     generator = ClusterNodeGenerator(G)
-    # print("******")
-    # print(f"generator clusters: {generator.clusters}")
-    # print(f"generator k: {generator.k}")
-    # print(f"generator q: {generator.q}")
-    # print("******")
+
     cluster_gcn_model = ClusterGCN(
         layer_sizes=[2], generator=generator, activations=["relu"], dropout=0.0
     )
@@ -151,14 +152,8 @@ def test_ClusterGCN_apply():
 
 
 def test_ClusterGCN_activations():
-    G, features = create_graph_features()
 
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
-
+    G = create_stellargraph()
     generator = ClusterNodeGenerator(G)
 
     # Test activations are set correctly
@@ -193,13 +188,7 @@ def test_ClusterGCN_activations():
 
 
 def test_ClusterGCN_regularisers():
-    G, features = create_graph_features()
-
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
+    G = create_stellargraph()
 
     generator = ClusterNodeGenerator(G)
 

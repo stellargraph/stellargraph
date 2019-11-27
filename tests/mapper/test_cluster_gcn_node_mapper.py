@@ -30,13 +30,20 @@ def create_graph_features():
     return G, np.array([[1, 1], [1, 0], [0, 1], [0.5, 1]])
 
 
-def test_ClusterNodeSequence_init():
-    G, features = create_graph_features()
-    nodes = G.nodes()
+def create_stellargraph():
+    Gnx, features = create_graph_features()
+    nodes = Gnx.nodes()
     node_features = pd.DataFrame.from_dict(
         {n: f for n, f in zip(nodes, features)}, orient="index"
     )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+    G = StellarGraph(Gnx, node_type_name="node", node_features=node_features)
+
+    return G
+
+
+def test_ClusterNodeSequence_init():
+
+    G = create_stellargraph()
 
     nsg = ClusterNodeSequence(graph=G, clusters=[list(G.nodes())])
     assert len(nsg) == 1
@@ -66,12 +73,8 @@ def test_ClusterNodeSequence_init():
 
 
 def test_ClusterNodeSequence_getitem():
-    G, features = create_graph_features()
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+    G = create_stellargraph()
 
     nsg = ClusterNodeSequence(
         graph=G, clusters=[["a"], ["b"], ["c"], ["d"]], node_ids=["a", "b", "d"]
@@ -104,12 +107,8 @@ def test_ClusterNodeSequence_getitem():
 
 
 def test_ClusterNodeGenerator_init():
-    G, features = create_graph_features()
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+    G = create_stellargraph()
 
     with pytest.raises(ValueError):
         generator = ClusterNodeGenerator(G, k=0)
@@ -154,12 +153,8 @@ def test_ClusterNodeGenerator_init():
 
 
 def test_ClusterNodeSquence():
-    G, features = create_graph_features()
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+    G = create_stellargraph()
 
     generator = ClusterNodeGenerator(G, k=1, q=1).flow(node_ids=["a", "b", "c", "d"])
 
