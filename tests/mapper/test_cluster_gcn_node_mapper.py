@@ -26,7 +26,6 @@ def create_graph_features():
     G = nx.Graph()
     G.add_nodes_from(["a", "b", "c", "d"])
     G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c"), ("b", "d")])
-    G = G.to_undirected()
     return G, np.array([[1, 1], [1, 0], [0, 1], [0.5, 1]])
 
 
