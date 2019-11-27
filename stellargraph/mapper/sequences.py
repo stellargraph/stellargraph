@@ -94,7 +94,7 @@ class NodeSequence(Sequence):
         self.shuffle = shuffle
         self.batch_size = batch_size
 
-        # Providing the sampled indices and features for ig
+        # Record the sampled indices and features for integrated_gradients
         self.batch_nodes_indices = []
         self.batch_features = []
         self.num_samples = []
@@ -134,7 +134,7 @@ class NodeSequence(Sequence):
         # Get corresponding targets
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        # Get features for nodes
+        # Get features and node_ids for nodes
         batch_feats, batch_ids = self._sample_function(head_ids)
         self.batch_nodes_indices = batch_ids
         self.batch_features = batch_feats

@@ -255,8 +255,8 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             for a in batch_feats
         ]
 
-        # Record the corresponding node id for calculate "ig_node_importance", this will change the return !!!
-        # Now only support GSAGE, batch_ids for other generators are set to none !!!
+        # Record the corresponding node ids for calculate "ig_node_importance", this will change the return of sample_features()!!!
+        # Now only support GSAGE, batch_ids for other generators are set as none !!!
         batch_ids = [
             np.reshape(np.array(a), (len(head_nodes), -1 if np.size(np.array(a)) > 0 else 0))
             for a in nodes_per_hop

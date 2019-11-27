@@ -43,7 +43,6 @@ class IntegratedGradientsGSAGE(GradientSaliencyGSAGE):
 
     def get_integrated_node_masks(
         self,
-        node_idx,
         class_of_interest,
         X_baseline=None,
         steps=20,
@@ -54,7 +53,6 @@ class IntegratedGradientsGSAGE(GradientSaliencyGSAGE):
         for node 'node_id'.
 
         Args:
-        node_id (int): The node ID in the StellarGraph object.
         class_of_interest (int): The  class of interest for which the saliency maps are computed.
         X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
                                               matrix with the size of the original feature matrix for existing features. 
@@ -77,30 +75,27 @@ class IntegratedGradientsGSAGE(GradientSaliencyGSAGE):
             X_step = X_baseline + alpha * X_diff
             X_step = self.arr2inplist(X_step)
             total_gradients += super().get_node_masks(
-                node_idx, class_of_interest, X_val=X_step
+                class_of_interest, X_val=X_step
             )
 
         return total_gradients / steps * X_diff
 
     def get_link_importance(
-        self, node_id, class_of_interest, steps=20, non_exist_edge=False
+        self, class_of_interest, steps=20, non_exist_edge=False
     ):
         """
         This function computes the integrated gradients which measure the importance of each edge to the prediction score of 'class_of_interest'
-        for node 'node_id'.
+        for target node.
 
         Args:
-        node_id (int): The node ID in the StellarGraph object.
         class_of_interest (int): The  class of interest for which the saliency maps are computed.
-        steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.\
+        steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
         non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
             adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
-            could only accurately measure the importance of existing edges.
-
-        return (Numpy array): shape the same with A_val. Integrated gradients for the links.
+            could only accurately measure the importance of existing edges. It is default set to False since non-existing edge is not supported.
+        return (dict): Integrated gradients for the links. {link_id: ig_link_gradient}
         """
-        A_val = self.A
-        A_val = self.inplist2arr(A_val)
+        A_val = self.inplist2arr(self.A)
         total_gradients = np.zeros(A_val.shape)
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             tmp = super().get_link_masks(
@@ -111,40 +106,56 @@ class IntegratedGradientsGSAGE(GradientSaliencyGSAGE):
         link_gradients_dict = self.link_gradlist2dict(link_gradients_list, self.L)
         return link_gradients_dict
 
-    def get_node_importance(self, node_id, class_of_interest, steps=20):
+    def get_node_importance(self, class_of_interest, steps=20):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
         Args:
             Refer to the parameters in get_integrated_node_masks.
 
-        return (float): Importance score for the node.
+        return (dict): Integrated gradients for the nodes. {node_id: ig_node_gradient}
         """
         gradients = self.get_integrated_node_masks(
-            node_id, class_of_interest, steps=steps
+            class_of_interest, steps=steps
         )
         node_grads = np.sum(gradients,axis=2)
         gradlist = self.arr2inplist(node_grads)
         gradients_dict = self.node_gradlist2dict(gradlist, self.A)
         return gradients_dict
 
-    def expected_node_importance(self, node_id, class_of_interest, ig_steps=20, exp_steps=20):
+    def expected_node_importance(self, class_of_interest, ig_steps=20, exp_steps=20):
+        """
+            Use expectation to fight against the randomness of GraphSAGE sampling strategy
+
+            Args:
+                Refer to the parameters in get_integrated_node_masks.
+            exp_steps (int): how many samples of subgraph we expect to use to fight against the randomness of GraphSAGE sampling strategy.
+            return (dict): Integrated gradients for the nodes. {node_id: ig_node_gradient}
+        """
         from collections import Counter
         node_importance_counter = Counter()
         for i in range(exp_steps):
+            # Generate a new subgraph, calculate node importance and use Counter to collect.
             self.batch_gen()
-            gradients_dict = self.get_node_importance(node_id, class_of_interest, steps=ig_steps)
+            gradients_dict = self.get_node_importance(class_of_interest, steps=ig_steps)
             node_importance_counter.update(Counter(gradients_dict))
         for i in node_importance_counter.keys():
             node_importance_counter[i] /= exp_steps
         return dict(node_importance_counter)
 
-    def expected_link_importance(self, node_id, class_of_interest, ig_steps=20, exp_steps=20):
+    def expected_link_importance(self, class_of_interest, ig_steps=20, exp_steps=20):
+        """
+            Use expectation to fight against the randomness of GraphSAGE sampling strategy
+            Args:
+                Refer to the parameters in get_integrated_link_masks.
+            exp_steps (int): how many samples of subgraph we expect to use to fight against the randomness of GraphSAGE sampling strategy.
+            return (dict): Integrated gradients for the links. {link_id: ig_link_gradient}
+        """
         from collections import Counter
         link_importance_counter = Counter()
         for i in range(exp_steps):
             self.batch_gen()
-            gradients_dict = self.get_link_importance(node_id, class_of_interest, steps=ig_steps)
+            gradients_dict = self.get_link_importance(class_of_interest, steps=ig_steps)
             link_importance_counter.update(Counter(gradients_dict))
         for i in link_importance_counter.keys():
             link_importance_counter[i] /= exp_steps

@@ -712,16 +712,25 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
         return self.act(h_out)
 
-### add a linkweight layer to inject link importance
 
 class Linkweight(Layer):
-
+    """
+      Linkweight Layer for IG_link_importance implemented with Keras base layer
+    """
     def __init__(self, **kwargs):
         super(Linkweight, self).__init__(**kwargs)
 
-
     def build(self, input_shape):
-        assert isinstance(input_shape, list)
+        """
+            Builds the weight tensor(s) corresponding to the features of the input groups.
+            Args:
+                in_shape (list of int): Shape of input tensor for single group
+
+        """
+        if not isinstance(input_shape, list):
+            raise ValueError(
+                "Expected a list of inputs, not {}".format(type(input_shape))
+            )
         # Create a trainable weight variable for this layer.
         self.included_weight_groups = [
             all(dim != 0 for dim in group_shape[1:]) for group_shape in input_shape
@@ -741,11 +750,9 @@ class Linkweight(Layer):
     def _build_group_weights(self, in_shape, group_idx=0):
         """
         Builds the weight tensor(s) corresponding to the features of the input groups.
-
+        Link weight was set to all one by default
         Args:
             in_shape (list of int): Shape of input tensor for single group
-            out_size (int): The size of the output vector for this group
-            group_idx (int): The index of the input group
 
         """
 
@@ -758,7 +765,17 @@ class Linkweight(Layer):
         return weight
 
     def call(self, x):
-        assert isinstance(x, list)
+        """
+            Apply link weight on the input tensors, `inputs`
+            Args:
+                inputs (List[Tensor]): Tensors giving self and neighbour features
+            Returns:
+                Keras Tensor representing the weighted embeddings of the input.
+        """
+        if not isinstance(x, list):
+            raise ValueError(
+              "Expected a list of inputs, not {}".format(type(x))
+            )
         w_x = []
         for i in range(len(x)):
             w_x.append(x[i] * self.w_link_group[i])

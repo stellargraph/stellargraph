@@ -23,14 +23,14 @@ from stellargraph.mapper.sequences import NodeSequence
 
 class GradientSaliencyGSAGE(object):
     """
-    Class to compute the saliency maps based on the vanilla gradient w.r.t the adjacency and the feature matrix.
-
+    Class to compute the saliency maps based on the vanilla gradient w.r.t the feature list.
+    GraphSAGE takes a list of features as input, whose length depends on the depth of its sampled subgraph.
+    We add a link_weight layer before the input was sent to the core of GraphSAGE to inject link importance.
 
     Args:
         model (Keras model object): The differentiable graph model object.
-            model.input should contain two tensors:
-                - features (Numpy array): The placeholder of the feature matrix.
-                - adj (Numpy array): The placeholder of the adjacency matrix.
+            model.input should contain one tensor:
+                - features (List of Numpy array): The placeholder of the feature list.
             model.output (Keras tensor): The tensor of model prediction output.
                 This is typically the logit or softmax output.
     """
@@ -38,8 +38,9 @@ class GradientSaliencyGSAGE(object):
     def __init__(self, model, generator):
         """
         Args:
-            model (Keras model object): The Keras GAT model.
-            generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matirx.
+            model (Keras model object): The Keras GSAGE model.
+            generator (NodeSequence object): The generator from which we generate a sampled subgraph and extract the feature list.
+                                            Notice that target_nid depends on the input generator.
         """
         # The placeholders for features and adjacency matrix (model input):
         if not isinstance(generator, NodeSequence):
@@ -51,7 +52,7 @@ class GradientSaliencyGSAGE(object):
         self.num_samples = generator.num_samples
         self.batch_gen()
 
-        #Collect gradient for ig
+        # Collect variable for setting link weight when compute ig_link_importance:
         self.link_weight = []
         for var in model.non_trainable_weights:
             if "ig_link_weight" in var.name:
@@ -99,7 +100,7 @@ class GradientSaliencyGSAGE(object):
 
     def set_ig_values(self, delta_value):
         """
-        Set values of the integrated gradient parameters in all layers of the model.
+        Set link weight to be delta_value of the model.
 
         Args:
             delta_value: Value of the `delta` parameter
@@ -107,127 +108,121 @@ class GradientSaliencyGSAGE(object):
         for delta_var in self.link_weight:
             K.set_value(delta_var, np.ones(delta_var.shape) * delta_value)
 
-    def get_node_masks(self, node_id, class_of_interest, X_val=None, A_val=None):
+    def get_node_masks(self, class_of_interest, X_val=None, A_val=None):
         """
         Args:
             This function computes the saliency maps (gradients) which measure the importance of each feature to the prediction score of 'class_of_interest'
-            for node 'node_id'.
+            for target node.
 
             class_of_interest (int): The  class of interest for which the saliency maps are computed.
-            X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
-            A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.
+            X_val (List of Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
+
         Returns:
             gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
         """
         if X_val is None:
             X_val = self.X
-        if A_val is None:
-            A_val = self.A
 
-        # Execute the function to compute the gradient [[head],[1-hop],[2-hops]]
+        # Execute the function to compute the gradients
+        # Output gradients have same size as input features: [head_array,1-hop_array,2-hops_array ...]
         batch_gradients = self.compute_node_gradients(
             [X_val, 0, class_of_interest]
         )
 
+        # Format the output gradients to a single array by concatenating them.
         return self.inplist2arr(batch_gradients)
 
     def get_link_masks(
-        self, alpha, class_of_interest, non_exist_edge, X_val=None, A_val=None
+        self, alpha, class_of_interest, non_exist_edge=False, X_val=None, A_val=None
     ):
         """
         This function computes the saliency maps (gradients) which measure the importance of each edge to the prediction score of 'class_of_interest'
-        for node 'node_id'.
+        for the head_node.
 
         Args:
             alpha (float): The path position parameter to support integrated gradient computation.
-            node_id (int): The node ID in the StellarGraph object.
             class_of_interest (int): The  class of interest for which the saliency maps are computed.
-            non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
-                adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
-                could only accurately measure the importance of existing edges.
             X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
-            A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.
         Returns:
-            gradients (Numpy array): Returns a vanilla gradient mask for the nodes.
+            gradients (Numpy array): Returns a vanilla gradient mask for the links.
         """
         if X_val is None:
             X_val = self.X
-        if A_val is None:
-            A_val = self.A
+
         # Execute the function to compute the gradient
         self.set_ig_values(alpha)
         gradients = self.compute_link_gradients(
             [X_val, 0, class_of_interest]
         )
-        ex_gradients = []
-        for i in gradients:
-            tmp = np.sum(i,axis=1)
-            ex_gradients.append(np.expand_dims(tmp,axis=0))
-        return self.inplist2arr(ex_gradients)
 
-    def get_node_importance(self, node_id, class_of_interest, X_val=None, A_val=None):
-        """
-        For nodes, the saliency mask we get gives us the importance of each features. For visualization purpose, we may
-        want to see a summary of the importance for the node. The importance of each node can be defined as the sum of
-        all the partial gradients w.r.t its features.
+        # Expand a batch_size dim for link gradients to make it consistent with node gradients
+        expanded_gradients = []
+        for link_gradient in gradients:
+            tmp = np.sum(link_gradient,axis=1)
+            expanded_gradients.append(np.expand_dims(tmp,axis=0))
+        return self.inplist2arr(expanded_gradients)
 
-        Args:
-            node_id (int): The node ID in the StellarGraph object.
-            class_of_interest (int): The  class of interest for which the saliency maps are computed.
-            non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
-                adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
-                could only accurately measure the importance of existing edges.
-            X_val (Numpy array): The feature matrix, we do not directly get it from generator to support the integrated gradients computation.
-            A_val (Numpy array): The adjacency matrix, we do not directly get it from generator to support the integrated gradients computation.        Returns:
-        """
 
-        if X_val is None:
-            X_val = self.X
-        if A_val is None:
-            A_val = self.A
-        gradients = self.get_node_masks(0, class_of_interest)
-        gradlist = self.arr2inplist(gradients)
-        gradients_dict = self.node_gradlist2dict(gradlist, self.A)
 
-        return gradients_dict
-
-    ### batch generation
     def batch_gen(self):
-        assert self.target_gen.data_size == 1, "data_size for the target generator must be 1"
+        """
+            This function is used to generate a subgraph generated by GraphsageGenerator.
+            It samples by calling target_gen.__getitem__(0) and records the corresponding features, node_ids and link_ids info.
+            features will be the input for gradients computing.
+            node_ids will be the keys of the node_importance Counter/dict.
+            link_ids will be the keys of the link_importance Counter/dict.
+        """
+        if self.target_gen.data_size != 1:
+            raise ValueError(
+                "data_size for the target generator must be 1"
+            )
+
         self.target_gen.__getitem__(0)
         self.X = self.target_gen.batch_features
         self.A = self.target_gen.batch_nodes_indices
         self.L = self.link_gen()
 
     def link_gen(self):
+        """
+            This function generates link_ids based on the node_ids.
+        """
         link_list = []
         node_list = self.A
         num_samples = self.num_samples
-
-        link_list.append([(int(node_list[0][0,0]),int(node_list[0][0,0]))])
+        head_node_id= int(node_list[0][0,0])
+        link_list.append([(head_node_id,head_node_id)])
         for i in range(len(node_list) - 1):
             tmp = []
-            for j in range(node_list[i].shape[1]):
+            node_list_cur_layer = node_list[i]
+            node_list_next_layer = node_list[i+1]
+            for j in range(node_list_cur_layer.shape[1]):
+                cur_node_id = int(node_list_cur_layer[0,j])
                 for k in range(num_samples[i]):
-                    tmp_tuple = (int(node_list[i][0,j]), int(node_list[i+1][0,j*num_samples[i] + k]))
+                    next_node_id = int(node_list_next_layer[0,j*num_samples[i] + k])
+                    tmp_tuple = (cur_node_id, next_node_id)
                     tmp.append(tmp_tuple)
             link_list.append(tmp)
         return link_list
 
 
-    ### formats for Gsage
-    def node_gradlist2dict(self, batch_gradients, batch_index):
+    def node_gradlist2dict(self, node_gradients, node_index):
+        """
+            This function covert the node gradients list to a dict {node_id: gradient}.
+        """
         from collections import Counter
         gradients_counter = Counter()
-        for i in range(len(batch_index)):
-            index = batch_index[i].squeeze(0)
-            gradients = batch_gradients[i].squeeze(0)
+        for i in range(len(node_index)):
+            index = node_index[i].squeeze(0)
+            gradients = node_gradients[i].squeeze(0)
             for j in range(index.shape[0]):
                 gradients_counter.update(Counter(dict(zip([index[j]], [gradients[j]]))))
         gradients_dict = dict(gradients_counter)
         return gradients_dict
 
     def link_gradlist2dict(self, link_gradients, link_index):
+        """
+            This function covert the node gradients list to a dict {link_id: gradient}.
+        """
         from collections import Counter
         gradients_counter = Counter()
         for i in range(len(link_index)):
@@ -238,6 +233,9 @@ class GradientSaliencyGSAGE(object):
 
 
     def inplist2arr(self, inputlist):
+        """
+            This function covert a list of arrays to a single array by concatenating them.
+        """
         for i in range(len(inputlist)):
             if i == 0:
                 arr = inputlist[i]
@@ -246,6 +244,9 @@ class GradientSaliencyGSAGE(object):
         return arr
 
     def arr2inplist(self, arr):
+        """
+            This function covert a array to list of arrays based on num_samples.
+        """
         inplist = [arr[:,0:1]]
         start_idx = 1
         layer_num = 1
