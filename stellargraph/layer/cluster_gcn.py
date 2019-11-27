@@ -343,11 +343,6 @@ class ClusterGCN:
 
         Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
 
-        if len(Ainput) != 1:
-            raise NotImplementedError(
-                "The Cluster GCN method currently only accepts a single matrix for each batch"
-            )
-
         h_layer = x_in
 
         for layer in self._layers:

@@ -87,7 +87,7 @@ def test_GraphConvolution():
     # Now try with final_layer=True
     out = ClusterGraphConvolution(2, final_layer=True)([x_t, output_indices_t, A_mat])
     # The final layer removes the batch dimension and causes the call to predict to fail.
-    # We are going to manually added the batch dimension before calling predict.
+    # We are going to manually add the batch dimension before calling predict.
     out = K.expand_dims(out, 0)
     model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
     print(

@@ -115,14 +115,14 @@ def test_ClusterNodeGenerator_init():
         generator = ClusterNodeGenerator(G, k=0)
 
     # k must be integer
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         generator = ClusterNodeGenerator(G, k=0.5)
 
     with pytest.raises(ValueError):
         generator = ClusterNodeGenerator(G, q=0)
 
     # q must be integer
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         generator = ClusterNodeGenerator(G, q=1.0)
 
     # k is not exactly divisible by q
@@ -143,10 +143,10 @@ def test_ClusterNodeGenerator_init():
     assert generator.q == 1
 
     # lam has to be in the interval [0., 1.] and float
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         generator = ClusterNodeGenerator(G, k=1, q=1, lam=-1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         generator = ClusterNodeGenerator(G, k=1, q=1, lam=1)
 
     with pytest.raises(ValueError):
