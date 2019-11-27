@@ -6,6 +6,7 @@ exitCode=0
 temp="$(mktemp)"
 
 copyrightRegex="# Copyright [0-9-]* Data61, CSIRO"
+
 echo "--- checking files have copyright headers"
 find . -name "*.py" -exec grep -L "$copyrightRegex" {} + | tee "$temp"
 
@@ -14,7 +15,6 @@ if [ -s "$temp" ]; then
   echo "found files without copyright header matching $copyrightRegex"
   exitCode=1
 fi
-
 
 echo "--- checking copyright headers are up to date"
 # look for files that have been modified in the last year (-mtime -$dayOfYear), where their
