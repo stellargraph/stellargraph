@@ -110,12 +110,13 @@ def test_ClusterNodeGenerator_init():
     G = create_stellargraph()
 
     with pytest.raises(ValueError):
-        generator = ClusterNodeGenerator(G, k=0)
+        generator = ClusterNodeGenerator(G, clusters=0)
 
-    # k must be integer
+    # clusters must be integer if not list
     with pytest.raises(TypeError):
-        generator = ClusterNodeGenerator(G, k=0.5)
+        generator = ClusterNodeGenerator(G, clusters=0.5)
 
+    # q must be greater than 0
     with pytest.raises(ValueError):
         generator = ClusterNodeGenerator(G, q=0)
 
@@ -123,46 +124,47 @@ def test_ClusterNodeGenerator_init():
     with pytest.raises(TypeError):
         generator = ClusterNodeGenerator(G, q=1.0)
 
-    # k is not exactly divisible by q
+    # number of clusters is not exactly divisible by q
     with pytest.raises(ValueError):
-        generator = ClusterNodeGenerator(G, k=5, q=2)
+        generator = ClusterNodeGenerator(G, clusters=5, q=2)
 
     # one cluster, k=len(clusters), not divisible by q
     with pytest.raises(ValueError):
         generator = ClusterNodeGenerator(G, clusters=[["a", "b", "c", "d"]], q=2)
 
+    # this should be ok
     generator = ClusterNodeGenerator(G, clusters=[["a", "b", "c", "d"]], q=1)
     assert generator.k == 1
     assert generator.q == 1
 
-    # two clusters, k=len(clusters).
+    # two clusters, len(clusters).
     generator = ClusterNodeGenerator(G, clusters=[["a", "d"], ["b", "c"]], q=1)
     assert generator.k == 2
     assert generator.q == 1
 
     # lam has to be in the interval [0., 1.] and float
     with pytest.raises(TypeError):
-        generator = ClusterNodeGenerator(G, k=1, q=1, lam=-1)
+        generator = ClusterNodeGenerator(G, clusters=1, q=1, lam=-1)
 
     with pytest.raises(TypeError):
-        generator = ClusterNodeGenerator(G, k=1, q=1, lam=1)
+        generator = ClusterNodeGenerator(G, clusters=1, q=1, lam=1)
 
     with pytest.raises(ValueError):
-        generator = ClusterNodeGenerator(G, k=1, q=1, lam=2.5)
+        generator = ClusterNodeGenerator(G, clusters=1, q=1, lam=2.5)
 
 
 def test_ClusterNodeSquence():
 
     G = create_stellargraph()
 
-    generator = ClusterNodeGenerator(G, k=1, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=1, q=1).flow(node_ids=["a", "b", "c", "d"])
 
     assert len(generator) == 1
 
-    generator = ClusterNodeGenerator(G, k=4, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(node_ids=["a", "b", "c", "d"])
     assert len(generator) == 4
 
-    generator = ClusterNodeGenerator(G, k=4, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(node_ids=["a", "b", "c", "d"])
 
     # ClusterNodeSequence returns the following:
     #      [features, target_node_indices, adj_cluster], cluster_targets
@@ -174,10 +176,10 @@ def test_ClusterNodeSquence():
         # one node so that adjacency matrix is 1x1
         assert batch[0][2].shape == (1, 1, 1)
         # no targets given
-        assert batch[1] == None
+        assert batch[1] is None
 
     # Use 2 clusters
-    generator = ClusterNodeGenerator(G, k=2, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=2, q=1).flow(node_ids=["a", "b", "c", "d"])
     assert len(generator) == 2
 
     # ClusterNodeSequence returns the following:
