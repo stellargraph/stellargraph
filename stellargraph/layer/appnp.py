@@ -180,7 +180,7 @@ class APPNP:
         bias (bool): toggles an optional bias in fully connected layers
         dropout (float): dropout rate applied to input features of each layer
         kernel_regularizer (str): normalization applied to the kernels of fully connetcted layers
-        teleport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
+        teleport_probability: "probability" of returning to the starting node in the propagation step as desribed in
         the paper (alpha in the paper)
         approx_iter: number of iterations to approximate PPNP as described in the paper (K in the paper)
     """
@@ -310,7 +310,7 @@ class APPNP:
 
         feature_layer = h_layer
 
-        for layer in self._layers[(2 * len(self.layer_sizes)) :]:
+        for layer in self._layers[(2 * len(self.layer_sizes)):]:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices] + Ainput)
             else:
@@ -361,7 +361,7 @@ class APPNP:
 
     def propagate_model(self, base_model):
         """
-        Propagates a trained kera model to create a node model.
+        Propagates a trained model using personalised PageRank.
         Args:
             base_model (keras Model): trained model with node features as input, predicted classes as output
 
