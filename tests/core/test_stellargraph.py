@@ -467,32 +467,30 @@ def test_benchmark_get_neighbours(benchmark):
 
 @pytest.mark.benchmark(group="StellarGraph node features")
 @pytest.mark.parametrize("num_types", [1, 4])
-@pytest.mark.parametrize("lookup", ["individual", "bulk"])
 @pytest.mark.parametrize("type_arg", ["infer", "specify"])
-def test_benchmark_get_features(benchmark, num_types, lookup, type_arg):
-    g = example_benchmark_graph(feature_size=10, n_types=num_types)
+def test_benchmark_get_features(benchmark, num_types, type_arg):
+    SAMPLE_SIZE = 50
+    N_NODES = 500
+    N_EDGES = 1000
+    g = example_benchmark_graph(
+        feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
+    )
     num_nodes = g.number_of_nodes()
 
+    ty_ids = [(ty, range(ty, num_nodes, num_types)) for ty in range(num_types)]
+
     if type_arg == "specify":
-        # compute the type from the vertex ID
-        node_type = lambda v: v % num_types
+        # pass through the type
+        node_type = lambda ty: ty
     else:
         # leave the argument as None, and so use inference of the type
-        node_type = lambda v: None
+        node_type = lambda ty: None
 
-    # get the features for every node in the graph...
-    def individual():
-        # either one at a time...
-        for i in range(num_nodes):
-            g.get_feature_for_nodes(i, node_type(i))
+    def f():
+        # look up a random subset of the nodes for a random type, similar to what an algorithm that
+        # does sampling might ask for
+        ty, all_ids = random.choice(ty_ids)
+        selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
+        g.get_feature_for_nodes(selected_ids, node_type(ty))
 
-    def bulk():
-        # or, for all nodes of each type in a batch.
-        for ty in range(num_types):
-            nodes_of_type = range(ty, num_nodes, num_types)
-            g.get_feature_for_nodes(nodes_of_type, node_type(ty))
-
-    if lookup == "bulk":
-        benchmark(bulk)
-    else:
-        benchmark(individual)
+    benchmark(f)
