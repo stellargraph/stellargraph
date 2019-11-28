@@ -51,27 +51,36 @@ class ClusterNodeGenerator:
 
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
-        k (int): The number of clusters if parameter `clusters` is None. Otherwise it is ignored.
+        clusters (int or list): If int then it indicates the number of clusters (default is 1 that is the given graph).
+            If clusters is greater than 1, then nodes are uniformly at random assigned to a cluster. If list,
+            then it should be a list of lists of node IDs such that each list corresponds to a cluster of nodes
+            in G. The clusters should be non-overlapping.
+        q (float): The number of clusters to combine for each mini-batch. The default is 1.
         lam (float): The mixture coefficient for adjacency matrix normalisation.
-        clusters (list): a list of lists of node IDs such that each list corresponds to a cluster of nodes
-            in G. The clusters should be non-overlapping. If None, the G is clustered into k clusters.
         name (str): an optional name of the generator
     """
 
-    def __init__(self, G, k=1, q=1, lam=0.1, clusters=None, name=None):
+    def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
 
         if not isinstance(G, StellarGraphBase):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
         self.name = name
-        self.k = k
         self.q = q  # The number of clusters to sample per mini-batch
         self.lam = lam
         self.clusters = clusters
 
-        if clusters:
+        if isinstance(clusters, list):
             self.k = len(clusters)
+        elif isinstance(clusters, int):
+            if clusters <= 0:
+                raise ValueError(
+                    "{}: clusters must be greater than 0.".format(type(self).__name__)
+                )
+            self.k = clusters
+        else:
+            raise TypeError("{}: clusters must be either int or list type.".format(type(self).__name__))
 
         # Some error checking on the given parameter values
         if not isinstance(lam, float):
@@ -90,17 +99,9 @@ class ClusterNodeGenerator:
                 "{}: q must be greater than 0.".format(type(self).__name__)
             )
 
-        if not isinstance(k, int):
-            raise TypeError("{}: k must be integer type.".format(type(self).__name__))
-
-        if k <= 0:
+        if self.k % q != 0:
             raise ValueError(
-                "{}: k must be greater than 0.".format(type(self).__name__)
-            )
-
-        if k % q != 0:
-            raise ValueError(
-                "{}: k must be exactly divisible by q.".format(type(self).__name__)
+                "{}: the number of clusters must be exactly divisible by q.".format(type(self).__name__)
             )
 
         # Check if the graph has features
@@ -113,14 +114,14 @@ class ClusterNodeGenerator:
 
         # Check that there is only a single node type
         if len(self.schema.node_types) > 1:
-            raise TypeError(
+            raise ValueError(
                 "{}: node generator requires graph with single node type; "
                 "a graph with multiple node types is passed. Stopping.".format(
                     type(self).__name__
                 )
             )
 
-        if not clusters:
+        if isinstance(clusters, int):
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
             all_nodes = list(G.nodes())
@@ -136,7 +137,7 @@ class ClusterNodeGenerator:
                 self.clusters[-2].extend(self.clusters[-1])
                 del self.clusters[-1]
 
-        print(f"Number of clusters {len(self.clusters)}")
+        print(f"Number of clusters {self.k}")
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
 
@@ -255,7 +256,7 @@ class ClusterNodeSequence(Sequence):
                     "Since targets is not None, node_ids must be given and cannot be None."
                 )
 
-            if (targets is not None) and (len(node_ids) != len(targets)):
+            if len(node_ids) != len(targets):
                 raise ValueError(
                     "When passed together targets and indices should be the same length."
                 )
