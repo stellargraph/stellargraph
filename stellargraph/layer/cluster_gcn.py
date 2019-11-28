@@ -246,7 +246,7 @@ class ClusterGCN:
         Creating a Cluster-GCN node classification model from an existing :class:`StellarGraph`
         object ``G``::
 
-            generator = ClusterNodeGenerator(G, clusters=None, k=10, q=2)
+            generator = ClusterNodeGenerator(G, clusters=10, q=2)
             cluster_gcn = ClusterGCN(
                              layer_sizes=[32, 4],
                              activations=["elu","softmax"],
