@@ -770,7 +770,6 @@ class Test_Attri2VecLinkGenerator:
     def test_edge_consistency(self):
         G = example_Graph_2(1)
         edges = list(G.edges())
-        nodes = list(G.nodes())
         edge_labels = list(range(len(edges)))
 
         mapper = Attri2VecLinkGenerator(G, batch_size=2).flow(edges, edge_labels)
@@ -782,9 +781,9 @@ class Test_Attri2VecLinkGenerator:
             e1 = edges[nl[0]]
             e2 = edges[nl[1]]
             assert nf[0][0, 0] == e1[0]
-            assert nf[1][0] == nodes.index(e1[1])
+            assert nf[1][0] == G.get_index_for_nodes([e1[1]])[0]
             assert nf[0][1, 0] == e2[0]
-            assert nf[1][1] == nodes.index(e2[1])
+            assert nf[1][1] == G.get_index_for_nodes([e2[1]])[0]
 
     def test_Attri2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
@@ -853,6 +852,145 @@ class Test_Attri2VecLinkGenerator:
             assert len(nf) == 2
 
             assert nf[0].shape == (min(self.batch_size, mapper.data_size), self.n_feat)
+            assert nf[1].shape == (min(self.batch_size, mapper.data_size),)
+            assert len(nl) == min(self.batch_size, mapper.data_size)
+            assert sorted(nl) == [0, 1]
+
+        with pytest.raises(IndexError):
+            nf, nl = mapper[8]
+
+class Test_Node2VecLinkGenerator:
+    """
+    Tests of Node2VecLinkGenerator class
+    """
+    
+    batch_size = 2
+    n_feat = 4
+    
+    def test_LinkMapper_constructor(self):
+
+        G = example_Graph_1(self.n_feat)
+        edge_labels = [0] * G.number_of_edges()
+
+        generator = Node2VecLinkGenerator(G, batch_size=self.batch_size)
+        mapper = generator.flow(G.edges(), edge_labels)
+        assert generator.batch_size == self.batch_size
+        assert mapper.data_size == G.number_of_edges()
+        assert len(mapper.ids) == G.number_of_edges()
+
+        G = example_Graph_1()
+        edge_labels = [0] * G.number_of_edges()
+        
+        generator = Node2VecLinkGenerator(G, batch_size=self.batch_size)
+        mapper = generator.flow(G.edges(), edge_labels)
+        assert generator.batch_size == self.batch_size
+        assert mapper.data_size == G.number_of_edges()
+        assert len(mapper.ids) == G.number_of_edges()
+        
+    def test_Node2VecLinkGenerator_1(self):
+
+        G = example_Graph_2()
+        data_size = G.number_of_edges()
+        edge_labels = [0] * data_size
+
+        mapper = Node2VecLinkGenerator(G, batch_size=self.batch_size).flow(
+            G.edges(), edge_labels
+        )
+
+        assert len(mapper) == 2
+
+        for batch in range(len(mapper)):
+            nf, nl = mapper[batch]
+            assert len(nf) == 2
+            assert nf[0].shape == (min(self.batch_size, data_size),)
+            assert nf[1].shape == (min(self.batch_size, data_size),)
+            assert len(nl) == min(self.batch_size, data_size)
+            assert all(nl == 0)
+
+        with pytest.raises(IndexError):
+            nf, nl = mapper[2]
+            
+    def test_edge_consistency(self):
+        G = example_Graph_2(1)
+        edges = list(G.edges())
+        edge_labels = list(range(len(edges)))
+
+        mapper = Node2VecLinkGenerator(G, batch_size=2).flow(edges, edge_labels)
+
+        assert len(mapper) == 2
+
+        for batch in range(len(mapper)):
+            nf, nl = mapper[batch]
+            e1 = edges[nl[0]]
+            e2 = edges[nl[1]]
+            assert nf[0][0] == G.get_index_for_nodes([e1[0]])[0]
+            assert nf[1][0] == G.get_index_for_nodes([e1[1]])[0]
+            assert nf[0][1] == G.get_index_for_nodes([e2[0]])[0]
+            assert nf[1][1] == G.get_index_for_nodes([e2[1]])[0]
+            
+    def test_Node2VecLinkGenerator_not_Stellargraph(self):
+        G = nx.Graph()
+        elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+        G.add_edges_from(elist)
+
+        with pytest.raises(TypeError):
+            Node2VecLinkGenerator(G, batch_size=self.batch_size)
+            
+    def test_Node2VecLinkGenerator_no_targets(self):
+        """
+        This tests link generator's iterator for prediction, i.e., without targets provided
+        """
+        G = example_Graph_2()
+        gen = Node2VecLinkGenerator(G, batch_size=self.batch_size).flow(G.edges())
+        for i in range(len(gen)):
+            assert gen[i][1] is None
+            
+    def test_Node2VecLinkGenerator_unsupervisedSampler_flow(self):
+        """
+        This tests link generator's initialization for on demand link generation i.e. there is no pregenerated list of samples provided to it.
+        """
+        n_feat = 4
+        n_batch = 2
+
+        # test graph
+        G = example_graph_random(
+            feature_size=None, n_nodes=6, n_isolates=2, n_edges=10
+        )
+
+        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes)
+
+        gen = Node2VecLinkGenerator(G, batch_size=n_batch).flow(unsupervisedSamples)
+
+        # The flow method is not passed UnsupervisedSampler object or a list of samples is not passed
+        with pytest.raises(KeyError):
+            gen = Node2VecLinkGenerator(G, batch_size=n_batch).flow(
+                "not_a_list_of_samples_or_a_sample_generator"
+            )
+
+        # The flow method is not passed nothing
+        with pytest.raises(TypeError):
+            gen = Node2VecLinkGenerator(G, batch_size=n_batch).flow()
+            
+    def test_Node2VecLinkGenerator_unsupervisedSampler_sample_generation(self):
+
+        G = example_Graph_2()
+
+        unsupervisedSamples = UnsupervisedSampler(G)
+
+        mapper = Node2VecLinkGenerator(G, batch_size=self.batch_size).flow(
+            unsupervisedSamples
+        )
+
+        assert mapper.data_size == 16
+        assert self.batch_size == 2
+        assert len(mapper) == 8
+
+        for batch in range(len(mapper)):
+            nf, nl = mapper[batch]
+
+            assert len(nf) == 2
+
+            assert nf[0].shape == (min(self.batch_size, mapper.data_size),)
             assert nf[1].shape == (min(self.batch_size, mapper.data_size),)
             assert len(nl) == min(self.batch_size, mapper.data_size)
             assert sorted(nl) == [0, 1]
