@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator
+  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, Node2VecNodeGenerator, Node2VecLinkGenerator
 
 
 GraphSAGE model
@@ -41,6 +41,13 @@ Attri2Vec model
 
 .. automodule:: stellargraph.layer.attri2vec
   :members: Attri2Vec
+
+
+Node2Vec model
+----------------
+
+.. automodule:: stellargraph.layer.node2vec
+  :members: Node2Vec
 
 
 GCN model
