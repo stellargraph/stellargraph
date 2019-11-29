@@ -40,7 +40,17 @@ class UnsupervisedSampler:
                 value is set to False.
     """
 
-    def __init__(self, G, nodes=None, length=2, number_of_walks=1, walker=None, seed=None, bidirectional=False, context_sampling=False):
+    def __init__(
+        self,
+        G,
+        nodes=None,
+        length=2,
+        number_of_walks=1,
+        walker=None,
+        seed=None,
+        bidirectional=False,
+        context_sampling=False,
+    ):
         if not isinstance(G, StellarGraphBase):
             raise ValueError(
                 "({}) Graph must be a StellarGraph object.".format(type(self).__name__)
@@ -50,12 +60,14 @@ class UnsupervisedSampler:
 
         if walker is not None:
             # only work with UniformRandomWalker and BiasedRandomWalker at the moment
-            if not isinstance(walker, UniformRandomWalk) and not isinstance(walker, BiasedRandomWalk):
+            if not isinstance(walker, UniformRandomWalk) and not isinstance(
+                walker, BiasedRandomWalk
+            ):
                 raise TypeError(
-                     "({}) Only the UniformRandomWalks and BiasedRandomWalks are possible".format(
-                         type(self).__name__
-                     )
-                 )
+                    "({}) Only the UniformRandomWalks and BiasedRandomWalks are possible".format(
+                        type(self).__name__
+                    )
+                )
             else:
                 self.walker = walker
         else:
@@ -135,7 +147,9 @@ class UnsupervisedSampler:
                 if self.context_sampling:
                     walk = self.walker.run(
                         nodes=[node],  # root nodes
-                        length=int(np.ceil(self.length*self.random.random())),  # maximum length of a random walk
+                        length=int(
+                            np.ceil(self.length * self.random.random())
+                        ),  # maximum length of a random walk
                         n=1,  # number of random walks per root node
                     )
                 else:
@@ -151,37 +165,37 @@ class UnsupervisedSampler:
                     # Don't add self pairs
                     if context == target:
                         continue
-                    
+
                     for _ in range(2):
                         positive_pairs.append((target, context))
                         sample_counter += 1
-                        
+
                         # For each positive sample, add a negative sample.
                         random_sample = self.random.choices(
                             all_nodes, weights=sampling_distribution, k=1
                         )
                         negative_pairs.append((target, *random_sample))
                         sample_counter += 1
-                        
+
                         # If the batch_size number of samples are accumulated, yield.
                         if sample_counter == batch_size:
                             all_pairs = positive_pairs + negative_pairs
                             all_targets = [1] * len(positive_pairs) + [0] * len(
                                 negative_pairs
                             )
-                            
+
                             positive_pairs.clear()
                             negative_pairs.clear()
                             sample_counter = 0
-                            
+
                             edge_ids_labels = list(zip(all_pairs, all_targets))
                             self.random.shuffle(edge_ids_labels)
                             edge_ids, edge_labels = [
                                 [z[i] for z in edge_ids_labels] for i in (0, 1)
                             ]
-                            
+
                             yield edge_ids, edge_labels
-                        
+
                         if self.bidirectional is False:
                             break
                         target, context = context, target
