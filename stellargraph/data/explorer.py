@@ -273,9 +273,19 @@ def naive_weighted_choices(rs, weights):
 
 
 class BiasedRandomWalk(GraphWalk):
+
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
+        
+    Args:
+        graph: The Stellargraph to perform uniform random walk on
+        graph_schema: The schema of the given graph
+        p: <float> Defines probability, 1/p, of returning to source node
+        q: <float> Defines probability, 1/q, for moving to a node away from the source node
+        seed: The seed used to initialize the random state
+        weighted: <False or True> Indicates whether the walk is unweighted or weighted
+        edge_weight_label: <string> Label of the edge weight property
     """
 
     def __init__(
@@ -288,17 +298,6 @@ class BiasedRandomWalk(GraphWalk):
         weighted=False,
         edge_weight_label="weight",
     ):
-        """
-        Args:
-            graph: The Stellargraph to perform uniform random walk on
-            graph_schema: The schema of the given graph
-            p: <float> Defines probability, 1/p, of returning to source node
-            q: <float> Defines probability, 1/q, for moving to a node away from the source node
-            seed: The seed used to initialize the random state
-            weighted: <False or True> Indicates whether the walk is unweighted or weighted
-            edge_weight_label: <string> Label of the edge weight property.
-        """
-
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
         self.p = p
         self.q = q
@@ -476,8 +475,8 @@ class UniformRandomMetaPathWalk(GraphWalk):
             n: <int> Total number of random walks per root node
             length: <int> Maximum length of each random walk
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
-            [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
-            schemas of length 3 and 5 respectively.
+                [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+                schemas of length 3 and 5 respectively.
             node_type_attribute: <str> The node attribute name that stores the node's type
             seed: <int> Random number generator seed; default is None
 
