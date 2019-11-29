@@ -3,11 +3,13 @@
 This folder contains four [Jupyter](http://jupyter.org/) python notebooks demonstrating the use of unsupervised graph representation learning methods implemented in the `stellargraph` library for homogeneous and heterogenous graphs with or without node features. The original works are referenced below.
 
 **Node2Vec** and **Metapath2Vec** notebooks demonstrate the combined use of `stellargraph` and `Gensim` [4] libraries for representation learning on homogeneous and heterogeneous graphs.
+**Keras-Node2vec** notebook demonstrates the Keras implementation of Node2vec with the `stellargraph` library.
 **Unsupervised GraphSAGE** notebook demonstrates the use of `Stellargraph` library's GraphSAGE implementation for unsupervised learning of node embeddings for homogeneous graphs with node features.
-**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for its ability to infer the representations of out-of-sample nodes with the out-of-sample node link prediction task.   
+**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features.
 
 The notebooks demonstrate the following algorithms.
-- `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs.
+- `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] implemented with the `Gensim` [4] library for representation learning on homogeneous graphs.
+- `stellargraph-keras-node2vec.ipynb` The **Node2Vec** algorithm [1] implemented with Keras and the `stellargraph` library for representation learning on homogeneous graphs.
 - `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm [2] for representation learning on heterogeneous graphs.
 - `embeddings-unsupervised-graphsage-cora.ipynb` The **Unsupervised GraphSAGE** algorithm [5] for representation learning on homogeneous graphs with node features.
 - `stellargraph-attri2vec-citeseer.ipynb` The **attri2vec** algorithm [6] for representation learning on the homogeneous graph with node features.
