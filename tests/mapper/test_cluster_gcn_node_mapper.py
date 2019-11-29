@@ -157,14 +157,20 @@ def test_ClusterNodeSquence():
 
     G = create_stellargraph()
 
-    generator = ClusterNodeGenerator(G, clusters=1, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=1, q=1).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
 
     assert len(generator) == 1
 
-    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
     assert len(generator) == 4
 
-    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
 
     # ClusterNodeSequence returns the following:
     #      [features, target_node_indices, adj_cluster], cluster_targets
@@ -179,7 +185,9 @@ def test_ClusterNodeSquence():
         assert batch[1] is None
 
     # Use 2 clusters
-    generator = ClusterNodeGenerator(G, clusters=2, q=1).flow(node_ids=["a", "b", "c", "d"])
+    generator = ClusterNodeGenerator(G, clusters=2, q=1).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
     assert len(generator) == 2
 
     # ClusterNodeSequence returns the following:

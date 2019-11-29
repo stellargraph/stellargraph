@@ -80,7 +80,11 @@ class ClusterNodeGenerator:
                 )
             self.k = clusters
         else:
-            raise TypeError("{}: clusters must be either int or list type.".format(type(self).__name__))
+            raise TypeError(
+                "{}: clusters must be either int or list type.".format(
+                    type(self).__name__
+                )
+            )
 
         # Some error checking on the given parameter values
         if not isinstance(lam, float):
@@ -101,7 +105,9 @@ class ClusterNodeGenerator:
 
         if self.k % q != 0:
             raise ValueError(
-                "{}: the number of clusters must be exactly divisible by q.".format(type(self).__name__)
+                "{}: the number of clusters must be exactly divisible by q.".format(
+                    type(self).__name__
+                )
             )
 
         # Check if the graph has features
