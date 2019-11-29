@@ -19,7 +19,12 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE, HinSAGE and Attri2Vec.
 
 """
-__all__ = ["GraphSAGELinkGenerator", "HinSAGELinkGenerator", "Attri2VecLinkGenerator"]
+__all__ = [
+    "GraphSAGELinkGenerator",
+    "HinSAGELinkGenerator",
+    "Attri2VecLinkGenerator",
+    "Node2VecLinkGenerator",
+]
 
 import random
 import operator
@@ -51,9 +56,6 @@ class BatchedLinkGenerator(abc.ABC):
 
         # This is a link generator and requries a model with two root nodes per query
         self.multiplicity = 2
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -204,6 +206,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self.num_samples = num_samples
         self.name = name
 
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
             print(
@@ -321,6 +326,9 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         super().__init__(G, batch_size, schema)
         self.num_samples = num_samples
         self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
 
         # This is a link generator and requires two nodes per query
         self.head_node_types = head_node_types
@@ -450,6 +458,9 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         self.name = name
 
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
     def sample_features(self, head_links):
         """
         Sample content features of the target nodes and the ids of the context nodes
@@ -468,5 +479,57 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         target_feats = self.graph.get_feature_for_nodes(target_ids)
         context_feats = self.graph.get_index_for_nodes(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
+
+        return batch_feats
+
+
+class Node2VecLinkGenerator(BatchedLinkGenerator):
+    """
+    A data generator for context node prediction with node2vec models.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model does not require node features for
+    nodes in the graph.
+
+    Use the :meth:`.flow` method supplying the nodes and targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Node2VecLinkGenerator(G, 50)
+        train_data_gen = G_generator.flow(edge_ids, edge_labels)
+
+    Args:
+        G (StellarGraph): A machine-learning ready graph.
+        batch_size (int): Size of batch of links to return.
+        name, optional: Name of generator.
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        super().__init__(G, batch_size)
+
+        self.name = name
+
+    def sample_features(self, head_links):
+        """
+        Sample the ids of the target and context nodes.
+        and return these as a list of feature arrays for the node2vec algorithm.
+
+        Args:
+            head_links: An iterable of edges to perform sampling for.
+
+        Returns:
+            A list of feaure arrays, with each element being the ids of 
+            the sampled target and context node.
+        """
+
+        target_ids = [head_link[0] for head_link in head_links]
+        context_ids = [head_link[1] for head_link in head_links]
+        target_feats = self.graph.get_index_for_nodes(target_ids)
+        context_feats = self.graph.get_index_for_nodes(context_ids)
+        batch_feats = [np.array(target_feats), np.array(context_feats)]
 
         return batch_feats
