@@ -61,6 +61,8 @@ def allocation_benchmark(request, benchmark):
             % (__name__, snapshot.__name__)
         )
 
+    # Put a note into the saved JSON files, so that future analysis can tell that these are special
+    # and the "times" aren't actually times.
     benchmark.extra_info["allocation_benchmark"] = True
 
     def run_it(f):
@@ -70,12 +72,14 @@ def allocation_benchmark(request, benchmark):
                 "benchmark function returned None: allocation benchmarking is only reliable if the object(s) of interest is created inside and returned from the function being benchmarked"
             )
 
-    # Running without a GC for an memory benchmark? This ensures that all objects created in the
+    # Running with GC disabled for an memory benchmark? This ensures that all objects created in the
     # benchmarked function get placed into the young generation (0), and so cleaning those up to
     # leave only the long-lived objects from each function execution is just a `gc.collect(0)` which
-    # is very fast (much faster than `gc.collect()`). For measuring peak memory use this gives the
-    # worst-case peak: the case when no GC runs at all during the benchmarked-function and so only
-    # obvious deallocations occur.
+    # is very fast (much faster than `gc.collect()`).
+    #
+    # Disabling GC is beneficial for measuring the peak memory use too, if that was implemented
+    # (e.g. via tracemalloc.get_traced_memory), as it gives us the worst-case peak: the case when no
+    # GC runs at all during the benchmarked-function and so only obvious deallocations occur.
     gc_was_enabled = gc.isenabled()
     gc.disable()
     tracemalloc.start()
