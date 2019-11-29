@@ -22,6 +22,7 @@ __all__ = [
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
     "Attri2VecNodeGenerator",
+    "Node2VecNodeGenerator",
     "DirectedGraphSAGENodeGenerator",
 ]
 
@@ -52,8 +53,7 @@ class BatchedNodeGenerator(abc.ABC):
     Abstract base class for graph data generators.
 
     The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    machine learning. 
 
     Do not use this base class: use a subclass specific to the method.
 
@@ -72,9 +72,6 @@ class BatchedNodeGenerator(abc.ABC):
 
         # This is a node generator and requries a model with one root nodes per query
         self.multiplicity = 1
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -200,6 +197,9 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         self.head_node_types = self.schema.node_types
         self.name = name
 
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
             print(
@@ -295,6 +295,9 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         self.out_samples = out_samples
         self.head_node_types = self.schema.node_types
         self.name = name
+
+        # Check if the graph has features
+        G.check_graph_for_ml()
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
@@ -399,6 +402,9 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         self.num_samples = num_samples
         self.name = name
 
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
         # The head node type
         if head_node_type not in self.schema.node_types:
             raise KeyError("Supplied head node type must exist in the graph")
@@ -494,6 +500,9 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
         super().__init__(G, batch_size)
         self.name = name
 
+        # Check if the graph has features
+        G.check_graph_for_ml()
+
     def sample_features(self, head_nodes):
         """
         Sample content features of the head nodes, and return these as a list of feature 
@@ -544,4 +553,86 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             in the Keras method ``predict_generator``.
 
         """
+        return NodeSequence(self.sample_features, self.batch_size, node_ids.index)
+
+
+class Node2VecNodeGenerator(BatchedNodeGenerator):
+    """
+    A data generator for node representation prediction with node2vec models.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model does not require node features for
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes to get an object 
+    that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Node2VecNodeGenerator(G, 50)
+        data_gen = G_generator.flow(node_ids)
+
+    Args:
+        G (StellarGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        super().__init__(G, batch_size)
+        self.name = name
+
+    def sample_features(self, head_nodes):
+        """
+        Get the ids of the head nodes, and return these as a list of feature 
+        arrays for the node2vec algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+
+        Returns:
+            A list of feaure arrays, with each element being the id of each
+            head node.
+        """
+
+        head_node_ids = self.graph.get_index_for_nodes(head_nodes)
+        batch_feats = np.array(head_node_ids)
+        return batch_feats
+
+    def flow(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids.
+
+        The node IDs are the nodes to inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset/all of the nodes in the graph.
+
+        Args:
+            node_ids: an iterable of node IDs.
+
+        Returns:
+            A NodeSequence object to use with the Node2Vec model
+            in the Keras method ``predict_generator``.
+        """
+
+        return NodeSequence(
+            self.sample_features, self.batch_size, node_ids, shuffle=False
+        )
+
+    def flow_from_dataframe(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids.
+
+        Args:
+            node_ids: a Pandas DataFrame of node_ids.
+
+        Returns:
+            A NodeSequence object to use with the Node2Vec model
+            in the Keras method ``predict_generator``.
+        """
+
         return NodeSequence(self.sample_features, self.batch_size, node_ids.index)
