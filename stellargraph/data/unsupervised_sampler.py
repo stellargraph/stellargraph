@@ -5,10 +5,12 @@ __all__ = ["UnsupervisedSampler"]
 
 
 import random
+import numpy as np
 
 from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraphBase
 from stellargraph.data.explorer import UniformRandomWalk
+from stellargraph.data.explorer import BiasedRandomWalk
 
 
 class UnsupervisedSampler:
@@ -28,9 +30,17 @@ class UnsupervisedSampler:
                 If not provided, all nodes in the graph are used.
             length (int): An integer giving the length of the walks. Length must be at least 2.
             number_of_walks (int): Number of walks from each root node.
+            walker: the walker used to generate random walks, which can be a instance of UniformRandomWalk or BiasedRandomWalk.
+            seed(int): the seed used to generate the initial random state
+            bidirectional(bool): whether to collect node context pairs in a bidirectional way, for node 'u' with its 
+                following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)' 
+                are collected as node context pairts, otherwise, only '(u, v)' is collected as a node context pair. The default value
+                is set to Fasle.
+            context_sampling(bool): whether to perform sampling on the length of random walks for collect node context pairs. The default
+                value is set to False.
     """
 
-    def __init__(self, G, nodes=None, length=2, number_of_walks=1, seed=None):
+    def __init__(self, G, nodes=None, length=2, number_of_walks=1, walker=None, seed=None, bidirectional=False, context_sampling=False):
         if not isinstance(G, StellarGraphBase):
             raise ValueError(
                 "({}) Graph must be a StellarGraph object.".format(type(self).__name__)
@@ -38,24 +48,18 @@ class UnsupervisedSampler:
         else:
             self.graph = G
 
-        # Instantiate the walker class used to generate random walks in the graph
-        self.walker = UniformRandomWalk(G, seed=seed)
-
-        # This code will enable alternative walker classes
-        # TODO: Enable this code, but figure out how to pass required options to run
-        # if walker is not None:
-        #     if not isinstance(
-        #         walker, UniformRandomWalk
-        #     ):  # only work with Uniform Random Walker at the moment
-        #         raise TypeError(
-        #             "({}) Only Uniform Random Walks are possible".format(
-        #                 type(self).__name__
-        #             )
-        #         )
-        #     else:
-        #         self.walker = walker(G, seed=seed)
-        # else:
-        #         self.walker = UniformRandomWalk(G, seed=seed)
+        if walker is not None:
+            # only work with UniformRandomWalker and BiasedRandomWalker at the moment
+            if not isinstance(walker, UniformRandomWalk) and not isinstance(walker, BiasedRandomWalk):
+                raise TypeError(
+                     "({}) Only the UniformRandomWalks and BiasedRandomWalks are possible".format(
+                         type(self).__name__
+                     )
+                 )
+            else:
+                self.walker = walker
+        else:
+            self.walker = UniformRandomWalk(G, seed=seed)
 
         # Define the root nodes for the walks
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes.
@@ -87,6 +91,8 @@ class UnsupervisedSampler:
 
         # Setup an interal random state with the given seed
         self.random = random.Random(seed)
+        self.bidirectional = bidirectional
+        self.context_sampling = context_sampling
 
     def generator(self, batch_size):
 
@@ -125,49 +131,60 @@ class UnsupervisedSampler:
         while not done:
             self.random.shuffle(self.nodes)
             for node in self.nodes:  # iterate over root nodes
-                # Get 1 walk at a time. For now its assumed that its a uniform random walker
-                walk = self.walker.run(
-                    nodes=[node],  # root nodes
-                    length=self.length,  # maximum length of a random walk
-                    n=1,  # number of random walks per root node
-                )
-
-                # (target,contect) pair sampling - GraphSAGE way
+                # Get 1 walk at a time. For now its assumed that its a uniform random walker or biased random walker
+                if self.context_sampling:
+                    walk = self.walker.run(
+                        nodes=[node],  # root nodes
+                        length=int(np.ceil(self.length*self.random.random())),  # maximum length of a random walk
+                        n=1,  # number of random walks per root node
+                    )
+                else:
+                    walk = self.walker.run(
+                        nodes=[node],  # root nodes
+                        length=self.length,  # maximum length of a random walk
+                        n=1,  # number of random walks per root node
+                    )
+                # (target,contect) pair sampling
                 target = walk[0][0]
                 context_window = walk[0][1:]
                 for context in context_window:
                     # Don't add self pairs
                     if context == target:
                         continue
-
-                    positive_pairs.append((target, context))
-                    sample_counter += 1
-
-                    # For each positive sample, add a negative sample.
-                    random_sample = self.random.choices(
-                        all_nodes, weights=sampling_distribution, k=1
-                    )
-                    negative_pairs.append((target, *random_sample))
-                    sample_counter += 1
-
-                    # If the batch_size number of samples are accumulated, yield.
-                    if sample_counter == batch_size:
-                        all_pairs = positive_pairs + negative_pairs
-                        all_targets = [1] * len(positive_pairs) + [0] * len(
-                            negative_pairs
+                    
+                    for _ in range(2):
+                        positive_pairs.append((target, context))
+                        sample_counter += 1
+                        
+                        # For each positive sample, add a negative sample.
+                        random_sample = self.random.choices(
+                            all_nodes, weights=sampling_distribution, k=1
                         )
-
-                        positive_pairs.clear()
-                        negative_pairs.clear()
-                        sample_counter = 0
-
-                        edge_ids_labels = list(zip(all_pairs, all_targets))
-                        self.random.shuffle(edge_ids_labels)
-                        edge_ids, edge_labels = [
-                            [z[i] for z in edge_ids_labels] for i in (0, 1)
-                        ]
-
-                        yield edge_ids, edge_labels
+                        negative_pairs.append((target, *random_sample))
+                        sample_counter += 1
+                        
+                        # If the batch_size number of samples are accumulated, yield.
+                        if sample_counter == batch_size:
+                            all_pairs = positive_pairs + negative_pairs
+                            all_targets = [1] * len(positive_pairs) + [0] * len(
+                                negative_pairs
+                            )
+                            
+                            positive_pairs.clear()
+                            negative_pairs.clear()
+                            sample_counter = 0
+                            
+                            edge_ids_labels = list(zip(all_pairs, all_targets))
+                            self.random.shuffle(edge_ids_labels)
+                            edge_ids, edge_labels = [
+                                [z[i] for z in edge_ids_labels] for i in (0, 1)
+                            ]
+                            
+                            yield edge_ids, edge_labels
+                        
+                        if self.bidirectional is False:
+                            break
+                        target, context = context, target
 
     def _check_parameter_values(self, batch_size):
         """
