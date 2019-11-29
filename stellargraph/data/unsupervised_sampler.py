@@ -30,7 +30,8 @@ class UnsupervisedSampler:
                 If not provided, all nodes in the graph are used.
             length (int): An integer giving the length of the walks. Length must be at least 2.
             number_of_walks (int): Number of walks from each root node.
-            walker: the walker used to generate random walks, which can be a instance of UniformRandomWalk or BiasedRandomWalk.
+            walker: the walker used to generate random walks, which can be a instance of UniformRandomWalk or BiasedRandomWalk. If walker
+                is None, it will be set to an instance of UniformRandomWalk.
             seed(int): the seed used to generate the initial random state
             bidirectional(bool): whether to collect node context pairs in a bidirectional way, for node 'u' with its 
                 following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)' 
