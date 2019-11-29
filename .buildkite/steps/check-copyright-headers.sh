@@ -1,9 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-set -eu
-
-# FIXME: replace with git-bash image
-apk add git
+set -euo pipefail
 
 exitCode=0
 temp="$(mktemp)"
@@ -22,8 +19,10 @@ find . \( \
 
 if [ -s "$temp" ]; then
   echo "^^^ +++"
-  echo "found files without copyright header matching $copyrightRegex"
+  echo "found files without a copyright header (no matches for /$copyrightRegex/)"
   exitCode=1
+else
+  echo "all files have a copyright header (have a match for /$copyrightRegex/)"
 fi
 
 echo "--- checking copyright headers are up to date"
@@ -50,6 +49,8 @@ if [ -s "$temp" ]; then
   echo "^^^ +++"
   echo "found files modified in $year (according to git) without $year in their copyright header"
   exitCode=1
+else
+  echo "all files modified in $year (according to git) have $year in their copyright header"
 fi
 
 exit "$exitCode"

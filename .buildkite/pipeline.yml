@@ -65,9 +65,6 @@ steps:
 
   - label: ":copyright: check copyright headers"
     command: '.buildkite/steps/check-copyright-headers.sh'
-    plugins:
-      docker#v3.2.0:
-        image: "alpine:3.10"
 
   - label: ":docker: publish numbered images"
     command: ".buildkite/steps/manage-images.sh build-publish-numbered"
