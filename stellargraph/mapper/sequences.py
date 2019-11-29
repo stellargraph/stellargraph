@@ -278,11 +278,19 @@ class OnDemandLinkSequence(Sequence):
 
         # an estimate of the  upper bound on how many samples are generated in each epoch
         self.data_size = (
-            2
-            * len(self.walker.nodes)
-            * self.walker.length
-            * self.walker.number_of_walks
+            len(self.walker.nodes) * self.walker.length * self.walker.number_of_walks
         )
+
+        if self.walker.bidirectional:
+            if self.walker.context_sampling:
+                self.data_size *= 2
+            else:
+                self.data_size *= 4
+        else:
+            if self.walker.context_sampling:
+                self.data_size *= 1
+            else:
+                self.data_size *= 2
 
         # the generator method from the sampler with the batch-size from the link generator method
         self._gen = self.walker.generator(self.batch_size)
