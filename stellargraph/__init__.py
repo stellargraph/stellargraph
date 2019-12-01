@@ -32,6 +32,7 @@ from stellargraph.utils.ensemble import Ensemble, BaggingEnsemble
 # Custom layers for keras deserialization:
 custom_keras_layers = {
     "GraphConvolution": layer.GraphConvolution,
+    "ClusterGraphConvolution": layer.ClusterGraphConvolution,
     "GraphAttention": layer.GraphAttention,
     "GraphAttentionSparse": layer.GraphAttentionSparse,
     "SqueezedSparseConversion": layer.SqueezedSparseConversion,
