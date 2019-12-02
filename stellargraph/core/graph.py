@@ -31,7 +31,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 
-from typing import Iterable, Iterator, Any, Mapping, List, Set
+from typing import Iterable, Iterator, Any, Mapping, List, Set, Optional
 
 from .. import globalvar
 from .schema import GraphSchema
@@ -457,9 +457,15 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def adjacency_weights(self):
+    def adjacency_weights(self, nodes: Optional[Iterable] = None):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
+
+        Args:
+            nodes (iterable): The optional collection of nodes
+                comprising the subgraph. If specified, then the
+                adjacency matrix is computed for the subgraph;
+                otherwise, it is computed for the full graph.
 
         Returns:
              The weighted adjacency matrix.
@@ -467,6 +473,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         raise NotImplementedError
 
 
+# A convenience class that merely specifies that edges have direction.
 class StellarDiGraph(StellarGraph):
     pass
 
@@ -989,7 +996,9 @@ class NetworkXStellarGraph(StellarGraph):
     def node_degrees(self) -> Mapping[Any, int]:
         return self._graph.degree()
 
-    def adjacency_weights(self):
+    def adjacency_weights(self, nodes: Optional[Iterable] = None):
+        if nodes is not None:
+            return nx.adjacency_matrix(self._graph.subgraph(nodes))
         return nx.to_scipy_sparse_matrix(
             self._graph, dtype="float32", weight=self._edge_weight_label, format="coo"
         )

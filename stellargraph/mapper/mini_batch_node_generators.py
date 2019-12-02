@@ -27,7 +27,7 @@ import networkx as nx
 from tensorflow.keras.utils import Sequence
 
 from scipy import sparse
-from ..core.graph import StellarGraphBase
+from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 
 
@@ -50,7 +50,7 @@ class ClusterNodeGenerator:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         clusters (int or list): If int then it indicates the number of clusters (default is 1 that is the given graph).
             If clusters is greater than 1, then nodes are uniformly at random assigned to a cluster. If list,
             then it should be a list of lists of node IDs such that each list corresponds to a cluster of nodes
@@ -62,8 +62,8 @@ class ClusterNodeGenerator:
 
     def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
 
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
         self.name = name
@@ -284,13 +284,7 @@ class ClusterNodeSequence(Sequence):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
-        g_cluster = self.graph.subgraph(
-            cluster
-        )  # Get the subgraph; returns SubGraph view
-
-        adj_cluster = nx.adjacency_matrix(
-            g_cluster
-        )  # order is given by order of IDs in cluster
+        adj_cluster = self.graph.adjacency_weights(cluster)
 
         # The operations to normalize the adjacency matrix are too slow.
         # Either optimize this or implement as a layer(?)
@@ -306,7 +300,7 @@ class ClusterNodeSequence(Sequence):
 
         adj_cluster = adj_cluster.toarray()
 
-        g_node_list = list(g_cluster.nodes())
+        g_node_list = list(cluster)
 
         # Determine the target nodes that exist in this cluster
         target_nodes_in_cluster = np.asanyarray(

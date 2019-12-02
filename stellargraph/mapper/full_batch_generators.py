@@ -88,7 +88,7 @@ class FullBatchNodeGenerator:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
             'chebyshev','sgc', 'self_loops', or 'none'.
