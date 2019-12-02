@@ -48,6 +48,7 @@ def create_test_temporal_graph():
                            ('m', 'd',9),('m', 'd',16),('m', 'd',4),
                           ])
     g = g.to_directed()
+    g = StellarGraph(g)
 
     return g
 
@@ -56,12 +57,15 @@ def create_test_temporal_graph():
 class TestTemporalUniformRandomWalk(object):
     def test_parameter_checking(self):
         g = create_test_temporal_graph()
+        
         temporalrw = TemporalUniformRandomWalk(g)
 
         nodes = ["0"]
         n = 1
         length = 2
         seed = None
+            
+        # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
 
         with pytest.raises(ValueError):
                 temporalrw.run(
@@ -72,4 +76,147 @@ class TestTemporalUniformRandomWalk(object):
                 edge_time_label = 'weight',
         )
 
-     
+        with pytest.raises(ValueError):
+                temporalrw.run(
+                nodes=nodes,
+                n=n,
+                length=length,
+                seed=seed,
+                edge_time_label=None,
+            )
+
+
+    def test_weighted_walks(self):
+
+        # all positive walks
+        g = nx.MultiGraph()
+        edges = [(1, 2, 1), (2, 3, 2), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        edge_time_label = 'weight'
+        
+        temporalrw = TemporalUniformRandomWalk(g)
+        
+        assert (
+            len(
+                temporalrw.run(
+                    nodes=nodes, n=n, length=length, seed=seed, edge_time_label = edge_time_label
+                )
+            )
+            == 4
+        )
+
+
+        # edges with negative time
+        g = nx.MultiGraph()
+        edges = [(1, 2, 1), (2, 3, -2), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        edge_time_label = 'weight'
+        
+        temporalrw = TemporalUniformRandomWalk(g)
+
+        with pytest.raises(ValueError):
+            temporalrw.run(
+                nodes=nodes, n=n,  length=length, seed=seed
+            )       
+
+        # edge with time infinity
+        g = nx.MultiGraph()
+        edges = [(1, 2, 1), (2, 3, np.inf), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        edge_time_label = 'weight'
+        
+        temporalrw = TemporalUniformRandomWalk(g)
+
+        with pytest.raises(ValueError):
+            temporalrw.run(
+                nodes=nodes, n=n, length=length, seed=seed, edge_time_label = edge_time_label
+            )
+            
+          # edges with missing times
+        g = nx.MultiGraph()
+        edges = [(1, 2, 1), (2, 3, None), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        edge_time_label = 'weight'
+        
+        temporalrw = TemporalUniformRandomWalk(g)
+        with pytest.raises(ValueError):
+            temporalrw.run(
+                nodes=nodes, n=n,  length=length, seed=seed, edge_time_label = edge_time_label
+            )   
+            
+        # edges with NaN
+        g = nx.MultiGraph()
+        edges = [(1, 2, 1), (2, 3, np.NaN), (3, 4, 3), (4, 1, 4)]
+
+        g.add_weighted_edges_from(edges)
+        g = StellarGraph(g)
+
+        nodes = list(g.nodes())
+        n = 1
+        length = 1
+        seed = None
+        edge_time_label = 'weight'
+        
+        temporalrw = TemporalUniformRandomWalk(g)
+        with pytest.raises(ValueError):
+            temporalrw.run(
+                nodes=nodes, n=n,  length=length, seed=seed, edge_time_label = edge_time_label
+            )  
+            
+            
+        def test_weighted_walks(self):
+            g = nx.MultiGraph()
+            edges = [(1, 2, 1), (2, 3, 2), (3, 4, 3), (4, 1, 4)]
+    
+            g.add_weighted_edges_from(edges)
+            g = StellarGraph(g)
+    
+            nodes = list(g.nodes())
+            n = 1
+            length = 1
+            seed = None
+            edge_time_label = None
+            
+            temporalrw = TemporalUniformRandomWalk(g)
+            
+            with pytest.raises(ValueError):
+                temporalrw.run(
+                        nodes=nodes, n=n, length=length, seed=seed, edge_time_label = edge_time_label
+            )
+                
+            edge_time_label = 'time'
+            
+            with pytest.raises(ValueError):
+                temporalrw.run(
+                        nodes=nodes, n=n, length=length, seed=seed, edge_time_label = edge_time_label
+            )
+  
+                
