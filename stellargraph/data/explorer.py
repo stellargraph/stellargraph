@@ -890,6 +890,40 @@ class TemporalUniformRandomWalk(GraphWalk):
         self._check_temporal_parameters(bidirectional, edge_time_label)
         rs = self._get_random_state(seed)
 
+
+
+        # Check that all edges have the time label specified by 'edge_time_label' and all the time values positive real values
+        for node in self.graph.nodes():
+            for neighbor in self.neighbors(node):
+                for k, v in self.graph[node][neighbor].items():
+                    if (edge_time_label in v):
+                        t = v.get(edge_time_label)
+                        if t is None or np.isnan(t) or t == np.inf:
+                            self._raise_error(
+                                "Missing or invalid time ({}) between ({}) and ({}).".format(
+                                    t, node, neighbor
+                                )
+                        )
+                        if not isinstance(t, (int, float)):
+                            self._raise_error(
+                                "Timestamp between nodes ({}) and ({}) is not numeric ({}).".format(
+                                    node, neighbor, t
+                                )
+                        )
+                        if t < 0:  # check if edge has a negative timestamp
+                            self._raise_error(
+                                "Timestamp between nodes ({}) and ({}) is negative ({}).".format(
+                                    node, neighbor, t
+                                )
+                        )
+                    else:
+                         self._raise_error(
+                                "Invalid time label ({}) between ({}) and ({}).".format(
+                                    edge_time_label, k,v
+                                )
+                        )
+
+
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
@@ -1123,3 +1157,4 @@ class TemporalBiasedRandomWalk(GraphWalk):
 
         if not isinstance(edge_time_label, str):
             self._raise_error("The edge time property label has to be of type string")
+
