@@ -515,16 +515,14 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
-@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 0), (100, 200)])
-# various feature sizes (including no features) to capture that cost
-@pytest.mark.parametrize("feature_size", [None, 1, 100])
-# test both features
-@pytest.mark.parametrize("features_in_nodes", [False, True])
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+# features or not, to capture their cost
+@pytest.mark.parametrize("feature_size", [None, 100])
 def test_allocation_benchmark_creation_from_networkx(
-    allocation_benchmark, feature_size, num_nodes, num_edges, features_in_nodes
+    allocation_benchmark, feature_size, num_nodes, num_edges
 ):
     g, node_features = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=features_in_nodes
+        feature_size, num_nodes, num_edges, features_in_nodes=True
     )
 
     def f():
