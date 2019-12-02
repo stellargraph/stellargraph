@@ -505,7 +505,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
-        name, optional: Name of generator.
+        name (str or None): Name of the generator (optional).
     """
 
     def __init__(self, G, batch_size, name=None):
