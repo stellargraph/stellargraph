@@ -465,6 +465,52 @@ def example_benchmark_graph(
     return G, node_features
 
 
+@pytest.mark.benchmark(group="StellarGraph neighbours")
+def test_benchmark_get_neighbours(benchmark):
+    g, node_features = example_benchmark_graph()
+    num_nodes = g.number_of_nodes()
+    sg = StellarGraph(g, node_features=node_features)
+
+    # get the neigbours of every node in the graph
+    def f():
+        for i in range(num_nodes):
+            sg.neighbors(i)
+
+    benchmark(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph node features")
+@pytest.mark.parametrize("num_types", [1, 4])
+@pytest.mark.parametrize("type_arg", ["infer", "specify"])
+def test_benchmark_get_features(benchmark, num_types, type_arg):
+    SAMPLE_SIZE = 50
+    N_NODES = 500
+    N_EDGES = 1000
+    g, node_features = example_benchmark_graph(
+        feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
+    )
+    num_nodes = g.number_of_nodes()
+
+    sg = StellarGraph(g, node_features=node_features)
+
+    ty_ids = [(ty, range(ty, num_nodes, num_types)) for ty in range(num_types)]
+
+    if type_arg == "specify":
+        # pass through the type
+        node_type = lambda ty: ty
+    else:
+        # leave the argument as None, and so use inference of the type
+        node_type = lambda ty: None
+
+    def f():
+        # look up a random subset of the nodes for a random type, similar to what an algorithm that
+        # does sampling might ask for
+        ty, all_ids = random.choice(ty_ids)
+        selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
+        sg.get_feature_for_nodes(selected_ids, node_type(ty))
+
+    benchmark(f)
+
 @pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
