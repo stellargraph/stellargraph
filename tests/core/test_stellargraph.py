@@ -465,7 +465,7 @@ def test_benchmark_get_neighbours(benchmark):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            g.neighbors(i)
+            g.neighbour_nodes(i)
 
     benchmark(f)
 
