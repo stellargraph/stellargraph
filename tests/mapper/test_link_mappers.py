@@ -859,14 +859,15 @@ class Test_Attri2VecLinkGenerator:
         with pytest.raises(IndexError):
             nf, nl = mapper[8]
 
+
 class Test_Node2VecLinkGenerator:
     """
     Tests of Node2VecLinkGenerator class
     """
-    
+
     batch_size = 2
     n_feat = 4
-    
+
     def test_LinkMapper_constructor(self):
 
         G = example_Graph_1(self.n_feat)
@@ -880,13 +881,13 @@ class Test_Node2VecLinkGenerator:
 
         G = example_Graph_1()
         edge_labels = [0] * G.number_of_edges()
-        
+
         generator = Node2VecLinkGenerator(G, batch_size=self.batch_size)
         mapper = generator.flow(G.edges(), edge_labels)
         assert generator.batch_size == self.batch_size
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
-        
+
     def test_Node2VecLinkGenerator_1(self):
 
         G = example_Graph_2()
@@ -909,7 +910,7 @@ class Test_Node2VecLinkGenerator:
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
-            
+
     def test_edge_consistency(self):
         G = example_Graph_2(1)
         edges = list(G.edges())
@@ -927,7 +928,7 @@ class Test_Node2VecLinkGenerator:
             assert nf[1][0] == G.get_index_for_nodes([e1[1]])[0]
             assert nf[0][1] == G.get_index_for_nodes([e2[0]])[0]
             assert nf[1][1] == G.get_index_for_nodes([e2[1]])[0]
-            
+
     def test_Node2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
         elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
@@ -935,7 +936,7 @@ class Test_Node2VecLinkGenerator:
 
         with pytest.raises(TypeError):
             Node2VecLinkGenerator(G, batch_size=self.batch_size)
-            
+
     def test_Node2VecLinkGenerator_no_targets(self):
         """
         This tests link generator's iterator for prediction, i.e., without targets provided
@@ -944,7 +945,7 @@ class Test_Node2VecLinkGenerator:
         gen = Node2VecLinkGenerator(G, batch_size=self.batch_size).flow(G.edges())
         for i in range(len(gen)):
             assert gen[i][1] is None
-            
+
     def test_Node2VecLinkGenerator_unsupervisedSampler_flow(self):
         """
         This tests link generator's initialization for on demand link generation i.e. there is no pregenerated list of samples provided to it.
@@ -953,9 +954,7 @@ class Test_Node2VecLinkGenerator:
         n_batch = 2
 
         # test graph
-        G = example_graph_random(
-            feature_size=None, n_nodes=6, n_isolates=2, n_edges=10
-        )
+        G = example_graph_random(feature_size=None, n_nodes=6, n_isolates=2, n_edges=10)
 
         unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes)
 
@@ -970,7 +969,7 @@ class Test_Node2VecLinkGenerator:
         # The flow method is not passed nothing
         with pytest.raises(TypeError):
             gen = Node2VecLinkGenerator(G, batch_size=n_batch).flow()
-            
+
     def test_Node2VecLinkGenerator_unsupervisedSampler_sample_generation(self):
 
         G = example_Graph_2()
