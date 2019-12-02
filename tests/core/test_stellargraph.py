@@ -511,6 +511,7 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
 
     benchmark(f)
 
+
 @pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
