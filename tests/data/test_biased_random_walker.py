@@ -154,21 +154,13 @@ class TestBiasedWeightedRandomWalk(object):
         with pytest.raises(ValueError):
             # weighted is boolean which is by default False. It is True if walk has to be weighted.
             biasedrw = BiasedRandomWalk(
-                g,
-                p=p,
-                q=q,
-                weighted="unknown",
-                edge_weight_label="weight",
+                g, p=p, q=q, weighted="unknown", edge_weight_label="weight"
             )
 
         with pytest.raises(ValueError):
             # edge weight labels are by default called weight as is in networkx but they can be any string value if user specified
             biasedrw = BiasedRandomWalk(
-                g,
-                p=p,
-                q=q,
-                weighted="unknown",
-                edge_weight_label=None,
+                g, p=p, q=q, weighted="unknown", edge_weight_label=None
             )
 
     def test_identity_unweighted_weighted_1_walks(self):
@@ -190,9 +182,7 @@ class TestBiasedWeightedRandomWalk(object):
         biasedrw_2 = BiasedRandomWalk(g, p=p, q=q, weighted=False)
         assert biasedrw_1.run(
             nodes=nodes, n=n, length=length, seed=seed
-        ) == biasedrw_2.run(
-            nodes=nodes, n=n, length=length, seed=seed
-        )
+        ) == biasedrw_2.run(nodes=nodes, n=n, length=length, seed=seed)
 
     def test_weighted_walks(self):
 
@@ -211,14 +201,7 @@ class TestBiasedWeightedRandomWalk(object):
         q = 1.0
 
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
-        assert (
-            len(
-                biasedrw.run(
-                    nodes=nodes, n=n, length=length, seed=seed
-                )
-            )
-            == 4
-        )
+        assert len(biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)) == 4
 
         # negative edge
         g = nx.Graph()
@@ -230,9 +213,7 @@ class TestBiasedWeightedRandomWalk(object):
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
 
         with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, length=length, seed=seed
-            )
+            biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
 
         # edge with weight infinity
         g = nx.Graph()
@@ -244,9 +225,7 @@ class TestBiasedWeightedRandomWalk(object):
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
 
         with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, length=length, seed=seed
-            )
+            biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
 
         # missing edges
         g = nx.Graph()
@@ -257,9 +236,7 @@ class TestBiasedWeightedRandomWalk(object):
 
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
         with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, length=length, seed=seed
-            )
+            biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
 
         # edges with NaN
         g = nx.Graph()
@@ -270,9 +247,7 @@ class TestBiasedWeightedRandomWalk(object):
 
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
         with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, length=length, seed=seed
-            )
+            biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
 
     def test_weighted_graph_label(self):
 
@@ -295,14 +270,7 @@ class TestBiasedWeightedRandomWalk(object):
 
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True, edge_weight_label="w")
 
-        assert (
-            len(
-                biasedrw.run(
-                    nodes=nodes, n=n, length=length, seed=seed
-                )
-            )
-            == 4
-        )
+        assert len(biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)) == 4
 
         g = nx.Graph()
         edges = [(1, 2), (2, 3), (3, 4), (4, 1)]
@@ -323,26 +291,20 @@ class TestBiasedWeightedRandomWalk(object):
 
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True, edge_weight_label="w")
         with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, length=length, seed=seed
-            )
+            biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
 
     def test_benchmark_biasedweightedrandomwalk(self, benchmark):
         g = create_test_simple_weighted_graph()
-        
+
         nodes = ["0"]
         n = 5
         p = 2
         q = 3
         length = 5
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
-        
-        benchmark(
-            lambda: biasedrw.run(
-                nodes=nodes, n=n, length=length 
-            )
-        )
+
+        benchmark(lambda: biasedrw.run(nodes=nodes, n=n, length=length))
 
 
 class TestBiasedRandomWalk(object):
@@ -355,7 +317,7 @@ class TestBiasedRandomWalk(object):
         p = 1.0
         q = 1.0
         seed = None
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q)
 
         with pytest.raises(ValueError):
@@ -423,14 +385,14 @@ class TestBiasedRandomWalk(object):
     def test_walk_generation_single_root_node(self):
 
         g = create_test_graph()
-        
+
         nodes = ["0"]
         n = 1
         length = 1
         seed = 42
         p = 0.25
         q = 0.5
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q)
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
@@ -464,7 +426,7 @@ class TestBiasedRandomWalk(object):
         seed = None
         p = 1.0
         q = 0.3
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q)
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
@@ -509,7 +471,7 @@ class TestBiasedRandomWalk(object):
         seed = None
         p = 0.5
         q = 1.0
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q)
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
@@ -546,7 +508,7 @@ class TestBiasedRandomWalk(object):
         seed = None
         p = 1.0
         q = 1.0
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q)
 
         subgraphs = biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
@@ -604,24 +566,22 @@ class TestBiasedRandomWalk(object):
         # always return to the last visited node
         p = always
         q = never
-        
+
         biasedrw = BiasedRandomWalk(graph, p=p, q=q)
-        
+
         walks = {
-            tuple(w)
-            for w in biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
+            tuple(w) for w in biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
         }
         assert walks == {(0, 1, 0, 1), (0, 2, 0, 2), (0, 3, 0, 3)}
 
         # always explore (when possible)
         p = never
         q = always
-        
+
         biasedrw = BiasedRandomWalk(graph, p=p, q=q)
-        
+
         walks = {
-            tuple(w)
-            for w in biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
+            tuple(w) for w in biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
         }
         assert walks == {
             # follow the square
@@ -636,12 +596,11 @@ class TestBiasedRandomWalk(object):
         # chance of returning or exploring
         p = never
         q = never
-        
+
         biasedrw = BiasedRandomWalk(graph, p=p, q=q)
-    
+
         walks = {
-            tuple(w)
-            for w in biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
+            tuple(w) for w in biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
         }
         assert walks == {
             # follow the triangle
@@ -664,7 +623,7 @@ class TestBiasedRandomWalk(object):
         p = 2
         q = 3
         length = 5
-        
+
         biasedrw = BiasedRandomWalk(g, p=p, q=q)
 
         benchmark(lambda: biasedrw.run(nodes=nodes, n=n, length=length))
