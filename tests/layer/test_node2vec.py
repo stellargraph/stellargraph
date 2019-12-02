@@ -46,13 +46,10 @@ def example_graph_1(feature_size=None):
 
 
 def test_node2vec_constructor():
-    node2vec = Node2Vec(
-        emb_size=4, node_num=4, multiplicity=2
-    )
+    node2vec = Node2Vec(emb_size=4, node_num=4, multiplicity=2)
     assert node2vec.emb_size == 4
     assert node2vec.input_node_num == 4
     assert node2vec.multiplicity == 2
-
 
     # Check requirement for generator or node_num & multiplicity
     with pytest.raises(KeyError):
@@ -69,11 +66,7 @@ def test_node2vec_constructor():
 
 
 def test_node2vec_apply():
-    node2vec = Node2Vec(
-        emb_size=4,
-        node_num=4,
-        multiplicity=2,
-    )
+    node2vec = Node2Vec(emb_size=4, node_num=4, multiplicity=2)
 
     x = np.array([[1]])
     expected = np.array([[1, 1, 1, 1]])
@@ -118,11 +111,7 @@ def test_node2vec_apply():
 
 
 def test_node2vec_serialize():
-    node2vec = Node2Vec(
-        emb_size=4,
-        node_num=4,
-        multiplicity=2,
-    )
+    node2vec = Node2Vec(emb_size=4, node_num=4, multiplicity=2)
 
     inp = keras.Input(shape=(1,))
     out = node2vec(inp)
