@@ -79,10 +79,10 @@ def allocation_benchmark(request, benchmark):
     # recording the final memory use, which can be done with `gc.collect`. Python's GC has 3
     # generations (called 0 (young), 1, 2): `gc.collect(0)` (collecting gen 0) is generally faster
     # than `gc.collect(1)` (gens 0 and 1), and that's faster than `gc.collect()`/`gc.collect(2)` (a
-    # full collection of gens 0, 1 and 2). Thus... if the benchmarks will run fastest if they can
-    # get away with `gc.collect(0)`. Objects start by being allocated into gen 0, and every time
-    # they survive a collection (that is, are still reachable when the collection occurs) they move
-    # to the next generation. That is, objects move out of gen 0 when they survive their first
+    # full collection of gens 0, 1 and 2). Thus, the benchmarks will run fastest if they can get
+    # away with `gc.collect(0)`. Objects start by being allocated into gen 0, and every time they
+    # survive a collection (that is, are still reachable when the collection occurs) they move to
+    # the next generation. That is, objects move out of gen 0 when they survive their first
     # collection.
     #
     # In summary, the benchmarks can use the fastest `gc.collect(0)` to clear out short-lived
