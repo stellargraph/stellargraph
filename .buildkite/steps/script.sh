@@ -2,6 +2,8 @@
 
 set -xeo pipefail
 
+exit 1
+
 upload_tests() {
   buildkite-agent artifact upload "${BUILDKITE_BUILD_NUMBER}.xml" "s3://${AWS_LOGS_BUCKET}/pytest/${BUILDKITE_BRANCH}/${BUILDKITE_BUILD_NUMBER}"
 }
