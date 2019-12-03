@@ -72,10 +72,22 @@ def allocation_benchmark(request, benchmark):
                 "benchmark function returned None: allocation benchmarking is only reliable if the object(s) of interest is created inside and returned from the function being benchmarked"
             )
 
-    # Running with GC disabled for an memory benchmark? This ensures that all objects created in the
-    # benchmarked function get placed into the young generation (0), and so cleaning those up to
-    # leave only the long-lived objects from each function execution is just a `gc.collect(0)` which
-    # is very fast (much faster than `gc.collect()`).
+    # Running with GC disabled for an memory benchmark?
+    #
+    # These benchmarks are designed to measure only the memory use of residual/long-lived objects
+    # created by each measurement run. They thus need to clean up any short lived objects before
+    # recording the final memory use, which can be done with `gc.collect`. Python's GC has 3
+    # generations (called 0 (young), 1, 2): `gc.collect(0)` (collecting gen 0) is generally faster
+    # than `gc.collect(1)` (gens 0 and 1), and that's faster than `gc.collect()`/`gc.collect(2)` (a
+    # full collection of gens 0, 1 and 2). Thus... if the benchmarks will run fastest if they can
+    # get away with `gc.collect(0)`. Objects start by being allocated into gen 0, and every time
+    # they survive a collection (that is, are still reachable when the collection occurs) they move
+    # to the next generation. That is, objects move out of gen 0 when they survive their first
+    # collection.
+    #
+    # In summary, the benchmarks can use the fastest `gc.collect(0)` to clear out short-lived
+    # objects at the end of a measurement run if no collections occur while the benchmark runs, and
+    # this can be guaranteed by disabling automatic collection.
     #
     # Disabling GC is beneficial for measuring the peak memory use too, if that was implemented
     # (e.g. via tracemalloc.get_traced_memory), as it gives us the worst-case peak: the case when no
