@@ -1,0 +1,5 @@
+---
+services:
+  stellargraph:
+    build:
+      dockerfile: docker/stellargraph/Dockerfile
