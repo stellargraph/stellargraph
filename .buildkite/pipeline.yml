@@ -70,14 +70,16 @@ steps:
     branches: "develop feature/*"
 
   - wait: ~
-    continue_on_failure: true
+    key: "wait-for-tests"
 
   - label: ":docker: (conditionally) publish docker images"
+    key: "publish-images"
     command: ".buildkite/utils/checkstatus.sh .buildkite/steps/manage-images.sh publish-images"
     branches: "develop feature/*"
 
-  - wait: ~
-    continue_on_failure: true
-
   - label: ":console: push logs"
     command: .buildkite/utils/pushlogs.sh "#build-bots"
+    depends_on:
+      - "wait-for-tests"
+      - "publish-images"
+    allow_dependency_failure: true
