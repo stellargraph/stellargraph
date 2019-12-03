@@ -72,14 +72,15 @@ steps:
   - wait: ~
     key: "wait-for-tests"
 
-  - label: ":docker: (conditionally) publish docker images"
+  - label: ":docker: publish docker images"
     key: "publish-images"
-    command: ".buildkite/utils/checkstatus.sh .buildkite/steps/manage-images.sh publish-images"
+    command: ".buildkite/steps/manage-images.sh publish-images"
     branches: "develop feature/*"
 
   - label: ":console: push logs"
     command: .buildkite/utils/pushlogs.sh "#build-bots"
     depends_on:
+      # by explicitly depending on the wait step, this will run even if things before the wait fail
       - "wait-for-tests"
       - "publish-images"
     allow_dependency_failure: true
