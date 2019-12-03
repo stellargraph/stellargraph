@@ -66,14 +66,22 @@ steps:
   - label: ":copyright: check copyright headers"
     command: '.buildkite/steps/check-copyright-headers.sh'
 
-  - label: ":docker: publish numbered images"
-    command: ".buildkite/steps/manage-images.sh build-publish-numbered"
+  - label: ":docker: build image"
+    plugins:
+      docker-compose#v3.1.0:
+        build:
+          - stellargraph
+        image-repository: index.docker.io/stellargraph/stellargraph
+        cache-from:
+          - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
+          - stellargraph:index.docker.io/stellargraph/stellargraph:latest
     agents:
       queue: "t2medium"
-    branches: "develop feature/*"
 
   - wait
 
-  - label: ":docker: publish docker images"
-    command: ".buildkite/steps/manage-images.sh publish-images"
-    branches: "develop feature/*"
+  - label: ":docker: publish image"
+    plugins:
+      docker-compose#v3.1.0:
+        push:
+          - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}

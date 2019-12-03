@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "~~~ setting docker image tag"
+case "${BUILDKITE_BRANCH}" in
+  develop)
+    IMAGE_TAG="latest"
+    ;;
+  *)
+    if [ "$BUILDKITE_PULL_REQUEST" != "false" ]; then
+      IMAGE_TAG="PR-$BUILDKITE_PULL_REQUEST"
+    else
+      IMAGE_TAG="testing"
+    fi
+    ;;
+esac
+
+echo "IMAGE_TAG=$IMAGE_TAG"
+
+export IMAGE_TAG
