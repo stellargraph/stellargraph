@@ -45,6 +45,8 @@ def snapshot(gc_generation=0) -> MallocInstant:
     Take a snapshot of the current "malloc instant", similar to an allocation version of time.perf_counter() (etc.).
     """
     if gc_generation is not None:
+        # By collecting, we ensure we're only recording long term objects; this works best when GC
+        # is disabled, see the comment in `allocation_benchmark` below.
         gc.collect(gc_generation)
     return MallocInstant(tracemalloc.take_snapshot())
 
@@ -76,18 +78,19 @@ def allocation_benchmark(request, benchmark):
     #
     # These benchmarks are designed to measure only the memory use of residual/long-lived objects
     # created by each measurement run. They thus need to clean up any short lived objects before
-    # recording the final memory use, which can be done with `gc.collect`. Python's GC has 3
-    # generations (called 0 (young), 1, 2): `gc.collect(0)` (collecting gen 0) is generally faster
-    # than `gc.collect(1)` (gens 0 and 1), and that's faster than `gc.collect()`/`gc.collect(2)` (a
-    # full collection of gens 0, 1 and 2). Thus, the benchmarks will run fastest if they can get
-    # away with `gc.collect(0)`. Objects start by being allocated into gen 0, and every time they
-    # survive a collection (that is, are still reachable when the collection occurs) they move to
-    # the next generation. That is, objects move out of gen 0 when they survive their first
-    # collection.
+    # recording the final memory use (in `snapshot`), which can be done with `gc.collect`. Python's
+    # GC has 3 generations (called 0 (young), 1, 2): `gc.collect(0)` (collecting gen 0) is generally
+    # faster than `gc.collect(1)` (gens 0 and 1), and that's faster than
+    # `gc.collect()`/`gc.collect(2)` (a full collection of gens 0, 1 and 2). Thus, the benchmarks
+    # will run fastest if they can get away with `gc.collect(0)`. Objects start by being allocated
+    # into gen 0, and every time they survive a collection (that is, are still reachable when the
+    # collection occurs) they move to the next generation. That is, objects move out of gen 0 when
+    # they survive their first collection.
     #
     # In summary, the benchmarks can use the fastest `gc.collect(0)` to clear out short-lived
-    # objects at the end of a measurement run if no collections occur while the benchmark runs, and
-    # this can be guaranteed by disabling automatic collection.
+    # objects at the end of a measurement run (just before recording the memory use in `snapshot`)
+    # if no collections occur while the benchmark runs, and this can be guaranteed by disabling
+    # automatic collection.
     #
     # Disabling GC is beneficial for measuring the peak memory use too, if that was implemented
     # (e.g. via tracemalloc.get_traced_memory), as it gives us the worst-case peak: the case when no
@@ -100,5 +103,7 @@ def allocation_benchmark(request, benchmark):
 
     if gc_was_enabled:
         gc.enable()
-        # forcibly clean up anything left over in this benchmark
-        gc.collect()
+
+    # This benchmark is finished, and now forcibly clean up any garbage left over from the
+    # small/partial collections that were being during the benchmark.
+    gc.collect()
