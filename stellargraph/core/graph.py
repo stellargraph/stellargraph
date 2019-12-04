@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -394,6 +394,9 @@ class StellarGraphBase:
         # This stores the map between node ID and index in the attribute arrays
         self._node_index_maps = data_index_maps
 
+        # The set of all node types in the graph
+        self._node_types = node_types
+
     def __repr__(self):
         directed_str = "Directed" if self.is_directed() else "Undirected"
         s = "{}: {} multigraph\n".format(type(self).__name__, directed_str)
@@ -452,19 +455,20 @@ class StellarGraphBase:
 
         # Get the node type if not specified.
         if node_type is None:
-            node_types = {
-                self._get_node_type(self.node[n]) for n in nodes if n is not None
-            }
+            if len(self._node_index_maps) == 1:
+                node_type = next(iter(self._node_index_maps))
+            else:
+                node_types = {
+                    self._get_node_type(self.node[n]) for n in nodes if n is not None
+                }
+                if len(node_types) > 1:
+                    raise ValueError("All nodes must be of the same type.")
 
-            if len(node_types) > 1:
-                raise ValueError("All nodes must be of the same type.")
-
-            if len(node_types) == 0:
-                raise ValueError(
-                    "At least one node must be given if node_type not specified"
-                )
-
-            node_type = node_types.pop()
+                if len(node_types) == 0:
+                    raise ValueError(
+                        "At least one node must be given if node_type not specified"
+                    )
+                node_type = node_types.pop()
 
         # Get index for nodes of this type
         nt_id_to_index = self._node_index_maps[node_type]
@@ -491,19 +495,20 @@ class StellarGraphBase:
 
         # Get the node type if not specified.
         if node_type is None:
-            node_types = {
-                self._get_node_type(self.node[n]) for n in nodes if n is not None
-            }
+            if len(self._node_index_maps) == 1:
+                node_type = next(iter(self._node_index_maps))
+            else:
+                node_types = {
+                    self._get_node_type(self.node[n]) for n in nodes if n is not None
+                }
+                if len(node_types) > 1:
+                    raise ValueError("All nodes must be of the same type.")
 
-            if len(node_types) > 1:
-                raise ValueError("All nodes must be of the same type.")
-
-            if len(node_types) == 0:
-                raise ValueError(
-                    "At least one node must be given if node_type not specified"
-                )
-
-            node_type = node_types.pop()
+                if len(node_types) == 0:
+                    raise ValueError(
+                        "At least one node must be given if node_type not specified"
+                    )
+                node_type = node_types.pop()
 
         # Check node_types
         if (

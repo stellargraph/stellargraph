@@ -73,7 +73,7 @@ to avoid errors due to API changes in the recent versions of Keras and Tensorflo
 
 **Fixed bugs:**
 - Removed igraph and mplleaflet from `demos` requirements in `setup.py`. Python-igraph doesn't install on many systems and is only required for the clustering notebook. See the `README.md` in that directory for requirements and installation directions.
-- Updated GCN interpretability notebook to work with new FullBatchGenerator API [\#429](https://github.com/stellargraph/stellargraph/pull/429)
+- Updated GCN interpretability notebook to work with new FullBatchNodeGenerator API [\#429](https://github.com/stellargraph/stellargraph/pull/429)
 
 ## [0.7.0](https://github.com/stellargraph/stellargraph/tree/v0.7.0)
 

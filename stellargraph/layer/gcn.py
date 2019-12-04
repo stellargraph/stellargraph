@@ -18,7 +18,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
-from ..mapper import FullBatchNodeGenerator
+from ..mapper import FullBatchGenerator
 from .misc import SqueezedSparseConversion
 from .preprocessing_layer import GraphPreProcessingLayer
 
@@ -284,8 +284,10 @@ class GCN:
     def __init__(
         self, layer_sizes, generator, bias=True, dropout=0.0, activations=None, **kwargs
     ):
-        if not isinstance(generator, FullBatchNodeGenerator):
-            raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
+        if not isinstance(generator, FullBatchGenerator):
+            raise TypeError(
+                "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+            )
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
@@ -293,8 +295,8 @@ class GCN:
         self.bias = bias
         self.dropout = dropout
         self.generator = generator
-        self.support = 1
         self.method = generator.method
+        self.multiplicity = generator.multiplicity
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
@@ -406,7 +408,7 @@ class GCN:
 
         return h_layer
 
-    def node_model(self):
+    def build(self):
         """
         Builds a GCN model for node prediction
 
@@ -418,9 +420,16 @@ class GCN:
         N_nodes = self.generator.features.shape[0]
         N_feat = self.generator.features.shape[1]
 
-        # Inputs for features & target indices
+        # Inputs for features
         x_t = Input(batch_shape=(1, N_nodes, N_feat))
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+
+        # Indices to gather for model output
+        if self.multiplicity == 1:
+            out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        else:
+            out_indices_t = Input(
+                batch_shape=(1, None, self.multiplicity), dtype="int32"
+            )
 
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
@@ -446,3 +455,17 @@ class GCN:
             self.x_out_flat = x_out
 
         return x_inp, x_out
+
+    def link_model(self):
+        if self.multiplicity != 2:
+            raise ValueError(
+                "Link model requested but a generator not supporting links was supplied."
+            )
+        return self.build()
+
+    def node_model(self):
+        if self.multiplicity != 1:
+            raise ValueError(
+                "Node model requested but a generator not supporting nodes was supplied."
+            )
+        return self.build()

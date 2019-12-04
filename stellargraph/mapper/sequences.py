@@ -22,8 +22,8 @@ __all__ = [
     "NodeSequence",
     "LinkSequence",
     "OnDemandLinkSequence",
-    "FullBatchNodeSequence",
-    "SparseFullBatchNodeSequence",
+    "FullBatchSequence",
+    "SparseFullBatchSequence",
 ]
 
 import warnings
@@ -322,7 +322,7 @@ class OnDemandLinkSequence(Sequence):
         return int(np.ceil(self.data_size / self.batch_size))
 
 
-class FullBatchNodeSequence(Sequence):
+class FullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
@@ -373,6 +373,8 @@ class FullBatchNodeSequence(Sequence):
             self.target_indices, (1,) + self.target_indices.shape
         )
 
+        # What about link targets?
+
         self.inputs = [self.features, self.target_indices, self.A_dense]
 
         if targets is not None:
@@ -388,7 +390,7 @@ class FullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-class SparseFullBatchNodeSequence(Sequence):
+class SparseFullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
@@ -398,7 +400,7 @@ class SparseFullBatchNodeSequence(Sequence):
 
     This class uses sparse matrix representations to send data to the models,
     and only works with the Keras tensorflow backend. For any other backends,
-    use the :class:`FullBatchNodeSequence` class.
+    use the :class:`FullBatchSequence` class.
 
     This class should be created using the `.flow(...)` method of
     :class:`FullBatchNodeGenerator`.

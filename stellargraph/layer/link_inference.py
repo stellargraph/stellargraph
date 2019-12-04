@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ link attribute inference (regression)
 """
 
 from typing import AnyStr, Optional, List, Tuple
+import tensorflow as tf
 from tensorflow.keras.layers import (
     Layer,
     Concatenate,
@@ -71,12 +72,105 @@ class LeakyClippedLinear(Layer):
         return input_shape
 
 
+class LinkEmbedding(Layer):
+    """
+    
+    """
+
+    def __init__(
+        self,
+        output_dim: int = 1,
+        method: AnyStr = "ip",
+        axis: Optional[int] = -2,
+        activation: Optional[AnyStr] = "linear",
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.method = method.lower()
+        self.output_dim = output_dim
+        self.axis = axis
+        self.activation = tf.keras.activations.get(activation)
+
+        if self.method in ["ip", "dot"] and self.output_dim != 1:
+            warnings.warn(
+                "For inner product link method the output_dim will be ignored and set to be 1."
+            )
+            self.output_dim = 1
+
+    def get_config(self):
+        config = {
+            "output_dim": int(self.output_dim),
+            "activation": activations.serialize(self.activation),
+            "method": self.method,
+            "axis": self.axis,
+        }
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def call(self, x):
+        # Extract the node embeddings:
+        # Currently GraphSAGE & HinSage output a list of tensors being the embeddigns
+        # for each of the nodes in the link of shape (B, M), where B is the batch size,
+        # and M is the embedding size.
+        # However, GCN, GAT & other full-batch methods return a tensor of shape (1, N, 2, M)
+        # Where N is the number of links and M the embedding size.
+        if isinstance(x, (list, tuple)):
+            if len(x) != 2:
+                raise ValueError("Expecting a list of length 2 for link embedding")
+            x0, x1 = x
+        elif isinstance(x, tf.Tensor):
+            if x.shape[self.axis] != 2:
+                raise ValueError(
+                    "Expecting a tensor of shape 2 along specified axis for link embedding"
+                )
+            x0, x1 = tf.unstack(x, axis=self.axis)
+
+        # Apply different ways to combine the node embeddings to a link embedding.
+        if self.method in ["ip", "dot"]:
+            out = tf.reduce_sum(x0 * x1, axis=-1, keepdims=True)
+            out = self.activation(out)
+
+        elif self.method == "l1":
+            # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
+            out = tf.abs(x0 - x1)
+
+        elif self.method == "l2":
+            # l2(u,v)_i = (u_i - v_i)^2 - vector of the same size as u,v
+            out = tf.square(x0 - x1)
+
+        elif self.method in ["mul", "hadamard"]:
+            out = tf.multiply(x0, x1)
+
+        elif self.method == "concat":
+            out = Concatenate()([x0, x1])
+
+        elif self.method == "avg":
+            out = Average()([x0, x1])
+
+        else:
+            raise NotImplementedError(
+                "{}: the requested method '{}' is not known/not implemented".format(
+                    name, edge_embedding_method
+                )
+            )
+
+        # All methods apart from inner product have a dense layer
+        # to convert link embedding to the desired output
+        if self.method not in ["ip", "dot"]:
+            out = Dense(self.output_dim, activation=self.activation)(out)
+
+        # Reshape to output dimensions
+        # out = Reshape((self.output_dim,))(out)
+        return out
+
+
 def link_inference(
     output_dim: int = 1,
     output_act: AnyStr = "linear",
     edge_embedding_method: AnyStr = "ip",
     clip_limits: Optional[Tuple[float]] = None,
     name: AnyStr = "link_inference",
+    axis: int = 0,
 ):
     """
     Defines an edge inference function that takes source, destination node embeddings (node features) as input,
