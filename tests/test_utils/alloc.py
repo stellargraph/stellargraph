@@ -104,6 +104,7 @@ def allocation_benchmark(request, benchmark):
     if gc_was_enabled:
         gc.enable()
 
-    # This benchmark is finished, and now forcibly clean up any garbage left over from the
-    # small/partial collections that were being during the benchmark.
+    # This benchmark is finished, so now clean up any longer-lived garbage left over from the
+    # small/partial collections of short-term objects that happened during the benchmark (in
+    # `snapshot`).
     gc.collect()
