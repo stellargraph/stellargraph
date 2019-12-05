@@ -129,6 +129,10 @@ def test_ig_saliency_map():
     assert pytest.approx(
         np.sum(np.ma.masked_array(ig_link_importance, mask=train_gen.A_dense)), 0
     )
+
+    # TODO: write a better comparison test with larger floating point values
+
+    # commented out test because of floating point errors
     # assert ig_link_importance == pytest.approx(ig_link_importance_ref, abs=1e-11)
     non_zero_edge_importance = np.sum(np.abs(ig_link_importance) > 1e-11)
     assert 8 == non_zero_edge_importance
