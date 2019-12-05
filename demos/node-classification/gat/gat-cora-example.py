@@ -121,7 +121,7 @@ def train(
         normalize=None,
     )
     # Expose the input and output tensors of the GAT model for nodes:
-    x_inp, x_out = gat.node_model()
+    x_inp, x_out = gat.build()
 
     # Snap the final estimator layer to x_out
     x_out = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
