@@ -64,48 +64,6 @@ class GradientSaliencyGAT(object):
         self.X = generator.features
         self.is_sparse = K.is_sparse(adj_t)
 
-        # The placeholder for the node index of interest. It is typically the index of the target test node.
-        # self.node_id = K.placeholder(shape=(), dtype="int32")
-        #
-        # # The placeholder for the class of interest. One will generally use the winning class.
-        # self.class_of_interest = K.placeholder(shape=(), dtype="int32")
-        #
-        # # The input tensors for computing the node saliency map
-        # node_mask_tensors = model.input + [
-        #     K.learning_phase(),  # placeholder for mode (train or test) tense
-        #     self.class_of_interest,
-        # ]
-        #
-        # # The input tensors for computing the link saliency map
-        # link_mask_tensors = model.input + [K.learning_phase(), self.class_of_interest]
-        #
-        # # node gradients are the gradients of the output's component corresponding to the
-        # # class of interest, w.r.t. input features of all nodes in the graph
-        # self.node_gradients = model.optimizer.get_gradients(
-        #     K.gather(output[0, 0], self.class_of_interest), features_t
-        # )
-        # self.is_sparse = K.is_sparse(adj_t)
-        # # link gradients are the gradients of the output's component corresponding to the
-        # # class of interest, w.r.t. all elements of the adjacency matrix
-        # if self.is_sparse:
-        #     print("adjacency matrix tensor is sparse")
-        #     self.link_gradients = model.optimizer.get_gradients(
-        #         K.gather(K.gather(output, self.node_id), self.class_of_interest),
-        #         adj_t.values,
-        #     )
-        #
-        # else:
-        #     self.link_gradients = model.optimizer.get_gradients(
-        #         K.gather(output[0, 0], self.class_of_interest), adj_t
-        #     )
-        #
-        # self.compute_link_gradients = K.function(
-        #     inputs=link_mask_tensors, outputs=self.link_gradients
-        # )
-        # self.compute_node_gradients = K.function(
-        #     inputs=node_mask_tensors, outputs=self.node_gradients
-        # )
-
     def compute_node_gradients(self, node_mask_tensors):
 
         for i, x in enumerate(node_mask_tensors):
