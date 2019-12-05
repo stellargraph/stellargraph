@@ -129,7 +129,7 @@ def test_ig_saliency_map():
     assert pytest.approx(
         np.sum(np.ma.masked_array(ig_link_importance, mask=train_gen.A_dense)), 0
     )
-    assert pytest.approx(ig_link_importance_ref, abs=1e-11) == ig_link_importance
+    assert pytest.approx(ig_link_importance_ref, ig_link_importance, abs=1e-11) #== ig_link_importance
     non_zero_edge_importance = np.sum(np.abs(ig_link_importance) > 1e-11)
     assert 8 == non_zero_edge_importance
     ig_node_importance = ig_saliency.get_node_importance(
