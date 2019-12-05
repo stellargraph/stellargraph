@@ -201,14 +201,10 @@ class TemperatureCalibration(object):
 
         def cost(T, x, y):
 
-            scaled_logits = tf.multiply(
-                name="z", x=x, y=1.0 / T
-            )
+            scaled_logits = tf.multiply(name="z", x=x, y=1.0 / T)
 
             cost_value = tf.reduce_mean(
-                tf.nn.softmax_cross_entropy_with_logits(
-                    logits=scaled_logits, labels=y
-                )
+                tf.nn.softmax_cross_entropy_with_logits(logits=scaled_logits, labels=y)
             )
 
             return cost_value

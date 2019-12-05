@@ -163,7 +163,6 @@ class IntegratedGradients(GradientSaliency):
         if A_val is None:
             A_val = self.A
 
-
         gradients = self.get_integrated_node_masks(
             node_idx,
             class_of_interest,

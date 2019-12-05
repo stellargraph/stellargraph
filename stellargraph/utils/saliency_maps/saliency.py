@@ -85,10 +85,23 @@ class GradientSaliency:
                 node_mask_tensors[i] = tf.convert_to_tensor(x)
 
         if self.is_sparse:
-            features_t, output_indices_t, adj_indices_t, adj_t, _, class_of_interest = node_mask_tensors
+            (
+                features_t,
+                output_indices_t,
+                adj_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = node_mask_tensors
             model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
         else:
-            features_t, output_indices_t, adj_t, _, class_of_interest = node_mask_tensors
+            (
+                features_t,
+                output_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = node_mask_tensors
             model_input = [features_t, output_indices_t, adj_t]
 
         with tf.GradientTape() as tape:
@@ -109,10 +122,23 @@ class GradientSaliency:
                 link_mask_tensors[i] = tf.convert_to_tensor(x)
 
         if self.is_sparse:
-            features_t, output_indices_t, adj_indices_t, adj_t, _, class_of_interest = link_mask_tensors
+            (
+                features_t,
+                output_indices_t,
+                adj_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = link_mask_tensors
             model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
         else:
-            features_t, output_indices_t, adj_t, _, class_of_interest = link_mask_tensors
+            (
+                features_t,
+                output_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = link_mask_tensors
             model_input = [features_t, output_indices_t, adj_t]
 
         with tf.GradientTape() as tape:
@@ -124,7 +150,6 @@ class GradientSaliency:
         link_gradients = tape.gradient(cost_value, adj_t)
 
         return link_gradients
-
 
     def get_node_masks(
         self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
@@ -188,7 +213,9 @@ class GradientSaliency:
                 [X_val, out_indices, A_val, 0, class_of_interest]
             )
         if self.is_sparse:
-            return csr_matrix((gradients.numpy()[0, :], (A_index[0, :, 0], A_index[0, :, 1])))
+            return csr_matrix(
+                (gradients.numpy()[0, :], (A_index[0, :, 0], A_index[0, :, 1]))
+            )
         return np.squeeze(gradients, 0)
 
     def get_node_importance(

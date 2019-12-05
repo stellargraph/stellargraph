@@ -96,7 +96,9 @@ class GradientSaliencyGAT(object):
             tape.watch(A_val)
             output = self.model(model_input)
             if self.is_sparse:
-                cost_value = K.gather(K.gather(output, out_indices), class_of_interest),
+                cost_value = (
+                    K.gather(K.gather(output, out_indices), class_of_interest),
+                )
 
             else:
                 cost_value = K.gather(output[0, 0], class_of_interest)
