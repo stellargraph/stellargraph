@@ -33,7 +33,7 @@ class RelationalGraphConvolution(Layer):
             units (int): dimensionality of output feature vectors
             num_relationships (int): the number of relationships in the graph
             num_bases (int): the number of basis matrices to use for parameterizing the weight matrices as described in
-                the paper; defaults to 0.
+                the paper; defaults to 0. num_bases < 0 triggers the default behaviour of num_bases = 0
             activation (str or func): nonlinear activation applied to layer's output to obtain output features
             use_bias (bool): toggles an optional bias
             final_layer (bool): If False the layer returns output for all nodes,
@@ -73,6 +73,11 @@ class RelationalGraphConvolution(Layer):
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
         super().__init__(**kwargs)
+
+        if not isinstance(num_bases, int):
+            raise TypeError(
+                "num_bases should be an int"
+            )
 
         self.units = units
         self.num_relationships = num_relationships
@@ -150,7 +155,7 @@ class RelationalGraphConvolution(Layer):
         feat_shape = input_shapes[0]
         input_dim = int(feat_shape[-1])
 
-        if self.num_bases != 0:
+        if self.num_bases > 0:
 
             self.bases = self.add_weight(
                 shape=(input_dim, self.units, self.num_bases),  # hyperparametr B
@@ -330,6 +335,7 @@ class RGCN:
             raise TypeError(
                 "Generator should be a instance of RelationalFullBatchNodeGenerator"
             )
+
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes

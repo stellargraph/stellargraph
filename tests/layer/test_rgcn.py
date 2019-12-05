@@ -21,8 +21,8 @@ def create_graph_features():
 
 
 def test_RelationalGraphConvolution_config():
-    gcn_layer = RelationalGraphConvolution(units=16, num_relationships=5)
-    conf = gcn_layer.get_config()
+    rgcn_layer = RelationalGraphConvolution(units=16, num_relationships=5)
+    conf = rgcn_layer.get_config()
 
     assert conf["units"] == 16
     assert conf["activation"] == "linear"
@@ -38,23 +38,23 @@ def test_RelationalGraphConvolution_config():
 
 
 def test_RelationalGraphConvolution_init():
-    gcn_layer = RelationalGraphConvolution(
+    rgcn_layer = RelationalGraphConvolution(
         units=16, num_relationships=5, num_bases=0, activation="relu"
     )
 
-    assert gcn_layer.units == 16
-    assert gcn_layer.use_bias == True
-    assert gcn_layer.num_bases == 0
-    assert gcn_layer.get_config()["activation"] == "relu"
+    assert rgcn_layer.units == 16
+    assert rgcn_layer.use_bias == True
+    assert rgcn_layer.num_bases == 0
+    assert rgcn_layer.get_config()["activation"] == "relu"
 
-    gcn_layer = RelationalGraphConvolution(
+    rgcn_layer = RelationalGraphConvolution(
         units=16, num_relationships=5, num_bases=10, activation="relu"
     )
 
-    assert gcn_layer.units == 16
-    assert gcn_layer.use_bias == True
-    assert gcn_layer.num_bases == 10
-    assert gcn_layer.get_config()["activation"] == "relu"
+    assert rgcn_layer.units == 16
+    assert rgcn_layer.use_bias == True
+    assert rgcn_layer.num_bases == 10
+    assert rgcn_layer.get_config()["activation"] == "relu"
 
 
 def test_RelationalGraphConvolution_sparse():
@@ -302,3 +302,21 @@ def test_RGCN_apply_dense():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+
+def test_RelationalGraphConvolution_edge_cases():
+
+
+    try:
+        rgcn_layer = RelationalGraphConvolution(
+            units=16, num_relationships=5, num_bases=0.5, activation="relu"
+        )
+    except TypeError as e:
+        error = e
+    assert str(error) == "num_bases should be an int"
+
+    rgcn_layer = RelationalGraphConvolution(
+        units=16, num_relationships=5, num_bases=-1, activation="relu"
+    )
+    rgcn_layer.build(input_shapes=[(1,)])
+    assert rgcn_layer.bases is None
