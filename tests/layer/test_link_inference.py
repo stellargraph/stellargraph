@@ -134,7 +134,7 @@ class Test_Link_Classification(object):
         li = link_classification(edge_embedding_method="ip", output_act="linear")(
             [x_src, x_src]
         )
-        assert li.numpy() == pytest.approx(1, abs=1e-7)
+        assert li.numpy()[0, 0] == pytest.approx(1, abs=1e-7)
 
         # Test sigmoid activation
         li = link_classification(edge_embedding_method="ip", output_act="sigmoid")(
