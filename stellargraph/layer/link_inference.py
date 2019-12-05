@@ -74,7 +74,41 @@ class LeakyClippedLinear(Layer):
 
 class LinkEmbedding(Layer):
     """
-    
+    Defines an edge inference function that takes source, destination node embeddings 
+    (node features) as input, and returns a numeric vector of output_dim size.
+
+    This class takes as input as either:
+
+     * A list of two tensors of shape (N, M) being the embeddings for each of the nodes in the link,
+       where N is the number of links, and M is the node embedding size.
+     * A single tensor of shape (..., N, 2, M) where the axis second from last indexes the nodes
+       in the link and N is the number of links and M the embedding size.
+
+    Examples:
+        Consider two tensors containing the source and destination embeddings of size M::
+
+            x_src = tf.constant(x_src, shape=(1, M), dtype="float32")
+            x_dst = tf.constant(x_dst, shape=(1, M), dtype="float32")
+
+            li = LinkEmbedding(method="ip", activation="sigmoid")([x_src, x_dst])
+
+    Args:
+        output_dim (int): Number of predictor's output units -- desired dimensionality 
+            of the output.
+        activation (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
+            or any activation function supported by Keras, see https://keras.io/activations/ for more information.
+        method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
+            One of:
+             * 'concat' -- concatenation,
+             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+            For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
+            edge embedding to transform to a vector of size `output_dim`.
+        name (str): optional name of the defined function, used for error logging
+
     """
 
     def __init__(
@@ -100,7 +134,7 @@ class LinkEmbedding(Layer):
     def get_config(self):
         config = {
             "output_dim": int(self.output_dim),
-            "activation": activations.serialize(self.activation),
+            "activation": tf.keras.activations.serialize(self.activation),
             "method": self.method,
             "axis": self.axis,
         }
@@ -108,12 +142,19 @@ class LinkEmbedding(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
     def call(self, x):
-        # Extract the node embeddings:
-        # Currently GraphSAGE & HinSage output a list of tensors being the embeddigns
-        # for each of the nodes in the link of shape (B, M), where B is the batch size,
-        # and M is the embedding size.
-        # However, GCN, GAT & other full-batch methods return a tensor of shape (1, N, 2, M)
-        # Where N is the number of links and M the embedding size.
+        """
+        Apply the layer to the node embeddings in x. These embeddings are either:
+
+          * A list of two tensors of shape (N, M) being the embeddings for each of the nodes in the link,
+            where N is the number of links, and M is the node embedding size.
+          * A single tensor of shape (..., N, 2, M) where the axis second from last indexes the nodes
+            in the link and N is the number of links and M the embedding size.
+
+        """
+        # Currently GraphSAGE & HinSage output a list of two tensors being the embeddigns
+        # for each of the nodes in the link. However, GCN, GAT & other full-batch methods
+        # return a tensor of shape (1, N, 2, M).
+        # Detect and support both inputs
         if isinstance(x, (list, tuple)):
             if len(x) != 2:
                 raise ValueError("Expecting a list of length 2 for link embedding")
@@ -176,6 +217,8 @@ def link_inference(
     Defines an edge inference function that takes source, destination node embeddings (node features) as input,
     and returns a numeric vector of output_dim size.
 
+    Note that the output tensor is flattened before being returned.
+
     Args:
         output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
@@ -191,6 +234,8 @@ def link_inference(
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         name (str): optional name of the defined function, used for error logging
+            For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
+            edge embedding to transform to a vector of size `output_dim`.
 
     Returns:
         Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
@@ -198,66 +243,18 @@ def link_inference(
     """
 
     def edge_function(x):
-        x0 = x[0]
-        x1 = x[1]
-
-        if edge_embedding_method == "ip" or edge_embedding_method == "dot":
-            out = Lambda(lambda x: K.sum(x[0] * x[1], axis=-1, keepdims=False))(
-                [x0, x1]
-            )
-            out = Activation(output_act)(out)
-            if output_dim != 1:
-                warnings.warn(
-                    "Inner product is a scalar, but output_dim is set to {}. Reverting output_dim to be 1.".format(
-                        output_dim
-                    )
-                )
-            out = Reshape((1,))(out)
-
-        elif edge_embedding_method == "l1":
-            # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
-            le = Lambda(lambda x: K.abs(x[0] - x[1]))([x0, x1])
-            # add dense layer to convert le to the desired output:
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        elif edge_embedding_method == "l2":
-            # l2(u,v)_i = (u_i - v_i)^2 - vector of the same size as u,v
-            le = Lambda(lambda x: K.square(x[0] - x[1]))([x0, x1])
-            # add dense layer to convert le to the desired output:
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        elif edge_embedding_method == "mul" or edge_embedding_method == "hadamard":
-            le = Multiply()([x0, x1])
-            # add dense layer to convert le to the desired output:
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        elif edge_embedding_method == "concat":
-            le = Concatenate()([x0, x1])
-            # add dense layer to convert le to the desired output:
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        elif edge_embedding_method == "avg":
-            le = Average()([x0, x1])
-            # add dense layer to convert le to the desired output:
-            out = Dense(output_dim, activation=output_act)(le)
-            out = Reshape((output_dim,))(out)
-
-        else:
-            raise NotImplementedError(
-                "{}: the requested method '{}' is not known/not implemented".format(
-                    name, edge_embedding_method
-                )
-            )
+        le = LinkEmbedding(
+            output_dim=output_dim,
+            activation=output_act,
+            method=edge_embedding_method,
+            axis=axis,
+        )(x)
+        out = Reshape((output_dim,))(le)
 
         if clip_limits:
             out = LeakyClippedLinear(
                 low=clip_limits[0], high=clip_limits[1], alpha=0.1
             )(out)
-
         return out
 
     print(
@@ -276,6 +273,8 @@ def link_classification(
     """
     Defines a function that predicts a binary or multi-class edge classification output from
     (source, destination) node embeddings (node features).
+
+    Note that the output tensor is flattened before being returned.
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
@@ -313,6 +312,8 @@ def link_regression(
     """
     Defines a function that predicts a numeric edge regression output vector/scalar from
     (source, destination) node embeddings (node features).
+
+    Note that the output tensor is flattened before being returned.
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
