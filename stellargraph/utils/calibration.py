@@ -196,45 +196,45 @@ class TemperatureCalibration(object):
             y_val (numpy array or None): The validation data class labels. It should have shape (M, C) where M is the
                 number of validation samples and C is the number of classes and the class labels are one-hot encoded.
         """
-        with tf.variable_scope(tf.get_variable_scope(), reuse=tf.AUTO_REUSE):
-            x = tf.placeholder(
-                tf.float32, [None, self.n_classes], name="x"
-            )  # input are the model logits
-            y = tf.placeholder(
-                tf.float32, [None, self.n_classes], name="y"
-            )  # output is one-hot encoded true class labels
 
-            T = tf.get_variable(
-                "T", [1], initializer=tf.ones_initializer
-            )  # the temperature
+        T = tf.Variable(tf.ones(shape=(1,)), name="T")
+
+        def cost(T, x, y):
 
             scaled_logits = tf.multiply(
                 name="z", x=x, y=1.0 / T
-            )  # logits scaled by inverse T
+            )
 
-            # cost function to optimise
-            cost = tf.reduce_mean(
-                tf.nn.softmax_cross_entropy_with_logits_v2(
+            cost_value = tf.reduce_mean(
+                tf.nn.softmax_cross_entropy_with_logits(
                     logits=scaled_logits, labels=y
                 )
             )
 
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
+            return cost_value
 
-        init = tf.global_variables_initializer()
-        sess = tf.Session()
-        sess.run(init)
-        self.history = []
+        def grad(T, x, y):
+
+            with tf.GradientTape() as tape:
+                cost_value = cost(T, x, y)
+
+            return cost_value, tape.gradient(cost_value, T)
+
+
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+
         for epoch in range(self.epochs):
-            _, c, t = sess.run([optimizer, cost, T], feed_dict={x: x_train, y: y_train})
+            train_cost, grads = grad(T, x_train, y_train)
+            optimizer.apply_gradients(zip([grads], [T]))
             if self.early_stopping:
-                c_val = sess.run([cost], feed_dict={x: x_val, y: y_val})
-                if len(self.history) > 0 and c_val > self.history[-1][1]:
+                val_cost = cost(T, x_val, y_val)
+                if (len(self.history) > 0) and (val_cost > self.history[-1][1]):
                     break
                 else:  # keep going
-                    self.history.append([c, c_val[0], t[0]])
+                    self.history.append([train_cost, val_cost, T.numpy()[0]])
             else:
-                self.history.append([c, t[0]])
+                self.history.append([train_cost, T.numpy()[0]])
+
         self.history = np.array(self.history)
         self.temperature = self.history[-1, -1]
 
