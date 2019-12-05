@@ -25,7 +25,11 @@ from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
 from stellargraph.core.graph import StellarGraph
-from stellargraph.mapper import FullBatchNodeGenerator, GraphSAGENodeGenerator
+from stellargraph.mapper import (
+    FullBatchNodeGenerator,
+    FullBatchLinkGenerator,
+    GraphSAGENodeGenerator,
+)
 from stellargraph.layer import *
 
 
@@ -431,7 +435,7 @@ class Test_GAT:
 
         assert gat.attn_heads_reduction == ["concat", "concat"]
 
-    def test_gat_node_model_constructor(self):
+    def test_gat_build_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
@@ -442,16 +446,16 @@ class Test_GAT:
             bias=True,
         )
 
-        assert len(gat.node_model()) == 2
-        x_in, x_out = gat.node_model()
+        assert len(gat.build()) == 2
+        x_in, x_out = gat.build()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
-    def test_gat_sparse_node_model_constructor(self):
+    def test_gat_build_linkmodel_constructor(self):
         G = example_graph_1(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
+        gen = FullBatchLinkGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
@@ -460,36 +464,36 @@ class Test_GAT:
             bias=True,
         )
 
-        assert len(gat.node_model()) == 2
-        x_in, x_out = gat.node_model()
+        assert len(gat.build()) == 2
+        x_in, x_out = gat.build()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
-    def test_gat_node_model_constructor_no_generator(self):
+    def test_gat_build_constructor_no_generator(self):
         G = example_graph_1(feature_size=self.F_in)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
             attn_heads=self.attn_heads,
             bias=True,
+            num_nodes=1000,
+            num_features=self.F_in,
+            multiplicity=1,
         )
         assert gat.use_sparse == False
 
-        with pytest.raises(RuntimeError):
-            x_in, x_out = gat.node_model()
-
-        x_in, x_out = gat.node_model(num_nodes=1000, feature_size=self.F_in)
+        x_in, x_out = gat.build()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
-    def test_gat_node_model_constructor_wrong_generator(self):
+    def test_gat_build_constructor_wrong_generator(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = GraphSAGENodeGenerator(G, self.N, [5, 10])
 
         # test error where generator is of the wrong type for GAT:
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             gat = GAT(
                 layer_sizes=self.layer_sizes,
                 activations=self.activations,
@@ -498,7 +502,7 @@ class Test_GAT:
                 generator=gen,
             )
 
-    def test_gat_node_model_l2norm(self):
+    def test_gat_build_l2norm(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
@@ -512,7 +516,7 @@ class Test_GAT:
             attn_kernel_initializer="ones",
         )
 
-        x_in, x_out = gat.node_model()
+        x_in, x_out = gat.build()
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
@@ -524,7 +528,7 @@ class Test_GAT:
 
         assert np.allclose(expected, actual[0])
 
-    def test_gat_node_model_no_norm(self):
+    def test_gat_build_no_norm(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
@@ -538,7 +542,7 @@ class Test_GAT:
             attn_kernel_initializer="ones",
         )
 
-        x_in, x_out = gat.node_model()
+        x_in, x_out = gat.build()
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
@@ -550,7 +554,7 @@ class Test_GAT:
         )
         assert np.allclose(expected, actual[0])
 
-    def test_gat_node_model_wrong_norm(self):
+    def test_gat_build_wrong_norm(self):
         G = example_graph_1(feature_size=self.F_in)
         gen = FullBatchNodeGenerator(G)
         with pytest.raises(ValueError):
@@ -575,7 +579,7 @@ class Test_GAT:
             normalize="l2",
         )
 
-        x_in, x_out = gat.node_model()
+        x_in, x_out = gat.build()
         model = keras.Model(inputs=x_in, outputs=x_out)
 
         ng = gen.flow(G.nodes())
@@ -601,5 +605,5 @@ class Test_GAT:
 
 
 def TestGATsparse(Test_GAT):
-    sparse = False
+    sparse = True
     method = "gat"

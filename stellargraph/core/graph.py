@@ -31,7 +31,7 @@ import numpy as np
 from networkx.classes.multigraph import MultiGraph
 from networkx.classes.multidigraph import MultiDiGraph
 
-from collections import Iterable, Iterator
+from collections import Iterable, Iterator, OrderedDict
 
 from .. import globalvar
 from .schema import GraphSchema
@@ -81,7 +81,9 @@ def _convert_from_node_attribute(
         nt_node_list.append(None)
 
         # Create map between node id and index (including None)
-        node_index_map[nt] = {nid: ii for ii, nid in enumerate(nt_node_list)}
+        node_index_map[nt] = OrderedDict(
+            (nid, ii) for ii, nid in enumerate(nt_node_list)
+        )
 
         # The node data
         attr_data = [v if v is None else G.node[v].get(attr_name) for v in nt_node_list]
@@ -187,7 +189,7 @@ def _convert_from_node_data(data, node_type_map, node_types, dtype="f"):
 
             elif isinstance(arr, (Iterable, list)):
                 data_arr = []
-                node_index_map = {}
+                node_index_map = OrderedDict()
                 for ii, (node_id, datum) in enumerate(arr):
                     data_arr.append(datum)
                     node_index_map[node_id] = ii
@@ -557,19 +559,24 @@ class StellarGraphBase:
         fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
         return fsize
 
-    def nodes_of_type(self, node_type=None):
+    def nodes_of_type(self, node_type):
         """
         Get the nodes of the graph with the specified node types.
-
+        The returned list of nodes is in the same order as
+        the features, not the same order as the graph.
+        
         Args:
-            node_type:
+            node_type: Node type to return.
 
         Returns:
             A list of node IDs with type node_type
         """
         # TODO: unit test!
-        if node_type is None:
-            return list(self)
+        # If there are features, it's faster
+        if node_type in self._node_index_maps:
+            return list(
+                n for n in self._node_index_maps[node_type].keys() if n is not None
+            )
         else:
             return [
                 n
@@ -587,15 +594,15 @@ class StellarGraphBase:
         Returns:
             Node type
         """
-        return self._get_node_type(self.node[node])
+        return self._get_node_type(self.nodes[node])
 
     @property
     def node_types(self):
         """
-        Get a list of all node types in the graph.
+        Get all node types in the graph.
 
         Returns:
-            set of types
+            (set) Set of nodetypes in graph
         """
         # TODO: unit test!
         # TODO: create a schmea when we geenrate _node_attribute_arrays and use it?

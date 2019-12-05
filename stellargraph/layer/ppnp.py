@@ -178,8 +178,8 @@ class PPNP:
     def __init__(
         self,
         layer_sizes,
-        activations,
         generator,
+        activations,
         bias=True,
         dropout=0.0,
         kernel_regularizer=None,
@@ -198,9 +198,13 @@ class PPNP:
         self.bias = bias
         self.dropout = dropout
         self.kernel_regularizer = kernel_regularizer
-        self.generator = generator
         self.support = 1
+
+        # Copy required information from generator
         self.method = generator.method
+        self.multiplicity = generator.multiplicity
+        self.n_nodes = generator.features.shape[0]
+        self.n_features = generator.features.shape[1]
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
@@ -283,20 +287,26 @@ class PPNP:
 
         return h_layer
 
-    def node_model(self):
+    def build(self, multiplicity=None):
         """
-        Builds a PPNP model for node prediction
-        Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the PPNP model (containing node features and graph adjacency),
-            and `x_out` is a Keras tensor for the PPNP model output.
-        """
-        # Placeholder for node features
-        N_nodes = self.generator.features.shape[0]
-        N_feat = self.generator.features.shape[1]
+        Builds a PPNP model for node or link prediction
 
-        # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, N_nodes, N_feat))
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        Returns:
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
+            input tensors for the model and `x_out` is a tensor of the model output.
+        """
+        # Inputs for features
+        x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
+
+        # If not specified use multiplicity from instanciation
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        # Indices to gather for model output
+        if multiplicity == 1:
+            out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        else:
+            out_indices_t = Input(batch_shape=(1, None, multiplicity), dtype="int32")
 
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
@@ -307,7 +317,7 @@ class PPNP:
 
         else:
             # Placeholders for the dense adjacency matrix
-            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
+            A_m = Input(batch_shape=(1, self.n_nodes, self.n_nodes))
             A_placeholders = [A_m]
 
         # TODO: Support multiple matrices
@@ -322,3 +332,17 @@ class PPNP:
             self.x_out_flat = x_out
 
         return x_inp, x_out
+
+    def link_model(self):
+        if self.multiplicity != 2:
+            warnings.warn(
+                "Link model requested but a generator not supporting links was supplied."
+            )
+        return self.build(multiplicity=2)
+
+    def node_model(self):
+        if self.multiplicity != 1:
+            warnings.warn(
+                "Node model requested but a generator not supporting nodes was supplied."
+            )
+        return self.build(multiplicity=1)

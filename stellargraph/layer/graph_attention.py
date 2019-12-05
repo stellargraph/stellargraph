@@ -25,7 +25,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, constraints, initializers, regularizers
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
-from ..mapper import FullBatchNodeGenerator
+from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
 from .misc import SqueezedSparseConversion
 
 
@@ -581,8 +581,12 @@ class GAT:
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`FullBatchNodeGenerator` class.
-
+    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
+    or the :class:`FullBatchLinkGenerator` class for link inference.
+    
+    To have the appropriate pre-processing the generator object should be instanciated
+    with the `method='gat'` argument.
+    
     Examples:
         Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
 
@@ -658,6 +662,7 @@ class GAT:
         self.attn_dropout = attn_dropout
         self.generator = generator
         self.saliency_map_support = saliency_map_support
+
         # Check layer_sizes (must be list of int):
         # check type:
         if not isinstance(layer_sizes, list):
@@ -760,20 +765,31 @@ class GAT:
             )
         self.activations = activations
 
-        # check generator:
-        if generator is not None:
-            if not isinstance(generator, FullBatchNodeGenerator):
-                raise ValueError(
-                    "{}: generator must be of type FullBatchNodeGenerator or None; received object of type {} instead".format(
-                        type(self).__name__, type(generator).__name__
-                    )
-                )
-
-            # Check if the generator is producing a sparse matrix
-            self.use_sparse = generator.use_sparse
+        # Check generator and configure sparse adjacency matrix
+        if generator is None:
+            self.use_sparse = False
+            self.multiplicity = kwargs.get("multiplicity", 1)
+            self.n_nodes = kwargs.get("num_nodes", None)
+            self.n_features = kwargs.get("num_features", None)
 
         else:
-            self.use_sparse = False
+            if not isinstance(generator, FullBatchGenerator):
+                print(generator)
+                raise TypeError(
+                    "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                )
+
+            # Copy required information from generator
+            self.use_sparse = generator.use_sparse
+            self.multiplicity = generator.multiplicity
+            self.n_nodes = generator.features.shape[0]
+            self.n_features = generator.features.shape[1]
+
+        if self.n_nodes is None or self.n_features is None:
+            print(self.n_nodes, self.n_features)
+            raise RuntimeError(
+                "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
+            )
 
         # Set the normalization layer used in the model
         if normalize == "l2":
@@ -897,32 +913,27 @@ class GAT:
 
         return self._normalization(h_layer)
 
-    def node_model(self, num_nodes=None, feature_size=None):
+    def build(self, multiplicity=None):
         """
-        Builds a GAT model for node prediction
+        Builds a GAT model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GAT model (containing node features and graph adjacency matrix),
-            and `x_out` is a Keras tensor for the GAT model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
+            input tensors for the model and `x_out` is a tensor of the model output.
         """
-        # Create input tensor:
-        if self.generator is not None:
-            # Placeholder for node features
-            N_nodes = self.generator.features.shape[0]
-            N_feat = self.generator.features.shape[1]
 
-        elif num_nodes is not None and feature_size is not None:
-            N_nodes = num_nodes
-            N_feat = feature_size
+        # Inputs for features
+        x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
 
+        # If not specified use multiplicity from instanciation
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        # Indices to gather for model output
+        if multiplicity == 1:
+            out_indices_t = Input(batch_shape=(1, None), dtype="int32")
         else:
-            raise RuntimeError(
-                "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
-            )
-
-        # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, N_nodes, N_feat))
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+            out_indices_t = Input(batch_shape=(1, None, multiplicity), dtype="int32")
 
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
@@ -933,10 +944,10 @@ class GAT:
 
         else:
             # Placeholders for the dense adjacency matrix
-            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
+            A_m = Input(batch_shape=(1, self.n_nodes, self.n_nodes))
             A_placeholders = [A_m]
 
-        # TODO: Support multiple matrices?
+        # TODO: Support multiple matrices
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
 
@@ -949,16 +960,15 @@ class GAT:
         return x_inp, x_out
 
     def link_model(self):
-        """
-        Builds a GAT model for link (node pair) prediction (implementation pending)
+        if self.multiplicity != 2:
+            warnings.warn(
+                "Link model requested but a generator not supporting links was supplied."
+            )
+        return self.build(multiplicity=2)
 
-        """
-        raise NotImplemented
-
-    def default_model(self, flatten_output=True):
-        warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .node_model() or .link_model() methods instead.",
-            PendingDeprecationWarning,
-        )
-        return self.node_model()
+    def node_model(self):
+        if self.multiplicity != 1:
+            warnings.warn(
+                "Node model requested but a generator not supporting nodes was supplied."
+            )
+        return self.build(multiplicity=1)
