@@ -61,8 +61,19 @@ class FullBatchGenerator:
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # Create sparse adjacency matrix
-        self.node_list = list(G.nodes())
+        # Check that there is only a single node type for GAT or GCN
+        node_types = list(G.node_types)
+        if len(node_types) > 1:
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Create sparse adjacency matrix:
+        # Use the node orderings the same as in the graph features
+        self.node_list = G.nodes_of_type(node_types[0])
         self.Aadj = nx.to_scipy_sparse_matrix(
             G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
         )
@@ -79,18 +90,6 @@ class FullBatchGenerator:
 
         else:
             self.use_sparse = sparse
-
-        # We need a schema to check compatibility with GAT, GCN
-        self.schema = G.create_graph_schema(create_type_maps=True)
-
-        # Check that there is only a single node type for GAT or GCN
-        if len(self.schema.node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
 
         # Get the features for the nodes
         self.features = G.get_feature_for_nodes(self.node_list)
@@ -160,6 +159,8 @@ class FullBatchGenerator:
                 raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
+        # Note this requires the adjacnecy matrix to have the same node ordering
+        # as the features array.
         node_ids = np.asanyarray(node_ids)
         node_indices = np.reshape(
             self.graph.get_index_for_nodes(node_ids.ravel()), node_ids.shape

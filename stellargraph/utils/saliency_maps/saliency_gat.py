@@ -18,7 +18,7 @@
 import numpy as np
 from tensorflow.keras import backend as K
 import scipy.sparse as sp
-from stellargraph.mapper import FullBatchNodeSequence
+from stellargraph.mapper import FullBatchSequence
 
 
 class GradientSaliencyGAT(object):
@@ -39,12 +39,12 @@ class GradientSaliencyGAT(object):
         """
         Args:
             model (Keras model object): The Keras GAT model.
-            generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matirx.
+            generator (FullBatchSequence object): The generator from which we extract the feature and adjacency matirx.
         """
         # The placeholders for features and adjacency matrix (model input):
-        if not isinstance(generator, FullBatchNodeSequence):
+        if not isinstance(generator, FullBatchSequence):
             raise TypeError(
-                "The generator supplied has to be an object of FullBatchNodeSequence."
+                "The generator supplied has to be an object of FullBatchSequence."
             )
         self.model = model
         # Collect variables for IG

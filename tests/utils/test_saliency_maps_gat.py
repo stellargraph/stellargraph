@@ -61,7 +61,7 @@ def create_GAT_model(graph):
     )
     for layer in gat._layers:
         layer._initializer = "ones"
-    x_inp, x_out = gat.node_model()
+    x_inp, x_out = gat.build()
     keras_model = Model(inputs=x_inp, outputs=x_out)
     return gat, keras_model, generator, train_gen
 

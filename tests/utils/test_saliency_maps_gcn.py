@@ -60,7 +60,7 @@ def create_GCN_model_dense(graph):
 
     for layer in gcn._layers:
         layer._initializer = "ones"
-    x_inp, x_out = gcn.node_model()
+    x_inp, x_out = gcn.build()
     keras_model = Model(inputs=x_inp, outputs=x_out)
     return gcn, keras_model, generator, train_gen
 
@@ -80,7 +80,7 @@ def create_GCN_model_sparse(graph):
 
     for layer in gcn._layers:
         layer._initializer = "ones"
-    x_inp, x_out = gcn.node_model()
+    x_inp, x_out = gcn.build()
     keras_model = Model(inputs=x_inp, outputs=x_out)
     return gcn, keras_model, generator, train_gen
 

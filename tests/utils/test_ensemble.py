@@ -80,12 +80,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
         # Expose input and output sockets of graphsage, for source and destination nodes:
-        x_inp_src, x_out_src = base_model.node_model()
-        x_inp_dst, x_out_dst = base_model.node_model()
-        # re-pack into a list where (source, destination) inputs alternate, for link inputs:
-        x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
-        # same for outputs:
-        x_out = [x_out_src, x_out_dst]
+        x_inp, x_out = base_model.build()
 
         prediction = link_classification(
             output_dim=1, output_act="relu", edge_embedding_method="ip"
@@ -93,7 +88,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
 
         keras_model = Model(inputs=x_inp, outputs=prediction)
     else:
-        x_inp, x_out = base_model.node_model()
+        x_inp, x_out = base_model.build()
         prediction = layers.Dense(units=2, activation="softmax")(x_out)
 
         keras_model = Model(inputs=x_inp, outputs=prediction)
@@ -150,7 +145,7 @@ def create_GCN_model(graph):
         activations=["elu", "softmax"],
     )
 
-    x_inp, x_out = base_model.node_model()
+    x_inp, x_out = base_model.build()
 
     keras_model = Model(inputs=x_inp, outputs=x_out)
 
@@ -172,7 +167,7 @@ def create_GAT_model(graph):
         normalize=None,
     )
 
-    x_inp, x_out = base_model.node_model()
+    x_inp, x_out = base_model.build()
 
     keras_model = Model(inputs=x_inp, outputs=x_out)
 
