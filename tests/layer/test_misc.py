@@ -97,7 +97,9 @@ def test_squeezedsparseconversion_axis():
         [A_ind, A_val_1]
     )
 
-    x_out = keras.layers.Lambda(lambda xin: K.dot(xin, K.ones((N, 1))))(A_mat)
+    ones = tf.ones((N, 1))
+
+    x_out = keras.layers.Lambda(lambda xin: K.dot(xin, ones))(A_mat)
 
     model = keras.Model(inputs=[A_ind, A_val], outputs=x_out)
     z = model.predict([A_indices, A_values])
