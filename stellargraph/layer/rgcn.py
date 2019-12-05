@@ -399,13 +399,13 @@ class RGCN:
         """
         Apply a stack of RGCN layers to the inputs.
         The input tensors are expected to be a list of the following:
-        [Node features shape (1, N, F), Output indices (1, O)] +
+        [Node features shape (1, N, F), Output indices (1, Z)] +
         [Adjacency indices for each relationship (1, E, 2) for _ in range(R)]
         [Adjacency values for each relationshiop (1, E) for _ in range(R)]
 
 
         where N is the number of nodes, F the number of input features,
-              E is the number of edges, O the number of output nodes,
+              E is the number of edges, Z the number of output nodes,
               R is the number of relationships in the graph (edge types).
 
         Args:

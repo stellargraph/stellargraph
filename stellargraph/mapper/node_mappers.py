@@ -1132,7 +1132,7 @@ class DirectedGraphSAGENodeGenerator:
 
 class RelationalSparseFullBatchNodeSequence(Sequence):
     """
-    Keras-compatible data generator for for node inference models
+    Keras-compatible data generator for node inference models
     on relational graphs that require full-batch training (e.g., RGCN).
     Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
         :meth:`keras.Model.evaluate_generator`, and
