@@ -220,7 +220,6 @@ class TemperatureCalibration(object):
 
             return cost_value, tape.gradient(cost_value, T)
 
-
         optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
         for epoch in range(self.epochs):

@@ -86,6 +86,7 @@ def create_GCN_model_sparse(graph):
 
 
 def test_ig_saliency_map():
+
     graph = example_graph_1(feature_size=4)
     base_model, keras_model_gcn, generator, train_gen = create_GCN_model_dense(graph)
     base_model_sp, keras_model_gcn_sp, generator_sp, train_gen_sp = create_GCN_model_sparse(
@@ -117,6 +118,7 @@ def test_ig_saliency_map():
 
     keras_model_gcn.set_weights(weights)
     keras_model_gcn_sp.set_weights(weights)
+
     ig_dense = IntegratedGradients(keras_model_gcn, train_gen)
     ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp)
 
