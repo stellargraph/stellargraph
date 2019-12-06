@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -946,7 +946,7 @@ def test_split_function_node_type():
         split_equally=False,
         seed=None,
     )
-    assert all(g.node[s]["label"] == "movie" for split in splits for s in split)
+    assert all(g.nodes[s]["label"] == "movie" for split in splits for s in split)
 
 
 def test_split_function_unlabelled():

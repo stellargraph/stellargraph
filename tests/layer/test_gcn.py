@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ GCN tests
 """
 
 from stellargraph.layer.gcn import *
-from stellargraph.mapper.node_mappers import FullBatchNodeGenerator
+from stellargraph.mapper import FullBatchNodeGenerator
 from stellargraph.core.graph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 

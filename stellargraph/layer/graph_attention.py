@@ -581,13 +581,7 @@ class GAT:
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
-    pre-processing the generator object should be instantiated as follows::
-
-        generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
-
-    For more details, please see the GAT demo notebook:
-    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
+    should be supplied using the :class:`FullBatchNodeGenerator` class.
 
     Examples:
         Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
@@ -602,6 +596,9 @@ class GAT:
                     attn_dropout=0.5,
                 )
             x_inp, predictions = gat.node_model()
+
+    For more details, please see the GAT demo notebook:
+    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \

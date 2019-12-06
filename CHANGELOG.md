@@ -2,20 +2,30 @@
 
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.1)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.2)
 
 **New algorithms:**
+
+- Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 
 **Implemented enhancements:** 
 
 **Refactoring:**
+- Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
+
+**Breaking changes:**
+- Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498).
+Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 
 **Fixed bugs:**
 
 
-## [0.8.1](https://github.com/stellargraph/stellargraph/tree/v0.8.1)
+## [0.8.2](https://github.com/stellargraph/stellargraph/tree/v0.8.2)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.8.1...v0.8.0)
+**Fixed bugs:**
+- Updated requirements to Tensorflow>=1.14, as tensorflow with lower versions causes errors with sparse full batch node methods: GCN, APPNP, and GAT. [\#519](https://github.com/stellargraph/stellargraph/issues/519)
+
+## [0.8.1](https://github.com/stellargraph/stellargraph/tree/v0.8.1)
 
 **Fixed bugs:**
 - Reverted erroneous demo notebooks.

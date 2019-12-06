@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,10 +21,10 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "tensorflow>=1.12,<1.15",
+    "tensorflow>=1.14,<1.15",
     "numpy>=1.14",
     "scipy>=1.1.0",
-    "networkx>=2.2,<2.4", # FIXME (#503): NetworkX 2.4 removed some attributes
+    "networkx>=2.2",
     "scikit_learn>=0.20",
     "matplotlib>=2.2",
     "gensim>=3.4.0",

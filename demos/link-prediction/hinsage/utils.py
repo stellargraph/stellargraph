@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import networkx as nx
 import os
 
 
-@jit(nopython=True, parallel=True)
+@jit(nopython=True)
 def remap_ids(data, uid_map, mid_map, uid_inx=0, mid_inx=1):
     """
     Remap user and movie IDs

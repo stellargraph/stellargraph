@@ -50,7 +50,10 @@ The examples folder structure is shown below.
 
     Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
     using the HinSAGE algorithm.
+    
+* [`/cluster-gnn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/cluster-gcn)
 
+    Example of semi-supervised node classification for a homogeneous network with attributed nodes using the Cluster-GCN algorithm [11].
 
 ## References
 
@@ -83,3 +86,5 @@ ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
 arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
 
 10.	Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
+
+11. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))
