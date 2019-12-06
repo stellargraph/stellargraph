@@ -75,9 +75,19 @@ class RelationalGraphConvolution(Layer):
         super().__init__(**kwargs)
 
         if not isinstance(num_bases, int):
-            raise TypeError(
-                "num_bases should be an int"
-            )
+            raise TypeError("num_bases should be an int")
+
+        if not isinstance(units, int):
+            raise TypeError("units should be an int")
+
+        if units <= 0:
+            raise ValueError("units should be positive")
+
+        if not isinstance(num_relationships, int):
+            raise TypeError("num_relationships should be an int")
+
+        if num_relationships <= 0:
+            raise ValueError("num_relationships should be positive")
 
         self.units = units
         self.num_relationships = num_relationships
@@ -295,7 +305,7 @@ class RGCN:
         in the same way as the adjacency matrix.
 
     Examples:
-        Creating a RGCN node classification model from an existing :class:`StellarDiGraph`
+        Creating a RGCN node classification model from an existing :class:`StellarGraphBase`
         object ``G``::
 
             generator = RelationalFullBatchNodeGenerator(G)
@@ -335,7 +345,6 @@ class RGCN:
             raise TypeError(
                 "Generator should be a instance of RelationalFullBatchNodeGenerator"
             )
-
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
@@ -500,3 +509,30 @@ class RGCN:
             self.x_out_flat = x_out
 
         return x_inp, x_out
+
+    def build(self):
+        """
+        Builds a RGCN model for node prediction. Link/node pair prediction will added in the future.
+
+        Returns:
+            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
+            for the specified RGCN model and ``x_out`` contains
+            model output tensor(s) of shape (batch_size, layer_sizes[-1])
+
+        """
+
+        if self.generator is not None:
+
+            if isinstance(self.generator, RelationalFullBatchNodeGenerator):
+                return self.node_model()
+
+            else:
+                raise NotImplementedError(
+                    "Currently only node prediction if supported for RGCN."
+                )
+
+        else:
+
+            raise RuntimeError(
+                "Suitable generator is not provided at model creation time, unable to figure out how to build the model."
+            )

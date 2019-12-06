@@ -1130,80 +1130,7 @@ class DirectedGraphSAGENodeGenerator:
         )
 
 
-class RelationalSparseFullBatchNodeSequence(Sequence):
-    """
-    Keras-compatible data generator for node inference models
-    on relational graphs that require full-batch training (e.g., RGCN).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
-
-    This class uses sparse representations to send data to the models.
-
-    This class should be created using the `.flow(...)` method of
-    :class:`RelationalFullBatchNodeGenerator`.
-
-    Args:
-        features (np.ndarray): An array of node features of size (N x F),
-            where N is the number of nodes in the graph, F is the node feature size
-        As (list of sparse matrices): A list of length R of adjacency matrices of the graph of size (N x N)
-            where R is the number of relationships in the graph.
-        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
-            where C is the target size (e.g., number of classes for one-hot class targets)
-        indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
-            of the targets. Required if targets is not None.
-    """
-
-    use_sparse = True
-
-    def __init__(self, features, As, targets=None, indices=None):
-
-        if (targets is not None) and (len(indices) != len(targets)):
-            raise ValueError(
-                "When passed together targets and indices should be the same length."
-            )
-
-        # Store features and targets as np.ndarray
-        self.features = np.asanyarray(features)
-        self.target_indices = np.asanyarray(indices)
-
-        # convert the list of adjacency matrices to a list of index array
-        # and a list of value array - add batch dimension 1 to each index and value array
-        self.A_indices = [
-            np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
-        ]
-        self.A_values = [np.expand_dims(A.data, 0) for A in As]
-
-        # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
-        self.inputs = (
-            [self.features, self.target_indices] + self.A_indices + self.A_values
-        )
-
-        # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
-
-        if targets is not None:
-            self.targets = np.asanyarray(targets)
-            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
-        else:
-            self.targets = None
-
-    def __len__(self):
-        return 1
-
-    def __getitem__(self, index):
-        return self.inputs, self.targets
-
-
-class RelationalDenseFullBatchNodeSequence(Sequence):
+class RelationalFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models on relational graphs
     that require full-batch training (e.g., RGCN).
@@ -1211,7 +1138,7 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
         :meth:`keras.Model.evaluate_generator`, and
         :meth:`keras.Model.predict_generator`,
 
-    This class uses dense representations to send data to the models.
+    This class uses either dense or sparse representations to send data to the models.
 
     This class should be created using the `.flow(...)` method of
     :class:`RelationalFullBatchNodeGenerator`.
@@ -1227,9 +1154,7 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
             of the targets. Required if targets is not None.
     """
 
-    use_sparse = False
-
-    def __init__(self, features, As, targets=None, indices=None):
+    def __init__(self, features, As, use_sparse, targets=None, indices=None):
 
         if (targets is not None) and (len(indices) != len(targets)):
             raise ValueError(
@@ -1239,9 +1164,18 @@ class RelationalDenseFullBatchNodeSequence(Sequence):
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
         self.target_indices = np.asanyarray(indices)
+        self.use_sparse = use_sparse
 
         # Convert all adj matrices to dense and reshape to have batch dimension of 1
-        self.As = [A.todense()[None, :, :] for A in As]
+        if self.use_sparse:
+            self.A_indices = [
+                np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
+                for A in As
+            ]
+            self.A_values = [np.expand_dims(A.data, 0) for A in As]
+            self.As = self.A_indices + self.A_values
+        else:
+            self.As = [A.todense()[None, :, :] for A in As]
 
         # Reshape all inputs to have batch dimension of 1
         self.target_indices = np.reshape(
@@ -1274,7 +1208,7 @@ class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
-    The supplied graph G should be a StellarDiGraph object that is ready for
+    The supplied graph G should be a StellarGraphBase object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
@@ -1352,7 +1286,12 @@ class RelationalFullBatchNodeGenerator:
             )
 
             if transform is None:
-                A = normalize_adj(A, symmetric=False)
+                # normalize here and add 1e-9 row sum to avoid harmless divide by zero warnings
+                d = sps.diags(
+                    np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0
+                )
+                A = d.dot(A).tocsr()
+
             else:
                 self.features, A = transform(self.features, A)
 
@@ -1392,11 +1331,6 @@ class RelationalFullBatchNodeGenerator:
         node_index = dict(zip(self.node_list, range(len(self.node_list))))
         node_indices = np.array([node_index[n] for n in node_ids])
 
-        if self.use_sparse:
-            return RelationalSparseFullBatchNodeSequence(
-                self.features, self.As, targets, node_indices
-            )
-        else:
-            return RelationalDenseFullBatchNodeSequence(
-                self.features, self.As, targets, node_indices
-            )
+        return RelationalFullBatchNodeSequence(
+            self.features, self.As, self.use_sparse, targets, node_indices
+        )

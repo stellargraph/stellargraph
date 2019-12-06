@@ -8,12 +8,19 @@ from stellargraph.core.utils import normalize_adj
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input, Lambda
-from stellargraph import StellarDiGraph
+from stellargraph import StellarDiGraph, StellarGraph
 from stellargraph.layer.misc import SqueezedSparseConversion
 import pandas as pd
 
 
 def create_graph_features():
+    G = nx.MultiGraph()
+    G.add_nodes_from(["a", "b", "c"])
+    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
+    return G, np.array([[1, 1], [1, 0], [0, 1]])
+
+
+def create_graph_features_directed():
     G = nx.MultiDiGraph()
     G.add_nodes_from(["a", "b", "c"])
     G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
@@ -31,10 +38,10 @@ def test_RelationalGraphConvolution_config():
     assert conf["use_bias"] == True
     assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
     assert conf["bias_initializer"]["class_name"] == "Zeros"
-    assert conf["kernel_regularizer"] == None
-    assert conf["bias_regularizer"] == None
-    assert conf["kernel_constraint"] == None
-    assert conf["bias_constraint"] == None
+    assert conf["kernel_regularizer"] is None
+    assert conf["bias_regularizer"] is None
+    assert conf["kernel_constraint"] is None
+    assert conf["bias_constraint"] is None
 
 
 def test_RelationalGraphConvolution_init():
@@ -43,7 +50,7 @@ def test_RelationalGraphConvolution_init():
     )
 
     assert rgcn_layer.units == 16
-    assert rgcn_layer.use_bias == True
+    assert rgcn_layer.use_bias is True
     assert rgcn_layer.num_bases == 0
     assert rgcn_layer.get_config()["activation"] == "relu"
 
@@ -52,7 +59,7 @@ def test_RelationalGraphConvolution_init():
     )
 
     assert rgcn_layer.units == 16
-    assert rgcn_layer.use_bias == True
+    assert rgcn_layer.use_bias is True
     assert rgcn_layer.num_bases == 10
     assert rgcn_layer.get_config()["activation"] == "relu"
 
@@ -107,7 +114,8 @@ def test_RelationalGraphConvolution_sparse():
             (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
         )
 
-        A = normalize_adj(A, symmetric=False)
+        d = sps.diags(np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0)
+        A = d.dot(A).tocsr()
         A = A.tocoo()
         As.append(A)
 
@@ -174,7 +182,8 @@ def test_RelationalGraphConvolution_dense():
             (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
         )
 
-        A = normalize_adj(A, symmetric=False)
+        d = sps.diags(np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0)
+        A = d.dot(A).tocsr()
         A = A.todense()[None, :, :]
         As.append(A)
 
@@ -200,7 +209,7 @@ def test_RGCN_init():
     node_features = pd.DataFrame.from_dict(
         {n: f for n, f in zip(nodes, features)}, orient="index"
     )
-    G = StellarDiGraph(G, node_type_name="node", node_features=node_features)
+    G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
     generator = RelationalFullBatchNodeGenerator(G)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
@@ -214,23 +223,8 @@ def test_RGCN_init():
 def test_RGCN_apply_sparse():
     G, features = create_graph_features()
 
-    As = []
-    edge_types = sorted(set(e[-1] for e in G.edges))
-    node_list = list(G.nodes)
-    node_index = dict(zip(node_list, range(len(node_list))))
-    for edge_type in edge_types:
-        col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-        row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
-        data = np.ones(len(col_index), np.float64)
-
-        A = sps.coo_matrix(
-            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
-        )
-
-        A = normalize_adj(A, symmetric=False)
-        A = A.tocoo()
-        As.append(A)
-
+    As = get_As(G)
+    As = [A.tocoo() for A in As]
     A_indices = [
         np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
     ]
@@ -240,12 +234,12 @@ def test_RGCN_apply_sparse():
     node_features = pd.DataFrame.from_dict(
         {n: f for n, f in zip(nodes, features)}, orient="index"
     )
-    G = StellarDiGraph(G, node_features=node_features)
+    G = StellarGraph(G, node_features=node_features)
 
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.node_model()
+    x_in, x_out = rgcnModel.build()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -263,22 +257,43 @@ def test_RGCN_apply_sparse():
 def test_RGCN_apply_dense():
     G, features = create_graph_features()
 
-    As = []
-    edge_types = sorted(set(e[-1] for e in G.edges))
-    node_list = list(G.nodes)
-    node_index = dict(zip(node_list, range(len(node_list))))
-    for edge_type in edge_types:
-        col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-        row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
-        data = np.ones(len(col_index), np.float64)
+    As = get_As(G)
+    As = [A.todense()[None, :, :] for A in As]
 
-        A = sps.coo_matrix(
-            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
-        )
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+    G = StellarGraph(G, node_features=node_features)
 
-        A = normalize_adj(A, symmetric=False)
-        A = A.todense()[None, :, :]
-        As.append(A)
+    generator = RelationalFullBatchNodeGenerator(G, sparse=False)
+    rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
+
+    x_in, x_out = rgcnModel.build()
+    model = keras.Model(inputs=x_in, outputs=x_out)
+
+    # Check fit method
+    out_indices = np.array([[0, 1]], dtype="int32")
+    preds_1 = model.predict([features[None, :, :], out_indices] + As)
+    assert preds_1.shape == (1, 2, 2)
+
+    # Check fit_generator method
+    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    assert preds_2.shape == (1, 2, 2)
+
+    assert preds_1 == pytest.approx(preds_2)
+
+
+def test_RGCN_apply_sparse_directed():
+    G, features = create_graph_features_directed()
+
+    As = get_As(G)
+    As = [A.tocoo() for A in As]
+
+    A_indices = [
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+    ]
+    A_values = [np.expand_dims(A.data, 0) for A in As]
 
     nodes = G.nodes()
     node_features = pd.DataFrame.from_dict(
@@ -286,10 +301,39 @@ def test_RGCN_apply_dense():
     )
     G = StellarDiGraph(G, node_features=node_features)
 
-    generator = RelationalFullBatchNodeGenerator(G, sparse=False)
+    generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.node_model()
+    x_in, x_out = rgcnModel.build()
+    model = keras.Model(inputs=x_in, outputs=x_out)
+
+    # Check fit method
+    out_indices = np.array([[0, 1]], dtype="int32")
+    preds_1 = model.predict([features[None, :, :], out_indices] + A_indices + A_values)
+    assert preds_1.shape == (1, 2, 2)
+
+    # Check fit_generator method
+    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    assert preds_2.shape == (1, 2, 2)
+
+    assert preds_1 == pytest.approx(preds_2)
+
+
+def test_RGCN_apply_dense_directed():
+    G, features = create_graph_features_directed()
+
+    As = get_As(G)
+    As = [A.todense()[None, :, :] for A in As]
+
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+
+    G = StellarDiGraph(G, node_features=node_features)
+    generator = RelationalFullBatchNodeGenerator(G, sparse=False)
+    rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
+    x_in, x_out = rgcnModel.build()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -306,7 +350,6 @@ def test_RGCN_apply_dense():
 
 def test_RelationalGraphConvolution_edge_cases():
 
-
     try:
         rgcn_layer = RelationalGraphConvolution(
             units=16, num_relationships=5, num_bases=0.5, activation="relu"
@@ -320,3 +363,57 @@ def test_RelationalGraphConvolution_edge_cases():
     )
     rgcn_layer.build(input_shapes=[(1,)])
     assert rgcn_layer.bases is None
+
+    try:
+        rgcn_layer = RelationalGraphConvolution(
+            units=16, num_relationships=0.5, num_bases=2, activation="relu"
+        )
+    except TypeError as e:
+        error = e
+    assert str(error) == "num_relationships should be an int"
+
+    try:
+        rgcn_layer = RelationalGraphConvolution(
+            units=16, num_relationships=-1, num_bases=2, activation="relu"
+        )
+    except ValueError as e:
+        error = e
+    assert str(error) == "num_relationships should be positive"
+
+    try:
+        rgcn_layer = RelationalGraphConvolution(
+            units=0.5, num_relationships=1, num_bases=2, activation="relu"
+        )
+    except TypeError as e:
+        error = e
+    assert str(error) == "units should be an int"
+
+    try:
+        rgcn_layer = RelationalGraphConvolution(
+            units=-16, num_relationships=1, num_bases=2, activation="relu"
+        )
+    except ValueError as e:
+        error = e
+    assert str(error) == "units should be positive"
+
+
+def get_As(G):
+
+    As = []
+    edge_types = sorted(set(e[-1] for e in G.edges))
+    node_list = list(G.nodes)
+    node_index = dict(zip(node_list, range(len(node_list))))
+    for edge_type in edge_types:
+        col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
+        row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
+        data = np.ones(len(col_index), np.float64)
+
+        A = sps.coo_matrix(
+            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
+        )
+
+        d = sps.diags(np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0)
+        A = d.dot(A).tocsr()
+        As.append(A)
+
+    return As
