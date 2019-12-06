@@ -3,7 +3,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer, Lambda, Dropout, Input
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from .misc import SqueezedSparseConversion
-from ..mapper.node_mappers import RelationalFullBatchNodeGenerator
+from ..mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 
 
 class RelationalGraphConvolution(Layer):

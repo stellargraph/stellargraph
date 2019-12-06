@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 from stellargraph.layer.rgcn import RelationalGraphConvolution, RGCN
-from stellargraph.mapper.node_mappers import RelationalFullBatchNodeGenerator
+from stellargraph.mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 import pytest
 from scipy import sparse as sps
 from stellargraph.core.utils import normalize_adj

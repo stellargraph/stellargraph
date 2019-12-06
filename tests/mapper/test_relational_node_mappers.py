@@ -1,5 +1,5 @@
 from stellargraph.core.graph import *
-from stellargraph.mapper.node_mappers import RelationalFullBatchNodeGenerator
+from stellargraph.mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 
 import networkx as nx
 import numpy as np
