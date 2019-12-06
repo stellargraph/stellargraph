@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2019 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+The StellarGraph class that encapsulates information required for
+a machine-learning ready graph used by models.
+
+"""
 #!/usr/bin/env python3
 import argparse
 import nbformat
@@ -187,7 +208,15 @@ if __name__ == "__main__":
     # html_exporter.template_file = 'basic'
 
     # Find all Jupyter notebook files in the specified directory
-    all_files = chain.from_iterable(Path(p).glob("**/*.ipynb") for p in args.locations)
+    all_files = []
+    for p in args.locations:
+        path = Path(p)
+        if path.is_dir():
+            all_files.extend(path.glob("**/*.ipynb"))
+        elif path.is_file():
+            all_files.append(path)
+        else:
+            raise ValueError(f"Specified location not '{path}'a file or directory.")
 
     # Go through all notebooks files in specified directory
     for file_loc in all_files:
@@ -222,4 +251,3 @@ if __name__ == "__main__":
             html_file_loc = str(file_loc.with_suffix(""))
             print(f"Writing HTML to {html_file_loc}.html")
             writer.write(body, resources, html_file_loc)
-
