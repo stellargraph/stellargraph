@@ -47,7 +47,7 @@ def example_graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarGraph(G, node_features="feature")
 
     else:

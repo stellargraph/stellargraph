@@ -85,8 +85,8 @@ def load_data(graph_loc, ignore_attr):
     node_ids = node_data.index
 
     for nid, f in zip(node_ids, node_features):
-        g.node[nid][globalvar.TYPE_ATTR_NAME] = "paper"
-        g.node[nid][globalvar.FEATURE_ATTR_NAME] = f
+        g.nodes[nid][globalvar.TYPE_ATTR_NAME] = "paper"
+        g.nodes[nid][globalvar.FEATURE_ATTR_NAME] = f
 
     return g
 

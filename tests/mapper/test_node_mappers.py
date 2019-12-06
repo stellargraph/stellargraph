@@ -39,7 +39,7 @@ def example_graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -55,7 +55,7 @@ def example_graph_2(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -75,7 +75,7 @@ def example_graph_3(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -90,7 +90,7 @@ def example_digraph_2(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarDiGraph(G, node_features="feature")
 
     else:

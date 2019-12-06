@@ -152,7 +152,7 @@ class NodeAttributeSpecification:
 
         # Go through graph to find node attributes
         all_attrs = set(
-            k for v in graph.nodes_of_type(node_type) for k in graph.node[v].keys()
+            k for v in graph.nodes_of_type(node_type) for k in graph.nodes[v].keys()
         )
 
         # Remove any ignored attributes

@@ -47,7 +47,7 @@ def example_Graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G
@@ -61,7 +61,7 @@ def example_DiGraph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G
@@ -75,7 +75,7 @@ def example_Graph_2(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = int(v) * np.ones(feature_size)
+            G.nodes[v]["feature"] = int(v) * np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G
@@ -143,7 +143,7 @@ def example_graph_random(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1)
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -200,7 +200,7 @@ def example_hin_random(
         nt_jj = 0
         for nt, nodes in node_dict.items():
             for ii, n in enumerate(nodes):
-                G.node[n]["feature"] = (ii + 10 * nt_jj) * np.ones(
+                G.nodes[n]["feature"] = (ii + 10 * nt_jj) * np.ones(
                     feature_size_by_type[nt], dtype="int"
                 )
             nt_jj += 1
@@ -325,7 +325,7 @@ class Test_GraphSAGELinkGenerator:
 
         # Add example features
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(1)
+            G.nodes[v]["feature"] = np.ones(1)
 
         with pytest.raises(TypeError):
             GraphSAGELinkGenerator(
@@ -793,7 +793,7 @@ class Test_Attri2VecLinkGenerator:
 
         # Add example features
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(1)
+            G.nodes[v]["feature"] = np.ones(1)
 
         with pytest.raises(TypeError):
             Attri2VecLinkGenerator(G, batch_size=self.batch_size)

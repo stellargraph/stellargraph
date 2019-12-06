@@ -946,7 +946,7 @@ def test_split_function_node_type():
         split_equally=False,
         seed=None,
     )
-    assert all(g.node[s]["label"] == "movie" for split in splits for s in split)
+    assert all(g.nodes[s]["label"] == "movie" for split in splits for s in split)
 
 
 def test_split_function_unlabelled():

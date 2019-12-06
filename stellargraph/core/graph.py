@@ -86,11 +86,15 @@ def _convert_from_node_attribute(
         )
 
         # The node data
-        attr_data = [v if v is None else G.node[v].get(attr_name) for v in nt_node_list]
+        attr_data = [
+            v if v is None else G.nodes[v].get(attr_name) for v in nt_node_list
+        ]
 
         # Get the size of the features
         data_sizes = {
-            np.size(G.node[v].get(attr_name, [])) for v in nt_node_list if v is not None
+            np.size(G.nodes[v].get(attr_name, []))
+            for v in nt_node_list
+            if v is not None
         }
 
         # Warn if nodes don't have the attribute
@@ -643,9 +647,9 @@ class StellarGraphBase:
 
         def is_of_edge_type(e, edge_type):
             et2 = (
-                self._get_node_type(self.node[e[0]]),
+                self._get_node_type(self.nodes[e[0]]),
                 self._get_edge_type(self.edges[e]),
-                self._get_node_type(self.node[e[1]]),
+                self._get_node_type(self.nodes[e[1]]),
             )
             return et2 == edge_type
 
@@ -724,7 +728,9 @@ class StellarGraphBase:
             raise ValueError("Creating type maps for subsampled nodes is not supported")
 
         # Create node type index list
-        node_types = sorted({self._get_node_type(self.node[n]) for n in nodes}, key=str)
+        node_types = sorted(
+            {self._get_node_type(self.nodes[n]) for n in nodes}, key=str
+        )
 
         graph_schema = {nt: set() for nt in node_types}
 
@@ -734,8 +740,8 @@ class StellarGraphBase:
             edata = self.adj[n1][n2][k]
 
             # Edge type tuple
-            node_type_1 = self._get_node_type(self.node[n1])
-            node_type_2 = self._get_node_type(self.node[n2])
+            node_type_1 = self._get_node_type(self.nodes[n1])
+            node_type_2 = self._get_node_type(self.nodes[n2])
             edge_type = self._get_edge_type(edata)
 
             # Add edge type to node_type_1 data
