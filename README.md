@@ -18,11 +18,11 @@
   <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
     <img src="https://img.shields.io/pypi/v/stellargraph.svg"/>
   </a>
-  <a href="https://buildkite.com/stellar/stellar-ml?branch=master/" alt="Build status: master">
-    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/master.svg?label=branch:+master"/>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master">
+    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/>
   </a>
-  <a href="https://buildkite.com/stellar/stellar-ml?branch=develop/" alt="Build status: develop">
-    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch:+develop"/>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
+    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
   </a>
   <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
@@ -217,7 +217,7 @@ Feel free to ask questions and discuss problems on the [StellarGraph Discourse f
 
 ### buildkite integration
 
-Pipeline is defined in `.buildkite/pipeline.yml`
+The Buildkite pipeline can be viewed in [https://buildkite.com/stellar/stellargraph-public/](https://buildkite.com/stellar/stellargraph-public/)
 
 ### Docker images
 
