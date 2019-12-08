@@ -465,7 +465,7 @@ class StellarGraphBase:
                 node_type = next(iter(self._node_index_maps))
             else:
                 node_types = {
-                    self._get_node_type(self.node[n]) for n in nodes if n is not None
+                    self._get_node_type(self.nodes[n]) for n in nodes if n is not None
                 }
                 if len(node_types) > 1:
                     raise ValueError("All nodes must be of the same type.")
@@ -505,7 +505,7 @@ class StellarGraphBase:
                 node_type = next(iter(self._node_index_maps))
             else:
                 node_types = {
-                    self._get_node_type(self.node[n]) for n in nodes if n is not None
+                    self._get_node_type(self.nodes[n]) for n in nodes if n is not None
                 }
                 if len(node_types) > 1:
                     raise ValueError("All nodes must be of the same type.")
