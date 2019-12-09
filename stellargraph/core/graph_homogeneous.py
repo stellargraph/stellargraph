@@ -97,10 +97,7 @@ class HomogeneousStellarGraph(StellarGraphInterface):
                 if dst_id != src_id:
                     self._edges.setdefault(dst_id, []).append((edge_id, src_id))
             # Check for node features and singleton nodes:
-            self._node_map = node_map = {
-                node_id: -1
-                for node_id in self._edges.keys()
-            }
+            self._node_map = node_map = {node_id: -1 for node_id in self._edges.keys()}
         if node_data is not None:
             node_ids = self._get_column(node_data, "node_id", node_id, True)
             for idx, node_id in enumerate(node_ids):
@@ -127,7 +124,7 @@ class HomogeneousStellarGraph(StellarGraphInterface):
         return self._is_directed
 
     def number_of_nodes(self) -> int:
-        len(self._node_map)
+        return len(self._node_map)
 
     def number_of_edges(self) -> int:
         return len(self._edge_ids)
