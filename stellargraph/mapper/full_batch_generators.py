@@ -261,7 +261,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
             and :meth:`predict_generator`
 
         """
-        super().flow(node_ids, targets)
+        return super().flow(node_ids, targets)
 
 
 class FullBatchLinkGenerator(FullBatchGenerator):
@@ -350,4 +350,4 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             and :meth:`predict_generator`
 
         """
-        super().flow(link_ids, targets)
+        return super().flow(link_ids, targets)
