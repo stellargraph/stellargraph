@@ -254,6 +254,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
+                sg.mapper.OnDemandLinkSequence
             ),
         ):
             raise ValueError(
@@ -355,6 +356,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
+                sg.mapper.OnDemandLinkSequence
             ),
         ):
             raise ValueError(
@@ -457,6 +459,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
+                sg.mapper.OnDemandLinkSequence
             ),
         ):
             raise ValueError(
