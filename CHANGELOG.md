@@ -9,6 +9,7 @@
 - Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 
 **Implemented enhancements:** 
+- GCN, GAT, APPNP and PPNP can now be used for link-prediction using the `FullBatchLinkGenerator` [\#543](https://github.com/stellargraph/stellargraph/pull/543)
 
 **Refactoring:**
 - Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)

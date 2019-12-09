@@ -139,9 +139,10 @@ class FullBatchGenerator:
         with the supplied node ids and numeric targets.
 
         Args:
-            node_ids: and iterable of node ids for the nodes of interest
+            node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)` 
+                or (len(node_ids), target_size)`
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -237,11 +238,30 @@ class FullBatchNodeGenerator(FullBatchGenerator):
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
-        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability" of returning to the
-        starting node in the propagation step as in [4].
+        teleport_probability (float): teleport probability between 0.0 and 1.0.
+            "probability" of returning to the starting node in the propagation step as in [4].
     """
 
     multiplicity = 1
+
+    def flow(self, node_ids, targets=None):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_ids: an iterable of node ids for the nodes of interest
+                (e.g., training, validation, or test set nodes)
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)` 
+                or (len(node_ids), target_size)`
+
+        Returns:
+            A NodeSequence object to use with GCN or GAT models
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
+
+        """
+        super().flow(node_ids, targets)
 
 
 class FullBatchLinkGenerator(FullBatchGenerator):
@@ -282,8 +302,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
     Example::
 
-        G_generator = FullBatchNodeGenerator(G)
-        train_flow = G_generator.flow(node_ids, node_targets)
+        G_generator = FullBatchLinkGenerator(G)
+        train_flow = G_generator.flow([(1,2), (3,4), (5,6)], [0, 1, 1])
 
         # Fetch the data from train_flow, and feed into a Keras model:
         x_inputs, y_train = train_flow[0]
@@ -292,7 +312,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit_generator:
         model.fit_generator(train_flow, epochs=num_epochs)
 
-    For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
+    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
@@ -307,8 +327,27 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
-        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability" of returning to the
-        starting node in the propagation step as in [4].
+        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability"
+            of returning to the starting node in the propagation step as in [4].
     """
 
     multiplicity = 2
+
+    def flow(self, link_ids, targets=None):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            link_ids: an iterable of link ids specified as tuples of node ids
+                or an array of shape (N_links, 2) specifying the links.
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)` 
+                or (len(node_ids), target_size)`
+
+        Returns:
+            A NodeSequence object to use with GCN or GAT models
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
+
+        """
+        super().flow(link_ids, targets)
