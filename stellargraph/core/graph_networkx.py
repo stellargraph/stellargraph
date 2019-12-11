@@ -737,7 +737,7 @@ class NetworkXStellarGraph(StellarGraph):
     def has_node(self, node: Any) -> bool:
         return self._graph.__contains__(node)
 
-    def neighbour_nodes(self, node: Any) -> Iterable[Any]:
+    def neighbors(self, node: Any) -> Iterable[Any]:
         if self.is_directed():
             in_nodes = {e[0] for e in self._graph.in_edges(node)}
             out_nodes = {e[1] for e in self._graph.out_edges(node)}
@@ -760,7 +760,7 @@ class NetworkXStellarGraph(StellarGraph):
     def node_degrees(self) -> Mapping[Any, int]:
         return self._graph.degree()
 
-    def adjacency_weights(self, nodes: Optional[Iterable] = None):
+    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
         if nodes is not None:
             return nx.adjacency_matrix(self._graph.subgraph(nodes))
         return nx.to_scipy_sparse_matrix(

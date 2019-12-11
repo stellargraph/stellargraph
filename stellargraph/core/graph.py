@@ -192,7 +192,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def neighbour_nodes(self, node: Any) -> Iterable[Any]:
+    def neighbors(self, node: Any) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
@@ -245,7 +245,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def adjacency_weights(self, nodes: Optional[Iterable] = None):
+    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
 

@@ -128,7 +128,7 @@ class FullBatchNodeGenerator:
 
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
-        self.Aadj = G.adjacency_weights()
+        self.Aadj = G.to_adjacency_matrix()
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.

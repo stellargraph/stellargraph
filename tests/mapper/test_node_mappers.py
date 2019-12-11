@@ -914,12 +914,12 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
 
-        A = G.adjacency_weights().toarray()
+        A = G.to_adjacency_matrix().toarray()
         assert np.array_equal(A.dot(A), generator.Aadj.toarray())
 
     def test_generator_methods(self):
         node_ids = list(self.G.nodes())
-        Aadj = self.G.adjacency_weights().toarray()
+        Aadj = self.G.to_adjacency_matrix().toarray()
         Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
         Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
         Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)

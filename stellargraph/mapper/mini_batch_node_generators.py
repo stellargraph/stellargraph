@@ -284,7 +284,7 @@ class ClusterNodeSequence(Sequence):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
-        adj_cluster = self.graph.adjacency_weights(cluster)
+        adj_cluster = self.graph.to_adjacency_matrix(cluster)
 
         # The operations to normalize the adjacency matrix are too slow.
         # Either optimize this or implement as a layer(?)

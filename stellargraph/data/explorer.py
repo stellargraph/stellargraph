@@ -98,7 +98,7 @@ class GraphWalk(object):
     def neighbors(self, node):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return list(self.graph.neighbour_nodes(node))
+        return list(self.graph.neighbors(node))
 
     def run(self, **kwargs):
         """
@@ -291,7 +291,7 @@ class BiasedRandomWalk(GraphWalk):
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbour_nodes(node):
+                for neighbor in self.graph.neighbors(node):
 
                     wts = set()
                     for weight in self.graph.edge_weights(node, neighbor):

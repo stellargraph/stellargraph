@@ -57,7 +57,7 @@ def beforeall():
 
 def test_normalize_adj():
     node_list = list(pytest.G.nodes())
-    Aadj = pytest.G.adjacency_weights()
+    Aadj = pytest.G.to_adjacency_matrix()
     csr = normalize_adj(Aadj)
     dense = csr.todense()
     assert 5 == pytest.approx(dense.sum(), 0.1)
@@ -71,7 +71,7 @@ def test_normalize_adj():
 
 def test_normalized_laplacian():
     node_list = list(pytest.G.nodes())
-    Aadj = pytest.G.adjacency_weights()
+    Aadj = pytest.G.to_adjacency_matrix()
     laplacian = normalized_laplacian(Aadj)
     assert 1 == pytest.approx(laplacian.sum(), 0.2)
     assert laplacian.get_shape() == Aadj.get_shape()
@@ -83,7 +83,7 @@ def test_normalized_laplacian():
 
 def test_rescale_laplacian():
     node_list = list(pytest.G.nodes())
-    Aadj = pytest.G.adjacency_weights()
+    Aadj = pytest.G.to_adjacency_matrix()
     rl = rescale_laplacian(normalized_laplacian(Aadj))
     assert rl.max() < 1
     assert rl.get_shape() == Aadj.get_shape()
@@ -91,7 +91,7 @@ def test_rescale_laplacian():
 
 def test_chebyshev_polynomial():
     node_list = list(pytest.G.nodes())
-    Aadj = pytest.G.adjacency_weights()
+    Aadj = pytest.G.to_adjacency_matrix()
 
     k = 2
     cp = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(Aadj)), k)
@@ -103,7 +103,7 @@ def test_chebyshev_polynomial():
 
 def test_GCN_Aadj_feats_op():
     node_list = list(pytest.G.nodes())
-    Aadj = pytest.G.adjacency_weights()
+    Aadj = pytest.G.to_adjacency_matrix()
     features = pytest.G.get_feature_for_nodes(node_list)
 
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
