@@ -480,7 +480,7 @@ class RGCN:
 
         return h_layer
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a RGCN model for node prediction
 
@@ -540,7 +540,7 @@ class RGCN:
         if self.generator is not None:
 
             if isinstance(self.generator, RelationalFullBatchNodeGenerator):
-                return self.node_model()
+                return self._node_model()
 
             else:
                 raise NotImplementedError(

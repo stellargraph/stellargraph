@@ -371,8 +371,7 @@ class RelationalFullBatchNodeGenerator:
         self.features = G.get_feature_for_nodes(self.node_list)
 
         edge_types = sorted(set(e[-1] for e in G.edges))
-
-        node_index = dict(zip(self.node_list, range(len(self.node_list))))
+        self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
@@ -381,10 +380,10 @@ class RelationalFullBatchNodeGenerator:
         for edge_type in edge_types:
 
             col_index = [
-                node_index[n1] for n1, n2, etype in G.edges if etype == edge_type
+                self.node_index[n1] for n1, n2, etype in G.edges if etype == edge_type
             ]
             row_index = [
-                node_index[n2] for n1, n2, etype in G.edges if etype == edge_type
+                self.node_index[n2] for n1, n2, etype in G.edges if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
 
@@ -438,8 +437,7 @@ class RelationalFullBatchNodeGenerator:
 
         # The list of indices of the target nodes in self.node_list
         # use dictionary for faster index look-up time
-        node_index = dict(zip(self.node_list, range(len(self.node_list))))
-        node_indices = np.array([node_index[n] for n in node_ids])
+        node_indices = np.array([self.node_index[n] for n in node_ids])
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
