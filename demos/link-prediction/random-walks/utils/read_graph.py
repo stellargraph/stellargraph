@@ -29,7 +29,7 @@ def read_graph(graph_file, dataset_name, is_directed=False, is_weighted=False):
         The graph in networkx format
     """
 
-    if graph_file.split('.')[-1] == 'gpickle':
+    if graph_file.split(".")[-1] == "gpickle":
         g = nx.read_gpickle(graph_file)
         for edge in g.edges():
             g[edge[0]][edge[1]]["weight"] = 1  # {'weight': 1}

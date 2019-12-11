@@ -39,7 +39,9 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
     Returns:
         Returns the ROCAUC score achieved by the classifier for each of the specified binary operators.
     """
-    scores = []  # the auc values for each binary operator (based on test set performance)
+    scores = (
+        []
+    )  # the auc values for each binary operator (based on test set performance)
     clf_best = None
     score_best = 0
     op_best = ""
@@ -107,7 +109,9 @@ def predict_links(feature_learner, edge_data, clf, binary_operators=None):
         print("WARNING: Using default binary operator 'h'")
         binary_operators = ["h"]
 
-    scores = []  # the auc values for each binary operator (based on test set performance)
+    scores = (
+        []
+    )  # the auc values for each binary operator (based on test set performance)
 
     # for each type of binary operator
     for binary_operator in binary_operators:

@@ -152,7 +152,12 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs
     G = sg.StellarGraph(Gnx, node_features=node_features)
 
     # Split nodes into train/test using stratification.
-    train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
+    (
+        train_nodes,
+        test_nodes,
+        train_targets,
+        test_targets,
+    ) = model_selection.train_test_split(
         node_ids,
         node_targets,
         train_size=140,

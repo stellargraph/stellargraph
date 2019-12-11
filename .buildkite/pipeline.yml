@@ -39,11 +39,8 @@ steps:
 
   - label: ":python-black: format"
     plugins:
-      docker#v3.2.0:
-        image: "stellargraph/black"
-        command: ["--check", "stellargraph", "tests"]
-        environment:
-          - PYTHONDONTWRITEBYTECODE=1
+      docker#v3.4.0:
+        image: "stellargraph/black:snapshot"
 
   - label: ":shell: format"
     plugins:
