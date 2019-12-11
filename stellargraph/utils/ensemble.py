@@ -72,8 +72,8 @@ class Ensemble(object):
             )
 
         self.metrics_names = (
-            None
-        )  # It will be set when the self.compile() method is called
+            None  # It will be set when the self.compile() method is called
+        )
         self.models = []
         self.history = []
         self.n_estimators = n_estimators
@@ -186,7 +186,8 @@ class Ensemble(object):
                 weighted_metrics=weighted_metrics,
             )
 
-        self.metrics_names = self.models[0].metrics_names  # assumes all models are same
+        # assumes all models are same
+        self.metrics_names = self.models[0].metrics_names
 
     def fit_generator(
         self,
@@ -254,7 +255,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
-                sg.mapper.OnDemandLinkSequence
+                sg.mapper.OnDemandLinkSequence,
             ),
         ):
             raise ValueError(
@@ -356,7 +357,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
-                sg.mapper.OnDemandLinkSequence
+                sg.mapper.OnDemandLinkSequence,
             ),
         ):
             raise ValueError(
@@ -459,7 +460,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
-                sg.mapper.OnDemandLinkSequence
+                sg.mapper.OnDemandLinkSequence,
             ),
         ):
             raise ValueError(
