@@ -476,9 +476,7 @@ def test_unsupervised_Ensemble_fit_generator():
     graph = example_graph_1(feature_size=10)
 
     # base_model, keras_model, generator, train_gen
-    gnn_models = [
-        create_graphSAGE_model(graph),
-    ]
+    gnn_models = [create_graphSAGE_model(graph)]
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
@@ -507,9 +505,7 @@ def test_unsupervised_BaggingEnsemble_fit_generator():
     graph = example_graph_1(feature_size=10)
 
     # base_model, keras_model, generator, train_gen
-    gnn_models = [
-        create_graphSAGE_model(graph),
-    ]
+    gnn_models = [create_graphSAGE_model(graph)]
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
