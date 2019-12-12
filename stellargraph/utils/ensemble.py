@@ -72,8 +72,8 @@ class Ensemble(object):
             )
 
         self.metrics_names = (
-            None
-        )  # It will be set when the self.compile() method is called
+            None  # It will be set when the self.compile() method is called
+        )
         self.models = []
         self.history = []
         self.n_estimators = n_estimators
@@ -254,6 +254,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
+                sg.mapper.OnDemandLinkSequence,
             ),
         ):
             raise ValueError(
@@ -355,6 +356,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
+                sg.mapper.OnDemandLinkSequence,
             ),
         ):
             raise ValueError(
@@ -457,6 +459,7 @@ class Ensemble(object):
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
                 sg.mapper.SparseFullBatchNodeSequence,
+                sg.mapper.OnDemandLinkSequence,
             ),
         ):
             raise ValueError(
