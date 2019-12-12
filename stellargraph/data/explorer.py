@@ -1134,14 +1134,15 @@ class TemporalBiasedRandomWalk(GraphWalk):
         return walks
 
     def get_exp_distribution(self, times, current_time, orientation="forward"):
+        min_time = min(times)
         time_dist = [
-            scipy.special.expit(-1 * (np.abs(t - current_time)))
-            # np.exp(-1 * (np.abs(t - current_time)))
+            # scipy.special.expit(-1 * (np.abs(t - current_time)))
+            np.exp(-1 * (np.abs(t - current_time) + np.abs(min_time - current_time)))
             for t in times
         ]  # relative gap in time w.r.t current time (higher values for shorter gaps)
         sum_time_dist = sum(time_dist)
-        if sum_time_dist < 1:
-            sum_time_dist = 1
+        # if sum_time_dist < 1:
+        #   sum_time_dist = 1
         exp_dist = [t / sum_time_dist for t in time_dist]  # exponential distribution
         return exp_dist
 
