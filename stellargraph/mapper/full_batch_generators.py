@@ -318,7 +318,7 @@ class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
-    The supplied graph G should be a StellarGraphBase object that is ready for
+    The supplied graph G should be a StellarGraph or StellarDiGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
