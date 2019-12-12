@@ -23,11 +23,14 @@ from stellargraph.data.converter import *
 from ..test_utils.alloc import snapshot, allocation_benchmark
 
 
-def create_graph_1(sg=StellarGraph()):
-    sg.add_nodes_from([0, 1, 2, 3], label="movie")
-    sg.add_nodes_from([4, 5], label="user")
-    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
-    return sg
+def create_graph_1(is_directed=False, return_nx=False):
+    g = nx.DiGraph() if is_directed else nx.Graph()
+    g.add_nodes_from([0, 1, 2, 3], label="movie")
+    g.add_nodes_from([4, 5], label="user")
+    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
+    if return_nx:
+        return nx.MultiDiGraph(g) if is_directed else nx.MultiGraph(g)
+    return StellarDiGraph(g) if is_directed else StellarGraph(g)
 
 
 def example_stellar_graph_1(feature_name=None, feature_size=10):
@@ -130,11 +133,11 @@ def test_graph_from_nx():
     sg = StellarGraph(Gnx)
 
     nodes_1 = sorted(Gnx.nodes(data=False))
-    nodes_2 = sorted(sg.nodes(data=False))
+    nodes_2 = sorted(sg.nodes())
     assert nodes_1 == nodes_2
 
     edges_1 = sorted(Gnx.edges(data=False))
-    edges_2 = sorted(sg.edges(keys=False, data=False))
+    edges_2 = sorted(sg.edges())
     assert edges_1 == edges_2
 
 
@@ -152,7 +155,8 @@ def test_homogeneous_graph_schema():
 
 
 def test_graph_schema():
-    sg = create_graph_1()
+    g = create_graph_1(return_nx=True)
+    sg = StellarGraph(g)
     schema = sg.create_graph_schema(create_type_maps=True)
 
     assert "movie" in schema.schema
@@ -161,12 +165,12 @@ def test_graph_schema():
     assert len(schema.schema["user"]) == 1
 
     # Test node type lookup
-    for n, ndata in sg.nodes(data=True):
+    for n, ndata in g.nodes(data=True):
         assert ndata["label"] == schema.get_node_type(n)
 
     # Test edge type lookup
-    node_labels = nx.get_node_attributes(sg, "label")
-    for n1, n2, k, edata in sg.edges(keys=True, data=True):
+    node_labels = nx.get_node_attributes(g, "label")
+    for n1, n2, k, edata in g.edges(keys=True, data=True):
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
@@ -199,7 +203,8 @@ def test_graph_schema_sampled():
 
 
 def test_digraph_schema():
-    sg = create_graph_1(StellarDiGraph())
+    g = create_graph_1(is_directed=True, return_nx=True)
+    sg = StellarDiGraph(g)
     schema = sg.create_graph_schema()
 
     assert "movie" in schema.schema
@@ -208,12 +213,12 @@ def test_digraph_schema():
     assert len(schema.schema["movie"]) == 0
 
     # Test node type lookup
-    for n, ndata in sg.nodes(data=True):
+    for n, ndata in g.nodes(data=True):
         assert ndata["label"] == schema.get_node_type(n)
 
     # Test edge type lookup
-    node_labels = nx.get_node_attributes(sg, "label")
-    for n1, n2, k, edata in sg.edges(keys=True, data=True):
+    node_labels = nx.get_node_attributes(g, "label")
+    for n1, n2, k, edata in g.edges(keys=True, data=True):
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
@@ -474,7 +479,7 @@ def test_benchmark_get_neighbours(benchmark):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i)
+            g.neighbors(i)
 
     benchmark(f)
 
