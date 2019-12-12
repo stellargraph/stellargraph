@@ -179,7 +179,6 @@ class APPNP:
         generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
         bias (bool): toggles an optional bias in fully connected layers
         dropout (float): dropout rate applied to input features of each layer
-        propagation_dropout (float): dropout applied after each power iteration in the propagation step
         kernel_regularizer (str): normalization applied to the kernels of fully connetcted layers
         teleport_probability: "probability" of returning to the starting node in the propagation step as desribed in
         the paper (alpha in the paper)
@@ -193,7 +192,6 @@ class APPNP:
         generator,
         bias=True,
         dropout=0.0,
-        propagation_dropout=0.0,
         teleport_probability=0.1,
         kernel_regularizer=None,
         approx_iter=10,
@@ -220,7 +218,6 @@ class APPNP:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.propagation_dropout = propagation_dropout
         self.kernel_regularizer = kernel_regularizer
         self.generator = generator
         self.support = 1
@@ -253,7 +250,7 @@ class APPNP:
 
         feature_dim = self.layer_sizes[-1]
         for ii in range(approx_iter):
-            self._layers.append(Dropout(self.propagation_dropout))
+            self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 APPNPPropagationLayer(
                     feature_dim,
