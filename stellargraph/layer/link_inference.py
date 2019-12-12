@@ -113,7 +113,6 @@ class LinkEmbedding(Layer):
 
     def __init__(
         self,
-        output_dim: int = 1,
         method: AnyStr = "ip",
         axis: Optional[int] = -2,
         activation: Optional[AnyStr] = "linear",
@@ -121,19 +120,11 @@ class LinkEmbedding(Layer):
     ):
         super().__init__(**kwargs)
         self.method = method.lower()
-        self.output_dim = output_dim
         self.axis = axis
         self.activation = tf.keras.activations.get(activation)
 
-        if self.method in ["ip", "dot"] and self.output_dim != 1:
-            warnings.warn(
-                "For inner product link method the output_dim will be ignored and set to be 1."
-            )
-            self.output_dim = 1
-
     def get_config(self):
         config = {
-            "output_dim": int(self.output_dim),
             "activation": tf.keras.activations.serialize(self.activation),
             "method": self.method,
             "axis": self.axis,
@@ -169,7 +160,6 @@ class LinkEmbedding(Layer):
         # Apply different ways to combine the node embeddings to a link embedding.
         if self.method in ["ip", "dot"]:
             out = tf.reduce_sum(x0 * x1, axis=-1, keepdims=True)
-            out = self.activation(out)
 
         elif self.method == "l1":
             # l1(u,v)_i = |u_i - v_i| - vector of the same size as u,v
@@ -195,13 +185,9 @@ class LinkEmbedding(Layer):
                 )
             )
 
-        # All methods apart from inner product have a dense layer
-        # to convert link embedding to the desired output
-        if self.method not in ["ip", "dot"]:
-            out = Dense(self.output_dim, activation=self.activation)(out)
+        # Apply activation function
+        out = self.activation(out)
 
-        # Reshape to output dimensions
-        # out = Reshape((self.output_dim,))(out)
         return out
 
 
@@ -242,14 +228,26 @@ def link_inference(
         returning a vector of output_dim length (e.g., edge class probabilities, edge attribute prediction, etc.).
     """
 
+    if edge_embedding_method in ["ip", "dot"] and output_dim != 1:
+        warnings.warn(
+            "For inner product link method the output_dim will be ignored as it is fixed to be 1."
+        )
+        output_dim = 1
+
     def edge_function(x):
         le = LinkEmbedding(
-            output_dim=output_dim,
-            activation=output_act,
-            method=edge_embedding_method,
-            axis=axis,
+            activation="linear", method=edge_embedding_method, axis=axis
         )(x)
-        out = Reshape((output_dim,))(le)
+
+        # All methods apart from inner product have a dense layer
+        # to convert link embedding to the desired output
+        if edge_embedding_method in ["ip", "dot"]:
+            out = Activation(output_act)(le)
+        else:
+            out = Dense(output_dim, activation=output_act)(le)
+
+        # Reshape outputs
+        out = Reshape((output_dim,))(out)
 
         if clip_limits:
             out = LeakyClippedLinear(

@@ -774,7 +774,6 @@ class GAT:
 
         else:
             if not isinstance(generator, FullBatchGenerator):
-                print(generator)
                 raise TypeError(
                     "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
                 )
@@ -786,7 +785,6 @@ class GAT:
             self.n_features = generator.features.shape[1]
 
         if self.n_nodes is None or self.n_features is None:
-            print(self.n_nodes, self.n_features)
             raise RuntimeError(
                 "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
             )

@@ -351,7 +351,7 @@ class APPNP:
 
     def build(self, multiplicity=None):
         """
-        Builds a APPNP model for node or link prediction
+        Builds an APPNP model for node or link prediction
 
         Returns:
             tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
