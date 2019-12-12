@@ -384,7 +384,6 @@ class RGCN:
         self.n_nodes = generator.features.shape[0]
         self.n_features = generator.features.shape[1]
         self.n_edge_types = len(generator.As)
-        self.support = 1
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
