@@ -63,7 +63,6 @@ argument_dict = {
 # Jupyter notebooks to test:
 notebook_paths = [
     "demos/node-classification/attri2vec/",
-    "demos/node-classification/directed-graphsage/",
     "demos/node-classification/gat/",
     "demos/node-classification/graphsage/",
     "demos/node-classification/node2vec/",
