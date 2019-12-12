@@ -114,6 +114,7 @@ def test_GCN_Aadj_feats_op():
         features=features, A=Aadj, method="chebyshev", k=2
     )
     assert len(features_) == 4
+    assert isinstance(features, np.ndarray)
     assert np.array_equal(features_[0], features_[0])
     assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
     assert features_[2].max() < 1

@@ -195,7 +195,7 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
         if isinstance(k, int) and k >= 2:
             # default minimum degree for Chebyshev polynomials.
             T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), k)
-            features = [features] + T_k
+            features = np.array([features] + T_k)
         else:
             raise ValueError(
                 "max_degree should be positive integer of value at least 2 for method='chebyshev'; but received type {} with value {}.".format(
