@@ -183,17 +183,24 @@ class RelationalGraphConvolution(Layer):
 
         if self.num_bases > 0:
 
+            # creates a kernel for each edge type/relationship in the graph
+            # each kernel is a linear combination of basis matrices
+            # the basis matrices are shared for all edge types/relationships
+            # each edge type has a different set of learnable coefficients
+
+            # initialize the shared basis matrices
             self.bases = self.add_weight(
-                shape=(input_dim, self.units, self.num_bases),  # hyperparametr B
+                shape=(input_dim, self.units, self.num_bases),
                 initializer=self.kernel_initializer,
                 name="bases",
                 regularizer=self.kernel_regularizer,
                 constraint=self.kernel_constraint,
             )
 
+            # initialize the coefficients for each edge type/relationship
             self.coefficients = [
                 self.add_weight(
-                    shape=(self.num_bases,),  # hyperparametr B
+                    shape=(self.num_bases,),
                     initializer=self.kernel_initializer,
                     name="coeff",
                     regularizer=self.kernel_regularizer,
@@ -202,6 +209,8 @@ class RelationalGraphConvolution(Layer):
                 for _ in range(self.num_relationships)
             ]
 
+            # create a kernel for each edge type from a linear combination
+            # of the basis matrices
             self.relational_kernels = [
                 tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
             ]
@@ -209,6 +218,7 @@ class RelationalGraphConvolution(Layer):
         else:
             self.bases = None
             self.coefficients = None
+
             self.relational_kernels = [
                 self.add_weight(
                     shape=(input_dim, self.units),
