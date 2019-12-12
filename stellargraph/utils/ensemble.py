@@ -29,6 +29,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 import stellargraph as sg
 
+
 class Ensemble(object):
     """
     The Ensemble class can be used to create ensembles of stellargraph's graph neural network algorithms including
@@ -81,6 +82,7 @@ class Ensemble(object):
 
         # Create the enseble from the given base model
         self._init_models(model)
+
     def _init_models(self, model):
         """
         This method creates an ensemble of models by cloning the given base model self.n_estimators times.
@@ -96,6 +98,7 @@ class Ensemble(object):
         # now clone the model self.n_estimators-1 times
         for _ in range(self.n_estimators - 1):
             self.models.append(K.models.clone_model(model))
+
     def layers(self, indx=None):
         """
         This method returns the layer objects for the model specified by the value of indx.
@@ -134,6 +137,7 @@ class Ensemble(object):
                     type(self).__name__, indx, len(self.models)
                 )
             )
+
     def compile(
         self,
         optimizer,
@@ -183,6 +187,7 @@ class Ensemble(object):
             )
 
         self.metrics_names = self.models[0].metrics_names  # assumes all models are same
+
     def fit_generator(
         self,
         generator,
@@ -291,6 +296,7 @@ class Ensemble(object):
             )
 
         return self.history
+
     def evaluate_generator(
         self,
         generator,
@@ -384,6 +390,7 @@ class Ensemble(object):
 
         # Return the mean and standard deviation of the metrics
         return np.mean(test_metrics, axis=0), np.std(test_metrics, axis=0)
+
     def predict_generator(
         self,
         generator,
@@ -498,6 +505,7 @@ class Ensemble(object):
 
         return predictions
 
+
 #
 #
 #
@@ -526,6 +534,7 @@ class BaggingEnsemble(Ensemble):
         super().__init__(
             model=model, n_estimators=n_estimators, n_predictions=n_predictions
         )
+
     def fit_generator(
         self,
         generator,
