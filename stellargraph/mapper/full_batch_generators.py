@@ -322,11 +322,12 @@ class RelationalFullBatchNodeGenerator:
             )
 
             if transform is None:
-                # normalize here and add 1e-9 row sum to avoid harmless divide by zero warnings
+                # normalize here and replace zero row sums with 1
+                # to avoid harmless divide by zero warnings
                 d = sps.diags(
-                    np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0
+                    np.float_power(np.ravel(np.maximum(A.sum(axis=1), 1)), -1), 0
                 )
-                A = d.dot(A).tocsr()
+                A = d.dot(A)
 
             else:
                 self.features, A = transform(self.features, A)
