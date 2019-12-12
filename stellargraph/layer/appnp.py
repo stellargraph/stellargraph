@@ -311,7 +311,7 @@ class APPNP:
 
         feature_layer = h_layer
 
-        for layer in self._layers[(2 * len(self.layer_sizes)):]:
+        for layer in self._layers[(2 * len(self.layer_sizes)) :]:
             if isinstance(layer, APPNPPropagationLayer):
                 h_layer = layer([h_layer, feature_layer, out_indices] + Ainput)
             else:
