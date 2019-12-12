@@ -42,6 +42,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy, binary_crossentropy
 from tensorflow import keras
 
+
 def example_graph_1(feature_size=None):
     G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2), (5, 6), (1, 5)]
@@ -56,6 +57,7 @@ def example_graph_1(feature_size=None):
 
     else:
         return StellarGraph(G)
+
 
 def create_graphSAGE_model(graph, link_prediction=False):
 
@@ -100,6 +102,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
 
     return base_model, keras_model, generator, train_gen
 
+
 def create_Unsupervised_graphSAGE_model(graph):
     generator = GraphSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 2])
     unsupervisedSamples = UnsupervisedSampler(
@@ -118,6 +121,7 @@ def create_Unsupervised_graphSAGE_model(graph):
 
     keras_model = Model(inputs=x_inp, outputs=prediction)
     return base_model, keras_model, generator, train_gen
+
 
 def create_HinSAGE_model(graph, link_prediction=False):
 
@@ -147,6 +151,7 @@ def create_HinSAGE_model(graph, link_prediction=False):
 
     return base_model, keras_model, generator, train_gen
 
+
 def create_GCN_model(graph):
 
     generator = FullBatchNodeGenerator(graph)
@@ -165,6 +170,7 @@ def create_GCN_model(graph):
     keras_model = Model(inputs=x_inp, outputs=x_out)
 
     return base_model, keras_model, generator, train_gen
+
 
 def create_GAT_model(graph):
 
@@ -186,6 +192,7 @@ def create_GAT_model(graph):
     keras_model = Model(inputs=x_inp, outputs=x_out)
 
     return base_model, keras_model, generator, train_gen
+
 
 #
 # Test for class Ensemble instance creation with invalid parameters given.
@@ -269,6 +276,7 @@ def test_ensemble_init_parameters():
         assert ens.n_estimators == 7
         assert ens.n_predictions == 10
 
+
 def test_compile():
 
     graph = example_graph_1(feature_size=10)
@@ -328,6 +336,7 @@ def test_compile():
                 weighted_metrics=["f1_accuracy"],
             )
 
+
 def test_Ensemble_fit_generator():
 
     graph = example_graph_1(feature_size=10)
@@ -362,6 +371,7 @@ def test_Ensemble_fit_generator():
                 shuffle=False,
             )
 
+
 def test_unsupervised_Ensemble_fit_generator():
 
     graph = example_graph_1(feature_size=10)
@@ -388,6 +398,7 @@ def test_unsupervised_Ensemble_fit_generator():
                 verbose=0,
                 shuffle=False,
             )
+
 
 def test_BaggingEnsemble_fit_generator():
 
@@ -481,6 +492,7 @@ def test_BaggingEnsemble_fit_generator():
                 shuffle=False,
                 bag_size=10,  # larger than the number of training points
             )
+
 
 def test_evaluate_generator():
 
@@ -578,6 +590,7 @@ def test_evaluate_generator():
         assert len(test_metrics_mean.shape) == 1
         assert len(test_metrics_std.shape) == 1
 
+
 def test_predict_generator():
 
     # test_data = np.array([[0, 0], [1, 1], [0.8, 0.8]])
@@ -669,6 +682,7 @@ def test_predict_generator():
         else:
             assert test_predictions.shape[2] == len(test_data)
         assert test_predictions.shape[-1] == test_targets.shape[-1]
+
 
 #
 # Tests for link prediction that can't be combined easily with the node attribute inference workflow above.
@@ -771,6 +785,7 @@ def test_evaluate_generator_link_prediction():
         assert len(test_metrics_mean.shape) == 1
         assert len(test_metrics_std.shape) == 1
 
+
 def test_predict_generator_link_prediction():
 
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
@@ -844,6 +859,7 @@ def test_predict_generator_link_prediction():
         assert test_predictions.shape[1] == ens.n_predictions
         assert test_predictions.shape[2] == len(edge_ids_test)
         assert test_predictions.shape[3] == 1
+
 
 def test_unsupervised_embeddings_prediction():
     #
