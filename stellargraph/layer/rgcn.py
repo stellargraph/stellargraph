@@ -378,7 +378,12 @@ class RGCN:
         self.bias = bias
         self.num_bases = num_bases
         self.dropout = dropout
-        self.generator = generator
+
+        # Copy required information from generator
+        self.multiplicity = generator.multiplicity
+        self.n_nodes = generator.features.shape[0]
+        self.n_features = generator.features.shape[1]
+        self.n_edge_types = len(generator.As)
         self.support = 1
 
         # Check if the generator is producing a sparse matrix
@@ -458,19 +463,18 @@ class RGCN:
                 "Currently full-batch methods only support a batch dimension of one"
             )
 
-        N_edge_types = len(self.generator.As)
 
         # Convert input indices & values to sparse matrices
         if self.use_sparse:
 
-            As_indices = As[:N_edge_types]
-            As_values = As[N_edge_types:]
+            As_indices = As[:self.n_edge_types]
+            As_values = As[self.n_edge_types:]
 
             Ainput = [
                 SqueezedSparseConversion(
                     shape=(n_nodes, n_nodes), dtype=As_values[i].dtype
                 )([As_indices[i], As_values[i]])
-                for i in range(N_edge_types)
+                for i in range(self.n_edge_types)
             ]
 
         # Otherwise, create dense matrices from input tensor
@@ -501,12 +505,11 @@ class RGCN:
             and `x_out` is a Keras tensor for the RGCN model output.
         """
         # Placeholder for node features
-        N_nodes = self.generator.features.shape[0]
-        N_feat = self.generator.features.shape[1]
+
         N_edge_types = len(self.generator.As)
 
         # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, N_nodes, N_feat))
+        x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
         out_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
         # Create inputs for sparse or dense matrices
@@ -522,7 +525,7 @@ class RGCN:
         else:
             # Placeholders for the dense adjacency matrix
             A_placeholders = [
-                Input(batch_shape=(1, N_nodes, N_nodes)) for i in range(N_edge_types)
+                Input(batch_shape=(1, self.n_nodes, self.n_nodes)) for i in range(N_edge_types)
             ]
 
         x_inp = [x_t, out_indices_t] + A_placeholders
@@ -547,18 +550,10 @@ class RGCN:
 
         """
 
-        if self.generator is not None:
-
-            if isinstance(self.generator, RelationalFullBatchNodeGenerator):
-                return self._node_model()
-
-            else:
-                raise NotImplementedError(
-                    "Currently only node prediction if supported for RGCN."
-                )
+        if self.multiplicity == 1:
+            return self._node_model()
 
         else:
-
-            raise RuntimeError(
-                "Suitable generator is not provided at model creation time, unable to figure out how to build the model."
+            raise NotImplementedError(
+                "Currently only node prediction if supported for RGCN."
             )
