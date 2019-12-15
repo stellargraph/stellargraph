@@ -14,11 +14,21 @@
 - Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
 
 **Breaking changes:**
+- The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality.
+In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead.
+[\#297](https://github.com/stellargraph/stellargraph/issues/297)
+
 - Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498).
 Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 
 **Fixed bugs:**
 
+
+## [0.8.3](https://github.com/stellargraph/stellargraph/tree/v0.8.3)
+
+**Fixed bugs:**
+- Fixed the issue in the APPNP class that causes appnp to propagate excessive dropout layers. [\#525](https://github.com/stellargraph/stellargraph/pull/525)
+- Added a fix into the PPNP node classification demo so that the softmax layer is no longer propagated. [\#525](https://github.com/stellargraph/stellargraph/pull/525)
 
 ## [0.8.2](https://github.com/stellargraph/stellargraph/tree/v0.8.2)
 

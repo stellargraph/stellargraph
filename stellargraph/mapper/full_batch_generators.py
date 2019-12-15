@@ -32,7 +32,7 @@ from functools import reduce
 from tensorflow.keras.utils import Sequence
 
 from . import FullBatchNodeSequence, SparseFullBatchNodeSequence, RelationalFullBatchNodeSequence
-from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
+from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
@@ -88,7 +88,7 @@ class FullBatchNodeGenerator:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
             'chebyshev','sgc', 'self_loops', or 'none'.
@@ -114,8 +114,8 @@ class FullBatchNodeGenerator:
         teleport_probability=0.1,
     ):
 
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
         self.name = name
@@ -128,9 +128,7 @@ class FullBatchNodeGenerator:
 
         # Create sparse adjacency matrix
         self.node_list = list(G.nodes())
-        self.Aadj = nx.to_scipy_sparse_matrix(
-            G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
-        )
+        self.Aadj = G.to_adjacency_matrix()
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.

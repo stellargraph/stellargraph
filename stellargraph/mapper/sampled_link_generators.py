@@ -30,7 +30,7 @@ import collections
 import abc
 from functools import reduce
 from tensorflow import keras
-from ..core.graph import StellarGraphBase
+from ..core.graph import StellarGraph
 from ..data import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
@@ -43,8 +43,8 @@ from . import LinkSequence, OnDemandLinkSequence
 
 class BatchedLinkGenerator(abc.ABC):
     def __init__(self, G, batch_size, schema=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
         self.batch_size = batch_size
