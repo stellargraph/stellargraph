@@ -54,11 +54,23 @@ class RelationalGraphConvolution(Layer):
             use_bias (bool): toggles an optional bias
             final_layer (bool): If False the layer returns output for all nodes,
                                 if True it returns the subset specified by the indices passed to it.
-            kernel_initializer (str or func): The initialiser to use for the weights;
+            kernel_initializer (str or func): The initialiser to use for the self kernel and also relational kernels if num_bases=0;
                 defaults to 'glorot_uniform'.
-            kernel_regularizer (str or func): The regulariser to use for the weights;
+            kernel_regularizer (str or func): The regulariser to use for the self kernel and also relational kernels if num_bases=0;
                 defaults to None.
-            kernel_constraint (str or func): The constraint to use for the weights;
+            kernel_constraint (str or func): The constraint to use for the self kernel and also relational kernels if num_bases=0;
+                defaults to None.
+            basis_initializer (str or func): The initialiser to use for the basis matrices;
+                defaults to 'glorot_uniform'.
+            basis_regularizer (str or func): The regulariser to use for the basis matrices;
+                defaults to None.
+            basis_constraint (str or func): The constraint to use for the basis matrices;
+                defaults to None.
+            coefficient_initializer (str or func): The initialiser to use for the coefficients;
+                defaults to 'glorot_uniform'.
+            coefficient_regularizer (str or func): The regulariser to use for the coefficients;
+                defaults to None.
+            coefficient_constraint (str or func): The constraint to use for the coefficients;
                 defaults to None.
             bias_initializer (str or func): The initialiser to use for the bias;
                 defaults to 'zeros'.
@@ -76,13 +88,6 @@ class RelationalGraphConvolution(Layer):
         activation=None,
         use_bias=True,
         final_layer=False,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
         **kwargs
     ):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
@@ -110,15 +115,36 @@ class RelationalGraphConvolution(Layer):
         self.num_bases = num_bases
         self.activation = activations.get(activation)
         self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
-        self.activity_regularizer = regularizers.get(activity_regularizer)
-        self.kernel_constraint = constraints.get(kernel_constraint)
-        self.bias_constraint = constraints.get(bias_constraint)
-
+        self._get_regularisers_from_keywords(kwargs)
         self.final_layer = final_layer
+        super().__init__(**kwargs)
+
+    def _get_regularisers_from_keywords(self, kwargs):
+        self.kernel_initializer = initializers.get(
+            kwargs.pop("kernel_initializer", "glorot_uniform")
+        )
+        self.kernel_regularizer = regularizers.get(
+            kwargs.pop("kernel_regularizer", None)
+        )
+        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
+
+        self.basis_initializer = initializers.get(
+            kwargs.pop("basis_initializer", "glorot_uniform")
+        )
+        self.basis_regularizer = regularizers.get(kwargs.pop("basis_regularizer", None))
+        self.basis_constraint = constraints.get(kwargs.pop("basis_constraint", None))
+
+        self.coefficient_initializer = initializers.get(
+            kwargs.pop("coefficient_initializer", "glorot_uniform")
+        )
+        self.coefficient_regularizer = regularizers.get(kwargs.pop("coefficient_regularizer", None))
+        self.coefficient_constraint = constraints.get(kwargs.pop("coefficient_constraint", None))
+
+        self.bias_initializer = initializers.get(
+            kwargs.pop("bias_initializer", "zeros")
+        )
+        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
+        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
 
     def get_config(self):
         """
@@ -134,13 +160,22 @@ class RelationalGraphConvolution(Layer):
             "use_bias": self.use_bias,
             "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
+
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
+            "basis_initializer": initializers.serialize(self.basis_initializer),
+            "coefficient_initializer": initializers.serialize(self.coefficient_initializer),
             "bias_initializer": initializers.serialize(self.bias_initializer),
+
             "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+            "basis_regularizer": regularizers.serialize(self.basis_regularizer),
+            "coefficient_regularizer": regularizers.serialize(self.coefficient_regularizer),
             "bias_regularizer": regularizers.serialize(self.bias_regularizer),
-            "activity_regularizer": regularizers.serialize(self.activity_regularizer),
+
             "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            "basis_constraint": constraints.serialize(self.basis_constraint),
+            "coefficient_constraint": constraints.serialize(self.coefficient_constraint),
             "bias_constraint": constraints.serialize(self.bias_constraint),
+
             "num_relationships": self.num_relationships,
             "num_bases": self.num_bases,
         }
@@ -191,20 +226,20 @@ class RelationalGraphConvolution(Layer):
             # initialize the shared basis matrices
             self.bases = self.add_weight(
                 shape=(input_dim, self.units, self.num_bases),
-                initializer=self.kernel_initializer,
+                initializer=self.basis_initializer,
                 name="bases",
-                regularizer=self.kernel_regularizer,
-                constraint=self.kernel_constraint,
+                regularizer=self.basis_regularizer,
+                constraint=self.basis_constraint,
             )
 
             # initialize the coefficients for each edge type/relationship
             self.coefficients = [
                 self.add_weight(
                     shape=(self.num_bases,),
-                    initializer=self.kernel_initializer,
+                    initializer=self.coefficient_initializer,
                     name="coeff",
-                    regularizer=self.kernel_regularizer,
-                    constraint=self.kernel_constraint,
+                    regularizer=self.coefficient_regularizer,
+                    constraint=self.coefficient_constraint,
                 )
                 for _ in range(self.num_relationships)
             ]
@@ -230,7 +265,7 @@ class RelationalGraphConvolution(Layer):
             ]
 
         self.self_kernel = self.add_weight(
-            shape=(input_dim, self.units),  # hyperparametr B
+            shape=(input_dim, self.units),
             initializer=self.kernel_initializer,
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
@@ -503,9 +538,6 @@ class RGCN:
              node indices, and the indices and values for the sparse adjacency matrices for each relationship),
             and `x_out` is a Keras tensor for the RGCN model output.
         """
-        # Placeholder for node features
-
-        N_edge_types = len(self.generator.As)
 
         # Inputs for features & target indices
         x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
@@ -516,15 +548,15 @@ class RGCN:
             # Placeholders for the sparse adjacency matrix
             A_indices_t = [
                 Input(batch_shape=(1, None, 2), dtype="int64")
-                for i in range(N_edge_types)
+                for i in range(self.n_edge_types)
             ]
-            A_values_t = [Input(batch_shape=(1, None)) for i in range(N_edge_types)]
+            A_values_t = [Input(batch_shape=(1, None)) for i in range(self.n_edge_types)]
             A_placeholders = A_indices_t + A_values_t
 
         else:
             # Placeholders for the dense adjacency matrix
             A_placeholders = [
-                Input(batch_shape=(1, self.n_nodes, self.n_nodes)) for i in range(N_edge_types)
+                Input(batch_shape=(1, self.n_nodes, self.n_nodes)) for i in range(self.n_edge_types)
             ]
 
         x_inp = [x_t, out_indices_t] + A_placeholders

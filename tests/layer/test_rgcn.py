@@ -52,12 +52,21 @@ def test_RelationalGraphConvolution_config():
     assert conf["num_bases"] == 0
     assert conf["num_relationships"] == 5
     assert conf["use_bias"] == True
+
     assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
     assert conf["bias_initializer"]["class_name"] == "Zeros"
+    assert conf["basis_initializer"]["class_name"] == "GlorotUniform"
+    assert conf["coefficient_initializer"]["class_name"] == "GlorotUniform"
+
     assert conf["kernel_regularizer"] is None
     assert conf["bias_regularizer"] is None
+    assert conf["basis_regularizer"] is None
+    assert conf["coefficient_regularizer"] is None
+
     assert conf["kernel_constraint"] is None
     assert conf["bias_constraint"] is None
+    assert conf["basis_constraint"] is None
+    assert conf["coefficient_constraint"] is None
 
 
 def test_RelationalGraphConvolution_init():
