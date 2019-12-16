@@ -46,7 +46,7 @@ class Test_RelationalFullBatchNodeGenerator:
     )
     G = StellarDiGraph(gnx, node_features=node_features)
     N = len(G.nodes())
-    edge_types = sorted(set(e[-1] for e in G.edges()))
+    edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
     num_relationships = len(edge_types)
 
     def test_generator_constructor(self):
@@ -183,15 +183,15 @@ class Test_RelationalFullBatchNodeGenerator:
         assert generator.name == "test"
 
         As = []
-        edge_types = sorted(set(e[-1] for e in G.edges()))
+        edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
         node_list = list(G.nodes())
         node_index = dict(zip(node_list, range(len(node_list))))
         for edge_type in edge_types:
             col_index = [
-                node_index[n1] for n1, n2, etype in G.edges() if etype == edge_type
+                node_index[n1] for n1, n2, etype in G.edges(triple=True) if etype == edge_type
             ]
             row_index = [
-                node_index[n2] for n1, n2, etype in G.edges() if etype == edge_type
+                node_index[n2] for n1, n2, etype in G.edges(triple=True) if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
 
