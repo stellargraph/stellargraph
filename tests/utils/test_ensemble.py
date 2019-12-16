@@ -40,7 +40,6 @@ from stellargraph.utils import Ensemble, BaggingEnsemble
 from tensorflow.keras import layers, Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy, binary_crossentropy
-from tensorflow import keras
 
 
 def example_graph_1(feature_size=None):
@@ -59,7 +58,7 @@ def example_graph_1(feature_size=None):
         return StellarGraph(G)
 
 
-def create_graphSAGE_model(graph, link_prediction=False):
+def create_GraphSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
         # We are going to train on the original graph
@@ -103,7 +102,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
     return base_model, keras_model, generator, train_gen
 
 
-def create_Unsupervised_graphSAGE_model(graph):
+def create_unsupervised_GraphSAGE_model(graph):
     generator = GraphSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 2])
     unsupervisedSamples = UnsupervisedSampler(
         graph, nodes=graph.nodes(), length=3, number_of_walks=2
@@ -201,14 +200,14 @@ def test_ensemble_init_parameters():
 
     graph = example_graph_1(feature_size=10)
 
-    base_model, keras_model, generator, train_gen = create_graphSAGE_model(graph)
+    base_model, keras_model, generator, train_gen = create_GraphSAGE_model(graph)
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph),
-        create_Unsupervised_graphSAGE_model(graph),
+        create_GraphSAGE_model(graph),
+        create_unsupervised_GraphSAGE_model(graph),
         create_HinSAGE_model(graph),
-        create_graphSAGE_model(graph, link_prediction=True),
+        create_GraphSAGE_model(graph, link_prediction=True),
         create_HinSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
@@ -283,10 +282,10 @@ def test_compile():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph),
-        create_Unsupervised_graphSAGE_model(graph),
+        create_GraphSAGE_model(graph),
+        create_unsupervised_GraphSAGE_model(graph),
         create_HinSAGE_model(graph),
-        create_graphSAGE_model(graph, link_prediction=True),
+        create_GraphSAGE_model(graph, link_prediction=True),
         create_HinSAGE_model(graph, link_prediction=True),
         create_GCN_model(graph),
         create_GAT_model(graph),
@@ -343,7 +342,7 @@ def test_Ensemble_fit_generator():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph),
+        create_GraphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
@@ -377,7 +376,7 @@ def test_unsupervised_Ensemble_fit_generator():
     graph = example_graph_1(feature_size=10)
 
     # base_model, keras_model, generator, train_gen
-    gnn_models = [create_Unsupervised_graphSAGE_model(graph)]
+    gnn_models = [create_unsupervised_GraphSAGE_model(graph)]
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
@@ -409,7 +408,7 @@ def test_BaggingEnsemble_fit_generator():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph),
+        create_GraphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
@@ -503,7 +502,7 @@ def test_evaluate_generator():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph),
+        create_GraphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
@@ -601,7 +600,7 @@ def test_predict_generator():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph),
+        create_GraphSAGE_model(graph),
         create_HinSAGE_model(graph),
         create_GCN_model(graph),
         create_GAT_model(graph),
@@ -696,7 +695,7 @@ def test_evaluate_generator_link_prediction():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph, link_prediction=True),
+        create_GraphSAGE_model(graph, link_prediction=True),
         create_HinSAGE_model(graph, link_prediction=True),
     ]
 
@@ -794,7 +793,7 @@ def test_predict_generator_link_prediction():
 
     # base_model, keras_model, generator, train_gen
     gnn_models = [
-        create_graphSAGE_model(graph, link_prediction=True),
+        create_GraphSAGE_model(graph, link_prediction=True),
         create_HinSAGE_model(graph, link_prediction=True),
     ]
 
@@ -870,7 +869,7 @@ def test_unsupervised_embeddings_prediction():
     graph = example_graph_1(feature_size=2)
 
     # base_model, keras_model, generator, train_gen
-    gnn_models = [create_Unsupervised_graphSAGE_model(graph)]
+    gnn_models = [create_unsupervised_GraphSAGE_model(graph)]
 
     for gnn_model in gnn_models:
         keras_model = gnn_model[1]
@@ -891,7 +890,7 @@ def test_unsupervised_embeddings_prediction():
         # We won't train the model instead use the initial random weights to test
         # the evaluate_generator method.
         ens.models = [
-            keras.Model(inputs=model.input, outputs=model.output[-1])
+            Model(inputs=model.input, outputs=model.output[-1])
             for model in ens.models
         ]
 
