@@ -519,11 +519,6 @@ class GraphAttentionSparse(GraphAttention):
                 features, attention_kernel[1]
             )  # (N x 1), [a_2]^T [Wh_j]
 
-            # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
-            dense = attn_for_self + K.transpose(
-                attn_for_neighs
-            )  # (N x N) via broadcasting
-
             # Create sparse attention vector (All non-zero values of the matrix)
             sparse_attn_self = tf.gather(
                 K.reshape(attn_for_self, [-1]), A_indices[:, 0], axis=0
