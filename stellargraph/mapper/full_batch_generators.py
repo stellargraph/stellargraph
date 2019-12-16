@@ -279,7 +279,7 @@ class RelationalFullBatchNodeGenerator:
 
     def __init__(self, G, name=None, sparse=True, transform=None):
 
-        if not isinstance(G, StellarGraphBase):
+        if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph object.")
 
         self.graph = G
@@ -295,7 +295,7 @@ class RelationalFullBatchNodeGenerator:
 
         self.features = G.get_feature_for_nodes(self.node_list)
 
-        edge_types = sorted(set(e[-1] for e in G.edges))
+        edge_types = sorted(set(e[-1] for e in G.edges()))
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
         # create a list of adjacency matrices - one adj matrix for each edge type
@@ -305,10 +305,10 @@ class RelationalFullBatchNodeGenerator:
         for edge_type in edge_types:
 
             col_index = [
-                self.node_index[n1] for n1, n2, etype in G.edges if etype == edge_type
+                self.node_index[n1] for n1, n2, etype in G.edges() if etype == edge_type
             ]
             row_index = [
-                self.node_index[n2] for n1, n2, etype in G.edges if etype == edge_type
+                self.node_index[n2] for n1, n2, etype in G.edges() if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
 

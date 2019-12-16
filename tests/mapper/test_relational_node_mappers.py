@@ -46,7 +46,7 @@ class Test_RelationalFullBatchNodeGenerator:
     )
     G = StellarDiGraph(gnx, node_features=node_features)
     N = len(G.nodes())
-    edge_types = sorted(set(e[-1] for e in G.edges))
+    edge_types = sorted(set(e[-1] for e in G.edges()))
     num_relationships = len(edge_types)
 
     def test_generator_constructor(self):
@@ -59,11 +59,11 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G))
+            generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G._graph))
 
     def generator_flow(self, G, node_ids, node_targets, sparse=False):
         generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)
-        n_nodes = len(G)
+        n_nodes = len(G.nodes())
 
         gen = generator.flow(node_ids, node_targets)
         if sparse:
@@ -183,15 +183,15 @@ class Test_RelationalFullBatchNodeGenerator:
         assert generator.name == "test"
 
         As = []
-        edge_types = sorted(set(e[-1] for e in G.edges))
-        node_list = list(G.nodes)
+        edge_types = sorted(set(e[-1] for e in G.edges()))
+        node_list = list(G.nodes())
         node_index = dict(zip(node_list, range(len(node_list))))
         for edge_type in edge_types:
             col_index = [
-                node_index[n1] for n1, n2, etype in G.edges if etype == edge_type
+                node_index[n1] for n1, n2, etype in G.edges() if etype == edge_type
             ]
             row_index = [
-                node_index[n2] for n1, n2, etype in G.edges if etype == edge_type
+                node_index[n2] for n1, n2, etype in G.edges() if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
 

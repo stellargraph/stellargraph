@@ -732,7 +732,7 @@ class NetworkXStellarGraph(StellarGraph):
         return self._graph.nodes()
 
     def edges(self) -> Iterable[Any]:
-        return self._graph.edges()
+        return self._graph.edges
 
     def has_node(self, node: Any) -> bool:
         return self._graph.__contains__(node)
