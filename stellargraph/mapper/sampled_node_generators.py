@@ -43,7 +43,7 @@ from ..data import (
     SampledHeterogeneousBreadthFirstWalk,
     DirectedBreadthFirstNeighbours,
 )
-from ..core.graph import StellarGraphBase, GraphSchema, StellarDiGraph
+from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
 from . import NodeSequence
 
@@ -64,8 +64,8 @@ class BatchedNodeGenerator(abc.ABC):
     """
 
     def __init__(self, G, batch_size, schema=None):
-        if not isinstance(G, StellarGraphBase):
-            raise TypeError("Graph must be a StellarGraph object.")
+        if not isinstance(G, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
         self.batch_size = batch_size

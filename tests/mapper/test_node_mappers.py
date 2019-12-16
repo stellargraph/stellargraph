@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
+from stellargraph.core.graph_networkx import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
@@ -199,7 +200,7 @@ def test_nodemapper_constructor():
 
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
-    mapper = generator.flow(list(G))
+    mapper = generator.flow(list(G.nodes()))
 
     assert generator.batch_size == 2
     assert mapper.data_size == 4
@@ -296,7 +297,7 @@ def test_nodemapper_with_labels():
 
     # test graph
     G2 = example_graph_2(n_feat)
-    nodes = list(G2)
+    nodes = list(G2.nodes())
     labels = [n * 2 for n in nodes]
 
     gen = GraphSAGENodeGenerator(G2, batch_size=n_batch, num_samples=[2, 2]).flow(
@@ -365,11 +366,14 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    ccs = list(nx.connected_components(G))
+    assert isinstance(G, NetworkXStellarGraph)
+    # XXX Hack - Only works for NetworkXStellarGraph instances
+    Gnx = G._graph
+    ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
     n_isolates = [5]
-    assert nx.degree(G, n_isolates[0]) == 0
+    assert nx.degree(Gnx, n_isolates[0]) == 0
 
     # Check both isolated and non-isolated nodes have same sampled feature shape
     for head_nodes in [[1], [2], n_isolates]:
@@ -407,11 +411,13 @@ def test_nodemapper_incorrect_targets():
     G = example_graph_1(feature_size=n_feat)
 
     with pytest.raises(TypeError):
-        GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(list(G), 1)
+        GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+            list(G.nodes()), 1
+        )
 
     with pytest.raises(ValueError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
-            list(G), targets=[]
+            list(G.nodes()), targets=[]
         )
 
 
@@ -679,7 +685,7 @@ def test_attri2vec_nodemapper_constructor():
 
     generator = Attri2VecNodeGenerator(G, batch_size=2)
 
-    mapper = generator.flow(list(G))
+    mapper = generator.flow(list(G.nodes()))
 
     assert generator.batch_size == 2
     assert mapper.data_size == 4
@@ -836,7 +842,7 @@ class Test_FullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = FullBatchNodeGenerator(nx.Graph(self.G))
+            generator = FullBatchNodeGenerator(nx.Graph())
 
     def test_generator_constructor_hin(self):
         feature_sizes = {"t1": 1, "t2": 1}
@@ -861,7 +867,7 @@ class Test_FullBatchNodeGenerator:
             k=k,
             teleport_probability=teleport_probability,
         )
-        n_nodes = len(G)
+        n_nodes = G.number_of_nodes()
 
         gen = generator.flow(node_ids, node_targets)
         if sparse:
@@ -982,12 +988,12 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
 
-        A = nx.to_numpy_array(G)
+        A = G.to_adjacency_matrix().toarray()
         assert np.array_equal(A.dot(A), generator.Aadj.toarray())
 
     def test_generator_methods(self):
         node_ids = list(self.G.nodes())
-        Aadj = nx.to_numpy_array(self.G)
+        Aadj = self.G.to_adjacency_matrix().toarray()
         Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
         Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
         Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)
