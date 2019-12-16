@@ -24,7 +24,7 @@ __all__ = [
     "OnDemandLinkSequence",
     "FullBatchNodeSequence",
     "SparseFullBatchNodeSequence",
-    "RelationalFullBatchNodeSequence"
+    "RelationalFullBatchNodeSequence",
 ]
 
 import warnings

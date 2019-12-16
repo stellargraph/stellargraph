@@ -188,10 +188,14 @@ class Test_RelationalFullBatchNodeGenerator:
         node_index = dict(zip(node_list, range(len(node_list))))
         for edge_type in edge_types:
             col_index = [
-                node_index[n1] for n1, n2, etype in G.edges(triple=True) if etype == edge_type
+                node_index[n1]
+                for n1, n2, etype in G.edges(triple=True)
+                if etype == edge_type
             ]
             row_index = [
-                node_index[n2] for n1, n2, etype in G.edges(triple=True) if etype == edge_type
+                node_index[n2]
+                for n1, n2, etype in G.edges(triple=True)
+                if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
 

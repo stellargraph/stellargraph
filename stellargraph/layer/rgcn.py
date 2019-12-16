@@ -137,8 +137,12 @@ class RelationalGraphConvolution(Layer):
         self.coefficient_initializer = initializers.get(
             kwargs.pop("coefficient_initializer", "glorot_uniform")
         )
-        self.coefficient_regularizer = regularizers.get(kwargs.pop("coefficient_regularizer", None))
-        self.coefficient_constraint = constraints.get(kwargs.pop("coefficient_constraint", None))
+        self.coefficient_regularizer = regularizers.get(
+            kwargs.pop("coefficient_regularizer", None)
+        )
+        self.coefficient_constraint = constraints.get(
+            kwargs.pop("coefficient_constraint", None)
+        )
 
         self.bias_initializer = initializers.get(
             kwargs.pop("bias_initializer", "zeros")
@@ -160,22 +164,24 @@ class RelationalGraphConvolution(Layer):
             "use_bias": self.use_bias,
             "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
-
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "basis_initializer": initializers.serialize(self.basis_initializer),
-            "coefficient_initializer": initializers.serialize(self.coefficient_initializer),
+            "coefficient_initializer": initializers.serialize(
+                self.coefficient_initializer
+            ),
             "bias_initializer": initializers.serialize(self.bias_initializer),
-
             "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
             "basis_regularizer": regularizers.serialize(self.basis_regularizer),
-            "coefficient_regularizer": regularizers.serialize(self.coefficient_regularizer),
+            "coefficient_regularizer": regularizers.serialize(
+                self.coefficient_regularizer
+            ),
             "bias_regularizer": regularizers.serialize(self.bias_regularizer),
-
             "kernel_constraint": constraints.serialize(self.kernel_constraint),
             "basis_constraint": constraints.serialize(self.basis_constraint),
-            "coefficient_constraint": constraints.serialize(self.coefficient_constraint),
+            "coefficient_constraint": constraints.serialize(
+                self.coefficient_constraint
+            ),
             "bias_constraint": constraints.serialize(self.bias_constraint),
-
             "num_relationships": self.num_relationships,
             "num_bases": self.num_bases,
         }
@@ -497,12 +503,11 @@ class RGCN:
                 "Currently full-batch methods only support a batch dimension of one"
             )
 
-
         # Convert input indices & values to sparse matrices
         if self.use_sparse:
 
-            As_indices = As[:self.n_edge_types]
-            As_values = As[self.n_edge_types:]
+            As_indices = As[: self.n_edge_types]
+            As_values = As[self.n_edge_types :]
 
             Ainput = [
                 SqueezedSparseConversion(
@@ -550,13 +555,16 @@ class RGCN:
                 Input(batch_shape=(1, None, 2), dtype="int64")
                 for i in range(self.n_edge_types)
             ]
-            A_values_t = [Input(batch_shape=(1, None)) for i in range(self.n_edge_types)]
+            A_values_t = [
+                Input(batch_shape=(1, None)) for i in range(self.n_edge_types)
+            ]
             A_placeholders = A_indices_t + A_values_t
 
         else:
             # Placeholders for the dense adjacency matrix
             A_placeholders = [
-                Input(batch_shape=(1, self.n_nodes, self.n_nodes)) for i in range(self.n_edge_types)
+                Input(batch_shape=(1, self.n_nodes, self.n_nodes))
+                for i in range(self.n_edge_types)
             ]
 
         x_inp = [x_t, out_indices_t] + A_placeholders

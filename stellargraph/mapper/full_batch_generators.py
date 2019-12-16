@@ -31,7 +31,11 @@ from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 
-from . import FullBatchNodeSequence, SparseFullBatchNodeSequence, RelationalFullBatchNodeSequence
+from . import (
+    FullBatchNodeSequence,
+    SparseFullBatchNodeSequence,
+    RelationalFullBatchNodeSequence,
+)
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
@@ -305,10 +309,14 @@ class RelationalFullBatchNodeGenerator:
         for edge_type in edge_types:
 
             col_index = [
-                self.node_index[n1] for n1, n2, etype in G.edges(triple=True) if etype == edge_type
+                self.node_index[n1]
+                for n1, n2, etype in G.edges(triple=True)
+                if etype == edge_type
             ]
             row_index = [
-                self.node_index[n2] for n1, n2, etype in G.edges(triple=True) if etype == edge_type
+                self.node_index[n2]
+                for n1, n2, etype in G.edges(triple=True)
+                if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
 
