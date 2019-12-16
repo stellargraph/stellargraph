@@ -360,7 +360,7 @@ class RGCN:
 
     For more details, please see the RGCN demo notebook:
 
-    emos/node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb
+    demos/node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
