@@ -890,8 +890,7 @@ def test_unsupervised_embeddings_prediction():
         # We won't train the model instead use the initial random weights to test
         # the evaluate_generator method.
         ens.models = [
-            Model(inputs=model.input, outputs=model.output[-1])
-            for model in ens.models
+            Model(inputs=model.input, outputs=model.output[-1]) for model in ens.models
         ]
 
         test_predictions = ens.predict_generator(train_gen, summarise=False)
