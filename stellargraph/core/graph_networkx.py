@@ -311,6 +311,22 @@ class NetworkXStellarGraph(StellarGraph):
 
         else:
             data_index_maps = {}
+            nodes_by_type = {
+                nt: [
+                    n
+                    for n, ndata in self._graph.nodes(data=True)
+                    if ndata.get(self._node_type_attr, self._node_type_default) == nt
+                ]
+                for nt in node_types
+            }
+            for nt in node_types:
+                nt_node_list = nodes_by_type[nt]
+
+                # Add None to node list as ID of unknown nodes
+                nt_node_list.append(None)
+
+                # Create map between node id and index (including None)
+                data_index_maps[nt] = {nid: ii for ii, nid in enumerate(nt_node_list)}
             data_arrays = {}
 
         # TODO: What other convenience attributes do we need?
