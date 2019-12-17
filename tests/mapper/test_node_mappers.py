@@ -759,7 +759,7 @@ def test_node2vec_nodemapper_constructor():
 
     generator = Node2VecNodeGenerator(G, batch_size=2)
 
-    mapper = generator.flow(list(G))
+    mapper = generator.flow(list(G.nodes()))
 
     assert generator.batch_size == 2
     assert mapper.data_size == 4
