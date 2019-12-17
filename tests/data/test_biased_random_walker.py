@@ -153,9 +153,7 @@ class TestBiasedWeightedRandomWalk(object):
 
         with pytest.raises(ValueError):
             # weighted must be a Boolean.
-            biasedrw = BiasedRandomWalk(
-                g, p=p, q=q, weighted="unknown"
-            )
+            biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted="unknown")
 
     def test_identity_unweighted_weighted_1_walks(self):
 
@@ -262,16 +260,9 @@ class TestBiasedWeightedRandomWalk(object):
         p = 1.0
         q = 1.0
 
-        biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True, edge_weight_label="w")
+        biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
 
-        assert (
-            len(
-                biasedrw.run(
-                    nodes=nodes, n=n, length=length, seed=seed
-                )
-            ) 
-            == 4
-        )
+        assert len(biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)) == 4
 
         g = nx.Graph()
         edges = [(1, 2), (2, 3), (3, 4), (4, 1)]
@@ -291,11 +282,9 @@ class TestBiasedWeightedRandomWalk(object):
         p = 1.0
         q = 1.0
 
-        biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True, edge_weight_label="w")
+        biasedrw = BiasedRandomWalk(g, p=p, q=q, weighted=True)
         with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, length=length, seed=seed
-            )
+            biasedrw.run(nodes=nodes, n=n, length=length, seed=seed)
 
     def test_benchmark_biasedweightedrandomwalk(self, benchmark):
         g = create_test_simple_weighted_graph()
