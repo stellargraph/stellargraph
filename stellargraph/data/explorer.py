@@ -271,13 +271,7 @@ class BiasedRandomWalk(GraphWalk):
     """
 
     def __init__(
-        self,
-        graph,
-        graph_schema=None,
-        p=1.0,
-        q=1.0,
-        seed=None,
-        weighted=False
+        self, graph, graph_schema=None, p=1.0, q=1.0, seed=None, weighted=False
     ):
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
         self.p = p
