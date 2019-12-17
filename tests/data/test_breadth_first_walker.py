@@ -230,15 +230,18 @@ class TestBreadthFirstWalk(object):
                     grandchildren_start = 1 + n_size[0] + child_pos * n_size[1]
                     grandchildren_end = grandchildren_start + n_size[1]
                     grandchildren = walk[grandchildren_start:grandchildren_end]
-                    if child == "0":  # node without children
+                    if child == "root":  # node with three children
                         for grandchild in grandchildren:
-                            assert grandchild is None
+                            assert grandchild in [0, 1, 2]
+                    elif child == "0":  # node without children
+                        for grandchild in grandchildren:
+                            assert grandchild == "root"
                     elif child == 1:  # node with single child
                         for grandchild in grandchildren:
-                            assert grandchild == "c1.1"
+                            assert grandchild in ["c1.1", "root"]
                     elif child == 2:  # node with two children
                         for grandchild in grandchildren:
-                            assert grandchild == "c2.1" or grandchild == "c2.2"
+                            assert grandchild in ["c2.1", "c2.2", "root"]
                     else:
                         assert 1 == 0
 
@@ -250,7 +253,7 @@ class TestBreadthFirstWalk(object):
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
-        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert len(subgraphs[0]) == 1  # all elements should be the same node
         assert subgraphs[0][0] == "root"
 
         n_size = [1]
