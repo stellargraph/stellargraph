@@ -36,8 +36,12 @@ from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
+from abc import ABC
 
-class FullBatchGenerator:
+
+class FullBatchGenerator(ABC):
+    multiplicity = None
+
     def __init__(
         self,
         G,
@@ -48,6 +52,11 @@ class FullBatchGenerator:
         transform=None,
         teleport_probability=0.1,
     ):
+        if self.multiplicity is None:
+            raise TypeError(
+                "Can't instantiate abstract class 'FullBatchGenerator', please"
+                "instantiate either 'FullBatchNodeGenerator' or 'FullBatchLinkGenerator'"
+            )
 
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
@@ -74,10 +83,7 @@ class FullBatchGenerator:
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes_of_type(node_types[0])
-        self.Aadj = nx.to_scipy_sparse_matrix(
-            G, nodelist=self.node_list, dtype="float32", weight="weight", format="coo"
-        )
-        #self.Aadj = G.to_adjacency_matrix()
+        self.Aadj = G.to_adjacency_matrix(self.node_list)
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.

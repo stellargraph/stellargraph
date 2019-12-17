@@ -484,25 +484,26 @@ class NetworkXStellarGraph(StellarGraph):
         fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
         return fsize
 
-    def nodes_of_type(self, node_type=None):
+    def nodes_of_type(self, node_type):
         """
         Get the nodes of the graph with the specified node types.
+        The returned list of nodes is in the same order as
+        the features, not the same order as the graph.
 
         Args:
-            node_type:
+            node_type: the type of the nodes to return
 
         Returns:
             A list of node IDs with type node_type
         """
         # TODO: unit test!
-        if node_type is None:
-            return list(self)
+        if node_type in self._node_index_maps:
+            return list(
+                n for n in self._node_index_maps[node_type].keys() if n is not None
+            )
+
         else:
-            return [
-                n
-                for n, ndata in self._graph.nodes(data=True)
-                if self._get_node_type(ndata) == node_type
-            ]
+            return [n for n in self.nodes() if self.type_for_node(n) == node_type]
 
     def type_for_node(self, node):
         """

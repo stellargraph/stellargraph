@@ -151,7 +151,7 @@ class LinkEmbedding(Layer):
                 raise ValueError("Expecting a list of length 2 for link embedding")
             x0, x1 = x
         elif isinstance(x, tf.Tensor):
-            if x.shape[self.axis] != 2:
+            if int(x.shape[self.axis]) != 2:
                 raise ValueError(
                     "Expecting a tensor of shape 2 along specified axis for link embedding"
                 )
