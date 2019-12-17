@@ -4,6 +4,15 @@ This directory contains scripts to perform testing and maintainence tasks for de
 
 Currently there are two scripts, one to formats and clean the specified Juptyer notebooks, the other to run specific demo notebooks and check if there are any errors.  In the future the functionality of these two scripts may be combined.
 
+### Requirements
+
+These scripts have requirements in addition to the base library, install the requirements using the `requirements.txt` file in this directory:
+
+```
+cd <scripts directory>
+pip install -r requirements.txt
+```
+
 
 ### Format and clean up demo Jupyter notebooks
 
