@@ -6,6 +6,8 @@
 
 **New algorithms:**
 
+- Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
+
 **Implemented enhancements:** 
 
 **Refactoring:**
