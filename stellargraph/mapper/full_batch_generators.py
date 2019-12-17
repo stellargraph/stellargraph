@@ -167,7 +167,7 @@ class FullBatchGenerator(ABC):
                 raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
-        # Note this requires the adjacnecy matrix to have the same node ordering
+        # Note this requires the adjacency matrix to have the same node ordering
         # as the features array.
         node_ids = np.asanyarray(node_ids)
         node_indices = np.reshape(

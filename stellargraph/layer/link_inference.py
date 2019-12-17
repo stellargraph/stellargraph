@@ -103,8 +103,8 @@ class LinkEmbedding(Layer):
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
              * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
             For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
             edge embedding to transform to a vector of size `output_dim`.
@@ -142,7 +142,7 @@ class LinkEmbedding(Layer):
             in the link and N is the number of links and M the embedding size.
 
         """
-        # Currently GraphSAGE & HinSage output a list of two tensors being the embeddigns
+        # Currently GraphSAGE & HinSage output a list of two tensors being the embeddings
         # for each of the nodes in the link. However, GCN, GAT & other full-batch methods
         # return a tensor of shape (1, N, 2, M).
         # Detect and support both inputs
@@ -156,6 +156,8 @@ class LinkEmbedding(Layer):
                     "Expecting a tensor of shape 2 along specified axis for link embedding"
                 )
             x0, x1 = tf.unstack(x, axis=self.axis)
+        else:
+            raise TypeError("Expected a list, tuple, or Tensor as input")
 
         # Apply different ways to combine the node embeddings to a link embedding.
         if self.method in ["ip", "dot"]:
@@ -220,8 +222,8 @@ def link_inference(
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
              * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
@@ -294,8 +296,8 @@ def link_classification(
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
              * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
@@ -340,8 +342,8 @@ def link_regression(
              * 'concat' -- concatenation,
              * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
              * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- l1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- l2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
              * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
