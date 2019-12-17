@@ -93,8 +93,9 @@ class LinkEmbedding(Layer):
             li = LinkEmbedding(method="ip", activation="sigmoid")([x_src, x_dst])
 
     Args:
-        output_dim (int): Number of predictor's output units -- desired dimensionality 
-            of the output.
+        axis (int): If a single tensor is supplied this is the axis that indexes the node
+            embeddings so that the indices 0 and 1 give the node embeddings to be combined.
+            This is ignored if two tensors are supplied as a list.
         activation (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
@@ -107,7 +108,6 @@ class LinkEmbedding(Layer):
              * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
             For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
             edge embedding to transform to a vector of size `output_dim`.
-        name (str): optional name of the defined function, used for error logging
 
     """
 
@@ -197,11 +197,17 @@ def link_inference(
     edge_embedding_method: AnyStr = "ip",
     clip_limits: Optional[Tuple[float]] = None,
     name: AnyStr = "link_inference",
-    axis: int = 0,
 ):
     """
     Defines an edge inference function that takes source, destination node embeddings (node features) as input,
     and returns a numeric vector of output_dim size.
+
+    This function takes as input as either:
+
+     * A list of two tensors of shape (N, M) being the embeddings for each of the nodes in the link,
+       where N is the number of links, and M is the node embedding size.
+     * A single tensor of shape (..., N, 2, M) where the axis second from last indexes the nodes
+       in the link and N is the number of links and M the embedding size.
 
     Note that the output tensor is flattened before being returned.
 
@@ -235,9 +241,7 @@ def link_inference(
         output_dim = 1
 
     def edge_function(x):
-        le = LinkEmbedding(
-            activation="linear", method=edge_embedding_method, axis=axis
-        )(x)
+        le = LinkEmbedding(activation="linear", method=edge_embedding_method)(x)
 
         # All methods apart from inner product have a dense layer
         # to convert link embedding to the desired output
@@ -271,6 +275,13 @@ def link_classification(
     """
     Defines a function that predicts a binary or multi-class edge classification output from
     (source, destination) node embeddings (node features).
+
+    This function takes as input as either:
+
+     * A list of two tensors of shape (N, M) being the embeddings for each of the nodes in the link,
+       where N is the number of links, and M is the node embedding size.
+     * A single tensor of shape (..., N, 2, M) where the axis second from last indexes the nodes
+       in the link and N is the number of links and M the embedding size.
 
     Note that the output tensor is flattened before being returned.
 
@@ -310,6 +321,13 @@ def link_regression(
     """
     Defines a function that predicts a numeric edge regression output vector/scalar from
     (source, destination) node embeddings (node features).
+
+    This function takes as input as either:
+
+     * A list of two tensors of shape (N, M) being the embeddings for each of the nodes in the link,
+       where N is the number of links, and M is the node embedding size.
+     * A single tensor of shape (..., N, 2, M) where the axis second from last indexes the nodes
+       in the link and N is the number of links and M the embedding size.
 
     Note that the output tensor is flattened before being returned.
 
