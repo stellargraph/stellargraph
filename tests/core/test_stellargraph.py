@@ -229,11 +229,29 @@ def test_digraph_schema():
 
 
 def test_get_index_for_nodes():
+    # test for networks with node features
     sg = example_stellar_graph_1(feature_name="feature", feature_size=8)
     aa = sg.get_index_for_nodes([1, 2, 3, 4])
     assert aa == [0, 1, 2, 3]
 
     sg = example_hin_1(feature_name="feature")
+    aa = sg.get_index_for_nodes([0, 1, 2, 3])
+    assert aa == [0, 1, 2, 3]
+    aa = sg.get_index_for_nodes([0, 1, 2, 3], "A")
+    assert aa == [0, 1, 2, 3]
+    aa = sg.get_index_for_nodes([4, 5, 6])
+    assert aa == [0, 1, 2]
+    aa = sg.get_index_for_nodes([4, 5, 6], "B")
+    assert aa == [0, 1, 2]
+    with pytest.raises(ValueError):
+        aa = sg.get_index_for_nodes([1, 2, 5])
+
+    # test for networks without node features
+    sg = example_stellar_graph_1(feature_name=None, feature_size=8)
+    aa = sg.get_index_for_nodes([1, 2, 3, 4])
+    assert aa == [0, 1, 2, 3]
+
+    sg = example_hin_1(feature_name=None)
     aa = sg.get_index_for_nodes([0, 1, 2, 3])
     assert aa == [0, 1, 2, 3]
     aa = sg.get_index_for_nodes([0, 1, 2, 3], "A")
