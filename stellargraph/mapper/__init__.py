@@ -27,3 +27,4 @@ from .sequences import *
 from .sampled_link_generators import *
 from .sampled_node_generators import *
 from .full_batch_generators import *
+from .mini_batch_node_generators import *

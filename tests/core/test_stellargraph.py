@@ -17,6 +17,7 @@
 import pytest
 import pandas as pd
 import networkx as nx
+import random
 from stellargraph.core.graph import *
 from stellargraph.data.converter import *
 
@@ -427,3 +428,69 @@ def test_feature_conversion_from_iterator():
     ab = gs.get_feature_for_nodes([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
+
+
+def example_benchmark_graph(feature_size=None, n_nodes=100, n_edges=200, n_types=4):
+    G = nx.Graph()
+
+    G.add_nodes_from(range(n_nodes))
+    edges = [
+        (random.randint(0, n_nodes - 1), random.randint(0, n_nodes - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_edges_from(edges)
+
+    # Add example features
+    if feature_size is not None:
+        for v in G.nodes():
+            G.nodes[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["label"] = v % n_types
+
+        G = StellarGraph(G, node_features="feature")
+    else:
+        G = StellarGraph(G)
+    return G
+
+
+@pytest.mark.benchmark(group="StellarGraph neighbours")
+def test_benchmark_get_neighbours(benchmark):
+    g = example_benchmark_graph()
+    num_nodes = g.number_of_nodes()
+
+    # get the neigbours of every node in the graph
+    def f():
+        for i in range(num_nodes):
+            g.neighbors(i)
+
+    benchmark(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph node features")
+@pytest.mark.parametrize("num_types", [1, 4])
+@pytest.mark.parametrize("type_arg", ["infer", "specify"])
+def test_benchmark_get_features(benchmark, num_types, type_arg):
+    SAMPLE_SIZE = 50
+    N_NODES = 500
+    N_EDGES = 1000
+    g = example_benchmark_graph(
+        feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
+    )
+    num_nodes = g.number_of_nodes()
+
+    ty_ids = [(ty, range(ty, num_nodes, num_types)) for ty in range(num_types)]
+
+    if type_arg == "specify":
+        # pass through the type
+        node_type = lambda ty: ty
+    else:
+        # leave the argument as None, and so use inference of the type
+        node_type = lambda ty: None
+
+    def f():
+        # look up a random subset of the nodes for a random type, similar to what an algorithm that
+        # does sampling might ask for
+        ty, all_ids = random.choice(ty_ids)
+        selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
+        g.get_feature_for_nodes(selected_ids, node_type(ty))
+
+    benchmark(f)
