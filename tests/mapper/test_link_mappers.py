@@ -956,7 +956,7 @@ class Test_Node2VecLinkGenerator:
         # test graph
         G = example_graph_random(feature_size=None, n_nodes=6, n_isolates=2, n_edges=10)
 
-        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes)
+        unsupervisedSamples = UnsupervisedSampler(G, nodes=G.nodes())
 
         gen = Node2VecLinkGenerator(G, batch_size=n_batch).flow(unsupervisedSamples)
 
