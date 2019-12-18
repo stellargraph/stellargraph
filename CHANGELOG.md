@@ -22,7 +22,7 @@ In particular, calls like `list(G)` will no longer return a list of nodes; use `
 Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 
 **Fixed bugs:**
-
+- Removed an incorrect assertion in `test_normalized_laplacian` and replaced it with a valid check of the symmetrically normalized Laplacian's egienvalues 
 
 ## [0.8.3](https://github.com/stellargraph/stellargraph/tree/v0.8.3)
 
