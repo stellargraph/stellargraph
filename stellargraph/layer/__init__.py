@@ -34,3 +34,4 @@ from .attri2vec import *
 from .node2vec import *
 from .misc import SqueezedSparseConversion
 from .preprocessing_layer import GraphPreProcessingLayer
+from .rgcn import *
