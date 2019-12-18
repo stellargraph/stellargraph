@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Copyright 2019 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 __all__ = ["UnsupervisedSampler"]
 
@@ -7,7 +21,7 @@ __all__ = ["UnsupervisedSampler"]
 import random
 
 from stellargraph.core.utils import is_real_iterable
-from stellargraph.core.graph import StellarGraphBase
+from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
 
 
@@ -31,9 +45,11 @@ class UnsupervisedSampler:
     """
 
     def __init__(self, G, nodes=None, length=2, number_of_walks=1, seed=None):
-        if not isinstance(G, StellarGraphBase):
+        if not isinstance(G, StellarGraph):
             raise ValueError(
-                "({}) Graph must be a StellarGraph object.".format(type(self).__name__)
+                "({}) Graph must be a StellarGraph or StellarDigraph object.".format(
+                    type(self).__name__
+                )
             )
         else:
             self.graph = G
@@ -118,7 +134,7 @@ class UnsupervisedSampler:
         all_nodes = list(self.graph.nodes())
 
         # Use the sampling distribution as per node2vec
-        degrees = self.graph.degree()
+        degrees = self.graph.node_degrees()
         sampling_distribution = [degrees[n] ** 0.75 for n in all_nodes]
 
         done = False
