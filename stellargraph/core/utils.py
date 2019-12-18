@@ -248,4 +248,4 @@ def partial_powers(one_hot_encoded_rows, Aadj_T, num_powers=5):
         partial_power = K.transpose(partial_power)
         partial_powers_list.append(partial_power)
 
-    return tf.stack(partial_powers_list, axis=1)
+    return K.squeeze(tf.stack(partial_powers_list, axis=1), axis=0)

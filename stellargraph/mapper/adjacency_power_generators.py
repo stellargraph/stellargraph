@@ -36,7 +36,7 @@ class AdjacencyPowerGenerator:
 
     def flow(self, batch_size, cache=False):
 
-        row_dataset = tf.data.Dataset.from_tensor_slices(tf.sparse.eye(100000))
+        row_dataset = tf.data.Dataset.from_tensor_slices(tf.sparse.eye(int(self.Aadj_T.shape[0])))
 
         adj_powers_dataset = row_dataset.map(
             lambda ohe_rows: partial_powers(ohe_rows, self.Aadj_T),
@@ -44,9 +44,11 @@ class AdjacencyPowerGenerator:
         )
 
         row_index_dataset = tf.data.Dataset.range(self.Aadj_T.shape[0])
-        row_index_adj_powers_dataset = tf.data.Dataset.zip((row_index_dataset, adj_powers_dataset)).batch(batch_size)
+        row_index_adj_powers_dataset = tf.data.Dataset.zip((row_index_dataset, adj_powers_dataset))
 
-        return row_index_adj_powers_dataset
+        dummy_label_dataset = tf.data.Dataset.range(self.Aadj_T.shape[0])
+        training_dataset = tf.data.Dataset.zip((row_index_adj_powers_dataset, dummy_label_dataset)).batch(batch_size)
+        return training_dataset.repeat()
 
 
 
