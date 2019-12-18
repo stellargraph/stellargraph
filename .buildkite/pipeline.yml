@@ -63,21 +63,17 @@ steps:
        docker#v3.2.0:
           image: "hadolint/hadolint:latest-debian"
 
+  - label: ":copyright: check copyright headers"
+    command: '.buildkite/steps/check-copyright-headers.sh'
+
   - label: ":docker: publish numbered images"
     command: ".buildkite/steps/manage-images.sh build-publish-numbered"
     agents:
       queue: "t2medium"
     branches: "develop feature/*"
 
-  - wait: ~
-    continue_on_failure: true
+  - wait
 
-  - label: ":docker: (conditionally) publish docker images"
-    command: ".buildkite/utils/checkstatus.sh .buildkite/steps/manage-images.sh publish-images"
+  - label: ":docker: publish docker images"
+    command: ".buildkite/steps/manage-images.sh publish-images"
     branches: "develop feature/*"
-
-  - wait: ~
-    continue_on_failure: true
-
-  - label: ":console: push logs"
-    command: .buildkite/utils/pushlogs.sh "#build-bots"

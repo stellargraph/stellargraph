@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import pytest
+import networkx as nx
 from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
 from stellargraph.core.graph import StellarGraph
 
@@ -27,7 +28,7 @@ def create_simple_test_graph():
     in StellarGraph format.
     """
 
-    g = StellarGraph()
+    g = nx.Graph()
 
     g.add_nodes_from([0, 1, "5", 4, 7], label="user")
     g.add_nodes_from([2, 3, 6], label="movie")
@@ -38,7 +39,7 @@ def create_simple_test_graph():
         [(7, 7)], label="friend"
     )  # isolated node with only a link back to itself
 
-    return g
+    return StellarGraph(g)
 
 
 def create_multi_test_graph():
@@ -50,7 +51,7 @@ def create_multi_test_graph():
     in StellarGraph format.
     """
 
-    g = StellarGraph()
+    g = nx.MultiGraph()
 
     g.add_nodes_from([0, 1, "5", 4, 7], label="user")
     g.add_nodes_from([2, 3, 6], label="movie")
@@ -59,7 +60,7 @@ def create_multi_test_graph():
     g.add_edges_from([("5", 4), (1, 4), (1, "5")], label="friend")
     g.add_edges_from([(1, 4)], label="colleague")
 
-    return g
+    return StellarGraph(g)
 
 
 class TestSampledHeterogeneousBreadthFirstWalk(object):
