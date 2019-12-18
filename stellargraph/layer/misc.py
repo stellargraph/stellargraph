@@ -16,6 +16,7 @@
 
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import backend as K
+import tensorflow as tf
 
 
 class SqueezedSparseConversion(Layer):
@@ -93,3 +94,30 @@ class SqueezedSparseConversion(Layer):
             indices=indices, values=values, dense_shape=self.matrix_shape
         )
         return output
+
+
+class GraphLogLikelihood(Layer):
+
+    def __init__(self, dtype=None):
+        super().__init__(dtype=dtype)
+
+        self.trainable = False
+        self.supports_masking = True
+
+
+    def get_config(self):
+        config = {"dtype": self.dtype}
+        return config
+
+    def compute_output_shape(self, input_shapes):
+        return tuple(1,)
+
+    def call(self, inputs):
+        """
+        """
+        expected_walks, sigmoid_cos_sim, row_indicies, partial_powers = inputs
+        batch_adj = tf.gather(partial_powers, indices=[0], axis=1)
+        adj_mask = K.cast((batch_adj == 0), 'float32')
+        loss = K.mean(K.abs(-(expected_walks * K.log(sigmoid_cos_sim + 1e-6)) -
+                            adj_mask * K.log(1 - sigmoid_cos_sim + 1e-6)))
+        return K.expand_dims(loss, 0)

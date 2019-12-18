@@ -106,7 +106,7 @@ class WatchYourStep:
         sigmoids = tf.keras.activations.sigmoid(dot_product)
         expected_walk = AttentiveWalk(walk_length=self.num_powers)([sigmoids, input_powers])
 
-        return [input_rows, input_powers], expected_walk
+        return [input_rows, input_powers], [expected_walk, sigmoids]
 
 
 
