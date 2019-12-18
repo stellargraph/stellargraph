@@ -21,6 +21,7 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
+    "tensorflow>=1.14,<1.15",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
@@ -42,7 +43,7 @@ REQUIRES = [
 EXTRAS_REQURES = {
     "demos": ["numba", "jupyter", "seaborn"],
     "test": ["pytest", "pytest-benchmark"],
-    "cpu": ["tensorflow>=1.14,<1.15"],
+    "gpu": ["tensorflow-gpu>=1.14,<1.15"],
 }
 
 # Long description
