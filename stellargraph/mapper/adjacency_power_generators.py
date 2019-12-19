@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from ..core import StellarGraph
-from ..core.utils import partial_powers
+from ..core.utils import partial_powers, select_row_from_sparse_tensor
 
 
 class AdjacencyPowerGenerator:
@@ -34,7 +34,7 @@ class AdjacencyPowerGenerator:
 
         self.num_powers = num_powers
 
-    def flow(self, batch_size, cache=False):
+    def flow(self, batch_size):
 
         row_dataset = tf.data.Dataset.from_tensor_slices(tf.sparse.eye(int(self.Aadj_T.shape[0])))
 
@@ -44,10 +44,18 @@ class AdjacencyPowerGenerator:
         )
 
         row_index_dataset = tf.data.Dataset.range(self.Aadj_T.shape[0])
+
         row_index_adj_powers_dataset = tf.data.Dataset.zip((row_index_dataset, adj_powers_dataset))
 
-        dummy_label_dataset = tf.data.Dataset.range(self.Aadj_T.shape[0])
-        training_dataset = tf.data.Dataset.zip((row_index_adj_powers_dataset, dummy_label_dataset)).batch(batch_size)
+        batch_adj_dataset = row_dataset.map(
+            lambda ohe_rows: select_row_from_sparse_tensor(ohe_rows, self.Aadj_T),
+            num_parallel_calls=10
+        )
+
+        training_dataset = tf.data.Dataset.zip(
+            (row_index_adj_powers_dataset, batch_adj_dataset)
+        ).batch(batch_size)
+
         return training_dataset.repeat()
 
 

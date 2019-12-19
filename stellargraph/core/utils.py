@@ -221,11 +221,11 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     return features, A
 
 
-def partial_powers(one_hot_encoded_rows, Aadj_T, num_powers=5):
+def partial_powers(one_hot_encoded_row, Aadj_T, num_powers=5):
     '''
     This function computes the first num_powers powers of the adjacency matrix
-    for the rows specified in one_hot_encoded_rows
-    :param one_hot_encoded_rows: matrix of one-hot-encoded rows
+    for the row specified in one_hot_encoded_row
+    :param one_hot_encoded_row: matrix of one-hot-encoded rows
     :param Aadj_T: the transpose of the adjacency matrix
     :param num_powers: the adjacency number of powers to compute
     :return: a matrix of the shape (num_powers, rows, Aadj_T.shape[1]) of
@@ -235,10 +235,7 @@ def partial_powers(one_hot_encoded_rows, Aadj_T, num_powers=5):
     # make sure the transpose of the adjacency is used
     # tensorflow requires that the sparse matrix is the first operand
 
-    one_hot_encoded_rows = tf.reshape(tf.sparse.to_dense(one_hot_encoded_rows), shape=(1, Aadj_T.shape[1]))
-
-    batch_adj = K.dot(Aadj_T, K.transpose(one_hot_encoded_rows))
-    batch_adj = tf.transpose(batch_adj)
+    batch_adj = select_row_from_sparse_tensor(one_hot_encoded_row, Aadj_T)
 
     partial_powers_list = [batch_adj]
 
@@ -249,3 +246,11 @@ def partial_powers(one_hot_encoded_rows, Aadj_T, num_powers=5):
         partial_powers_list.append(partial_power)
 
     return K.squeeze(tf.stack(partial_powers_list, axis=1), axis=0)
+
+
+def select_row_from_sparse_tensor(one_hot_encoded_row, sp_tensor_T):
+
+    one_hot_encoded_row = tf.reshape(tf.sparse.to_dense(one_hot_encoded_row), shape=(1, sp_tensor_T.shape[1]))
+    row_T = K.dot(sp_tensor_T, K.transpose(one_hot_encoded_row))
+    row = K.transpose(row_T)
+    return row
