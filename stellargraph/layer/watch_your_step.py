@@ -1,7 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Embedding, Input, Lambda
+from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Model
 from tensorflow.keras import regularizers, initializers, constraints
 import numpy as np
 
@@ -22,15 +21,15 @@ class AttentiveWalk(Layer):
         return (input_shapes[0][-1],)
 
     def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
+        self.attention_initializer = initializers.get(
+            kwargs.pop("attention_initializer", "glorot_uniform")
         )
 
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
+        self.attention_regularizer = regularizers.get(
+            kwargs.pop("attention_regularizer", None)
         )
 
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
+        self.attention_constraint = constraints.get(kwargs.pop("attention_constraint", None))
 
     def build(self, input_shapes):
         """
@@ -38,10 +37,10 @@ class AttentiveWalk(Layer):
 
         self.attention_weights = self.add_weight(
             shape=(self.walk_length,),
-            initializer=self.kernel_initializer,
+            initializer=self.attention_initializer,
             name="attention_weights",
-            regularizer=self.kernel_regularizer,
-            constraint=self.kernel_constraint,
+            regularizer=self.attention_regularizer,
+            constraint=self.attention_constraint,
         )
 
         self.built = True
@@ -51,14 +50,6 @@ class AttentiveWalk(Layer):
 
         attention = K.softmax(self.attention_weights)
         expected_walk = tf.einsum("ijk,j->ik", partial_powers, attention)
-
-        # batch_adj = K.squeeze(tf.gather(partial_powers, indices=[0], axis=1), axis=1)
-        # adj_mask = tf.cast((batch_adj == 0), 'float32')
-        #
-        # # calculate loss here
-        # loss = K.mean(K.abs(-((expected_walk * K.log(sigmoids + 1e-6))) -
-        #                     adj_mask * K.log(1 - sigmoids + 1e-6)))
-        # loss = tf.expand_dims(loss, 0)
 
         return expected_walk
 
@@ -106,62 +97,8 @@ class WatchYourStep:
         sigmoids = tf.keras.activations.sigmoid(dot_product)
         expected_walk = AttentiveWalk(walk_length=self.num_powers)([sigmoids, input_powers])
 
-        return [input_rows, input_powers], [expected_walk, sigmoids]
+        expander = Lambda(lambda x: K.expand_dims(x, axis=1))
 
+        output = Concatenate(axis=1)([expander(expected_walk), expander(sigmoids)])
 
-
-
-
-def full_embedding_model(batch_rows, vector_dim, vocab_size, walk_length):
-    input_rows = Input(batch_shape=(1, batch_rows), name='row_node_ids', dtype='int64')
-    input_powers = Input(batch_shape=(1, batch_rows, walk_length, int(Aadj_T.shape[0])))
-
-    all_inputs = [input_rows, input_powers]
-
-    rows = K.squeeze(input_rows, axis=0)
-    powers = K.squeeze(input_powers, axis=0)
-
-    # connect to input to satisfy keras API - input_cols is actually constant
-    input_cols = Lambda(lambda x: tf.constant(np.arange(int(Aadj_T.shape[0])), dtype='int64'))(input_rows)
-
-    left_embedding = Embedding(
-        vocab_size, vector_dim,
-        input_length=None, name='LEFT_EMBEDDINGS'
-    )
-
-    right_embedding = Embedding(
-        vocab_size, vector_dim,
-        input_length=None, name='RIGHT_EMBEDDINGS'
-    )
-
-    vectors_left = Lambda(lambda x: K.transpose(x))(left_embedding(rows))
-    vectors_right = right_embedding(input_cols)
-
-    dot_product = Lambda(lambda x: K.transpose(K.dot(x[0], x[1])))([vectors_right, vectors_left])
-
-    sigmoids = tf.keras.activations.sigmoid(dot_product)
-
-    loss = AttentiveWalk(walk_length=walk_length)([sigmoids, powers])
-
-    model = Model(inputs=all_inputs, outputs=loss)
-
-    return model
-
-
-# def graph_log_liklihood(partial_powers, output):
-#     sigmoids, attention = y_pred
-#     expected_walk = tf.einsum("bijk,bj->bik", partial_powers, attention)
-#
-#     batch_adj = K.squeeze(tf.gather(partial_powers, indices=[0], axis=1), axis=1)
-#     adj_mask = tf.cast((batch_adj == 0), 'float32')
-#
-#     # calculate loss here
-#     loss = K.mean(K.abs(-((expected_walk * K.log(sigmoids + 1e-6))) -
-#                         adj_mask * K.log(1 - sigmoids + 1e-6)))
-#     loss = tf.expand_dims(loss, 0)
-#
-#     return loss
-
-
-# def identity_loss(y_true, y_pred):
-#     return y_true * y_pred
+        return [input_rows, input_powers],  output
