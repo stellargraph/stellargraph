@@ -170,9 +170,13 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def edges(self) -> Iterable[Any]:
+    def edges(self, triple=False) -> Iterable[Any]:
         """
         Obtains the collection of edges in the graph.
+
+        Args:
+            triple (bool): A flag that indicates whether to return edge triples
+            of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
 
         Returns:
             The graph edges.
