@@ -4,7 +4,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers, initializers, constraints
 import numpy as np
 
-from ..mapper.adjacency_power_generators import AdjacencyPowerGenerator
+from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 
 class AttentiveWalk(Layer):
 
