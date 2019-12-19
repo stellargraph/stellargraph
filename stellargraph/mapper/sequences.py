@@ -24,6 +24,7 @@ __all__ = [
     "OnDemandLinkSequence",
     "FullBatchSequence",
     "SparseFullBatchSequence",
+    "RelationalFullBatchNodeSequence",
 ]
 
 import warnings
@@ -450,6 +451,80 @@ class SparseFullBatchSequence(Sequence):
             self.A_indices,
             self.A_values,
         ]
+
+        if targets is not None:
+            self.targets = np.asanyarray(targets)
+            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+        else:
+            self.targets = None
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        return self.inputs, self.targets
+
+
+class RelationalFullBatchNodeSequence(Sequence):
+    """
+    Keras-compatible data generator for for node inference models on relational graphs
+    that require full-batch training (e.g., RGCN).
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
+
+    This class uses either dense or sparse representations to send data to the models.
+
+    This class should be created using the `.flow(...)` method of
+    :class:`RelationalFullBatchNodeGenerator`.
+
+    Args:
+        features (np.ndarray): An array of node features of size (N x F),
+            where N is the number of nodes in the graph, F is the node feature size
+        As (list of sparse matrices): A list of length R of adjacency matrices of the graph of size (N x N)
+            where R is the number of relationships in the graph.
+        targets (np.ndarray, optional): An optional array of node targets of size (N x C),
+            where C is the target size (e.g., number of classes for one-hot class targets)
+        indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
+            of the targets. Required if targets is not None.
+    """
+
+    def __init__(self, features, As, use_sparse, targets=None, indices=None):
+
+        if (targets is not None) and (len(indices) != len(targets)):
+            raise ValueError(
+                "When passed together targets and indices should be the same length."
+            )
+
+        # Store features and targets as np.ndarray
+        self.features = np.asanyarray(features)
+        self.target_indices = np.asanyarray(indices)
+        self.use_sparse = use_sparse
+
+        # Convert all adj matrices to dense and reshape to have batch dimension of 1
+        if self.use_sparse:
+            self.A_indices = [
+                np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
+                for A in As
+            ]
+            self.A_values = [np.expand_dims(A.data, 0) for A in As]
+            self.As = self.A_indices + self.A_values
+        else:
+            self.As = [A.todense()[None, :, :] for A in As]
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.inputs = [self.features, self.target_indices] + self.As
+
+        # Reshape all inputs to have batch dimension of 1
+        self.target_indices = np.reshape(
+            self.target_indices, (1,) + self.target_indices.shape
+        )
+        self.features = np.reshape(self.features, (1,) + self.features.shape)
 
         if targets is not None:
             self.targets = np.asanyarray(targets)

@@ -72,8 +72,8 @@ class Ensemble(object):
             )
 
         self.metrics_names = (
-            None
-        )  # It will be set when the self.compile() method is called
+            None  # It will be set when the self.compile() method is called
+        )
         self.models = []
         self.history = []
         self.n_estimators = n_estimators

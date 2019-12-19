@@ -8,6 +8,8 @@
 
 - Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 
+- Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
+
 **Implemented enhancements:** 
 - GCN, GAT, APPNP and PPNP can now be used for link-prediction using the `FullBatchLinkGenerator` [\#543](https://github.com/stellargraph/stellargraph/pull/543)
 
