@@ -353,7 +353,6 @@ class GraphAttention(Layer):
             # YT: this is ensured by setting the diagonal elements of A tensor to 1 above
             if not self.saliency_map_support:
                 mask = -10e9 * (1.0 - A)
-                self.A = A
                 dense += mask
                 dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
 
@@ -363,9 +362,7 @@ class GraphAttention(Layer):
                 W = (self.delta * A) * K.exp(
                     dense - K.max(dense, axis=1, keepdims=True)
                 ) * (1 - self.non_exist_edge) + self.non_exist_edge * (
-                    A
-                    + self.delta * (K.ones(shape=[N, N], dtype="float") - A)
-                    + K.eye(N)
+                    A + self.delta * (tf.ones((N, N)) - A) + tf.eye(N)
                 ) * K.exp(
                     dense - K.max(dense, axis=1, keepdims=True)
                 )
@@ -544,7 +541,9 @@ class GraphAttentionSparse(GraphAttention):
             sparse_attn = tf.sparse.softmax(sparse_attn)  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
-            node_features = tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
+            node_features = tf.sparse.sparse_dense_matmul(
+                sparse_attn, dropout_feat
+            )  # (N x F')
 
             if self.use_bias:
                 node_features = K.bias_add(node_features, self.biases[head])

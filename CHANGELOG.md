@@ -16,6 +16,8 @@
 - Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
 
 **Breaking changes:**
+- The stellargraph library now only supports `tensorflow` versions 2.0 and above [\#518](https://github.com/stellargraph/stellargraph/pull/518). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
+
 - The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality.
 In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead.
 [\#297](https://github.com/stellargraph/stellargraph/issues/297)
