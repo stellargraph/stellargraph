@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -338,9 +338,12 @@ class TestEPGMIOHeterogeneous(unittest.TestCase):
             y.shape[0] - test_size - nc * number_of_unique_labels - num_unlabeled
         )
 
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(y=y, p=nc, test_size=test_size)
         print(self.y_val, self.y_unlabeled)
 
         self.assertEqual(
@@ -593,9 +596,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         #
         # Test using method 'count'
         #
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(y=y, p=nc, test_size=test_size)
 
         self.assertEqual(
             self.y_test.shape[0],
@@ -625,9 +631,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         p = 0.75
         method = "percent"
         # y_val should be empty
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=p, method=method
-        )
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(y=y, p=p, method=method)
 
         self.assertEqual(len(self.y_val), 0, "Validation set should be empty.")
         self.assertEqual(
@@ -663,7 +672,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         train_size = 1000
         test_size = 98
         # y_val should be empty
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(
             y=y, method=method, test_size=test_size, train_size=train_size
         )
         validation_size = y.shape[0] - (
@@ -717,9 +731,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
 
         validation_size = y.shape[0] - test_size - nc * number_of_unique_labels
 
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=nc, test_size=test_size
-        )
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(y=y, p=nc, test_size=test_size)
 
         self.assertEqual(
             self.y_test.shape[0],
@@ -749,9 +766,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         p = 0.5
         method = "percent"
         # y_val should be empty
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
-            y=y, p=p, method=method
-        )
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(y=y, p=p, method=method)
 
         self.assertEqual(len(self.y_val), 0, "Validation set should be empty.")
         self.assertEqual(
@@ -786,7 +806,12 @@ class TestEPGMIOHomogenous(unittest.TestCase):
         train_size = 299
         test_size = 101
         # y_val should be empty
-        self.y_train, self.y_val, self.y_test, self.y_unlabeled = self.ds_obj.train_test_split(
+        (
+            self.y_train,
+            self.y_val,
+            self.y_test,
+            self.y_unlabeled,
+        ) = self.ds_obj.train_test_split(
             y=y, method=method, test_size=test_size, train_size=train_size
         )
         validation_size = y.shape[0] - (
@@ -946,7 +971,7 @@ def test_split_function_node_type():
         split_equally=False,
         seed=None,
     )
-    assert all(g.node[s]["label"] == "movie" for split in splits for s in split)
+    assert all(g.nodes[s]["label"] == "movie" for split in splits for s in split)
 
 
 def test_split_function_unlabelled():

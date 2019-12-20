@@ -21,7 +21,7 @@ Utils tests:
 """
 import pytest
 import random
-import networkx as nx
+from networkx import Graph as nxGraph
 import numpy as np
 import scipy as sp
 
@@ -30,7 +30,7 @@ from stellargraph.core.graph import *
 
 
 def example_graph(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
-    G = nx.Graph()
+    G = nxGraph()
     n_noniso = n_nodes - n_isolates
     edges = [
         (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
@@ -42,7 +42,7 @@ def example_graph(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
+            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -57,7 +57,7 @@ def beforeall():
 
 def test_normalize_adj():
     node_list = list(pytest.G.nodes())
-    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    Aadj = pytest.G.to_adjacency_matrix()
     csr = normalize_adj(Aadj)
     dense = csr.todense()
     assert 5 == pytest.approx(dense.sum(), 0.1)
@@ -70,20 +70,24 @@ def test_normalize_adj():
 
 
 def test_normalized_laplacian():
-    node_list = list(pytest.G.nodes())
-    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
-    laplacian = normalized_laplacian(Aadj)
-    assert 1 == pytest.approx(laplacian.sum(), 0.2)
-    assert laplacian.get_shape() == Aadj.get_shape()
+    Aadj = pytest.G.to_adjacency_matrix()
+    laplacian = normalized_laplacian(Aadj).todense()
+    eigenvalues, _ = np.linalg.eig(laplacian)
+
+    # min eigenvalue of normalized laplacian is 0
+    # max eigenvalue of normalized laplacian is <= 2
+    assert eigenvalues.min() == pytest.approx(0, abs=1e-7)
+    assert eigenvalues.max() <= (2 + 1e-7)
+    assert laplacian.shape == Aadj.get_shape()
 
     laplacian = normalized_laplacian(Aadj, symmetric=False)
-    assert 1 == pytest.approx(laplacian.sum(), 0.2)
+    assert 1 == pytest.approx(laplacian.sum(), abs=1e-7)
     assert laplacian.get_shape() == Aadj.get_shape()
 
 
 def test_rescale_laplacian():
     node_list = list(pytest.G.nodes())
-    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    Aadj = pytest.G.to_adjacency_matrix()
     rl = rescale_laplacian(normalized_laplacian(Aadj))
     assert rl.max() < 1
     assert rl.get_shape() == Aadj.get_shape()
@@ -91,7 +95,7 @@ def test_rescale_laplacian():
 
 def test_chebyshev_polynomial():
     node_list = list(pytest.G.nodes())
-    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    Aadj = pytest.G.to_adjacency_matrix()
 
     k = 2
     cp = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(Aadj)), k)
@@ -103,7 +107,7 @@ def test_chebyshev_polynomial():
 
 def test_GCN_Aadj_feats_op():
     node_list = list(pytest.G.nodes())
-    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    Aadj = pytest.G.to_adjacency_matrix()
     features = pytest.G.get_feature_for_nodes(node_list)
 
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")

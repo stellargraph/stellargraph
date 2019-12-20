@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ def test_squeezedsparseconversion():
 
     z = model.predict([x, np.expand_dims(A_indices, 0), np.expand_dims(A_values, 0)])
 
-    assert np.allclose(z.squeeze(), A.dot(x.squeeze()))
+    assert np.allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7)
 
 
 def test_squeezedsparseconversion_dtype():
@@ -79,7 +79,7 @@ def test_squeezedsparseconversion_dtype():
     z = model.predict([x, np.expand_dims(A_indices, 0), np.expand_dims(A_values, 0)])
 
     assert np.dtype(z.dtype) == np.dtype("float64")
-    assert np.allclose(z.squeeze(), A.dot(x.squeeze()))
+    assert np.allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7)
 
 
 def test_squeezedsparseconversion_axis():
@@ -102,4 +102,5 @@ def test_squeezedsparseconversion_axis():
 
     model = keras.Model(inputs=[A_ind, A_val], outputs=x_out)
     z = model.predict([A_indices, A_values])
-    assert np.allclose(z, A.sum(axis=1))
+
+    assert np.allclose(z, A.sum(axis=1), atol=1e-7)
