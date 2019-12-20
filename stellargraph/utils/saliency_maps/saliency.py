@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,7 @@
 import numpy as np
 from tensorflow.keras import backend as K
 from scipy.sparse import csr_matrix
-from stellargraph.mapper.node_mappers import (
-    SparseFullBatchNodeSequence,
-    FullBatchNodeSequence,
-)
+from stellargraph.mapper import SparseFullBatchNodeSequence, FullBatchNodeSequence
 
 
 class GradientSaliency:

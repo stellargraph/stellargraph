@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
                 (
                     "clf",
                     LogisticRegressionCV(
-                        Cs=10, cv=10, scoring="roc_auc", verbose=False
+                        Cs=10, cv=10, scoring="roc_auc", verbose=False, max_iter=500
                     ),
                 ),
             ]

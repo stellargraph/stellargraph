@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,9 +66,9 @@ def create_test_graph():
 
     for node in g.nodes():
         if type(node) == str:  # make these type s for string
-            g.node[node]["label"] = "s"
+            g.nodes[node]["label"] = "s"
         else:  # make these type n for number
-            g.node[node]["label"] = "n"
+            g.nodes[node]["label"] = "n"
 
     g = StellarGraph(g)
     return g

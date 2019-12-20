@@ -72,8 +72,8 @@ class Ensemble(object):
             )
 
         self.metrics_names = (
-            None
-        )  # It will be set when the self.compile() method is called
+            None  # It will be set when the self.compile() method is called
+        )
         self.models = []
         self.history = []
         self.n_estimators = n_estimators
@@ -439,9 +439,9 @@ class Ensemble(object):
             if not isinstance(
                 generator,
                 (
-                    sg.mapper.node_mappers.GraphSAGENodeGenerator,
-                    sg.mapper.node_mappers.HinSAGENodeGenerator,
-                    sg.mapper.node_mappers.FullBatchNodeGenerator,
+                    sg.mapper.GraphSAGENodeGenerator,
+                    sg.mapper.HinSAGENodeGenerator,
+                    sg.mapper.FullBatchNodeGenerator,
                 ),
             ):
                 raise ValueError(
