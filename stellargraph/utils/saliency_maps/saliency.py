@@ -17,6 +17,7 @@
 
 import numpy as np
 from tensorflow.keras import backend as K
+import tensorflow as tf
 from scipy.sparse import csr_matrix
 from stellargraph.mapper import SparseFullBatchNodeSequence, FullBatchNodeSequence
 
@@ -73,49 +74,82 @@ class GradientSaliency:
         # Extract features from generator
         self.X = generator.features
 
+        self.model = model
         # Placeholder for class prediction (model output):
         output = model.output
 
-        # The placeholder for the node index of interest. It is typically the index of the target test node.
-        self.node_idx = K.placeholder(shape=(), dtype="int32")
+    def compute_node_gradients(self, node_mask_tensors):
 
-        # The placeholder for the class of interest. One will generally use the winning class.
-        self.class_of_interest = K.placeholder(shape=(), dtype="int32")
+        for i, x in enumerate(node_mask_tensors):
+            if not isinstance(x, tf.Tensor):
+                node_mask_tensors[i] = tf.convert_to_tensor(x)
 
-        # The input tensors for computing the node saliency map
-        node_mask_tensors = model.input + [
-            K.learning_phase(),  # placeholder for mode (train or test) tense
-            self.class_of_interest,
-        ]
-
-        # The input tensors for computing the link saliency map
-        link_mask_tensors = model.input + [K.learning_phase(), self.class_of_interest]
-
-        # node gradients are the gradients of the output's component corresponding to the
-        # class of interest, w.r.t. input features of all nodes in the graph
-        self.node_gradients = model.optimizer.get_gradients(
-            K.gather(output[0, 0], self.class_of_interest), features_t
-        )
-
-        # link gradients are the gradients of the output's component corresponding to the
-        # class of interest, w.r.t. all elements of the adjacency matrix
         if self.is_sparse:
-            self.link_gradients = model.optimizer.get_gradients(
-                K.gather(output[0, 0], self.class_of_interest), adj_t
-            )
-            # raise NotImplementedError("Sparse matrix support is not yet implemented")
-
+            (
+                features_t,
+                output_indices_t,
+                adj_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = node_mask_tensors
+            model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
         else:
-            self.link_gradients = model.optimizer.get_gradients(
-                K.gather(output[0, 0], self.class_of_interest), adj_t
-            )
+            (
+                features_t,
+                output_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = node_mask_tensors
+            model_input = [features_t, output_indices_t, adj_t]
 
-        self.compute_link_gradients = K.function(
-            inputs=link_mask_tensors, outputs=self.link_gradients
-        )
-        self.compute_node_gradients = K.function(
-            inputs=node_mask_tensors, outputs=self.node_gradients
-        )
+        with tf.GradientTape() as tape:
+            tape.watch(features_t)
+            output = self.model(model_input)
+
+            cost_value = K.gather(output[0, 0], class_of_interest)
+
+        node_gradients = tape.gradient(cost_value, features_t)
+
+        return node_gradients
+
+    def compute_link_gradients(self, link_mask_tensors):
+
+        for i, x in enumerate(link_mask_tensors):
+
+            if not isinstance(x, tf.Tensor):
+                link_mask_tensors[i] = tf.convert_to_tensor(x)
+
+        if self.is_sparse:
+            (
+                features_t,
+                output_indices_t,
+                adj_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = link_mask_tensors
+            model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
+        else:
+            (
+                features_t,
+                output_indices_t,
+                adj_t,
+                _,
+                class_of_interest,
+            ) = link_mask_tensors
+            model_input = [features_t, output_indices_t, adj_t]
+
+        with tf.GradientTape() as tape:
+            tape.watch(adj_t)
+            output = self.model(model_input)
+
+            cost_value = K.gather(output[0, 0], class_of_interest)
+
+        link_gradients = tape.gradient(cost_value, adj_t)
+
+        return link_gradients
 
     def get_node_masks(
         self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
@@ -179,7 +213,9 @@ class GradientSaliency:
                 [X_val, out_indices, A_val, 0, class_of_interest]
             )
         if self.is_sparse:
-            return csr_matrix((gradients[0][0], (A_index[0, :, 0], A_index[0, :, 1])))
+            return csr_matrix(
+                (gradients.numpy()[0, :], (A_index[0, :, 0], A_index[0, :, 1]))
+            )
         return np.squeeze(gradients, 0)
 
     def get_node_importance(
