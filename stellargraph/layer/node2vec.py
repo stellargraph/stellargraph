@@ -91,12 +91,13 @@ class Node2Vec:
                 "Generator not provided; node_num and multiplicity must be specified."
             )
 
-    def __call__(self, xin):
+    def __call__(self, xin, embedding):
         """
         Construct node representations from node ids through a look-up table.
 
         Args:
             xin (Keras Tensor): Batch input node ids.
+            embedding (str): "input" for input_embedding matrix, "output" for output_embedding
 
         Returns:
             Output tensor.
@@ -109,15 +110,36 @@ class Node2Vec:
             name="input_embedding",
             embeddings_initializer=input_initializer,
         )
-        h_layer = input_embedding(xin)
+
+        output_initializer = keras.initializers.TruncatedNormal(
+            stddev=1.0 / math.sqrt(self.emb_size * 1.0)
+        )
+        output_embedding = Embedding(
+            self.input_node_num,
+            self.emb_size,
+            input_length=1,
+            name="output_embedding",
+            embeddings_initializer=output_initializer,
+        )
+
+        if embedding == "input":
+            h_layer = input_embedding(xin)
+        elif embedding == "output":
+            h_layer = output_embedding(xin)
+        else:
+            raise ValueError("wrong embedding argument is supplied: {}, should be \"input\" or \"output\"".format(embedding))
+
         h_layer = Reshape((self.emb_size,))(h_layer)
         # K.squeeze(h_layer, axis=0)
 
         return h_layer
 
-    def node_model(self):
+    def node_model(self, embedding="input"):
         """
         Builds a Node2Vec model for node prediction.
+
+        Args:
+            embedding (str): "input" for input_embedding, "output" for output_embedding
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
@@ -129,7 +151,7 @@ class Node2Vec:
         x_inp = Input(shape=(1,))
 
         # Output from Node2Vec model
-        x_out = self(x_inp)
+        x_out = self(x_inp, embedding)
 
         return x_inp, x_out
 
@@ -143,27 +165,13 @@ class Node2Vec:
 
         """
         # Expose input and output sockets of the model, for source node:
-        x_inp_src, x_out_src = self.node_model()
-
-        # Expose input and out sockets of the model, for target node:
-        x_inp_dst = Input(shape=(1,))
-        output_initializer = keras.initializers.TruncatedNormal(
-            stddev=1.0 / math.sqrt(self.emb_size * 1.0)
-        )
-        output_embedding = Embedding(
-            self.input_node_num,
-            self.emb_size,
-            input_length=1,
-            name="output_embedding",
-            embeddings_initializer=output_initializer,
-        )
-        x_out_dst = output_embedding(x_inp_dst)
-        x_out_dst = Reshape((self.emb_size,))(x_out_dst)
-        # K.squeeze(x_out_dst, axis=0
+        x_inp_src, x_out_src = self.node_model("input")
+        x_inp_dst, x_out_dst = self.node_model("output")
 
         x_inp = [x_inp_src, x_inp_dst]
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
+
 
     def build(self):
         """
