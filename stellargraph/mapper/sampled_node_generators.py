@@ -593,7 +593,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             head_nodes: An iterable of head nodes to perform sampling on.
 
         Returns:
-            A list of feaure arrays, with each element being the id of each
+            A list of feature arrays, with each element being the id of each
             head node.
         """
 
