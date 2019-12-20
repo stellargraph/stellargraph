@@ -55,9 +55,27 @@ class Node2Vec:
 
         # Model parameters
         self.emb_size = emb_size
-        self.initializer = (
-            "glorot_uniform"
-        )  # the initializer for the weights to construct hidden layers
+
+        # Initialise the embedding layers: input-to-hidden and hidden-to-output
+        input_initializer = keras.initializers.RandomUniform(minval=-1.0, maxval=1.0)
+        self.input_embedding = Embedding(
+            self.input_node_num,
+            self.emb_size,
+            input_length=1,
+            name="input_embedding",
+            embeddings_initializer=input_initializer,
+        )
+
+        output_initializer = keras.initializers.TruncatedNormal(
+            stddev=1.0 / math.sqrt(self.emb_size * 1.0)
+        )
+        self.output_embedding = Embedding(
+            self.input_node_num,
+            self.emb_size,
+            input_length=1,
+            name="output_embedding",
+            embeddings_initializer=output_initializer,
+        )
 
     def _get_sizes_from_generator(self, generator):
         """
@@ -102,30 +120,11 @@ class Node2Vec:
         Returns:
             Output tensor.
         """
-        input_initializer = keras.initializers.RandomUniform(minval=-1.0, maxval=1.0)
-        input_embedding = Embedding(
-            self.input_node_num,
-            self.emb_size,
-            input_length=1,
-            name="input_embedding",
-            embeddings_initializer=input_initializer,
-        )
-
-        output_initializer = keras.initializers.TruncatedNormal(
-            stddev=1.0 / math.sqrt(self.emb_size * 1.0)
-        )
-        output_embedding = Embedding(
-            self.input_node_num,
-            self.emb_size,
-            input_length=1,
-            name="output_embedding",
-            embeddings_initializer=output_initializer,
-        )
 
         if embedding == "input":
-            h_layer = input_embedding(xin)
+            h_layer = self.input_embedding(xin)
         elif embedding == "output":
-            h_layer = output_embedding(xin)
+            h_layer = self.output_embedding(xin)
         else:
             raise ValueError("wrong embedding argument is supplied: {}, should be \"input\" or \"output\"".format(embedding))
 
