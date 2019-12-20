@@ -21,7 +21,7 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "tensorflow>=1.14,<1.15",
+    "tensorflow>=2.0.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",

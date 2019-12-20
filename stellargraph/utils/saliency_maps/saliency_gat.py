@@ -19,6 +19,7 @@ import numpy as np
 from tensorflow.keras import backend as K
 import scipy.sparse as sp
 from stellargraph.mapper import FullBatchNodeSequence
+import tensorflow as tf
 
 
 class GradientSaliencyGAT(object):
@@ -39,7 +40,7 @@ class GradientSaliencyGAT(object):
         """
         Args:
             model (Keras model object): The Keras GAT model.
-            generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matirx.
+            generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matrix.
         """
         # The placeholders for features and adjacency matrix (model input):
         if not isinstance(generator, FullBatchNodeSequence):
@@ -61,48 +62,50 @@ class GradientSaliencyGAT(object):
         output = self.model.output
         self.A = generator.A_dense
         self.X = generator.features
-
-        # The placeholder for the node index of interest. It is typically the index of the target test node.
-        self.node_id = K.placeholder(shape=(), dtype="int32")
-
-        # The placeholder for the class of interest. One will generally use the winning class.
-        self.class_of_interest = K.placeholder(shape=(), dtype="int32")
-
-        # The input tensors for computing the node saliency map
-        node_mask_tensors = model.input + [
-            K.learning_phase(),  # placeholder for mode (train or test) tense
-            self.class_of_interest,
-        ]
-
-        # The input tensors for computing the link saliency map
-        link_mask_tensors = model.input + [K.learning_phase(), self.class_of_interest]
-
-        # node gradients are the gradients of the output's component corresponding to the
-        # class of interest, w.r.t. input features of all nodes in the graph
-        self.node_gradients = model.optimizer.get_gradients(
-            K.gather(output[0, 0], self.class_of_interest), features_t
-        )
         self.is_sparse = K.is_sparse(adj_t)
-        # link gradients are the gradients of the output's component corresponding to the
-        # class of interest, w.r.t. all elements of the adjacency matrix
-        if self.is_sparse:
-            print("adjacency matrix tensor is sparse")
-            self.link_gradients = model.optimizer.get_gradients(
-                K.gather(K.gather(output, self.node_id), self.class_of_interest),
-                adj_t.values,
-            )
 
-        else:
-            self.link_gradients = model.optimizer.get_gradients(
-                K.gather(output[0, 0], self.class_of_interest), adj_t
-            )
+    def compute_node_gradients(self, node_mask_tensors):
 
-        self.compute_link_gradients = K.function(
-            inputs=link_mask_tensors, outputs=self.link_gradients
-        )
-        self.compute_node_gradients = K.function(
-            inputs=node_mask_tensors, outputs=self.node_gradients
-        )
+        for i, x in enumerate(node_mask_tensors):
+            if not isinstance(x, tf.Tensor):
+                node_mask_tensors[i] = tf.convert_to_tensor(x)
+
+        X_val, out_indices, A_val, _, class_of_interest = node_mask_tensors
+        model_input = [X_val, out_indices, A_val]
+
+        with tf.GradientTape() as tape:
+            tape.watch(X_val)
+            output = self.model(model_input)
+
+            cost_value = K.gather(output[0, 0], class_of_interest)
+
+        node_gradients = tape.gradient(cost_value, X_val)
+
+        return node_gradients
+
+    def compute_link_gradients(self, link_mask_tensors):
+
+        for i, x in enumerate(link_mask_tensors):
+            if not isinstance(x, tf.Tensor):
+                link_mask_tensors[i] = tf.convert_to_tensor(x)
+
+        X_val, out_indices, A_val, _, class_of_interest = link_mask_tensors
+        model_input = [X_val, out_indices, A_val]
+
+        with tf.GradientTape() as tape:
+            tape.watch(A_val)
+            output = self.model(model_input)
+            if self.is_sparse:
+                cost_value = (
+                    K.gather(K.gather(output, out_indices), class_of_interest),
+                )
+
+            else:
+                cost_value = K.gather(output[0, 0], class_of_interest)
+
+        link_gradients = tape.gradient(cost_value, A_val)
+
+        return link_gradients
 
     def set_ig_values(self, delta_value, edge_value):
         """

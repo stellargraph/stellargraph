@@ -38,7 +38,7 @@ def test_APPNP_edge_cases():
     G, features = create_graph_features()
     adj = nx.to_scipy_sparse_matrix(G)
     features, adj = GCN_Aadj_feats_op(features, adj)
-    adj = adj.todense()[None, :, :]
+    adj = np.array(adj.todense()[None, :, :])
     n_nodes = features.shape[0]
 
     nodes = G.nodes()
@@ -98,7 +98,7 @@ def test_APPNP_apply_dense():
     G, features = create_graph_features()
     adj = nx.to_scipy_sparse_matrix(G)
     features, adj = GCN_Aadj_feats_op(features, adj)
-    adj = adj.todense()[None, :, :]
+    adj = np.array(adj.todense()[None, :, :])
     n_nodes = features.shape[0]
 
     nodes = G.nodes()
@@ -162,7 +162,7 @@ def test_APPNP_apply_propagate_model_dense():
     G, features = create_graph_features()
     adj = nx.to_scipy_sparse_matrix(G)
     features, adj = GCN_Aadj_feats_op(features, adj)
-    adj = adj.todense()[None, :, :]
+    adj = np.array(adj.todense()[None, :, :])
     n_nodes = features.shape[0]
 
     nodes = G.nodes()

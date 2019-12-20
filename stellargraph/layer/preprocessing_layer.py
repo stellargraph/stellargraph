@@ -26,7 +26,7 @@ from tensorflow import keras
 import numpy as np
 
 
-class GraphPreProcessingLayer(Layer):
+class SymmetricGraphPreProcessingLayer(Layer):
     """
     This class implements the pre-processing of adjacency matrices in GCN. We implement it in tensorflow so that
     while computing the saliency maps, we are able to calculate the gradients in an end-to-end way. 
@@ -37,8 +37,6 @@ class GraphPreProcessingLayer(Layer):
     """
 
     def __init__(self, num_of_nodes, **kwargs):
-        if K.backend() != "tensorflow":
-            raise TypeError("Only tensorflow backend is currently supported.")
         self.output_dims = (num_of_nodes, num_of_nodes)
         super().__init__(**kwargs)
 
@@ -76,3 +74,48 @@ class GraphPreProcessingLayer(Layer):
         d_mat_inv_sqrt = tf.diag(tf.rsqrt(rowsum))
         adj_normalized = tf.matmul(tf.matmul(d_mat_inv_sqrt, adj), d_mat_inv_sqrt)
         return adj_normalized
+
+
+class GraphPreProcessingLayer(Layer):
+    """
+    This class implements the pre-processing of adjacency matrices in GCN. We implement it in tensorflow so that
+    while computing the saliency maps, we are able to calculate the gradients in an end-to-end way. 
+    We currently only support this for tensorflow backend.
+
+    Args:
+    num_of_nodes (int pair): The number of nodes in the graph.
+    """
+
+    def __init__(self, num_of_nodes, **kwargs):
+        self.output_dims = (num_of_nodes, num_of_nodes)
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def call(self, adj):
+        """
+            The adjacency matrix pre-processing in tensorflow.
+            This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
+            GCN requires that the input adjacency matrix has self-loops and is normalized.
+
+            Args:
+                adj (Numpy array): the adjacency matrix to transform.
+
+            Returns:
+                The tensor of the transformed adjacency matrix.
+        """
+        if K.is_sparse(adj):  # isinstance(adj, tf.SparseTensor):
+            raise RuntimeError(
+                "Tensorflow adjacency matrix normalization not implemented for sparse matrices."
+            )
+
+        else:
+            # Add self loops.
+            adj = adj + tf.linalg.diag(tf.ones(adj.shape[0]) - tf.linalg.diag_part(adj))
+
+            # Normalization
+            rowsum = tf.reduce_sum(adj, 1)
+            d_mat_inv_sqrt = tf.linalg.diag(tf.math.rsqrt(rowsum))
+            adj_normalized = tf.matmul(tf.matmul(d_mat_inv_sqrt, adj), d_mat_inv_sqrt)
+            return adj_normalized
