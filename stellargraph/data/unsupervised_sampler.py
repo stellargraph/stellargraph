@@ -47,10 +47,10 @@ class UnsupervisedSampler:
             walker: the walker used to generate random walks, which can be a instance of UniformRandomWalk or BiasedRandomWalk. If walker
                 is None, it will be set to an instance of UniformRandomWalk.
             seed(int): the seed used to generate the initial random state
-            bidirectional(bool): whether to collect node context pairs in a bidirectional way, for node 'u' with its 
+            bidirectional(bool): whether to collect node context pairs in a bidirectional way: for node 'u' with its
                 following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)' 
-                are collected as node context pairts, otherwise, only '(u, v)' is collected as a node context pair. The default value
-                is set to Fasle.
+                are collected as node-context pairs, otherwise, only '(u, v)' is collected as a node-context pair. The default value
+                is set to False.
             context_sampling(bool): whether to perform sampling on the length of random walks for collect node context pairs. The default
                 value is set to False.
     """
@@ -97,7 +97,7 @@ class UnsupervisedSampler:
         elif is_real_iterable(nodes):  # check whether the nodes provided are valid.
             self.nodes = list(nodes)
         else:
-            raise ValueError("nodes parameter should be an iterableof node IDs.")
+            raise ValueError("nodes parameter should be an iterable of node IDs.")
 
         # Require walks of at lease length two because to create a sample pair we need at least two nodes.
         if length < 2:
@@ -175,7 +175,7 @@ class UnsupervisedSampler:
                         length=self.length,  # maximum length of a random walk
                         n=1,  # number of random walks per root node
                     )
-                # (target,contect) pair sampling
+                # (target,context) pair sampling
                 target = walk[0][0]
                 context_window = walk[0][1:]
                 for context in context_window:
