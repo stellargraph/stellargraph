@@ -70,14 +70,18 @@ def test_normalize_adj():
 
 
 def test_normalized_laplacian():
-    node_list = list(pytest.G.nodes())
     Aadj = pytest.G.to_adjacency_matrix()
-    laplacian = normalized_laplacian(Aadj)
-    assert 1 == pytest.approx(laplacian.sum(), 0.2)
-    assert laplacian.get_shape() == Aadj.get_shape()
+    laplacian = normalized_laplacian(Aadj).todense()
+    eigenvalues, _ = np.linalg.eig(laplacian)
+
+    # min eigenvalue of normalized laplacian is 0
+    # max eigenvalue of normalized laplacian is <= 2
+    assert eigenvalues.min() == pytest.approx(0, abs=1e-7)
+    assert eigenvalues.max() <= (2 + 1e-7)
+    assert laplacian.shape == Aadj.get_shape()
 
     laplacian = normalized_laplacian(Aadj, symmetric=False)
-    assert 1 == pytest.approx(laplacian.sum(), 0.2)
+    assert 1 == pytest.approx(laplacian.sum(), abs=1e-7)
     assert laplacian.get_shape() == Aadj.get_shape()
 
 

@@ -33,3 +33,4 @@ from .cluster_gcn import *
 from .attri2vec import *
 from .misc import SqueezedSparseConversion, GraphLogLikelihood
 from .preprocessing_layer import GraphPreProcessingLayer
+from .rgcn import *
