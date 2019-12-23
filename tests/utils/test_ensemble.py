@@ -16,7 +16,7 @@
 
 import pytest
 import networkx as nx
-
+import tensorflow as tf
 from stellargraph import StellarGraph
 from stellargraph.layer import (
     GraphSAGE,
@@ -178,6 +178,7 @@ def create_GAT_model(graph):
 # Test for class Ensemble instance creation with invalid parameters given.
 #
 def test_ensemble_init_parameters():
+    tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
 
@@ -257,6 +258,7 @@ def test_ensemble_init_parameters():
 
 
 def test_compile():
+    tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
 
@@ -316,6 +318,7 @@ def test_compile():
 
 
 def test_Ensemble_fit_generator():
+    tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
 
@@ -351,6 +354,7 @@ def test_Ensemble_fit_generator():
 
 
 def test_BaggingEnsemble_fit_generator():
+    tf.keras.backend.clear_session()
 
     train_data = np.array([1, 2])
     train_targets = np.array([[1, 0], [0, 1]])
@@ -445,6 +449,7 @@ def test_BaggingEnsemble_fit_generator():
 
 
 def test_evaluate_generator():
+    tf.keras.backend.clear_session()
 
     test_data = np.array([3, 4, 5])
     test_targets = np.array([[1, 0], [0, 1], [0, 1]])
@@ -543,6 +548,8 @@ def test_evaluate_generator():
 
 def test_predict_generator():
 
+    tf.keras.backend.clear_session()
+
     # test_data = np.array([[0, 0], [1, 1], [0.8, 0.8]])
     test_data = np.array([4, 5, 6])
     test_targets = np.array([[1, 0], [0, 1], [0, 1]])
@@ -638,7 +645,7 @@ def test_predict_generator():
 # Tests for link prediction that can't be combined easily with the node attribute inference workflow above.
 #
 def test_evaluate_generator_link_prediction():
-
+    tf.keras.backend.clear_session()
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
     edge_labels_test = np.array([1, 1, 0])
 
@@ -737,7 +744,7 @@ def test_evaluate_generator_link_prediction():
 
 
 def test_predict_generator_link_prediction():
-
+    tf.keras.backend.clear_session()
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
 
     graph = example_graph_1(feature_size=2)
