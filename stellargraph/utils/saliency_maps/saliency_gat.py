@@ -83,14 +83,8 @@ class GradientSaliencyGAT:
         return node_gradients
 
     def compute_link_gradients(self, link_mask_tensors):
-
         for i, x in enumerate(link_mask_tensors):
             if not isinstance(x, tf.Tensor):
-                print(x.dtype)
-                try:
-                    tf.convert_to_tensor(x)
-                except ValueError:
-                    print(f"Value error with x={x}")
                 link_mask_tensors[i] = tf.convert_to_tensor(x)
 
         X_val, out_indices, A_val, _, class_of_interest = link_mask_tensors

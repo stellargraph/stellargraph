@@ -148,6 +148,7 @@ if __name__ == "__main__":
         "--execute",
         nargs="?",
         default=None,
+        const="default",
         help="Execute notebook before export with specified kernel (default if not given)",
     )
     parser.add_argument(
@@ -187,11 +188,11 @@ if __name__ == "__main__":
     write_notebook = True
     write_html = args.html
     overwrite_notebook = args.overwrite
-    format_code = args.format_code or args.all
-    clear_warnings = args.clear_warnings or args.all
-    renumber_code = args.renumber or args.all
-    set_kernel = args.set_kernel or args.all
-    execute_code = args.execute_code
+    format_code = args.format_code or args.default
+    clear_warnings = args.clear_warnings or args.default
+    renumber_code = args.renumber or args.default
+    set_kernel = args.set_kernel or args.default
+    execute_code = args.execute
 
     # Add preprocessors
     preprocessor_list = []
@@ -214,7 +215,9 @@ if __name__ == "__main__":
     c = Config()
     c.NotebookExporter.preprocessors = preprocessor_list
     c.HTMLExporter.preprocessors = preprocessor_list
-    c.ExecutePreprocessor.kernel_name = e
+
+    if execute_code and execute_code != "default":
+        c.ExecutePreprocessor.kernel_name = execute_code
 
     nb_exporter = NotebookExporter(c)
     html_exporter = HTMLExporter(c)

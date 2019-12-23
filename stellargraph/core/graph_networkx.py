@@ -767,10 +767,12 @@ class NetworkXStellarGraph(StellarGraph):
         return self._graph.degree()
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
-        if nodes is not None:
-            return nx.adjacency_matrix(self._graph.subgraph(nodes))
         return nx.to_scipy_sparse_matrix(
-            self._graph, dtype="float32", weight=self._edge_weight_label, format="coo"
+            self._graph,
+            nodelist=nodes,
+            dtype="float32",
+            weight=self._edge_weight_label,
+            format="coo",
         )
 
     # XXX This has not yet been standardised in the interface.
