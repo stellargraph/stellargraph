@@ -38,4 +38,3 @@ papermill --log-output "$f" "$f" || exitCode=$?
 # and also upload the notebook with outputs, for someone to download and look at
 buildkite-agent artifact upload "$(basename "$f")"
 exit $exitCode
-
