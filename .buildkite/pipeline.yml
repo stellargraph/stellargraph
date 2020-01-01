@@ -37,6 +37,19 @@ steps:
     agents:
       queue: 't2medium'
 
+  - label: ":python::jupyter: test notebooks %n"
+    command: ".buildkite/steps/python-notebooks.sh"
+    parallelism: 31
+    plugins:
+      docker#v3.2.0:
+        image: "python:3.6-slim"
+        environment:
+          - PYTHONDONTWRITEBYTECODE=1
+          - BUILDKITE_PARALLEL_JOB_COUNT
+          - BUILDKITE_PARALLEL_JOB
+    agents:
+      queue: "t2medium"
+
   - label: ":python-black: format"
     plugins:
       docker#v3.2.0:
