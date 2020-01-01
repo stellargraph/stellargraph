@@ -39,7 +39,6 @@ steps:
 
   - label: ":python::jupyter: test notebooks %n"
     command: ".buildkite/steps/python-notebooks.sh"
-    parallelism: 30
     plugins:
       docker#v3.2.0:
         image: "python:3.6-slim"
