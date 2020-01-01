@@ -1,0 +1,4 @@
+-r ../requirements.txt
+-r ./link-prediction/random-walks/requirements.txt
+-r ./community_detection/requirements.txt
+-r ./node-classification/rgcn/requirements.txt

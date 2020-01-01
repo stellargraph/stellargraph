@@ -15,7 +15,7 @@ done < <(find "$PWD" -name "*.ipynb" -print0)
 NUM_NOTEBOOKS_TOTAL=${#NOTEBOOKS[@]}
 
 echo "--- :python: installing notebooks dependencies"
-pip install -q --no-cache-dir -r requirements.txt -e .
+pip install -q --no-cache-dir -r demos/requirements.txt -e .
 
 echo "--- :python: listing notebooks dependencies"
 pip freeze
