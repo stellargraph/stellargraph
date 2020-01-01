@@ -44,8 +44,6 @@ steps:
         image: "python:3.6-slim"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
-          - BUILDKITE_PARALLEL_JOB_COUNT
-          - BUILDKITE_PARALLEL_JOB
     agents:
       queue: "t2medium"
 

@@ -2,17 +2,12 @@
 
 set -xeo pipefail
 
-SPLIT="${BUILDKITE_PARALLEL_JOB_COUNT:-1}"
-INDEX="${BUILDKITE_PARALLEL_JOB:-0}"
-
 echo "--- :books: collecting notebooks"
 # Create array with all notebooks
 NOTEBOOKS=()
 while IFS= read -r -d $'\0'; do
   NOTEBOOKS+=("$REPLY")
 done < <(find "$PWD" -name "*.ipynb" -print0)
-
-NUM_NOTEBOOKS_TOTAL=${#NOTEBOOKS[@]}
 
 echo "--- :python: installing notebooks dependencies"
 pip install -q --no-cache-dir -r demos/requirements.txt -e .
