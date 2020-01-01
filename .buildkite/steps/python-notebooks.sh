@@ -24,10 +24,14 @@ echo "--- :python: preparing to run notebooks"
 
 exitCode=0
 for f in "${NOTEBOOKS[@]}"; do
-  echo "+++ :python: running $f"
+  echo "--- :python: running $f"
   cd "$(dirname "$f")"
   # run the notebook, saving it back to where it was, printing everything
-  papermill --log-output "$f" "$f" || exitCode=$?
+  papermill --log-output "$f" "$f" || {
+    exitCode=$?
+    # this section failed, so open it by default
+    echo "^^^ +++"
+  }
 
   # and also upload the notebook with outputs, for someone to download and look at
   buildkite-agent artifact upload "$(basename "$f")"
