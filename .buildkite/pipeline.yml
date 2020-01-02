@@ -3,6 +3,9 @@ steps:
     key: "build_image"
     plugins:
       docker-compose#v3.1.0:
+        config:
+          - docker-compose.yml
+          - .buildkite/docker-compose.yml
         build:
           - stellargraph
         image-repository: index.docker.io/stellargraph/stellargraph
@@ -19,17 +22,6 @@ steps:
     plugins:
       docker-compose#v3.1.0:
         run: stellargraph
-        environment:
-          - PYTHONDONTWRITEBYTECODE=1
-          - GIT_BRANCH=$BUILDKITE_BRANCH
-          - COVERALLS_REPO_TOKEN
-          - BUILDKITE_BUILD_NUMBER
-          - BUILDKITE_BRANCH
-          - AWS_LOGS_BUCKET
-          # for coveralls-python, to send more metadata to coveralls.io
-          - BUILDKITE
-          - BUILDKITE_PULL_REQUEST
-          - BUILDKITE_JOB_ID
     agents:
       queue: 't2medium'
 

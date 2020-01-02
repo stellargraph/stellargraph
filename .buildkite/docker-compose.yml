@@ -1,0 +1,27 @@
+---
+version: "3.4"
+services:
+  stellargraph:
+    working_dir: /workdir
+    volumes:
+      - $PWD:/workdir
+      # We need to manually bring in buildkite-agent
+      # (https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/issues/158)
+      - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
+    environment:
+      - CI
+      - BUILDKITE
+      - BUILDKITE_AGENT_ACCESS_TOKEN
+      - BUILDKITE_BRANCH=${BUILDKITE_BRANCH?}
+      - BUILDKITE_BUILD_ID
+      - BUILDKITE_BUILD_NUMBER
+      - BUILDKITE_BUILD_URL
+      - BUILDKITE_COMMIT
+      - BUILDKITE_JOB_ID
+      - BUILDKITE_LABEL
+      - BUILDKITE_PROJECT_SLUG
+      - BUILDKITE_PULL_REQUEST
+      - PYTHONDONTWRITEBYTECODE=1
+      - GIT_BRANCH=$BUILDKITE_BRANCH
+      - COVERALLS_REPO_TOKEN
+      - AWS_LOGS_BUCKET
