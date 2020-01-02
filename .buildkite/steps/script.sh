@@ -13,7 +13,7 @@ pip install -q --no-cache-dir -r requirements.txt -e .
 
 echo "+++ running tests"
 exitCode=$?
-py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=0
+py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
 echo "--- uploading coveralls"
 coveralls
