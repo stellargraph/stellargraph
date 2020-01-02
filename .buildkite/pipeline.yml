@@ -58,10 +58,9 @@ steps:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
-    command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
     plugins:
-       docker#v3.2.0:
-          image: "hadolint/hadolint:latest-debian"
+      docker#v3.4.0:
+        image: "stellargraph/hadolint:snapshot"
 
   - label: ":copyright: check copyright headers"
     command: '.buildkite/steps/check-copyright-headers.sh'
