@@ -122,6 +122,7 @@ class EdgeSplitter(object):
                         probs
                     ),
                     RuntimeWarning,
+                    stacklevel=2,
                 )
             negative_edges = self._sample_negative_examples_local_dfs(
                 p=p, probs=probs, limit_samples=len(positive_edges)
@@ -231,6 +232,7 @@ class EdgeSplitter(object):
                         probs
                     ),
                     RuntimeWarning,
+                    stacklevel=2,
                 )
             negative_edges = self._sample_negative_examples_by_edge_type_local_dfs(
                 p=p,
