@@ -106,7 +106,7 @@ class GraphSchema:
 
         except IndexError:
             warnings.warn(
-                "Node key '{}' not found in type map.".format(name), RuntimeWarning
+                "Node key '{}' not found in type map.".format(node), RuntimeWarning
             )
             node_type = None
         return node_type
