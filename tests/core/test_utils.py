@@ -123,11 +123,11 @@ def test_GCN_Aadj_feats_op():
     assert features_.shape == (features.shape[0], features.shape[1] + (features.shape[0] * 3))
 
     # test content
-    assert np.array_equal(
+    assert np.allclose(
         features_[:, :features.shape[1]],
         features
     )
-    assert np.array_equal(
+    assert np.allclose(
         features_[:, features.shape[1]:],
         np.concatenate([c.todense() for c in cp], axis=1)
     )
