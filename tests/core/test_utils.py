@@ -169,3 +169,25 @@ def test_GCN_Aadj_feats_op():
     assert Aadj_power_2.shape == Aadj_.get_shape()
     # and the same values.
     assert pytest.approx(Aadj_power_2) == Aadj_.todense()
+
+
+def test_GCN_Aadj_feats_op_consistent_shape():
+    node_list = list(pytest.G.nodes())
+    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
+    features = pytest.G.get_feature_for_nodes(node_list)
+
+    # methods to check
+    methods = ["gcn", "chebyshev", "sgc"]
+
+    # unzip into list of features and list of Aadj
+    features_list, Aadj_list = zip(
+        *[
+            GCN_Aadj_feats_op(features=features, A=Aadj, method=method, k=2)
+            for method in methods
+        ]
+    )
+
+    # check that shapes are consistent
+    assert len(set(len(f.shape) for f in features_list)) == 1
+    assert len(set(f.shape[0] for f in features_list)) == 1
+    assert len(set(a.shape for a in Aadj_list)) == 1
