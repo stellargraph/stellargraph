@@ -113,12 +113,24 @@ def test_GCN_Aadj_feats_op():
     features_, Aadj_ = GCN_Aadj_feats_op(
         features=features, A=Aadj, method="chebyshev", k=2
     )
-    assert len(features_) == 4
-    assert isinstance(features, np.ndarray)
-    assert np.array_equal(features_[0], features_[0])
-    assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
-    assert features_[2].max() < 1
-    assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
+    cp = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(Aadj)), 2)
+
+    # test types
+    assert isinstance(features_, np.ndarray)
+    assert features_.dtype == np.float64
+
+    # test shape
+    assert features_.shape == (features.shape[0], features.shape[1] + (features.shape[0] * 3))
+
+    # test content
+    assert np.array_equal(
+        features_[:, :features.shape[1]],
+        features
+    )
+    assert np.array_equal(
+        features_[:, features.shape[1]:],
+        np.concatenate([c.todense() for c in cp], axis=1)
+    )
     assert Aadj.get_shape() == Aadj_.get_shape()
 
     # k must an integer greater than or equal to 2
