@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import queue
+import warnings
 from collections.__init__ import namedtuple
 from ..core.utils import is_real_iterable
 
@@ -60,7 +61,7 @@ class GraphSchema:
         try:
             index = self.node_types.index(name)
         except ValueError:
-            print("Warning: Node key '{}' not found.".format(name))
+            warnings.warn("Node key '{}' not found.".format(name), RuntimeWarning)
             index = None
         return index
 
@@ -104,7 +105,9 @@ class GraphSchema:
             node_type = nt if index else self.node_types[nt]
 
         except IndexError:
-            print("Warning: Node '{}' not found in type map.".format(node))
+            warnings.warn(
+                "Node key '{}' not found in type map.".format(name), RuntimeWarning
+            )
             node_type = None
         return node_type
 

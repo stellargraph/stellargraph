@@ -16,6 +16,7 @@
 
 
 import os
+import warnings
 import pandas as pd
 
 import networkx as nx
@@ -43,10 +44,11 @@ def from_epgm(epgm_location, dataset_name=None, directed=False):
     # if dataset_name is not given, use the name of the 1st graph head
     if not dataset_name:
         dataset_name = graphs[0]["meta"]["label"]
-        print(
-            "WARNING: dataset name not specified, using dataset '{}' in the 1st graph head".format(
+        warnings.warn(
+            "dataset name not specified, using dataset '{}' in the 1st graph head".format(
                 dataset_name
-            )
+            ),
+            RuntimeWarning,
         )
 
     # Select graph using dataset_name

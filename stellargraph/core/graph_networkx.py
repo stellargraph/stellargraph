@@ -26,6 +26,7 @@ from stellargraph.core.graph import StellarGraph
 import random
 import itertools as it
 from collections import defaultdict
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -97,9 +98,11 @@ def _convert_from_node_attribute(
 
         # Warn if nodes don't have the attribute
         if 0 in data_sizes:
-            print(
-                "Warning: Some nodes have no value for attribute '{}', "
-                "using default value.".format(attr_name)
+            warnings.warn(
+                "Some nodes have no value for attribute '{}', "
+                "using default value.".format(attr_name),
+                RuntimeWarning,
+                stacklevel=2,
             )
             data_sizes.discard(0)
 
