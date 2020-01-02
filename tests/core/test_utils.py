@@ -120,16 +120,16 @@ def test_GCN_Aadj_feats_op():
     assert features_.dtype == np.float64
 
     # test shape
-    assert features_.shape == (features.shape[0], features.shape[1] + (features.shape[0] * 3))
+    assert features_.shape == (
+        features.shape[0],
+        features.shape[1] + (features.shape[0] * 3),
+    )
 
     # test content
+    assert np.allclose(features_[:, : features.shape[1]], features)
     assert np.allclose(
-        features_[:, :features.shape[1]],
-        features
-    )
-    assert np.allclose(
-        features_[:, features.shape[1]:],
-        np.concatenate([c.todense() for c in cp], axis=1)
+        features_[:, features.shape[1] :],
+        np.concatenate([c.todense() for c in cp], axis=1),
     )
     assert Aadj.get_shape() == Aadj_.get_shape()
 
