@@ -8,9 +8,6 @@ upload_tests() {
   buildkite-agent artifact upload "$junit_file" "s3://${AWS_LOGS_BUCKET}/pytest/${BUILDKITE_BRANCH}/${BUILDKITE_BUILD_NUMBER}"
 }
 
-echo "--- installing dependencies"
-pip install -q --no-cache-dir -r requirements.txt -e .
-
 echo "+++ running tests"
 exitCode=$?
 py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
