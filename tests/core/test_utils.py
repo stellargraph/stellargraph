@@ -65,7 +65,7 @@ def test_normalize_adj():
 
     csr = normalize_adj(Aadj, symmetric=False)
     dense = csr.todense()
-    assert 5 == pytest.approx(dense.sum(), 0.1)
+    assert 10 == pytest.approx(dense.sum(), 0.1)
     assert csr.get_shape() == Aadj.get_shape()
 
 
