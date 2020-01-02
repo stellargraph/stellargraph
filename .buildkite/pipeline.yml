@@ -1,5 +1,6 @@
 steps:
   - label: ":python: 3.6"
+    key: "python_3_6"
     command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
@@ -19,6 +20,7 @@ steps:
       queue: 't2medium'
 
   - label: ":python: 3.7"
+    key: "python_3_7"
     command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
@@ -58,10 +60,9 @@ steps:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
-    command: "find -name 'Dockerfile*' -print0 | xargs -0 hadolint"
     plugins:
-       docker#v3.2.0:
-          image: "hadolint/hadolint:latest-debian"
+      docker#v3.4.0:
+        image: "stellargraph/hadolint:snapshot"
 
   - label: ":copyright: check copyright headers"
     command: '.buildkite/steps/check-copyright-headers.sh'
@@ -77,3 +78,15 @@ steps:
   - label: ":docker: publish docker images"
     command: ".buildkite/steps/manage-images.sh publish-images"
     branches: "develop feature/*"
+
+  # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
+  # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
+  # it runs in parallel with them.
+  - label: ":memo: annotate with junit"
+    plugins:
+      junit-annotate#v1.7.0:
+        artifacts: junit-*.xml
+    depends_on:
+      - "python_3_6"
+      - "python_3_7"
+    allow_dependency_failure: true
