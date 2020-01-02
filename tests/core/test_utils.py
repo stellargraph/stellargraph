@@ -30,7 +30,7 @@ from stellargraph.core.graph import *
 
 
 @pytest.fixture
-def example_graph(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
+def example_graph(feature_size=4, n_edges=20, n_nodes=6, n_isolates=1):
     G = nxGraph()
     n_noniso = n_nodes - n_isolates
     edges = [
