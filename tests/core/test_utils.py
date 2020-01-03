@@ -170,10 +170,10 @@ def test_GCN_Aadj_feats_op(example_graph):
     assert pytest.approx(Aadj_power_2) == Aadj_.todense()
 
 
-def test_GCN_Aadj_feats_op_consistent_shape():
-    node_list = list(pytest.G.nodes())
-    Aadj = nx.adjacency_matrix(pytest.G, nodelist=node_list)
-    features = pytest.G.get_feature_for_nodes(node_list)
+def test_GCN_Aadj_feats_op_consistent_shape(example_graph):
+    node_list = list(example_graph.nodes())
+    Aadj = example_graph.to_adjacency_matrix()
+    features = example_graph.get_feature_for_nodes(node_list)
 
     # methods to check
     methods = ["gcn", "chebyshev", "sgc"]
