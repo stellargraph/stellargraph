@@ -118,4 +118,14 @@ site
 
 # Vim session
 **/Session.vim
+
+# Other service configurations
+.buildkite/
+.github/
+
+# docker configuration isn't needed inside the image
+docker/
+# buildkite creates a docker-compose.buildkite-...-override.yml file
+# that changes each build, that also needs to be ignored
+docker-compose*.yml
 .dockerignore
