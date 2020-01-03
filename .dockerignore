@@ -118,3 +118,4 @@ site
 
 # Vim session
 **/Session.vim
+.dockerignore
