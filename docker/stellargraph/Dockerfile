@@ -10,7 +10,7 @@ ENV PATH=${PATH}:/home/stellar/.local/bin
 COPY requirements.txt /build/requirements.txt
 RUN echo "+++ installing dependencies" && pip install --no-cache-dir -r /build/requirements.txt --user
 
-# Now copy the code in to install, to install stellargraph itself
+# Now copy the code in, to install stellargraph itself
 COPY . /build/
 # hadolint ignore=DL3013
 RUN echo "+++ installing stellargraph" && pip install --no-cache-dir /build/ --user
