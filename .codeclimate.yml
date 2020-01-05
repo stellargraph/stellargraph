@@ -1,0 +1,16 @@
+---
+version: "2"         # required to adjust maintainability checks
+
+plugins:
+  bandit:
+    enabled: true
+
+  radon:
+    enabled: true
+
+  sonar-python:
+    enabled: true
+
+  pylint:
+    enabled: true
+    channel: "beta"
