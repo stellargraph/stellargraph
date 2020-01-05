@@ -8,6 +8,9 @@ checks:
   file-lines:
     enabled: false
 
+  method-count:
+    enabled: false
+
   similar-code:
     enabled: false
 
