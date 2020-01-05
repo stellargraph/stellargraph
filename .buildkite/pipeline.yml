@@ -71,8 +71,8 @@ steps:
         image: "stellargraph/prettier:${BIGDATA_DOCKER_TAG-snapshot}"
         command: [
             "--check",
-            "--prose-wrap=preserve"
-            "**/*.md"
+            "--prose-wrap=preserve",
+            "**/*.md",
             "**/*.yml",
             "**/*.yaml",
             # not valid YAML because of jinja templating
