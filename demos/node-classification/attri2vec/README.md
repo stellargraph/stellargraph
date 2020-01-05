@@ -30,6 +30,7 @@ the example.
 The example in this directory uses the citeseer dataset, which can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/lbc/citesser.tgz).
 
 The following is the description of the dataset:
+
 > The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes.
 > The citation network consists of 4732 links. Each publication in the dataset is described by a
 > 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.

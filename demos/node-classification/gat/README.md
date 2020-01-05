@@ -1,9 +1,10 @@
 # GAT for Node Classification
 
-This is an example of using the Graph Attention network (GAT) algorithm [1] for semi-supervised node classification 
+This is an example of using the Graph Attention network (GAT) algorithm [1] for semi-supervised node classification
 in a homogeneous network.
 
 ## Requirements
+
 All examples use Python 3.6 and the StellarGraph library. To install the StellarGraph library
 follow the instructions at: https://github.com/stellargraph/stellargraph
 
@@ -19,6 +20,7 @@ features are available for all nodes in the graph.
 The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
 
 The following is the description of the dataset:
+
 > The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
 > The citation network consists of 5429 links. Each publication in the dataset is described by a
 > 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
@@ -31,12 +33,14 @@ as a command line argument to this script.
 
 The example script can be run on supplying the location of the downloaded CORA dataset
 with the following command:
+
 ```
 python gat-cora-example.py -l <path_to_cora_dataset>
 ```
 
 Additional arguments can be specified that change the GAT model architecture and training parameters, a
 description of these arguments is displayed using the help option to the script:
+
 ```
 python gat-cora-example.py --help
 ```
@@ -50,7 +54,6 @@ website: http://jupyter.org/install.html
 After starting the Jupyter server on your computer, load the notebook
 `gat-cora-node-classification-example.ipynb` and follow the instructions inside.
 
-
 ## References
 
-[1]	Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
+[1] Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))

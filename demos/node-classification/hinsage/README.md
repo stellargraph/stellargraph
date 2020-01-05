@@ -8,6 +8,7 @@ as a binary classification task predicting if the user has had 'elite' status in
 never had 'elite' status.
 
 ## Requirements
+
 Install the StellarGraph library following the instructions at:
 https://github.com/stellargraph/stellargraph
 
@@ -19,13 +20,13 @@ of the StellarGraph library.
 Currently the examples in this directory use the Yelp dataset.
 The Yelp dataset can be obtained by navigating to https://www.yelp.com/dataset,
 selecting "Download Dataset" and signing the licence agreement.
-Then, download the JSON dataset and uncompress it to an appropriate location 
+Then, download the JSON dataset and uncompress it to an appropriate location
 in your filesystem.
 
 There are several different versions of the dataset, enumerated by "rounds",
 to check which round the dataset is, look for the file named "Yelp_Dataset_Challenge_Round_XX.pdf"
 where "XX" is the round number. The current script supports rounds 12 and 13.
-The path to the Yelp dataset used below should contain the JSON files including 
+The path to the Yelp dataset used below should contain the JSON files including
 `yelp_academic_dataset_user.json` or `user.json` depending on the round number.
 
 The example code uses a preprocessed version of the dataset that is generated
@@ -36,6 +37,7 @@ the output directory (`-o`),
 and the round number (`-r`, which defaults to 13).
 
 Example usage:
+
 ```
 python yelp-preprocessing.py -r XX -l <path_to_yelp_dataset> -o .
 ```
@@ -46,6 +48,7 @@ of Wisconsin. To change this to another state, or to "false" to use the entire d
 memory as the entire graph will be loaded).
 
 Example usage to run without filtering:
+
 ```
 python yelp-preprocessing.py -l <path_to_yelp_dataset> -o . --filter_state=false
 ```
@@ -55,17 +58,19 @@ python yelp-preprocessing.py -l <path_to_yelp_dataset> -o . --filter_state=false
 The example script can be run on supplying the location of the preprocessed Yelp dataset.
 
 Example usage:
+
 ```
 python yelp-example.py -l <location_of_preprocessed_data>
 ```
 
 Additional command line arguments are available to tune the training of the model, to see a
 description of these arguments use the `--help` argument:
+
 ```
 python yelp-example.py --help
 ```
 
 ## References
 
-[1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017
+[1] W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017
 ([arXiv:1706.02216](https://arxiv.org/abs/1706.02216)).

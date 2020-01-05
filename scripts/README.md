@@ -1,8 +1,8 @@
 ## Development Scripts Readme
 
-This directory contains scripts to perform testing and maintainence tasks for developers of the StellarGraph  library. These scripts should not be needed for users of the library.
+This directory contains scripts to perform testing and maintainence tasks for developers of the StellarGraph library. These scripts should not be needed for users of the library.
 
-Currently there are two scripts, one to formats and clean the specified Juptyer notebooks, the other to run specific demo notebooks and check if there are any errors.  In the future the functionality of these two scripts may be combined.
+Currently there are two scripts, one to formats and clean the specified Juptyer notebooks, the other to run specific demo notebooks and check if there are any errors. In the future the functionality of these two scripts may be combined.
 
 ### Requirements
 
@@ -12,7 +12,6 @@ These scripts have requirements in addition to the base library, install the req
 cd <scripts directory>
 pip install -r requirements.txt
 ```
-
 
 ### Format and clean up demo Jupyter notebooks
 
@@ -53,23 +52,19 @@ For example, to perform all formatting on all Jupyter notebooks found in the dem
 ```
 
 To additionally output HTML files:
+
 ```
 > python scripts/format_scripts.py -a --html demos
 ```
 
 ### Testing demo Jupyter notebooks
 
-The `test_demos.py` script runs the demo scripts and Jupyter notebooks that use the CORA dataset, it currently skips the demos that use other datasets (due to dataset licencing issues) and those that require complicated dependencies (such as iGraph which requires a pre-compiled library not installable through PyPI).  The script has a dependency on `treon` which is used to test the notebooks.
+The `test_demos.py` script runs the demo scripts and Jupyter notebooks that use the CORA dataset, it currently skips the demos that use other datasets (due to dataset licencing issues) and those that require complicated dependencies (such as iGraph which requires a pre-compiled library not installable through PyPI). The script has a dependency on `treon` which is used to test the notebooks.
 
 The script currently has no command line arguments and is just run as follows:
+
 ```
 python scripts/test_demos.py
 ```
 
 The script takes a while to run, as it loops through all supported demo notebooks and scripts. FInally, it will print the number of passed and failed notebooks and scripts.
-
-
-
-
-
-

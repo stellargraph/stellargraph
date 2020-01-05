@@ -4,9 +4,10 @@ This folder contains four [Jupyter](http://jupyter.org/) python notebooks demons
 
 **Node2Vec** and **Metapath2Vec** notebooks demonstrate the combined use of `stellargraph` and `Gensim` [4] libraries for representation learning on homogeneous and heterogeneous graphs.
 **Unsupervised GraphSAGE** notebook demonstrates the use of `Stellargraph` library's GraphSAGE implementation for unsupervised learning of node embeddings for homogeneous graphs with node features.
-**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for its ability to infer the representations of out-of-sample nodes with the out-of-sample node link prediction task.   
+**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for its ability to infer the representations of out-of-sample nodes with the out-of-sample node link prediction task.
 
 The notebooks demonstrate the following algorithms.
+
 - `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs.
 - `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm [2] for representation learning on heterogeneous graphs.
 - `embeddings-unsupervised-graphsage-cora.ipynb` The **Unsupervised GraphSAGE** algorithm [5] for representation learning on homogeneous graphs with node features.
@@ -16,18 +17,17 @@ All examples demonstrate how to calculate embedding vectors for a graph's nodes 
 The learned node representations can be used in numerous downstream tasks such as node attribute inference, link
 prediction, and community detection.
 
-
 ## References
 
 **1.** Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference
 on Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
 
-**2.**  Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
+**2.** Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
 Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017.
 ([link](https://ericdongyx.github.io/papers/KDD17-dong-chawla-swami-metapath2vec.pdf))
 
 **3.** Distributed representations of words and phrases and their compositionality. T. Mikolov, I. Sutskever, K. Chen,
-G. S. Corrado, and J. Dean.  In Advances in Neural Information Processing Systems (NIPS), pp. 3111-3119, 2013.
+G. S. Corrado, and J. Dean. In Advances in Neural Information Processing Systems (NIPS), pp. 3111-3119, 2013.
 ([link](https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf))
 
 **4.** Gensim: Topic modelling for humans. ([link](https://radimrehurek.com/gensim/))

@@ -1,10 +1,7 @@
 ---
 name: New feature
 about: A new feature to be implemented
-
----
-
-### Description
+---### Description
 
 ... [Insert a brief description of the actions involved to complete this task.]
 
@@ -16,15 +13,13 @@ about: A new feature to be implemented
 
 **So that** [achieve a larger goal]
 
-
 ### Done Checklist
 
 - [ ] Produced code for required functionality
 - [ ] Tests written and coverage checked
 - [ ] Code review performed
-- [ ] Documentation on Google Docs  (if applicable)
+- [ ] Documentation on Google Docs (if applicable)
 - [ ] Documentation in repo
 - [ ] Version number reflects new status
 - [ ] CHANGELOG.md updated
 - [ ] Team demo
-

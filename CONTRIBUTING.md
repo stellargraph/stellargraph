@@ -10,21 +10,21 @@ Please follow these steps to report a bug:
 
 1. The bug may already be fixed. Try updating to the latest version, and check the current and closed issues in GitHub. Search for similar issues and try and find if someone else has found the same bug already.
 
-3. Make sure you provide us with useful information about your configuration: what OS are you using?
+1. Make sure you provide us with useful information about your configuration: what OS are you using?
 
-4. Provide a simple script that reproduces the bug. A bug that cannot be reproduced easily will most likely not be investigated.
+1. Provide a simple script that reproduces the bug. A bug that cannot be reproduced easily will most likely not be investigated.
 
-5. Optionally, try and fix the bug and let us know how you go.
+1. Optionally, try and fix the bug and let us know how you go.
 
 ## Contributing Code
 
 ### Contributor License Agreement
 
-In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). You will 
-be guided through the process of digitally signing our CLA when you create a pull request. 
+In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). You will
+be guided through the process of digitally signing our CLA when you create a pull request.
 
-### Be Friendly ###
- 
+### Be Friendly
+
 StellarGraph considers courtesy and respect for others an essential part of the community, and we strongly encourage everyone to be friendly when engaging with others. Please be helpful when people are asking questions, and on technical disagreements ensure that the issues are discussed in a respectful manner.
 
 ### Proposing a new feature
@@ -39,12 +39,11 @@ StellarGraph considers courtesy and respect for others an essential part of the 
 
 1. We welcome new code that demonstrates the functionality of StellarGraph on different datasets. To add a demo it is best to give a clear and detailed explanation of the demo. This is best done by creating an issue addressing the new demo.
 
-3. Describe the dataset that you are using, how it can be downloaded, and the licence conditions. Please don't put the dataset in the GitHub repository.
+2. Describe the dataset that you are using, how it can be downloaded, and the licence conditions. Please don't put the dataset in the GitHub repository.
 
-2. If this demo is replicating an experiment in the literature, please give a link to a paper describing the algorithm.
+3. If this demo is replicating an experiment in the literature, please give a link to a paper describing the algorithm.
 
-3. If you choose to implement the demo you can do so by forking the StellarGraph repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the `develop` branch of the main StellarGraph repository. See the next section for more details on submitting your pull request.
-
+4. If you choose to implement the demo you can do so by forking the StellarGraph repository and creating a new branch from the `develop` branch. Put the code for the demo in the `demos` directory and make a Pull Request to the `develop` branch of the main StellarGraph repository. See the next section for more details on submitting your pull request.
 
 ### Pull Requests
 

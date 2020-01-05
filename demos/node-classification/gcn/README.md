@@ -1,14 +1,15 @@
 # GCN for Node Classification
 
-This is an example of using the Graph Convolutional network (GCN) algorithm [1] for semi-supervised node classification 
+This is an example of using the Graph Convolutional network (GCN) algorithm [1] for semi-supervised node classification
 in a homogeneous network.
 
 ## Requirements
+
 All examples use Python 3.6 and the StellarGraph library. To install the StellarGraph library
 follow the instructions at: https://github.com/stellargraph/stellargraph
 
 Additional requirements are Pandas, Numpy and Scikit-Learn which are installed as depdendencies
-of the StellarGraph library. 
+of the StellarGraph library.
 
 ## CORA dataset
 
@@ -18,6 +19,7 @@ features are available for all nodes in the graph.
 The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
 
 The following is the description of the dataset:
+
 > The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
 > The citation network consists of 5429 links. Each publication in the dataset is described by a
 > 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
@@ -30,17 +32,19 @@ as a command line argument to this script.
 
 The example script can be run on supplying the location of the downloaded CORA dataset
 with the following command:
+
 ```
 python gcn-cora-example.py -l <path_to_cora_dataset>
 ```
 
 Additional arguments can be specified that change the GCN model architecture and training parameters, a
 description of these arguments is displayed using the help option to the script:
+
 ```
 python gcn-cora-example.py --help
 ```
 
 ## References
 
-[1]	Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling. 
+[1] Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling.
 ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
