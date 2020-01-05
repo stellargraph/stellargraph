@@ -1,0 +1,22 @@
+---
+version: "2"
+
+checks:
+  argument-count:
+    enabled: false
+
+  file-lines:
+    enabled: false
+
+  similar-code:
+    enabled: false
+
+plugins:
+  bandit:
+    enabled: true
+
+  radon:
+    enabled: true
+
+  sonar-python:
+    enabled: true
