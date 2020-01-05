@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -442,7 +442,7 @@ class NetworkXStellarGraph(StellarGraph):
             node_type not in self._node_attribute_arrays
             or node_type not in self._node_index_maps
         ):
-            raise ValueError("Features not found for node type '{}'")
+            raise ValueError(f"Features not found for node type '{node_type}'")
 
         # Edge case: if we are given no nodes, what do we do?
         if len(nodes) == 0:
