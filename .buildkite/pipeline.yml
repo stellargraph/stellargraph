@@ -65,7 +65,7 @@ steps:
       docker#v3.4.0:
         image: "stellargraph/hadolint:snapshot"
 
-  - label: ":prettier::yaml::json::markdown: format YAML"
+  - label: ":prettier::yaml: format YAML"
     plugins:
       docker#v3.4.0:
         image: "stellargraph/prettier:${BIGDATA_DOCKER_TAG-snapshot}"
