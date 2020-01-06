@@ -445,15 +445,21 @@ def test_to_networkx(in_nodes):
     sg = StellarGraph(g, node_features=node_features)
     new_nx = sg.to_networkx()
 
-    def normalise(nodes):
+    def normalise_nodes(g):
         return sorted(
             (node_id, {**data, "feature": list(data["feature"])})
-            for node_id, data in nodes
+            for node_id, data in g.nodes(data=True)
         )
 
-    new_nodes = normalise(new_nx.nodes(data=True))
+    def normalise_edges(g):
+        return sorted(
+            (min(src, dst), max(src, dst), data)
+            for src, dst, data in g.edges(data=True)
+        )
+
+    new_nodes = normalise_nodes(new_nx)
     if in_nodes:
-        g_nodes = normalise(g.nodes(data=True))
+        g_nodes = normalise_nodes(g)
     else:
         features = {
             ty: {row[0]: list(row[1:]) for row in ty_features.itertuples()}
@@ -465,7 +471,7 @@ def test_to_networkx(in_nodes):
         )
 
     assert new_nodes == g_nodes
-    assert sorted(new_nx.edges(data=True)) == sorted(g.edges(data=True))
+    assert normalise_edges(new_nx) == normalise_edges(g)
 
 
 def example_benchmark_graph(
