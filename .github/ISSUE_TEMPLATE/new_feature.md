@@ -1,6 +1,7 @@
 ---
 name: New feature
 about: A new feature to be implemented
+labels: enhancement, sg-library
 ---
 
 ### Description

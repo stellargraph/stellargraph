@@ -65,10 +65,10 @@ steps:
       docker#v3.4.0:
         image: "stellargraph/hadolint:snapshot"
 
-  - label: ":prettier::yaml::markdown: format YAML, Markdown"
+  - label: ":prettier::yaml: format YAML"
     plugins:
       docker#v3.4.0:
-        image: "stellargraph/prettier:${BIGDATA_DOCKER_TAG-snapshot}"
+        image: "stellargraph/prettier:snapshot"
         command: [
             "--check",
             "--prose-wrap=preserve",
@@ -82,7 +82,7 @@ steps:
   - label: ":yaml::lint-roller: lint YAML"
     plugins:
       docker#v3.4.0:
-        image: "stellargraph/yamllint:${BIGDATA_DOCKER_TAG-snapshot}"
+        image: "stellargraph/yamllint:snapshot"
 
   - label: ":copyright: check copyright headers"
     command: ".buildkite/steps/check-copyright-headers.sh"
@@ -93,6 +93,10 @@ steps:
         build:
           - stellargraph
         image-repository: index.docker.io/stellargraph/stellargraph
+        # Caching can cause packages to be pinned to old (possibly-vulnerable) versions for long
+        # periods.  Setting `REFRESH_BUILD=true` allows for builds (e.g. scheduled builds) to start
+        # from scratch and refresh the caches.
+        no-cache: ${REFRESH_BUILD-false}
         cache-from:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
           - stellargraph:index.docker.io/stellargraph/stellargraph:latest
