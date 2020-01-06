@@ -401,7 +401,7 @@ class NetworkXStellarGraph(StellarGraph):
         node_indices = [nt_id_to_index.get(n) for n in nodes]
         return node_indices
 
-    def get_feature_for_nodes(self, nodes, node_type=None):
+    def node_features(self, nodes, node_type=None):
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -415,7 +415,7 @@ class NetworkXStellarGraph(StellarGraph):
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        # TODO: change method's name to node_features(), and add @property decorator
+        # TODO: add @property decorator
         if not is_real_iterable(nodes):
             nodes = [nodes]
 
@@ -463,6 +463,9 @@ class NetworkXStellarGraph(StellarGraph):
 
         features = self._node_attribute_arrays[node_type][node_indices]
         return features
+
+    # FIXME: compatibility shim
+    get_feature_for_nodes = node_features
 
     def node_feature_sizes(self, node_types=None):
         """

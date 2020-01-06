@@ -275,6 +275,29 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
+    def node_feature_sizes(self) -> Mapping[Any, int]:
+        """
+        Obtains a mapping from node types to node feature sizes.
+
+        Returns:
+             The node-type -> number-of-features mapping; this is
+             empty if node features are unavailable.
+        """
+        raise NotImplementedError
+
+    def node_features(self, nodes: Iterable[Any], node_type: Any = None):
+        """
+        Obtains the numeric feature vectors for the specified nodes as a NumPy array.
+
+        Args:
+            nodes (iterable): A collection of node identifiers.
+            node_type (any, optional): The common type of the nodes.
+
+        Returns:
+            Numpy array containing the node features for the requested nodes.
+        """
+        raise NotImplementedError
+
     ##################################################################
     # Computationally intensive methods:
 
