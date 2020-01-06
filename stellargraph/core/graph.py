@@ -19,7 +19,7 @@ The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
 
 """
-__all__ = ["StellarGraph", "StellarDiGraph"]
+__all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 
 from typing import Iterable, Any, Mapping, Optional, Union
 
@@ -34,6 +34,8 @@ class StellarGraphFactory(type):
 
     def __call__(cls, *args, **kwargs):
         if cls is StellarGraph or cls is StellarDiGraph:
+            if "is_directed" in kwargs:
+                raise ValueError("Restricted keyword 'is_directed'")
             is_directed = cls is StellarDiGraph
             if StellarGraphFactory.is_networkx(args, kwargs):
                 # XXX Import is here to avoid circular definitions
@@ -186,16 +188,20 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def edges(self, include_info: bool = False) -> Iterable[tuple]:
+    def edges(self, triple: bool = False, include_info: bool = False) -> Iterable[tuple]:
+        # FIXME: fold triple and include_info together
         """
         Obtains the edges in the graph, where each edge
         is represented by a tuple containing (at least)
         the source and target node identifiers.
 
         Args:
+            triple (bool): A flag that indicates whether to return edge triples
+            of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
             include_info (bool):
                 If True, then the edge information also contains
                 the edge identifier, type and weight.
+
         Returns:
              The collection of edges.
         """
@@ -226,7 +232,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def neighbour_nodes(self, node: Any) -> Iterable[Any]:
+    def neighbours(self, node: Any) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
@@ -299,74 +305,22 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def adjacency_weights(self):
+    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
+
+        Args:
+            nodes (iterable): The optional collection of nodes
+                comprising the subgraph. If specified, then the
+                adjacency matrix is computed for the subgraph;
+                otherwise, it is computed for the full graph.
 
         Returns:
              The weighted adjacency matrix.
         """
         raise NotImplementedError
 
-    ##################################################################
-    # Private methods:
 
-    def check_graph_for_ml(self):
-        """
-        Checks if all properties required for machine learning training/inference are set up.
-        An error will be raised if the graph is not correctly setup.
-        """
-        raise NotImplementedError
-
-    def create_graph_schema(
-        self, create_type_maps: bool = True, nodes: Optional[Iterable[Any]] = None
-    ) -> GraphSchema:
-        """
-        Creates a graph schema from current graph.
-
-        Note: the assumption we make that there is only one
-        edge of a particular edge type per node pair.
-
-        This means that specifying an edge by source, target and edge type
-        is unique.
-
-        Arguments:
-            create_type_maps (bool): If True, a lookup of node/edge types is
-                created in the schema. This can be slow.
-
-            nodes (iterable): A collection of node identifiers to use to build schema.
-                This must represent all node types and all edge types in the graph.
-                If specified, `create_type_maps` must be False.
-                If not specified, all nodes and edges in the graph are used.
-
-        Returns:
-            GraphSchema: The graph schema.
-        """
-        raise NotImplementedError
-
-    def node_feature_sizes(self) -> Mapping[Any, int]:
-        """
-        Obtains a mapping from node types to node feature sizes.
-
-        Returns:
-             The node-type -> number-of-features mapping; this is
-             empty if node features are unavailable.
-        """
-        raise NotImplementedError
-
-    def node_features(self, nodes: Iterable[Any], node_type: Any = None):
-        """
-        Obtains the numeric feature vectors for the specified nodes as a NumPy array.
-
-        Args:
-            nodes (iterable): A collection of node identifiers.
-            node_type (any, optional): The common type of the nodes.
-
-        Returns:
-            Numpy array containing the node features for the requested nodes.
-        """
-        raise NotImplementedError
-
-
+# A convenience class that merely specifies that edges have direction.
 class StellarDiGraph(StellarGraph):
     pass

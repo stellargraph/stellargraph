@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -162,6 +162,7 @@ class IntegratedGradients(GradientSaliency):
             A_index = self.A_indices
         if A_val is None:
             A_val = self.A
+
         gradients = self.get_integrated_node_masks(
             node_idx,
             class_of_interest,

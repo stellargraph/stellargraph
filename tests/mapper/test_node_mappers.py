@@ -20,6 +20,7 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
+from stellargraph.core.graph_networkx import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
@@ -365,7 +366,9 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    Gnx = G._graph  # XXX Hack - Only works for NetworkXStellarGraph instances.
+    assert isinstance(G, NetworkXStellarGraph)
+    # XXX Hack - Only works for NetworkXStellarGraph instances
+    Gnx = G._graph
     ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
@@ -911,12 +914,12 @@ class Test_FullBatchNodeGenerator:
         generator = FullBatchNodeGenerator(G, "test", transform=func)
         assert generator.name == "test"
 
-        A = G.adjacency_weights().toarray()
+        A = G.to_adjacency_matrix().toarray()
         assert np.array_equal(A.dot(A), generator.Aadj.toarray())
 
     def test_generator_methods(self):
         node_ids = list(self.G.nodes())
-        Aadj = self.G.adjacency_weights().toarray()
+        Aadj = self.G.to_adjacency_matrix().toarray()
         Aadj_selfloops = Aadj + np.eye(*Aadj.shape) - np.diag(Aadj.diagonal())
         Dtilde = np.diag(Aadj_selfloops.sum(axis=1) ** (-0.5))
         Agcn = Dtilde.dot(Aadj_selfloops).dot(Dtilde)

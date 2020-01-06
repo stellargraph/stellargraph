@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "tensorflow>=1.14,<1.15",
+    "tensorflow>=2.0.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
@@ -41,8 +41,8 @@ REQUIRES = [
 #
 # Other demos do not have specific requirements
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "seaborn"],
-    "test": ["pytest", "pytest-benchmark"],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib"],
+    "test": ["pytest<=3.9.3", "pytest-benchmark<=3.2.2"],
 }
 
 # Long description
