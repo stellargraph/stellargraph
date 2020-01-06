@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from abc import ABC, abstractmethod
+import warnings
 import numpy as np
 from tensorflow.keras.utils import to_categorical
 from stellargraph.core.graph import StellarGraph
@@ -541,7 +542,7 @@ class OneHotCategoricalConverter(StellarAttributeConverter):
     def fit_transform(self, data):
         self.categories = sorted(set(data), key=str)
         if len(self.categories) == 1:
-            print("Warning: Only one category for attribute")
+            warnings.warn("Only one category for attribute", RuntimeWarning)
 
         return self.transform(data)
 
