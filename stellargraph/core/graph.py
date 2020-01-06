@@ -240,6 +240,23 @@ class StellarGraph(metaclass=StellarGraphFactory):
     ##################################################################
     # Computationally intensive methods:
 
+    def info(self, show_attributes=True, sample=None):
+        """
+        Return an information string summarizing information on the current graph.
+        This includes node and edge type information and their attributes.
+
+        Note: This requires processing all nodes and edges and could take a long
+        time for a large graph.
+
+        Args:
+            sample (int): To speed up the graph analysis, use only a random sample of
+                          this many nodes and edges.
+
+        Returns:
+            An information string.
+        """
+        raise NotImplementedError
+
     def node_degrees(self) -> Mapping[Any, int]:
         """
         Obtains a map from node to node degree.
