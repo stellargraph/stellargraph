@@ -68,7 +68,7 @@ steps:
   - label: ":prettier::yaml: format YAML"
     plugins:
       docker#v3.4.0:
-        image: "stellargraph/prettier:${BIGDATA_DOCKER_TAG-snapshot}"
+        image: "stellargraph/prettier:snapshot"
         command: [
             "--check",
             "**/*.yml",
@@ -80,7 +80,7 @@ steps:
   - label: ":yaml::lint-roller: lint YAML"
     plugins:
       docker#v3.4.0:
-        image: "stellargraph/yamllint:${BIGDATA_DOCKER_TAG-snapshot}"
+        image: "stellargraph/yamllint:snapshot"
 
   - label: ":copyright: check copyright headers"
     command: ".buildkite/steps/check-copyright-headers.sh"
