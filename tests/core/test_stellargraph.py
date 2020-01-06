@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,15 +17,20 @@
 import pytest
 import pandas as pd
 import networkx as nx
+import random
 from stellargraph.core.graph import *
 from stellargraph.data.converter import *
+from ..test_utils.alloc import snapshot, allocation_benchmark
 
 
-def create_graph_1(sg=StellarGraph()):
-    sg.add_nodes_from([0, 1, 2, 3], label="movie")
-    sg.add_nodes_from([4, 5], label="user")
-    sg.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
-    return sg
+def create_graph_1(is_directed=False, return_nx=False):
+    g = nx.DiGraph() if is_directed else nx.Graph()
+    g.add_nodes_from([0, 1, 2, 3], label="movie")
+    g.add_nodes_from([4, 5], label="user")
+    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
+    if return_nx:
+        return nx.MultiDiGraph(g) if is_directed else nx.MultiGraph(g)
+    return StellarDiGraph(g) if is_directed else StellarGraph(g)
 
 
 def example_stellar_graph_1(feature_name=None, feature_size=10):
@@ -37,7 +42,7 @@ def example_stellar_graph_1(feature_name=None, feature_size=10):
     # Add some numeric node attributes
     if feature_name:
         for v in G.nodes():
-            G.node[v][feature_name] = v * np.ones(feature_size)
+            G.nodes[v][feature_name] = v * np.ones(feature_size)
 
         return StellarGraph(G, node_features=feature_name)
     else:
@@ -57,8 +62,8 @@ def example_hin_1(feature_name=False, for_nodes=None, feature_sizes={}):
             for_nodes = list(G.nodes())
 
         for v in for_nodes:
-            fs = feature_sizes.get(G.node[v]["label"], 10)
-            G.node[v][feature_name] = v * np.ones(fs)
+            fs = feature_sizes.get(G.nodes[v]["label"], 10)
+            G.nodes[v][feature_name] = v * np.ones(fs)
 
         return StellarGraph(G, node_features=feature_name)
     else:
@@ -74,7 +79,7 @@ def example_stellar_graph_1_nx(feature_name=None):
     # Add some numeric node attributes
     if feature_name:
         for v in G.nodes():
-            G.node[v][feature_name] = v * np.ones(10)
+            G.nodes[v][feature_name] = v * np.ones(10)
 
     return G
 
@@ -88,7 +93,7 @@ def example_hin_1_nx(feature_name=False, for_nodes=[]):
 
     if feature_name:
         for v in for_nodes:
-            G.node[v][feature_name] = v * np.ones(10)
+            G.nodes[v][feature_name] = v * np.ones(10)
     return G
 
 
@@ -128,11 +133,11 @@ def test_graph_from_nx():
     sg = StellarGraph(Gnx)
 
     nodes_1 = sorted(Gnx.nodes(data=False))
-    nodes_2 = sorted(sg.nodes(data=False))
+    nodes_2 = sorted(sg.nodes())
     assert nodes_1 == nodes_2
 
     edges_1 = sorted(Gnx.edges(data=False))
-    edges_2 = sorted(sg.edges(keys=False, data=False))
+    edges_2 = sorted(sg.edges())
     assert edges_1 == edges_2
 
 
@@ -150,7 +155,8 @@ def test_homogeneous_graph_schema():
 
 
 def test_graph_schema():
-    sg = create_graph_1()
+    g = create_graph_1(return_nx=True)
+    sg = StellarGraph(g)
     schema = sg.create_graph_schema(create_type_maps=True)
 
     assert "movie" in schema.schema
@@ -159,12 +165,12 @@ def test_graph_schema():
     assert len(schema.schema["user"]) == 1
 
     # Test node type lookup
-    for n, ndata in sg.nodes(data=True):
+    for n, ndata in g.nodes(data=True):
         assert ndata["label"] == schema.get_node_type(n)
 
     # Test edge type lookup
-    node_labels = nx.get_node_attributes(sg, "label")
-    for n1, n2, k, edata in sg.edges(keys=True, data=True):
+    node_labels = nx.get_node_attributes(g, "label")
+    for n1, n2, k, edata in g.edges(keys=True, data=True):
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
@@ -197,7 +203,8 @@ def test_graph_schema_sampled():
 
 
 def test_digraph_schema():
-    sg = create_graph_1(StellarDiGraph())
+    g = create_graph_1(is_directed=True, return_nx=True)
+    sg = StellarDiGraph(g)
     schema = sg.create_graph_schema()
 
     assert "movie" in schema.schema
@@ -206,12 +213,12 @@ def test_digraph_schema():
     assert len(schema.schema["movie"]) == 0
 
     # Test node type lookup
-    for n, ndata in sg.nodes(data=True):
+    for n, ndata in g.nodes(data=True):
         assert ndata["label"] == schema.get_node_type(n)
 
     # Test edge type lookup
-    node_labels = nx.get_node_attributes(sg, "label")
-    for n1, n2, k, edata in sg.edges(keys=True, data=True):
+    node_labels = nx.get_node_attributes(g, "label")
+    for n1, n2, k, edata in g.edges(keys=True, data=True):
         assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
             schema.get_edge_type((n1, n2, k))
         )
@@ -219,6 +226,24 @@ def test_digraph_schema():
     assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
     with pytest.raises(IndexError):
         schema.get_edge_type((0, 4, 0))
+
+
+def test_get_index_for_nodes():
+    sg = example_stellar_graph_1(feature_name="feature", feature_size=8)
+    aa = sg.get_index_for_nodes([1, 2, 3, 4])
+    assert aa == [0, 1, 2, 3]
+
+    sg = example_hin_1(feature_name="feature")
+    aa = sg.get_index_for_nodes([0, 1, 2, 3])
+    assert aa == [0, 1, 2, 3]
+    aa = sg.get_index_for_nodes([0, 1, 2, 3], "A")
+    assert aa == [0, 1, 2, 3]
+    aa = sg.get_index_for_nodes([4, 5, 6])
+    assert aa == [0, 1, 2]
+    aa = sg.get_index_for_nodes([4, 5, 6], "B")
+    assert aa == [0, 1, 2]
+    with pytest.raises(ValueError):
+        aa = sg.get_index_for_nodes([1, 2, 5])
 
 
 def test_feature_conversion_from_nodes():
@@ -409,3 +434,104 @@ def test_feature_conversion_from_iterator():
     ab = gs.get_feature_for_nodes([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
+
+
+def example_benchmark_graph(
+    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
+):
+    G = nx.Graph()
+
+    G.add_nodes_from(range(n_nodes))
+    edges = [
+        (random.randint(0, n_nodes - 1), random.randint(0, n_nodes - 1))
+        for _ in range(n_edges)
+    ]
+    G.add_edges_from(edges)
+
+    for v in G.nodes():
+        G.nodes[v]["label"] = v % n_types
+
+    # Add example features
+    if feature_size is None:
+        node_features = None
+    elif features_in_nodes:
+        node_features = "feature"
+        for v in G.nodes():
+            G.nodes[v][node_features] = np.ones(feature_size)
+    else:
+        node_features = {}
+        for ty in range(n_types):
+            type_nodes = range(ty, n_nodes, n_types)
+            if len(type_nodes) > 0:
+                node_features[ty] = pd.DataFrame(
+                    [np.ones(feature_size)] * len(type_nodes), index=type_nodes
+                )
+
+    return G, node_features
+
+
+@pytest.mark.benchmark(group="StellarGraph neighbours")
+def test_benchmark_get_neighbours(benchmark):
+    g, node_features = example_benchmark_graph()
+    num_nodes = g.number_of_nodes()
+    sg = StellarGraph(g, node_features=node_features)
+
+    # get the neigbours of every node in the graph
+    def f():
+        for i in range(num_nodes):
+            g.neighbors(i)
+
+    benchmark(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph node features")
+@pytest.mark.parametrize("num_types", [1, 4])
+@pytest.mark.parametrize("type_arg", ["infer", "specify"])
+def test_benchmark_get_features(benchmark, num_types, type_arg):
+    SAMPLE_SIZE = 50
+    N_NODES = 500
+    N_EDGES = 1000
+    g, node_features = example_benchmark_graph(
+        feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
+    )
+    num_nodes = g.number_of_nodes()
+
+    sg = StellarGraph(g, node_features=node_features)
+
+    ty_ids = [(ty, range(ty, num_nodes, num_types)) for ty in range(num_types)]
+
+    if type_arg == "specify":
+        # pass through the type
+        node_type = lambda ty: ty
+    else:
+        # leave the argument as None, and so use inference of the type
+        node_type = lambda ty: None
+
+    def f():
+        # look up a random subset of the nodes for a random type, similar to what an algorithm that
+        # does sampling might ask for
+        ty, all_ids = random.choice(ty_ids)
+        selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
+        sg.get_feature_for_nodes(selected_ids, node_type(ty))
+
+    benchmark(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
+# various element counts, to give an indication of the relationship
+# between those and memory use (0,0 gives the overhead of the
+# StellarGraph object itself, without any data)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+# features or not, to capture their cost
+@pytest.mark.parametrize("feature_size", [None, 100])
+def test_allocation_benchmark_creation_from_networkx(
+    allocation_benchmark, feature_size, num_nodes, num_edges
+):
+    g, node_features = example_benchmark_graph(
+        feature_size, num_nodes, num_edges, features_in_nodes=True
+    )
+
+    def f():
+        return StellarGraph(g, node_features=node_features)
+
+    allocation_benchmark(f)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
-from keras.utils.np_utils import to_categorical
-from stellargraph.core.graph import StellarGraphBase
+from tensorflow.keras.utils import to_categorical
+from stellargraph.core.graph import StellarGraph
 
 
 class NodeAttributeSpecification:
@@ -147,19 +147,16 @@ class NodeAttributeSpecification:
             raise TypeError(
                 "Converter should be a subclass of StellarAttributeConverter"
             )
-        if not isinstance(graph, StellarGraphBase):
-            raise TypeError("Graph should be a StellarGraph")
+        if not isinstance(graph, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDigraph object")
 
         # Go through graph to find node attributes
-        all_attrs = set(
-            k for v in graph.nodes_of_type(node_type) for k in graph.node[v].keys()
-        )
+        attrs = set()
+        for node in graph.nodes_of_type(node_type):
+            attrs |= graph.node_attributes(node)
 
         # Remove any ignored attributes
-        attrs = all_attrs.difference(set(ignored_attributes))
-
-        # Don't use node type as attribute:
-        attrs.discard(graph._node_type_attr)
+        attrs = attrs.difference(set(ignored_attributes))
 
         # Set found attributes with converter
         self.add_attribute_list(node_type, attrs, converter, **conv_args)

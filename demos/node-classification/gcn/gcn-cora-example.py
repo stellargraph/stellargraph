@@ -20,12 +20,12 @@ import pickle
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, losses, layers, metrics, regularizers
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, layers, metrics, regularizers
 from sklearn import feature_extraction, model_selection
 
 import stellargraph as sg
-from stellargraph.layer import GCN, GraphConvolution
+from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
 
 
@@ -35,10 +35,11 @@ def train(
     val_nodes,
     val_targets,
     generator,
-    dropout=0.0,
-    layer_sizes=[16, 7],
-    learning_rate=0.01,
-    activations=["relu", "softmax"],
+    dropout,
+    layer_sizes,
+    learning_rate,
+    activations,
+    num_epochs,
 ):
     """
 
@@ -59,11 +60,11 @@ def train(
     val_gen = generator.flow(val_nodes, val_targets)
     gcnModel = GCN(
         layer_sizes,
-        activations,
-        generator=generator,
+        generator,
         bias=True,
         dropout=dropout,
         kernel_regularizer=regularizers.l2(5e-4),
+        activations=activations,
     )
 
     # Expose the input and output sockets of the model:
@@ -73,13 +74,13 @@ def train(
     model = keras.Model(inputs=x_inp, outputs=x_out)
     model.compile(
         loss=losses.categorical_crossentropy,
-        weighted_metrics=[metrics.categorical_accuracy],
+        metrics=[metrics.categorical_accuracy],
         optimizer=optimizers.Adam(lr=learning_rate),
     )
 
     # Train model
     history = model.fit_generator(
-        train_gen, epochs=100, validation_data=val_gen, verbose=2, shuffle=False
+        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
     )
 
     return model
@@ -99,12 +100,10 @@ def test(test_nodes, test_targets, generator, model_file):
 
     test_gen = generator.flow(test_nodes, test_targets)
 
-    model = keras.models.load_model(
-        model_file, custom_objects={"GraphConvolution": GraphConvolution}
-    )
+    model = keras.models.load_model(model_file, custom_objects=sg.custom_keras_layers)
     model.compile(
         loss=losses.categorical_crossentropy,
-        weighted_metrics=[metrics.categorical_accuracy],
+        metrics=[metrics.categorical_accuracy],
         optimizer=optimizers.Adam(lr=0.01),
     )
     print(model.summary())
@@ -117,11 +116,13 @@ def test(test_nodes, test_targets, generator, model_file):
         print("\t{}: {:0.4f}".format(name, val))
 
 
-def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
-
+def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs):
+    # Load edges in order 'cited-paper' <- 'citing-paper'
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, 'cora.cites'), sep="\t", header=None, names=['source', 'target']
-
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["target", "source"],
     )
 
     # Load node features
@@ -129,11 +130,12 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
     # (out of 1433 keywords) is found in the corresponding publication.
     feature_names = ["w_{}".format(ii) for ii in range(1433)]
     # Also, there is a "subject" column
-    column_names = feature_names + ['subject']
+    column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, 'cora.content'), sep="\t", header=None, names=column_names
-
-      
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
 
     target_encoding = feature_extraction.DictVectorizer(sparse=False)
@@ -177,6 +179,7 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate):
         layer_sizes,
         learning_rate,
         activations,
+        num_epochs,
     )
 
     # Save the trained model
@@ -200,7 +203,7 @@ if __name__ == "__main__":
         "-e",
         "--epochs",
         type=int,
-        default=10,
+        default=50,
         help="The number of epochs to train the model",
     )
     parser.add_argument(
@@ -222,7 +225,7 @@ if __name__ == "__main__":
         "--layer_sizes",
         type=int,
         nargs="*",
-        default=[16, 7],
+        default=[32, 7],
         help="The number of hidden features at each GCN layer",
     )
     parser.add_argument(
@@ -244,4 +247,11 @@ if __name__ == "__main__":
         )
 
     activations = ["relu", "softmax"]
-    main(graph_loc, args.layer_sizes, activations, args.dropout, args.learningrate)
+    main(
+        graph_loc,
+        args.layer_sizes,
+        activations,
+        args.dropout,
+        args.learningrate,
+        args.epochs,
+    )

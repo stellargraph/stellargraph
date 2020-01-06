@@ -13,3 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from .integrated_gradients import IntegratedGradients
+from .saliency import GradientSaliency
+from .integrated_gradients_gat import IntegratedGradientsGAT
+from .saliency_gat import GradientSaliencyGAT

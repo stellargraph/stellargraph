@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ import pytest
 
 import numpy as np
 import networkx as nx
-import keras
+from tensorflow import keras
 
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.mapper.link_mappers import *
+from stellargraph.mapper import *
 from stellargraph.layer import GraphSAGE, link_classification
 
 
@@ -70,7 +70,7 @@ def example_Graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G
@@ -84,7 +84,7 @@ def example_Graph_2(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = int(v) * np.ones(feature_size)
+            G.nodes[v]["feature"] = int(v) * np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G

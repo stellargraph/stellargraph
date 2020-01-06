@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, losses, layers, metrics
+from tensorflow import keras
+from tensorflow.keras import optimizers, losses, layers, metrics
 from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import (
@@ -112,19 +112,19 @@ def train(
 
     # Create mappers for GraphSAGE that input data from the graph to the model
     generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=5312)
-    train_gen = generator.flow(train_nodes, train_targets, shuffle=True)
-    val_gen = generator.flow(val_nodes, val_targets)
+    train_flow = generator.flow(train_nodes, train_targets, shuffle=True)
+    val_flow = generator.flow(val_nodes, val_targets)
 
     # GraphSAGE model
     model = GraphSAGE(
         layer_sizes=layer_size,
-        generator=train_gen,
+        generator=generator,
         bias=True,
         dropout=dropout,
         aggregator=MeanAggregator,
     )
     # Expose the input and output sockets of the model:
-    x_inp, x_out = model.build(flatten_output=True)
+    x_inp, x_out = model.build()
 
     # Snap the final estimator layer to x_out
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
@@ -140,7 +140,11 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
+        train_flow,
+        epochs=num_epochs,
+        validation_data=val_flow,
+        verbose=2,
+        shuffle=False,
     )
 
     # Evaluate on test set and print metrics
@@ -320,7 +324,10 @@ if __name__ == "__main__":
         )
 
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["source", "target"],
     )
     edgelist["label"] = "cites"
 
@@ -331,7 +338,10 @@ if __name__ == "__main__":
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
 
     if args.checkpoint is None:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "keras>=2.2.4",
-    "tensorflow>=1.12",
+    "tensorflow>=2.0.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
@@ -33,13 +32,17 @@ REQUIRES = [
 ]
 
 # The demos requirements are as follows:
-# demos/community_detection: mplleaflet, python-igraph
-# demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
-# demos/link-prediction/hinsage/utils.py: numba
+# * demos/community_detection: mplleaflet, python-igraph
+#  *** For now these are not installed as compiled python-igraph is not available for all platforms
 #
+# * demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
+#
+# * demos/link-prediction/hinsage/utils.py: numba
+#
+# Other demos do not have specific requirements
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "mplleaflet", "seaborn", "python-igraph"],
-    "test": ["pytest", "pytest-benchmark"],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib"],
+    "test": ["pytest<=3.9.3", "pytest-benchmark<=3.2.2"],
 }
 
 # Long description

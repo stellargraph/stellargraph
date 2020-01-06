@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ import argparse
 import numpy as np
 import pandas as pd
 import networkx as nx
-import keras
-from keras import optimizers, layers, metrics
-import keras.backend as K
+from tensorflow import keras
+from tensorflow.keras import optimizers, layers, metrics
+import tensorflow.keras.backend as K
 
-from stellargraph.core.graph import StellarGraph
-from stellargraph.layer.hinsage import HinSAGE
-from stellargraph.mapper.node_mappers import HinSAGENodeGenerator
+from stellargraph.core import StellarGraph
+from stellargraph.layer import HinSAGE
+from stellargraph.mapper import HinSAGENodeGenerator
 
 from sklearn import model_selection
 from sklearn import metrics as sk_metrics
@@ -92,14 +92,17 @@ def train(
         user_targets, train_size=0.25, test_size=None
     )
 
+    print("Train targets:\n", train_targets.iloc[:, 0].value_counts())
+    print("Test targets:\n", test_targets.iloc[:, 0].value_counts())
+
     # The mapper feeds data from sampled subgraph to GraphSAGE model
-    generator = HinSAGENodeGenerator(G, batch_size, num_samples)
+    generator = HinSAGENodeGenerator(G, batch_size, num_samples, head_node_type="user")
     train_gen = generator.flow_from_dataframe(train_targets, shuffle=True)
     test_gen = generator.flow_from_dataframe(test_targets)
 
     # GraphSAGE model
-    model = HinSAGE(layer_size, train_gen, dropout=dropout)
-    x_inp, x_out = model.build(flatten_output=True)
+    model = HinSAGE(layer_sizes=layer_size, generator=generator, dropout=dropout)
+    x_inp, x_out = model.build()
 
     # Final estimator layer
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
@@ -121,7 +124,9 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
+    history = model.fit_generator(
+        train_gen, epochs=num_epochs, verbose=2, shuffle=False
+    )
 
     # Evaluate on test set and print metrics
     predictions = model.predict_generator(test_gen)
@@ -222,6 +227,13 @@ if __name__ == "__main__":
     print("Reading user features and targets...")
     user_features = pd.read_pickle(os.path.join(data_loc, "user_features_filtered.pkl"))
     user_targets = pd.read_pickle(os.path.join(data_loc, "user_targets_filtered.pkl"))
+
+    # Quick check of target sanity
+    vc = user_targets.iloc[:, 0].value_counts()
+    if vc.iloc[0] == vc.sum():
+        raise ValueError(
+            "Targets are all the same, there has been an error in data processing"
+        )
 
     print("Reading business features...")
     business_features = pd.read_pickle(

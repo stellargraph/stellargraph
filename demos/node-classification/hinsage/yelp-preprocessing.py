@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from keras.utils.generic_utils import Progbar
+from tensorflow.keras.utils import Progbar
 from sklearn import preprocessing, feature_extraction, pipeline
 
 user_feature_names = [
@@ -90,6 +90,14 @@ if __name__ == "__main__":
         help="Location of Yelp JSON data files",
     )
     parser.add_argument(
+        "-r",
+        "--round",
+        nargs="?",
+        type=int,
+        default=13,
+        help="Yelp dataset round number",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         nargs="?",
@@ -117,6 +125,22 @@ if __name__ == "__main__":
     filter_friends = True
     use_sparse = args.use_sparse
 
+    # In round 12 the value for no elite status for all years was "None"
+    # in round 13 it is ""
+    non_elite_values = ["None", ""]
+    if args.round == 12:
+        user_dataset_name = "yelp_academic_dataset_user.json"
+        business_dataset_name = "yelp_academic_dataset_business.json"
+        review_dataset_name = "yelp_academic_dataset_review.json"
+
+    elif args.round == 13:
+        user_dataset_name = "user.json"
+        business_dataset_name = "business.json"
+        review_dataset_name = "review.json"
+
+    else:
+        raise ValueError("Only round 12 & 13 is currently supported.")
+
     # Check mandatory arguments
     if not yelp_location:
         raise RuntimeError("Please specify the location of the Yelp dataset with the -l argument")
@@ -133,7 +157,7 @@ if __name__ == "__main__":
     # Note we modify user_id to have a prefix 'u_' as there are conflicts
     # in the IDs between users & businesses
     print("Loading user data")
-    with open(os.path.join(yelp_location, "yelp_academic_dataset_user.json"), "r") as f:
+    with open(os.path.join(yelp_location, user_dataset_name), "r") as f:
         user_data_raw = {}
         for line in f:
             d = json.loads(line)
@@ -143,7 +167,7 @@ if __name__ == "__main__":
     # Load business data from json to a dictionary with the business_id as key
     print("Loading business data")
     with open(
-        os.path.join(yelp_location, "yelp_academic_dataset_business.json"), "r"
+        os.path.join(yelp_location, business_dataset_name), "r"
     ) as f:
         business_data_raw = {}
         for line in f:
@@ -154,7 +178,7 @@ if __name__ == "__main__":
     # Load review data from json to a dictionary with the review_id as key
     print("Loading review data")
     with open(
-        os.path.join(yelp_location, "yelp_academic_dataset_review.json"), "r"
+        os.path.join(yelp_location, review_dataset_name), "r"
     ) as f:
         review_data_raw = {}
         for line in f:
@@ -267,7 +291,7 @@ if __name__ == "__main__":
     target_data = [
         {
             user_target_name: "false"
-            if user_data_raw[uid][user_target_name] == "None"
+            if user_data_raw[uid][user_target_name] in non_elite_values
             else "true"
         }
         for uid in user_ids
@@ -277,8 +301,13 @@ if __name__ == "__main__":
     del target_data
     del user_data_raw
 
+    print(user_targets.shape)
+
     # Store as a Pandas dataframe
     user_targets = pd.DataFrame(user_targets, index=user_ids)
+
+    print("Target values:")
+    print(user_targets[0].value_counts())
 
     # --- Convert Business Features ---
     print("Converting business features")

@@ -19,14 +19,14 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator
+  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
 
 
 GraphSAGE model
 ----------------
 
 .. automodule:: stellargraph.layer.graphsage
-  :members: GraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+  :members: GraphSAGE, DirectedGraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
 
 
 HinSAGE model
@@ -36,18 +36,52 @@ HinSAGE model
   :members: HinSAGE, MeanHinAggregator
 
 
+Attri2Vec model
+----------------
+
+.. automodule:: stellargraph.layer.attri2vec
+  :members: Attri2Vec
+
+
 GCN model
 -------------
 
 .. automodule:: stellargraph.layer.gcn
-  :members: GraphConvolution, GCN
+  :members: GCN, GraphConvolution
+
+Cluster-GCN model
+------------------
+
+.. automodule:: stellargraph.layer.cluster_gcn
+  :members: ClusterGCN, ClusterGraphConvolution
+
+
+RGCN model
+-------------
+
+.. automodule:: stellargraph.layer.rgcn
+  :members: RGCN, RelationalGraphConvolution
+
+
+PPNP model
+-------------
+
+.. automodule:: stellargraph.layer.ppnp
+  :members: PPNPPropagationLayer, PPNP
+
+
+APPNP model
+-------------
+
+.. automodule:: stellargraph.layer.appnp
+  :members: APPNPPropagationLayer, APPNP
 
 
 GAT model
 -------------
 
 .. automodule:: stellargraph.layer.graph_attention
-  :members: GraphAttention, GAT
+  :members: GAT, GraphAttention, GraphAttentionSparse
 
 
 Link prediction layers
@@ -60,7 +94,7 @@ Ensembles
 ------------------------
 
 .. automodule:: stellargraph.utils.ensemble
-  :members: Ensemble, compile, fit_generator, evaluate_generator, predict_generator, layers
+  :members: Ensemble, BaggingEnsemble
 
 
 Calibration

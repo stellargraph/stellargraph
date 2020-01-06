@@ -15,16 +15,17 @@
 # limitations under the License.
 
 """
-Ensembles of graph neural network models, GraphSAGE, GCN, GAT, with optional bootstrap sampling of the training data.
+Ensembles of graph neural network models, GraphSAGE, GCN, GAT, and HinSAGE, with optional bootstrap sampling of the
+training data (implemented in the BaggingEnsemble class).
 """
 
 from stellargraph.layer import *
 
-__all__ = ["Ensemble"]
+__all__ = ["Ensemble", "BaggingEnsemble"]
 
 import numpy as np
-import keras as K
-from keras.callbacks import EarlyStopping
+from tensorflow import keras as K
+from tensorflow.keras.callbacks import EarlyStopping
 
 import stellargraph as sg
 
@@ -35,17 +36,11 @@ class Ensemble(object):
     GCN, GraphSAGE, GAT, and HinSAGE. Ensembles can be used for training classification and regression problems for
     node attribute inference and link prediction.
 
-    The Ensemble class can be used to create two different types of ensembles, Naive and Bagging.
+    The Ensemble class can be used to create Naive ensembles.
 
     Naive ensembles add model diversity by random initialisation of the models' weights (before training) to
     different values. Each model in the ensemble is trained on the same training set of examples.
 
-    Bagging ensembles add additional model diversity via bootstrap sampling of the training
-    data. That is, each model in the ensemble is trained on a random subset of the training examples,
-    sampled with replacement from the original training data.
-
-    The choice of ensemble type, Naive or Bagging, is done implicitly based on how data is passed to the
-    :func:`~Ensemble.fit_generator` method.
     """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):
@@ -56,7 +51,7 @@ class Ensemble(object):
             n_estimators (int):  The number of estimators (aka models) in the ensemble.
             n_predictions (int):  The number of predictions per query point per estimator
         """
-        if not isinstance(model, K.engine.training.Model):
+        if not isinstance(model, K.Model):
             raise ValueError(
                 "({}) model must be a Keras model received object of type {}".format(
                     type(self).__name__, type(model)
@@ -77,8 +72,8 @@ class Ensemble(object):
             )
 
         self.metrics_names = (
-            None
-        )  # It will be set when the self.compile() method is called
+            None  # It will be set when the self.compile() method is called
+        )
         self.models = []
         self.history = []
         self.n_estimators = n_estimators
@@ -109,8 +104,8 @@ class Ensemble(object):
         This method returns the layer objects for the model specified by the value of indx.
 
         Args:
-            indx (None or int): The index of the model to return the layers for. If it is None, then the layers
-                for the 0-th (or first) model are returned.
+            indx (None or int): The index  (starting at 0) of the model to return the layers for.
+                If it is None, then the layers for the 0-th (or first) model are returned.
 
         Returns:
             list: The layers for the specified model.
@@ -153,7 +148,8 @@ class Ensemble(object):
         weighted_metrics=None,
     ):
         """
-        Method for configuring the model for training. It is a wrapper of the `keras.models.Model.compile` method for all models in the ensemble.
+        Method for configuring the model for training. It is a wrapper of the `keras.models.Model.compile` method for
+        all models in the ensemble.
 
         For detailed descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
@@ -198,7 +194,7 @@ class Ensemble(object):
         steps_per_epoch=None,
         epochs=1,
         verbose=1,
-        validation_generator=None,
+        validation_data=None,
         validation_steps=None,
         class_weight=None,
         max_queue_size=10,
@@ -206,44 +202,29 @@ class Ensemble(object):
         use_multiprocessing=False,
         shuffle=True,
         initial_epoch=0,
-        train_data=None,
-        train_targets=None,
-        val_data=None,
-        val_targets=None,
-        bag_size=None,
         use_early_stopping=False,
         early_stopping_monitor="val_loss",
     ):
         """
-        This method trains the ensemble on the data specified by the generator or the data given in train_data and
-        train_targets. If validation data are given, then the training metrics are evaluated
-        on these data and results printed on screen if verbose level is greater than 0.
+        This method trains the ensemble on the data specified by the generator. If validation data are given, then the
+        training metrics are evaluated on these data and results printed on screen if verbose level is greater than 0.
 
         The method trains each model in the ensemble in series for the number of epochs specified. Training can
-        also stop early with the best model as evaluated on the validation data, if use_early_stopping is enabled.
-
-        if train_data and train_targets are given, then each model in the ensemble is trained using a bootstrapped
-        sample of the data (the train data are re-sampled with replacement.) The number of bootstrap samples is
-        can be specified via the bag_size parameter; by default, the number of bootstrap samples equals the number of
-        training points.
+        also stop early with the best model as evaluated on the validation data, if use_early_stopping is set to True.
 
         For detail descriptions of Keras-specific parameters consult the Keras documentation
         at https://keras.io/models/sequential/
 
         Args:
-            generator: The generator object for training data. if test_data is not None, it should be one of type
-                GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
-                or HinSAGELinkGenerator. However, if test_data is None, then generator should be one of type
-                NodeSequence, LinkSequence, or FullBatchNodeSequence.
+            generator: The generator object for training data. It should be one of type
+                NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
             epochs (int): (Keras-specific parameter) The number of training epochs.
             verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
                 progress bar, and one line per epoch respectively.
-            validation_generator: A generator for validation data that is optional (None). If not None then, if val_data
-                is not None, it should be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator,
-                FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator. However, if val_data is None,
-                then it should be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.
+            validation_data: A generator for validation data that is optional (None). If not None then, it should
+                be one of type NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             validation_steps (None or int): (Keras-specific parameter) If validation_generator is not None, then it
                 specifies the number of steps to yield from the generator before stopping at the end of every epoch.
             class_weight (None or dict): (Keras-specific parameter) If not None, it should be a dictionary
@@ -257,16 +238,6 @@ class Ensemble(object):
                 beginning of each training epoch.
             initial_epoch (int): (Keras-specific parameter) Epoch at which to start training (useful for resuming a
                 previous training run).
-            train_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the data
-                to train the model with.
-            train_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the target
-                values for the train data.
-            val_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the validation
-                data.
-            val_targets (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the target
-                values for the validation data.
-            bag_size (None or int): The number of samples in a bootstrap sample. If None and bagging is used, then
-                the number of samples is equal to the number of training points.
             use_early_stopping (bool): If set to True, then early stopping is used when training each model
                 in the ensemble. The default is False.
             early_stopping_monitor (str): The quantity to monitor for early stopping, e.g., 'val_loss',
@@ -276,40 +247,13 @@ class Ensemble(object):
             list: It returns a list of Keras History objects each corresponding to one trained model in the ensemble.
 
         """
-        if train_data is not None:
-            if not isinstance(
-                generator,
-                (
-                    sg.mapper.GraphSAGENodeGenerator,
-                    sg.mapper.HinSAGENodeGenerator,
-                    sg.mapper.FullBatchNodeGenerator,
-                    sg.mapper.GraphSAGELinkGenerator,
-                    sg.mapper.HinSAGELinkGenerator,
-                ),
-            ):
-                raise ValueError(
-                    "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, "
-                    "FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. "
-                    "Received type {}".format(type(self).__name__, type(generator))
-                )
-            if bag_size is not None and (bag_size > len(train_data) or bag_size <= 0):
-                raise ValueError(
-                    "({}) bag_size must be positive and less than or equal to the number of training points ({})".format(
-                        type(self).__name__, len(train_data)
-                    )
-                )
-            if train_targets is None:
-                raise ValueError(
-                    "({}) If train_data is given then train_targets must be given as well.".format(
-                        type(self).__name__
-                    )
-                )
-        elif not isinstance(
+        if not isinstance(
             generator,
             (
                 sg.mapper.NodeSequence,
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
+                sg.mapper.SparseFullBatchNodeSequence,
             ),
         ):
             raise ValueError(
@@ -321,82 +265,34 @@ class Ensemble(object):
 
         self.history = []
 
-        if train_data is not None:
-            num_points_per_bag = len(train_data)
-            if bag_size is not None:
-                num_points_per_bag = bag_size
-            # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
-            # datasets.
-            for model in self.models:
-                di_index = np.random.choice(
-                    len(train_data), size=num_points_per_bag
-                )  # sample with replacement
-                di_train = train_data[di_index]
-                di_targets = None
-                if train_targets is not None:
-                    di_targets = train_targets[di_index]
-
-                val_gen = validation_generator
-                di_gen = generator.flow(di_train, di_targets)
-                if val_data is not None and val_targets is not None:
-                    val_gen = generator.flow(val_data, val_targets)
-
-                es_callback = None
-                if use_early_stopping and val_gen is not None:
-                    es_callback = [
-                        EarlyStopping(
-                            monitor=early_stopping_monitor,
-                            patience=self.early_stoppping_patience,
-                            restore_best_weights=True,
-                        )
-                    ]
-
-                self.history.append(
-                    model.fit_generator(
-                        generator=di_gen,
-                        steps_per_epoch=steps_per_epoch,
-                        epochs=epochs,
-                        verbose=verbose,
-                        callbacks=es_callback,
-                        validation_data=val_gen,
-                        validation_steps=validation_steps,
-                        class_weight=class_weight,
-                        max_queue_size=max_queue_size,
-                        workers=workers,
-                        use_multiprocessing=use_multiprocessing,
-                        shuffle=shuffle,
-                        initial_epoch=initial_epoch,
-                    )
+        es_callback = None
+        if use_early_stopping and validation_data is not None:
+            es_callback = [
+                EarlyStopping(
+                    monitor=early_stopping_monitor,
+                    patience=self.early_stoppping_patience,
+                    restore_best_weights=True,
                 )
-        else:
-            es_callback = None
-            if use_early_stopping and validation_generator is not None:
-                es_callback = [
-                    EarlyStopping(
-                        monitor=early_stopping_monitor,
-                        patience=self.early_stoppping_patience,
-                        restore_best_weights=True,
-                    )
-                ]
+            ]
 
-            for model in self.models:
-                self.history.append(
-                    model.fit_generator(
-                        generator=generator,
-                        steps_per_epoch=steps_per_epoch,
-                        epochs=epochs,
-                        verbose=verbose,
-                        callbacks=es_callback,
-                        validation_data=validation_generator,
-                        validation_steps=validation_steps,
-                        class_weight=class_weight,
-                        max_queue_size=max_queue_size,
-                        workers=workers,
-                        use_multiprocessing=use_multiprocessing,
-                        shuffle=shuffle,
-                        initial_epoch=initial_epoch,
-                    )
+        for model in self.models:
+            self.history.append(
+                model.fit_generator(
+                    generator=generator,
+                    steps_per_epoch=steps_per_epoch,
+                    epochs=epochs,
+                    verbose=verbose,
+                    callbacks=es_callback,
+                    validation_data=validation_data,
+                    validation_steps=validation_steps,
+                    class_weight=class_weight,
+                    max_queue_size=max_queue_size,
+                    workers=workers,
+                    use_multiprocessing=use_multiprocessing,
+                    shuffle=shuffle,
+                    initial_epoch=initial_epoch,
                 )
+            )
 
         return self.history
 
@@ -458,10 +354,12 @@ class Ensemble(object):
                 sg.mapper.NodeSequence,
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
+                sg.mapper.SparseFullBatchNodeSequence,
             ),
         ):
             raise ValueError(
-                "({}) If test_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchNodeSequence "
+                "({}) If test_data is None, generator must be one of type NodeSequence, "
+                "LinkSequence, FullBatchNodeSequence, or SparseFullBatchNodeSequence "
                 "but received object of type {}".format(
                     type(self).__name__, type(generator)
                 )
@@ -513,7 +411,7 @@ class Ensemble(object):
             generator: The generator object that, if predict_data is None, should be one of type
                 GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
                 or HinSAGELinkGenerator. However, if predict_data is not None, then generator should be one of type
-                NodeSequence, LinkSequence, or FullBatchNodeSequence.
+                NodeSequence, LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.
             predict_data (None or iterable): If not None, then it is an iterable, e.g. list, that specifies the node IDs
                 to make predictions for. If generator is of type FullBatchNodeGenerator then predict_data should be all
                 the nodes in the graph since full batch approaches such as GCN and GAT can only be used to make
@@ -541,9 +439,9 @@ class Ensemble(object):
             if not isinstance(
                 generator,
                 (
-                    sg.mapper.node_mappers.GraphSAGENodeGenerator,
-                    sg.mapper.node_mappers.HinSAGENodeGenerator,
-                    sg.mapper.node_mappers.FullBatchNodeGenerator,
+                    sg.mapper.GraphSAGENodeGenerator,
+                    sg.mapper.HinSAGENodeGenerator,
+                    sg.mapper.FullBatchNodeGenerator,
                 ),
             ):
                 raise ValueError(
@@ -558,10 +456,12 @@ class Ensemble(object):
                 sg.mapper.NodeSequence,
                 sg.mapper.LinkSequence,
                 sg.mapper.FullBatchNodeSequence,
+                sg.mapper.SparseFullBatchNodeSequence,
             ),
         ):
             raise ValueError(
-                "({}) If x is None, generator must be one of type NodeSequence, LinkSequence, or FullBatchNodeSequence.".format(
+                "({}) If x is None, generator must be one of type NodeSequence, "
+                "LinkSequence, SparseFullBatchNodeSequence, or FullBatchNodeSequence.".format(
                     type(self).__name__
                 )
             )
@@ -597,7 +497,186 @@ class Ensemble(object):
             # average the predictions across models and predictions per query point
             predictions = np.mean(predictions, axis=(0, 1))
 
-        if len(predictions.shape) > 4:
-            predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
+        # if len(predictions.shape) > 4:
+        #     predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
         return predictions
+
+
+#
+#
+#
+class BaggingEnsemble(Ensemble):
+    """
+    The BaggingEnsemble class can be used to create ensembles of stellargraph's graph neural network algorithms
+    including GCN, GraphSAGE, GAT, and HinSAGE. Ensembles can be used for training classification and regression
+    problems for node attribute inference and link prediction.
+
+    This class can be used to create Bagging ensembles.
+
+    Bagging ensembles add model diversity in two ways: (1) by random initialisation of the models' weights (before
+    training) to different values; and (2) by bootstrap sampling of the training data for each model. That is, each
+    model in the ensemble is trained on a random subset of the training examples, sampled with replacement from the
+    original training data.
+    """
+
+    def __init__(self, model, n_estimators=3, n_predictions=3):
+        """
+
+        Args:
+            model: A keras model.
+            n_estimators (int):  The number of estimators (aka models) in the ensemble.
+            n_predictions (int):  The number of predictions per query point per estimator
+        """
+        super().__init__(
+            model=model, n_estimators=n_estimators, n_predictions=n_predictions
+        )
+
+    def fit_generator(
+        self,
+        generator,
+        train_data,
+        train_targets,
+        steps_per_epoch=None,
+        epochs=1,
+        verbose=1,
+        validation_data=None,
+        validation_steps=None,
+        class_weight=None,
+        max_queue_size=10,
+        workers=1,
+        use_multiprocessing=False,
+        shuffle=True,
+        initial_epoch=0,
+        bag_size=None,
+        use_early_stopping=False,
+        early_stopping_monitor="val_loss",
+    ):
+        """
+        This method trains the ensemble on the data given in train_data and train_targets. If validation data are
+        also given, then the training metrics are evaluated on these data and results printed on screen if verbose
+        level is greater than 0.
+
+        The method trains each model in the ensemble in series for the number of epochs specified. Training can
+        also stop early with the best model as evaluated on the validation data, if use_early_stopping is enabled.
+
+        Each model in the ensemble is trained using a bootstrapped sample of the data (the train data are re-sampled
+        with replacement.) The number of bootstrap samples can be specified via the bag_size parameter; by default,
+        the number of bootstrap samples equals the number of training points.
+
+        For detail descriptions of Keras-specific parameters consult the Keras documentation
+        at https://keras.io/models/sequential/
+
+        Args:
+            generator: The generator object for training data. It should be one of type
+                GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, GraphSAGELinkGenerator,
+                or HinSAGELinkGenerator.
+            train_data (iterable): It is an iterable, e.g. list, that specifies the data
+                to train the model with.
+            train_targets (iterable): It is an iterable, e.g. list, that specifies the target
+                values for the train data.
+            steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
+                to yield from the generator before declaring one epoch finished and starting a new epoch.
+            epochs (int): (Keras-specific parameter) The number of training epochs.
+            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
+                progress bar, and one line per epoch respectively.
+            validation_data: A generator for validation data that is optional (None). If not None then, it should
+                be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator,
+                GraphSAGELinkGenerator, or HinSAGELinkGenerator.
+            validation_steps (None or int): (Keras-specific parameter) If validation_generator is not None, then it
+                specifies the number of steps to yield from the generator before stopping at the end of every epoch.
+            class_weight (None or dict): (Keras-specific parameter) If not None, it should be a dictionary
+                mapping class indices (integers) to a weight (float) value, used for weighting the loss function (during
+                training only). This can be useful to tell the model to "pay more attention" to samples from an
+                under-represented class.
+            max_queue_size (int): (Keras-specific parameter) The maximum size for the generator queue.
+            workers (int): (Keras-specific parameter) The maximum number of workers to use.
+            use_multiprocessing (bool): (Keras-specific parameter) If True then use process based threading.
+            shuffle (bool): (Keras-specific parameter) If True, then it shuffles the order of batches at the
+                beginning of each training epoch.
+            initial_epoch (int): (Keras-specific parameter) Epoch at which to start training (useful for resuming a
+                previous training run).
+            bag_size (None or int): The number of samples in a bootstrap sample. If None and bagging is used, then
+                the number of samples is equal to the number of training points.
+            use_early_stopping (bool): If set to True, then early stopping is used when training each model
+                in the ensemble. The default is False.
+            early_stopping_monitor (str): The quantity to monitor for early stopping, e.g., 'val_loss',
+                'val_weighted_acc'. It should be a valid Keras metric.
+
+        Returns:
+            list: It returns a list of Keras History objects each corresponding to one trained model in the ensemble.
+
+        """
+        if not isinstance(
+            generator,
+            (
+                sg.mapper.GraphSAGENodeGenerator,
+                sg.mapper.HinSAGENodeGenerator,
+                sg.mapper.FullBatchNodeGenerator,
+                sg.mapper.GraphSAGELinkGenerator,
+                sg.mapper.HinSAGELinkGenerator,
+            ),
+        ):
+            raise ValueError(
+                "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, "
+                "FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. "
+                "Received type {}".format(type(self).__name__, type(generator))
+            )
+        if bag_size is not None and (bag_size > len(train_data) or bag_size <= 0):
+            raise ValueError(
+                "({}) bag_size must be positive and less than or equal to the number of training points ({})".format(
+                    type(self).__name__, len(train_data)
+                )
+            )
+        if train_targets is None:
+            raise ValueError(
+                "({}) If train_data is given then train_targets must be given as well.".format(
+                    type(self).__name__
+                )
+            )
+
+        self.history = []
+
+        num_points_per_bag = bag_size if bag_size is not None else len(train_data)
+
+        # Prepare the training data for each model. Use sampling with replacement to create len(self.models)
+        # datasets.
+        for model in self.models:
+            di_index = np.random.choice(
+                len(train_data), size=num_points_per_bag
+            )  # sample with replacement
+            di_train = train_data[di_index]
+
+            di_targets = train_targets[di_index]
+
+            di_gen = generator.flow(di_train, di_targets)
+
+            es_callback = None
+            if use_early_stopping and validation_data is not None:
+                es_callback = [
+                    EarlyStopping(
+                        monitor=early_stopping_monitor,
+                        patience=self.early_stoppping_patience,
+                        restore_best_weights=True,
+                    )
+                ]
+
+            self.history.append(
+                model.fit_generator(
+                    generator=di_gen,
+                    steps_per_epoch=steps_per_epoch,
+                    epochs=epochs,
+                    verbose=verbose,
+                    callbacks=es_callback,
+                    validation_data=validation_data,
+                    validation_steps=validation_steps,
+                    class_weight=class_weight,
+                    max_queue_size=max_queue_size,
+                    workers=workers,
+                    use_multiprocessing=use_multiprocessing,
+                    shuffle=shuffle,
+                    initial_epoch=initial_epoch,
+                )
+            )
+
+        return self.history
