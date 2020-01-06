@@ -23,3 +23,19 @@ plugins:
 
   sonar-python:
     enabled: true
+
+exclude_patterns:
+  # default exclude patterns:
+  - "config/"
+  - "db/"
+  - "dist/"
+  - "features/"
+  - "**/node_modules/"
+  - "script/"
+  - "**/spec/"
+  - "**/test/"
+  - "**/tests/"
+  - "Tests/"
+  - "**/vendor/"
+  - "**/*_test.go"
+  - "**/*.d.ts"
