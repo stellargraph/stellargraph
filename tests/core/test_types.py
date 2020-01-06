@@ -30,13 +30,13 @@ from stellargraph.core.graph import *
 
 
 def example_graph(label=None):
-    G = StellarGraph()
+    G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
     if label:
         G.add_edges_from(elist, label=label)
     else:
         G.add_edges_from(elist)
-    return G
+    return StellarGraph(G)
 
 
 def test_edges_with_type():

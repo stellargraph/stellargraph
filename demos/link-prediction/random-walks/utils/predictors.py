@@ -66,7 +66,7 @@ def link_prediction_clf(feature_learner, edge_data, binary_operators=None):
                 (
                     "clf",
                     LogisticRegressionCV(
-                        Cs=10, cv=10, scoring="roc_auc", verbose=False
+                        Cs=10, cv=10, scoring="roc_auc", verbose=False, max_iter=500
                     ),
                 ),
             ]
