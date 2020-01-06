@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -188,7 +188,9 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def edges(self, triple: bool = False, include_info: bool = False) -> Iterable[tuple]:
+    def edges(
+        self, triple: bool = False, include_info: bool = False
+    ) -> Iterable[tuple]:
         # FIXME: fold triple and include_info together
         """
         Obtains the edges in the graph, where each edge
