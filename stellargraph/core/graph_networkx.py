@@ -772,6 +772,26 @@ class NetworkXStellarGraph(StellarGraph):
             self._graph, dtype="float32", weight=self._edge_weight_label, format="coo"
         )
 
+    def to_networkx(self):
+        # This is implemented generically to not be tied to the (outgoing) networkx format.
+        if self.is_directed():
+            graph = nx.MultiGraph()
+        else:
+            graph = nx.MultiDiGraph()
+
+        types = self.node_types
+
+        for ty in types:
+            node_ids = self.nodes_of_type(ty)
+            features = self.node_features(node_ids, node_type = ty)
+
+            for node_id, node_features in zip(node_ids, features):
+                graph.add_node(node_id, **{self._feature_attr: node_features, self._node_type_attr: ty})
+
+        graph.add_edges_from(self.edges(triple = True))
+
+        return graph
+
     # XXX This has not yet been standardised in the interface.
     def adjacency_types(self, graph_schema: GraphSchema):
         """

@@ -24,6 +24,7 @@ __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 from typing import Iterable, Any, Mapping, Optional
 
 from .schema import GraphSchema
+from ..globalvar import FEATURE_ATTR_NAME
 
 
 class StellarGraphFactory(type):
@@ -290,6 +291,17 @@ class StellarGraph(metaclass=StellarGraphFactory):
 
         Returns:
              The weighted adjacency matrix.
+        """
+        raise NotImplementedError
+
+    def to_networkx(self):
+        """
+        Creates a NetworkX graph from all in the information in this
+        StellarGraph.
+
+        Returns:
+            A NetworkX graph incorporating the information from this
+            StellarGraph.
         """
         raise NotImplementedError
 

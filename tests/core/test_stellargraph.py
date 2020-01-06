@@ -436,6 +436,38 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
+@pytest.mark.parametrize("in_nodes", [False, True])
+def test_to_networkx(in_nodes):
+    g, node_features = example_benchmark_graph(
+        feature_size=5, features_in_nodes=in_nodes
+    )
+
+    sg = StellarGraph(g, node_features=node_features)
+    new_nx = sg.to_networkx()
+
+    def normalise(nodes):
+        return sorted(
+            (node_id, {**data, "feature": list(data["feature"])})
+            for node_id, data in nodes
+        )
+
+    new_nodes = normalise(new_nx.nodes(data=True))
+    if in_nodes:
+        g_nodes = normalise(g.nodes(data=True))
+    else:
+        features = {
+            ty: {row[0]: list(row[1:]) for row in ty_features.itertuples()}
+            for ty, ty_features in node_features.items()
+        }
+        g_nodes = sorted(
+            (node_id, {**data, "feature": features[data["label"]][node_id]})
+            for node_id, data in g.nodes(data=True)
+        )
+
+    assert new_nodes == g_nodes
+    assert sorted(new_nx.edges(data=True)) == sorted(g.edges(data=True))
+
+
 def example_benchmark_graph(
     feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
 ):
