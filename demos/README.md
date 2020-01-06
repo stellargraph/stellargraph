@@ -7,7 +7,7 @@ examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Cluster-GCN [10], PPNP/APPNP [9],
+state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Cluster-GCN [10], PPNP/APPNP [9], 
 Node2Vec [1], and Metapath2Vec [2].
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
@@ -52,7 +52,6 @@ The examples folder structure is shown below.
 * [`/use-cases`](https://github.com/stellargraph/stellargraph/tree/master/demos/use-cases)
 
     Example use-cases/applications for graph neural network algorithms.
->>>>>>> origin/develop
 
 ## References
 
