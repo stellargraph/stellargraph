@@ -775,9 +775,9 @@ class NetworkXStellarGraph(StellarGraph):
     def to_networkx(self):
         # This is implemented generically to not be tied to the (outgoing) networkx format.
         if self.is_directed():
-            graph = nx.MultiGraph()
-        else:
             graph = nx.MultiDiGraph()
+        else:
+            graph = nx.MultiGraph()
 
         types = self.node_types
 
