@@ -249,6 +249,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         time for a large graph.
 
         Args:
+            show_attributes (bool, default True): If True, include attributes information
             sample (int): To speed up the graph analysis, use only a random sample of
                           this many nodes and edges.
 
