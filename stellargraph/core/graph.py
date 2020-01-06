@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -238,6 +238,40 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
+    def nodes_of_type(self, node_type=None):
+        """
+        Get the nodes of the graph with the specified node types.
+
+        Args:
+            node_type: a type of nodes that exist in the graph
+
+        Returns:
+            A list of node IDs with type node_type
+        """
+        raise NotImplementedError
+
+    def node_type(self, node):
+        """
+        Get the type of the node
+
+        Args:
+            node: Node ID
+
+        Returns:
+            Node type
+        """
+        raise NotImplementedError
+
+    @property
+    def node_types(self):
+        """
+        Get a list of all node types in the graph.
+
+        Returns:
+            set of types
+        """
+        raise NotImplementedError
+
     def node_feature_sizes(self, node_types=None):
         """
         Get the feature sizes for the specified node types.
@@ -251,7 +285,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def node_features(self, nodes, node_type = None):
+    def node_features(self, nodes, node_type=None):
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found

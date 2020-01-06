@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -133,7 +133,7 @@ class BatchedNodeGenerator(abc.ABC):
         # Check all IDs are actually in the graph and are of expected type
         for n in node_ids:
             try:
-                node_type = self.graph.type_for_node(n)
+                node_type = self.graph.node_type(n)
             except KeyError:
                 raise KeyError(f"Node ID {n} supplied to generator not found in graph")
 
@@ -340,9 +340,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
-            features_for_slot = self.graph.node_features(
-                nodes_in_slot, node_type
-            )
+            features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])

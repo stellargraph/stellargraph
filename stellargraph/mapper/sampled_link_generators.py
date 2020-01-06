@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -121,8 +121,8 @@ class BatchedLinkGenerator(abc.ABC):
 
                 src, dst = link
                 try:
-                    node_type_src = self.graph.type_for_node(src)
-                    node_type_dst = self.graph.type_for_node(dst)
+                    node_type_src = self.graph.node_type(src)
+                    node_type_dst = self.graph.node_type(dst)
                 except KeyError:
                     raise KeyError(
                         f"Node ID {n} supplied to generator not found in graph"
