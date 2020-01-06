@@ -24,7 +24,6 @@ __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 from typing import Iterable, Any, Mapping, Optional
 
 from .schema import GraphSchema
-from ..globalvar import FEATURE_ATTR_NAME
 
 
 class StellarGraphFactory(type):
