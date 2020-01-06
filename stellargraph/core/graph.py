@@ -237,6 +237,35 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
+    def node_feature_sizes(self, node_types=None):
+        """
+        Get the feature sizes for the specified node types.
+
+        Args:
+            node_types: (list) A list of node types. If None all current node types
+                will be used.
+
+        Returns:
+            A dictionary of node type and integer feature size.
+        """
+        raise NotImplementedError
+
+    def node_features(self, nodes, node_type = None):
+        """
+        Get the numeric feature vectors for the specified node or nodes.
+        If the node type is not specified the node types will be found
+        for all nodes. It is therefore important to supply the ``node_type``
+        for this method to be fast.
+
+        Args:
+            n: (list or hashable) Node ID or list of node IDs
+            node_type: (hashable) the type of the nodes.
+
+        Returns:
+            Numpy array containing the node features for the requested nodes.
+        """
+        raise NotImplementedError
+
     ##################################################################
     # Computationally intensive methods:
 

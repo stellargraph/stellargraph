@@ -245,7 +245,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Get features for sampled nodes
         batch_feats = [
-            self.graph.get_feature_for_nodes(layer_nodes, node_type)
+            self.graph.node_features(layer_nodes, node_type)
             for layer_nodes in nodes_per_hop
         ]
 
@@ -340,7 +340,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
-            features_for_slot = self.graph.get_feature_for_nodes(
+            features_for_slot = self.graph.node_features(
                 nodes_in_slot, node_type
             )
             resize = -1 if np.size(features_for_slot) > 0 else 0
@@ -452,7 +452,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # Get features
         batch_feats = [
-            self.graph.get_feature_for_nodes(layer_nodes, nt)
+            self.graph.node_features(layer_nodes, nt)
             for nt, layer_nodes in nodes_by_type
         ]
 
@@ -507,7 +507,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             head node.
         """
 
-        batch_feats = self.graph.get_feature_for_nodes(head_nodes)
+        batch_feats = self.graph.node_features(head_nodes)
         return batch_feats
 
     def flow(self, node_ids):

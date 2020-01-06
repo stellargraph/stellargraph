@@ -160,7 +160,7 @@ class FullBatchNodeGenerator:
             )
 
         # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
         if transform is not None:
             if callable(transform):
@@ -297,7 +297,7 @@ class RelationalFullBatchNodeGenerator:
         # extract node, feature, and edge type info from G
         self.node_list = list(G.nodes())
 
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
         edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
@@ -342,7 +342,7 @@ class RelationalFullBatchNodeGenerator:
             self.As.append(A)
 
         # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
     def flow(self, node_ids, targets=None):
         """
