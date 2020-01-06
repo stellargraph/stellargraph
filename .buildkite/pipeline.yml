@@ -73,6 +73,10 @@ steps:
         build:
           - stellargraph
         image-repository: index.docker.io/stellargraph/stellargraph
+        # Caching can cause packages to be pinned to old (possibly-vulnerable) versions for long
+        # periods.  Setting `REFRESH_BUILD=true` allows for builds (e.g. scheduled builds) to start
+        # from scratch and refresh the caches.
+        no-cache: ${REFRESH_BUILD-false}
         cache-from:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
           - stellargraph:index.docker.io/stellargraph/stellargraph:latest
