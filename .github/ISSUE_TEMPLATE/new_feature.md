@@ -1,7 +1,9 @@
 ---
 name: New feature
 about: A new feature to be implemented
----### Description
+---
+
+### Description
 
 ... [Insert a brief description of the actions involved to complete this task.]
 
