@@ -237,6 +237,40 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
+    def nodes_of_type(self, node_type=None):
+        """
+        Get the nodes of the graph with the specified node types.
+
+        Args:
+            node_type: a type of nodes that exist in the graph
+
+        Returns:
+            A list of node IDs with type node_type
+        """
+        raise NotImplementedError
+
+    def node_type(self, node):
+        """
+        Get the type of the node
+
+        Args:
+            node: Node ID
+
+        Returns:
+            Node type
+        """
+        raise NotImplementedError
+
+    @property
+    def node_types(self):
+        """
+        Get a list of all node types in the graph.
+
+        Returns:
+            set of types
+        """
+        raise NotImplementedError
+
     def node_feature_sizes(self, node_types=None):
         """
         Get the feature sizes for the specified node types.

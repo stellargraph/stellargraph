@@ -121,8 +121,8 @@ class BatchedLinkGenerator(abc.ABC):
 
                 src, dst = link
                 try:
-                    node_type_src = self.graph.type_for_node(src)
-                    node_type_dst = self.graph.type_for_node(dst)
+                    node_type_src = self.graph.node_type(src)
+                    node_type_dst = self.graph.node_type(dst)
                 except KeyError:
                     raise KeyError(
                         f"Node ID {n} supplied to generator not found in graph"

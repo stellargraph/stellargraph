@@ -133,7 +133,7 @@ class BatchedNodeGenerator(abc.ABC):
         # Check all IDs are actually in the graph and are of expected type
         for n in node_ids:
             try:
-                node_type = self.graph.type_for_node(n)
+                node_type = self.graph.node_type(n)
             except KeyError:
                 raise KeyError(f"Node ID {n} supplied to generator not found in graph")
 

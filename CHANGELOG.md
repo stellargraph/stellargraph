@@ -25,6 +25,10 @@ In particular, calls like `list(G)` will no longer return a list of nodes; use `
 - Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498).
 Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 
+- Various methods on `StellarGraph` have been renamed to be more succinct and uniform:
+   - `get_feature_for_nodes` is now `node_features`
+   - `type_for_node` is now `node_type`
+
 **Fixed bugs:**
 
 
