@@ -340,9 +340,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
-            features_for_slot = self.graph.node_features(
-                nodes_in_slot, node_type
-            )
+            features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])

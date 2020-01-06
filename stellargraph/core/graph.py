@@ -250,7 +250,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
-    def node_features(self, nodes, node_type = None):
+    def node_features(self, nodes, node_type=None):
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
