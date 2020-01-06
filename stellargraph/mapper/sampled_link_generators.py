@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import itertools as it
 import operator
 import collections
 import abc
+import warnings
 from functools import reduce
 from tensorflow import keras
 from ..core.graph import StellarGraph
@@ -206,8 +207,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
             )
 
         self.head_node_types = self.schema.node_types * 2

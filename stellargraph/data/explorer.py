@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ __all__ = [
 
 import numpy as np
 import random
+import warnings
 from collections import defaultdict, deque
 
 from ..core.schema import GraphSchema
@@ -141,10 +142,10 @@ class GraphWalk(object):
         if (
             len(nodes) == 0
         ):  # this is not an error but maybe a warning should be printed to inform the caller
-            print(
-                "({}) WARNING: No root node IDs given. An empty list will be returned as a result.".format(
-                    type(self).__name__
-                )
+            warnings.warn(
+                "No root node IDs given. An empty list will be returned as a result.",
+                RuntimeWarning,
+                stacklevel=3,
             )
 
     def _check_repetitions(self, n):

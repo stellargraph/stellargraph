@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import warnings
 import operator
 import random
 import abc
+import warnings
 import numpy as np
 import itertools as it
 import networkx as nx
@@ -202,8 +203,9 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
             )
 
         # Create sampler for GraphSAGE
@@ -298,8 +300,9 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
             )
 
         # Create sampler for GraphSAGE
