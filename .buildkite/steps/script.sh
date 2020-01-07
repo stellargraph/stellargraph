@@ -11,6 +11,9 @@ upload_tests() {
 echo "--- installing dependencies"
 pip install -q --no-cache-dir -r requirements.txt -e .
 
+echo "--- listing dependency versions"
+pip freeze
+
 echo "+++ running tests"
 exitCode=$?
 py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
