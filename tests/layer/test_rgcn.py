@@ -166,6 +166,7 @@ def test_RelationalGraphConvolution_sparse():
 
 
 def test_RelationalGraphConvolution_dense():
+
     G, features = create_graph_features()
     edge_types = sorted(set(e[-1] for e in G.edges))
     n_edge_types = len(edge_types)
@@ -209,7 +210,7 @@ def test_RelationalGraphConvolution_dense():
 
         d = sps.diags(np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0)
         A = d.dot(A).tocsr()
-        A = A.todense()[None, :, :]
+        A = np.expand_dims(A.todense(), 0)
         As.append(A)
 
     out_indices = np.array([[0, 1]], dtype="int32")
@@ -283,7 +284,7 @@ def test_RGCN_apply_dense():
     G, features = create_graph_features()
 
     As = get_As(G)
-    As = [A.todense()[None, :, :] for A in As]
+    As = [np.expand_dims(A.todense(), 0) for A in As]
 
     nodes = G.nodes()
     node_features = pd.DataFrame.from_dict(
@@ -348,7 +349,7 @@ def test_RGCN_apply_dense_directed():
     G, features = create_graph_features_directed()
 
     As = get_As(G)
-    As = [A.todense()[None, :, :] for A in As]
+    As = [np.expand_dims(A.todense(), 0) for A in As]
 
     nodes = G.nodes()
     node_features = pd.DataFrame.from_dict(

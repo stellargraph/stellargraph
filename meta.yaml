@@ -1,3 +1,6 @@
+# yamllint disable-file
+# This file is not valid YAML because of the jinja templating
+
 {% set name = "stellargraph" %}
 {% set version = "0.8.1" %}
 
@@ -13,7 +16,7 @@ build:
   noarch: python
   number: 0
   script: "{{ PYTHON }} -m pip install . -vv"
-  skip: True  # [py<36]
+  skip: True # [py<36]
 
 requirements:
   host:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ from stellargraph.core.graph import StellarGraph
 import random
 import itertools as it
 from collections import defaultdict
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -97,9 +98,11 @@ def _convert_from_node_attribute(
 
         # Warn if nodes don't have the attribute
         if 0 in data_sizes:
-            print(
-                "Warning: Some nodes have no value for attribute '{}', "
-                "using default value.".format(attr_name)
+            warnings.warn(
+                "Some nodes have no value for attribute '{}', "
+                "using default value.".format(attr_name),
+                RuntimeWarning,
+                stacklevel=2,
             )
             data_sizes.discard(0)
 
@@ -458,7 +461,7 @@ class NetworkXStellarGraph(StellarGraph):
             node_type not in self._node_attribute_arrays
             or node_type not in self._node_index_maps
         ):
-            raise ValueError("Features not found for node type '{}'")
+            raise ValueError(f"Features not found for node type '{node_type}'")
 
         # Edge case: if we are given no nodes, what do we do?
         if len(nodes) == 0:
