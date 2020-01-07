@@ -465,9 +465,9 @@ class Test_GraphSAGELinkGenerator:
         )
         mapper = gen.flow(unsupervisedSamples)
 
-        assert mapper.data_size == 16
-        assert self.batch_size == 2
-        assert len(mapper) == 8
+        assert mapper.data_size == len(list(G.nodes())) * 2
+        assert mapper.batch_size == self.batch_size
+        assert len(mapper) == np.ceil(mapper.data_size / mapper.batch_size)
         assert len(set(gen.head_node_types)) == 1
 
         for batch in range(len(mapper)):
@@ -492,7 +492,6 @@ class Test_GraphSAGELinkGenerator:
                     self.n_feat,
                 )
                 assert len(nl) == min(self.batch_size, mapper.data_size)
-                assert sorted(nl) == [0, 1]
 
         with pytest.raises(IndexError):
             nf, nl = mapper[8]
@@ -843,9 +842,9 @@ class Test_Attri2VecLinkGenerator:
             unsupervisedSamples
         )
 
-        assert mapper.data_size == 16
-        assert self.batch_size == 2
-        assert len(mapper) == 8
+        assert mapper.data_size == len(list(G.nodes())) * 2
+        assert mapper.batch_size == self.batch_size
+        assert len(mapper) == np.ceil(mapper.data_size / mapper.batch_size)
 
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
@@ -855,7 +854,6 @@ class Test_Attri2VecLinkGenerator:
             assert nf[0].shape == (min(self.batch_size, mapper.data_size), self.n_feat)
             assert nf[1].shape == (min(self.batch_size, mapper.data_size),)
             assert len(nl) == min(self.batch_size, mapper.data_size)
-            assert sorted(nl) == [0, 1]
 
         with pytest.raises(IndexError):
             nf, nl = mapper[8]

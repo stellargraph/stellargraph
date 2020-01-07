@@ -30,7 +30,6 @@ __all__ = [
 import warnings
 import operator
 import random
-import threading
 import collections
 import numpy as np
 import itertools as it
@@ -229,7 +228,7 @@ class LinkSequence(Sequence):
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
         # Get node features for batch of link ids
-        batch_feats = self._sample_features(head_ids)
+        batch_feats = self._sample_features(head_ids, batch_num)
 
         return batch_feats, batch_targets
 
@@ -273,20 +272,12 @@ class OnDemandLinkSequence(Sequence):
                 "({}) UnsupervisedSampler is required.".format(type(self).__name__)
             )
 
-        self.lock = threading.Lock()
         self.batch_size = batch_size
         self.walker = walker
-
-        # an estimate of the  upper bound on how many samples are generated in each epoch
-        self.data_size = (
-            2
-            * len(self.walker.nodes)
-            * self.walker.length
-            * self.walker.number_of_walks
-        )
-
-        # the generator method from the sampler with the batch-size from the link generator method
-        self._gen = self.walker.generator(self.batch_size)
+        self.shuffle = shuffle
+        self._batches = self._create_batches()
+        self.length = len(self._batches)
+        self.data_size = sum([len(batch[0]) for batch in self._batches])
 
     def __getitem__(self, batch_num):
         """
@@ -309,18 +300,26 @@ class OnDemandLinkSequence(Sequence):
         # print("Fetching {} batch {} [{}]".format(self.name, batch_num, start_idx))
 
         # Get head nodes and labels
-        self.lock.acquire()
-        head_ids, batch_targets = next(self._gen)
-        self.lock.release()
+        head_ids, batch_targets = self._batches[batch_num]
 
         # Obtain features for head ids
-        batch_feats = self._sample_features(head_ids)
+        batch_feats = self._sample_features(head_ids, batch_num)
 
         return batch_feats, batch_targets
 
     def __len__(self):
         """Denotes the number of batches per epoch"""
-        return int(np.ceil(self.data_size / self.batch_size))
+        return self.length
+
+    def _create_batches(self):
+        return self.walker.run(self.batch_size)
+
+    def on_epoch_end(self):
+        """
+        Shuffle all link IDs at the end of each epoch
+        """
+        if self.shuffle == True:
+            self._batches = self._create_batches()
 
 
 class FullBatchNodeSequence(Sequence):

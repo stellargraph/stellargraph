@@ -153,26 +153,18 @@ class TestUnsupervisedSampler(object):
 
         g = create_test_graph()
         g = StellarGraph(g)
-        # rw = UniformRandomWalk(g)
         sampler = UnsupervisedSampler(G=g)
 
         # generator should be provided with a valid batch size. i.e. an integer >=1
 
-        sample_gen = sampler.generator(batch_size=None)
         with pytest.raises(ValueError):
-            next(sample_gen)
+            sampler.run(batch_size=None)
 
-        sample_gen = sampler.generator(batch_size="x")
-        with pytest.raises(TypeError):
-            next(sample_gen)
-
-        sample_gen = sampler.generator(batch_size=0)
         with pytest.raises(ValueError):
-            next(sample_gen)
+            sampler.run(batch_size=0)
 
-        sample_gen = sampler.generator(batch_size=3)
         with pytest.raises(ValueError):
-            next(sample_gen)
+            sampler.run(batch_size=3)
 
     def test_generator_samples(self):
 
@@ -183,9 +175,8 @@ class TestUnsupervisedSampler(object):
 
         sampler = UnsupervisedSampler(G=G)
 
-        sample_gen = sampler.generator(batch_size)
-
-        samples = next(sample_gen)
+        # take the first batch
+        samples = sampler.run(batch_size)[0]
 
         # return two lists: [(target,context)] pairs and [1/0] binary labels
         assert len(samples) == 2
@@ -199,17 +190,25 @@ class TestUnsupervisedSampler(object):
     def test_generator_multiple_batches(self):
 
         n_feat = 4
-        batch_size = 4
-        number_of_batches = 3
 
         G = example_Graph_2(n_feat)
 
-        sampler = UnsupervisedSampler(G=G)
+        # walk length of 2 (i.e. 1 positive context pair) for the 4 nodes in the graph
+        # should produce 8 training examples => 2 batches of 4
+        sampler = UnsupervisedSampler(G=G, length=2, number_of_walks=1)
+        batch_size = 4
+        number_of_batches = 2
 
-        sample_gen = sampler.generator(batch_size)
+        batches = sampler.run(batch_size)
 
-        batches = []
-        for batch in range(number_of_batches):
-            batches.append(next(sample_gen))
+        assert len(batches) == number_of_batches
+
+        # walk length of 3 (i.e. 2 positive context pairs) for the 4 nodes in the graph
+        # should produce 16 training examples => 3 batches of 6, last batch containing less
+        sampler = UnsupervisedSampler(G=G, length=3, number_of_walks=1)
+        batch_size = 6
+        number_of_batches = 3
+
+        batches = sampler.run(batch_size)
 
         assert len(batches) == number_of_batches
