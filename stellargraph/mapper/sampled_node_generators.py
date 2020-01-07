@@ -256,7 +256,15 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
             for a in batch_feats
         ]
-        return batch_feats
+
+        # Record the corresponding node ids for calculate "ig_node_importance", this will change the return of sample_features()!!!
+        # Now only support GSAGE, batch_ids for other generators are set as none !!!
+        batch_ids = [
+            np.reshape(np.array(a), (len(head_nodes), -1 if np.size(np.array(a)) > 0 else 0))
+            for a in nodes_per_hop
+        ]
+
+        return batch_feats, batch_ids
 
 
 class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
@@ -351,7 +359,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
             )
 
-        return features
+        return features, None
 
 
 class HinSAGENodeGenerator(BatchedNodeGenerator):
@@ -465,7 +473,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
             for a in batch_feats
         ]
 
-        return batch_feats
+        return batch_feats, None
 
 
 class Attri2VecNodeGenerator(BatchedNodeGenerator):
@@ -511,7 +519,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
         """
 
         batch_feats = self.graph.get_feature_for_nodes(head_nodes)
-        return batch_feats
+        return batch_feats, None
 
     def flow(self, node_ids):
         """

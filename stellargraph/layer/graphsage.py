@@ -713,6 +713,75 @@ class AttentionalAggregator(GraphSAGEAggregator):
         return self.act(h_out)
 
 
+class Linkweight(Layer):
+    """
+      Linkweight Layer for IG_link_importance implemented with Keras base layer
+    """
+    def __init__(self, **kwargs):
+        super(Linkweight, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        """
+            Builds the weight tensor(s) corresponding to the features of the input groups.
+            Args:
+                in_shape (list of int): Shape of input tensor for single group
+
+        """
+        if not isinstance(input_shape, list):
+            raise ValueError(
+                "Expected a list of inputs, not {}".format(type(input_shape))
+            )
+        # Create a trainable weight variable for this layer.
+        self.included_weight_groups = [
+            all(dim != 0 for dim in group_shape[1:]) for group_shape in input_shape
+        ]
+        self.output_dim = input_shape
+        linkw_group = [None] * len(input_shape)
+        for ii, g_shape in enumerate(input_shape):
+            if self.included_weight_groups[ii]:
+                weight = self._build_group_weights(
+                    g_shape, group_idx=ii
+                )
+                linkw_group[ii] = weight
+
+        self.w_link_group = linkw_group
+        super(Linkweight, self).build(input_shape)  # Be sure to call this at the end
+
+    def _build_group_weights(self, in_shape, group_idx=0):
+        """
+        Builds the weight tensor(s) corresponding to the features of the input groups.
+        Link weight was set to all one by default
+        Args:
+            in_shape (list of int): Shape of input tensor for single group
+
+        """
+
+        weight = self.add_weight(
+            shape=(int(in_shape[-2]),int(in_shape[-1])),
+            initializer=initializers.ones(),
+            trainable=False,
+            name=f"ig_link_weight{group_idx}",
+        )
+        return weight
+
+    def call(self, x):
+        """
+            Apply link weight on the input tensors, `inputs`
+            Args:
+                inputs (List[Tensor]): Tensors giving self and neighbour features
+            Returns:
+                Keras Tensor representing the weighted embeddings of the input.
+        """
+        if not isinstance(x, list):
+            raise ValueError(
+              "Expected a list of inputs, not {}".format(type(x))
+            )
+        w_x = []
+        for i in range(len(x)):
+            w_x.append(x[i] * self.w_link_group[i])
+        return w_x
+
+
 class GraphSAGE:
     """
     Implementation of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
@@ -816,6 +885,9 @@ class GraphSAGE:
 
         # Compute size of each sampled neighbourhood
         self._compute_neighbourhood_sizes()
+
+        # Set the linkweight layer used in the model
+        self._linkweight = Linkweight()
 
         # Set the aggregator layer used in the model
         if aggregator is None:
@@ -985,7 +1057,8 @@ class GraphSAGE:
             )
 
         # Form GraphSAGE layers iteratively
-        h_layer = xin
+        h_layer = self._linkweight(xin)
+        # h_layer = xin
         for layer in range(0, self.max_hops):
             h_layer = apply_layer(h_layer, layer)
 
