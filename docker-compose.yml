@@ -5,3 +5,16 @@ services:
     build:
       dockerfile: docker/stellargraph/Dockerfile
       context: .
+
+  builder-3.6:
+    build: &builder-build
+      dockerfile: docker/stellargraph/Dockerfile
+      context: .
+      arg:
+        PYTHON_VERSION: 3.6
+
+  builder-3.7:
+    build:
+      <<: *builder-build
+      arg:
+        PYTHON_VERSION: 3.7
