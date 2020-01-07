@@ -45,6 +45,10 @@ The examples folder structure is shown below.
     Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings.
     Note that this demo requires the installation of `igraph-python`, see the `README.md` in this directory for more details.
 
+* [`/interpretability`](https://github.com/stellargraph/stellargraph/tree/master/demos/interpretability)
+
+    Examples of using saliency map based methods, such as integrated gradients [11], to provide interpretability to the graph neural networks, e.g., GCN. Saliency maps are used to approximate the importance of the nodes and links (in the ego network of a target node) while making the prediction.
+
 * [`/use-cases`](https://github.com/stellargraph/stellargraph/tree/master/demos/use-cases)
 
     Example use-cases/applications for graph neural network algorithms.
@@ -79,3 +83,5 @@ ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
 9. Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
 
 10. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))
+
+11. Axiomatic Attribution for Deep Networks. Mukund Sundararajan, Ankur Taly and Qiqi Yan. ICML 2017. ([link](https://arxiv.org/pdf/1703.01365.pdf))
