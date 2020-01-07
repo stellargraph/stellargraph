@@ -5,7 +5,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
-        image: "python:3.6"
+        image: "python:3.6-slim"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - GIT_BRANCH=$BUILDKITE_BRANCH
@@ -25,7 +25,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       docker#v3.2.0:
-        image: "python:3.7"
+        image: "python:3.7-slim"
         environment:
           - PYTHONDONTWRITEBYTECODE=1
           - GIT_BRANCH=$BUILDKITE_BRANCH

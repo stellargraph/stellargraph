@@ -8,6 +8,9 @@ upload_tests() {
   buildkite-agent artifact upload "$junit_file" "s3://${AWS_LOGS_BUCKET}/pytest/${BUILDKITE_BRANCH}/${BUILDKITE_BUILD_NUMBER}"
 }
 
+echo "--- installing required packages"
+apt install -y git
+
 echo "--- installing dependencies"
 pip install -q --no-cache-dir -r requirements.txt -e .
 
