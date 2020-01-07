@@ -9,6 +9,7 @@ upload_tests() {
 }
 
 echo "--- installing required packages"
+apt update
 apt install -y git
 
 echo "--- installing dependencies"
