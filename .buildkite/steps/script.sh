@@ -8,15 +8,14 @@ upload_tests() {
   buildkite-agent artifact upload "$junit_file" "s3://${AWS_LOGS_BUCKET}/pytest/${BUILDKITE_BRANCH}/${BUILDKITE_BUILD_NUMBER}"
 }
 
-echo "--- installing required packages"
-apt update
-apt install -y git
-
 echo "--- installing dependencies"
-pip install -q --no-cache-dir -r requirements.txt -e .
+pip install -q --no-cache-dir -r requirements.txt
 
 echo "--- listing dependency versions"
 pip freeze
+
+echo "--- installing stellargraph"
+pip install -q --no-cache-dir -e .
 
 echo "+++ running tests"
 exitCode=$?
