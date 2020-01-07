@@ -1,7 +1,7 @@
 ---
 version: "3.4"
 services:
-  runner-3_6: &runner-config
+  runner-3.6: &runner-config
     image: "python:3.6-slim"
     working_dir: /workdir
     volumes:
@@ -21,6 +21,6 @@ services:
       - BUILDKITE_PULL_REQUEST
       - BUILDKITE_JOB_ID
 
-  runner-3_7:
+  runner-3.7:
     <<: *runner-config
     image: "python:3.7-slim"
