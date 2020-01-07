@@ -1,5 +1,18 @@
 ---
-version: "2"         # required to adjust maintainability checks
+version: "2"
+
+checks:
+  argument-count:
+    enabled: false
+
+  file-lines:
+    enabled: false
+
+  method-count:
+    enabled: false
+
+  similar-code:
+    enabled: false
 
 plugins:
   bandit:
@@ -14,3 +27,19 @@ plugins:
   pylint:
     enabled: true
     channel: "beta"
+
+exclude_patterns:
+  # default exclude patterns:
+  - "config/"
+  - "db/"
+  - "dist/"
+  - "features/"
+  - "**/node_modules/"
+  - "script/"
+  - "**/spec/"
+  - "**/test/"
+  - "**/tests/"
+  - "Tests/"
+  - "**/vendor/"
+  - "**/*_test.go"
+  - "**/*.d.ts"
