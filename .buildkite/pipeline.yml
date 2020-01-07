@@ -10,7 +10,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       docker-compose#v3.1.0:
-        run: runner-3.6
+        run: runner-3_6
     agents:
       queue: "t2medium"
 
@@ -19,7 +19,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       docker-compose#v3.1.0:
-        run: runner-3.7
+        run: runner-3_7
     agents:
       queue: "t2medium"
 
