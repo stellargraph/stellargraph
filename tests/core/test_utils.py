@@ -103,7 +103,7 @@ def test_chebyshev_polynomial(example_graph):
 def test_GCN_Aadj_feats_op(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
-    features = example_graph.get_feature_for_nodes(node_list)
+    features = example_graph.node_features(node_list)
 
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
     assert np.array_equal(features, features_)
