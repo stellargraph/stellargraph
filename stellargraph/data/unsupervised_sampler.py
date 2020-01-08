@@ -130,7 +130,7 @@ class UnsupervisedSampler:
         degrees = self.graph.node_degrees()
         sampling_distribution = [degrees[n] ** 0.75 for n in all_nodes]
 
-        walks = self.walker.run(nodes=self.nodes, length=self.length, n=1, seed=0)
+        walks = self.walker.run(nodes=self.nodes, length=self.length, n=1)
 
         # first item in each walk is the target/head node
         targets = [walk[0] for walk in walks]

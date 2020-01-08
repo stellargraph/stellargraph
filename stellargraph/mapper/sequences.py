@@ -277,7 +277,7 @@ class OnDemandLinkSequence(Sequence):
         self.shuffle = shuffle
         self._batches = self._create_batches()
         self.length = len(self._batches)
-        self.data_size = sum([len(batch[0]) for batch in self._batches])
+        self.data_size = sum(len(batch[0]) for batch in self._batches)
 
     def __getitem__(self, batch_num):
         """
