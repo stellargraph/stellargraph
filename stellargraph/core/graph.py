@@ -38,8 +38,6 @@ def from_networkx(
     target_name=globalvar.TARGET_ATTR_NAME,
     node_features=None,
     dtype="float32",
-    edge_weight_label=None,
-    default_edge_weight=None,
 ):
     from .graph_networkx import _convert_from_node_data, _convert_from_node_attribute
     from ..data.node_data import NodeData
