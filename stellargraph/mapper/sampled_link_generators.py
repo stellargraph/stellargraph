@@ -224,7 +224,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         Get the sampler for a particular batch number. Each batch number has an associated sampler
         with its own random state, so that batches being fetched in parallel do not interfere with
         each other's random states. The seed for each sampler is a combination of the Sequence
-        object's seed and the batch number.
+        object's seed and the batch number. For its intended use in a Keras/TF workflow, if there
+        are N batches in an epoch, there will be N samplers created, each corresponding to a
+        particular ``batch_num``.
 
         Args:
             batch_num (int): Batch number
