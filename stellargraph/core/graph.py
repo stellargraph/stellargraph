@@ -24,6 +24,82 @@ __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 from typing import Iterable, Any, Mapping, Optional, Union
 
 from .schema import GraphSchema
+from .. import globalvar
+
+
+def from_networkx(
+    graph,
+    edge_weight_label="weight",
+    node_type_name=globalvar.TYPE_ATTR_NAME,
+    edge_type_name=globalvar.TYPE_ATTR_NAME,
+    node_type_default=globalvar.NODE_TYPE_DEFAULT,
+    edge_type_default=globalvar.NODE_TYPE_DEFAULT,
+    feature_name=globalvar.FEATURE_ATTR_NAME,
+    target_name=globalvar.TARGET_ATTR_NAME,
+    node_features=None,
+    dtype="float32",
+    edge_weight_label=None,
+    default_edge_weight=None,
+):
+    from .graph_networkx import _convert_from_node_data, _convert_from_node_attribute
+    from ..data.node_data import NodeData
+    import pandas as pd
+
+    def node_type(node_data):
+        return node_data.setdefault(node_type_name, node_type_default)
+
+    def edge_type(edge_data):
+        return edge_data.setdefault(edge_type_name, edge_type_default)
+
+    node_types = {node_type(data) for _, data in graph.nodes(data=True)}
+    type_for_node = {n: node_type(data) for n, data in graph.nodes(data=True)}
+    if isinstance(node_features, str):
+        data_index_maps, data_arrays = _convert_from_node_attributes(
+            graph, node_features, node_types, node_type_name, node_type_default, dtype
+        )
+    elif node_features is not None:
+        data_index_maps, data_arrays = _convert_from_node_data(
+            node_features, type_for_node, node_types, dtype
+        )
+    else:
+        data_index_maps = {}
+        data_arrays = {}
+
+    def create_index(nt):
+        node_ids = (
+            pd.DataFrame(data_index_maps[nt].items(), columns=("node_id", "index"))
+            .sort("index")
+            .node_id
+        )
+        return node_ids
+
+    nodes = {
+        nt: pd.DataFrame(array).set_index(create_index(nt))
+        for nt, array in data_arrays.items()
+    }
+
+    def make_edge(edge_tuple):
+        src, dst, data = edge_tuple
+        result = [src, dst, edge_type(data)]
+        if edge_weight_label is not None:
+            result.append(edge_data.get(edge_weight_label))
+        return result
+
+    columns = ["src", "dst", edge_type_name]
+    if edge_weight_label is not None:
+        columns.append(edge_weight_label)
+    edges = pd.DataFrame(make_edge(t) for t in graph.edges(data=True))
+
+    return StandardStellarGraph(
+        graph.is_directed(),
+        nodes=nodes,
+        edges=edges,
+        node_id=NodeData.PANDAS_INDEX,
+        source_id="src",
+        target_id="dst",
+        edge_type=edge_type_name,
+        edge_weight=edge_weight_label,
+    )
 
 
 class StellarGraphFactory(type):
@@ -38,10 +114,7 @@ class StellarGraphFactory(type):
                 raise ValueError("Restricted keyword 'is_directed'")
             is_directed = cls is StellarDiGraph
             if StellarGraphFactory.is_networkx(args, kwargs):
-                # XXX Import is here to avoid circular definitions
-                from .graph_networkx import NetworkXStellarGraph
-
-                return NetworkXStellarGraph(*args, is_directed=is_directed, **kwargs)
+                return from_networkx(*args, **kwargs)
             else:
                 from .graph_standard import StandardStellarGraph
 
