@@ -18,7 +18,6 @@
 __all__ = ["UnsupervisedSampler"]
 
 
-import numpy as np
 import random
 
 from stellargraph.core.utils import is_real_iterable
@@ -104,7 +103,6 @@ class UnsupervisedSampler:
 
         # Setup an interal random state with the given seed
         self.random = random.Random(seed)
-        self.np_random = np.random.RandomState(seed)
 
     def run(self, batch_size):
         """
@@ -137,36 +135,30 @@ class UnsupervisedSampler:
         # first item in each walk is the target/head node
         targets = [walk[0] for walk in walks]
 
-        positive_pairs = np.array(
-            [
-                (target, positive_context, 1)
-                for target, walk in zip(targets, walks)
-                for positive_context in walk[1:]
-            ],
-            dtype=np.int32,
-        )
+        positive_pairs = [
+            (target, positive_context)
+            for target, walk in zip(targets, walks)
+            for positive_context in walk[1:]
+        ]
 
         negative_samples = self.random.choices(
             all_nodes, weights=sampling_distribution, k=len(positive_pairs)
         )
-        negative_pairs = np.array(
-            [
-                (target, negative_context, 0)
-                for (target, _, _), negative_context in zip(
-                    positive_pairs, negative_samples
-                )
-            ],
-            dtype=np.int32,
-        )
+        negative_pairs = [
+            (target, negative_context)
+            for (target, _), negative_context in zip(positive_pairs, negative_samples)
+        ]
+
+        labels = [1] * len(positive_pairs) + [0] * len(negative_pairs)
 
         # zip and shuffle
-        pairs = np.concatenate((positive_pairs, negative_pairs), axis=0)
-        self.np_random.shuffle(pairs)
+        edge_ids_labels = list(zip(positive_pairs + negative_pairs, labels))
+        self.random.shuffle(edge_ids_labels)
 
         # convert to batches
         return [
-            (pairs[i : i + batch_size, :2], pairs[i : i + batch_size, 2])
-            for i in range(0, len(pairs), batch_size)
+            tuple(zip(*edge_ids_labels[i : i + batch_size]))
+            for i in range(0, len(edge_ids_labels), batch_size)
         ]
 
     def _check_parameter_values(self, batch_size):
