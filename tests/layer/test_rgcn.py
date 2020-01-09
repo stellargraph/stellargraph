@@ -29,17 +29,21 @@ from stellargraph.layer.misc import SqueezedSparseConversion
 import pandas as pd
 
 
+R1 = {"label": "r1"}
+R2 = {"label": "r2"}
+
+
 def create_graph_features():
     G = nx.MultiGraph()
     G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
+    G.add_edges_from([("a", "b", R1), ("b", "c", R1), ("a", "c", R2)])
     return G, np.array([[1, 1], [1, 0], [0, 1]])
 
 
 def create_graph_features_directed():
     G = nx.MultiDiGraph()
     G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
+    G.add_edges_from([("a", "b", R1), ("b", "c", R1), ("a", "c", R2)])
     return G, np.array([[1, 1], [1, 0], [0, 1]])
 
 
