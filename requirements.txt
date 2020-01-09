@@ -1,6 +1,7 @@
 networkx>=2.2
 setuptools>=39.1.0
-tensorflow>=2.0.0
+# FIXME (#626): tensorflow 2.1 breaks hinsage
+tensorflow>=2.0.0,<2.1.0
 numba>=0.39.0
 numpy>=1.14
 scipy>=1.1.0

@@ -21,7 +21,8 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "tensorflow>=2.0.0",
+    # FIXME (#626): tensorflow 2.1 breaks hinsage
+    "tensorflow>=2.0.0,<2.1.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
