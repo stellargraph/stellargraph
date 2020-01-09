@@ -20,12 +20,9 @@ __all__ = [
     "UniformRandomMetaPathWalk",
     "SampledBreadthFirstWalk",
     "SampledHeterogeneousBreadthFirstWalk",
-<<<<<<< HEAD
     "TemporalUniformRandomWalk",
     "TemporalBiasedRandomWalk",
-=======
     "DirectedBreadthFirstNeighbours",
->>>>>>> develop
 ]
 
 
@@ -33,11 +30,8 @@ import numpy as np
 from numpy.random import choice
 import math
 import random
-<<<<<<< HEAD
 import scipy
-=======
 import warnings
->>>>>>> develop
 from collections import defaultdict, deque
 
 from ..core.schema import GraphSchema
