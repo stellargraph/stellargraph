@@ -114,8 +114,11 @@ class StellarGraph:
             a numeric feature vector for each node in the graph.
 
     """
+
     def __init__(self, *args, **kwargs):
+        # Avoid a circular import
         from .graph_networkx import NetworkXStellarGraph
+
         is_directed = kwargs.pop("is_directed", False)
         self._graph = NetworkXStellarGraph(is_directed=is_directed, *args, **kwargs)
 
