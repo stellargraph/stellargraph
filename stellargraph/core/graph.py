@@ -52,7 +52,7 @@ def from_networkx(
     node_types = {node_type(data) for _, data in graph.nodes(data=True)}
     type_for_node = {n: node_type(data) for n, data in graph.nodes(data=True)}
     if isinstance(node_features, str):
-        data_index_maps, data_arrays = _convert_from_node_attributes(
+        data_index_maps, data_arrays = _convert_from_node_attribute(
             graph, node_features, node_types, node_type_name, node_type_default, dtype
         )
     elif node_features is not None:
