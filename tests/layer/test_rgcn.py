@@ -430,7 +430,7 @@ def test_RelationalGraphConvolution_edge_cases():
 def get_As(G):
 
     As = []
-    edge_types = sorted(set(e[-1] for e in G.edges))
+    edge_types = sorted(set(e[-1]["label"] for e in G.edges(data=True)))
     node_list = list(G.nodes)
     node_index = dict(zip(node_list, range(len(node_list))))
     for edge_type in edge_types:
