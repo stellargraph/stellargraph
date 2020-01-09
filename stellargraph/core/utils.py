@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,8 +86,9 @@ def rescale_laplacian(laplacian):
         print("Calculating largest eigenvalue of normalized graph Laplacian...")
         largest_eigval = eigsh(laplacian, 1, which="LM", return_eigenvectors=False)[0]
     except ArpackNoConvergence:
-        print(
-            "Eigenvalue calculation did not converge! Using largest_eigval=2 instead."
+        warnings.warn(
+            "Eigenvalue calculation did not converge! Using largest_eigval=2 instead.",
+            RuntimeWarning,
         )
         largest_eigval = 2
 
@@ -121,6 +122,33 @@ def chebyshev_polynomial(X, k):
         T_k.append(chebyshev_recurrence(T_k[-1], T_k[-2], X))
 
     return T_k
+
+
+def PPNP_Aadj_feats_op(features, A, teleport_probability=0.1):
+    """
+    This function calculates the personalized page rank matrix of Eq 2 in [1].
+    Args:
+        features: node features in the graph
+        A: adjacency matrix
+        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability" of returning to the starting node in the
+        propagation step as in [1].
+
+    [1] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
+    """
+
+    if (teleport_probability > 1.0) or (teleport_probability < 0.0):
+        raise ValueError(
+            "teleport_probability should be between 0.0 and 1.0 (inclusive)"
+        )
+
+    A = A + A.T.multiply(A.T > A) - A.multiply(A.T > A)
+    A = A + sp.diags(np.ones(A.shape[0]) - A.diagonal())
+    A = normalize_adj(A, symmetric=True)
+    A = A.toarray()
+    A = teleport_probability * np.linalg.inv(
+        np.eye(A.shape[0]) - ((1 - teleport_probability) * A)
+    )
+    return features, A
 
 
 def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):

@@ -16,7 +16,7 @@
 
 import pytest
 import networkx as nx
-
+import tensorflow as tf
 from stellargraph import StellarGraph
 from stellargraph.layer import (
     GraphSAGE,
@@ -50,7 +50,7 @@ def example_graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -75,7 +75,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
     #     train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = GraphSAGE(
-        layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
+        layer_sizes=[8, 8], generator=generator, bias=True, dropout=0.5
     )
 
     if link_prediction:
@@ -104,15 +104,22 @@ def create_graphSAGE_model(graph, link_prediction=False):
 def create_HinSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
-        generator = HinSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 1])
+        generator = HinSAGELinkGenerator(
+            graph,
+            batch_size=2,
+            num_samples=[2, 1],
+            head_node_types=["default", "default"],
+        )
         edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
         train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
     else:
-        generator = HinSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
+        generator = HinSAGENodeGenerator(
+            graph, batch_size=2, num_samples=[2, 2], head_node_type="default"
+        )
         train_gen = generator.flow([1, 2], np.array([[1, 0], [0, 1]]))
 
     base_model = HinSAGE(
-        layer_sizes=[8, 8], generator=train_gen, bias=True, dropout=0.5
+        layer_sizes=[8, 8], generator=generator, bias=True, dropout=0.5
     )
 
     if link_prediction:
@@ -176,6 +183,7 @@ def create_GAT_model(graph):
 # Test for class Ensemble instance creation with invalid parameters given.
 #
 def test_ensemble_init_parameters():
+    tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
 
@@ -255,6 +263,7 @@ def test_ensemble_init_parameters():
 
 
 def test_compile():
+    tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
 
@@ -314,6 +323,7 @@ def test_compile():
 
 
 def test_Ensemble_fit_generator():
+    tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
 
@@ -336,7 +346,7 @@ def test_Ensemble_fit_generator():
             optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
         )
 
-        ens.fit_generator(train_gen, epochs=10, verbose=0, shuffle=False)
+        ens.fit_generator(train_gen, epochs=1, verbose=0, shuffle=False)
 
         with pytest.raises(ValueError):
             ens.fit_generator(
@@ -349,6 +359,7 @@ def test_Ensemble_fit_generator():
 
 
 def test_BaggingEnsemble_fit_generator():
+    tf.keras.backend.clear_session()
 
     train_data = np.array([1, 2])
     train_targets = np.array([[1, 0], [0, 1]])
@@ -378,7 +389,7 @@ def test_BaggingEnsemble_fit_generator():
             generator=generator,
             train_data=train_data,
             train_targets=train_targets,
-            epochs=10,
+            epochs=1,
             validation_data=train_gen,
             verbose=0,
             shuffle=False,
@@ -443,6 +454,7 @@ def test_BaggingEnsemble_fit_generator():
 
 
 def test_evaluate_generator():
+    tf.keras.backend.clear_session()
 
     test_data = np.array([3, 4, 5])
     test_targets = np.array([[1, 0], [0, 1], [0, 1]])
@@ -541,6 +553,8 @@ def test_evaluate_generator():
 
 def test_predict_generator():
 
+    tf.keras.backend.clear_session()
+
     # test_data = np.array([[0, 0], [1, 1], [0.8, 0.8]])
     test_data = np.array([4, 5, 6])
     test_targets = np.array([[1, 0], [0, 1], [0, 1]])
@@ -636,7 +650,7 @@ def test_predict_generator():
 # Tests for link prediction that can't be combined easily with the node attribute inference workflow above.
 #
 def test_evaluate_generator_link_prediction():
-
+    tf.keras.backend.clear_session()
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
     edge_labels_test = np.array([1, 1, 0])
 
@@ -652,7 +666,7 @@ def test_evaluate_generator_link_prediction():
         keras_model = gnn_model[1]
         generator = gnn_model[2]
 
-        ens = Ensemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
@@ -694,7 +708,7 @@ def test_evaluate_generator_link_prediction():
         #
         # Repeat for BaggingEnsemble
 
-        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
@@ -735,7 +749,7 @@ def test_evaluate_generator_link_prediction():
 
 
 def test_predict_generator_link_prediction():
-
+    tf.keras.backend.clear_session()
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
 
     graph = example_graph_1(feature_size=2)
@@ -750,7 +764,7 @@ def test_predict_generator_link_prediction():
         keras_model = gnn_model[1]
         generator = gnn_model[2]
 
-        ens = Ensemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = Ensemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]
@@ -780,7 +794,7 @@ def test_predict_generator_link_prediction():
 
         #
         # Repeat for BaggingEnsemble
-        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=3)
+        ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=1)
 
         ens.compile(
             optimizer=Adam(), loss=binary_crossentropy, weighted_metrics=["acc"]

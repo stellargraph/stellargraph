@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda, Reshape, Embedding
 import warnings
 
+from ..mapper import Attri2VecLinkGenerator, Attri2VecNodeGenerator
+
 
 class Attri2Vec:
     """
@@ -50,11 +52,10 @@ class Attri2Vec:
         self,
         layer_sizes,
         generator=None,
-        input_dim=None,
-        node_num=None,
         bias=False,
         activation="sigmoid",
         normalize=None,
+        **kwargs
     ):
 
         if activation == "linear" or activation == "relu" or activation == "sigmoid":
@@ -79,26 +80,11 @@ class Attri2Vec:
                 )
             )
 
-        # Get the input_dim and node_num from the generator if it is given
-        self.generator = generator
+        # Get the model parameters from the generator or the keyword arguments
         if generator is not None:
-            feature_sizes = generator.generator.graph.node_feature_sizes()
-            if len(feature_sizes) > 1:
-                raise RuntimeError(
-                    "Attri2Vec called on graph with more than one node type."
-                )
-
-            self.input_feature_size = feature_sizes.popitem()[1]
-            self.input_node_num = generator.generator.graph.number_of_nodes()
-
-        elif input_dim is not None and node_num is not None:
-            self.input_feature_size = input_dim
-            self.input_node_num = node_num
-
+            self._get_sizes_from_generator(generator)
         else:
-            raise RuntimeError(
-                "If generator is not provided, input_dim and node_num must be specified."
-            )
+            self._get_sizes_from_keywords(kwargs)
 
         # Model parameters
         self.n_layers = len(layer_sizes)
@@ -106,6 +92,43 @@ class Attri2Vec:
 
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
+
+    def _get_sizes_from_generator(self, generator):
+        """
+        Sets node_num and input_feature_size from the generator.
+        Args:
+             generator: The supplied generator.
+        """
+        if not isinstance(generator, (Attri2VecNodeGenerator, Attri2VecLinkGenerator)):
+            raise TypeError(
+                "Generator should be an instance of Attri2VecNodeGenerator or Attri2VecLinkGenerator"
+            )
+
+        self.multiplicity = generator.multiplicity
+        self.input_node_num = generator.graph.number_of_nodes()
+
+        feature_sizes = generator.graph.node_feature_sizes()
+        if len(feature_sizes) > 1:
+            raise RuntimeError(
+                "Attri2Vec called on graph with more than one node type."
+            )
+        self.input_feature_size = feature_sizes.popitem()[1]
+
+    def _get_sizes_from_keywords(self, kwargs):
+        """
+        Sets node_num and input_feature_size from the keywords.
+        Args:
+             kwargs: The additional keyword arguments.
+        """
+        try:
+            self.input_node_num = kwargs["node_num"]
+            self.input_feature_size = kwargs["input_dim"]
+            self.multiplicity = kwargs["multiplicity"]
+
+        except KeyError:
+            raise KeyError(
+                "Generator not provided; node_num, multiplicity, and input_dim must be specified."
+            )
 
     def __call__(self, xin):
         """
@@ -174,15 +197,24 @@ class Attri2Vec:
 
     def build(self):
         """
-        Builds a Attri2Vec model for context node prediction.
+        Builds a Attri2Vec model for node or link/node pair prediction, depending on the generator used to construct
+        the model (whether it is a node or link/node pair generator).
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` contains Keras input tensor(s)
-            for the Attri2Vec model to perform context node prediction and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1]).
+            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
+            for the specified Attri2Vec model (either node or link/node pair model) and ``x_out`` contains
+            model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        return self.link_model()
+        if self.multiplicity == 1:
+            return self.node_model()
+        elif self.multiplicity == 2:
+            return self.link_model()
+        else:
+            raise RuntimeError(
+                "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
+                "link_model method explicitly to build node or link prediction model, respectively."
+            )
 
     def default_model(self, flatten_output=True):
         warnings.warn(

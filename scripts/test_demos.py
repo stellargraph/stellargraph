@@ -1,4 +1,41 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2019 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+The StellarGraph class that encapsulates information required for
+a machine-learning ready graph used by models.
+
+"""
 #!/usr/bin/env python
+#
+# -*- coding: utf-8 -*-
+#
+# Copyright 2019 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import os
 import sys
@@ -31,29 +68,31 @@ scripts = [
         "path": "demos/link-prediction/graphsage/cora-links-example.py",
         "args": "-l {CORA_DIR} -e 5",
     },
-#    {
-#        "name": "HinSAGE Movielens Demo script",
-#        "path": "demos/link-prediction/hinsage/movielens-recommender.py",
-#        "args": "-p {ML100_DIR} -f {SCRIPT_DIR}/ml-100k-config.json -e 5",
-#    },
+    #    {
+    #        "name": "HinSAGE Movielens Demo script",
+    #        "path": "demos/link-prediction/hinsage/movielens-recommender.py",
+    #        "args": "-p {ML100_DIR} -f {SCRIPT_DIR}/ml-100k-config.json -e 5",
+    #    },
 ]
 
 # Datasets & arguments
 argument_dict = {
     "CORA_DIR": os.path.expandvars("$HOME/data/cora"),
-#    "ML100_DIR": os.path.expandvars("$HOME/data/ml-100k"),
+    #    "ML100_DIR": os.path.expandvars("$HOME/data/ml-100k"),
 }
 
 # Jupyter notebooks to test:
 notebook_paths = [
+    "demos/node-classification/attri2vec/",
     "demos/node-classification/gat/",
     "demos/node-classification/graphsage/",
     "demos/node-classification/node2vec/",
     "demos/node-classification/sgc/",
+    # "demos/link-prediction/attri2vec/",
     "demos/link-prediction/graphsage/",
-    #"demos/link-prediction/hinsage/",
+    # "demos/link-prediction/hinsage/",
     "demos/link-prediction/random-walks/",
-    #"demos/interpretability/gcn/",
+    # "demos/interpretability/gcn/",
     "demos/calibration",
     "demos/embeddings",
     "demos/ensembles",
@@ -114,7 +153,7 @@ def test_scripts():
     num_passed = 0
     for script in scripts:
         abs_script_path = os.path.join(SGDIR, script["path"])
-        argument_dict['SCRIPT_DIR'] =  os.path.dirname(abs_script_path)
+        argument_dict["SCRIPT_DIR"] = os.path.dirname(abs_script_path)
 
         cmd_args = script["args"].format(**argument_dict)
         cmd_line = "python " + abs_script_path + " " + cmd_args

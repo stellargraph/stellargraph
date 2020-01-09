@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ The mapper package contains classes and functions to map graph data to neural ne
 
 # __all__ = ["link_mappers", "node_mappers"]
 
-# Expose the mappers
-from .node_mappers import *
-from .link_mappers import *
+# Expose the generators
+from .sequences import *
+from .sampled_link_generators import *
+from .sampled_node_generators import *
+from .full_batch_generators import *
+from .mini_batch_node_generators import *

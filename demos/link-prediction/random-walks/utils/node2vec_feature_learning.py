@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import pandas as pd
 
 
 class Node2VecFeatureLearning(object):
-
-    def __init__(self, nxG=None, embeddings_filename=r'..\data\model.emb'):
+    def __init__(self, nxG=None, embeddings_filename=r"..\data\model.emb"):
         self.nxG = nxG
         self.G = None
         self.model = None
@@ -44,13 +43,19 @@ class Node2VecFeatureLearning(object):
         """
         time_b = time.time()
         walks = [list(map(str, walk)) for walk in walks]
-        self.model = Word2Vec(walks, size=d, window=k, min_count=0, sg=1, workers=2, iter=1)
+        self.model = Word2Vec(
+            walks, size=d, window=k, min_count=0, sg=1, workers=2, iter=1
+        )
         self.model.wv.save_word2vec_format(self.embeddings_filename)
-        print("({}) Time for learning embeddings {:.0f} seconds.".format(type(self).__name__, time.time()-time_b))
+        print(
+            "({}) Time for learning embeddings {:.0f} seconds.".format(
+                type(self).__name__, time.time() - time_b
+            )
+        )
 
         return
 
-    def _assert_positive_int(self, val, msg=''):
+    def _assert_positive_int(self, val, msg=""):
         """
         Raises ValueError exception if val is not a positive integer.
         :param val: The value to check
@@ -59,7 +64,7 @@ class Node2VecFeatureLearning(object):
         if val <= 0 or not isinstance(val, int):
             raise ValueError(msg)
 
-    def _assert_positive(self, val, msg=''):
+    def _assert_positive(self, val, msg=""):
         """
         Raises ValueError exception if val is not a positive number.
         :param val: The value to check
@@ -67,7 +72,6 @@ class Node2VecFeatureLearning(object):
         """
         if val <= 0:
             raise ValueError(msg)
-
 
     def fit(self, p=1, q=1, d=128, r=10, l=80, k=10):
         """
@@ -93,10 +97,13 @@ class Node2VecFeatureLearning(object):
         self.G.preprocess_transition_probs()
         time_b = time.time()
         walks = self.G.simulate_walks(r, l)
-        print("({}) Time for random walks {:.0f} seconds".format(type(self).__name__, time.time()-time_b))
+        print(
+            "({}) Time for random walks {:.0f} seconds".format(
+                type(self).__name__, time.time() - time_b
+            )
+        )
         self.learn_embeddings(walks, d, k)
-        print("Total time for fit()", time.time()-start_time_fit, "seconds")
-
+        print("Total time for fit()", time.time() - start_time_fit, "seconds")
 
     def from_file(self, filename):
         """
@@ -106,38 +113,40 @@ class Node2VecFeatureLearning(object):
         :param filename: The filename storing the model
         :return:  None
         """
-        self.model = pd.read_csv(filename, delimiter=' ', skiprows=1, header=None)
-        self.model.iloc[:, 0] = self.model.iloc[:, 0].astype(str)  # this is so that indexing works the same as having
+        self.model = pd.read_csv(filename, delimiter=" ", skiprows=1, header=None)
+        self.model.iloc[:, 0] = self.model.iloc[:, 0].astype(
+            str
+        )  # this is so that indexing works the same as having
         # trained the model with self.fit()
         self.model.index = self.model.iloc[:, 0]
         self.model = self.model.drop([0], 1)
         print(self.model.head(2))
 
     def select_operator_from_str(self, binary_operator):
-        if binary_operator == 'l1':
+        if binary_operator == "l1":
             return self.operator_l1
-        elif binary_operator == 'l2':
+        elif binary_operator == "l2":
             return self.operator_l2
-        elif binary_operator == 'avg':
+        elif binary_operator == "avg":
             return self.operator_avg
-        elif binary_operator == 'h': #hadamard
+        elif binary_operator == "h":  # hadamard
             return self.operator_hadamard
         else:
             raise ValueError("Invalid binary operator {}".format(binary_operator))
 
     def operator_hadamard(self, u, v):
-        return u*v
+        return u * v
 
     def operator_avg(self, u, v):
-        return (u+v)/2.0
+        return (u + v) / 2.0
 
     def operator_l2(self, u, v):
-        return (u-v)**2
+        return (u - v) ** 2
 
     def operator_l1(self, u, v):
-        return np.abs(u-v)
+        return np.abs(u - v)
 
-    def transform(self, edge_data, binary_operator='h'):
+    def transform(self, edge_data, binary_operator="h"):
         """
         It calculates edge features for the given binary operator applied to the node features in data_edge
 
@@ -157,6 +166,8 @@ class Node2VecFeatureLearning(object):
             if type(self.model) is Word2Vec:
                 X.append(func_bin_operator(self.model[u_str], self.model[v_str]))
             else:  # Pandas Dataframe
-                X.append(func_bin_operator(self.model.loc[u_str], self.model.loc[v_str]))
+                X.append(
+                    func_bin_operator(self.model.loc[u_str], self.model.loc[v_str])
+                )
 
         return np.array(X), edge_data[1]

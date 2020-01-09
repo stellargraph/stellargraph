@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,13 +19,32 @@
 HinSAGE tests
 
 """
-
-
-from stellargraph.layer.hinsage import *
+import pytest
+import numpy as np
+import networkx as nx
 from tensorflow import keras
 from tensorflow.keras import regularizers
-import numpy as np
-import pytest
+from stellargraph import StellarGraph
+from stellargraph.layer.hinsage import *
+from stellargraph.mapper import *
+
+
+def example_hin_1(feature_size_by_type=None):
+    G = nx.Graph()
+    G.add_nodes_from([0, 1, 2, 3], label="A")
+    G.add_nodes_from([4, 5, 6], label="B")
+    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
+    G.add_edges_from([(4, 5)], label="F")
+
+    # Add example features
+    if feature_size_by_type is not None:
+        for v, vdata in G.nodes(data=True):
+            nt = vdata["label"]
+            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
+        return StellarGraph(G, node_features="feature")
+
+    else:
+        return StellarGraph(G)
 
 
 def test_mean_hin_agg_constructor():
@@ -140,6 +159,7 @@ def test_hinsage_constructor():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 2},
     )
     assert hs.n_layers == 2
@@ -157,6 +177,7 @@ def test_hinsage_constructor():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 2},
     )
     assert hs.n_layers == 2
@@ -176,6 +197,7 @@ def test_hinsage_constructor_with_agg():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 2},
         aggregator=MeanHinAggregator,
     )
@@ -196,6 +218,7 @@ def test_hinsage_input_shapes():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 4},
     )
     assert hs._input_shapes() == [(1, 2), (2, 2), (2, 4), (4, 2), (4, 4), (4, 4)]
@@ -214,6 +237,7 @@ def test_hinsage_constructor_wrong_normalisation():
                 ("2", []),
                 ("2", []),
             ],
+            multiplicity=1,
             input_dim={"1": 2, "2": 2},
             normalize="unknown",
         )
@@ -231,6 +255,7 @@ def test_hinsage_apply():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 4},
         normalize="none",
         kernel_initializer="ones",
@@ -274,6 +299,7 @@ def test_hinsage_default_model():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 4},
         normalize="none",
         kernel_initializer="ones",
@@ -308,6 +334,7 @@ def test_hinsage_serialize():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 4},
         normalize="none",
         bias=False,
@@ -353,6 +380,7 @@ def test_hinsage_zero_neighbours():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 4},
         normalize="none",
         kernel_initializer="ones",
@@ -387,6 +415,7 @@ def test_hinsage_aggregators():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 4},
         aggregator=MeanHinAggregator,
         normalize="none",
@@ -422,6 +451,7 @@ def test_hinsage_passing_activations():
             ("2", []),
             ("2", []),
         ],
+        multiplicity=1,
         input_dim={"1": 2, "2": 2},
     )
     assert hs.activations == ["relu", "linear"]
@@ -438,6 +468,7 @@ def test_hinsage_passing_activations():
                 ("2", []),
                 ("2", []),
             ],
+            multiplicity=1,
             input_dim={"1": 2, "2": 2},
             activations=["fred", "wilma"],
         )
@@ -455,6 +486,7 @@ def test_hinsage_passing_activations():
                 ("2", []),
             ],
             input_dim={"1": 2, "2": 2},
+            multiplicity=1,
             activations=["relu"],
         )
 
@@ -470,6 +502,7 @@ def test_hinsage_passing_activations():
             ("2", []),
         ],
         input_dim={"1": 2, "2": 2},
+        multiplicity=1,
         activations=["linear"] * 2,
     )
     assert hs.activations == ["linear"] * 2
@@ -488,6 +521,7 @@ def test_hinsage_regularisers():
             ("2", []),
         ],
         input_dim={"1": 2, "2": 4},
+        multiplicity=1,
         normalize="none",
         kernel_initializer="ones",
         kernel_regularizer=regularizers.l2(0.01),
@@ -506,7 +540,48 @@ def test_hinsage_regularisers():
                 ("2", []),
             ],
             input_dim={"1": 2, "2": 4},
+            multiplicity=1,
             normalize="none",
             kernel_initializer="ones",
             kernel_regularizer="fred",
         )
+
+
+def test_hinsage_unitary_layer_size():
+    with pytest.raises(ValueError):
+        hs = HinSAGE(
+            layer_sizes=[2, 1],
+            n_samples=[2, 2],
+            input_neighbor_tree=[
+                ("1", [1, 2]),
+                ("1", [3, 4]),
+                ("2", [5]),
+                ("1", []),
+                ("2", []),
+                ("2", []),
+            ],
+            input_dim={"1": 2, "2": 4},
+            multiplicity=1,
+            normalize="none",
+            kernel_initializer="ones",
+        )
+
+
+def test_hinsage_from_generator():
+    G = example_hin_1({"A": 8, "B": 4})
+
+    gen = HinSAGENodeGenerator(G, 1, [2, 2], "A", seed=1234)
+
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        generator=gen,
+        normalize="none",
+        kernel_initializer="ones",
+        activations=["relu", "relu"],
+    )
+
+    xin, xout = hs.build()
+    model = keras.Model(inputs=xin, outputs=xout)
+    actual = model.predict_generator(gen.flow([1, 2]))
+    expected = np.array([[26, 29], [32, 31]], dtype=np.float32)
+    assert actual == pytest.approx(expected)

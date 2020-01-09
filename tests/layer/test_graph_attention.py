@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,21 +17,16 @@
 """
 GAT tests
 """
-from stellargraph.core.graph import StellarGraph
-from stellargraph.mapper.node_mappers import (
-    FullBatchNodeGenerator,
-    GraphSAGENodeGenerator,
-)
-from stellargraph.layer import *
-
-from tensorflow import keras
-from tensorflow.keras import backend as K
-from tensorflow.keras.layers import Input
-
 import numpy as np
 import networkx as nx
 import pytest
 import scipy.sparse as sps
+from tensorflow import keras
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Input
+from stellargraph.core.graph import StellarGraph
+from stellargraph.mapper import FullBatchNodeGenerator, GraphSAGENodeGenerator
+from stellargraph.layer import *
 
 
 def example_graph_1(feature_size=None):
@@ -43,7 +38,7 @@ def example_graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarGraph(G, node_features="feature")
 
     else:

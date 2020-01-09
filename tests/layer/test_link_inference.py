@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,8 +44,6 @@ class Test_Link_Inference(object):
 
         expected = np.dot(x_src, x_dst)
 
-        sess = tf.InteractiveSession()
-
         x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
         x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
@@ -54,30 +52,28 @@ class Test_Link_Inference(object):
         )
         print(
             "link inference with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
-                li.eval(), expected
+                li, expected
             )
         )
-        assert li.eval() == pytest.approx(expected)
-        assert li.eval() == pytest.approx(0)
+        assert li.numpy() == pytest.approx(expected, abs=1.5e-7)
+        assert li.numpy() == pytest.approx(0, abs=1.5e-7)
 
         li = link_inference(edge_embedding_method="ip", output_act="linear")(
             [x_src, x_src]
         )
-        print("link inference with 'ip' operator on unit vector: ", li.eval())
-        assert li.eval() == pytest.approx(1)
+        print("link inference with 'ip' operator on unit vector: ", li)
+        assert li.numpy() == pytest.approx(1, abs=1.5e-7)
 
         # Test sigmoid activation
         li = link_classification(edge_embedding_method="ip", output_act="sigmoid")(
             [x_src, x_dst]
         )
-        assert li.eval() == pytest.approx(0.5)
+        assert li.numpy() == pytest.approx(0.5)
 
         li = link_classification(edge_embedding_method="ip", output_act="sigmoid")(
             [x_src, x_src]
         )
-        assert li.eval() == pytest.approx(0.7310586)
-
-        sess.close()
+        assert li.numpy() == pytest.approx(0.7310586, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
         """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
@@ -126,8 +122,6 @@ class Test_Link_Classification(object):
 
         expected = np.dot(x_src, x_dst)
 
-        sess = tf.InteractiveSession()
-
         x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
         x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
@@ -135,25 +129,23 @@ class Test_Link_Classification(object):
         li = link_classification(edge_embedding_method="ip", output_act="linear")(
             [x_src, x_dst]
         )
-        assert li.eval() == pytest.approx(0)
+        assert li.numpy() == pytest.approx(0, abs=1.5e-7)
 
         li = link_classification(edge_embedding_method="ip", output_act="linear")(
             [x_src, x_src]
         )
-        assert li.eval() == pytest.approx(1)
+        assert li.numpy()[0, 0] == pytest.approx(1, abs=1.5e-7)
 
         # Test sigmoid activation
         li = link_classification(edge_embedding_method="ip", output_act="sigmoid")(
             [x_src, x_dst]
         )
-        assert li.eval() == pytest.approx(0.5)
+        assert li.numpy() == pytest.approx(0.5, abs=1.5e-7)
 
         li = link_classification(edge_embedding_method="ip", output_act="sigmoid")(
             [x_src, x_src]
         )
-        assert li.eval() == pytest.approx(0.7310586)
-
-        sess.close()
+        assert li.numpy() == pytest.approx(0.7310586, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
         """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
@@ -207,24 +199,20 @@ class Test_Link_Regression(object):
 
         expected = np.dot(x_src, x_dst)
 
-        sess = tf.InteractiveSession()
-
         x_src = tf.constant(x_src, shape=(1, self.d), dtype="float64")
         x_dst = tf.constant(x_dst, shape=(1, self.d), dtype="float64")
 
         li = link_regression(edge_embedding_method="ip")([x_src, x_dst])
         print(
             "link regression with 'ip' operator on orthonormal vectors: {}, expected: {}".format(
-                li.eval(), expected
+                li, expected
             )
         )
-        assert li.eval() == pytest.approx(0)
+        assert li.numpy() == pytest.approx(0, abs=1.5e-7)
 
         li = link_regression(edge_embedding_method="ip")([x_src, x_src])
-        print("link regression with 'ip' operator on unit vector: ", li.eval())
-        assert li.eval() == pytest.approx(1)
-
-        sess.close()
+        print("link regression with 'ip' operator on unit vector: ", li)
+        assert li.numpy() == pytest.approx(1, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
         """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
