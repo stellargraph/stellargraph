@@ -26,6 +26,7 @@ from stellargraph.core.graph import StellarGraph
 import random
 import itertools as it
 from collections import defaultdict
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -97,9 +98,11 @@ def _convert_from_node_attribute(
 
         # Warn if nodes don't have the attribute
         if 0 in data_sizes:
-            print(
-                "Warning: Some nodes have no value for attribute '{}', "
-                "using default value.".format(attr_name)
+            warnings.warn(
+                "Some nodes have no value for attribute '{}', "
+                "using default value.".format(attr_name),
+                RuntimeWarning,
+                stacklevel=2,
             )
             data_sizes.discard(0)
 
@@ -401,7 +404,7 @@ class NetworkXStellarGraph(StellarGraph):
         node_indices = [nt_id_to_index.get(n) for n in nodes]
         return node_indices
 
-    def get_feature_for_nodes(self, nodes, node_type=None):
+    def node_features(self, nodes, node_type=None):
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -415,7 +418,7 @@ class NetworkXStellarGraph(StellarGraph):
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        # TODO: change method's name to node_features(), and add @property decorator
+        # TODO: add @property decorator
         if not is_real_iterable(nodes):
             nodes = [nodes]
 
@@ -504,7 +507,7 @@ class NetworkXStellarGraph(StellarGraph):
                 if self._get_node_type(ndata) == node_type
             ]
 
-    def type_for_node(self, node):
+    def node_type(self, node):
         """
         Get the type of the node
 

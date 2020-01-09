@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -372,7 +372,7 @@ class RGCN:
         in the same way as the adjacency matrix.
 
     Examples:
-        Creating a RGCN node classification model from an existing :class:`StellarGraphBase`
+        Creating a RGCN node classification model from an existing :class:`StellarGraph`
         object ``G``::
 
             generator = RelationalFullBatchNodeGenerator(G)

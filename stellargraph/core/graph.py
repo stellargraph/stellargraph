@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -237,8 +237,89 @@ class StellarGraph(metaclass=StellarGraphFactory):
         """
         raise NotImplementedError
 
+    def nodes_of_type(self, node_type=None):
+        """
+        Get the nodes of the graph with the specified node types.
+
+        Args:
+            node_type (hashable, optional): a type of nodes that exist in the graph
+
+        Returns:
+            A list of node IDs with type node_type
+        """
+        raise NotImplementedError
+
+    def node_type(self, node):
+        """
+        Get the type of the node
+
+        Args:
+            node: Node ID
+
+        Returns:
+            Node type
+        """
+        raise NotImplementedError
+
+    @property
+    def node_types(self):
+        """
+        Get a list of all node types in the graph.
+
+        Returns:
+            set of types
+        """
+        raise NotImplementedError
+
+    def node_feature_sizes(self, node_types=None):
+        """
+        Get the feature sizes for the specified node types.
+
+        Args:
+            node_types (list, optional): A list of node types. If None all current node types
+                will be used.
+
+        Returns:
+            A dictionary of node type and integer feature size.
+        """
+        raise NotImplementedError
+
+    def node_features(self, nodes, node_type=None):
+        """
+        Get the numeric feature vectors for the specified node or nodes.
+        If the node type is not specified the node types will be found
+        for all nodes. It is therefore important to supply the ``node_type``
+        for this method to be fast.
+
+        Args:
+            nodes (list or hashable): Node ID or list of node IDs
+            node_type (hashable): the type of the nodes.
+
+        Returns:
+            Numpy array containing the node features for the requested nodes.
+        """
+        raise NotImplementedError
+
     ##################################################################
     # Computationally intensive methods:
+
+    def info(self, show_attributes=True, sample=None):
+        """
+        Return an information string summarizing information on the current graph.
+        This includes node and edge type information and their attributes.
+
+        Note: This requires processing all nodes and edges and could take a long
+        time for a large graph.
+
+        Args:
+            show_attributes (bool, default True): If True, include attributes information
+            sample (int): To speed up the graph analysis, use only a random sample of
+                          this many nodes and edges.
+
+        Returns:
+            An information string.
+        """
+        raise NotImplementedError
 
     def node_degrees(self) -> Mapping[Any, int]:
         """
