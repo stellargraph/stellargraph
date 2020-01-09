@@ -80,7 +80,7 @@ def from_networkx(
         src, dst, data = edge_tuple
         result = [src, dst, edge_type(data)]
         if edge_weight_label is not None:
-            result.append(edge_data.get(edge_weight_label))
+            result.append(data.get(edge_weight_label))
         return result
 
     columns = ["src", "dst", edge_type_name]
