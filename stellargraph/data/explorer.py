@@ -219,7 +219,6 @@ class UniformRandomWalk(GraphWalk):
         return walk
 
 
-
 def naive_weighted_choices(rs, weights):
     """
     Select an index at random, weighted by the iterator `weights` of
