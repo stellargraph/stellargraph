@@ -45,7 +45,7 @@ class Test_RelationalFullBatchNodeGenerator:
         {n: f for n, f in zip(nodes, features)}, orient="index"
     )
     G = StellarDiGraph(gnx, node_features=node_features)
-    N = len(G.nodes())
+    N = G.number_of_nodes()
     edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
     num_relationships = len(edge_types)
 
@@ -63,7 +63,7 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def generator_flow(self, G, node_ids, node_targets, sparse=False):
         generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)
-        n_nodes = len(G.nodes())
+        n_nodes = G.number_of_nodes()
 
         gen = generator.flow(node_ids, node_targets)
         if sparse:

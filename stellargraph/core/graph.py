@@ -41,6 +41,7 @@ def from_networkx(
 ):
     from .graph_networkx import _convert_from_node_data, _convert_from_node_attribute
     from ..data.node_data import NodeData
+    from .graph_standard import StandardStellarGraph
     import pandas as pd
 
     def node_type(node_data):
@@ -86,7 +87,9 @@ def from_networkx(
     columns = ["src", "dst", edge_type_name]
     if edge_weight_label is not None:
         columns.append(edge_weight_label)
-    edges = pd.DataFrame(make_edge(t) for t in graph.edges(data=True))
+    edges = pd.DataFrame(
+        (make_edge(t) for t in graph.edges(data=True)), columns=columns
+    )
 
     return StandardStellarGraph(
         graph.is_directed(),

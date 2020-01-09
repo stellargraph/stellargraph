@@ -759,7 +759,7 @@ class Test_FullBatchNodeGenerator:
     target_dim = 5
 
     G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
-    N = len(G.nodes())
+    N = G.number_of_nodes()
 
     def test_generator_constructor(self):
         generator = FullBatchNodeGenerator(self.G)

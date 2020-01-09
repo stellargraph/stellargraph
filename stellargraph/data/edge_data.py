@@ -312,7 +312,7 @@ class EdgeData(metaclass=EdgeDataFactory):
     ##################################################
     # Edge relationships:
 
-    def edges(self, include_info: bool = False) -> Iterable[tuple]:
+    def edges(self, triple: bool = False, include_info: bool = False) -> Iterable[tuple]:
         """
         Obtains the edges in the graph, where each edge
         is represented by a tuple containing (at least)
@@ -332,6 +332,12 @@ class EdgeData(metaclass=EdgeDataFactory):
                 self.edge_ids(),
                 self.edge_types(),
                 self.edge_weights(),
+            )
+        if triple:
+            return zip(
+                self.source_ids(),
+                self.target_ids(),
+                itertools.repeat(0),
             )
         return zip(self.source_ids(), self.target_ids())
 
@@ -493,10 +499,15 @@ class DefaultEdgeData(EdgeData):
     def edge_weight(self, edge_id: Any) -> Optional[Number]:
         return self._default_edge_weight if self.has_edge(edge_id) else None
 
-    def edges(self, include_info: bool = False) -> Iterable[tuple]:
+    def edges(self, triple: bool = True, include_info: bool = False) -> Iterable[tuple]:
         if include_info:
             return [
                 (e[0], e[1], e[2], self._default_edge_type, self._default_edge_weight)
+                for e in self._external_edges
+            ]
+        elif triple:
+            return [
+                (e[0], e[1], 0)
                 for e in self._external_edges
             ]
         else:
@@ -641,9 +652,9 @@ class TypeDictEdgeData(DefaultEdgeData):
         # Check external identifiers
         return super().edge_weight(edge_id)
 
-    def edges(self, include_info: bool = False) -> Iterable[tuple]:
-        edges = [ed.edges(include_info) for ed in self._data.values()]
-        return itertools.chain(*edges, super().edges(include_info))
+    def edges(self, triple: bool = True, include_info: bool = False) -> Iterable[tuple]:
+        edges = [ed.edges(triple, include_info) for ed in self._data.values()]
+        return itertools.chain(*edges, super().edges(triple, include_info))
 
     def edge_type_set(self) -> Set[Any]:
         return self._data.keys() | super().edge_type_set()
@@ -726,16 +737,8 @@ class MappedEdgeData(DefaultEdgeData):
     def edge_type_set(self) -> Set:
         return self._edge_types | super().edge_type_set()
 
-    def edges(self, include_info: bool = False) -> Iterable[tuple]:
-        if include_info:
-            return zip(
-                self.source_ids(),
-                self.target_ids(),
-                self.edge_ids(),
-                self.edge_types(),
-                self.edge_weights(),
-            )
-        return zip(self.source_ids(), self.target_ids())
+    def edges(self, triple: bool = False, include_info: bool = False) -> Iterable[tuple]:
+        return EdgeData.edges(self, triple, include_info)
 
 
 #############################################

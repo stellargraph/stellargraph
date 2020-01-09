@@ -84,8 +84,8 @@ class StandardStellarGraph(StellarGraph):
     ) -> Union[Iterable[Any], Iterable[tuple]]:
         return self._node_data.nodes(include_info)
 
-    def edges(self, include_info: bool = False) -> Iterable[Any]:
-        return self._edge_data.edges(include_info)
+    def edges(self, triple: bool = False, include_info: bool = False) -> Iterable[Any]:
+        return self._edge_data.edges(triple, include_info)
 
     def has_node(self, node: Any) -> bool:
         return self._node_data.has_node(node)
