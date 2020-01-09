@@ -22,10 +22,6 @@ from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from ..test_utils.graph_fixtures import simple_graph
 
 
-@pytest.fixture(scope="session", autouse=True)
-def graph_and_batches(simple_graph):
-
-
 class TestUnsupervisedSampler(object):
     def test_UnsupervisedSampler_parameter(self, simple_graph):
 
@@ -47,7 +43,7 @@ class TestUnsupervisedSampler(object):
 
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes
         sampler = UnsupervisedSampler(G=simple_graph, nodes=None)
-        assert sampler.nodes == list(g.nodes())
+        assert sampler.nodes == list(simple_graph.nodes())
 
         # if the seed value is provided check
         # that the random choices is reproducable
@@ -71,7 +67,7 @@ class TestUnsupervisedSampler(object):
         batches = sampler.run(batch_size)
 
         # check batch sizes
-        assert len(batches) == np.ceil(len(simple_graph.nodes(0)) * 4 / batch_size)
+        assert len(batches) == np.ceil(len(simple_graph.nodes()) * 4 / batch_size)
         for ids, labels in batches[:-1]:
             assert len(ids) == len(labels) == batch_size
 
