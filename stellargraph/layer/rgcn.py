@@ -372,7 +372,7 @@ class RGCN:
         in the same way as the adjacency matrix.
 
     Examples:
-        Creating a RGCN node classification model from an existing :class:`StellarGraphBase`
+        Creating a RGCN node classification model from an existing :class:`StellarGraph`
         object ``G``::
 
             generator = RelationalFullBatchNodeGenerator(G)
