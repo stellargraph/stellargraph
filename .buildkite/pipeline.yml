@@ -5,6 +5,16 @@ compose-config: &compose-config
     - .buildkite/docker-compose.yml
 
 steps:
+  - label: ":python: 3.5"
+    key: "python_3_5"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3.5
+    agents:
+      queue: "t2medium"
+
   - label: ":python: 3.6"
     key: "python_3_6"
     command: ".buildkite/steps/script.sh"
@@ -106,6 +116,7 @@ steps:
       junit-annotate#v1.7.0:
         artifacts: junit-*.xml
     depends_on:
+      - "python_3_5"
       - "python_3_6"
       - "python_3_7"
     allow_dependency_failure: true

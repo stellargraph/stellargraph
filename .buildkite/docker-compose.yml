@@ -25,3 +25,7 @@ services:
   runner-3.7:
     <<: *runner-config
     image: "python:3.7-slim"
+
+  runner-3.5:
+    <<: *runner-config
+    image: "python:3.5-slim"
