@@ -32,3 +32,11 @@ def node_features(seed=0) -> pd.DataFrame:
 def petersen_graph() -> StellarGraph:
     nxg = nx.petersen_graph()
     return StellarGraph(nxg, node_features=node_features())
+
+
+@pytest.fixture
+def simple_graph() -> StellarGraph:
+    nxg = nx.MultiGraph()
+    nxg.add_nodes_from(range(10))
+    nxg.add_edges_from([(i, i + 1) for i in range(9)])
+    return StellarGraph(nxg, node_features=node_features())

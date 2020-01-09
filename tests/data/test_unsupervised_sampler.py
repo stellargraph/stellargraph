@@ -17,125 +17,41 @@
 import pytest
 
 import numpy as np
-import networkx as nx
-from tensorflow import keras
-
+from collections import defaultdict
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
-from stellargraph.core.graph import StellarGraph
-from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.mapper import *
-from stellargraph.layer import GraphSAGE, link_classification
+from ..test_utils.graph_fixtures import simple_graph
 
 
-def create_test_graph():
-    """
-    Creates a simple graph for testing the unsupervised sampler
-
-    :return: A simple graph with 10 nodes and 20 edges  in networkx format.
-    """
-    g = nx.Graph()
-    edges = [
-        (1, 3),
-        (1, 4),
-        (1, 9),
-        (2, 5),
-        (2, 7),
-        (3, 6),
-        (3, 8),
-        (4, 2),
-        (4, 8),
-        (4, 10),
-        (5, 7),
-        (5, 9),
-        (5, 10),
-        (6, 1),
-        (6, 7),
-        (6, 9),
-        (7, 3),
-        (8, 2),
-        (8, 10),
-        (9, 10),
-    ]
-
-    g.add_edges_from(edges)
-
-    return g
-
-
-def example_Graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-
-    G = StellarGraph(G, node_features="feature")
-    return G
-
-
-def example_Graph_2(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size)
-
-    G = StellarGraph(G, node_features="feature")
-    return G
+@pytest.fixture(scope="session", autouse=True)
+def graph_and_batches(simple_graph):
 
 
 class TestUnsupervisedSampler(object):
-    def test_UnsupervisedSampler_parameter(self):
-
-        g = create_test_graph()
-        # rw = UniformRandomWalk(StellarGraph(g))
+    def test_UnsupervisedSampler_parameter(self, simple_graph):
 
         # if no graph is provided
         with pytest.raises(ValueError):
             UnsupervisedSampler(G=None)
 
-        # graph has to be a Stellargraph object
-        with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g)
-
-        g = StellarGraph(g)
-
-        """
-        # only Uniform random walk is supported at the moment
-        with pytest.raises(TypeError):
-            UnsupervisedSampler(G=g, walker="any random walker")
-
-        # if no walker is provided, default to Uniform Random Walk
-        sampler = UnsupervisedSampler(G=g)
-        assert isinstance(sampler.walker, UniformRandomWalk)
-
-        """
-
         # walk must have length strictly greater than 1
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, length=1)
+            UnsupervisedSampler(G=simple_graph, length=1)
 
         # at least 1 walk from each root node
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, number_of_walks=0)
+            UnsupervisedSampler(G=simple_graph, number_of_walks=0)
 
         # nodes nodes parameter should be an iterable of node IDs
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=g, nodes=1)
+            UnsupervisedSampler(G=simple_graph, nodes=1)
 
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes
-        sampler = UnsupervisedSampler(G=g, nodes=None)
+        sampler = UnsupervisedSampler(G=simple_graph, nodes=None)
         assert sampler.nodes == list(g.nodes())
 
         # if the seed value is provided check
         # that the random choices is reproducable
-        sampler = UnsupervisedSampler(G=g, seed=1)
+        sampler = UnsupervisedSampler(G=simple_graph, seed=1)
         assert sampler.random.choices(range(100), k=10) == [
             13,
             84,
@@ -149,66 +65,39 @@ class TestUnsupervisedSampler(object):
             2,
         ]
 
-    def test_generator_parameter(self):
-
-        g = create_test_graph()
-        g = StellarGraph(g)
-        sampler = UnsupervisedSampler(G=g)
-
-        # generator should be provided with a valid batch size. i.e. an integer >=1
-
-        with pytest.raises(ValueError):
-            sampler.run(batch_size=None)
-
-        with pytest.raises(ValueError):
-            sampler.run(batch_size=0)
-
-        with pytest.raises(ValueError):
-            sampler.run(batch_size=3)
-
-    def test_generator_samples(self):
-
-        n_feat = 4
+    def test_run_batch_sizes(self, simple_graph):
         batch_size = 4
-
-        G = example_Graph_2(n_feat)
-
-        sampler = UnsupervisedSampler(G=G)
-
-        # take the first batch
-        samples = sampler.run(batch_size)[0]
-
-        # return two lists: [(target,context)] pairs and [1/0] binary labels
-        assert len(samples) == 2
-
-        # each (target, context) pair has a matching label
-        assert len(samples[0]) == len(samples[1])
-
-        # batch-size number of samples are returned if batch_size is even
-        assert len(samples[0]) == batch_size
-
-    def test_generator_multiple_batches(self):
-
-        n_feat = 4
-
-        G = example_Graph_2(n_feat)
-
-        # walk length of 2 (i.e. 1 positive context pair) for the 4 nodes in the graph
-        # should produce 8 training examples => 2 batches of 4
-        sampler = UnsupervisedSampler(G=G, length=2, number_of_walks=1)
-        batch_size = 4
-        number_of_batches = 2
-
+        sampler = UnsupervisedSampler(G=simple_graph, length=2, number_of_walks=2)
         batches = sampler.run(batch_size)
 
-        assert len(batches) == number_of_batches
+        # check batch sizes
+        assert len(batches) == np.ceil(len(simple_graph.nodes(0)) * 4 / batch_size)
+        for ids, labels in batches[:-1]:
+            assert len(ids) == len(labels) == batch_size
 
-        # walk length of 3 (i.e. 2 positive context pairs) for the 4 nodes in the graph
-        # should produce 16 training examples => 3 batches of 6, last batch containing less
-        sampler = UnsupervisedSampler(G=G, length=3, number_of_walks=1)
-        batch_size = 6
-        number_of_batches = 3
+        # last batch can be smaller
+        ids, labels = batches[-1]
+        assert len(ids) == len(labels)
+        assert len(ids) <= batch_size
 
+    def test_run_context_pairs(self, simple_graph):
+        batch_size = 4
+        sampler = UnsupervisedSampler(G=simple_graph, length=2, number_of_walks=2)
         batches = sampler.run(batch_size)
 
-        assert len(batches) == number_of_batches
+        grouped_by_target = defaultdict(list)
+
+        for ids, labels in batches:
+            for (target, context), label in zip(ids, labels):
+                grouped_by_target[target].append((context, label))
+
+        assert len(grouped_by_target) == len(simple_graph.nodes())
+
+        for target, sampled in grouped_by_target.items():
+            # exactly 2 positive and 2 negative context pairs for each target node
+            assert len(sampled) == 4
+
+            # since each walk has length = 2, there must be an edge between each positive context pair
+            for context, label in sampled:
+                if label == 1:
+                    assert context in set(simple_graph.neighbors(target))
