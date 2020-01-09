@@ -66,7 +66,7 @@ def from_networkx(
     def create_index(nt):
         node_ids = (
             pd.DataFrame(data_index_maps[nt].items(), columns=("node_id", "index"))
-            .sort("index")
+            .sort_values(by="index")
             .node_id
         )
         return node_ids
