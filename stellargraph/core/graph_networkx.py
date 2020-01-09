@@ -784,13 +784,19 @@ class NetworkXStellarGraph(StellarGraph):
 
         for ty in types:
             node_ids = self.nodes_of_type(ty)
-            features = self.node_features(node_ids, node_type=ty)
+            ty_dict = {self._node_type_attr: ty}
 
-            for node_id, node_features in zip(node_ids, features):
-                graph.add_node(
-                    node_id,
-                    **{self._feature_attr: node_features, self._node_type_attr: ty},
-                )
+            if ty in self._node_attribute_arrays:
+                # has features!
+                features = self.node_features(node_ids, node_type=ty)
+
+                for node_id, node_features in zip(node_ids, features):
+                    graph.add_node(
+                        node_id, **ty_dict, **{self._feature_attr: node_features},
+                    )
+            else:
+                # no features, so just add the type
+                graph.add_nodes_from(node_ids, **ty_dict)
 
         graph.add_edges_from(self.edges(triple=True))
 

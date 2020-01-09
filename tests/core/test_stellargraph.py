@@ -436,6 +436,24 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
+def normalise_nodes(g):
+    def fix_data(data):
+        try:
+            data["feature"] = list(data["feature"])
+        except KeyError:
+            # no feature value to be list-ified
+            pass
+        return data
+
+    return sorted((node_id, fix_data(data)) for node_id, data in g.nodes(data=True))
+
+
+def normalise_edges(g):
+    return sorted(
+        (min(src, dst), max(src, dst), data) for src, dst, data in g.edges(data=True)
+    )
+
+
 @pytest.mark.parametrize("in_nodes", [False, True])
 def test_to_networkx(in_nodes):
     g, node_features = example_benchmark_graph(
@@ -444,18 +462,6 @@ def test_to_networkx(in_nodes):
 
     sg = StellarGraph(g, node_features=node_features)
     new_nx = sg.to_networkx()
-
-    def normalise_nodes(g):
-        return sorted(
-            (node_id, {**data, "feature": list(data["feature"])})
-            for node_id, data in g.nodes(data=True)
-        )
-
-    def normalise_edges(g):
-        return sorted(
-            (min(src, dst), max(src, dst), data)
-            for src, dst, data in g.edges(data=True)
-        )
 
     new_nodes = normalise_nodes(new_nx)
     if in_nodes:
@@ -471,6 +477,15 @@ def test_to_networkx(in_nodes):
         )
 
     assert new_nodes == g_nodes
+    assert normalise_edges(new_nx) == normalise_edges(g)
+
+
+def test_to_networkx_no_features():
+    g, _ = example_benchmark_graph(feature_size=None)
+
+    sg = StellarGraph(g)
+    new_nx = sg.to_networkx()
+    assert normalise_nodes(new_nx) == normalise_nodes(g)
     assert normalise_edges(new_nx) == normalise_edges(g)
 
 
