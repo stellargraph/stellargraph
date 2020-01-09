@@ -736,8 +736,11 @@ class NetworkXStellarGraph(StellarGraph):
 
     def edges(self, triple=False) -> Iterable[Any]:
         if triple:
-            # returns triples of format (node 1, node 2, edge info)
-            return self._graph.edges
+            # returns triples of format (node 1, node 2, edge type)
+            return (
+                (src, dst, self._get_edge_type(data))
+                for src, dst, data in self._graph.edges(data=True)
+            )
         else:
             # returns pairs of format (node 1, node 2)
             return self._graph.edges()
