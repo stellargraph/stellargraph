@@ -38,7 +38,7 @@ def example_graph_1(feature_size=None):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -86,11 +86,15 @@ def create_GCN_model_sparse(graph):
 
 
 def test_ig_saliency_map():
+
     graph = example_graph_1(feature_size=4)
     base_model, keras_model_gcn, generator, train_gen = create_GCN_model_dense(graph)
-    base_model_sp, keras_model_gcn_sp, generator_sp, train_gen_sp = create_GCN_model_sparse(
-        graph
-    )
+    (
+        base_model_sp,
+        keras_model_gcn_sp,
+        generator_sp,
+        train_gen_sp,
+    ) = create_GCN_model_sparse(graph)
 
     keras_model_gcn.compile(
         optimizer=Adam(lr=0.1), loss=categorical_crossentropy, weighted_metrics=["acc"]
@@ -117,6 +121,7 @@ def test_ig_saliency_map():
 
     keras_model_gcn.set_weights(weights)
     keras_model_gcn_sp.set_weights(weights)
+
     ig_dense = IntegratedGradients(keras_model_gcn, train_gen)
     ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp)
 
@@ -156,9 +161,12 @@ def test_ig_saliency_map():
 def test_saliency_init_parameters():
     graph = example_graph_1(feature_size=4)
     base_model, keras_model_gcn, generator, train_gen = create_GCN_model_dense(graph)
-    base_model_sp, keras_model_gcn_sp, generator_sp, train_gen_sp = create_GCN_model_sparse(
-        graph
-    )
+    (
+        base_model_sp,
+        keras_model_gcn_sp,
+        generator_sp,
+        train_gen_sp,
+    ) = create_GCN_model_sparse(graph)
 
     keras_model_gcn.compile(
         optimizer=Adam(lr=0.1), loss=categorical_crossentropy, weighted_metrics=["acc"]

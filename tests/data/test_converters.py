@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,23 +25,24 @@ from stellargraph.data.converter import (
     NodeAttributeSpecification,
 )
 
+import networkx as nx
 import numpy as np
 import pytest
 
 
 def example_stellar_graph_1():
-    G = StellarGraph()
+    G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
 
     G.add_nodes_from([1, 2, 3, 4], label="")
     G.add_edges_from(elist, label="")
 
     # Add some node attributes
-    G.node[1]["a1"] = 1
-    G.node[3]["a1"] = 1
-    G.node[1]["a2"] = 1
-    G.node[4]["a2"] = 1
-    return G
+    G.nodes[1]["a1"] = 1
+    G.nodes[3]["a1"] = 1
+    G.nodes[1]["a2"] = 1
+    G.nodes[4]["a2"] = 1
+    return StellarGraph(G)
 
 
 def test_converter_categorical():

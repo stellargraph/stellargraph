@@ -353,7 +353,6 @@ class GraphAttention(Layer):
             # YT: this is ensured by setting the diagonal elements of A tensor to 1 above
             if not self.saliency_map_support:
                 mask = -10e9 * (1.0 - A)
-                self.A = A
                 dense += mask
                 dense = K.softmax(dense)  # (N x N), Eq. 3 of the paper
 
@@ -363,9 +362,7 @@ class GraphAttention(Layer):
                 W = (self.delta * A) * K.exp(
                     dense - K.max(dense, axis=1, keepdims=True)
                 ) * (1 - self.non_exist_edge) + self.non_exist_edge * (
-                    A
-                    + self.delta * (K.ones(shape=[N, N], dtype="float") - A)
-                    + K.eye(N)
+                    A + self.delta * (tf.ones((N, N)) - A) + tf.eye(N)
                 ) * K.exp(
                     dense - K.max(dense, axis=1, keepdims=True)
                 )
@@ -519,11 +516,6 @@ class GraphAttentionSparse(GraphAttention):
                 features, attention_kernel[1]
             )  # (N x 1), [a_2]^T [Wh_j]
 
-            # Attention head a(Wh_i, Wh_j) = a^T [[Wh_i], [Wh_j]]
-            dense = attn_for_self + K.transpose(
-                attn_for_neighs
-            )  # (N x N) via broadcasting
-
             # Create sparse attention vector (All non-zero values of the matrix)
             sparse_attn_self = tf.gather(
                 K.reshape(attn_for_self, [-1]), A_indices[:, 0], axis=0
@@ -549,7 +541,9 @@ class GraphAttentionSparse(GraphAttention):
             sparse_attn = tf.sparse.softmax(sparse_attn)  # (N x N), Eq. 3 of the paper
 
             # Linear combination with neighbors' features [YT: see Eq. 4]
-            node_features = tf.sparse.matmul(sparse_attn, dropout_feat)  # (N x F')
+            node_features = tf.sparse.sparse_dense_matmul(
+                sparse_attn, dropout_feat
+            )  # (N x F')
 
             if self.use_bias:
                 node_features = K.bias_add(node_features, self.biases[head])
@@ -581,13 +575,7 @@ class GAT:
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
-    pre-processing the generator object should be instantiated as follows::
-
-        generator = FullBatchNodeGenerator(G, sparse=False, method="gat")
-
-    For more details, please see the GAT demo notebook:
-    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
+    should be supplied using the :class:`FullBatchNodeGenerator` class.
 
     Examples:
         Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
@@ -602,6 +590,9 @@ class GAT:
                     attn_dropout=0.5,
                 )
             x_inp, predictions = gat.node_model()
+
+    For more details, please see the GAT demo notebook:
+    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \

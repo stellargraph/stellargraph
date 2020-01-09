@@ -18,11 +18,11 @@
   <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
     <img src="https://img.shields.io/pypi/v/stellargraph.svg"/>
   </a>
-  <a href="https://buildkite.com/stellar/stellar-ml?branch=master/" alt="Build status: master">
-    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/master.svg?label=branch:+master"/>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master">
+    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/>
   </a>
-  <a href="https://buildkite.com/stellar/stellar-ml?branch=develop/" alt="Build status: develop">
-    <img src="https://img.shields.io/buildkite/34d537a018c6bf27cf154aa5bcc287b2e170d6e3391cd40c64/develop.svg?label=branch:+develop"/>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
+    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
   </a>
   <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
@@ -47,7 +47,8 @@
    * [Guiding Principles](#guiding-principles)
    * [Getting Started](#getting-started)
    * [Installation](#installation)
-       * [Install StellarGraph using pip](#install-stellargraph-using-pip)
+       * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
+       * [Install StellarGraph in Anaconda Python](#Install-stellargraph-in-anaconda-python)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
    * [Docker Image](#docker-image)
    * [Running the examples](#running-the-examples)
@@ -73,15 +74,15 @@ The StellarGraph library can be used to solve tasks using graph-structured data,
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
-- Interpretation of node classification through calculated importances of edges and neighbours for selected nodes [8].
+- Interpretation of node classification through calculated importances of edges and neighbour nodes for selected target nodes [8].
 
 We provide [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of using `StellarGraph` to solve such tasks using several real-world datasets.
 
 
 ## Guiding Principles
 
-StellarGraph uses the [Keras](https://keras.io/) library and adheres to the same guiding principles
-as Keras: user-friendliness, modularity, and easy extendability. Modules and layers
+StellarGraph uses the [Keras](https://keras.io/) API as implemented in the [TensorFlow](https://tensorflow.org/) library and adheres to the same
+guiding principles as Keras: user-friendliness, modularity, and easy extendability. Modules and layers
 of StellarGraph library are designed so that they can be used together with
 standard Keras layers and modules, if required. This enables flexibility in using existing
 or creating new models and workflows for machine learning on graphs.
@@ -129,26 +130,26 @@ StellarGraph is a Python 3 library and we recommend using Python version `3.6.*`
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
-*Note*: while the library works on Python 3.7 it is based on Keras which does not officially support Python 3.7.
-Therefore, there may be unforseen bugs and you there are many warnings from the Python libraries that
-StellarGraph depends upon.
+The StellarGraph library can be installed from PyPI, from Anaconda Cloud, or directly from GitHub, as described below.
 
-<!--
-The StellarGraph library requires [Keras](https://keras.io/), so you'll need to install Keras and a selected backend (we recommend tensorflow, which is used to test StellarGraph).  Other requirements are the NetworkX library (to create and modify graphs and networks), numpy (to manipulate numeric arrays), pandas (to manipulate tabular data), and gensim (to use the Word2Vec model), scikit-learn (to prepare datasets for machine learning), and matplotlib (for plotting).
--->
-
-The StellarGraph library can be installed in one of two ways, described next.
-
-#### Install StellarGraph using pip:
-To install StellarGraph library from [PyPi](https://pypi.org) using `pip`, execute the following command:
+#### Install StellarGraph using PyPI:
+To install StellarGraph library from [PyPI](https://pypi.org) using `pip`, execute the following command:
 ```
 pip install stellargraph
 ```
 
-Some of the examples in the `demos` directory require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
+Some of the examples in the `demos` [directory](https://github.com/stellargraph/stellargraph/tree/master/demos) require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
 ```
 pip install stellargraph[demos]
 ```
+
+
+#### Install StellarGraph in Anaconda Python:
+The StellarGraph library is available an [Anaconda Cloud](https://anaconda.org/stellargraph/stellargraph) and can be installed in [Anaconda Python](https://anaconda.com) using the command line `conda` tool, execute the following command:
+```
+conda install -c stellargraph stellargraph
+```
+
 
 #### Install StellarGraph from Github source:
 First, clone the StellarGraph repository using `git`:
@@ -182,43 +183,19 @@ See the [README](https://github.com/stellargraph/stellargraph/tree/master/demos/
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
 
-* GraphSAGE [1]
-  - Supports supervised as well as unsupervised representation learning, node classification/regression, and link prediction for homogeneous networks.
-  The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and
-  attentional aggregators.
-
-* HinSAGE
-  - Extension of GraphSAGE algorithm to heterogeneous networks.
-  Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs.
-  The current implementation supports mean aggregation of neighbour nodes,
-  taking into account their types and the types of links between them.
-
-* attri2vec [4]
-  - Supports node representation learning, node classification, and out-of-sample node link prediction for homogeneous graphs with node attributes.
-
-* The Graph ATtention Network (GAT) [5]
-  - The GAT algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph attention layer that support both sparse and dense adjacency matrices.
-
-* Graph Convolutional Network (GCN) [6]
-  - The GCN algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph convolutional layer that support both sparse and dense adjacency matrices.
-
-* Simplified Graph Convolutional network (SGC) [7]
-  - The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers.
-
-* Node2Vec [2]
-  - The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec
-  algorithm from [Gensim](https://radimrehurek.com/gensim/).
-  Learned node representations can be used in downstream machine learning models
-  implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/),
-  [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library.
-
-* Metapath2Vec [3]
-  - The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring
-  node attributes. The implementation combines StellarGraph's metapath-guided random walk
-  generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm.
-  As with node2vec, the learned node representations (node embeddings) can be used in
-  downstream machine learning models to solve tasks such as node classification, link prediction, etc,
-  for heterogeneous networks.
+| Algorithm | Description |
+| --- | --- |
+| GraphSAGE [1] | Supports supervised as well as unsupervised representation learning, node classification/regression, and link prediction for homogeneous networks. The current implementation supports multiple aggregation methods, including mean, maxpool, meanpool, and attentional aggregators. |
+| HinSAGE | Extension of GraphSAGE algorithm to heterogeneous networks. Supports representation learning, node classification/regression, and link prediction/regression for heterogeneous graphs. The current implementation supports mean aggregation of neighbour nodes, taking into account their types and the types of links between them. |
+| attri2vec [4] | Supports node representation learning, node classification, and out-of-sample node link prediction for homogeneous graphs with node attributes. |
+| Graph ATtention Network (GAT) [5] | The GAT algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph attention layer that support both sparse and dense adjacency matrices. |
+| Graph Convolutional Network (GCN) [6] | The GCN algorithm supports representation learning and node classification for homogeneous graphs. There are versions of the graph convolutional layer that support both sparse and dense adjacency matrices. |
+| Cluster Graph Convolutional Network (Cluster-GCN) [10] | An extension of the GCN algorithm supporting representation learning and node classification for homogeneous graphs. Cluster-GCN scales to larger graphs and can be used to train deeper GCN models using Stochastic Gradient Descent. |
+| Simplified Graph Convolutional network (SGC) [7] | The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers. |
+| (Approximate) Personalized Propagation of Neural Predictions (PPNP/APPNP) [9] | The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input. The predictions from the latter network are then diffused across the graph using a method based on Personalized PageRank. |
+| Node2Vec [2] | The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec algorithm from [Gensim](https://radimrehurek.com/gensim/). Learned node representations can be used in downstream machine learning models implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/), [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library. |
+| Metapath2Vec [3] | The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring node attributes. The implementation combines StellarGraph's metapath-guided random walk generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm. As with node2vec, the learned node representations (node embeddings) can be used in downstream machine learning models to solve tasks such as node classification, link prediction, etc, for heterogeneous networks. |
+| Relational Graph Convolutional Network [10] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
 
 
 ## Getting Help
@@ -233,7 +210,7 @@ Feel free to ask questions and discuss problems on the [StellarGraph Discourse f
 
 ### buildkite integration
 
-Pipeline is defined in `.buildkite/pipeline.yml`
+The Buildkite pipeline can be viewed in [https://buildkite.com/stellar/stellargraph-public/](https://buildkite.com/stellar/stellargraph-public/)
 
 ### Docker images
 
@@ -279,3 +256,10 @@ International Conference on Learning Representations (ICLR), 2017
 International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv.org/abs/1902.07153))
 
 8. Adversarial Examples on Graph Data: Deep Insights into Attack and Defense. H. Wu, C. Wang, Y. Tyshetskiy, A. Docherty, K. Lu, and L. Zhu. IJCAI 2019. ([link](https://arxiv.org/abs/1903.01610))
+
+9. Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
+
+10. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))
+
+
+11. Modeling relational data with graph convolutional networks. M. Schlichtkrull, T. N. Kipf, P. Bloem, R. Van Den Berg, I. Titov, and M. Welling, European Semantic Web Conference (2018), arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907)).

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -96,7 +96,12 @@ def train(
     G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
 
     # Split nodes into train/test using stratification.
-    train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
+    (
+        train_nodes,
+        test_nodes,
+        train_targets,
+        test_targets,
+    ) = model_selection.train_test_split(
         node_ids,
         node_targets,
         train_size=140,
@@ -112,13 +117,13 @@ def train(
 
     # Create mappers for GraphSAGE that input data from the graph to the model
     generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=5312)
-    train_gen = generator.flow(train_nodes, train_targets, shuffle=True)
-    val_gen = generator.flow(val_nodes, val_targets)
+    train_flow = generator.flow(train_nodes, train_targets, shuffle=True)
+    val_flow = generator.flow(val_nodes, val_targets)
 
     # GraphSAGE model
     model = GraphSAGE(
         layer_sizes=layer_size,
-        generator=train_gen,
+        generator=generator,
         bias=True,
         dropout=dropout,
         aggregator=MeanAggregator,
@@ -140,7 +145,11 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
+        train_flow,
+        epochs=num_epochs,
+        validation_data=val_flow,
+        verbose=2,
+        shuffle=False,
     )
 
     # Evaluate on test set and print metrics
@@ -320,7 +329,10 @@ if __name__ == "__main__":
         )
 
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["source", "target"],
     )
     edgelist["label"] = "cites"
 
@@ -331,7 +343,10 @@ if __name__ == "__main__":
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
 
     if args.checkpoint is None:

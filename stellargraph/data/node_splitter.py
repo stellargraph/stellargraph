@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2019 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ __all__ = ["train_val_test_split", "NodeSplitter"]
 
 import numpy as np
 import pandas as pd
-from stellargraph.core.graph import StellarGraphBase
+from stellargraph.core.graph import StellarGraph
 from stellargraph import globalvar
 
 
@@ -76,13 +76,16 @@ def train_val_test_split(
 
     # Get list of nodes to split
     if node_type is None:
-        nodes = list(G)
-
-    elif isinstance(G, StellarGraphBase):
-        nodes = G.nodes_of_type(node_type)
-
+        if isinstance(G, StellarGraph):
+            nodes = list(G.nodes())
+        else:
+            nodes = list(G)
     else:
-        raise TypeError("G must be a StellarGraph is node_type is not None")
+        if not isinstance(G, StellarGraph):
+            raise TypeError(
+                "Graph must be a StellarGraph or StellarDiGraph if node_type is not None."
+            )
+        nodes = G.nodes_of_type(node_type)
 
     # Number of nodes and number without a label
     n_nodes = len(nodes)
