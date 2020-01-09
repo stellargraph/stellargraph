@@ -567,6 +567,9 @@ def test_hinsage_unitary_layer_size():
         )
 
 
+@pytest.mark.xfail(
+    struct=True, reason="#626: tensorflow 2.1 changed the predicted values"
+)
 def test_hinsage_from_generator():
     G = example_hin_1({"A": 8, "B": 4})
 
