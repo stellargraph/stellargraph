@@ -318,7 +318,7 @@ class OnDemandLinkSequence(Sequence):
         """
         Shuffle all link IDs at the end of each epoch
         """
-        if self.shuffle == True:
+        if self.shuffle:
             self._batches = self._create_batches()
 
 
