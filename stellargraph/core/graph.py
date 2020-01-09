@@ -21,7 +21,7 @@ a machine-learning ready graph used by models.
 """
 __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 
-from typing import Iterable, Any, Mapping, Optional
+from typing import Iterable, Any, Mapping, List, Optional, Set
 
 from .schema import GraphSchema
 
@@ -257,7 +257,7 @@ class StellarGraph:
         Returns:
             set of types
         """
-        return self._graph.node_types()
+        return self._graph.node_types
 
     def node_feature_sizes(self, node_types=None):
         """
@@ -271,6 +271,13 @@ class StellarGraph:
             A dictionary of node type and integer feature size.
         """
         return self._graph.node_feature_sizes(node_types)
+
+    def check_graph_for_ml(self, features=True):
+        """
+        Checks if all properties required for machine learning training/inference are set up.
+        An error will be raised if the graph is not correctly setup.
+        """
+        self._graph.check_graph_for_ml(features)
 
     def node_features(self, nodes, node_type=None):
         """
@@ -286,7 +293,7 @@ class StellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        return self._graph.node_features(nodes, node_types)
+        return self._graph.node_features(nodes, node_type)
 
     ##################################################################
     # Computationally intensive methods:
@@ -308,6 +315,30 @@ class StellarGraph:
             An information string.
         """
         return self._graph.info(show_attributes, sample)
+
+    def create_graph_schema(self, create_type_maps=True, nodes=None):
+        """
+        Create graph schema in dict of dict format from current graph.
+
+        Note the assumption we make that there is only one
+        edge of a particular edge type per node pair.
+
+        This means that specifying an edge by node0, node1 and edge type
+        is unique.
+
+        Arguments:
+            create_type_maps (bool): If True quick lookup of node/edge types is
+                created in the schema. This can be slow.
+
+            nodes (list): A list of node IDs to use to build schema. This must
+                represent all node types and all edge types in the graph.
+                If specified, `create_type_maps` must be False.
+                If not specified, all nodes and edges in the graph are used.
+
+        Returns:
+            GraphSchema object.
+        """
+        return self._graph.create_graph_schema(create_type_maps, nodes)
 
     def node_degrees(self) -> Mapping[Any, int]:
         """
@@ -332,6 +363,62 @@ class StellarGraph:
              The weighted adjacency matrix.
         """
         return self._graph.to_adjacency_matrix(nodes)
+
+    # Experimental/special-case methods that need to be considered more
+    def get_index_for_nodes(self, nodes, node_type=None):
+        """
+        Get the indices for the specified node or nodes.
+        If the node type is not specified the node types will be found
+        for all nodes. It is therefore important to supply the ``node_type``
+        for this method to be fast.
+
+        Args:
+            n: (list or hashable) Node ID or list of node IDs
+            node_type: (hashable) the type of the nodes.
+
+        Returns:
+            Numpy array containing the indices for the requested nodes.
+        """
+        return self._graph.get_index_for_nodes(nodes, node_type)
+
+    def adjacency_types(self, graph_schema: GraphSchema):
+        """
+        Obtains the edges in the form of the typed mapping:
+
+            {edge_type_triple: {source_node: [target_node, ...]}}
+
+        Args:
+            graph_schema: The graph schema.
+        Returns:
+             The edge types mapping.
+        """
+        return self._graph.adjacency_types(graph_schema)
+
+    def edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
+        """
+        Obtains the weights of edges between the given pair of nodes.
+
+        Args:
+            source_node (any): The source node.
+            target_node (any): The target node.
+
+        Returns:
+            list: The edge weights.
+        """
+        return self._graph.edge_weights(source_node, target_node)
+
+    def node_attributes(self, node: Any) -> Set[Any]:
+        """
+        Obtains the names of any (non-standard) node attributes that are
+        available in the user data.
+
+        Args:
+            node (any): The node of interest.
+
+        Returns:
+            set: The collection of node attributes.
+        """
+        return self._graph.node_attributes(node)
 
 
 # A convenience class that merely specifies that edges have direction.
