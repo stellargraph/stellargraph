@@ -212,11 +212,6 @@ Feel free to ask questions and discuss problems on the [StellarGraph Discourse f
 
 The Buildkite pipeline can be viewed in [https://buildkite.com/stellar/stellargraph-public/](https://buildkite.com/stellar/stellargraph-public/)
 
-### Docker images
-
-* Tests: Uses the official [python:3.6](https://hub.docker.com/_/python/) image.
-* Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.
-
 ## Citing
 StellarGraph is designed, developed and supported by [CSIRO's Data61](https://data61.csiro.au/).
 If you use any part of this library in your research, please cite it using the following BibTex entry
