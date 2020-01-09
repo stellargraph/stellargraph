@@ -272,7 +272,7 @@ class RelationalFullBatchNodeGenerator:
         model.fit_generator(train_gen, epochs=num_epochs, ...)
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         transform (callable): an optional function to apply on features and adjacency matrix
             the function takes (features, Aadj) as arguments.
