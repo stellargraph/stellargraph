@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import multiprocessing
 
 # Default parameters for Node2Vec
 parameters = {
-    "p": 1.,  # Parameter p
-    "q": 1.,  # Parameter q
+    "p": 1.0,  # Parameter p
+    "q": 1.0,  # Parameter q
     "dimensions": 128,  # dimensionality of node2vec embeddings
     "num_walks": 10,  # Number of walks from each node
     "walk_length": 80,  # Walk length
@@ -141,7 +141,11 @@ if __name__ == "__main__":
     # From the original graph, extract E_test and G_test
     edge_splitter_test = EdgeSplitter(g_nx)
     if args.hin:
-        g_test, edge_data_ids_test, edge_data_labels_test = edge_splitter_test.train_test_split(
+        (
+            g_test,
+            edge_data_ids_test,
+            edge_data_labels_test,
+        ) = edge_splitter_test.train_test_split(
             p=p,
             edge_label=args.edge_type,
             edge_attribute_label=args.edge_attribute_label,
@@ -151,7 +155,11 @@ if __name__ == "__main__":
             probs=sampling_probs,
         )
     else:
-        g_test, edge_data_ids_test, edge_data_labels_test = edge_splitter_test.train_test_split(
+        (
+            g_test,
+            edge_data_ids_test,
+            edge_data_labels_test,
+        ) = edge_splitter_test.train_test_split(
             p=p, method=args.sampling_method, probs=sampling_probs
         )
     if args.show_histograms:
@@ -175,7 +183,11 @@ if __name__ == "__main__":
 
     edge_splitter_train = EdgeSplitter(g_test, g_nx)
     if args.hin:
-        g_train, edge_data_ids_train, edge_data_labels_train = edge_splitter_train.train_test_split(
+        (
+            g_train,
+            edge_data_ids_train,
+            edge_data_labels_train,
+        ) = edge_splitter_train.train_test_split(
             p=p,
             edge_label=args.edge_type,
             edge_attribute_label=args.edge_attribute_label,
@@ -185,7 +197,11 @@ if __name__ == "__main__":
             probs=sampling_probs,
         )
     else:
-        g_train, edge_data_ids_train, edge_data_labels_train = edge_splitter_train.train_test_split(
+        (
+            g_train,
+            edge_data_ids_train,
+            edge_data_labels_train,
+        ) = edge_splitter_train.train_test_split(
             p=p, method=args.sampling_method, probs=sampling_probs
         )
     if args.show_histograms:

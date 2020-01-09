@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 __all__ = ["EdgeSplitter"]
 
 import datetime
+import warnings
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -116,10 +117,12 @@ class EdgeSplitter(object):
         else:  # method == 'local'
             if probs is None:  # use default values if not given, by warn user
                 probs = [0.0, 0.25, 0.50, 0.25]
-                print(
-                    "WARNING: Using default sampling probabilities (distance from source node): {}".format(
+                warnings.warn(
+                    "Using default sampling probabilities (distance from source node): {}".format(
                         probs
-                    )
+                    ),
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             negative_edges = self._sample_negative_examples_local_dfs(
                 p=p, probs=probs, limit_samples=len(positive_edges)
@@ -224,10 +227,12 @@ class EdgeSplitter(object):
         else:  # method == 'local'
             if probs is None:
                 probs = [0.0, 0.25, 0.50, 0.25]
-                print(
-                    "WARNING: Using default sampling probabilities (distance from source node): {}".format(
+                warnings.warn(
+                    "Using default sampling probabilities (distance from source node): {}".format(
                         probs
-                    )
+                    ),
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             negative_edges = self._sample_negative_examples_by_edge_type_local_dfs(
                 p=p,
@@ -671,8 +676,8 @@ class EdgeSplitter(object):
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
-            print(
-                "Warning: Using default sampling probabilities up to 3 hops from source node with values {}".format(
+            warnings.warn(
+                "Using default sampling probabilities up to 3 hops from source node with values {}".format(
                     probs
                 )
             )
@@ -805,10 +810,11 @@ class EdgeSplitter(object):
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
-            print(
-                "Warning: Using default sampling probabilities up to 3 hops from source node with values {}".format(
+            warnings.warn(
+                "Using default sampling probabilities up to 3 hops from source node with values {}".format(
                     probs
-                )
+                ),
+                RuntimeWarning,
             )
 
         if not isclose(sum(probs), 1.0):

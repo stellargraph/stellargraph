@@ -242,7 +242,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         Get the nodes of the graph with the specified node types.
 
         Args:
-            node_type: a type of nodes that exist in the graph
+            node_type (hashable, optional): a type of nodes that exist in the graph
 
         Returns:
             A list of node IDs with type node_type
@@ -276,7 +276,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         Get the feature sizes for the specified node types.
 
         Args:
-            node_types: (list) A list of node types. If None all current node types
+            node_types (list, optional): A list of node types. If None all current node types
                 will be used.
 
         Returns:
@@ -292,8 +292,8 @@ class StellarGraph(metaclass=StellarGraphFactory):
         for this method to be fast.
 
         Args:
-            n: (list or hashable) Node ID or list of node IDs
-            node_type: (hashable) the type of the nodes.
+            nodes (list or hashable): Node ID or list of node IDs
+            node_type (hashable): the type of the nodes.
 
         Returns:
             Numpy array containing the node features for the requested nodes.
@@ -302,6 +302,24 @@ class StellarGraph(metaclass=StellarGraphFactory):
 
     ##################################################################
     # Computationally intensive methods:
+
+    def info(self, show_attributes=True, sample=None):
+        """
+        Return an information string summarizing information on the current graph.
+        This includes node and edge type information and their attributes.
+
+        Note: This requires processing all nodes and edges and could take a long
+        time for a large graph.
+
+        Args:
+            show_attributes (bool, default True): If True, include attributes information
+            sample (int): To speed up the graph analysis, use only a random sample of
+                          this many nodes and edges.
+
+        Returns:
+            An information string.
+        """
+        raise NotImplementedError
 
     def node_degrees(self) -> Mapping[Any, int]:
         """
@@ -324,17 +342,6 @@ class StellarGraph(metaclass=StellarGraphFactory):
 
         Returns:
              The weighted adjacency matrix.
-        """
-        raise NotImplementedError
-
-    def to_networkx(self):
-        """
-        Creates a NetworkX graph from all in the information in this
-        StellarGraph.
-
-        Returns:
-            A NetworkX graph incorporating the information from this
-            StellarGraph.
         """
         raise NotImplementedError
 

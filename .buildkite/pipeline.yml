@@ -1,51 +1,34 @@
+---
+compose-config: &compose-config
+  config:
+    - docker-compose.yml
+    - .buildkite/docker-compose.yml
+
 steps:
   - label: ":python: 3.6"
     key: "python_3_6"
     command: ".buildkite/steps/script.sh"
     plugins:
-      docker#v3.2.0:
-        image: "python:3.6-slim"
-        environment:
-          - PYTHONDONTWRITEBYTECODE=1
-          - GIT_BRANCH=$BUILDKITE_BRANCH
-          - COVERALLS_REPO_TOKEN
-          - BUILDKITE_BUILD_NUMBER
-          - BUILDKITE_BRANCH
-          - AWS_LOGS_BUCKET
-          # for coveralls-python, to send more metadata to coveralls.io
-          - BUILDKITE
-          - BUILDKITE_PULL_REQUEST
-          - BUILDKITE_JOB_ID
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3.6
     agents:
-      queue: 't2medium'
+      queue: "t2medium"
 
   - label: ":python: 3.7"
     key: "python_3_7"
     command: ".buildkite/steps/script.sh"
     plugins:
-      docker#v3.2.0:
-        image: "python:3.7-slim"
-        environment:
-          - PYTHONDONTWRITEBYTECODE=1
-          - GIT_BRANCH=$BUILDKITE_BRANCH
-          - COVERALLS_REPO_TOKEN
-          - BUILDKITE_BUILD_NUMBER
-          - BUILDKITE_BRANCH
-          - AWS_LOGS_BUCKET
-          # for coveralls-python, to send more metadata to coveralls.io
-          - BUILDKITE
-          - BUILDKITE_PULL_REQUEST
-          - BUILDKITE_JOB_ID
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3.7
     agents:
-      queue: 't2medium'
+      queue: "t2medium"
 
   - label: ":python-black: format"
     plugins:
-      docker#v3.2.0:
-        image: "stellargraph/black"
-        command: ["--check", "stellargraph", "tests"]
-        environment:
-          - PYTHONDONTWRITEBYTECODE=1
+      docker#v3.4.0:
+        image: "stellargraph/black:snapshot"
 
   - label: ":shell: format"
     plugins:
@@ -64,15 +47,42 @@ steps:
       docker#v3.4.0:
         image: "stellargraph/hadolint:snapshot"
 
+  - label: ":docker: format Dockerfiles"
+    plugins:
+      docker#v3.4.0:
+        image: "stellargraph/dockerfile-utils:snapshot"
+
+  - label: ":prettier::yaml: format YAML"
+    plugins:
+      docker#v3.4.0:
+        image: "stellargraph/prettier:snapshot"
+        command: [
+            "--check",
+            "**/*.yml",
+            "**/*.yaml",
+            # not valid YAML because of jinja templating
+            "!meta.yaml",
+          ]
+
+  - label: ":yaml::lint-roller: lint YAML"
+    plugins:
+      docker#v3.4.0:
+        image: "stellargraph/yamllint:snapshot"
+
   - label: ":copyright: check copyright headers"
-    command: '.buildkite/steps/check-copyright-headers.sh'
+    command: ".buildkite/steps/check-copyright-headers.sh"
 
   - label: ":docker: build image"
     plugins:
       docker-compose#v3.1.0:
+        <<: *compose-config
         build:
           - stellargraph
         image-repository: index.docker.io/stellargraph/stellargraph
+        # Caching can cause packages to be pinned to old (possibly-vulnerable) versions for long
+        # periods.  Setting `REFRESH_BUILD=true` allows for builds (e.g. scheduled builds) to start
+        # from scratch and refresh the caches.
+        no-cache: ${REFRESH_BUILD-false}
         cache-from:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
           - stellargraph:index.docker.io/stellargraph/stellargraph:latest
@@ -84,6 +94,7 @@ steps:
   - label: ":docker: publish image"
     plugins:
       docker-compose#v3.1.0:
+        <<: *compose-config
         push:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
 

@@ -28,6 +28,7 @@ import itertools as it
 import operator
 import collections
 import abc
+import warnings
 from functools import reduce
 from tensorflow import keras
 from ..core.graph import StellarGraph
@@ -206,8 +207,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
             )
 
         self.head_node_types = self.schema.node_types * 2
