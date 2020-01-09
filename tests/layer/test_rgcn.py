@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,18 +33,21 @@ R1 = {"label": "r1"}
 R2 = {"label": "r2"}
 
 
-def create_graph_features():
-    G = nx.MultiGraph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", R1), ("b", "c", R1), ("a", "c", R2)])
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+def create_graph_features(directed=False):
+    G = nx.MultiDiGraph() if directed else nx.MultiGraph()
 
+    nodes = ["a", "b", "c"]
+    features = np.array([[1, 1], [1, 0], [0, 1]])
 
-def create_graph_features_directed():
-    G = nx.MultiDiGraph()
-    G.add_nodes_from(["a", "b", "c"])
+    G.add_nodes_from(nodes)
     G.add_edges_from([("a", "b", R1), ("b", "c", R1), ("a", "c", R2)])
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+
+    SG = StellarDiGraph if directed else StellarGraph
+    return SG(G, node_features=node_features), np.array([[1, 1], [1, 0], [0, 1]])
 
 
 def test_RelationalGraphConvolution_config():
@@ -95,8 +98,7 @@ def test_RelationalGraphConvolution_init():
 
 def test_RelationalGraphConvolution_sparse():
     G, features = create_graph_features()
-    edge_types = sorted(set(e[-1] for e in G.edges))
-    n_edge_types = len(edge_types)
+    n_edge_types = len(get_edge_types(G))
 
     # We need to specify the batch shape as one for the GraphConvolutional logic to work
     n_nodes = features.shape[0]
@@ -131,22 +133,7 @@ def test_RelationalGraphConvolution_sparse():
     )(x_inp_conv)
 
     # Note we add a batch dimension of 1 to model inputs
-    As = []
-    node_list = list(G.nodes)
-    node_index = dict(zip(node_list, range(len(node_list))))
-    for edge_type in edge_types:
-        col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-        row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
-        data = np.ones(len(col_index), np.float64)
-
-        A = sps.coo_matrix(
-            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
-        )
-
-        d = sps.diags(np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0)
-        A = d.dot(A).tocsr()
-        A = A.tocoo()
-        As.append(A)
+    As = [A.tocoo() for A in get_As(G)]
 
     A_indices = [
         np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
@@ -172,8 +159,7 @@ def test_RelationalGraphConvolution_sparse():
 def test_RelationalGraphConvolution_dense():
 
     G, features = create_graph_features()
-    edge_types = sorted(set(e[-1] for e in G.edges))
-    n_edge_types = len(edge_types)
+    n_edge_types = len(get_edge_types(G))
 
     # We need to specify the batch shape as one for the GraphConvolutional logic to work
     n_nodes = features.shape[0]
@@ -199,23 +185,7 @@ def test_RelationalGraphConvolution_dense():
         2, num_relationships=n_edge_types, final_layer=False
     )(x_inp_conv)
 
-    # Note we add a batch dimension of 1 to model inputs
-    As = []
-    node_list = list(G.nodes)
-    node_index = dict(zip(node_list, range(len(node_list))))
-    for edge_type in edge_types:
-        col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-        row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
-        data = np.ones(len(col_index), np.float64)
-
-        A = sps.coo_matrix(
-            (data, (row_index, col_index)), shape=(len(node_list), len(node_list))
-        )
-
-        d = sps.diags(np.float_power(np.array(A.sum(1)) + 1e-9, -1).flatten(), 0)
-        A = d.dot(A).tocsr()
-        A = np.expand_dims(A.todense(), 0)
-        As.append(A)
+    As = [np.expand_dims(A.todense(), 0) for A in get_As(G)]
 
     out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
@@ -235,11 +205,6 @@ def test_RelationalGraphConvolution_dense():
 
 def test_RGCN_init():
     G, features = create_graph_features()
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
     generator = RelationalFullBatchNodeGenerator(G)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
@@ -259,12 +224,6 @@ def test_RGCN_apply_sparse():
         np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
-
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
 
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
@@ -290,12 +249,6 @@ def test_RGCN_apply_dense():
     As = get_As(G)
     As = [np.expand_dims(A.todense(), 0) for A in As]
 
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
-
     generator = RelationalFullBatchNodeGenerator(G, sparse=False)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
@@ -315,7 +268,7 @@ def test_RGCN_apply_dense():
 
 
 def test_RGCN_apply_sparse_directed():
-    G, features = create_graph_features_directed()
+    G, features = create_graph_features(directed=True)
 
     As = get_As(G)
     As = [A.tocoo() for A in As]
@@ -324,12 +277,6 @@ def test_RGCN_apply_sparse_directed():
         np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
-
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarDiGraph(G, node_features=node_features)
 
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
@@ -350,17 +297,11 @@ def test_RGCN_apply_sparse_directed():
 
 
 def test_RGCN_apply_dense_directed():
-    G, features = create_graph_features_directed()
+    G, features = create_graph_features(directed=True)
 
     As = get_As(G)
     As = [np.expand_dims(A.todense(), 0) for A in As]
 
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-
-    G = StellarDiGraph(G, node_features=node_features)
     generator = RelationalFullBatchNodeGenerator(G, sparse=False)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
     x_in, x_out = rgcnModel.build()
@@ -427,15 +368,19 @@ def test_RelationalGraphConvolution_edge_cases():
     assert str(error) == "units should be positive"
 
 
+def get_edge_types(G):
+    assert isinstance(G, StellarGraph)
+    return sorted(set(etype for _, _, etype in G.edges(triple=True)))
+
 def get_As(G):
 
     As = []
-    edge_types = sorted(set(e[-1]["label"] for e in G.edges(data=True)))
-    node_list = list(G.nodes)
+    edge_types = get_edge_types(G)
+    node_list = list(G.nodes())
     node_index = dict(zip(node_list, range(len(node_list))))
     for edge_type in edge_types:
-        col_index = [node_index[n1] for n1, n2, etype in G.edges if etype == edge_type]
-        row_index = [node_index[n2] for n1, n2, etype in G.edges if etype == edge_type]
+        col_index = [node_index[n1] for n1, n2, etype in G.edges(triple=True) if etype == edge_type]
+        row_index = [node_index[n2] for n1, n2, etype in G.edges(triple=True) if etype == edge_type]
         data = np.ones(len(col_index), np.float64)
 
         A = sps.coo_matrix(
