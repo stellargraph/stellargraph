@@ -132,18 +132,19 @@ class UnsupervisedSampler:
         degrees = self.graph.node_degrees()
         sampling_distribution = [degrees[n] ** 0.75 for n in all_nodes]
 
-        walks = self.walker.run(nodes=self.nodes, length=self.length, n=1)
+        walks = self.walker.run(
+            nodes=self.nodes, length=self.length, n=self.number_of_walks
+        )
 
         # first item in each walk is the target/head node
         targets = [walk[0] for walk in walks]
 
         positive_pairs = np.array(
             [
-                (target, positive_context, 1)
+                (target, positive_context)
                 for target, walk in zip(targets, walks)
                 for positive_context in walk[1:]
-            ],
-            dtype=np.int32,
+            ]
         )
 
         negative_samples = self.random.choices(
@@ -151,23 +152,23 @@ class UnsupervisedSampler:
         )
         negative_pairs = np.array(
             [
-                (target, negative_context, 0)
-                for (target, _, _), negative_context in zip(
+                (target, negative_context)
+                for (target, _), negative_context in zip(
                     positive_pairs, negative_samples
                 )
-            ],
-            dtype=np.int32,
+            ]
         )
 
-        # zip and shuffle
+        # shuffle
         pairs = np.concatenate((positive_pairs, negative_pairs), axis=0)
-        self.np_random.shuffle(pairs)
+        labels = np.repeat([1, 0], len(positive_pairs))
 
-        # convert to batches
-        return [
-            (pairs[i : i + batch_size, :2], pairs[i : i + batch_size, 2])
-            for i in range(0, len(pairs), batch_size)
+        indices = self.np_random.permutation(len(pairs))
+        batch_indices = [
+            indices[i : i + batch_size] for i in range(0, len(indices), batch_size)
         ]
+
+        return [(pairs[i], labels[i]) for i in batch_indices]
 
     def _check_parameter_values(self, batch_size):
         """
