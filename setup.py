@@ -15,14 +15,14 @@
 # limitations under the License.
 
 import setuptools
-import sys
+import os
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 # full tensorflow is too big for readthedocs's builder
-tensorflow = "tensorflow-cpu" if "READTHEDOCS" in sys.environ else "tensorflow"
+tensorflow = "tensorflow-cpu" if "READTHEDOCS" in os.environ else "tensorflow"
 REQUIRES = [
     f"{tensorflow}>=2.0.0",
     "numpy>=1.14",
