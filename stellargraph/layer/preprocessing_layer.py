@@ -29,7 +29,7 @@ import numpy as np
 class SymmetricGraphPreProcessingLayer(Layer):
     """
     This class implements the pre-processing of adjacency matrices in GCN. We implement it in tensorflow so that
-    while computing the saliency maps, we are able to calculate the gradients in an end-to-end way. 
+    while computing the saliency maps, we are able to calculate the gradients in an end-to-end way.
     We currently only support this for tensorflow backend.
 
     Args:
@@ -79,7 +79,7 @@ class SymmetricGraphPreProcessingLayer(Layer):
 class GraphPreProcessingLayer(Layer):
     """
     This class implements the pre-processing of adjacency matrices in GCN. We implement it in tensorflow so that
-    while computing the saliency maps, we are able to calculate the gradients in an end-to-end way. 
+    while computing the saliency maps, we are able to calculate the gradients in an end-to-end way.
     We currently only support this for tensorflow backend.
 
     Args:

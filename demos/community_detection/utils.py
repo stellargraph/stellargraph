@@ -189,7 +189,7 @@ def load_network(input_data):
 
 
 def dbscan_hyperparameters(embeddings, e_lower=0.3, e_upper=0.8, m_lower=3, m_upper=15):
-    """ 
+    """
     function to run dbscan clustering greedily for different min_samples and e_eps and discover number of resulting clusters and noise points
     """
     n_clusters_res = []

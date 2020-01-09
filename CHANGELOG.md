@@ -10,7 +10,7 @@
 
 - Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
 
-**Implemented enhancements:** 
+**Implemented enhancements:**
 
 **Refactoring:**
 - Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
@@ -59,7 +59,7 @@ Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by p
 - PPNP and APPNP algorithms + demos [\#485](https://github.com/stellargraph/stellargraph/pull/485)
 - GAT saliency maps for interpreting node classification with Graph Attention Networks + demo [\#435](https://github.com/stellargraph/stellargraph/pull/435)
 
-**Implemented enhancements:** 
+**Implemented enhancements:**
 - New demo of node classification on Twitter hateful users [\430](https://github.com/stellargraph/stellargraph/pull/430)
 - New demo of graph saliency on Twitter hateful users [\#448](https://github.com/stellargraph/stellargraph/pull/448)
 - Added Directed SampledBFS walks on directed graphs [\#464](https://github.com/stellargraph/stellargraph/issues/464)
@@ -90,7 +90,7 @@ Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements
 in the recent versions of NetworkX and Tensorflow.
 
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
-Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements, 
+Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements,
 to avoid errors due to API changes in the recent versions of Keras and Tensorflow.
 
 
@@ -136,12 +136,12 @@ This replaces the node_model\(\) and link_model\(\) methods, which will be depre
 the optional function to the generator for GCN
 
 **Enhancements:**
-- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb` 
+- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb`
 
 ## [0.6.0](https://github.com/stellargraph/stellargraph/tree/v0.6.0) (14 Mar 2019)
 
 **Implemented new features and enhancements:**
-- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216), 
+- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216),
 [\#315](https://github.com/stellargraph/stellargraph/pull/315)
 - Unsupervised GraphSAGE [\#331](https://github.com/stellargraph/stellargraph/pull/331) with a demo [\#335](https://github.com/stellargraph/stellargraph/pull/335)
 - Model Ensembles [\#343](https://github.com/stellargraph/stellargraph/pull/343)

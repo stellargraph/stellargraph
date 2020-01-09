@@ -227,14 +227,14 @@ class HinSAGE:
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
 
     To use this class as a Keras model, the features and graph should be supplied using the
-    :class:`HinSAGENodeGenerator` class for node inference models or the 
+    :class:`HinSAGENodeGenerator` class for node inference models or the
     :class:`HinSAGELinkGenerator` class for link inference models.  The `.build` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Currently the class supports node or link prediction models which are built depending on whether
     a `HinSAGENodeGenerator` or `HinSAGELinkGenerator` object is specified.
     The models are built for a single node or link type. For example if you have nodes of types 'A' and 'B'
-    you can build a link model for only a single pair of node types, for example ('A', 'B'), which should 
+    you can build a link model for only a single pair of node types, for example ('A', 'B'), which should
     be specified in the `HinSAGELinkGenerator`.
 
     If you feed links into the model that do not have these node types (in correct order) an error will be
@@ -255,7 +255,7 @@ class HinSAGE:
                 )
             x_inp, predictions = gat.build()
 
-        Creating a two-level GrapSAGE link classification model on nodes pairs of type ('A', 'B') 
+        Creating a two-level GrapSAGE link classification model on nodes pairs of type ('A', 'B')
         with hidden node sizes of 8 and 4 and 5 neighbours sampled at each layer::
 
             generator = HinSAGELinkGenerator(
@@ -277,7 +277,7 @@ class HinSAGE:
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
         generator (HinSAGENodeGenerator or HinSAGELinkGenerator):
-            If specified, required model arguments such as the number of samples 
+            If specified, required model arguments such as the number of samples
             will be taken from the generator object. See note below.
         aggregator (HinSAGEAggregator): The HinSAGE aggregator to use; defaults to the `MeanHinAggregator`.
         bias (bool): If True (default), a bias vector is learnt for each layer.
@@ -295,11 +295,11 @@ class HinSAGE:
 
         * input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
           subtree to be created by the HinSAGE model.
-        
+
         * input_dim (dict): The input dimensions for each node type as a dictionary of the form
           `{node_type: feature_size}`.
-        
-        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
           and 2 for link inference (currently no others are supported).
     """
 

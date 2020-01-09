@@ -143,4 +143,3 @@ There are several other examples in the ``demos`` directory. Read the `README.md
 .. _`Installing Git`: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
 .. _`Python on HomeBrew`: https://docs.brew.sh/Homebrew-and-Python.html
-
