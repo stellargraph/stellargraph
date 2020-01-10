@@ -17,7 +17,7 @@ annotate_error() {
   buildkite-agent annotate --context "$context" --style error << EOF
 ${msg}:
 
-$(sed s/^/- / "$temp")
+$(sed 's/^\(.*\)$/- `\1`/' "$temp")
 EOF
 
   exitCode=1
