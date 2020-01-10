@@ -801,7 +801,7 @@ class NetworkXStellarGraph(StellarGraph):
                 # no features, so just add the type
                 graph.add_nodes_from(node_ids, **ty_dict)
 
-        graph.add_edges_from(self.edges(triple=True))
+        graph.add_edges_from(self._graph.edges(data=True))
 
         return graph
 

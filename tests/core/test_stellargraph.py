@@ -436,8 +436,10 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
-def normalise_nodes(g):
+def normalise_nodes(g, default_label=False):
     def fix_data(data):
+        if default_label:
+            data.setdefault("label", "default")
         try:
             data["feature"] = list(data["feature"])
         except KeyError:
@@ -448,9 +450,12 @@ def normalise_nodes(g):
     return sorted((node_id, fix_data(data)) for node_id, data in g.nodes(data=True))
 
 
-def normalise_edges(g):
+def normalise_edges(g, default_label=False):
+    def fix_data(data):
+        if default_label:
+            data.setdefault("label", "default")
     return sorted(
-        (min(src, dst), max(src, dst), data) for src, dst, data in g.edges(data=True)
+        (min(src, dst), max(src, dst), fix_data(data)) for src, dst, data in g.edges(data=True)
     )
 
 
@@ -477,7 +482,7 @@ def test_to_networkx(in_nodes):
         )
 
     assert new_nodes == g_nodes
-    assert normalise_edges(new_nx) == normalise_edges(g)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
 
 
 def test_to_networkx_no_features():
@@ -485,8 +490,28 @@ def test_to_networkx_no_features():
 
     sg = StellarGraph(g)
     new_nx = sg.to_networkx()
-    assert normalise_nodes(new_nx) == normalise_nodes(g)
-    assert normalise_edges(new_nx) == normalise_edges(g)
+    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
+def test_to_networkx_edge_attributes():
+    g = nx.Graph()
+    g.add_nodes_from([1, 2])
+    g.add_edge(1, 2, label="foo", weight=10.0)
+    sg = StellarGraph(g)
+    new_nx = sg.to_networkx()
+
+    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
+def test_to_networkx_default_label():
+    g = nx.Graph()
+    g.add_nodes_from([1, 2])
+    g.add_edge(1, 2)
+    sg = StellarGraph(g)
+    new_nx = sg.to_networkx()
+
+    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
 
 
 def example_benchmark_graph(
