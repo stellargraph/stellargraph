@@ -454,8 +454,10 @@ def normalise_edges(g, default_label=False):
     def fix_data(data):
         if default_label:
             data.setdefault("label", "default")
+
     return sorted(
-        (min(src, dst), max(src, dst), fix_data(data)) for src, dst, data in g.edges(data=True)
+        (min(src, dst), max(src, dst), fix_data(data))
+        for src, dst, data in g.edges(data=True)
     )
 
 
@@ -493,6 +495,7 @@ def test_to_networkx_no_features():
     assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
     assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
 
+
 def test_to_networkx_edge_attributes():
     g = nx.Graph()
     g.add_nodes_from([1, 2])
@@ -502,6 +505,7 @@ def test_to_networkx_edge_attributes():
 
     assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
     assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
 
 def test_to_networkx_default_label():
     g = nx.Graph()
