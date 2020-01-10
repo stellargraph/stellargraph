@@ -541,8 +541,8 @@ def example_weighted_hin():
     graph = nx.MultiDiGraph()
     graph.add_nodes_from([0, 1], label="A")
     graph.add_nodes_from([2, 3], label="B")
-    graph.add_edges_from([(0, 1, 0.0), (0, 1, 1.0)], label="AA")
-    graph.add_edges_from([(1, 2, 10.0), (1, 3, 10.0)], label="AB")
+    graph.add_weighted_edges_from([(0, 1, 0.0), (0, 1, 1.0)], label="AA")
+    graph.add_weighted_edges_from([(1, 2, 10.0), (1, 3, 10.0)], label="AB")
     return StellarDiGraph(graph)
 
 
@@ -561,10 +561,12 @@ def test_neighbors_weighted_hin():
     graph = example_weighted_hin()
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
-        graph.neighbors(1, weight=True), [(0, 0.0), (0, 1.0), (2, 10.0), (3, 10.0)]
+        graph.neighbors(1, include_edge_weight=True),
+        [(0, 0.0), (0, 1.0), (2, 10.0), (3, 10.0)],
     )
     assert_items_equal(
-        graph.neighbors(1, weight=True, edge_types=["AB"]), [(2, 10.0), (3, 10.0)]
+        graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]),
+        [(2, 10.0), (3, 10.0)],
     )
 
 
@@ -572,34 +574,53 @@ def test_neighbors_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
-        graph.neighbors(1, weight=True), [(0, None), (0, None), (2, None), (3, None)]
+        graph.neighbors(1, include_edge_weight=True),
+        [(0, None), (0, None), (2, None), (3, None)],
     )
-    assert_items_equal(graph.neighbors(1, weight=True, edge_types=["AB"]), [])
+    assert_items_equal(
+        graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]), []
+    )
 
 
 def test_in_nodes_weighted_hin():
     graph = example_weighted_hin()
     assert_items_equal(graph.in_nodes(1), [0, 0])
-    assert_items_equal(graph.in_nodes(1, weight=True), [(0, 0.0), (0, 1.0)])
-    assert_items_equal(graph.in_nodes(1, weight=True, edge_types=["AB"]), [])
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True), [(0, 0.0), (0, 1.0)]
+    )
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+    )
 
 
 def test_in_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.in_nodes(1), [0, 0])
-    assert_items_equal(graph.in_nodes(1, weight=True), [(0, None), (0, None)])
-    assert_items_equal(graph.in_nodes(1, weight=True, edge_types=["AA"]), [])
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True), [(0, None), (0, None)]
+    )
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+    )
 
 
 def test_out_nodes_weighted_hin():
     graph = example_weighted_hin()
     assert_items_equal(graph.out_nodes(1), [2, 3])
-    assert_items_equal(graph.out_nodes(1, weight=True), [(2, 10.0), (3, 10.0)])
-    assert_items_equal(graph.out_nodes(1, weight=True, edge_types=["AA"]), [])
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True), [(2, 10.0), (3, 10.0)]
+    )
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+    )
 
 
 def test_out_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.out_nodes(1), [2, 3])
-    assert_items_equal(graph.out_nodes(1, weight=True), [(2, None), (3, None)])
-    assert_items_equal(graph.out_nodes(1, weight=True, edge_types=["AB"]), [])
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True), [(2, None), (3, None)]
+    )
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+    )

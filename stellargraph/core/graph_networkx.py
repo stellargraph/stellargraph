@@ -25,7 +25,7 @@ from stellargraph.core.graph import StellarGraph
 
 import random
 import itertools as it
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import warnings
 
 import pandas as pd
@@ -37,6 +37,9 @@ from typing import Iterable, Iterator, Any, Mapping, List, Set, Optional
 from .. import globalvar
 from .schema import GraphSchema
 from .utils import is_real_iterable
+
+
+NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 
 def _convert_from_node_attribute(
@@ -745,15 +748,15 @@ class NetworkXStellarGraph(StellarGraph):
     def has_node(self, node: Any) -> bool:
         return self._graph.__contains__(node)
 
-    def _transform_edges(self, edges, get_node, weight, edge_types):
+    def _transform_edges(self, edges, get_node, include_edge_weight, edge_types):
         edge_types_set = set(edge_types) if edge_types is not None else None
 
         def get(e):
-            return (
-                (get_node(e), e[2].get(self._edge_weight_label))
-                if weight
-                else get_node(e)
-            )
+            if include_edge_weight:
+                return NeighbourWithWeight(
+                    get_node(e), e[2].get(self._edge_weight_label)
+                )
+            return get_node(e)
 
         def is_correct_type(e):
             return (
@@ -763,31 +766,43 @@ class NetworkXStellarGraph(StellarGraph):
 
         return {get(e) for e in edges if is_correct_type(e)}
 
-    def _in(self, node, weight, edge_types):
+    def _in(self, node, include_edge_weight, edge_types):
         return self._transform_edges(
-            self._graph.in_edges(node, data=True), lambda e: e[0], weight, edge_types
+            self._graph.in_edges(node, data=True),
+            lambda e: e[0],
+            include_edge_weight,
+            edge_types,
         )
 
-    def _out(self, node, weight, edge_types):
+    def _out(self, node, include_edge_weight, edge_types):
         return self._transform_edges(
-            self._graph.out_edges(node, data=True), lambda e: e[1], weight, edge_types
+            self._graph.out_edges(node, data=True),
+            lambda e: e[1],
+            include_edge_weight,
+            edge_types,
         )
 
-    def neighbors(self, node: Any, weight=False, edge_types=None) -> Iterable[Any]:
+    def neighbors(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         if self.is_directed():
-            in_nodes = self._in(node, weight, edge_types)
-            out_nodes = self._out(node, weight, edge_types)
+            in_nodes = self._in(node, include_edge_weight, edge_types)
+            out_nodes = self._out(node, include_edge_weight, edge_types)
             return in_nodes | out_nodes
         return nx.neighbors(self._graph, node)
 
-    def in_nodes(self, node: Any, weight=False, edge_types=None) -> Iterable[Any]:
+    def in_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         if self.is_directed():
-            return self._in(node, weight, edge_types)
+            return self._in(node, include_edge_weight, edge_types)
         return nx.neighbors(self._graph, node)
 
-    def out_nodes(self, node: Any, weight=False, edge_types=None) -> Iterable[Any]:
+    def out_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         if self.is_directed():
-            return self._out(node, weight, edge_types)
+            return self._out(node, include_edge_weight, edge_types)
         return nx.neighbors(self._graph, node)
 
     ########################################################################
