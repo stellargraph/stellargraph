@@ -34,9 +34,9 @@ find . \( \
   -exec grep -L "$copyrightRegex" {} + | tee "$temp"
 
 if [ -s "$temp" ]; then
-  annotate_error "copyright-existence" "Found files without a copyright header (no matches for /$copyrightRegex/)"
+  annotate_error "copyright-existence" "Found files without a copyright header (no matches for \`$copyrightRegex\`)"
 else
-  echo "all files have a copyright header (have a match for /$copyrightRegex/)"
+  echo "all files have a copyright header (have a match for \`$copyrightRegex\`)"
 fi
 
 echo "--- checking copyright headers are up to date"
