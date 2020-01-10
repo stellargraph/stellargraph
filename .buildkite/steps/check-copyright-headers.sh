@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-exitCode=0
 temp="$(mktemp)"
 
 copyrightRegex="# Copyright [0-9-]*2020 Data61, CSIRO"
