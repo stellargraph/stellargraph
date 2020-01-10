@@ -226,7 +226,7 @@ class StellarGraph(metaclass=StellarGraphFactory):
         Args:
             node (any): The node in question.
             include_edge_weight (bool, default False): If True, each neighbour in the
-                output is a tuple of (node ID, edge weight)
+                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
 
