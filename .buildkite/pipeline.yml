@@ -72,6 +72,9 @@ steps:
   - label: ":copyright: check copyright headers"
     command: ".buildkite/steps/check-copyright-headers.sh"
 
+  - label: ":space_invader: check whitespace"
+    command: "scripts/whitespace.sh --ci"
+
   - label: ":docker: build image"
     plugins:
       docker-compose#v3.1.0:
