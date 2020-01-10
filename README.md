@@ -3,32 +3,28 @@
 # StellarGraph Machine Learning Library
 
 <p align="center">
-  <a href="https://community.stellargraph.io" alt="Discourse Forum">
-    <img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/>
-  </a>
-  <a href="https://github.com/ambv/black" alt="Code style">
-    <img src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
-  </a>
-  <a href="https://github.com/mvdan/sh/" alt="Shellcode style">
-    <img src="https://img.shields.io/badge/shell%20style-shfmt-black.svg"/>
-  </a>
   <a href="https://stellargraph.readthedocs.io/" alt="Docs">
     <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
   </a>
+  <a href="https://community.stellargraph.io" alt="Discourse Forum">
+    <img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/>
+  </a>
   <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
     <img src="https://img.shields.io/pypi/v/stellargraph.svg"/>
+  </a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
+    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
+    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
   </a>
   <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master">
     <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/>
   </a>
   <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
     <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
-  </a>
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
-    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
-  </a>
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
-    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/>
   </a>
   <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
     <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
@@ -211,11 +207,6 @@ Feel free to ask questions and discuss problems on the [StellarGraph Discourse f
 ### buildkite integration
 
 The Buildkite pipeline can be viewed in [https://buildkite.com/stellar/stellargraph-public/](https://buildkite.com/stellar/stellargraph-public/)
-
-### Docker images
-
-* Tests: Uses the official [python:3.6](https://hub.docker.com/_/python/) image.
-* Style: Uses [black](https://hub.docker.com/r/stellargraph/black/) from the `stellargraph` docker hub organisation.
 
 ## Citing
 StellarGraph is designed, developed and supported by [CSIRO's Data61](https://data61.csiro.au/).
