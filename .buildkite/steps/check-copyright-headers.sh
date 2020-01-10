@@ -7,6 +7,22 @@ temp="$(mktemp)"
 
 copyrightRegex="# Copyright [0-9-]* Data61, CSIRO"
 
+annotate_error() {
+  context="$1"
+  msg="$2"
+
+  echo "^^^ +++"
+  echo "$msg"
+
+  buildkite-agent annotate --context "$context" --style error << EOF
+${msg}:
+
+$(sed s/^/- / "$temp")
+EOF
+
+  exitCode=1
+}
+
 echo "--- checking files have copyright headers"
 # Some files shouldn't have our copyright header and so are ignored
 find . \( \
@@ -18,9 +34,7 @@ find . \( \
   -exec grep -L "$copyrightRegex" {} + | tee "$temp"
 
 if [ -s "$temp" ]; then
-  echo "^^^ +++"
-  echo "found files without a copyright header (no matches for /$copyrightRegex/)"
-  exitCode=1
+  annotate_error "copyright-existence" "Found files without a copyright header (no matches for /$copyrightRegex/)"
 else
   echo "all files have a copyright header (have a match for /$copyrightRegex/)"
 fi
@@ -46,9 +60,7 @@ find . -name "*.py" -exec grep "$copyrightRegex" {} + | grep -v "$year" | while 
 done | tee "$temp"
 
 if [ -s "$temp" ]; then
-  echo "^^^ +++"
-  echo "found files modified in $year (according to git) without $year in their copyright header"
-  exitCode=1
+  annotate_error "copyright-year" "Found files modified in $year (according to git) without $year in their copyright header"
 else
   echo "all files modified in $year (according to git) have $year in their copyright header"
 fi
