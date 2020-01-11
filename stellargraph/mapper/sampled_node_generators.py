@@ -54,7 +54,7 @@ class BatchedNodeGenerator(abc.ABC):
     Abstract base class for graph data generators.
 
     The supplied graph should be a StellarGraph object that is ready for
-    machine learning. 
+    machine learning.
 
     Do not use this base class: use a subclass specific to the method.
 
@@ -567,7 +567,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
     machine learning. Currently the model does not require node features for
     nodes in the graph.
 
-    Use the :meth:`flow` method supplying the nodes to get an object 
+    Use the :meth:`flow` method supplying the nodes to get an object
     that can be used as a Keras data generator.
 
     Example::
@@ -587,7 +587,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
 
     def sample_features(self, head_nodes):
         """
-        Get the ids of the head nodes, and return these as a list of feature 
+        Get the ids of the head nodes, and return these as a list of feature
         arrays for the node2vec algorithm.
 
         Args:

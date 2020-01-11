@@ -524,7 +524,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
             head_links: An iterable of edges to perform sampling for.
 
         Returns:
-            A list of feaure arrays, with each element being the ids of 
+            A list of feaure arrays, with each element being the ids of
             the sampled target and context node.
         """
 

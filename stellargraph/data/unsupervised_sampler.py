@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class UnsupervisedSampler:
             number_of_walks (int): Number of walks from each root node.
             seed(int): the seed used to generate the initial random state
             bidirectional(bool): whether to collect node context pairs in a bidirectional way: for node 'u' with its
-                following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)' 
+                following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)'
                 are collected as node-context pairs, otherwise, only '(u, v)' is collected as a node-context pair. The default value
                 is set to False.
             context_sampling(bool): whether to perform sampling on the length of random walks for collect node context pairs. The default
