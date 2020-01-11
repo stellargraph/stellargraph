@@ -49,7 +49,7 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator` 
+    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator`
     or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
 
     These generator classes are used within the NodeSequence to generate

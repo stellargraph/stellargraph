@@ -122,8 +122,8 @@ class BatchedLinkGenerator(abc.ABC):
 
                 src, dst = link
                 try:
-                    node_type_src = self.graph.type_for_node(src)
-                    node_type_dst = self.graph.type_for_node(dst)
+                    node_type_src = self.graph.node_type(src)
+                    node_type_dst = self.graph.node_type(dst)
                 except KeyError:
                     raise KeyError(
                         f"Node ID {n} supplied to generator not found in graph"
@@ -289,7 +289,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             # Get features for the sampled nodes
             batch_feats.append(
                 [
-                    self.graph.get_feature_for_nodes(layer_nodes, node_type)
+                    self.graph.node_features(layer_nodes, node_type)
                     for layer_nodes in nodes_per_hop
                 ]
             )
@@ -387,7 +387,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         # Resize features to (batch_size, n_neighbours, feature_size)
         # for each node type (note that we can have different feature size for each node type)
         batch_feats = [
-            self.graph.get_feature_for_nodes(layer_nodes, nt)
+            self.graph.node_features(layer_nodes, nt)
             for nt, layer_nodes in node_samples
         ]
 
@@ -496,7 +496,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         target_ids = [head_link[0] for head_link in head_links]
         context_ids = [head_link[1] for head_link in head_links]
-        target_feats = self.graph.get_feature_for_nodes(target_ids)
+        target_feats = self.graph.node_features(target_ids)
         context_feats = self.graph.get_index_for_nodes(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 

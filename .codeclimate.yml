@@ -8,6 +8,9 @@ checks:
   file-lines:
     enabled: false
 
+  method-complexity:
+    enabled: false
+
   method-count:
     enabled: false
 
@@ -19,7 +22,7 @@ plugins:
     enabled: true
 
   radon:
-    enabled: true
+    enabled: false
 
   sonar-python:
     enabled: true

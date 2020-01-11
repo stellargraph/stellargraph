@@ -5,7 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph.core
-  :members: StellarGraphBase, GraphSchema
+  :members: StellarGraph, GraphSchema
 
 
 Data

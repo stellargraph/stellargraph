@@ -8,7 +8,7 @@ All examples use Python 3.6 and the StellarGraph library. To install the Stellar
 follow the instructions at: https://github.com/stellargraph/stellargraph
 
 Additional requirements are Pandas, Numpy, Keras, and Scikit-Learn which are installed as depdendencies
-of the StellarGraph library. 
+of the StellarGraph library.
 
 ## CORA dataset
 
