@@ -22,7 +22,6 @@ node2vec
 __all__ = ["Node2Vec"]
 
 from tensorflow.keras import Input
-from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Reshape, Embedding
 import math
 from tensorflow import keras
@@ -96,7 +95,7 @@ class Node2Vec:
 
     def _get_sizes_from_keywords(self, kwargs):
         """
-        Sets node_num and input_feature_size from the keywords.
+        Sets node_num and multiplicity from the keywords.
         Args:
              kwargs: The additional keyword arguments.
         """
@@ -126,7 +125,11 @@ class Node2Vec:
         elif embedding == "output":
             h_layer = self.output_embedding(xin)
         else:
-            raise ValueError("wrong embedding argument is supplied: {}, should be \"input\" or \"output\"".format(embedding))
+            raise ValueError(
+                'wrong embedding argument is supplied: {}, should be "input" or "output"'.format(
+                    embedding
+                )
+            )
 
         h_layer = Reshape((self.emb_size,))(h_layer)
         # K.squeeze(h_layer, axis=0)
@@ -170,7 +173,6 @@ class Node2Vec:
         x_inp = [x_inp_src, x_inp_dst]
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
-
 
     def build(self):
         """

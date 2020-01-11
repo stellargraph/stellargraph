@@ -35,8 +35,8 @@ class UnsupervisedSampler:
         The positive samples are all the (target, context) pairs from the walks and the negative
         samples are contexts generated for each target based on a sampling distribtution.
 
-        Currently only uniform random walks are performed, other walk strategies (such as
-        second order walks) will be enabled in the future.
+        Currently uniform random walks and biased random walks are performed, other walk strategies
+        will be enabled in the future.
 
         Args:
             G (StellarGraph): A stellargraph with features.
@@ -44,8 +44,6 @@ class UnsupervisedSampler:
                 If not provided, all nodes in the graph are used.
             length (int): An integer giving the length of the walks. Length must be at least 2.
             number_of_walks (int): Number of walks from each root node.
-            walker: the walker used to generate random walks, which can be a instance of UniformRandomWalk or BiasedRandomWalk. If walker
-                is None, it will be set to an instance of UniformRandomWalk.
             seed(int): the seed used to generate the initial random state
             bidirectional(bool): whether to collect node context pairs in a bidirectional way: for node 'u' with its
                 following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)' 
@@ -53,6 +51,9 @@ class UnsupervisedSampler:
                 is set to False.
             context_sampling(bool): whether to perform sampling on the length of random walks for collect node context pairs. The default
                 value is set to False.
+            walker: the walker used to generate random walks, which can be an instance of UniformRandomWalk or BiasedRandomWalk. If walker
+                is None, it will be set to an instance of UniformRandomWalk.
+            **kwargs: optional hyperparameters (p, q, weighted) for biased random walkers.
     """
 
     def __init__(
@@ -61,10 +62,11 @@ class UnsupervisedSampler:
         nodes=None,
         length=2,
         number_of_walks=1,
-        walker=None,
         seed=None,
         bidirectional=False,
         context_sampling=False,
+        walker=None,
+        **kwargs,
     ):
         if not isinstance(G, StellarGraph):
             raise ValueError(
@@ -89,6 +91,11 @@ class UnsupervisedSampler:
                 self.walker = walker
         else:
             self.walker = UniformRandomWalk(G, seed=seed)
+
+        if isinstance(self.walker, BiasedRandomWalk):
+            self.p = kwargs.get("p", 1.0)
+            self.q = kwargs.get("q", 1.0)
+            self.weighted = kwargs.get("weighted", False)
 
         # Define the root nodes for the walks
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes.
@@ -118,10 +125,20 @@ class UnsupervisedSampler:
         else:
             self.number_of_walks = number_of_walks
 
+        # Determine whether to collect node context pairs in a bidirectional way
+        if not isinstance(bidirectional, bool):
+            raise TypeError("bidirectional should be a bool variable")
+        else:
+            self.bidirectional = bidirectional
+
+        # Determine whether to perform sampling on the length of random walks
+        if not isinstance(context_sampling, bool):
+            raise TypeError("context_sampling should be a bool variable")
+        else:
+            self.context_sampling = context_sampling
+
         # Setup an interal random state with the given seed
         self.random = random.Random(seed)
-        self.bidirectional = bidirectional
-        self.context_sampling = context_sampling
 
     def generator(self, batch_size):
 
@@ -160,20 +177,28 @@ class UnsupervisedSampler:
         while not done:
             self.random.shuffle(self.nodes)
             for node in self.nodes:  # iterate over root nodes
-                # Get 1 walk at a time. For now its assumed that its a uniform random walker or biased random walker
+                # Set the walk length
                 if self.context_sampling:
+                    walk_length = int(np.ceil(self.length * self.random.random()))
+                else:
+                    walk_length = self.length
+                # Get 1 walk at a time. For now its assumed that its a uniform random walker or biased random walker
+                if isinstance(
+                    self.walker, UniformRandomWalk
+                ):  # for uniform random walk
                     walk = self.walker.run(
                         nodes=[node],  # root nodes
-                        length=int(
-                            np.ceil(self.length * self.random.random())
-                        ),  # maximum length of a random walk
+                        length=walk_length,  # maximum length of a random walk
                         n=1,  # number of random walks per root node
                     )
-                else:
+                else:  # for biased random walk
                     walk = self.walker.run(
                         nodes=[node],  # root nodes
-                        length=self.length,  # maximum length of a random walk
+                        length=walk_length,  # maximum length of a random walk
                         n=1,  # number of random walks per root node
+                        p=self.p,  # defines probability, 1/p, of returning to source node
+                        q=self.q,  # defines probability, 1/q, for moving to a node away from the source node
+                        weighted=self.weighted,  #  indicates whether the walk is unweighted or weighted
                     )
                 # (target,context) pair sampling
                 target = walk[0][0]

@@ -257,47 +257,36 @@ def naive_weighted_choices(rs, weights):
 
 
 class BiasedRandomWalk(GraphWalk):
-
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
-        
-    Args:
-        graph: The Stellargraph to perform uniform random walk on
-        graph_schema: The schema of the given graph
-        p: <float> Defines probability, 1/p, of returning to source node
-        q: <float> Defines probability, 1/q, for moving to a node away from the source node
-        seed: The seed used to initialize the random state
-        weighted: <False or True> Indicates whether the walk is unweighted or weighted
     """
 
-    def __init__(
-        self, graph, graph_schema=None, p=1.0, q=1.0, seed=None, weighted=False
+    def run(
+        self, nodes=None, n=None, p=1.0, q=1.0, length=None, seed=None, weighted=False
     ):
-        super().__init__(graph, graph_schema=graph_schema, seed=seed)
-        self.p = p
-        self.q = q
-        self.weighted = weighted
-        self._check_weights(self.p, self.q, self.weighted)
 
-    def run(self, nodes=None, n=None, length=None, seed=None):
         """
         Perform a random walk starting from the root nodes.
 
         Args:
             nodes: <list> The root nodes as a list of node IDs
             n: <int> Total number of random walks per root node
+            p: <float> Defines probability, 1/p, of returning to source node
+            q: <float> Defines probability, 1/q, for moving to a node away from the source node
             length: <int> Maximum length of each random walk
             seed: <int> Random number generator seed; default is None
+            weighted: <False or True> Indicates whether the walk is unweighted or weighted
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
 
         """
         self._check_common_parameters(nodes, n, length, seed)
+        self._check_weights(p, q, weighted)
         rs = self._get_random_state(seed)
 
-        if self.weighted:
+        if weighted:
             # Check that all edge weights are greater than or equal to 0.
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
@@ -306,7 +295,6 @@ class BiasedRandomWalk(GraphWalk):
                 for neighbor in self.graph.neighbors(node):
 
                     wts = set()
-
                     for weight in self.graph.edge_weights(node, neighbor):
                         if weight is None or np.isnan(weight) or weight == np.inf:
                             self._raise_error(
@@ -336,8 +324,8 @@ class BiasedRandomWalk(GraphWalk):
                             )
                         )
 
-        ip = 1.0 / self.p
-        iq = 1.0 / self.q
+        ip = 1.0 / p
+        iq = 1.0 / q
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -381,7 +369,7 @@ class BiasedRandomWalk(GraphWalk):
                         choice = naive_weighted_choices(
                             rs,
                             (
-                                transition_probability(nn, current_node, self.weighted)
+                                transition_probability(nn, current_node, weighted)
                                 for nn in neighbours
                             ),
                         )
@@ -445,7 +433,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.type_for_node(node)
+            label = self.graph.node_type(node)
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -473,7 +461,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if self.graph.type_for_node(n_node) == metapath[d]
+                            if self.graph.node_type(n_node) == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.

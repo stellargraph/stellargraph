@@ -106,16 +106,13 @@ class TestUnsupervisedSampler(object):
 
         g = StellarGraph(g)
 
-        """
-        # only Uniform random walk is supported at the moment
+        # only uniform random walk and biased random walk are supported at the moment
         with pytest.raises(TypeError):
             UnsupervisedSampler(G=g, walker="any random walker")
 
         # if no walker is provided, default to Uniform Random Walk
         sampler = UnsupervisedSampler(G=g)
         assert isinstance(sampler.walker, UniformRandomWalk)
-
-        """
 
         # walk must have length strictly greater than 1
         with pytest.raises(ValueError):
@@ -128,6 +125,14 @@ class TestUnsupervisedSampler(object):
         # nodes nodes parameter should be an iterable of node IDs
         with pytest.raises(ValueError):
             UnsupervisedSampler(G=g, nodes=1)
+
+        # bidirectional option should be a bool variable
+        with pytest.raises(TypeError):
+            UnsupervisedSampler(G=g, bidirectional=1)
+
+        # context_sampling option should be a bool variable
+        with pytest.raises(TypeError):
+            UnsupervisedSampler(G=g, context_sampling=1)
 
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes
         sampler = UnsupervisedSampler(G=g, nodes=None)
