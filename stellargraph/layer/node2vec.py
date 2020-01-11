@@ -40,7 +40,7 @@ class Node2Vec:
     Args:
         emb_size (int): The dimension of node embeddings.
         generator (Sequence): A NodeSequence or LinkSequence.
-        node_num (int): The number of nodes in the given graph.
+        **kwargs: Parameters node_num(int) and multiplicity(int).
     """
 
     def __init__(self, emb_size, generator=None, **kwargs):

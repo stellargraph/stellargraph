@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -266,7 +266,7 @@ def test_get_index_for_nodes():
 
 def test_feature_conversion_from_nodes():
     sg = example_stellar_graph_1(feature_name="feature", feature_size=8)
-    aa = sg.get_feature_for_nodes([1, 2, 3, 4])
+    aa = sg.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
     assert aa.shape == (4, 8)
@@ -277,7 +277,7 @@ def test_feature_conversion_from_nodes():
         for_nodes=[0, 1, 2, 3, 4, 5],
         feature_sizes={"A": 4, "B": 2},
     )
-    aa = sg.get_feature_for_nodes([0, 1, 2, 3], "A")
+    aa = sg.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 4)
 
@@ -285,49 +285,49 @@ def test_feature_conversion_from_nodes():
     assert fs["A"] == 4
     assert fs["B"] == 2
 
-    ab = sg.get_feature_for_nodes([4, 5], "B")
+    ab = sg.node_features([4, 5], "B")
     assert ab.shape == (2, 2)
     assert ab[:, 0] == pytest.approx([4, 5])
 
     # Test mixed types
     with pytest.raises(ValueError):
-        ab = sg.get_feature_for_nodes([1, 5])
+        ab = sg.node_features([1, 5])
 
     # Test incorrect manual node_type
     with pytest.raises(ValueError):
-        ab = sg.get_feature_for_nodes([4, 5], "A")
+        ab = sg.node_features([4, 5], "A")
 
     # Test feature for node with no set attributes
-    ab = sg.get_feature_for_nodes([4, 5, 6], "B")
+    ab = sg.node_features([4, 5, 6], "B")
     assert ab.shape == (3, 2)
     assert ab[:, 0] == pytest.approx([4, 5, 0])
 
 
 def test_null_node_feature():
     sg = example_stellar_graph_1(feature_name="feature", feature_size=6)
-    aa = sg.get_feature_for_nodes([1, None, 2, None])
+    aa = sg.node_features([1, None, 2, None])
     assert aa.shape == (4, 6)
     assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
 
     sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
 
     # Test feature for null node, without node type
-    ab = sg.get_feature_for_nodes([None, 5, None])
+    ab = sg.node_features([None, 5, None])
     assert ab.shape == (3, 2)
     assert ab[:, 0] == pytest.approx([0, 5, 0])
 
     # Test feature for null node, node type
-    ab = sg.get_feature_for_nodes([None, 6, None], "B")
+    ab = sg.node_features([None, 6, None], "B")
     assert ab.shape == (3, 2)
     assert ab[:, 0] == pytest.approx([0, 6, 0])
 
     # Test feature for null node, wrong type
     with pytest.raises(ValueError):
-        sg.get_feature_for_nodes([None, 5, None], "A")
+        sg.node_features([None, 5, None], "A")
 
     # Test null-node with no type
     with pytest.raises(ValueError):
-        sg.get_feature_for_nodes([None, None])
+        sg.node_features([None, None])
 
 
 def test_node_types():
@@ -348,11 +348,11 @@ def test_feature_conversion_from_dataframe():
     df = pd.DataFrame({v: np.ones(10) * float(v) for v in list(g)}).T
     gs = StellarGraph(g, node_features=df)
 
-    aa = gs.get_feature_for_nodes([1, 2, 3, 4])
+    aa = gs.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
     # Check None identifier
-    aa = gs.get_feature_for_nodes([1, 2, None, None])
+    aa = gs.node_features([1, 2, None, None])
     assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
     g = example_hin_1_nx()
@@ -369,24 +369,24 @@ def test_feature_conversion_from_dataframe():
     }
     gs = StellarGraph(g, node_features=df)
 
-    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
+    aa = gs.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 10)
 
-    ab = gs.get_feature_for_nodes([4, 5], "B")
+    ab = gs.node_features([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
 
     # Test mixed types
     with pytest.raises(ValueError):
-        ab = gs.get_feature_for_nodes([1, 5])
+        ab = gs.node_features([1, 5])
 
     # Test incorrect manual node_type
     with pytest.raises(ValueError):
-        ab = gs.get_feature_for_nodes([4, 5], "A")
+        ab = gs.node_features([4, 5], "A")
 
     # Test feature for node with no set attributes
-    ab = gs.get_feature_for_nodes([4, None, None], "B")
+    ab = gs.node_features([4, None, None], "B")
     assert ab.shape == (3, 10)
     assert ab[:, 0] == pytest.approx([4, 0, 0])
 
@@ -398,11 +398,11 @@ def test_feature_conversion_from_iterator():
     node_features = [(v, np.ones(10) * float(v)) for v in list(g)]
     gs = StellarGraph(g, node_features=node_features)
 
-    aa = gs.get_feature_for_nodes([1, 2, 3, 4])
+    aa = gs.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
     # Check None identifier
-    aa = gs.get_feature_for_nodes([1, 2, None, None])
+    aa = gs.node_features([1, 2, None, None])
     assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
     g = example_hin_1_nx()
@@ -416,24 +416,24 @@ def test_feature_conversion_from_iterator():
     }
     gs = StellarGraph(g, node_features=nf)
 
-    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
+    aa = gs.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 10)
 
-    ab = gs.get_feature_for_nodes([4, 5], "B")
+    ab = gs.node_features([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
 
     # Test mixed types
     with pytest.raises(ValueError):
-        ab = gs.get_feature_for_nodes([1, 5])
+        ab = gs.node_features([1, 5])
 
     # Test incorrect manual node_type
     with pytest.raises(ValueError):
-        ab = gs.get_feature_for_nodes([4, 5], "A")
+        ab = gs.node_features([4, 5], "A")
 
     # Test feature for node with no set attributes
-    ab = gs.get_feature_for_nodes([4, None, None], "B")
+    ab = gs.node_features([4, None, None], "B")
     assert ab.shape == (3, 10)
     assert ab[:, 0] == pytest.approx([4, 0, 0])
 
@@ -445,11 +445,11 @@ def test_feature_conversion_from_iterator():
     ]
     gs = StellarGraph(g, node_features=nf)
 
-    aa = gs.get_feature_for_nodes([0, 1, 2, 3], "A")
+    aa = gs.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 5)
 
-    ab = gs.get_feature_for_nodes([4, 5], "B")
+    ab = gs.node_features([4, 5], "B")
     assert ab.shape == (2, 10)
     assert ab[:, 0] == pytest.approx([4, 5])
 
@@ -530,7 +530,7 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
         # does sampling might ask for
         ty, all_ids = random.choice(ty_ids)
         selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
-        sg.get_feature_for_nodes(selected_ids, node_type(ty))
+        sg.node_features(selected_ids, node_type(ty))
 
     benchmark(f)
 

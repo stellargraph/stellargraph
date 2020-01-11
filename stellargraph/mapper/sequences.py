@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator` 
+    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator`
     or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
 
     These generator classes are used within the NodeSequence to generate
