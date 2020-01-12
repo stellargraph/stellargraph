@@ -92,8 +92,7 @@ def load_dataset_BlogCatalog3(location):
     """
     location = os.path.expanduser(location)
     if not os.path.isdir(location):
-        print("The location {} is not a directory.".format(location))
-        exit(0)
+        raise NotADirectoryError("The location {} is not a directory.".format(location))
 
     # load the raw data
     user_node_ids = pd.read_csv(os.path.join(location, "nodes.csv"), header=None)
