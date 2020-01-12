@@ -363,7 +363,7 @@ class StellarGraph:
         """
         return self._graph.to_adjacency_matrix(nodes)
 
-    # Experimental/special-case methods that need to be considered more
+    # FIXME: Experimental/special-case methods that need to be considered more
     def get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
