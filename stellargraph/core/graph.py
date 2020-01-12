@@ -119,8 +119,7 @@ class StellarGraph:
         # Avoid a circular import
         from .graph_networkx import NetworkXStellarGraph
 
-        is_directed = kwargs.pop("is_directed", False)
-        self._graph = NetworkXStellarGraph(is_directed=is_directed, *args, **kwargs)
+        self._graph = NetworkXStellarGraph(*args, **kwargs)
 
     def is_directed(self) -> bool:
         """
