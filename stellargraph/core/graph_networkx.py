@@ -34,7 +34,6 @@ import networkx as nx
 
 from typing import Iterable, Iterator, Any, Mapping, List, Set, Optional
 
-from .. import globalvar
 from .schema import GraphSchema
 from .utils import is_real_iterable
 
@@ -250,7 +249,20 @@ class NetworkXStellarGraph(StellarGraph):
     Implementation based on encapsulating a NetworkX graph.
     """
 
-    def __init__(self, graph=None, is_directed=False, **attr):
+    def __init__(
+        self,
+        graph,
+        is_directed,
+        edge_weight_label,
+        node_type_name,
+        edge_type_name,
+        node_type_default,
+        edge_type_default,
+        feature_name,
+        target_name,
+        node_features,
+        dtype,
+    ):
         if is_directed:
             if not isinstance(graph, nx.MultiDiGraph):
                 graph = nx.MultiDiGraph(graph)
@@ -260,24 +272,20 @@ class NetworkXStellarGraph(StellarGraph):
         self._graph = graph
 
         # Name of optional attribute for edge weights
-        self._edge_weight_label = attr.get("edge_weight_label", "weight")
+        self._edge_weight_label = edge_weight_label
 
         # Names of attributes that store the type of nodes and edges
-        self._node_type_attr = attr.get("node_type_name", globalvar.TYPE_ATTR_NAME)
-        self._edge_type_attr = attr.get("edge_type_name", globalvar.TYPE_ATTR_NAME)
+        self._node_type_attr = node_type_name
+        self._edge_type_attr = edge_type_name
 
         # Default types of nodes and edges
-        self._node_type_default = attr.get(
-            "node_type_default", globalvar.NODE_TYPE_DEFAULT
-        )
-        self._edge_type_default = attr.get(
-            "edge_type_default", globalvar.EDGE_TYPE_DEFAULT
-        )
+        self._node_type_default = node_type_default
+        self._edge_type_default = edge_type_default
 
         # Names for the feature/target type (used if they are supplied and
         #  feature/target spec not supplied"
-        self._feature_attr = attr.get("feature_name", globalvar.FEATURE_ATTR_NAME)
-        self._target_attr = attr.get("target_name", globalvar.TARGET_ATTR_NAME)
+        self._feature_attr = feature_name
+        self._target_attr = target_name
 
         # Ensure that the incoming graph data has node & edge types
         # TODO: This requires traversing all nodes and edges. Is there another way?
@@ -290,10 +298,6 @@ class NetworkXStellarGraph(StellarGraph):
         edge_types = set()
         for n1, n2, k, edata in graph.edges(keys=True, data=True):
             edge_types.add(self._get_edge_type(edata))
-
-        # New style: we are passed numpy arrays or pandas arrays of the feature vectors
-        node_features = attr.get("node_features", None)
-        dtype = attr.get("dtype", "float32")
 
         # If node_features is a string, load features from this attribute of the nodes in the graph
         if isinstance(node_features, str):

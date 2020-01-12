@@ -23,6 +23,7 @@ __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 
 from typing import Iterable, Any, Mapping, List, Optional, Set
 
+from .. import globalvar
 from .schema import GraphSchema
 
 
@@ -115,11 +116,36 @@ class StellarGraph:
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        graph=None,
+        is_directed=False,
+        edge_weight_label="weight",
+        node_type_name=globalvar.TYPE_ATTR_NAME,
+        edge_type_name=globalvar.TYPE_ATTR_NAME,
+        node_type_default=globalvar.NODE_TYPE_DEFAULT,
+        edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
+        feature_name=globalvar.FEATURE_ATTR_NAME,
+        target_name=globalvar.TARGET_ATTR_NAME,
+        node_features=None,
+        dtype="float32",
+    ):
         # Avoid a circular import
         from .graph_networkx import NetworkXStellarGraph
 
-        self._graph = NetworkXStellarGraph(*args, **kwargs)
+        self._graph = NetworkXStellarGraph(
+            graph,
+            is_directed,
+            edge_weight_label,
+            node_type_name,
+            edge_type_name,
+            node_type_default,
+            edge_type_default,
+            feature_name,
+            target_name,
+            node_features,
+            dtype,
+        )
 
     def is_directed(self) -> bool:
         """
