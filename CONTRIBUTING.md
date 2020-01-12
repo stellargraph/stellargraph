@@ -20,11 +20,11 @@ Please follow these steps to report a bug:
 
 ### Contributor License Agreement
 
-In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). You will 
-be guided through the process of digitally signing our CLA when you create a pull request. 
+In order to contribute to StellarGraph, please ensure that you have signed a Contributor License Agreement (CLA). You will
+be guided through the process of digitally signing our CLA when you create a pull request.
 
 ### Be Friendly ###
- 
+
 StellarGraph considers courtesy and respect for others an essential part of the community, and we strongly encourage everyone to be friendly when engaging with others. Please be helpful when people are asking questions, and on technical disagreements ensure that the issues are discussed in a respectful manner.
 
 ### Proposing a new feature

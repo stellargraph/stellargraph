@@ -3,32 +3,28 @@
 # StellarGraph Machine Learning Library
 
 <p align="center">
-  <a href="https://community.stellargraph.io" alt="Discourse Forum">
-    <img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/>
-  </a>
-  <a href="https://github.com/ambv/black" alt="Code style">
-    <img src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
-  </a>
-  <a href="https://github.com/mvdan/sh/" alt="Shellcode style">
-    <img src="https://img.shields.io/badge/shell%20style-shfmt-black.svg"/>
-  </a>
   <a href="https://stellargraph.readthedocs.io/" alt="Docs">
     <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
   </a>
+  <a href="https://community.stellargraph.io" alt="Discourse Forum">
+    <img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/>
+  </a>
   <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
     <img src="https://img.shields.io/pypi/v/stellargraph.svg"/>
+  </a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
+    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/>
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
+    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
   </a>
   <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master">
     <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/>
   </a>
   <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
     <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
-  </a>
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
-    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
-  </a>
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
-    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/>
   </a>
   <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
     <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
@@ -195,7 +191,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | (Approximate) Personalized Propagation of Neural Predictions (PPNP/APPNP) [9] | The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input. The predictions from the latter network are then diffused across the graph using a method based on Personalized PageRank. |
 | Node2Vec [2] | The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec algorithm from [Gensim](https://radimrehurek.com/gensim/). Learned node representations can be used in downstream machine learning models implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/), [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library. |
 | Metapath2Vec [3] | The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring node attributes. The implementation combines StellarGraph's metapath-guided random walk generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm. As with node2vec, the learned node representations (node embeddings) can be used in downstream machine learning models to solve tasks such as node classification, link prediction, etc, for heterogeneous networks. |
-| Relational Graph Convolutional Network [10] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
+| Relational Graph Convolutional Network [11] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
 
 
 ## Getting Help
@@ -257,4 +253,4 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 10. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))
 
 
-11. Modeling relational data with graph convolutional networks. M. Schlichtkrull, T. N. Kipf, P. Bloem, R. Van Den Berg, I. Titov, and M. Welling, European Semantic Web Conference (2018), arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907)).
+11. Modeling relational data with graph convolutional networks. M. Schlichtkrull, T. N. Kipf, P. Bloem, R. Van Den Berg, I. Titov, and M. Welling, European Semantic Web Conference (2018), arXiv:1609.02907 ([link](https://arxiv.org/abs/1703.06103)).

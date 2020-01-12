@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
 # limitations under the License.
 
 import setuptools
+import os
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
+# full tensorflow is too big for readthedocs's builder
+tensorflow = "tensorflow-cpu" if "READTHEDOCS" in os.environ else "tensorflow"
 REQUIRES = [
-    "tensorflow>=2.0.0",
+    f"{tensorflow}>=2.0.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
@@ -67,7 +70,7 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    python_requires=">=3.5.0, <3.8.0",
+    python_requires=">=3.6.0, <3.8.0",
     install_requires=REQUIRES,
     extras_require=EXTRAS_REQURES,
     packages=setuptools.find_packages(exclude=("tests",)),
