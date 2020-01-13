@@ -35,8 +35,9 @@ REQUIRES = [
 ]
 
 # The demos requirements are as follows:
-# * demos/community_detection: mplleaflet, python-igraph
-#  *** For now these are not installed as compiled python-igraph is not available for all platforms
+#
+# * demos/community_detection: mplleaflet, python-igraph (separate
+#   'extra', because it's only available on some platforms)
 #
 # * demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
 #
@@ -44,13 +45,27 @@ REQUIRES = [
 #
 # Other demos do not have specific requirements
 EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "seaborn", "rdflib"],
-    "test": ["pytest<=3.9.3", "pytest-benchmark<=3.2.2"],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
+    "igraph": ["python-igraph"],
+    "test": [
+        "pytest==5.3.1",
+        "pytest-benchmark>=3.1",
+        "pytest-cov>=2.6.0",
+        "coveralls>=1.5.1",
+        "coverage>=4.4,<5.0",
+        "black>=19.3b0",
+        "nbconvert>=5.5.0",
+        "treon>=0.1.2",
+    ],
 }
 
 # Long description
-with open("README.md", "r") as fh:
-    LONG_DESCRIPTION = fh.read()
+try:
+    with open("README.md", "r") as fh:
+        LONG_DESCRIPTION = fh.read()
+except FileNotFoundError:
+    # can't find the README (e.g. building the docker image), so skip it
+    LONG_DESCRIPTION = ""
 
 # Get global version
 # see: https://packaging.python.org/guides/single-sourcing-package-version/

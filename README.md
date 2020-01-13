@@ -139,6 +139,10 @@ Some of the examples in the `demos` [directory](https://github.com/stellargraph/
 pip install stellargraph[demos]
 ```
 
+The community detection demos requires `python-igraph` which is only available on some platforms. To install this in addition to the other demo requirements:
+```
+pip install stellargraph[demos,igraph]
+```
 
 #### Install StellarGraph in Anaconda Python:
 The StellarGraph library is available an [Anaconda Cloud](https://anaconda.org/stellargraph/stellargraph) and can be installed in [Anaconda Python](https://anaconda.com) using the command line `conda` tool, execute the following command:
