@@ -837,13 +837,13 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-        self._check_temporal_parameters(bidirectional, edge_time_label)
+        #self._check_temporal_parameters(bidirectional, edge_time_label)
         rs = self._get_random_state(seed)
 
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                walk = self._walk_walk(node, length, bidirectional, edge_time_label, rs)
+                walk = self._walk(node, length, bidirectional, edge_time_label, rs)
                 walks.append(walk)
         return walks
 
