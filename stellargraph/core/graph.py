@@ -200,7 +200,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring nodes.
         """
-        return self._graph.neighbors(node)
+        return self._graph.neighbors(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
     def in_nodes(
         self, node: Any, include_edge_weight=False, edge_types=None
@@ -220,7 +222,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        return self._graph.in_nodes(node)
+        return self._graph.in_nodes(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
     def out_nodes(
         self, node: Any, include_edge_weight=False, edge_types=None
@@ -240,7 +244,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        return self._graph.out_nodes(node)
+        return self._graph.out_nodes(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
     def nodes_of_type(self, node_type=None):
         """
