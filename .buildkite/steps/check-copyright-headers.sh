@@ -1,4 +1,6 @@
 #!/bin/bash
+# shellcheck disable=SC2016
+# Disable the above because this formats some markdown, and so there's lots of literal ` in strings
 
 set -euo pipefail
 
@@ -18,8 +20,20 @@ find . \( \
 
 if [ -s "$temp" ]; then
   echo "^^^ +++"
-  echo "found files without a copyright header (no matches for /$copyrightRegex/)"
+  msg="Found files without a copyright header (no matches for \`$copyrightRegex\`)"
+  echo "$msg"
+
+  # create a markdown list containing each of the files, wrapped in backticks so they're formatted
+  # nicely
+  markdown_file_list="$(sed 's/\(.*\)/- `\1`/' "$temp")"
+
+  buildkite-agent annotate --context "copyright-existence" --style error << EOF
+${msg}:
+
+${markdown_file_list}
+EOF
+
   exit 1
 else
-  echo "all files have a copyright header (have a match for /$copyrightRegex/)"
+  echo "all files have a copyright header (have a match for \`$copyrightRegex\`)"
 fi
