@@ -18,7 +18,8 @@ import random
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
-from stellargraph.core.graph import StellarGraph, StellarDiGraph
+from stellargraph.core.graph import StellarDiGraph
+from ..test_utils.graph_fixtures import create_test_graph
 
 
 def create_simple_graph():
@@ -41,52 +42,9 @@ def create_simple_graph():
     return StellarDiGraph(g)
 
 
-def create_test_graph():
-    """
-    Creates a simple graph for testing. The node ids are string or integers.
-
-    :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
-    StellarDiGraph format.
-    """
-    g = nx.DiGraph()
-    edges = [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, 7),
-        (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        (7, 7),
-        (8, 8),
-        (2, 2),
-        (5, 5),
-        (9, 9),
-        (
-            "self loner",
-            "self loner",
-        ),  # node that is not connected with any other nodes but has self loop
-    ]
-
-    g.add_edges_from(edges)
-    g.add_node(
-        "loner"
-    )  # node that is not connected to any other nodes and not having a self loop
-
-    return StellarDiGraph(g)
-
-
 class TestDirectedBreadthFirstNeighbours(object):
     def test_parameter_checking(self):
-        g = create_test_graph()
+        g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
         nodes = ["0", 1]
@@ -262,7 +220,7 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(node_graph[6]) == out_size[0] * out_size[1]
 
     def test_three_hops(self):
-        g = create_test_graph()
+        g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
         graph_nodes = list(g.nodes())
         for _ in range(50):
@@ -289,7 +247,7 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(subgraph[0][14]) == out_size[0] * out_size[1] * out_size[2]
 
     def test_benchmark_bfs_walk(self, benchmark):
-        g = create_test_graph()
+        g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
         nodes = ["0"]

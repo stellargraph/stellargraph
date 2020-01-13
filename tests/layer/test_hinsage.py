@@ -27,24 +27,7 @@ from tensorflow.keras import regularizers
 from stellargraph import StellarGraph
 from stellargraph.layer.hinsage import *
 from stellargraph.mapper import *
-
-
-def example_hin_1(feature_size_by_type=None):
-    G = nx.Graph()
-    G.add_nodes_from([0, 1, 2, 3], label="A")
-    G.add_nodes_from([4, 5, 6], label="B")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
-    G.add_edges_from([(4, 5)], label="F")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+from ..test_utils.graph_fixtures import example_hin_1
 
 
 def test_mean_hin_agg_constructor():

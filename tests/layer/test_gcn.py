@@ -30,14 +30,7 @@ import pandas as pd
 import numpy as np
 from tensorflow import keras
 import pytest
-
-
-def create_graph_features():
-    G = nx.Graph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
-    G = G.to_undirected()
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+from ..test_utils.graph_fixtures import create_graph_features
 
 
 def test_GraphConvolution_config():

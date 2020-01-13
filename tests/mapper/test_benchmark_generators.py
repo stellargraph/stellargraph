@@ -24,6 +24,7 @@ import networkx as nx
 import pytest
 
 
+# FIXME (#535): Consider using graph fixtures
 def example_Graph_2(feature_size=None, n_nodes=100, n_edges=200):
     G = nx.Graph()
 

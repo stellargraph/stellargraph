@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_graph_features():
     G = nx.Graph()
     G.add_nodes_from(["a", "b", "c", "d"])
