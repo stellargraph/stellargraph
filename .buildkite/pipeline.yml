@@ -40,7 +40,7 @@ steps:
   - label: ":shell: format"
     plugins:
       <<: *plugins
-      docker#v3.2.0:
+      docker#v3.4.0:
         image: "mvdan/shfmt:v2.6.4"
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
@@ -48,7 +48,7 @@ steps:
     command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
     plugins:
       <<: *plugins
-      docker#v3.2.0:
+      docker#v3.4.0:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
@@ -85,6 +85,9 @@ steps:
   - label: ":copyright: check copyright headers"
     command: ".buildkite/steps/check-copyright-headers.sh"
 
+  - label: ":space_invader: check whitespace"
+    command: "scripts/whitespace.sh --ci"
+
   - label: ":docker: build image"
     plugins:
       <<: *plugins
@@ -118,7 +121,6 @@ steps:
   # it runs in parallel with them.
   - label: ":memo: annotate with junit"
     plugins:
-      <<: *plugins
       junit-annotate#v1.7.0:
         artifacts: junit-*.xml
     depends_on:

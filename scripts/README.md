@@ -67,9 +67,3 @@ python scripts/test_demos.py
 ```
 
 The script takes a while to run, as it loops through all supported demo notebooks and scripts. FInally, it will print the number of passed and failed notebooks and scripts.
-
-
-
-
-
-

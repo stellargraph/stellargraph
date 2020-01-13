@@ -468,7 +468,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
 class Attri2VecNodeGenerator(BatchedNodeGenerator):
     """
-    A node feature generator for node representation prediction with the 
+    A node feature generator for node representation prediction with the
     attri2vec model.
 
     At minimum, supply the StellarGraph and the batch size.
@@ -477,7 +477,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`flow` method supplying the nodes to get an object 
+    Use the :meth:`flow` method supplying the nodes to get an object
     that can be used as a Keras data generator.
 
     Example::
@@ -497,7 +497,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
     def sample_features(self, head_nodes):
         """
-        Sample content features of the head nodes, and return these as a list of feature 
+        Sample content features of the head nodes, and return these as a list of feature
         arrays for the attri2vec algorithm.
 
         Args:

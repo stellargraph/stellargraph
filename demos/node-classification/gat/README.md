@@ -1,6 +1,6 @@
 # GAT for Node Classification
 
-This is an example of using the Graph Attention network (GAT) algorithm [1] for semi-supervised node classification 
+This is an example of using the Graph Attention network (GAT) algorithm [1] for semi-supervised node classification
 in a homogeneous network.
 
 ## Requirements
