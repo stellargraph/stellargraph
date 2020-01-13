@@ -8,14 +8,6 @@ temp="$(mktemp)"
 
 copyrightRegex="# Copyright [0-9-]*2020 Data61, CSIRO"
 
-annotate_error() {
-  context="$1"
-  msg="$2"
-
-
-  exitCode=1
-}
-
 echo "--- checking files have copyright headers"
 # Some files shouldn't have our copyright header and so are ignored
 find . \( \
