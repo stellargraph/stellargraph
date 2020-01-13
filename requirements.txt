@@ -1,3 +1,4 @@
+# Convenience for installing stellargraph for development (editable mode, appropriate dependencies)
 setuptools>=39.1.0
 # not igraph, because that doesn't work on all platforms
 -e .[demos,test]
