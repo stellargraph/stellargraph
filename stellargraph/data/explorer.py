@@ -842,72 +842,9 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         walks = []
         for node in nodes:  # iterate over root nodes
-            if not nx.is_isolate(self.graph, node):
-
-                for walk_number in range(n):  # generate n walks per root node
-                    start_edge = rs.sample(
-                        list(self.graph.edges(node, data=edge_time_label)), 1
-                    )  # sample a starting edge uniformly at random.
-                    current_forward_node = start_edge[0][1]
-                    current_forward_time = start_edge[0][2]
-                    move_forwards = True
-
-                    if bidirectional:
-                        move_backwards = True
-                        current_backwards_node = node
-                        current_backwards_time = start_edge[0][2]
-                    else:
-                        move_backwards = False
-
-                    walk = list()
-                    walk.append(node)  # start a walk
-                    walk.append(current_forward_node)
-
-                    while len(walk) < (length):
-                        if (
-                            move_forwards
-                        ):  # check to stop incase a dead end is reached moving forward
-                            forward_edges = []
-                            for _, neighbor, time in self.graph.edges(
-                                current_forward_node, data=edge_time_label
-                            ):
-                                if (
-                                    time > current_forward_time
-                                ):  # strictly look ahead of time to avoid being stuck in the current time
-                                    forward_edges.append((neighbor, time))
-                            if len(forward_edges) != 0:
-                                next_edge = rs.sample(forward_edges, 1)
-                                current_forward_time = next_edge[0][1]
-                                current_forward_node = next_edge[0][0]
-                                walk.append(current_forward_node)
-                            else:
-                                move_forwards = False  # reached a dead end at this walk
-
-                        if (
-                            move_backwards
-                        ):  # check to stop incase a dead end is reached moving backwards
-                            backwards_edges = []
-                            for _, neighbor, time in self.graph.edges(
-                                current_backwards_node, data=edge_time_label
-                            ):
-                                if time < current_backwards_time:
-                                    backwards_edges.append((neighbor, time))
-                            if len(backwards_edges) != 0:
-                                next_edge = rs.sample(backwards_edges, 1)
-                                current_backwards_time = next_edge[0][1]
-                                current_backwards_node = next_edge[0][0]
-                                walk.insert(0, current_backwards_node)
-                            else:
-                                move_backwards = (
-                                    False
-                                )  # reached a dead end at this walk
-
-                        if (not move_backwards) and (
-                            not move_forwards
-                        ):  # if dead ends reached in both direction, stop walking.
-                            break
-                    walks.append(walk)
-
+            for walk_number in range(n):  # generate n walks per root node
+                walk = self._walk_walk(node, length, bidirectional, edge_time_label, rs)
+                walks.append(walk)
         return walks
 
     def _check_temporal_parameters(self, bidirectional, edge_time_label):
@@ -930,34 +867,102 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         "Check that all edges have the time label specified by 'edge_time_label' and all the time values positive real values."
         for node in self.graph.nodes():
-            for neighbor in self.neighbors(node):
-                for k, v in self.graph[node][neighbor].items():
-                    if edge_time_label in v:
-                        t = v.get(edge_time_label)
-                        if t is None or np.isnan(t) or t == np.inf:
-                            self._raise_error(
-                                "Missing or invalid time ({}) between ({}) and ({}).".format(
-                                    t, node, neighbor
-                                )
-                            )
-                        if not isinstance(t, (int, float)):
+    
+            for neighbor in self.graph.neighbors(node, weight=True, edge_types=[edge_time_label]):
+                for n,t in neighbor:
+                    if not isinstance(t, (int, float)):
                             self._raise_error(
                                 "Timestamp between nodes ({}) and ({}) is not numeric ({}).".format(
                                     node, neighbor, t
                                 )
                             )
-                        if t < 0:  # check if edge has a negative timestamp
+                    elif t < 0:  # check if edge has a negative timestamp
                             self._raise_error(
                                 "Timestamp between nodes ({}) and ({}) is negative ({}).".format(
                                     node, neighbor, t
                                 )
                             )
-                    else:
-                        self._raise_error(
-                            "Invalid time label ({}) between ({}) and ({}).".format(
-                                edge_time_label, k, v
-                            )
-                        )
+                   
+    def _step(self, node, time, is_forward, edge_time_label, rs):
+        """Perform 1 temporal step from a node. Returns None if a dead-end is reached."""
+
+        def check_time(t):
+            return (is_forward and t > time) or (not is_forward and t < time)
+
+        edges = [
+            (neighbour, t)
+            for neighbour, t in self.graph.neighbors(
+                node, weight=True, edge_types=[edge_time_label]
+            )
+            if check_time(t)
+        ]
+
+        if len(edges) > 0:
+            next_edge = rs.sample(edges, 1)
+            return next_edge[0][0], next_edge[0][1]  # (node, time)
+        else:
+            return None
+
+    def _walk(self, node, length, bidirectional, edge_time_label, rs):
+        # take steps until walk is of correct length or reached dead ends
+        start_edge = self._step(
+            node, time=0, is_forward=True, edge_time_label=edge_time_label, rs=rs
+        )  # rs.sample(list(G.edges(node, data="weight")),1) # sample a starting edge uniformly at random.
+        current_forward_node = start_edge[0]
+        current_forward_time = start_edge[1]
+        move_forwards = True
+
+        if bidirectional:
+            move_backwards = True
+            current_backwards_node = node
+            current_backwards_time = current_forward_time
+        else:
+            move_backwards = False
+
+        walk = list()
+        walk.append(node)  # start a walk
+        walk.append(current_forward_node)
+
+        while len(walk) < (length):
+            if (
+                move_forwards
+            ):  # check to stop incase a dead end is reached moving forward
+                next_edge = self._step(
+                    current_forward_node,
+                    current_forward_time,
+                    is_forward=True,
+                    edge_time_label=edge_time_label,
+                    rs=rs,
+                )
+                if not next_edge == None:
+                    current_forward_time = next_edge[1]
+                    current_forward_node = next_edge[0]
+                    walk.append(current_forward_node)
+                else:
+                    move_forwards = False  # reached a dead end at this walk
+
+            if (
+                move_backwards
+            ):  # check to stop incase a dead end is reached moving backwards
+                next_backward_edge = self._step(
+                    current_backwards_node,
+                    current_backwards_time,
+                    is_forward=False,
+                    edge_time_label=edge_time_label,
+                    rs=rs,
+                )
+                if not next_backward_edge == None:
+                    current_backwards_node = next_backward_edge[0]
+                    current_backwards_time = next_backward_edge[1]
+                    walk.insert(0, current_backwards_node)
+                else:
+                    move_backwards = False  # reached a dead end at this walk
+
+            if (not move_backwards) and (
+                not move_forwards
+            ):  # if dead ends reached in both direction, stop walking.
+                break
+        return walk
 
 
 class TemporalBiasedRandomWalk(GraphWalk):
