@@ -537,28 +537,29 @@ def test_allocation_benchmark_creation_from_networkx(
     allocation_benchmark(f)
 
 
-def example_weighted_hin():
-    graph = nx.MultiDiGraph()
+def example_weighted_hin(is_directed=True):
+    graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
     graph.add_nodes_from([0, 1], label="A")
     graph.add_nodes_from([2, 3], label="B")
     graph.add_weighted_edges_from([(0, 1, 0.0), (0, 1, 1.0)], label="AA")
     graph.add_weighted_edges_from([(1, 2, 10.0), (1, 3, 10.0)], label="AB")
-    return StellarDiGraph(graph)
+    return StellarDiGraph(graph) if is_directed else StellarGraph(graph)
 
 
-def example_unweighted_hom():
-    graph = nx.MultiDiGraph()
+def example_unweighted_hom(is_directed=True):
+    graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
     graph.add_nodes_from([0, 1, 2, 3])
     graph.add_edges_from([(0, 1), (0, 1), (1, 2), (1, 3)])
-    return StellarDiGraph(graph)
+    return StellarDiGraph(graph) if is_directed else StellarGraph(graph)
 
 
 def assert_items_equal(l1, l2):
     return sorted(l1) == sorted(l2)
 
 
-def test_neighbors_weighted_hin():
-    graph = example_weighted_hin()
+@pytest.mark.parametrize("is_directed", [True, False])
+def test_neighbors_weighted_hin(is_directed):
+    graph = example_weighted_hin(is_directed=is_directed)
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True),
@@ -570,8 +571,9 @@ def test_neighbors_weighted_hin():
     )
 
 
-def test_neighbors_unweighted_hom():
-    graph = example_unweighted_hom()
+@pytest.mark.parametrize("is_directed", [True, False])
+def test_neighbors_unweighted_hom(is_directed):
+    graph = example_unweighted_hom(is_directed=is_directed)
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True),
@@ -580,6 +582,12 @@ def test_neighbors_unweighted_hom():
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]), []
     )
+
+
+def test_undirected_hin_neighbor_methods():
+    graph = example_weighted_hin(is_directed=True)
+    assert_items_equal(graph.neighbors(1), graph.in_nodes(1))
+    assert_items_equal(graph.neighbors(1), graph.out_nodes(1))
 
 
 def test_in_nodes_weighted_hin():
