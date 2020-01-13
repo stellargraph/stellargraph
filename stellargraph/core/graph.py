@@ -448,7 +448,8 @@ class StellarGraph:
 
 # A convenience class that merely specifies that edges have direction.
 class StellarDiGraph(StellarGraph):
-    def __init__(self,
+    def __init__(
+        self,
         graph=None,
         edge_weight_label="weight",
         node_type_name=globalvar.TYPE_ATTR_NAME,
