@@ -18,6 +18,7 @@
 
 **Breaking changes:**
 - The stellargraph library now only supports `tensorflow` versions 2.0 and above [\#518](https://github.com/stellargraph/stellargraph/pull/518). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
+- The stellargraph library now only supports Python versions 3.6 and above [\#](). Backward compatibility with earlier versions of Python is not guaranteed.
 
 - The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality.
 In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead.

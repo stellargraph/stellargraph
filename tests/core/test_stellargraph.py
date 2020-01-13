@@ -100,25 +100,25 @@ def example_hin_1_nx(feature_name=False, for_nodes=[]):
 def test_graph_constructor():
     sg = StellarGraph()
     assert sg.is_directed() == False
-    assert sg._node_type_attr == "label"
-    assert sg._edge_type_attr == "label"
+    assert sg._graph._node_type_attr == "label"
+    assert sg._graph._edge_type_attr == "label"
 
     sg = StellarGraph(node_type_name="type", edge_type_name="type")
     assert sg.is_directed() == False
-    assert sg._node_type_attr == "type"
-    assert sg._edge_type_attr == "type"
+    assert sg._graph._node_type_attr == "type"
+    assert sg._graph._edge_type_attr == "type"
 
 
 def test_digraph_constructor():
     sg = StellarDiGraph()
     assert sg.is_directed() == True
-    assert sg._node_type_attr == "label"
-    assert sg._edge_type_attr == "label"
+    assert sg._graph._node_type_attr == "label"
+    assert sg._graph._edge_type_attr == "label"
 
     sg = StellarDiGraph(node_type_name="type", edge_type_name="type")
     assert sg.is_directed() == True
-    assert sg._node_type_attr == "type"
-    assert sg._edge_type_attr == "type"
+    assert sg._graph._node_type_attr == "type"
+    assert sg._graph._edge_type_attr == "type"
 
 
 def test_info():
