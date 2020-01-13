@@ -867,22 +867,24 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         "Check that all edges have the time label specified by 'edge_time_label' and all the time values positive real values."
         for node in self.graph.nodes():
-    
-            for neighbor in self.graph.neighbors(node, weight=True, edge_types=[edge_time_label]):
-                for n,t in neighbor:
+
+            for neighbor in self.graph.neighbors(
+                node, weight=True, edge_types=[edge_time_label]
+            ):
+                for n, t in neighbor:
                     if not isinstance(t, (int, float)):
-                            self._raise_error(
-                                "Timestamp between nodes ({}) and ({}) is not numeric ({}).".format(
-                                    node, neighbor, t
-                                )
+                        self._raise_error(
+                            "Timestamp between nodes ({}) and ({}) is not numeric ({}).".format(
+                                node, neighbor, t
                             )
+                        )
                     elif t < 0:  # check if edge has a negative timestamp
-                            self._raise_error(
-                                "Timestamp between nodes ({}) and ({}) is negative ({}).".format(
-                                    node, neighbor, t
-                                )
+                        self._raise_error(
+                            "Timestamp between nodes ({}) and ({}) is negative ({}).".format(
+                                node, neighbor, t
                             )
-                   
+                        )
+
     def _step(self, node, time, is_forward, edge_time_label, rs):
         """Perform 1 temporal step from a node. Returns None if a dead-end is reached."""
 
