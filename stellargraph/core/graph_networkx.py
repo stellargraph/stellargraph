@@ -782,18 +782,19 @@ class NetworkXStellarGraph(StellarGraph):
             edge_types,
         )
 
-    def _both(self, node, include_edge_weight, edge_types):
+    def neighbors(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
+        if self.is_directed():
+            in_nodes = self._in(node, include_edge_weight, edge_types)
+            out_nodes = self._out(node, include_edge_weight, edge_types)
+            return in_nodes | out_nodes
         return self._transform_edges(
             self._graph.edges(node, data=True),
             lambda e: e[1],
             include_edge_weight,
             edge_types,
         )
-
-    def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
-    ) -> Iterable[Any]:
-        return self._both(node, include_edge_weight, edge_types)
 
     def in_nodes(
         self, node: Any, include_edge_weight=False, edge_types=None
