@@ -23,10 +23,14 @@ if [ -s "$temp" ]; then
   msg="Found files without a copyright header (no matches for \`$copyrightRegex\`)"
   echo "$msg"
 
+  # create a markdown list containing each of the files, wrapped in backticks so they're formatted
+  # nicely
+  markdown_file_list="$(sed 's/\(.*\)/- `\1`/' "$temp")"
+
   buildkite-agent annotate --context "copyright-existence" --style error << EOF
 ${msg}:
 
-$(sed 's/\(.*\)/- `\1`/' "$temp")
+${markdown_file_list}
 EOF
 
   exit 1
