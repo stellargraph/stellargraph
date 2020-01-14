@@ -17,13 +17,10 @@ can ask that links to be predicted should occur after *01/01/2005*. That is link
 used for training, and data after that same date are put aside for predicting/testing.
 
 
-### Instalation
-To install the requirements for running the script, activate a python 3.6 environment
-where the `stellargraph` library is installed (see the library installation
-[instructions](https://github.com/stellargraph/stellargraph/)), navigate to the directory with this script,
-and execute
-
-```pip install -r requirements.txt```
+## Requirements
+This example assumes the `stellargraph` library and its requirements have been
+installed by following the installation instructions in the README
+of the library's [root directory](https://github.com/stellargraph/stellargraph).
 
 ### Usage
 
