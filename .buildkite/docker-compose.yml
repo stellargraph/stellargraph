@@ -2,7 +2,11 @@
 version: "3.4"
 services:
   runner-3.6: &runner-config
-    image: "python:3.6-slim"
+    build: &runner-build
+      context: ..
+      dockerfile: docker/ci-runner/Dockerfile
+      arg:
+        PYTHON_VERSION: "3.6"
     working_dir: /workdir
     volumes:
       - $PWD:/workdir
@@ -24,4 +28,7 @@ services:
 
   runner-3.7:
     <<: *runner-config
-    image: "python:3.7-slim"
+    build:
+      <<: *runner-build
+      arg:
+        PYTHON_VERSION: "3.7"
