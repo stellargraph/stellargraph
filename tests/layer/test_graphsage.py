@@ -23,35 +23,17 @@ from tensorflow import keras
 from tensorflow.keras import initializers, regularizers
 
 import numpy as np
-import networkx as nx
 import pytest
 
-from stellargraph.core.graph import StellarGraph
 from stellargraph.mapper import GraphSAGENodeGenerator
 from stellargraph.layer.graphsage import (
     GraphSAGE,
-    DirectedGraphSAGE,
     MeanAggregator,
     MaxPoolingAggregator,
     MeanPoolingAggregator,
     AttentionalAggregator,
 )
-
-
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+from ..test_utils.graphs import example_graph_1
 
 
 # Mean aggregator tests
