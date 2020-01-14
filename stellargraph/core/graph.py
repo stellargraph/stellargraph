@@ -24,7 +24,7 @@ __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 from typing import Iterable, Any, Mapping, List, Optional, Set
 
 from .. import globalvar
-from .schema import GraphSchema
+from .schema import GraphSchema, EdgeType
 
 
 class StellarGraph:
@@ -387,7 +387,82 @@ class StellarGraph:
         Returns:
             GraphSchema object.
         """
-        return self._graph.create_graph_schema(create_type_maps, nodes)
+        if nodes is None:
+            nodes = self.nodes()
+            edges = self.edges(triple=True)
+
+        elif create_type_maps is False:
+            edges = self.edges(triple=True)
+
+        else:
+            raise ValueError("Creating type maps for subsampled nodes is not supported")
+
+        # Create node type index list
+        node_types = sorted({self.node_type(n) for n in nodes}, key=str)
+
+        graph_schema = {nt: set() for nt in node_types}
+
+        # Create edge type index list
+        edge_types = set()
+        for n1, n2, edge_type in edges:
+            # Edge type tuple
+            node_type_1 = self.node_type(n1)
+            node_type_2 = self.node_type(n2)
+
+            # Add edge type to node_type_1 data
+            edge_type_tri = EdgeType(node_type_1, edge_type, node_type_2)
+            edge_types.add(edge_type_tri)
+            graph_schema[node_type_1].add(edge_type_tri)
+
+            # Also add type to node_2 data if not digraph
+            if not self.is_directed():
+                edge_type_tri = EdgeType(node_type_2, edge_type, node_type_1)
+                edge_types.add(edge_type_tri)
+                graph_schema[node_type_2].add(edge_type_tri)
+
+        # Create ordered list of edge_types
+        edge_types = sorted(edge_types)
+
+        # Create keys for node and edge types
+        schema = {
+            node_label: [
+                edge_types[einx]
+                for einx in sorted([edge_types.index(et) for et in list(node_data)])
+            ]
+            for node_label, node_data in graph_schema.items()
+        }
+
+        # Create schema object
+        gs = GraphSchema()
+        gs._is_directed = self.is_directed()
+        gs.edge_types = edge_types
+        gs.node_types = node_types
+        gs.schema = schema
+
+        # Create quick type lookups for nodes and edges.
+        # Note: we encode the type index, in the assumption it will take
+        # less storage.
+        if create_type_maps:
+            node_type_map = {
+                n: node_types.index(self.node_type(n)) for n in self.nodes()
+            }
+            edge_type_map = {
+                (src, tgt, key): edge_types.index(
+                    EdgeType(
+                        node_types[node_type_map[src]],
+                        self._graph._get_edge_type(data),
+                        node_types[node_type_map[tgt]],
+                    )
+                )
+                for src, tgt, key, data in self._graph._graph.edges(
+                    keys=True, data=True
+                )
+            }
+
+            gs.node_type_map = node_type_map
+            gs.edge_type_map = edge_type_map
+
+        return gs
 
     def node_degrees(self) -> Mapping[Any, int]:
         """
