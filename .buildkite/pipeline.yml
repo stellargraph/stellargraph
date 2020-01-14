@@ -31,6 +31,17 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":python: 3.8"
+    key: "python_3_8"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3.8
+    agents:
+      queue: "t2medium"
+
   - label: ":python-black: format"
     plugins:
       <<: *plugins
@@ -126,4 +137,5 @@ steps:
     depends_on:
       - "python_3_6"
       - "python_3_7"
+      - "python_3_8"
     allow_dependency_failure: true
