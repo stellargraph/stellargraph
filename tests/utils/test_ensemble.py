@@ -17,7 +17,6 @@
 import pytest
 import networkx as nx
 import tensorflow as tf
-from stellargraph import StellarGraph
 from stellargraph.layer import (
     GraphSAGE,
     GCN,
@@ -41,6 +40,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy, binary_crossentropy
 
 
+# FIXME (#535): Consider using graph fixtures
 def example_graph_1(feature_size=None):
     G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2), (5, 6), (1, 5)]

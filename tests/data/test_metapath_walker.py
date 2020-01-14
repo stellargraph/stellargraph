@@ -20,6 +20,7 @@ from stellargraph.data.explorer import UniformRandomMetaPathWalk
 from stellargraph.core.graph import StellarGraph
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_test_graph():
     """
     Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers. Each node

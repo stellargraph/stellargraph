@@ -22,13 +22,9 @@ import numpy as np
 import pytest
 import pandas as pd
 import scipy.sparse as sps
-
-
-def create_graph_features():
-    G = nx.MultiDiGraph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+from ..test_utils.graphs import (
+    relational_create_graph_features as create_graph_features,
+)
 
 
 class Test_RelationalFullBatchNodeGenerator:
