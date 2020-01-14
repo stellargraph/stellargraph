@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,52 +17,8 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import SampledBreadthFirstWalk
-from stellargraph.core.graph import StellarGraph, StellarDiGraph
-
-
-def create_test_graph():
-    """
-    Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers.
-
-    :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
-    StellarGraph format.
-    """
-    g = nx.Graph()
-    edges = [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, 7),
-        (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        (7, 7),
-        (8, 8),
-        (2, 2),
-        (5, 5),
-        (9, 9),
-        (
-            "self loner",
-            "self loner",
-        ),  # node that is not connected with any other nodes but has self loop
-    ]
-
-    g.add_edges_from(edges)
-    g.add_node(
-        "loner"
-    )  # node that is not connected to any other nodes and not having a self loop
-
-    g = StellarGraph(g)
-
-    return g
+from stellargraph.core.graph import StellarDiGraph
+from ..test_utils.graphs import create_test_graph
 
 
 def expected_bfw_size(n_size):

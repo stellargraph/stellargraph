@@ -19,13 +19,13 @@ of the StellarGraph library.
 Currently the examples in this directory use the Yelp dataset.
 The Yelp dataset can be obtained by navigating to https://www.yelp.com/dataset,
 selecting "Download Dataset" and signing the licence agreement.
-Then, download the JSON dataset and uncompress it to an appropriate location 
+Then, download the JSON dataset and uncompress it to an appropriate location
 in your filesystem.
 
 There are several different versions of the dataset, enumerated by "rounds",
 to check which round the dataset is, look for the file named "Yelp_Dataset_Challenge_Round_XX.pdf"
 where "XX" is the round number. The current script supports rounds 12 and 13.
-The path to the Yelp dataset used below should contain the JSON files including 
+The path to the Yelp dataset used below should contain the JSON files including
 `yelp_academic_dataset_user.json` or `user.json` depending on the round number.
 
 The example code uses a preprocessed version of the dataset that is generated

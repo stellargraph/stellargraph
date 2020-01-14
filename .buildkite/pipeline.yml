@@ -4,11 +4,16 @@ compose-config: &compose-config
     - docker-compose.yml
     - .buildkite/docker-compose.yml
 
+plugins: &plugins
+  stellargraph/github-merged-pr#develop:
+    mode: checkout
+
 steps:
   - label: ":python: 3.6"
     key: "python_3_6"
     command: ".buildkite/steps/script.sh"
     plugins:
+      <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
         run: runner-3.6
@@ -19,6 +24,7 @@ steps:
     key: "python_3_7"
     command: ".buildkite/steps/script.sh"
     plugins:
+      <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
         run: runner-3.7
@@ -27,11 +33,13 @@ steps:
 
   - label: ":python-black: format"
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/black:snapshot"
 
   - label: ":shell: format"
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "mvdan/shfmt:v2.6.4"
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
@@ -39,21 +47,25 @@ steps:
   - label: ":shell: shellcheck"
     command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/hadolint:snapshot"
 
   - label: ":docker: format Dockerfiles"
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/dockerfile-utils:snapshot"
 
   - label: ":prettier::yaml: format YAML"
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/prettier:snapshot"
         command: [
@@ -66,14 +78,19 @@ steps:
 
   - label: ":yaml::lint-roller: lint YAML"
     plugins:
+      <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/yamllint:snapshot"
 
   - label: ":copyright: check copyright headers"
     command: ".buildkite/steps/check-copyright-headers.sh"
 
+  - label: ":space_invader: check whitespace"
+    command: "scripts/whitespace.sh --ci"
+
   - label: ":docker: build image"
     plugins:
+      <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
         build:
@@ -93,6 +110,7 @@ steps:
 
   - label: ":docker: publish image"
     plugins:
+      <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
         push:

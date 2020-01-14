@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import networkx as nx
 import pytest
 
 
+# FIXME (#535): Consider using graph fixtures
 def example_Graph_2(feature_size=None, n_nodes=100, n_edges=200):
     G = nx.Graph()
 

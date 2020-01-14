@@ -1,3 +1,0 @@
-python-igraph
-mplleaflet==0.0.5
-

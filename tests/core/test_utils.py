@@ -20,34 +20,15 @@ Utils tests:
 
 """
 import pytest
-import random
-from networkx import Graph as nxGraph
-import numpy as np
 import scipy as sp
 
 from stellargraph.core.utils import *
-from stellargraph.core.graph import *
+from ..test_utils.graphs import example_graph_random
 
 
 @pytest.fixture
-def example_graph(feature_size=4, n_edges=20, n_nodes=6, n_isolates=1):
-    G = nxGraph()
-    n_noniso = n_nodes - n_isolates
-    edges = [
-        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
-        for _ in range(n_edges)
-    ]
-    G.add_nodes_from(range(n_nodes))
-    G.add_edges_from(edges, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+def example_graph():
+    return example_graph_random()
 
 
 def test_normalize_adj(example_graph):
