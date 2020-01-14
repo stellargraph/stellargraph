@@ -136,23 +136,13 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_fullbatch_generator_init_1(self):
         G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
         generator = RelationalFullBatchNodeGenerator(G, name="test")
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+        G, _ = create_graph_features()
 
         func = "Not callable"
 
@@ -160,12 +150,7 @@ class Test_RelationalFullBatchNodeGenerator:
             generator = RelationalFullBatchNodeGenerator(G, "test", transform=func)
 
     def test_fullbatch_generator_transform(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarDiGraph(G, node_type_name="node", node_features=node_features)
+        G, _ = create_graph_features()
 
         def func(features, A, **kwargs):
             return features, A.dot(A)
