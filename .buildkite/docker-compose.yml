@@ -3,7 +3,6 @@ version: "3.4"
 services:
   runner-3.6: &runner-config
     build: &runner-build
-      context: ..
       dockerfile: docker/ci-runner/Dockerfile
       args:
         PYTHON_VERSION: "3.6"
