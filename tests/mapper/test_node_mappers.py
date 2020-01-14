@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,24 +29,15 @@ import random
 import pytest
 import pandas as pd
 import scipy.sparse as sps
+from ..test_utils.graphs import (
+    example_graph_1,
+    example_graph_random,
+    example_hin_1,
+    create_graph_features,
+)
 
 
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
+# FIXME (#535): Consider using graph fixtures
 def example_graph_2(feature_size=None):
     G = nx.Graph()
     elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
@@ -57,59 +48,6 @@ def example_graph_2(feature_size=None):
     if feature_size is not None:
         for v in G.nodes():
             G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_graph_3(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
-    G = nx.Graph()
-    n_noniso = n_nodes - n_isolates
-    edges = [
-        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
-        for _ in range(n_edges)
-    ]
-    G.add_nodes_from(range(n_nodes))
-    G.add_edges_from(edges, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_digraph_2(feature_size=None):
-    G = nx.DiGraph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarDiGraph(G, node_features="feature")
-
-    else:
-        return StellarDiGraph(G)
-
-
-def example_hin_1(feature_size_by_type=None):
-    G = nx.Graph()
-    G.add_nodes_from([0, 1, 2, 3], label="A")
-    G.add_nodes_from([4, 5, 6], label="B")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
-    G.add_edges_from([(4, 5)], label="F")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
         return StellarGraph(G, node_features="feature")
 
     else:
@@ -363,12 +301,12 @@ def test_nodemapper_isolated_nodes():
     n_batch = 2
 
     # test graph
-    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    assert isinstance(G, NetworkXStellarGraph)
+    assert isinstance(G._graph, NetworkXStellarGraph)
     # XXX Hack - Only works for NetworkXStellarGraph instances
-    Gnx = G._graph
+    Gnx = G._graph._graph
     ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
@@ -423,7 +361,7 @@ def test_nodemapper_incorrect_targets():
 
 def test_hinnodemapper_constructor():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes)
+    G = example_hin_1(feature_sizes=feature_sizes, feature_name="feature")
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
@@ -440,7 +378,7 @@ def test_hinnodemapper_constructor():
 
 def test_hinnodemapper_constructor_all_options():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes)
+    G = example_hin_1(feature_sizes=feature_sizes, feature_name="feature")
 
     gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
 
@@ -451,7 +389,7 @@ def test_hinnodemapper_constructor_all_options():
 
 
 def test_hinnodemapper_constructor_no_features():
-    G = example_hin_1(feature_size_by_type=None)
+    G = example_hin_1(feature_sizes=None)
     with pytest.raises(RuntimeError):
         mapper = HinSAGENodeGenerator(
             G, batch_size=2, num_samples=[2, 2], head_node_type="A"
@@ -742,14 +680,6 @@ def test_attri2vec_nodemapper_2():
         assert all(np.ravel(nf) == expected_node_batches[ii])
 
 
-def create_graph_features():
-    G = nx.Graph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
-    G = G.to_undirected()
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
-
-
 class Test_FullBatchNodeGenerator:
     """
     Tests of FullBatchNodeGenerator class
@@ -758,7 +688,7 @@ class Test_FullBatchNodeGenerator:
     n_feat = 4
     target_dim = 5
 
-    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
     N = len(G.nodes())
 
     def test_generator_constructor(self):

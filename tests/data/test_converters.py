@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-from stellargraph.core.graph import *
+from stellargraph.core.graph import StellarGraph
 from stellargraph.data.converter import (
     StellarAttributeConverter,
     CategoricalConverter,
@@ -30,6 +30,7 @@ import numpy as np
 import pytest
 
 
+# FIXME (#535): Consider using graph fixtures
 def example_stellar_graph_1():
     G = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (3, 2)]

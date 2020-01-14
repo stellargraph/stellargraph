@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,9 @@ import numpy as np
 import pytest
 import pandas as pd
 import scipy.sparse as sps
-
-
-def create_graph_features():
-    G = nx.MultiDiGraph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+from ..test_utils.graphs import (
+    relational_create_graph_features as create_graph_features,
+)
 
 
 class Test_RelationalFullBatchNodeGenerator:
@@ -59,7 +55,7 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G._graph))
+            generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G._graph._graph))
 
     def generator_flow(self, G, node_ids, node_targets, sparse=False):
         generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)

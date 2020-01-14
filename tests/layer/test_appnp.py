@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2019 Data61, CSIRO
+# Copyright 2019-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,14 +24,7 @@ import pandas as pd
 import numpy as np
 from tensorflow import keras
 import pytest
-
-
-def create_graph_features():
-    G = nx.Graph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
-    G = G.to_undirected()
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+from ..test_utils.graphs import create_graph_features
 
 
 def test_APPNP_edge_cases():

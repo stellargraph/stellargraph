@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import numpy as np
 import pytest
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_graph_features():
     G = nx.Graph()
     G.add_nodes_from(["a", "b", "c", "d"])

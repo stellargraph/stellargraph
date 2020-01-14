@@ -205,25 +205,23 @@ class UniformRandomWalk(GraphWalk):
         self._check_common_parameters(nodes, n, length, seed)
         rs = self._get_random_state(seed)
 
-        walks = []
-        for node in nodes:  # iterate over root nodes
-            for walk_number in range(n):  # generate n walks per root node
-                walk = list()
-                current_node = node
-                for _ in range(length):
-                    walk.extend([current_node])
-                    neighbours = self.neighbors(current_node)
-                    if (
-                        len(neighbours) == 0
-                    ):  # for whatever reason this node has no neighbours so stop
-                        break
-                    else:
-                        rs.shuffle(neighbours)  # shuffles the list in place
-                        current_node = neighbours[0]  # select the first node to follow
+        # for each root node, do n walks
+        return [self._walk(rs, node, length) for node in nodes for _ in range(n)]
 
-                walks.append(walk)
+    def _walk(self, rs, start_node, length):
+        walk = [start_node]
+        current_node = start_node
+        for _ in range(length - 1):
+            neighbours = self.neighbors(current_node)
+            if not neighbours:
+                # dead end, so stop
+                break
+            else:
+                # has neighbours, so pick one to walk to
+                current_node = rs.choice(neighbours)
+            walk.append(current_node)
 
-        return walks
+        return walk
 
 
 def naive_weighted_choices(rs, weights):
