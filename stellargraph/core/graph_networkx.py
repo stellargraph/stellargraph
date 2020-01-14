@@ -768,7 +768,7 @@ class NetworkXStellarGraph(StellarGraph):
                 or e[2].get(self._edge_type_attr) in edge_types_set
             )
 
-        return {get(e) for e in edges if is_correct_type(e)}
+        return [get(e) for e in edges if is_correct_type(e)]
 
     def _in(self, node, include_edge_weight, edge_types):
         return self._transform_edges(
@@ -792,7 +792,7 @@ class NetworkXStellarGraph(StellarGraph):
         if self.is_directed():
             in_nodes = self._in(node, include_edge_weight, edge_types)
             out_nodes = self._out(node, include_edge_weight, edge_types)
-            return in_nodes | out_nodes
+            return in_nodes + out_nodes
         return self._transform_edges(
             self._graph.edges(node, data=True),
             lambda e: e[1],
