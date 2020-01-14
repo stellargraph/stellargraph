@@ -9,8 +9,24 @@ plugins: &plugins
     mode: checkout
 
 steps:
+  - label: ":docker: build 3.6 runner"
+    key: "build_3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        build: runner-3.6
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - stellargraph:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+          - stellargraph:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
+    agents:
+      queue: "t2medium"
+
   - label: ":python: 3.6"
     key: "python_3_6"
+    depends_on: "build_3_6"
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
@@ -20,8 +36,24 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":docker: build 3.7 runner"
+    key: "build_3_7"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        build: runner-3.7
+        image-repository: index.docker.io/stellargraph/stellargraph-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - stellargraph:index.docker.io/stellargraph/stellargraph:3_7-${IMAGE_TAG}
+          - stellargraph:index.docker.io/stellargraph/stellargraph:3_7-latest
+    agents:
+      queue: "t2medium"
+
   - label: ":python: 3.7"
     key: "python_3_7"
+    depends_on: "build_3_7"
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
@@ -108,13 +140,15 @@ steps:
 
   - wait
 
-  - label: ":docker: publish image"
+  - label: ":docker: publish images"
     plugins:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
         push:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
+          - runner-3.6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+          - runner-3.7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
 
   # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
   # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
