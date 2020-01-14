@@ -20,6 +20,7 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 import random
+import pytest
 
 
 def create_graph_features():
@@ -208,3 +209,23 @@ def example_graph_random(feature_size=4, n_edges=20, n_nodes=6, n_isolates=1):
 
     else:
         return StellarGraph(graph)
+
+
+def node_features(seed=0) -> pd.DataFrame:
+    random = np.random.RandomState(seed)
+    node_data_np = random.rand(10, 10)
+    return pd.DataFrame(node_data_np)
+
+
+@pytest.fixture
+def petersen_graph() -> StellarGraph:
+    nxg = nx.petersen_graph()
+    return StellarGraph(nxg, node_features=node_features())
+
+
+@pytest.fixture
+def simple_graph() -> StellarGraph:
+    nxg = nx.MultiGraph()
+    nxg.add_nodes_from(range(10))
+    nxg.add_edges_from([(i, i + 1) for i in range(9)])
+    return StellarGraph(nxg, node_features=node_features())

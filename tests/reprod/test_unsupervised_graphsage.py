@@ -22,7 +22,7 @@ from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.mapper.sampled_link_generators import GraphSAGELinkGenerator
 from stellargraph.layer.graphsage import GraphSAGE
 from stellargraph.layer.link_inference import link_classification
-from ..test_utils.graph_fixtures import petersen_graph
+from ..test_utils.graphs import petersen_graph
 from .fixtures import assert_reproducible
 
 
