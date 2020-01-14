@@ -27,7 +27,7 @@ from tensorflow.keras import regularizers
 from stellargraph import StellarGraph
 from stellargraph.layer.hinsage import *
 from stellargraph.mapper import *
-from ..test_utils.graph_fixtures import example_hin_1
+from ..test_utils.graphs import example_hin_1
 
 
 def test_mean_hin_agg_constructor():

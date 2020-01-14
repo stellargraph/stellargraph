@@ -26,7 +26,7 @@ from tensorflow.keras.layers import Input, Lambda
 from stellargraph import StellarDiGraph, StellarGraph
 from stellargraph.layer.misc import SqueezedSparseConversion
 import pandas as pd
-from ..test_utils.graph_fixtures import (
+from ..test_utils.graphs import (
     relational_create_graph_features as create_graph_features,
 )
 

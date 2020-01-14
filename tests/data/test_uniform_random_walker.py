@@ -16,7 +16,7 @@
 
 import pytest
 from stellargraph.data.explorer import UniformRandomWalk
-from ..test_utils.graph_fixtures import create_test_graph
+from ..test_utils.graphs import create_test_graph
 
 
 class TestUniformRandomWalk(object):

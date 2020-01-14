@@ -21,7 +21,7 @@ import pytest
 import random
 from stellargraph.core.graph import *
 from ..test_utils.alloc import snapshot, allocation_benchmark
-from ..test_utils.graph_fixtures import (
+from ..test_utils.graphs import (
     example_graph_1_nx,
     example_graph_2,
     example_hin_1_nx,

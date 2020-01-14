@@ -27,7 +27,7 @@ from tensorflow import keras
 import numpy as np
 import networkx as nx
 import pytest
-from ..test_utils.graph_fixtures import example_graph_1
+from ..test_utils.graphs import example_graph_1
 
 
 def test_attri2vec_constructor():

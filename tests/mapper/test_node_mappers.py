@@ -29,7 +29,7 @@ import random
 import pytest
 import pandas as pd
 import scipy.sparse as sps
-from ..test_utils.graph_fixtures import (
+from ..test_utils.graphs import (
     example_graph_1,
     example_graph_random,
     example_hin_1,

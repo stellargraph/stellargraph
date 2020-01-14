@@ -24,7 +24,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy
 import networkx as nx
 from tensorflow.keras import backend as K
-from ..test_utils.graph_fixtures import example_graph_1_saliency_maps as example_graph_1
+from ..test_utils.graphs import example_graph_1_saliency_maps as example_graph_1
 
 
 def create_GAT_model(graph):

@@ -23,7 +23,7 @@ import pytest
 import scipy as sp
 
 from stellargraph.core.utils import *
-from ..test_utils.graph_fixtures import example_graph_random
+from ..test_utils.graphs import example_graph_random
 
 
 @pytest.fixture

@@ -22,7 +22,7 @@ from stellargraph.mapper import FullBatchNodeGenerator
 from tensorflow.keras import Model, regularizers
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy
-from ..test_utils.graph_fixtures import example_graph_1_saliency_maps as example_graph_1
+from ..test_utils.graphs import example_graph_1_saliency_maps as example_graph_1
 
 
 def create_GCN_model_dense(graph):

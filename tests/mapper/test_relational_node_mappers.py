@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 import pandas as pd
 import scipy.sparse as sps
-from ..test_utils.graph_fixtures import (
+from ..test_utils.graphs import (
     relational_create_graph_features as create_graph_features,
 )
 

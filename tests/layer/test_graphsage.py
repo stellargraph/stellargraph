@@ -33,7 +33,7 @@ from stellargraph.layer.graphsage import (
     MeanPoolingAggregator,
     AttentionalAggregator,
 )
-from ..test_utils.graph_fixtures import example_graph_1
+from ..test_utils.graphs import example_graph_1
 
 
 # Mean aggregator tests

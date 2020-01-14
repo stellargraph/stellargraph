@@ -24,7 +24,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
 from stellargraph.mapper import FullBatchNodeGenerator, GraphSAGENodeGenerator
 from stellargraph.layer import *
-from ..test_utils.graph_fixtures import example_graph_1
+from ..test_utils.graphs import example_graph_1
 
 
 class Test_GraphAttention:

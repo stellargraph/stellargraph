@@ -19,7 +19,7 @@
 Utils tests:
 
 """
-from ..test_utils.graph_fixtures import example_graph_1
+from ..test_utils.graphs import example_graph_1
 
 
 def test_edges_with_type():

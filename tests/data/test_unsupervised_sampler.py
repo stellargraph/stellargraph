@@ -19,7 +19,7 @@ import pytest
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.graph import StellarGraph
 
-from ..test_utils.graph_fixtures import example_graph_2, create_test_graph_nx
+from ..test_utils.graphs import example_graph_2, create_test_graph_nx
 
 
 class TestUnsupervisedSampler(object):

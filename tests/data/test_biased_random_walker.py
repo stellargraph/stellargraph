@@ -19,7 +19,7 @@ import pytest
 import networkx as nx
 from stellargraph.data.explorer import BiasedRandomWalk
 from stellargraph.core.graph import StellarGraph
-from ..test_utils.graph_fixtures import create_test_graph
+from ..test_utils.graphs import create_test_graph
 
 
 # FIXME (#535): Consider using graph fixtures

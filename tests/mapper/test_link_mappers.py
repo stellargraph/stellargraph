@@ -36,11 +36,7 @@ import random
 from stellargraph.mapper import *
 from stellargraph.core.graph import *
 from stellargraph.data.unsupervised_sampler import *
-from ..test_utils.graph_fixtures import (
-    example_graph_1,
-    example_graph_2,
-    example_graph_random,
-)
+from ..test_utils.graphs import example_graph_1, example_graph_2, example_graph_random
 
 
 # FIXME (#535): Consider using graph fixtures

@@ -19,7 +19,7 @@ import pytest
 import networkx as nx
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graph_fixtures import create_test_graph
+from ..test_utils.graphs import create_test_graph
 
 
 def create_simple_graph():

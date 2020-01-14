@@ -24,7 +24,7 @@ import pandas as pd
 import numpy as np
 from tensorflow import keras
 import pytest
-from ..test_utils.graph_fixtures import create_graph_features
+from ..test_utils.graphs import create_graph_features
 
 
 def test_PPNP_edge_cases():
