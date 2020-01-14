@@ -5,7 +5,7 @@ services:
     build: &runner-build
       context: ..
       dockerfile: docker/ci-runner/Dockerfile
-      arg:
+      args:
         PYTHON_VERSION: "3.6"
     working_dir: /workdir
     volumes:
@@ -30,5 +30,5 @@ services:
     <<: *runner-config
     build:
       <<: *runner-build
-      arg:
+      args:
         PYTHON_VERSION: "3.7"
