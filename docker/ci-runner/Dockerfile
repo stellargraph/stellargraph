@@ -1,10 +1,6 @@
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim
 
-RUN adduser --disabled-password --gecos '' stellar
-USER stellar
-ENV PATH=${PATH}:/home/stellar/.local/bin
-
 WORKDIR /build
 # Copy requirements first to install dependencies without having to recompute when the source code
 # changes
