@@ -16,84 +16,16 @@
 
 import pytest
 
-import numpy as np
-import networkx as nx
-from tensorflow import keras
-
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.core.graph import StellarGraph
-from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.mapper import *
-from stellargraph.layer import GraphSAGE, link_classification
 
-
-def create_test_graph():
-    """
-    Creates a simple graph for testing the unsupervised sampler
-
-    :return: A simple graph with 10 nodes and 20 edges  in networkx format.
-    """
-    g = nx.Graph()
-    edges = [
-        (1, 3),
-        (1, 4),
-        (1, 9),
-        (2, 5),
-        (2, 7),
-        (3, 6),
-        (3, 8),
-        (4, 2),
-        (4, 8),
-        (4, 10),
-        (5, 7),
-        (5, 9),
-        (5, 10),
-        (6, 1),
-        (6, 7),
-        (6, 9),
-        (7, 3),
-        (8, 2),
-        (8, 10),
-        (9, 10),
-    ]
-
-    g.add_edges_from(edges)
-
-    return g
-
-
-def example_Graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-
-    G = StellarGraph(G, node_features="feature")
-    return G
-
-
-def example_Graph_2(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size)
-
-    G = StellarGraph(G, node_features="feature")
-    return G
+from ..test_utils.graphs import example_graph_2, create_test_graph_nx
 
 
 class TestUnsupervisedSampler(object):
     def test_UnsupervisedSampler_parameter(self):
 
-        g = create_test_graph()
+        g = create_test_graph_nx()
         # rw = UniformRandomWalk(StellarGraph(g))
 
         # if no graph is provided
@@ -151,7 +83,7 @@ class TestUnsupervisedSampler(object):
 
     def test_generator_parameter(self):
 
-        g = create_test_graph()
+        g = create_test_graph_nx()
         g = StellarGraph(g)
         # rw = UniformRandomWalk(g)
         sampler = UnsupervisedSampler(G=g)
@@ -179,7 +111,7 @@ class TestUnsupervisedSampler(object):
         n_feat = 4
         batch_size = 4
 
-        G = example_Graph_2(n_feat)
+        G = example_graph_2(feature_size=n_feat)
 
         sampler = UnsupervisedSampler(G=G)
 
@@ -202,7 +134,7 @@ class TestUnsupervisedSampler(object):
         batch_size = 4
         number_of_batches = 3
 
-        G = example_Graph_2(n_feat)
+        G = example_graph_2(feature_size=n_feat)
 
         sampler = UnsupervisedSampler(G=G)
 

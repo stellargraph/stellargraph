@@ -15,50 +15,8 @@
 # limitations under the License.
 
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.core.graph import StellarGraph
-
-
-def create_test_graph():
-    """
-    Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers.
-
-    :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
-    networkx format.
-    """
-    g = nx.Graph()
-    edges = [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, 7),
-        (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        (7, 7),
-        (8, 8),
-        (2, 2),
-        (5, 5),
-        (9, 9),
-        ("self lonely", "self lonely"),  # an isolated node with a self link
-    ]
-
-    g.add_edges_from(edges)
-
-    g.add_node("lonely")  # an isolated node without self link
-
-    g = StellarGraph(g)
-
-    return g
+from ..test_utils.graphs import create_test_graph
 
 
 class TestUniformRandomWalk(object):
@@ -189,12 +147,12 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) <= length
 
-    def test_walk_generation_lonely_root_node(self):
+    def test_walk_generation_loner_root_node(self):
 
         g = create_test_graph()
         urw = UniformRandomWalk(g)
 
-        nodes = ["lonely"]  # this node has no edges including itself
+        nodes = ["loner"]  # this node has no edges including itself
         n = 1
         length = 1
         seed = None
@@ -223,12 +181,12 @@ class TestUniformRandomWalk(object):
                 len(subgraph) == 1
             )  # always 1 since only the root node can ever be added to the walk
 
-    def test_walk_generation_self_lonely_root_node(self):
+    def test_walk_generation_self_loner_root_node(self):
 
         g = create_test_graph()
         urw = UniformRandomWalk(g)
 
-        nodes = ["self lonely"]  # this node has link to self but no other edges
+        nodes = ["self loner"]  # this node has link to self but no other edges
         n = 1
         length = 1
         seed = None
@@ -244,7 +202,7 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert node == "self lonely"  # all nodes should be the same node
+                assert node == "self loner"  # all nodes should be the same node
 
         n = 1
         length = 99
@@ -253,7 +211,7 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert node == "self lonely"  # all nodes should be the same node
+                assert node == "self loner"  # all nodes should be the same node
 
         n = 10
         length = 10
@@ -262,7 +220,7 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert node == "self lonely"  # all nodes should be the same node
+                assert node == "self loner"  # all nodes should be the same node
 
     def test_benchmark_uniformrandomwalk(self, benchmark):
 

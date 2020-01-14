@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import numpy as np
-import networkx as nx
 from stellargraph.layer.rgcn import RelationalGraphConvolution, RGCN
 from stellargraph.mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 import pytest
@@ -27,20 +26,9 @@ from tensorflow.keras.layers import Input, Lambda
 from stellargraph import StellarDiGraph, StellarGraph
 from stellargraph.layer.misc import SqueezedSparseConversion
 import pandas as pd
-
-
-def create_graph_features():
-    G = nx.MultiGraph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
-
-
-def create_graph_features_directed():
-    G = nx.MultiDiGraph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
+from ..test_utils.graphs import (
+    relational_create_graph_features as create_graph_features,
+)
 
 
 def test_RelationalGraphConvolution_config():
@@ -311,7 +299,7 @@ def test_RGCN_apply_dense():
 
 
 def test_RGCN_apply_sparse_directed():
-    G, features = create_graph_features_directed()
+    G, features = create_graph_features(is_directed=True)
 
     As = get_As(G)
     As = [A.tocoo() for A in As]
@@ -346,7 +334,7 @@ def test_RGCN_apply_sparse_directed():
 
 
 def test_RGCN_apply_dense_directed():
-    G, features = create_graph_features_directed()
+    G, features = create_graph_features(is_directed=True)
 
     As = get_As(G)
     As = [np.expand_dims(A.todense(), 0) for A in As]
