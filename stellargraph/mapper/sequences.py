@@ -496,9 +496,6 @@ class RelationalFullBatchNodeSequence(Sequence):
                 "When passed together targets and indices should be the same length."
             )
 
-        # Store features and targets as np.ndarray
-        self.features = np.asanyarray(features)
-        self.target_indices = np.asanyarray(indices)
         self.use_sparse = use_sparse
 
         # Convert all adj matrices to dense and reshape to have batch dimension of 1
@@ -512,23 +509,17 @@ class RelationalFullBatchNodeSequence(Sequence):
         else:
             self.As = [np.expand_dims(A.todense(), 0) for A in As]
 
-        # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
+        # Make sure all inputs are numpy arrays, and have batch dimension of 1
+        def reshape(array):
+            return np.reshape(np.asanyarray(array), (1,) + array.shape)
 
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.target_indices = reshape(indices)
+        self.features = reshape(features)
+
         self.inputs = [self.features, self.target_indices] + self.As
 
-        # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
-
         if targets is not None:
-            self.targets = np.asanyarray(targets)
-            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
+            self.targets = reshape(targets)
         else:
             self.targets = None
 
