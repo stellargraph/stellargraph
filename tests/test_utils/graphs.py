@@ -45,7 +45,7 @@ def relational_create_graph_features(is_directed=False):
     graph.add_nodes_from(nodes)
     graph.add_edges_from([("a", "b", r1), ("b", "c", r1), ("a", "c", r2)])
 
-    SG = StellarDiGraph if directed else StellarGraph
+    SG = StellarDiGraph if is_directed else StellarGraph
     return SG(graph, node_features=node_features), features
 
 
