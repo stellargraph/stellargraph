@@ -35,12 +35,7 @@ class Test_RelationalFullBatchNodeGenerator:
     n_feat = 2
     target_dim = 5
 
-    gnx, features = create_graph_features()
-    nodes = list(gnx.nodes)
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarDiGraph(gnx, node_features=node_features)
+    G, features = create_graph_features()
     N = len(G.nodes())
     edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
     num_relationships = len(edge_types)
