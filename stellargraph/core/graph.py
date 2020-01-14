@@ -209,20 +209,30 @@ class StellarGraph:
         """
         return self._graph.has_node(node)
 
-    def neighbors(self, node: Any) -> Iterable[Any]:
+    def neighbors(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
 
         Args:
             node (any): The node in question.
+            include_edge_weight (bool, default False): If True, each neighbour in the
+                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
+            edge_types (list of hashable, optional): If provided, only traverse the graph
+                via the provided edge types when collecting neighbours.
 
         Returns:
             iterable: The neighbouring nodes.
         """
-        return self._graph.neighbors(node)
+        return self._graph.neighbors(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
-    def in_nodes(self, node: Any) -> Iterable[Any]:
+    def in_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
         directed to the given node. For an undirected graph,
@@ -230,13 +240,21 @@ class StellarGraph:
 
         Args:
             node (any): The node in question.
+            include_edge_weight (bool, default False): If True, each neighbour in the
+                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
+            edge_types (list of hashable, optional): If provided, only traverse the graph
+                via the provided edge types when collecting neighbours.
 
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        return self._graph.in_nodes(node)
+        return self._graph.in_nodes(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
-    def out_nodes(self, node: Any) -> Iterable[Any]:
+    def out_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
         directed from the given node. For an undirected graph,
@@ -244,11 +262,17 @@ class StellarGraph:
 
         Args:
             node (any): The node in question.
+            include_edge_weight (bool, default False): If True, each neighbour in the
+                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
+            edge_types (list of hashable, optional): If provided, only traverse the graph
+                via the provided edge types when collecting neighbours.
 
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        return self._graph.out_nodes(node)
+        return self._graph.out_nodes(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
     def nodes_of_type(self, node_type=None):
         """
