@@ -23,7 +23,7 @@ from ..test_utils.graphs import line_graph
 
 
 class TestUnsupervisedSampler(object):
-    def test_UnsupervisedSampler_parameter(self, simple_graph):
+    def test_UnsupervisedSampler_parameter(self, line_graph):
 
         # if no graph is provided
         with pytest.raises(ValueError):
@@ -31,23 +31,23 @@ class TestUnsupervisedSampler(object):
 
         # walk must have length strictly greater than 1
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=simple_graph, length=1)
+            UnsupervisedSampler(G=line_graph, length=1)
 
         # at least 1 walk from each root node
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=simple_graph, number_of_walks=0)
+            UnsupervisedSampler(G=line_graph, number_of_walks=0)
 
         # nodes nodes parameter should be an iterable of node IDs
         with pytest.raises(ValueError):
-            UnsupervisedSampler(G=simple_graph, nodes=1)
+            UnsupervisedSampler(G=line_graph, nodes=1)
 
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes
-        sampler = UnsupervisedSampler(G=simple_graph, nodes=None)
-        assert sampler.nodes == list(simple_graph.nodes())
+        sampler = UnsupervisedSampler(G=line_graph, nodes=None)
+        assert sampler.nodes == list(line_graph.nodes())
 
         # if the seed value is provided check
         # that the random choices is reproducable
-        sampler = UnsupervisedSampler(G=simple_graph, seed=1)
+        sampler = UnsupervisedSampler(G=line_graph, seed=1)
         assert sampler.random.choices(range(100), k=10) == [
             13,
             84,
@@ -61,13 +61,13 @@ class TestUnsupervisedSampler(object):
             2,
         ]
 
-    def test_run_batch_sizes(self, simple_graph):
+    def test_run_batch_sizes(self, line_graph):
         batch_size = 4
-        sampler = UnsupervisedSampler(G=simple_graph, length=2, number_of_walks=2)
+        sampler = UnsupervisedSampler(G=line_graph, length=2, number_of_walks=2)
         batches = sampler.run(batch_size)
 
         # check batch sizes
-        assert len(batches) == np.ceil(len(simple_graph.nodes()) * 4 / batch_size)
+        assert len(batches) == np.ceil(len(line_graph.nodes()) * 4 / batch_size)
         for ids, labels in batches[:-1]:
             assert len(ids) == len(labels) == batch_size
 
@@ -76,9 +76,9 @@ class TestUnsupervisedSampler(object):
         assert len(ids) == len(labels)
         assert len(ids) <= batch_size
 
-    def test_run_context_pairs(self, simple_graph):
+    def test_run_context_pairs(self, line_graph):
         batch_size = 4
-        sampler = UnsupervisedSampler(G=simple_graph, length=2, number_of_walks=2)
+        sampler = UnsupervisedSampler(G=line_graph, length=2, number_of_walks=2)
         batches = sampler.run(batch_size)
 
         grouped_by_target = defaultdict(list)
@@ -87,7 +87,7 @@ class TestUnsupervisedSampler(object):
             for (target, context), label in zip(ids, labels):
                 grouped_by_target[target].append((context, label))
 
-        assert len(grouped_by_target) == len(simple_graph.nodes())
+        assert len(grouped_by_target) == len(line_graph.nodes())
 
         for target, sampled in grouped_by_target.items():
             # exactly 2 positive and 2 negative context pairs for each target node
@@ -96,4 +96,4 @@ class TestUnsupervisedSampler(object):
             # since each walk has length = 2, there must be an edge between each positive context pair
             for context, label in sampled:
                 if label == 1:
-                    assert context in set(simple_graph.neighbors(target))
+                    assert context in set(line_graph.neighbors(target))
