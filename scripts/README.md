@@ -6,11 +6,10 @@ Currently there are two scripts, one to formats and clean the specified Juptyer 
 
 ### Requirements
 
-These scripts have requirements in addition to the base library, install the requirements using the `requirements.txt` file in this directory:
+These scripts have requirements in addition to the base library, install the requirements using the `test` extra, e.g. in the parent directory:
 
 ```
-cd <scripts directory>
-pip install -r requirements.txt
+pip install .[test]
 ```
 
 
@@ -67,9 +66,3 @@ python scripts/test_demos.py
 ```
 
 The script takes a while to run, as it loops through all supported demo notebooks and scripts. FInally, it will print the number of passed and failed notebooks and scripts.
-
-
-
-
-
-

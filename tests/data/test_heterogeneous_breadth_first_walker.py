@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
 from stellargraph.core.graph import StellarGraph
 
 
+# FIXME (#535): Consider using graph fixtures. These two test graphs are very similar, and should be combined
 def create_simple_test_graph():
     """
     Creates a simple graph for testing the SampledHeterogeneousBreadthFirstWalk class. The node ids are string or integers.
