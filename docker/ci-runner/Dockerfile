@@ -12,5 +12,5 @@ RUN echo "+++ installing dependencies" \
     # uninstall it (without uninstalling the dependencies), so that the installation with source
     # code below will work without the `--upgrade` flag. This flag will cause pip to try to update
     # dependencies, which we don't want to happen in that second step.
-    && pip install --no-cache-dir /build/ --user \
+    && pip install --no-cache-dir /build/ \
     && pip uninstall -y stellargraph
