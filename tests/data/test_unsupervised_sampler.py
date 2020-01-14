@@ -19,7 +19,7 @@ import pytest
 import numpy as np
 from collections import defaultdict
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
-from ..test_utils.graphs import simple_graph
+from ..test_utils.graphs import line_graph
 
 
 class TestUnsupervisedSampler(object):

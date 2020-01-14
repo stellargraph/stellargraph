@@ -234,9 +234,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         Returns:
             SampledBreadthFirstWalk object
         """
-        if batch_num in self._samplers:
+        try:
             return self._samplers[batch_num]
-        else:
+        except KeyError:
             seed = self._seed + batch_num if self._seed is not None else None
             self._samplers[batch_num] = SampledBreadthFirstWalk(
                 self._graph, graph_schema=self.schema, seed=seed

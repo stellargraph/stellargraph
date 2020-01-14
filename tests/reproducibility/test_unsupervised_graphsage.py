@@ -47,7 +47,7 @@ def unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize):
     return model
 
 
-def unsup_gs_embeddings(
+def unsup_gs(
     g,
     num_samples,
     optimizer,
@@ -81,23 +81,17 @@ def unsup_gs_embeddings(
         workers=4,
         shuffle=True,
     )
-    weights = model.get_weights()  # list of np matrices
-    return weights
-
-
-def embedding_equals(emb1, emb2):
-    return all([np.array_equal(w, w_new) for w, w_new in zip(emb1, emb2)])
+    return model
 
 
 def test_reproducibility(petersen_graph):
     assert_reproducible(
-        lambda: unsup_gs_embeddings(
+        lambda: unsup_gs(
             petersen_graph,
             [2],
             tf.optimizers.Adam(1e-3),
             epochs=4,
             walk_length=2,
             batch_size=4,
-        ),
-        embedding_equals,
+        )
     )

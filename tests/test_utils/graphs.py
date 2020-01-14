@@ -224,7 +224,7 @@ def petersen_graph() -> StellarGraph:
 
 
 @pytest.fixture
-def simple_graph() -> StellarGraph:
+def line_graph() -> StellarGraph:
     nxg = nx.MultiGraph()
     nxg.add_nodes_from(range(10))
     nxg.add_edges_from([(i, i + 1) for i in range(9)])

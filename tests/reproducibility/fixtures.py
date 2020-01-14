@@ -14,20 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 
-def assert_reproducible(func, equals, num_iter=20):
+
+def models_equals(model1, model2):
+    w1 = model1.get_weights()
+    w2 = model2.get_weights()
+    return all(np.array_equal(w, w_new) for w, w_new in zip(w1, w2))
+
+
+def assert_reproducible(func, num_iter=20):
     """
-    Assert results from calling ``func`` are reproducible. The ``equals`` function is used to test equality of results.
+    Assert Keras models produced from calling ``func`` are reproducible.
 
     Args:
-        func (callable): Function to check for reproducible "result"
-        equals (callable): Function to take two arguments (of "result" type) and check that they are equal
+        func (callable): Function to check for reproducible model
         num_iter (int, default 20): Number of iterations to run through to validate reproducibility.
 
     """
-    out = func()
+    model = func()
     for i in range(num_iter):
-        out_new = func()
-        if not equals(out, out_new):
-            assert False, (out, out_new)
+        model_new = func()
+        if not models_equals(model, model_new):
+            assert False, (model, model_new)
     assert True
