@@ -9,7 +9,7 @@ upload_tests() {
 }
 
 echo "--- installing dependencies"
-pip install -q --no-cache-dir -r requirements.txt .
+pip install -q --no-cache-dir '.[test]'
 
 echo "--- listing dependency versions"
 pip freeze
