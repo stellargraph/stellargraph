@@ -44,7 +44,7 @@ REQUIRES = [
 # * demos/link-prediction/hinsage/utils.py: numba
 #
 # Other demos do not have specific requirements
-EXTRAS_REQURES = {
+EXTRAS_REQUIRES = {
     "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
     "igraph": ["python-igraph"],
     "test": [
@@ -87,7 +87,7 @@ setuptools.setup(
     include_package_data=True,
     python_requires=">=3.5.0, <3.8.0",
     install_requires=REQUIRES,
-    extras_require=EXTRAS_REQURES,
+    extras_require=EXTRAS_REQUIRES,
     packages=setuptools.find_packages(exclude=("tests",)),
     classifiers=[
         "Programming Language :: Python :: 3",
