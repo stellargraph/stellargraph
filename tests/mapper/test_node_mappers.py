@@ -304,9 +304,7 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    assert isinstance(G._graph, NetworkXStellarGraph)
-    # XXX Hack - Only works for NetworkXStellarGraph instances
-    Gnx = G._graph._graph
+    Gnx = G.to_networkx()
     ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 

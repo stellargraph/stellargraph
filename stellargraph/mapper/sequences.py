@@ -322,6 +322,22 @@ class OnDemandLinkSequence(Sequence):
             self._batches = self._create_batches()
 
 
+def _full_batch_array_and_reshape(array, propagate_none=False):
+    """
+    Args:
+        array: an array-like object
+        propagate_none: if True, return None when array is None
+    Returns:
+        array as a numpy array with an extra first dimension (batch dimension) equal to 1
+    """
+    # if it's ok, just short-circuit on None (e.g. for target arrays, that may or may not exist)
+    if propagate_none and array is None:
+        return None
+
+    as_np = np.asanyarray(array)
+    return np.reshape(as_np, (1,) + as_np.shape)
+
+
 class FullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
@@ -358,28 +374,20 @@ class FullBatchNodeSequence(Sequence):
 
         # Convert sparse matrix to dense:
         if sps.issparse(A) and hasattr(A, "toarray"):
-            self.A_dense = A.toarray()
+            self.A_dense = _full_batch_array_and_reshape(A.toarray())
         elif isinstance(A, (np.ndarray, np.matrix)):
-            self.A_dense = np.asanyarray(A)
+            self.A_dense = _full_batch_array_and_reshape(A)
         else:
             raise TypeError(
                 "Expected input matrix to be either a Scipy sparse matrix or a Numpy array."
             )
 
         # Reshape all inputs to have batch dimension of 1
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
-        self.A_dense = self.A_dense.reshape((1,) + self.A_dense.shape)
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-
+        self.features = _full_batch_array_and_reshape(features)
+        self.target_indices = _full_batch_array_and_reshape(indices)
         self.inputs = [self.features, self.target_indices, self.A_dense]
 
-        if targets is not None:
-            self.targets = np.asanyarray(targets)
-            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
-        else:
-            self.targets = None
+        self.targets = _full_batch_array_and_reshape(targets, propagate_none=True)
 
     def __len__(self):
         return 1
@@ -422,10 +430,6 @@ class SparseFullBatchNodeSequence(Sequence):
                 "When passed together targets and indices should be the same length."
             )
 
-        # Store features and targets as np.ndarray
-        self.features = np.asanyarray(features)
-        self.target_indices = np.asanyarray(indices)
-
         # Ensure matrix is in COO format to extract indices
         if sps.isspmatrix(A):
             A = A.tocoo()
@@ -440,10 +444,8 @@ class SparseFullBatchNodeSequence(Sequence):
         self.A_values = np.expand_dims(A.data, 0)
 
         # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        self.target_indices = _full_batch_array_and_reshape(indices)
+        self.features = _full_batch_array_and_reshape(features)
         self.inputs = [
             self.features,
             self.target_indices,
@@ -451,11 +453,7 @@ class SparseFullBatchNodeSequence(Sequence):
             self.A_values,
         ]
 
-        if targets is not None:
-            self.targets = np.asanyarray(targets)
-            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
-        else:
-            self.targets = None
+        self.targets = _full_batch_array_and_reshape(targets, propagate_none=True)
 
     def __len__(self):
         return 1
@@ -495,9 +493,6 @@ class RelationalFullBatchNodeSequence(Sequence):
                 "When passed together targets and indices should be the same length."
             )
 
-        # Store features and targets as np.ndarray
-        self.features = np.asanyarray(features)
-        self.target_indices = np.asanyarray(indices)
         self.use_sparse = use_sparse
 
         # Convert all adj matrices to dense and reshape to have batch dimension of 1
@@ -511,25 +506,12 @@ class RelationalFullBatchNodeSequence(Sequence):
         else:
             self.As = [np.expand_dims(A.todense(), 0) for A in As]
 
-        # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
+        # Make sure all inputs are numpy arrays, and have batch dimension of 1
+        self.target_indices = _full_batch_array_and_reshape(indices)
+        self.features = _full_batch_array_and_reshape(features)
         self.inputs = [self.features, self.target_indices] + self.As
 
-        # Reshape all inputs to have batch dimension of 1
-        self.target_indices = np.reshape(
-            self.target_indices, (1,) + self.target_indices.shape
-        )
-        self.features = np.reshape(self.features, (1,) + self.features.shape)
-
-        if targets is not None:
-            self.targets = np.asanyarray(targets)
-            self.targets = np.reshape(self.targets, (1,) + self.targets.shape)
-        else:
-            self.targets = None
+        self.targets = _full_batch_array_and_reshape(targets, propagate_none=True)
 
     def __len__(self):
         return 1
