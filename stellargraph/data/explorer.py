@@ -829,7 +829,9 @@ class TemporalRandomWalk(GraphWalk):
             length: <int> Maximum length of each random walk
             bidirectional: <bool> Whether the walk extends on both direction.
             seed: <int> Random number generator seed; default is None
-            step_type: whether the next step taken in the walk is chosen uniformly at random or is biased (such as, exponential)
+            step_type <string>: whether the next step taken in the walk is chosen uniformly at random or is biased (such as, exponential). 
+            The default is 'uniform_random', any other string value assumes a biased time respecting walk. 
+            And currently only exponentially biased random walks are implemented.  
 
         Returns:
             <list> List of lists of nodes ids for each of the random walks
@@ -927,8 +929,9 @@ class TemporalRandomWalk(GraphWalk):
             return None
 
     def _walk(self, node, length, bidirectional, edge_time_label, step_type, rs):
-        walk = list()
 
+        walk = list()
+        walk.append(node)  # start a walk
         # take steps until walk is of correct length or reached dead ends
         start_edge = self._step(
             node,
@@ -952,7 +955,6 @@ class TemporalRandomWalk(GraphWalk):
             else:
                 move_backwards = False
 
-            walk.append(node)  # start a walk
             walk.append(current_forward_node)
 
             while len(walk) < (length):
@@ -996,3 +998,4 @@ class TemporalRandomWalk(GraphWalk):
                     not move_forwards
                 ):  # if dead ends reached in both direction, stop walking.
                     return walk
+        return walk
