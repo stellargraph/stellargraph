@@ -33,10 +33,20 @@ def create_graph_features():
 
 def relational_create_graph_features(is_directed=False):
     # RGCN, relational node mappers
+    r1 = {"label": "r1"}
+    r2 = {"label": "r2"}
+    nodes = ["a", "b", "c"]
+    features = np.array([[1, 1], [1, 0], [0, 1]])
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+
     graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
-    graph.add_nodes_from(["a", "b", "c"])
-    graph.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
-    return graph, np.array([[1, 1], [1, 0], [0, 1]])
+    graph.add_nodes_from(nodes)
+    graph.add_edges_from([("a", "b", r1), ("b", "c", r1), ("a", "c", r2)])
+
+    SG = StellarDiGraph if is_directed else StellarGraph
+    return SG(graph, node_features=node_features), features
 
 
 def example_graph_1_nx(
