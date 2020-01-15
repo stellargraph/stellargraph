@@ -99,7 +99,7 @@ class GraphWalk(object):
     def neighbors(self, node):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return list(self.graph.neighbors(node))
+        return self.graph.neighbors(node)
 
     def run(self, **kwargs):
         """

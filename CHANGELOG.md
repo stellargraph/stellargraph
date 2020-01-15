@@ -31,6 +31,8 @@ Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by p
    - `get_feature_for_nodes` is now `node_features`
    - `type_for_node` is now `node_type`
 
+- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now return a list of neighbours instead of a set. This addresses [\#653](https://github.com/stellargraph/stellargraph/issues/653). This means multi-edges are no longer collapsed into one in the return value.
+
 **Fixed bugs:**
 
 
