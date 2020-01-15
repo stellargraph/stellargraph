@@ -14,7 +14,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
-      viviedu/docker-compose-buildkite-plugin#dd0a3f41f2f3d362e68bc9e0924bf718b8f6bff5:
+      viviedu/docker-compose#dd0a3f41f2f3d362e68bc9e0924bf718b8f6bff5:
         <<: *compose-config
         build: runner-3_6
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
@@ -35,7 +35,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
-      viviedu/docker-compose-buildkite-plugin#dd0a3f41f2f3d362e68bc9e0924bf718b8f6bff5:
+      viviedu/docker-compose#dd0a3f41f2f3d362e68bc9e0924bf718b8f6bff5:
         <<: *compose-config
         build: runner-3_7
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
