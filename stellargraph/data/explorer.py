@@ -835,7 +835,7 @@ class TemporalUniformRandomWalk(GraphWalk):
 
         """
         self._check_common_parameters(nodes, n, length, seed)
-        #self._check_temporal_parameters(bidirectional, edge_time_label)
+        # self._check_temporal_parameters(bidirectional, edge_time_label)
         rs = self._get_random_state(seed)
 
         walks = []
@@ -867,7 +867,7 @@ class TemporalUniformRandomWalk(GraphWalk):
         for node in self.graph.nodes():
 
             for neighbor in self.graph.neighbors(
-                node, weight=True, edge_types=[edge_time_label]
+                node, include_edge_weight=True, edge_types=[edge_time_label]
             ):
                 for n, t in neighbor:
                     if not isinstance(t, (int, float)):
@@ -892,7 +892,7 @@ class TemporalUniformRandomWalk(GraphWalk):
         edges = [
             (neighbour, t)
             for neighbour, t in self.graph.neighbors(
-                node, weight=True, edge_types=[edge_time_label]
+                node, include_edge_weight=True, edge_types=[edge_time_label]
             )
             if check_time(t)
         ]
@@ -904,65 +904,68 @@ class TemporalUniformRandomWalk(GraphWalk):
             return None
 
     def _walk(self, node, length, bidirectional, edge_time_label, rs):
+        walk = list()
+
         # take steps until walk is of correct length or reached dead ends
         start_edge = self._step(
             node, time=0, is_forward=True, edge_time_label=edge_time_label, rs=rs
         )  # rs.sample(list(G.edges(node, data="weight")),1) # sample a starting edge uniformly at random.
-        current_forward_node = start_edge[0]
-        current_forward_time = start_edge[1]
-        move_forwards = True
 
-        if bidirectional:
-            move_backwards = True
-            current_backwards_node = node
-            current_backwards_time = current_forward_time
-        else:
-            move_backwards = False
+        if not start_edge == None:
 
-        walk = list()
-        walk.append(node)  # start a walk
-        walk.append(current_forward_node)
+            current_forward_node = start_edge[0]
+            current_forward_time = start_edge[1]
+            move_forwards = True
 
-        while len(walk) < (length):
-            if (
-                move_forwards
-            ):  # check to stop incase a dead end is reached moving forward
-                next_edge = self._step(
-                    current_forward_node,
-                    current_forward_time,
-                    is_forward=True,
-                    edge_time_label=edge_time_label,
-                    rs=rs,
-                )
-                if not next_edge == None:
-                    current_forward_time = next_edge[1]
-                    current_forward_node = next_edge[0]
-                    walk.append(current_forward_node)
-                else:
-                    move_forwards = False  # reached a dead end at this walk
+            if bidirectional:
+                move_backwards = True
+                current_backwards_node = node
+                current_backwards_time = current_forward_time
+            else:
+                move_backwards = False
 
-            if (
-                move_backwards
-            ):  # check to stop incase a dead end is reached moving backwards
-                next_backward_edge = self._step(
-                    current_backwards_node,
-                    current_backwards_time,
-                    is_forward=False,
-                    edge_time_label=edge_time_label,
-                    rs=rs,
-                )
-                if not next_backward_edge == None:
-                    current_backwards_node = next_backward_edge[0]
-                    current_backwards_time = next_backward_edge[1]
-                    walk.insert(0, current_backwards_node)
-                else:
-                    move_backwards = False  # reached a dead end at this walk
+            walk.append(node)  # start a walk
+            walk.append(current_forward_node)
 
-            if (not move_backwards) and (
-                not move_forwards
-            ):  # if dead ends reached in both direction, stop walking.
-                break
-        return walk
+            while len(walk) < (length):
+                if (
+                    move_forwards
+                ):  # check to stop incase a dead end is reached moving forward
+                    next_edge = self._step(
+                        current_forward_node,
+                        current_forward_time,
+                        is_forward=True,
+                        edge_time_label=edge_time_label,
+                        rs=rs,
+                    )
+                    if not next_edge == None:
+                        current_forward_time = next_edge[1]
+                        current_forward_node = next_edge[0]
+                        walk.append(current_forward_node)
+                    else:
+                        move_forwards = False  # reached a dead end at this walk
+
+                if (
+                    move_backwards
+                ):  # check to stop incase a dead end is reached moving backwards
+                    next_backward_edge = self._step(
+                        current_backwards_node,
+                        current_backwards_time,
+                        is_forward=False,
+                        edge_time_label=edge_time_label,
+                        rs=rs,
+                    )
+                    if not next_backward_edge == None:
+                        current_backwards_node = next_backward_edge[0]
+                        current_backwards_time = next_backward_edge[1]
+                        walk.insert(0, current_backwards_node)
+                    else:
+                        move_backwards = False  # reached a dead end at this walk
+
+                if (not move_backwards) and (
+                    not move_forwards
+                ):  # if dead ends reached in both direction, stop walking.
+                    return walk
 
 
 class TemporalBiasedRandomWalk(GraphWalk):
