@@ -19,8 +19,8 @@ steps:
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
         no-cache: ${REFRESH_BUILD-false}
         cache-from:
-          - stellargraph:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
-          - stellargraph:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
+          - runner-3.6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+          - runner-3.6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
     agents:
       queue: "t2medium"
 
@@ -46,8 +46,8 @@ steps:
         image-repository: index.docker.io/stellargraph/stellargraph-runner
         no-cache: ${REFRESH_BUILD-false}
         cache-from:
-          - stellargraph:index.docker.io/stellargraph/stellargraph:3_7-${IMAGE_TAG}
-          - stellargraph:index.docker.io/stellargraph/stellargraph:3_7-latest
+          - runner-3.7:index.docker.io/stellargraph/stellargraph:3_7-${IMAGE_TAG}
+          - runner-3.7:index.docker.io/stellargraph/stellargraph:3_7-latest
     agents:
       queue: "t2medium"
 
