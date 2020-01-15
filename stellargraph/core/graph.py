@@ -147,6 +147,34 @@ class StellarGraph:
             dtype,
         )
 
+    # customise how a missing attribute is handled to give better error messages for the NetworkX
+    # -> no NetworkX transition.
+    def __getattr__(self, item):
+        import networkx
+
+        try:
+            # get the native python wording of the error message
+            super().__getattribute__(item)
+        except AttributeError as e:
+            if hasattr(networkx.MultiDiGraph, item):
+                # a networkx class has this as an attribute, so let's assume that it's old code
+                # from before the conversion and replace (the `from None`) the default exception
+                # with one with a more specific message that guides the user to the fix
+                type_name = type(self).__name__
+                raise AttributeError(
+                    f"{e.args[0]}. The '{type_name}' type no longer inherits from the NetworkX types: consider using one of its method, or, if that is not possible, the `.to_networkx()` conversion function."
+                ) from None
+
+            # doesn't look like a NetworkX method so use the default error
+            raise
+        else:
+            # __getattr__ is only called for attribute accesses that don't exist,
+            # so the `__getattribute__` call should also fail, but, just in case it doesn't,
+            # let's not return None implicitly
+            raise AssertionError(
+                f"attribute '{item}' that was missing has magically appeared again"
+            )
+
     def is_directed(self) -> bool:
         """
         Indicates whether the graph is directed (True) or undirected (False).

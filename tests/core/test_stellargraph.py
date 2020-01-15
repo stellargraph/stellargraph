@@ -413,6 +413,31 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
+def test_networkx_attribute_message():
+    ug = StellarGraph()
+    dg = StellarDiGraph()
+
+    with pytest.raises(
+        AttributeError, match="The 'StellarGraph' type no longer inherits"
+    ):
+        # this graph is undirected and the corresponding networkx type doesn't have this
+        # attribute, but there's no reason to be too precise
+        ug.successors
+
+    with pytest.raises(
+        AttributeError, match="The 'StellarDiGraph' type no longer inherits"
+    ):
+        dg.successors
+
+    # make sure that the user doesn't get spammed with junk about networkx when they're just making
+    # a normal typo with the new StellarGraph
+    with pytest.raises(AttributeError, match="has no attribute 'not_networkx_attr'$"):
+        ug.not_networkx_attr
+
+    with pytest.raises(AttributeError, match="has no attribute 'not_networkx_attr'$"):
+        dg.not_networkx_attr
+
+
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
     g, node_features = example_benchmark_graph()
