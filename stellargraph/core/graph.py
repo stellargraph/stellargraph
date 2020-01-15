@@ -488,6 +488,16 @@ class StellarGraph:
         """
         return self._graph.to_adjacency_matrix(nodes)
 
+    def to_networkx(self):
+        """
+        Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
+
+        Returns:
+             An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
+             undirected) containing all the nodes & edges and their types & features in this graph.
+        """
+        return self._graph.to_networkx()
+
     # FIXME: Experimental/special-case methods that need to be considered more
     def get_index_for_nodes(self, nodes, node_type=None):
         """

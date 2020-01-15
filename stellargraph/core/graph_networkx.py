@@ -639,8 +639,11 @@ class NetworkXStellarGraph(StellarGraph):
 
     def edges(self, triple=False) -> Iterable[Any]:
         if triple:
-            # returns triples of format (node 1, node 2, edge info)
-            return self._graph.edges
+            # returns triples of format (node 1, node 2, edge type)
+            return (
+                (src, dst, self._get_edge_type(data))
+                for src, dst, data in self._graph.edges(data=True)
+            )
         else:
             # returns pairs of format (node 1, node 2)
             return self._graph.edges()
@@ -722,6 +725,36 @@ class NetworkXStellarGraph(StellarGraph):
         return nx.to_scipy_sparse_matrix(
             self._graph, dtype="float32", weight=self._edge_weight_label, format="coo"
         )
+
+    def to_networkx(self):
+        # Despite this class using NetworkX, this implementation does not directly use that
+        # representation, so that it can be reused as we move away from being NetworkX-based.
+        if self.is_directed():
+            graph = nx.MultiDiGraph()
+        else:
+            graph = nx.MultiGraph()
+
+        types = self.node_types
+
+        for ty in types:
+            node_ids = self.nodes_of_type(ty)
+            ty_dict = {self._node_type_attr: ty}
+
+            if ty in self._node_attribute_arrays:
+                # has features!
+                features = self.node_features(node_ids, node_type=ty)
+
+                for node_id, node_features in zip(node_ids, features):
+                    graph.add_node(
+                        node_id, **ty_dict, **{self._feature_attr: node_features},
+                    )
+            else:
+                # no features, so just add the type
+                graph.add_nodes_from(node_ids, **ty_dict)
+
+        graph.add_edges_from(self._graph.edges(data=True))
+
+        return graph
 
     # XXX This has not yet been standardised in the interface.
     def adjacency_types(self, graph_schema: GraphSchema):
