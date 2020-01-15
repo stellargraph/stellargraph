@@ -20,15 +20,6 @@ of the library's [root directory](https://github.com/stellargraph/stellargraph).
 Currently this example is tested on the CORA dataset. The GraphSAGE model assumes that node
 features are available.
 
-The following is the description of the dataset:
-> The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
-> The citation network consists of 5429 links. Each publication in the dataset is described by a
-> 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
-> The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
-
-Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your computer and pass this location
-as a command line argument to this script.
-
 ## Running the notebook
 The narrated version of this example is available in the `cora-links-example.ipynb` notebook.
 To run the notebook:
@@ -36,15 +27,14 @@ To run the notebook:
 `stellargraph` library is installed
  - Start `jupyter-notebook`
    - note: you may need to first install `jupyter` by running `pip install jupyter` in your python environment
- - Navigate to the notebook (`/demos/link-prediction-hinsage/movielens-recommender.ipynb`), and click on
+ - Navigate to the notebook (`/demos/link-prediction/graphsae/cora-links-example.ipynb`), and click on
  it to launch the notebook.
 
 ## Running the script
 
-The example should be run by specifying the location of the downloaded CORA dataset using the `-g` command line
-argument. You can run the script using the following command:
+You can run the script using the following command:
 ```
-python cora-links-example.py -l <path_to_cora_dataset>
+python cora-links-example.py
 ```
 The above command runs the link prediction on Cora dataset with default parameters. There is a number of other command
 line options that affect the architecture and training of the odel. For help on how to set parameters of the run, and

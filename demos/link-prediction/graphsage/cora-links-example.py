@@ -39,6 +39,7 @@ from stellargraph.mapper import GraphSAGELinkGenerator
 from stellargraph import globalvar
 
 from sklearn import feature_extraction
+from stellargraph import datasets
 
 
 def load_data(graph_loc, ignore_attr):
@@ -334,13 +335,6 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the dataset (directory)",
-    )
-    parser.add_argument(
         "-i",
         "--ignore_node_attr",
         nargs="+",
@@ -357,15 +351,10 @@ if __name__ == "__main__":
 
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
-
-    G = load_data(graph_loc, args.ignore_node_attr)
+    # Load the CORA dataset, downloading if necessary
+    dataset = datasets.Cora()
+    dataset.download()
+    G = load_data(dataset.data_directory, args.ignore_node_attr)
 
     if args.checkpoint is None:
         train(
