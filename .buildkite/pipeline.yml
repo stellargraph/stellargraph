@@ -22,7 +22,11 @@ steps:
         cache-from:
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
+
         run: runner-3_6
+
+        push:
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
     agents:
       queue: "t2medium"
 
@@ -41,6 +45,9 @@ steps:
           - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
 
         run: runner-3_7
+
+        push:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
     agents:
       queue: "t2medium"
 
@@ -121,15 +128,13 @@ steps:
 
   - wait
 
-  - label: ":docker: publish images"
+  - label: ":docker: publish image"
     plugins:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
         push:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
-          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
-          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
 
   # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
   # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
