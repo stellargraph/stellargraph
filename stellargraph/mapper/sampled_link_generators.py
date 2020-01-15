@@ -28,6 +28,7 @@ import itertools as it
 import operator
 import collections
 import abc
+import threading
 import warnings
 from functools import reduce
 from tensorflow import keras
@@ -218,6 +219,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self._seed = seed
         self.random = random.Random(seed)
         self._samplers = dict()
+        self._lock = threading.Lock()
 
     def _sampler(self, batch_num):
         """
@@ -234,6 +236,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         Returns:
             SampledBreadthFirstWalk object
         """
+        self._lock.acquire()
         try:
             return self._samplers[batch_num]
         except KeyError:
@@ -242,6 +245,8 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
                 self._graph, graph_schema=self.schema, seed=seed
             )
             return self._samplers[batch_num]
+        finally:
+            self._lock.release()
 
     def sample_features(self, head_links, batch_num):
         """

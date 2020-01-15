@@ -130,7 +130,10 @@ class UnsupervisedSampler:
         all_nodes = list(self.graph.nodes())
         # Use the sampling distribution as per node2vec
         degrees = self.graph.node_degrees()
-        sampling_distribution = [degrees[n] ** 0.75 for n in all_nodes]
+        sampling_distribution = np.array([degrees[n] ** 0.75 for n in all_nodes])
+        sampling_distribution_norm = sampling_distribution / np.sum(
+            sampling_distribution
+        )
 
         walks = self.walker.run(
             nodes=self.nodes, length=self.length, n=self.number_of_walks
@@ -147,23 +150,18 @@ class UnsupervisedSampler:
             ]
         )
 
-        negative_samples = self.random.choices(
-            all_nodes, weights=sampling_distribution, k=len(positive_pairs)
+        negative_samples = self.np_random.choice(
+            all_nodes, size=len(positive_pairs), p=sampling_distribution_norm
         )
-        negative_pairs = np.array(
-            [
-                (target, negative_context)
-                for (target, _), negative_context in zip(
-                    positive_pairs, negative_samples
-                )
-            ]
-        )
+        negative_pairs = np.column_stack((positive_pairs[:, 0], negative_samples))
 
-        # shuffle
         pairs = np.concatenate((positive_pairs, negative_pairs), axis=0)
         labels = np.repeat([1, 0], len(positive_pairs))
 
+        # shuffle indices - note this doesn't ensure an equal number of positive/negative examples in
+        # each batch, just an equal number overall
         indices = self.np_random.permutation(len(pairs))
+
         batch_indices = [
             indices[i : i + batch_size] for i in range(0, len(indices), batch_size)
         ]
