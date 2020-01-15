@@ -19,31 +19,14 @@
 Utils tests:
 
 """
-import pytest
-import random
-import networkx as nx
-import numpy as np
-import scipy as sp
-
-from stellargraph.core.utils import *
-from stellargraph.core.graph import *
-
-
-def example_graph(label=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    if label:
-        G.add_edges_from(elist, label=label)
-    else:
-        G.add_edges_from(elist)
-    return StellarGraph(G)
+from ..test_utils.graphs import example_graph_1
 
 
 def test_edges_with_type():
-    G = example_graph("edge")
+    G = example_graph_1(label="edge")
     info = G.info()
 
 
 def test_edges_without_type():
-    G = example_graph()
+    G = example_graph_1()
     info = G.info()

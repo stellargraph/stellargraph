@@ -20,6 +20,7 @@ from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
 from stellargraph.core.graph import StellarGraph
 
 
+# FIXME (#535): Consider using graph fixtures. These two test graphs are very similar, and should be combined
 def create_simple_test_graph():
     """
     Creates a simple graph for testing the SampledHeterogeneousBreadthFirstWalk class. The node ids are string or integers.

@@ -14,14 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-import pytest
 import networkx as nx
 import pandas as pd
 from stellargraph.mapper import DirectedGraphSAGENodeGenerator
-from stellargraph.core.graph import StellarGraph, StellarDiGraph
+from stellargraph.core.graph import StellarDiGraph
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_simple_graph():
     """
     Creates a simple directed graph for testing. The node ids are integers.
