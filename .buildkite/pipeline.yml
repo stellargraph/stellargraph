@@ -19,8 +19,8 @@ steps:
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
         no-cache: ${REFRESH_BUILD-false}
         cache-from:
-          - runner-3.6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
-          - runner-3.6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
     agents:
       queue: "t2medium"
 
@@ -32,7 +32,7 @@ steps:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        run: runner-3.6
+        run: runner-3_6
     agents:
       queue: "t2medium"
 
@@ -42,12 +42,12 @@ steps:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        build: runner-3.7
+        build: runner-3_7
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
         no-cache: ${REFRESH_BUILD-false}
         cache-from:
-          - runner-3.7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
-          - runner-3.7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
     agents:
       queue: "t2medium"
 
@@ -59,7 +59,7 @@ steps:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        run: runner-3.7
+        run: runner-3_7
     agents:
       queue: "t2medium"
 
@@ -147,8 +147,8 @@ steps:
         <<: *compose-config
         push:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
-          - runner-3.6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
-          - runner-3.7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
 
   # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
   # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
