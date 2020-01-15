@@ -421,6 +421,88 @@ def test_edges_triple():
     assert set(g.edges(triple=True)) == r | f
 
 
+def normalise_nodes(g, default_label=False):
+    def fix_data(data):
+        if default_label:
+            data.setdefault("label", "default")
+        try:
+            data["feature"] = list(data["feature"])
+        except KeyError:
+            # no feature value to be list-ified
+            pass
+        return data
+
+    return sorted((node_id, fix_data(data)) for node_id, data in g.nodes(data=True))
+
+
+def normalise_edges(g, default_label=False):
+    def fix_data(data):
+        if default_label:
+            data.setdefault("label", "default")
+
+    return sorted(
+        (min(src, dst), max(src, dst), fix_data(data))
+        for src, dst, data in g.edges(data=True)
+    )
+
+
+@pytest.mark.parametrize("in_nodes", [False, True])
+def test_to_networkx(in_nodes):
+    g, node_features = example_benchmark_graph(
+        feature_size=5, features_in_nodes=in_nodes
+    )
+
+    sg = StellarGraph(g, node_features=node_features)
+    new_nx = sg.to_networkx()
+
+    new_nodes = normalise_nodes(new_nx)
+    if in_nodes:
+        g_nodes = normalise_nodes(g)
+    else:
+        features = {
+            ty: {row[0]: list(row[1:]) for row in ty_features.itertuples()}
+            for ty, ty_features in node_features.items()
+        }
+        g_nodes = sorted(
+            (node_id, {**data, "feature": features[data["label"]][node_id]})
+            for node_id, data in g.nodes(data=True)
+        )
+
+    assert new_nodes == g_nodes
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
+
+def test_to_networkx_no_features():
+    g, _ = example_benchmark_graph(feature_size=None)
+
+    sg = StellarGraph(g)
+    new_nx = sg.to_networkx()
+    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
+
+def test_to_networkx_edge_attributes():
+    g = nx.Graph()
+    g.add_nodes_from([1, 2])
+    g.add_edge(1, 2, label="foo", weight=10.0)
+    sg = StellarGraph(g)
+    new_nx = sg.to_networkx()
+
+    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
+
+def test_to_networkx_default_label():
+    g = nx.Graph()
+    g.add_nodes_from([1, 2])
+    g.add_edge(1, 2)
+    sg = StellarGraph(g)
+    new_nx = sg.to_networkx()
+
+    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
+    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+
+
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
     g, node_features = example_benchmark_graph()

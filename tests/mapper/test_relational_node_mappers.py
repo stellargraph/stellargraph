@@ -50,7 +50,7 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G._graph._graph))
+            generator = RelationalFullBatchNodeGenerator(self.G.to_networkx())
 
     def generator_flow(self, G, node_ids, node_targets, sparse=False):
         generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)
