@@ -589,60 +589,79 @@ def example_unweighted_hom(is_directed=True):
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_weighted_hin(is_directed):
     graph = example_weighted_hin(is_directed=is_directed)
-    assert graph.neighbors(1) == {0, 2, 3}
-    assert graph.neighbors(1, include_edge_weight=True) == {
-        (0, 0.0),
-        (0, 1.0),
-        (2, 10.0),
-        (3, 10.0),
-    }
-    assert graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]) == {
-        (2, 10.0),
-        (3, 10.0),
-    }
+    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+    assert_items_equal(
+        graph.neighbors(1, include_edge_weight=True),
+        [(0, 0.0), (0, 1.0), (2, 10.0), (3, 10.0)],
+    )
+    assert_items_equal(
+        graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]),
+        [(2, 10.0), (3, 10.0)],
+    )
+
+
+def assert_items_equal(l1, l2):
+    assert sorted(l1) == sorted(l2)
 
 
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_unweighted_hom(is_directed):
     graph = example_unweighted_hom(is_directed=is_directed)
-    assert graph.neighbors(1) == {0, 2, 3}
-    assert graph.neighbors(1, include_edge_weight=True) == {
-        (0, None),
-        (2, None),
-        (3, None),
-    }
-    assert graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]) == set()
+    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+    assert_items_equal(
+        graph.neighbors(1, include_edge_weight=True),
+        [(0, None), (0, None), (2, None), (3, None)],
+    )
+    assert_items_equal(
+        graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]), []
+    )
 
 
 def test_undirected_hin_neighbor_methods():
     graph = example_weighted_hin(is_directed=False)
-    assert graph.neighbors(1) == graph.in_nodes(1)
-    assert graph.neighbors(1) == graph.out_nodes(1)
+    assert_items_equal(graph.neighbors(1), graph.in_nodes(1))
+    assert_items_equal(graph.neighbors(1), graph.out_nodes(1))
 
 
 def test_in_nodes_weighted_hin():
     graph = example_weighted_hin()
-    assert graph.in_nodes(1) == {0}
-    assert graph.in_nodes(1, include_edge_weight=True) == {(0, 0.0), (0, 1.0)}
-    assert graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]) == set()
+    assert_items_equal(graph.in_nodes(1), [0, 0])
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True), [(0, 0.0), (0, 1.0)]
+    )
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+    )
 
 
 def test_in_nodes_unweighted_hom():
     graph = example_unweighted_hom()
-    assert graph.in_nodes(1) == {0}
-    assert graph.in_nodes(1, include_edge_weight=True) == {(0, None)}
-    assert graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]) == set()
+    assert_items_equal(graph.in_nodes(1), [0, 0])
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True), [(0, None), (0, None)]
+    )
+    assert_items_equal(
+        graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+    )
 
 
 def test_out_nodes_weighted_hin():
     graph = example_weighted_hin()
-    assert graph.out_nodes(1) == {2, 3}
-    assert graph.out_nodes(1, include_edge_weight=True) == {(2, 10.0), (3, 10.0)}
-    assert graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]) == set()
+    assert_items_equal(graph.out_nodes(1), [2, 3])
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True), [(2, 10.0), (3, 10.0)]
+    )
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+    )
 
 
 def test_out_nodes_unweighted_hom():
     graph = example_unweighted_hom()
-    assert graph.out_nodes(1) == {2, 3}
-    assert graph.out_nodes(1, include_edge_weight=True) == {(2, None), (3, None)}
-    assert graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]) == set()
+    assert_items_equal(graph.out_nodes(1), [2, 3])
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True), [(2, None), (3, None)]
+    )
+    assert_items_equal(
+        graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+    )
