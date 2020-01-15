@@ -43,11 +43,11 @@ steps:
       docker-compose#v3.1.0:
         <<: *compose-config
         build: runner-3.7
-        image-repository: index.docker.io/stellargraph/stellargraph-runner
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
         no-cache: ${REFRESH_BUILD-false}
         cache-from:
-          - runner-3.7:index.docker.io/stellargraph/stellargraph:3_7-${IMAGE_TAG}
-          - runner-3.7:index.docker.io/stellargraph/stellargraph:3_7-latest
+          - runner-3.7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3.7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
     agents:
       queue: "t2medium"
 
