@@ -388,7 +388,7 @@ class EdgeSplitter(object):
         else:
             all_edges = list(self.g.edges())
 
-        if edge_attribute_label is None and edge_attribute_threshold is None:
+        if edge_attribute_label is None or edge_attribute_threshold is None:
             # filter by edge_label
             edges_with_label = [
                 e for e in all_edges if self.g.get_edge_data(*e)["label"] == edge_label
