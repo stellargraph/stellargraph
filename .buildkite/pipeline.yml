@@ -15,7 +15,7 @@ steps:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        build: runner-3.6
+        build: runner-3_6
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
         no-cache: ${REFRESH_BUILD-false}
         cache-from:
