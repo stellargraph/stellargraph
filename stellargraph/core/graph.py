@@ -162,7 +162,7 @@ class StellarGraph:
                 # with one with a more specific message that guides the user to the fix
                 type_name = type(self).__name__
                 raise AttributeError(
-                    f"{e.args[0]}. The '{type_name}' type no longer inherits from the NetworkX types: consider using one of its method, or, if that is not possible, the `.to_networkx()` conversion function."
+                    f"{e.args[0]}. The '{type_name}' type no longer inherits from NetworkX types: use a new StellarGraph method, or, if that is not possible, the `.to_networkx()` conversion function."
                 ) from None
 
             # doesn't look like a NetworkX method so use the default error
