@@ -690,13 +690,6 @@ class NetworkXStellarGraph(StellarGraph):
             for node_label, node_data in graph_schema.items()
         }
 
-        # Create schema object
-        gs = GraphSchema()
-        gs._is_directed = self.is_directed()
-        gs.edge_types = edge_types
-        gs.node_types = node_types
-        gs.schema = schema
-
         # Create quick type lookups for nodes and edges.
         # Note: we encode the type index, in the assumption it will take
         # less storage.
@@ -714,11 +707,17 @@ class NetworkXStellarGraph(StellarGraph):
                 )
                 for src, tgt, key, data in self._graph.edges(keys=True, data=True)
             }
+        else:
+            node_type_map = edge_type_map = None
 
-            gs.node_type_map = node_type_map
-            gs.edge_type_map = edge_type_map
-
-        return gs
+        return GraphSchema(
+            self.is_directed(),
+            node_types,
+            edge_types,
+            schema,
+            node_type_map,
+            edge_type_map,
+        )
 
     ######################################################################
     # Generic graph interface:
