@@ -554,7 +554,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = [None] * n_size[cur_depth]
                     else:
                         # sample with replacement
-                        neighbours = rs.choices(neighbours, k = n_size[cur_depth])
+                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
 
                     # add them to the back of the queue
                     q.extend((sampled_node, depth) for sampled_node in neighbours)
