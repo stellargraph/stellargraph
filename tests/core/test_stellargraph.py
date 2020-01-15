@@ -413,6 +413,14 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
+def test_edges_triple():
+    g = example_hin_1()
+
+    r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
+    f = {(4, 5, "F")}
+    assert set(g.edges(triple=True)) == r | f
+
+
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
     g, node_features = example_benchmark_graph()
