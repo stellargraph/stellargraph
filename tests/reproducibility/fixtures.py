@@ -36,5 +36,5 @@ def assert_reproducible(func, num_iter=20):
     for i in range(num_iter):
         model_new = func()
         if not models_equals(model, model_new):
-            assert False, (model, model_new)
+            assert False, (model.get_weights(), model_new.get_weights())
     assert True
