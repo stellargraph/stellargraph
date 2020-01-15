@@ -275,6 +275,7 @@ class OnDemandLinkSequence(Sequence):
         self.batch_size = batch_size
         self.walker = walker
         self.shuffle = shuffle
+        # FIXME(#681): all batches are created at once, so this is no longer "on demand"
         self._batches = self._create_batches()
         self.length = len(self._batches)
         self.data_size = sum(len(batch[0]) for batch in self._batches)
