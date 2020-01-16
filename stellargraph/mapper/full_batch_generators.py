@@ -36,6 +36,7 @@ from . import (
     SparseFullBatchNodeSequence,
     RelationalFullBatchNodeSequence,
 )
+from ..core.experimental import experimental
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
@@ -242,6 +243,7 @@ class FullBatchNodeGenerator:
             )
 
 
+@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
