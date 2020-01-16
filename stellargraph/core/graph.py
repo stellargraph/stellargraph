@@ -387,7 +387,7 @@ class StellarGraph:
         Returns:
             GraphSchema object.
         """
-        self._graph.create_graph_schema(create_type_maps, nodes)
+        return self._graph.create_graph_schema(create_type_maps, nodes)
 
     def node_degrees(self) -> Mapping[Any, int]:
         """
