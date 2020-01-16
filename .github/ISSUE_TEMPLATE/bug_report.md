@@ -37,7 +37,7 @@ Package versions: *for example: stellargraph==0.8.3, tensorflow==2.0.0*
 ~~~
 import subprocess, platform, sys
 pkgs = subprocess.Popen(["pip", "freeze"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0].decode("utf-8")
-print("Operating system: `{}`\nPython version:\n```\n{}\n```\nPackage versions:\n<details>\n\n```\n{}\n```\n\n</details>".format(platform.platform(), sys.version, pkgs))'
+print("Operating system: `{}`\nPython version:\n```\n{}\n```\nPackage versions:\n<details>\n\n```\n{}\n```\n\n</details>".format(platform.platform(), sys.version, pkgs))
 ~~~
 
 ### Additional context
