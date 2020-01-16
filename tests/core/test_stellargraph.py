@@ -503,6 +503,39 @@ def test_to_networkx_default_label():
     assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
 
 
+def test_networkx_attribute_message():
+    ug = StellarGraph()
+    dg = StellarDiGraph()
+
+    with pytest.raises(
+        AttributeError, match="The 'StellarGraph' type no longer inherits"
+    ):
+        # this graph is undirected and the corresponding networkx type doesn't have this
+        # attribute, but there's no reason to be too precise
+        ug.successors
+
+    with pytest.raises(
+        AttributeError, match="The 'StellarDiGraph' type no longer inherits"
+    ):
+        dg.successors
+
+    # make sure that the user doesn't get spammed with junk about networkx when they're just making
+    # a normal typo with the new StellarGraph
+    with pytest.raises(AttributeError, match="has no attribute 'not_networkx_attr'$"):
+        ug.not_networkx_attr
+
+    with pytest.raises(AttributeError, match="has no attribute 'not_networkx_attr'$"):
+        dg.not_networkx_attr
+
+    # getting an existing attribute via `getattr` should work fine
+    assert getattr(ug, "is_directed")() == False
+    assert getattr(dg, "is_directed")() == True
+
+    # calling __getattr__ directly is... unconventional, but it should work
+    assert ug.__getattr__("is_directed")() == False
+    assert dg.__getattr__("is_directed")() == True
+
+
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
     g, node_features = example_benchmark_graph()
