@@ -24,7 +24,7 @@ __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 from typing import Iterable, Any, Mapping, List, Optional, Set
 
 from .. import globalvar
-from .schema import GraphSchema, EdgeType
+from .schema import GraphSchema
 
 
 class StellarGraph:
