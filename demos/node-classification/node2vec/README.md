@@ -13,21 +13,6 @@ with nodes representing research papers that have a single attribute, namely the
 graph represent a citation relationship between two papers, i.e., `paper A` cites `paper B`. The graph is
 treated as undirected.
 
-## Dataset
-
-The examples in this directory uses the CORA dataset.
-
-The dataset can be downloaded from [here](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz).
-
-The following is the description of the dataset:
-> The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
-> The citation network consists of 5429 links. Each publication in the dataset is described by a
-> 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
-> The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
-
-Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your
-computer and pass this location as a command line argument to this script.
-
 ## References
 
 **1.** Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference

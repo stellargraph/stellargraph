@@ -16,29 +16,20 @@
 
 """
 Graph link prediction using GraphSAGE.
-This example requires the CORA dataset - see the README for how to obtain the dataset.
-
-Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora:
-
-    python cora-links-example.py -l ~/data/cora
-
+This example will download the CORA dataset (if not already downloaded).
 """
 import os
 import argparse
 import networkx as nx
 import pandas as pd
 from typing import AnyStr, List
-
 from tensorflow import keras
-from tensorflow.keras import optimizers, losses, metrics
-
+from tensorflow.keras import optimizers, losses, metric
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
 from stellargraph.mapper import GraphSAGELinkGenerator
 from stellargraph import globalvar
-
-from sklearn import feature_extraction
 from stellargraph import datasets
 
 

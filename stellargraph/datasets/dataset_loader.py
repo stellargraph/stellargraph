@@ -32,7 +32,7 @@ class DatasetLoader(object):
         name: str,
         directory_name: str,
         url: str,
-        url_format: str,
+        url_archive_format: Optional[str],
         expected_files: List[str],
         description: str,
         source: str,
@@ -41,7 +41,7 @@ class DatasetLoader(object):
         self.name = name
         self.directory_name = directory_name
         self.url = url
-        self.url_format = url_format
+        self.url_archive_format = url_archive_format
         self.expected_files = expected_files
         self.description = description
         self.source = source
@@ -85,9 +85,17 @@ class DatasetLoader(object):
             print(
                 f"{self.name} dataset downloading to {self.base_directory} from {self.url}"
             )
-            filename, _ = urlretrieve(self.url)
-            self._create_base_directory()
-            unpack_archive(filename, self._all_datasets_directory(), self.url_format)
+            if self.url_archive_format is None:
+                # single file to download
+                assert len(self.expected_files) == 1
+                self._create_base_directory()
+                destination_filename = os.path.join(self.base_directory, self.expected_files[0])
+                urlretrieve(self.url, filename=destination_filename)
+            else:
+                # archive of files
+                filename, _ = urlretrieve(self.url)
+                self._create_base_directory()
+                unpack_archive(filename, self._all_datasets_directory(), self.url_archive_format)
             if not self._is_downloaded():
                 print(f"{self.name} dataset failed to download")
         else:

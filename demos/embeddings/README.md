@@ -16,7 +16,6 @@ All examples demonstrate how to calculate embedding vectors for a graph's nodes 
 The learned node representations can be used in numerous downstream tasks such as node attribute inference, link
 prediction, and community detection.
 
-
 ## References
 
 **1.** Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference

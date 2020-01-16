@@ -23,11 +23,11 @@ from .dataset_loader import DatasetLoader
 
 class Cora(DatasetLoader):
     def __init__(self) -> None:
-        super(Cora, self).__init__(
+        super().__init__(
             "Cora",
             "cora",
             "https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz",
-            "gztar",
+            url_archive_format="gztar",
             expected_files=["cora.cites", "cora.content"],
             description="The Cora dataset consists of 2708 scientific publications classified into one of seven classes. "
             "The citation network consists of 5429 links. Each publication in the dataset is described by a 0/1-valued word vector "
@@ -38,11 +38,11 @@ class Cora(DatasetLoader):
 
 class CiteSeer(DatasetLoader):
     def __init__(self) -> None:
-        super(CiteSeer, self).__init__(
+        super().__init__(
             "CiteSeer",
             "CiteSeer",
             "https://linqs-data.soe.ucsc.edu/public/lbc/citeseer.tgz",
-            "gztar",
+            url_archive_format="gztar",
             expected_files=["citeseer.cites", "citeseer.content"],
             description="The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. "
             "The citation network consists of 4732 links. Each publication in the dataset is described by a 0/1-valued word vector "
@@ -60,11 +60,11 @@ class PubMedDiabetes(DatasetLoader):
     """
 
     def __init__(self) -> None:
-        super(PubMedDiabetes, self).__init__(
+        super().__init__(
             "PubMed Diabetes",
             "Pubmed-Diabetes",
             "https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz",
-            "gztar",
+            url_archive_format="gztar",
             expected_files=[
                 "data/Pubmed-Diabetes.DIRECTED.cites.tab",
                 "data/Pubmed-Diabetes.GRAPH.pubmed.tab",
@@ -80,11 +80,11 @@ class PubMedDiabetes(DatasetLoader):
 
 class BlogCatalog3(DatasetLoader):
     def __init__(self) -> None:
-        super(BlogCatalog3, self).__init__(
+        super().__init__(
             "BlogCatalog3",
             "BlogCatalog-dataset",
             "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip",
-            "zip",
+            url_archive_format="zip",
             expected_files=[
                 "data/edges.csv",
                 "data/group-edges.csv",
@@ -100,13 +100,30 @@ class BlogCatalog3(DatasetLoader):
 
 class MovieLens(DatasetLoader):
     def __init__(self) -> None:
-        super(BlogCatalog3, self).__init__(
+        super().__init__(
             "MovieLens",
             "ml-100k",
             "http://files.grouplens.org/datasets/movielens/ml-100k.zip",
-            "zip",
+            url_archive_format="zip",
             expected_files=["u.data", "u.user", "u.item", "u.genre", "u.occupation",],
-            description="MovieLens 100K movie ratings. Stable benchmark dataset. "
-            "100,000 ratings from 1000 users on 1700 movies. Released 4/1998.",
+            description="The MovieLens 100K dataset contains 100,000 ratings from 943 users on 1682 movies.",
             source="https://grouplens.org/datasets/movielens/100k/",
+        )
+
+
+class AIFB(DatasetLoader):
+    def __init__(self) -> None:
+        super().__init__(
+            "AIFB",
+            "aifb",
+            "https://ndownloader.figshare.com/files/1118822",
+            url_archive_format=None,
+            expected_files=["aifbfixed_complete.n3",],
+            description="The AIFB dataset describes the AIFB research institute in terms of its staff, research group, and publications. "
+            'First used for machine learning with RDF in Bloehdorn, Stephan and Sure, York, "Kernel Methods for Mining Instance Data in Ontologies", '
+            "The Semantic Web (2008), http://dx.doi.org/10.1007/978-3-540-76298-0_5. "
+            "It contains ~8k entities, ~29k edges, and 45 different relationships or edge types. In (Bloehdorn et al 2007) the dataset "
+            "was first used to predict the affiliation (i.e., research group) for people in the dataset. The dataset contains 178 "
+            "members of a research group with 5 different research groups. The goal is to predict which research group a researcher belongs to.",
+            source="https://figshare.com/articles/AIFB_DataSet/745364",
         )
