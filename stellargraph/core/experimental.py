@@ -14,14 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__all__ = ["experimental"]
+
 from textwrap import dedent
 
 ISSUE_BASE = "https://github.com/stellargraph/stellargraph/issues"
 
+
 def render_issue_link(number):
     return f"`#{number} <{ISSUE_BASE}/{number}>`_"
 
+
 def experimental(*, reason, issues=None):
+    """
+    A decorator to mark a function, method or class as experimental, meaning it may not be complete.
+
+    Args:
+        reason (str): why this is experimental
+        issues (list of int, optional): any relevant ``stellargraph/stellargraph`` issues
+    """
     if issues is None:
         issues = []
 
