@@ -243,9 +243,7 @@ class FullBatchNodeGenerator:
             )
 
 
-@experimental(
-    reason="`#649 <https://github.com/stellargraph/stellargraph/issues/649>`_ is a severe known bug"
-)
+@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.

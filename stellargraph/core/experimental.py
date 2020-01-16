@@ -16,15 +16,29 @@
 
 from textwrap import dedent
 
+ISSUE_BASE = "https://github.com/stellargraph/stellargraph/issues"
 
-def experimental(*, reason):
+def render_issue_link(number):
+    return f"`#{number} <{ISSUE_BASE}/{number}>`_"
+
+def experimental(*, reason, issues=None):
+    if issues is None:
+        issues = []
+
+    if issues:
+        links = ", ".join(render_issue_link(number) for number in issues)
+        issue_text = f" (see: {links})"
+    else:
+        issue_text = ""
+
     def decorator(decl):
         # add warning at the start of the documentation
         # <https://docutils.sourceforge.io/docs/ref/rst/directives.html#caution>
         decl.__doc__ = f"""\
 .. warning::
 
-   ``{decl.__qualname__}`` is experimental: {reason}. It may be difficult to use and may have major
+   ``{decl.__qualname__}`` is experimental: {reason}{issue_text}. It may be difficult to use and 
+   may have major
    changes at any time.
 
 {dedent(decl.__doc__)}

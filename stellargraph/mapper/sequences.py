@@ -464,9 +464,7 @@ class SparseFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-@experimental(
-    reason="`#649 <https://github.com/stellargraph/stellargraph/issues/649>`_ is a severe known bug"
-)
+@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models on relational graphs
