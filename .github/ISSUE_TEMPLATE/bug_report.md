@@ -33,24 +33,11 @@ Python version: *for example: 3.7.2*
 
 Package versions: *for example: stellargraph==0.8.3, tensorflow==2.0.0*
 
-*The following Python code can automatically compute the data for this section (for example: on macOS, copy the code and run `pbpaste | python -`):*
-
-~~~python
+*The following Python code can automatically compute the data for this section (for example: run the code in a Jupyter notebook cell, or, on macOS, copy the code and run `pbpaste | python -` in a terminal):*
+~~~
 import subprocess, platform, sys
-packages=subprocess.run(["pip", "freeze"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8")
-print("""Operating system: `{}`
-Python version:
-```
-{}
-```
-Package versions:
-<details>
-
-```
-{}
-```
-
-</details>""".format(platform.platform(), sys.version, packages))
+pkgs = subprocess.Popen(["pip", "freeze"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0].decode("utf-8")
+print("Operating system: `{}`\nPython version:\n```\n{}\n```\nPackage versions:\n<details>\n\n```\n{}\n```\n\n</details>".format(platform.platform(), sys.version, pkgs))'
 ~~~
 
 ### Additional context
