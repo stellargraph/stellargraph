@@ -33,12 +33,14 @@ def example_graph_schema():
         for ii in range(bb):
             schema["B"].append(EdgeType("B", "b%d" % ii, "B"))
 
-        # Create schema object
-        gs = GraphSchema()
-        gs.node_types = sorted(schema.keys())
-        gs.edge_types = sorted(set(it.chain(*schema.values())))
-        gs.schema = schema
-        return gs
+        return GraphSchema(
+            is_directed=False,
+            node_types=sorted(schema.keys()),
+            edge_types=sorted(set(it.chain(*schema.values()))),
+            schema=schema,
+            node_type_map=None,
+            edge_type_map=None,
+        )
 
     return create_schema
 
