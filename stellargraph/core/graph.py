@@ -153,8 +153,9 @@ class StellarGraph:
         import networkx
 
         try:
-            # get the native python wording of the error message
-            super().__getattribute__(item)
+            # do the normal access, in case the attribute actually exists, and to get the native
+            # python wording of the error
+            return super().__getattribute__(item)
         except AttributeError as e:
             if hasattr(networkx.MultiDiGraph, item):
                 # a networkx class has this as an attribute, so let's assume that it's old code
@@ -167,13 +168,6 @@ class StellarGraph:
 
             # doesn't look like a NetworkX method so use the default error
             raise
-        else:
-            # __getattr__ is only called for attribute accesses that don't exist,
-            # so the `__getattribute__` call should also fail, but, just in case it doesn't,
-            # let's not return None implicitly
-            raise AssertionError(
-                f"attribute '{item}' that was missing has magically appeared again"
-            )
 
     def is_directed(self) -> bool:
         """

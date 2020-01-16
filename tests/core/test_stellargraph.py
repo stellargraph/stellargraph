@@ -527,6 +527,14 @@ def test_networkx_attribute_message():
     with pytest.raises(AttributeError, match="has no attribute 'not_networkx_attr'$"):
         dg.not_networkx_attr
 
+    # getting an existing attribute via `getattr` should work fine
+    assert getattr(ug, "is_directed")() == False
+    assert getattr(dg, "is_directed")() == True
+
+    # calling __getattr__ directly is... unconventional, but it should work
+    assert ug.__getattr__("is_directed")() == False
+    assert dg.__getattr__("is_directed")() == True
+
 
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
