@@ -40,6 +40,7 @@ from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 from ..data.unsupervised_sampler import UnsupervisedSampler
+from ..core.experimental import experimental
 from ..core.utils import is_real_iterable
 
 
@@ -463,6 +464,7 @@ class SparseFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
+@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models on relational graphs
