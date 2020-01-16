@@ -68,9 +68,29 @@ StellarGraph considers courtesy and respect for others an essential part of the 
 
 ### Experimental code
 
-Code can be marked as experimental using the `@experimental` decorator. This should be applied to new code that isn't fully documented, tested or validated. This allows landing code faster and iterating on it inside the repository.
+Functions, methods and classes can be marked as experimental using the `@experimental` decorator. For example:
 
-This is meant to be a lightweight annotation, with a low bar for "graduating". Code does not need to be `@experimental` if it satisfies the following check-list:
+``` python
+# On a class: (the reason argument is required)
+@experimental(reason="it has no documentation")
+class Foo:
+    pass
+
+# On a function: (the issues argument will link to those stellargraph issues)
+@experimental(reason="the API is not satisfactory", issues=[123])
+def bar():
+    pass
+
+class Baz:
+    # On a method:
+    @experimental(reason="it is not fully tested")
+    def f():
+        pass
+```
+
+This should be applied to new code that isn't fully documented, tested or validated. This allows landing code faster and iterating on it inside the repository. The annotation will add an obvious "warning" admonition to the attached item's documentation.
+
+This is meant to be a lightweight status, with a low bar for "graduating". Code does not need to be `@experimental` if it satisfies the following check-list:
 
 - [ ] tests
 - [ ] documentation for all classes, functions and their parameters
