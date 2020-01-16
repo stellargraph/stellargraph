@@ -99,7 +99,7 @@ class GraphWalk(object):
     def neighbors(self, node):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return list(self.graph.neighbors(node))
+        return self.graph.neighbors(node)
 
     def run(self, **kwargs):
         """
@@ -554,9 +554,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = [None] * n_size[cur_depth]
                     else:
                         # sample with replacement
-                        neighbours = [
-                            rs.choice(neighbours) for _ in range(n_size[cur_depth])
-                        ]
+                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
 
                     # add them to the back of the queue
                     q.extend((sampled_node, depth) for sampled_node in neighbours)
@@ -632,12 +630,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             # In case of no neighbours of the current node for et, neigh_et == [None],
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
-                                samples = [
-                                    rs.choice(neigh_et)
-                                    for _ in range(n_size[depth - 1])
-                                ]
-                                # Choices limits us to Python 3.6+
-                                # samples = random.choices(neigh_et, k=n_size[depth - 1])
+                                samples = rs.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 
@@ -777,7 +770,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             # Sampling from empty neighbourhood
             return [None] * size
         # Sample with replacement
-        return [rs.choice(neighbours) for _ in range(size)]
+        return rs.choices(neighbours, k=size)
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
