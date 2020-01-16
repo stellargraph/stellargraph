@@ -65,3 +65,13 @@ StellarGraph considers courtesy and respect for others an essential part of the 
 8. Update the documentation. If introducing new functionality, make sure you include code snippets demonstrating the usage of your new feature.
 
 9. Create a pull request on GitHub from your branch to `develop` branch. If you have already discussed the new features on GitHub with the developers and they are aware of what the pull request contains, then the developers will endeavour to approve the pull request promptly.
+
+### Experimental code
+
+Code can be marked as experimental using the `@experimental` decorator. This should be applied to new code that isn't fully documented, tested or validated. This allows landing code faster and iterating on it inside the repository.
+
+This is meant to be a lightweight annotation, with a low bar for "graduating". Code does not need to be `@experimental` if it satisfies the following check-list:
+
+- [ ] tests
+- [ ] documentation for all classes, functions and their parameters
+- [ ] a demo notebook, if applicable; if there are relevant research papers, the demo(s) should produce similar results, to validate that the implementation matches the description
