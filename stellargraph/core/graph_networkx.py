@@ -650,7 +650,10 @@ class NetworkXStellarGraph(StellarGraph):
             edges = self.edges(triple=True)
 
         elif create_type_maps is False:
-            edges = self.edges(triple=True)
+            edges = (
+                (src, dst, self._get_edge_type(data))
+                for src, dst, data in self._graph.edges(nodes, data=True)
+            )
 
         else:
             raise ValueError("Creating type maps for subsampled nodes is not supported")
