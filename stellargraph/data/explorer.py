@@ -846,7 +846,7 @@ class TemporalRandomWalk(GraphWalk):
                 walks.append(walk)
         return walks
 
-    def get_exp_distribution(self, times, current_time, is_forward):
+    def _exp_distribution(self, times, current_time, is_forward):
 
         closest_time = min(times) if is_forward else max(times)
         time_dist = [
@@ -858,30 +858,32 @@ class TemporalRandomWalk(GraphWalk):
         exp_dist = [t / sum_time_dist for t in time_dist]  # exponential distribution
         return exp_dist
 
+    def _biases(self, neighbours, time, is_forward, step_type):
+        if step_type == "uniform":
+            return None
+        elif step_type == "exponential":
+            _, times = zip(*neighbours)
+            return self._exp_distribution(times, time, is_forward)
+        else:
+            raise ValueError("Unsupported step type")
+
     def _step(self, node, time, is_forward, step_type, np_rs):
         """Perform 1 temporal step from a node. Returns None if a dead-end is reached."""
 
         def check_time(t):
             return (is_forward and t > time) or (not is_forward and t < time)
 
-        def get_probabilities(step_type):
-            if step_type == "uniform":
-                return None
-            elif step_type == "exponential":
-                _, times = zip(*edges)
-                return self.get_exp_distribution(times, time, is_forward=is_forward)
-            else:
-                raise ValueError("Unsupported step type")
-
-        edges = [
+        neighbours = [
             (neighbour, t)
             for neighbour, t in self.graph.neighbors(node, include_edge_weight=True)
             if check_time(t)
         ]
 
-        if len(edges) > 0:
-            chosen_index = np_rs.choice(len(edges), p=get_probabilities(step_type))
-            node, time = edges[chosen_index]
+        if len(neighbours) > 0:
+            chosen_index = np_rs.choice(
+                len(neighbours), p=self._biases(neighbours, time, is_forward, step_type)
+            )
+            node, time = neighbours[chosen_index]
             return node, time
         else:
             return None
