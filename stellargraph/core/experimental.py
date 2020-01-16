@@ -48,9 +48,8 @@ def experimental(*, reason, issues=None):
         decl.__doc__ = f"""\
 .. warning::
 
-   ``{decl.__qualname__}`` is experimental: {reason}{issue_text}. It may be difficult to use and 
-   may have major
-   changes at any time.
+   ``{decl.__qualname__}`` is experimental: {reason}{issue_text}. It may be difficult to use and may
+   have major changes at any time.
 
 {dedent(decl.__doc__)}
 """
