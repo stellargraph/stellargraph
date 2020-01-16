@@ -889,66 +889,30 @@ class TemporalRandomWalk(GraphWalk):
             return None
 
     def _walk(self, node, length, bidirectional, step_type, np_rs):
+        def step(n, t, is_forward):
+            return self._step(
+                n, time=t, is_forward=is_forward, step_type=step_type, np_rs=np_rs
+            )
 
-        walk = list()
-        walk.append(node)  # start a walk
+        # sample 1 edge to obtain starting time
+        forward = step(node, 0, is_forward=True)
+        if forward is None:
+            return [node]
+        backward = node, forward[1]
+
+        walk = []
+
         # take steps until walk is of correct length or reached dead ends
-        start_edge = self._step(
-            node, time=0, is_forward=True, step_type=step_type, np_rs=np_rs
-        )
+        while len(walk) < length:
+            if forward is None and backward is None:
+                break
+            if forward is not None:
+                n, t = forward
+                walk.append(n)
+                forward = step(n, t, is_forward=True)
+            if backward is not None:
+                n, t = backward
+                walk = [n] + walk
+                backward = step(n, t, is_forward=False) if bidirectional else None
 
-        if not start_edge == None:
-
-            current_forward_node = start_edge[0]
-            current_forward_time = start_edge[1]
-            move_forwards = True
-
-            if bidirectional:
-                move_backwards = True
-                current_backwards_node = node
-                current_backwards_time = current_forward_time
-            else:
-                move_backwards = False
-
-            walk.append(current_forward_node)
-
-            while len(walk) < (length):
-                if (
-                    move_forwards
-                ):  # check to stop incase a dead end is reached moving forward
-                    next_edge = self._step(
-                        current_forward_node,
-                        current_forward_time,
-                        is_forward=True,
-                        step_type=step_type,
-                        np_rs=np_rs,
-                    )
-                    if not next_edge == None:
-                        current_forward_time = next_edge[1]
-                        current_forward_node = next_edge[0]
-                        walk.append(current_forward_node)
-                    else:
-                        move_forwards = False  # reached a dead end at this walk
-
-                if (
-                    move_backwards
-                ):  # check to stop incase a dead end is reached moving backwards
-                    next_backward_edge = self._step(
-                        current_backwards_node,
-                        current_backwards_time,
-                        is_forward=False,
-                        step_type=step_type,
-                        np_rs=np_rs,
-                    )
-                    if not next_backward_edge == None:
-                        current_backwards_node = next_backward_edge[0]
-                        current_backwards_time = next_backward_edge[1]
-                        walk.insert(0, current_backwards_node)
-                    else:
-                        move_backwards = False  # reached a dead end at this walk
-
-                if (not move_backwards) and (
-                    not move_forwards
-                ):  # if dead ends reached in both direction, stop walking.
-                    return walk
         return walk
