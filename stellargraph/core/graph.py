@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
@@ -116,7 +115,6 @@ class StellarGraph:
             a numeric feature vector for each node in the graph.
 
     """
-
     def __init__(
         self,
         graph=None,
@@ -232,9 +230,10 @@ class StellarGraph:
         """
         return self._graph.has_node(node)
 
-    def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
-    ) -> Iterable[Any]:
+    def neighbors(self,
+                  node: Any,
+                  include_edge_weight=False,
+                  edge_types=None) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
@@ -249,13 +248,14 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring nodes.
         """
-        return self._graph.neighbors(
-            node, include_edge_weight=include_edge_weight, edge_types=edge_types
-        )
+        return self._graph.neighbors(node,
+                                     include_edge_weight=include_edge_weight,
+                                     edge_types=edge_types)
 
-    def in_nodes(
-        self, node: Any, include_edge_weight=False, edge_types=None
-    ) -> Iterable[Any]:
+    def in_nodes(self,
+                 node: Any,
+                 include_edge_weight=False,
+                 edge_types=None) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
         directed to the given node. For an undirected graph,
@@ -271,13 +271,14 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        return self._graph.in_nodes(
-            node, include_edge_weight=include_edge_weight, edge_types=edge_types
-        )
+        return self._graph.in_nodes(node,
+                                    include_edge_weight=include_edge_weight,
+                                    edge_types=edge_types)
 
-    def out_nodes(
-        self, node: Any, include_edge_weight=False, edge_types=None
-    ) -> Iterable[Any]:
+    def out_nodes(self,
+                  node: Any,
+                  include_edge_weight=False,
+                  edge_types=None) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
         directed from the given node. For an undirected graph,
@@ -293,9 +294,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        return self._graph.out_nodes(
-            node, include_edge_weight=include_edge_weight, edge_types=edge_types
-        )
+        return self._graph.out_nodes(node,
+                                     include_edge_weight=include_edge_weight,
+                                     edge_types=edge_types)
 
     def nodes_of_type(self, node_type=None):
         """
@@ -447,8 +448,7 @@ class StellarGraph:
         return self._graph.to_networkx()
 
     # FIXME: Experimental/special-case methods that need to be considered more
-    @experimental(reason="special-case method that needs more consideration")
-    def get_index_for_nodes(self, nodes, node_type=None):
+    def _get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -464,8 +464,7 @@ class StellarGraph:
         """
         return self._graph.get_index_for_nodes(nodes, node_type)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def adjacency_types(self, graph_schema: GraphSchema):
+    def _adjacency_types(self, graph_schema: GraphSchema):
         """
         Obtains the edges in the form of the typed mapping:
 
@@ -478,8 +477,7 @@ class StellarGraph:
         """
         return self._graph.adjacency_types(graph_schema)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
+    def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
         """
         Obtains the weights of edges between the given pair of nodes.
 
@@ -492,8 +490,7 @@ class StellarGraph:
         """
         return self._graph.edge_weights(source_node, target_node)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def node_attributes(self, node: Any) -> Set[Any]:
+    def _node_attributes(self, node: Any) -> Set[Any]:
         """
         Obtains the names of any (non-standard) node attributes that are
         available in the user data.

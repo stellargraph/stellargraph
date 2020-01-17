@@ -68,7 +68,7 @@ class GraphWalk(object):
         adj = getattr(self, "adj_types", None)
         if not adj:
             # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-            self.adj_types = adj = self.graph.adjacency_types(self.graph_schema)
+            self.adj_types = adj = self.graph._adjacency_types(self.graph_schema)
         return adj
 
     def _check_seed(self, seed):
@@ -293,7 +293,7 @@ class BiasedRandomWalk(GraphWalk):
                 for neighbor in self.graph.neighbors(node):
 
                     wts = set()
-                    for weight in self.graph.edge_weights(node, neighbor):
+                    for weight in self.graph._edge_weights(node, neighbor):
                         if weight is None or np.isnan(weight) or weight == np.inf:
                             self._raise_error(
                                 "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
@@ -342,7 +342,7 @@ class BiasedRandomWalk(GraphWalk):
 
                     if weighted:
                         # TODO Encapsulate edge weights
-                        weight_cn = self.graph.edge_weights(current_node, nn)[0]
+                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
                     else:
                         weight_cn = 1.0
 
