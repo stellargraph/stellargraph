@@ -807,8 +807,9 @@ class TemporalRandomWalk(GraphWalk):
         n=None,
         length=None,
         bidirectional=False,
+        initial_edge_bias=None,
+        walk_bias=None,
         seed=None,
-        step_type="uniform",
     ):
         """
         Perform a time respecting random walk starting from the root nodes.
@@ -818,11 +819,16 @@ class TemporalRandomWalk(GraphWalk):
             n (int): Total number of random walks per root node
             length (int): Maximum length of each random walk
             bidirectional (bool, default False): Whether the walk extends on both direction.
+            initial_edge_bias (str, optional): distribution to use when choosing a random
+                initial temporal edge to start from. Available options are:
+                * None (default) - the initial edge is picked from a uniform distribution
+                * "exponential" - heavily biased towards more recent edges.
+            walk_bias (str, optional): distribution to use when choosing a random
+                neighbour to walk through. Available options are:
+                * None (default) - neighbours are picked from a uniform distribution
+                * "exponential" - exponentially decaying probability, resulting in a bias
+                    towards shorter time gaps
             seed (int, optional): Random number generator seed; default is None
-            step_type (str, default "uniform"): distribution to use when chooing a random
-            neighbour to walk through. Available options are:
-                * "uniform" (default)
-                * "exponential" - biased towards shorter time gaps using an exponential distribution
 
         Returns:
             List of lists of nodes ids for each of the random walks
@@ -834,36 +840,38 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         for node in nodes:  # iterate over root nodes
             for walk_number in range(n):  # generate n walks per root node
-                walk = self._walk(node, length, bidirectional, step_type, np_rs)
+                walk = self._walk(
+                    node, length, bidirectional, initial_edge_bias, walk_bias, np_rs
+                )
                 walks.append(walk)
         return walks
 
-    def _exp_distribution(self, times, current_time, is_forward):
+    def _exp_biases(self, times, t_0, decay):
+        # t_0 assumed to be smaller than all time values
+        dist = np.exp(t_0 - np.array(times) if decay else np.array(times) - t_0)
+        sum_dist = np.sum(dist)
+        return dist / sum_dist
 
-        closest_time = min(times) if is_forward else max(times)
-        time_dist = [
-            np.exp(-(np.abs(t - current_time) - np.abs(closest_time - current_time)))
-            for t in times
-        ]  # relative gap in time w.r.t current time (higher values for shorter gaps)
-        sum_time_dist = sum(time_dist)
-
-        exp_dist = [t / sum_time_dist for t in time_dist]  # exponential distribution
-        return exp_dist
-
-    def _biases(self, neighbours, time, is_forward, step_type):
-        if step_type == "uniform":
-            return None
-        elif step_type == "exponential":
-            _, times = zip(*neighbours)
-            return self._exp_distribution(times, time, is_forward)
+    def _biases(self, times, t_0, bias_type, is_forward):
+        if bias_type == "exponential":
+            # exponential decay bias needs to be reversed if looking backwards in time
+            return self._exp_biases(times, t_0, decay=is_forward)
         else:
-            raise ValueError("Unsupported step type")
+            raise ValueError("Unsupported bias type")
 
-    def _step(self, node, time, is_forward, step_type, np_rs):
-        """Perform 1 temporal step from a node. Returns None if a dead-end is reached."""
+    def _step(self, node, time, is_forward, bias_type, np_rs):
+        """
+        Perform 1 temporal step from a node. Returns None if a dead-end is reached.
+
+        """
 
         def check_time(t):
-            return (is_forward and t > time) or (not is_forward and t < time)
+            # time is None indicates no temporal filtering (i.e. initial edge selection)
+            return (
+                (time is None)
+                or (is_forward and t > time)
+                or (not is_forward and t < time)
+            )
 
         neighbours = [
             (neighbour, t)
@@ -872,22 +880,32 @@ class TemporalRandomWalk(GraphWalk):
         ]
 
         if len(neighbours) > 0:
-            chosen_index = np_rs.choice(
-                len(neighbours), p=self._biases(neighbours, time, is_forward, step_type)
-            )
-            node, time = neighbours[chosen_index]
-            return node, time
+            if bias_type is not None:
+                times = [t for _, t in neighbours]
+
+                # time is None indicates we should obtain the minimum available time for t_0
+                t_0 = time if time is not None else min(times)
+                biases = self._biases(
+                    times, t_0, bias_type=bias_type, is_forward=is_forward
+                )
+            else:
+                # default to uniform random sampling
+                biases = None
+            chosen_index = np_rs.choice(len(neighbours), p=biases)
+            next_node, next_time = neighbours[chosen_index]
+            return next_node, next_time
         else:
             return None
 
-    def _walk(self, node, length, bidirectional, step_type, np_rs):
-        def step(n, t, is_forward):
+    def _walk(self, node, length, bidirectional, initial_edge_bias, walk_bias, np_rs):
+        def step(n, t, is_forward, bias_type=walk_bias):
             return self._step(
-                n, time=t, is_forward=is_forward, step_type=step_type, np_rs=np_rs
+                n, time=t, is_forward=is_forward, bias_type=bias_type, np_rs=np_rs
             )
 
-        # sample 1 edge to obtain starting time
-        forward = step(node, 0, is_forward=True)
+        # sample 1 edge to obtain starting time - any biases are applied as though we are
+        # looking backwards in time.
+        forward = step(node, None, is_forward=False, bias_type=initial_edge_bias)
         if forward is None:
             return [node]
         backward = node, forward[1]
