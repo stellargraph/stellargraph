@@ -33,7 +33,10 @@ from ..test_utils.graphs import (
 
 # FIXME(#649,#677): silence the current experimental warnings
 pytestmark = [
-    pytest.mark.filterwarnings(f"ignore:{name}:stellargraph.core.experimental.ExperimentalWarning") for name in ["Relational", "RGCN"]
+    pytest.mark.filterwarnings(
+        f"ignore:{name}:stellargraph.core.experimental.ExperimentalWarning"
+    )
+    for name in ["Relational", "RGCN"]
 ]
 
 
