@@ -25,6 +25,7 @@ from typing import Iterable, Any, Mapping, List, Optional, Set
 
 from .. import globalvar
 from .schema import GraphSchema
+from .experimental import experimental
 
 
 class StellarGraph:
@@ -146,6 +147,28 @@ class StellarGraph:
             node_features,
             dtype,
         )
+
+    # customise how a missing attribute is handled to give better error messages for the NetworkX
+    # -> no NetworkX transition.
+    def __getattr__(self, item):
+        import networkx
+
+        try:
+            # do the normal access, in case the attribute actually exists, and to get the native
+            # python wording of the error
+            return super().__getattribute__(item)
+        except AttributeError as e:
+            if hasattr(networkx.MultiDiGraph, item):
+                # a networkx class has this as an attribute, so let's assume that it's old code
+                # from before the conversion and replace (the `from None`) the default exception
+                # with one with a more specific message that guides the user to the fix
+                type_name = type(self).__name__
+                raise AttributeError(
+                    f"{e.args[0]}. The '{type_name}' type no longer inherits from NetworkX types: use a new StellarGraph method, or, if that is not possible, the `.to_networkx()` conversion function."
+                ) from None
+
+            # doesn't look like a NetworkX method so use the default error
+            raise
 
     def is_directed(self) -> bool:
         """
@@ -413,7 +436,18 @@ class StellarGraph:
         """
         return self._graph.to_adjacency_matrix(nodes)
 
+    def to_networkx(self):
+        """
+        Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
+
+        Returns:
+             An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
+             undirected) containing all the nodes & edges and their types & features in this graph.
+        """
+        return self._graph.to_networkx()
+
     # FIXME: Experimental/special-case methods that need to be considered more
+    @experimental(reason="special-case method that needs more consideration")
     def get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
@@ -430,6 +464,7 @@ class StellarGraph:
         """
         return self._graph.get_index_for_nodes(nodes, node_type)
 
+    @experimental(reason="special-case method that needs more consideration")
     def adjacency_types(self, graph_schema: GraphSchema):
         """
         Obtains the edges in the form of the typed mapping:
@@ -443,6 +478,7 @@ class StellarGraph:
         """
         return self._graph.adjacency_types(graph_schema)
 
+    @experimental(reason="special-case method that needs more consideration")
     def edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
         """
         Obtains the weights of edges between the given pair of nodes.
@@ -456,6 +492,7 @@ class StellarGraph:
         """
         return self._graph.edge_weights(source_node, target_node)
 
+    @experimental(reason="special-case method that needs more consideration")
     def node_attributes(self, node: Any) -> Set[Any]:
         """
         Obtains the names of any (non-standard) node attributes that are
