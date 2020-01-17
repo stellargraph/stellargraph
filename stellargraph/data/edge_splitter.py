@@ -394,10 +394,7 @@ class EdgeSplitter(object):
                 e for e in all_edges if self.g.get_edge_data(*e)["label"] == edge_label
             ]
 
-        elif (
-            edge_attribute_threshold is not None
-            and edge_attribute_threshold is not None
-        ):
+        else:
             # filter by edge label, edge attribute and threshold value
             edge_attribute_threshold_dt = datetime.datetime.strptime(
                 edge_attribute_threshold, "%d/%m/%Y"
@@ -413,8 +410,6 @@ class EdgeSplitter(object):
                     > edge_attribute_threshold_dt
                 )
             ]
-        else:
-            raise ValueError("Invalid parameters")  # not the most informative error!
 
         return edges_with_label
 

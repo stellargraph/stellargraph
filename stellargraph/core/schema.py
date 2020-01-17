@@ -30,12 +30,15 @@ class GraphSchema:
     :func:`~stellargraph.core.graph.create_graph_schema` method.
     """
 
-    _is_directed = False
-    node_types = None
-    edge_types = None
-    schema = None
-    node_type_map = None
-    edge_type_map = None
+    def __init__(
+        self, is_directed, node_types, edge_types, schema, node_type_map, edge_type_map
+    ):
+        self._is_directed = is_directed
+        self.node_types = node_types
+        self.edge_types = edge_types
+        self.schema = schema
+        self.node_type_map = node_type_map
+        self.edge_type_map = edge_type_map
 
     def __repr__(self):
         s = "{}:\n".format(type(self).__name__)

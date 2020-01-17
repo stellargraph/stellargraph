@@ -8,7 +8,7 @@
 
 - Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 
-- Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
+- *Experimental*: Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
 
 **Implemented enhancements:**
 - Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now support additional parameters to include edge weights in the results or filter by a set of edge types. [\#646](https://github.com/stellargraph/stellargraph/pull/646)
@@ -30,6 +30,8 @@ Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by p
 - Various methods on `StellarGraph` have been renamed to be more succinct and uniform:
    - `get_feature_for_nodes` is now `node_features`
    - `type_for_node` is now `node_type`
+
+- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now return a list of neighbours instead of a set. This addresses [\#653](https://github.com/stellargraph/stellargraph/issues/653). This means multi-edges are no longer collapsed into one in the return value. There will be an implicit change in behaviour for explorer classes used for algorithms like GraphSAGE, Node2Vec, since a neighbour connected via multiple edges will now be more likely to be sampled. If this doesn't sound like the desired behaviour, consider pruning the graph of multi-edges before running the algorithm.
 
 **Fixed bugs:**
 
