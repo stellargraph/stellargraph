@@ -445,7 +445,8 @@ class StellarGraph:
         """
         return self._graph.to_networkx()
 
-    # FIXME: Experimental/special-case methods that need to be considered more
+    # FIXME: Experimental/special-case methods that need to be considered more; the underscores
+    # denote "package private", not fully private, and so are ok to use in the rest of stellargraph
     def _get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
