@@ -80,7 +80,7 @@ class DatasetLoader(object):
                 return False
         return True
 
-    def download(self, ignore_cache: bool = False) -> None:
+    def download(self, ignore_cache: Optional[bool] = False) -> None:
         """Download the dataset (if not already downloaded, unless ignore_cache=True)"""
         if not self._is_downloaded() or ignore_cache:
             print(

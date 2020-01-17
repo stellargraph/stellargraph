@@ -19,6 +19,15 @@ Sample datasets for stellargraph demonstrations
 """
 
 from .dataset_loader import DatasetLoader
+from typing import Optional
+
+
+def download_all_datasets(ignore_cache: Optional[bool] = False) -> None:
+    """ download all datasets """
+    # obtain all the classes derived from DatasetLoader (note: must be direct descendants)
+    for cls in DatasetLoader.__subclasses__():
+        dataset = cls()
+        dataset.download(ignore_cache)
 
 
 class Cora(DatasetLoader):
