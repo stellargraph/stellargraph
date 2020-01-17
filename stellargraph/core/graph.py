@@ -115,6 +115,7 @@ class StellarGraph:
             a numeric feature vector for each node in the graph.
 
     """
+
     def __init__(
         self,
         graph=None,
@@ -230,10 +231,9 @@ class StellarGraph:
         """
         return self._graph.has_node(node)
 
-    def neighbors(self,
-                  node: Any,
-                  include_edge_weight=False,
-                  edge_types=None) -> Iterable[Any]:
+    def neighbors(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
@@ -248,14 +248,13 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring nodes.
         """
-        return self._graph.neighbors(node,
-                                     include_edge_weight=include_edge_weight,
-                                     edge_types=edge_types)
+        return self._graph.neighbors(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
-    def in_nodes(self,
-                 node: Any,
-                 include_edge_weight=False,
-                 edge_types=None) -> Iterable[Any]:
+    def in_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
         directed to the given node. For an undirected graph,
@@ -271,14 +270,13 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        return self._graph.in_nodes(node,
-                                    include_edge_weight=include_edge_weight,
-                                    edge_types=edge_types)
+        return self._graph.in_nodes(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
-    def out_nodes(self,
-                  node: Any,
-                  include_edge_weight=False,
-                  edge_types=None) -> Iterable[Any]:
+    def out_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
         directed from the given node. For an undirected graph,
@@ -294,9 +292,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        return self._graph.out_nodes(node,
-                                     include_edge_weight=include_edge_weight,
-                                     edge_types=edge_types)
+        return self._graph.out_nodes(
+            node, include_edge_weight=include_edge_weight, edge_types=edge_types
+        )
 
     def nodes_of_type(self, node_type=None):
         """
