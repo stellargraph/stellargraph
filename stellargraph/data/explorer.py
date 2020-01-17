@@ -35,6 +35,7 @@ from collections import defaultdict, deque
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
+from ..core.experimental import experimental
 
 
 class GraphWalk(object):
@@ -794,9 +795,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             )
 
 
-""" Temporal random walks """
-
-
+@experimental(reason="requires more thorough testing and documentation")
 class TemporalRandomWalk(GraphWalk):
     """
     Performs uniform temporal random walks on the given graph
