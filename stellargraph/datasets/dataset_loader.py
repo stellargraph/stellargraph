@@ -25,7 +25,8 @@ from typing import List, Optional
 
 
 class DatasetLoader(object):
-    """ A class to download sample datasets"""
+    """ A class to download sample datasets.
+    the default path of ~/data can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable."""
 
     def __init__(
         self,
@@ -67,7 +68,7 @@ class DatasetLoader(object):
 
     @staticmethod
     def _all_datasets_directory() -> str:
-        """Return the path of the base directory which contains subdirectories for each dataset"""
+        """Return the path of the base directory which contains subdirectories for each dataset."""
         return os.path.expanduser(
             os.getenv("STELLARGRAPH_DATASETS_PATH", os.path.join("~", "data"))
         )
@@ -87,15 +88,20 @@ class DatasetLoader(object):
             )
             if self.url_archive_format is None:
                 # single file to download
-                assert len(self.expected_files) == 1
                 self._create_base_directory()
-                destination_filename = os.path.join(self.base_directory, self.expected_files[0])
+                destination_filename = os.path.join(
+                    self.base_directory, self.expected_files[0]
+                )
                 urlretrieve(self.url, filename=destination_filename)
             else:
                 # archive of files
-                filename, _ = urlretrieve(self.url)
+                filename, _ = urlretrieve(
+                    self.url
+                )  # this will download to a temporary location
                 self._create_base_directory()
-                unpack_archive(filename, self._all_datasets_directory(), self.url_archive_format)
+                unpack_archive(
+                    filename, self._all_datasets_directory(), self.url_archive_format
+                )
             if not self._is_downloaded():
                 print(f"{self.name} dataset failed to download")
         else:
