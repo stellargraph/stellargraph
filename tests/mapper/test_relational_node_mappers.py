@@ -27,6 +27,15 @@ from ..test_utils.graphs import (
 )
 
 
+# FIXME(#649,#677): silence the current experimental warnings
+pytestmark = [
+    pytest.mark.filterwarnings(
+        f"ignore:{name}:stellargraph.core.experimental.ExperimentalWarning"
+    )
+    for name in ["Relational", "RGCN"]
+]
+
+
 class Test_RelationalFullBatchNodeGenerator:
     """
     Tests of FullBatchNodeGenerator class

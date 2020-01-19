@@ -207,20 +207,20 @@ def test_digraph_schema():
 
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_name="feature", feature_size=8)
-    aa = sg.get_index_for_nodes([1, 2, 3, 4])
+    aa = sg._get_index_for_nodes([1, 2, 3, 4])
     assert aa == [0, 1, 2, 3]
 
     sg = example_hin_1(feature_name="feature")
-    aa = sg.get_index_for_nodes([0, 1, 2, 3])
+    aa = sg._get_index_for_nodes([0, 1, 2, 3])
     assert aa == [0, 1, 2, 3]
-    aa = sg.get_index_for_nodes([0, 1, 2, 3], "A")
+    aa = sg._get_index_for_nodes([0, 1, 2, 3], "A")
     assert aa == [0, 1, 2, 3]
-    aa = sg.get_index_for_nodes([4, 5, 6])
+    aa = sg._get_index_for_nodes([4, 5, 6])
     assert aa == [0, 1, 2]
-    aa = sg.get_index_for_nodes([4, 5, 6], "B")
+    aa = sg._get_index_for_nodes([4, 5, 6], "B")
     assert aa == [0, 1, 2]
     with pytest.raises(ValueError):
-        aa = sg.get_index_for_nodes([1, 2, 5])
+        aa = sg._get_index_for_nodes([1, 2, 5])
 
 
 def test_feature_conversion_from_nodes():

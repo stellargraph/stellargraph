@@ -88,7 +88,7 @@ class Baz:
         pass
 ```
 
-This should be applied to new code that isn't fully documented, tested or validated. This allows landing code faster and iterating on it inside the repository. The annotation will add an obvious "warning" admonition to the attached item's documentation.
+This should be applied to new code that isn't fully documented, tested or validated. This allows landing code faster and iterating on it inside the repository. The annotation will add an obvious "warning" admonition to the attached item's documentation, as well as emitting a dynamic warning (with the class `ExperimentalWarning`) when the function, method or class `__init__` constructor is called.
 
 This is meant to be a lightweight status, with a low bar for "graduating". Code does not need to be `@experimental` if it satisfies the following check-list:
 

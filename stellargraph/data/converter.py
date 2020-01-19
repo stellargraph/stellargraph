@@ -154,7 +154,7 @@ class NodeAttributeSpecification:
         # Go through graph to find node attributes
         attrs = set()
         for node in graph.nodes_of_type(node_type):
-            attrs |= graph.node_attributes(node)
+            attrs |= graph._node_attributes(node)
 
         # Remove any ignored attributes
         attrs = attrs.difference(set(ignored_attributes))
