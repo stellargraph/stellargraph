@@ -31,6 +31,15 @@ from ..test_utils.graphs import (
 )
 
 
+# FIXME(#649,#677): silence the current experimental warnings
+pytestmark = [
+    pytest.mark.filterwarnings(
+        f"ignore:{name}:stellargraph.core.experimental.ExperimentalWarning"
+    )
+    for name in ["Relational", "RGCN"]
+]
+
+
 def test_RelationalGraphConvolution_config():
     rgcn_layer = RelationalGraphConvolution(units=16, num_relationships=5)
     conf = rgcn_layer.get_config()

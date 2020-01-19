@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
@@ -446,9 +445,9 @@ class StellarGraph:
         """
         return self._graph.to_networkx()
 
-    # FIXME: Experimental/special-case methods that need to be considered more
-    @experimental(reason="special-case method that needs more consideration")
-    def get_index_for_nodes(self, nodes, node_type=None):
+    # FIXME: Experimental/special-case methods that need to be considered more; the underscores
+    # denote "package private", not fully private, and so are ok to use in the rest of stellargraph
+    def _get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -464,8 +463,7 @@ class StellarGraph:
         """
         return self._graph.get_index_for_nodes(nodes, node_type)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def adjacency_types(self, graph_schema: GraphSchema):
+    def _adjacency_types(self, graph_schema: GraphSchema):
         """
         Obtains the edges in the form of the typed mapping:
 
@@ -478,8 +476,7 @@ class StellarGraph:
         """
         return self._graph.adjacency_types(graph_schema)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
+    def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
         """
         Obtains the weights of edges between the given pair of nodes.
 
@@ -492,8 +489,7 @@ class StellarGraph:
         """
         return self._graph.edge_weights(source_node, target_node)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def node_attributes(self, node: Any) -> Set[Any]:
+    def _node_attributes(self, node: Any) -> Set[Any]:
         """
         Obtains the names of any (non-standard) node attributes that are
         available in the user data.
