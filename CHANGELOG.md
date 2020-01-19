@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.8.4](https://github.com/stellargraph/stellargraph/tree/v0.8.4)
+
+**Fixed bugs:**
+
 ## [0.8.3](https://github.com/stellargraph/stellargraph/tree/v0.8.3)
 
 **Fixed bugs:**
