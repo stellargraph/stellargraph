@@ -25,6 +25,7 @@ import nbformat
 import re
 import shlex
 import subprocess
+import sys
 import tempfile
 from itertools import chain
 from traitlets import Set, Integer, Bool
@@ -311,3 +312,5 @@ Fix by running:
                     message,
                 ]
             )
+
+        sys.exit(1)
