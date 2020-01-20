@@ -141,17 +141,6 @@ def test_graph_schema():
     assert len(schema.schema["movie"]) == 1
     assert len(schema.schema["user"]) == 1
 
-    # Test edge type lookup
-    node_labels = nx.get_node_attributes(g, "label")
-    for n1, n2, k, edata in g.edges(keys=True, data=True):
-        assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
-            schema.get_edge_type((n1, n2, k))
-        )
-
-    # Test undirected graph types
-    assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
-    assert schema.get_edge_type((0, 4, 0)) == ("movie", "rating", "user")
-
 
 def test_graph_schema_sampled():
     sg = create_graph_1()
@@ -167,9 +156,6 @@ def test_graph_schema_sampled():
     assert len(schema.schema["movie"]) == 1
     assert len(schema.schema["user"]) == 1
 
-    with pytest.raises(RuntimeError):
-        schema.get_edge_type((4, 0, 0))
-
 
 def test_digraph_schema():
     g = create_graph_1(is_directed=True, return_nx=True)
@@ -180,17 +166,6 @@ def test_digraph_schema():
     assert "user" in schema.schema
     assert len(schema.schema["user"]) == 1
     assert len(schema.schema["movie"]) == 0
-
-    # Test edge type lookup
-    node_labels = nx.get_node_attributes(g, "label")
-    for n1, n2, k, edata in g.edges(keys=True, data=True):
-        assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
-            schema.get_edge_type((n1, n2, k))
-        )
-
-    assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
-    with pytest.raises(IndexError):
-        schema.get_edge_type((0, 4, 0))
 
 
 def test_schema_removals():

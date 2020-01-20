@@ -38,7 +38,6 @@ def example_graph_schema():
             node_types=sorted(schema.keys()),
             edge_types=sorted(set(it.chain(*schema.values()))),
             schema=schema,
-            edge_type_map=None,
         )
 
     return create_schema

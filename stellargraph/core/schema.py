@@ -30,12 +30,11 @@ class GraphSchema:
     :func:`~stellargraph.core.graph.create_graph_schema` method.
     """
 
-    def __init__(self, is_directed, node_types, edge_types, schema, edge_type_map):
+    def __init__(self, is_directed, node_types, edge_types, schema):
         self._is_directed = is_directed
         self.node_types = node_types
         self.edge_types = edge_types
         self.schema = schema
-        self.edge_type_map = edge_type_map
 
     def __getattr__(self, item):
         try:
@@ -44,6 +43,10 @@ class GraphSchema:
             if item in ("node_type_map", "get_node_type"):
                 raise AttributeError(
                     f"{e.args[0]}. This has been replaced by accessing node types through 'StellarGraph.node_type'."
+                )
+            if attr in ("edge_type_map", "get_edge_type"):
+                raise AttributeError(
+                    f"{e.args[0]}. This was removed because it wasn't meaningfully used, please file an issue with a use case if you were using it."
                 )
             # not something we know about
             raise
@@ -93,87 +96,6 @@ class GraphSchema:
             raise ValueError("Edge key '{}' not found.".format(edge_type))
 
         return index
-
-    def is_of_edge_type(self, edge, edge_type, index=False):
-        """
-        Tests if an edge is of the given edge type.
-
-        The edge is specified as a standard NetworkX multigraph edge
-        triple of (node_id_1, node_id_2, edge_key).
-
-        If the graph schema is undirected then the ordering of the nodes
-        of the edge type doesn't matter.
-
-        Args:
-            edge: The edge ID from the original graph as a triple.
-            edge_type: The type of the edge as a tuple or EdgeType triple.
-
-        Returns:
-            True if the edge is of the given type
-        """
-        # TODO: deprecate this function
-        if self.edge_type_map is None:
-            raise RuntimeError("Edge type maps must be created to use this method")
-
-        if edge in self.edge_type_map:
-            eindex = self.edge_type_map[edge]
-
-        elif not self.is_directed():
-            eindex = self.edge_type_map[(edge[1], edge[0], edge[2])]
-
-        else:
-            raise IndexError("Warning: Edge '{}' not found in type map.".format(edge))
-
-        et = self.edge_types[eindex]
-
-        if self.is_directed():
-            match = et == edge_type
-        else:
-            match = (et == edge_type) or (
-                et == (edge_type[2], edge_type[1], edge_type[0])
-            )
-
-        return match
-
-    def get_edge_type(self, edge, index=False):
-        """
-        Return the type of the edge as a triple of
-            (source_node_type, relation_type, dest_node_type).
-
-        The edge is specified as a standard NetworkX multigraph edge
-        triple of (node_id_1, node_id_2, edge_key).
-
-        If the graph schema is undirected and there is an edge type for
-        the edge (node_id_2, node_id_1, edge_key) then the edge type
-        for this node will be returned permuted to match the node order.
-
-        Args:
-            edge: The edge ID from the original graph as a triple.
-            index: Return a numeric type index if True,
-                otherwise return the type triple.
-
-        Returns:
-            A node type triple or index.
-        """
-        # TODO: deprecate this function
-        if self.edge_type_map is None:
-            raise RuntimeError("Edge type maps must be created to use this method")
-
-        if edge in self.edge_type_map:
-            et = self.edge_type_map[edge]
-            edge_type = et if index else self.edge_types[et]
-
-        elif not self.is_directed():
-            et = self.edge_type_map[(edge[1], edge[0], edge[2])]
-            if index:
-                edge_type = et
-            else:
-                et = self.edge_types[et]
-                edge_type = EdgeType(et[2], et[1], et[0])
-        else:
-            raise IndexError("Edge '{}' not found in type map.".format(edge))
-
-        return edge_type
 
     def sampling_tree(self, head_node_types, n_hops):
         """
