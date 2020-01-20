@@ -700,9 +700,9 @@ class NetworkXStellarGraph(StellarGraph):
             edge_type_map = {
                 (src, tgt, key): edge_types.index(
                     EdgeType(
-                        node_types[node_type_map[src]],
+                        self.node_type(src),
                         self._get_edge_type(data),
-                        node_types[node_type_map[tgt]],
+                        self.node_type(tgt),
                     )
                 )
                 for src, tgt, key, data in self._graph.edges(keys=True, data=True)
