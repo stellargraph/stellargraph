@@ -148,11 +148,8 @@ class FullBatchNodeGenerator:
         else:
             self.use_sparse = sparse
 
-        # We need a schema to check compatibility with GAT, GCN
-        self.schema = G.create_graph_schema(create_type_maps=True)
-
         # Check that there is only a single node type for GAT or GCN
-        if len(self.schema.node_types) > 1:
+        if len(G.node_types) > 1:
             raise TypeError(
                 "{}: node generator requires graph with single node type; "
                 "a graph with multiple node types is passed. Stopping.".format(
