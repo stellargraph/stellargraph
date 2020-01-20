@@ -141,10 +141,6 @@ def test_graph_schema():
     assert len(schema.schema["movie"]) == 1
     assert len(schema.schema["user"]) == 1
 
-    # Test node type lookup
-    for n, ndata in g.nodes(data=True):
-        assert ndata["label"] == schema.get_node_type(n)
-
     # Test edge type lookup
     node_labels = nx.get_node_attributes(g, "label")
     for n1, n2, k, edata in g.edges(keys=True, data=True):
@@ -171,10 +167,6 @@ def test_graph_schema_sampled():
     assert len(schema.schema["movie"]) == 1
     assert len(schema.schema["user"]) == 1
 
-    # Node and edge type lookups will fail with no type maps
-    with pytest.raises(RuntimeError):
-        schema.get_node_type(0)
-
     with pytest.raises(RuntimeError):
         schema.get_edge_type((4, 0, 0))
 
@@ -189,10 +181,6 @@ def test_digraph_schema():
     assert len(schema.schema["user"]) == 1
     assert len(schema.schema["movie"]) == 0
 
-    # Test node type lookup
-    for n, ndata in g.nodes(data=True):
-        assert ndata["label"] == schema.get_node_type(n)
-
     # Test edge type lookup
     node_labels = nx.get_node_attributes(g, "label")
     for n1, n2, k, edata in g.edges(keys=True, data=True):
@@ -203,6 +191,17 @@ def test_digraph_schema():
     assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
     with pytest.raises(IndexError):
         schema.get_edge_type((0, 4, 0))
+
+
+def test_schema_removals():
+    sg = create_graph_1()
+    schema = sg.create_graph_schema(create_type_maps=True)
+
+    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
+        _ = schema.node_type_maps
+
+    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
+        _ = schema.get_node_type
 
 
 def test_get_index_for_nodes():
