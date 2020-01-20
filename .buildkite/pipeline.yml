@@ -17,6 +17,8 @@ steps:
       docker-compose#v3.1.0:
         <<: *compose-config
         run: runner-3.6
+        env:
+          CHECK_NOTEBOOK_FORMATTING: 1
     agents:
       queue: "t2medium"
 
@@ -81,9 +83,6 @@ steps:
       <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/yamllint:snapshot"
-
-  - label: ":python-black::jupyter: check notebook formatting"
-    command: "python3 scripts/format_notebooks.py --all --ci demos/"
 
   - label: ":copyright: check copyright headers"
     command: ".buildkite/steps/check-copyright-headers.sh"

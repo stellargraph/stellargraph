@@ -18,6 +18,12 @@ echo "+++ running tests"
 exitCode=$?
 py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
+if [ "${CHECK_NOTEBOOK_FORMATTING-0}" = 1 ]; then
+  echo "+++ checking notebook formatting"
+  # This script requires non-trivial dependencies, so run it here after installing them
+  python scripts/format_notebooks.py --all --ci demos/ || exitCode=$?
+fi
+
 echo "--- uploading coveralls"
 coveralls
 
