@@ -18,7 +18,7 @@ steps:
         <<: *compose-config
         run: runner-3.6
         env:
-          CHECK_NOTEBOOK_FORMATTING: 1
+          - CHECK_NOTEBOOK_FORMATTING=1
     agents:
       queue: "t2medium"
 
