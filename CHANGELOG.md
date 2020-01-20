@@ -3,6 +3,7 @@
 ## [0.8.4](https://github.com/stellargraph/stellargraph/tree/v0.8.4)
 
 **Fixed bugs:**
+- Fix `DirectedGraphSAGENodeGenerator` always hitting `TypeError` exception. [#695](https://github.com/stellargraph/stellargraph/issues/695)
 
 ## [0.8.3](https://github.com/stellargraph/stellargraph/tree/v0.8.3)
 

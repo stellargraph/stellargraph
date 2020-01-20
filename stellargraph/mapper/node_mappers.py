@@ -188,8 +188,10 @@ class NodeSequence(Sequence):
         # Get corresponding targets
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
-        if isinstance(self.generator, GraphSAGENodeGenerator) or isinstance(
-            self.generator, HinSAGENodeGenerator
+        if (
+            isinstance(self.generator, GraphSAGENodeGenerator)
+            or isinstance(self.generator, DirectedGraphSAGENodeGenerator)
+            or isinstance(self.generator, HinSAGENodeGenerator)
         ):
             # Get sampled nodes for GraphSAGENodeGenerator and HinSAGENodeGenerator
             batch_feats = self.generator.sample_features(
