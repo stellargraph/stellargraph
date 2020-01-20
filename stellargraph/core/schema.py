@@ -21,6 +21,7 @@ from ..core.utils import is_real_iterable
 
 EdgeType = namedtuple("EdgeType", "n1 rel n2")
 
+
 class GraphSchema:
     """
     Class to encapsulate the schema information for a heterogeneous graph.
@@ -29,9 +30,7 @@ class GraphSchema:
     :func:`~stellargraph.core.graph.create_graph_schema` method.
     """
 
-    def __init__(
-        self, is_directed, node_types, edge_types, schema, edge_type_map
-    ):
+    def __init__(self, is_directed, node_types, edge_types, schema, edge_type_map):
         self._is_directed = is_directed
         self.node_types = node_types
         self.edge_types = edge_types

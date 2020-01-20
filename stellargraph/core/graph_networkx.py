@@ -711,11 +711,7 @@ class NetworkXStellarGraph(StellarGraph):
             edge_type_map = None
 
         return GraphSchema(
-            self.is_directed(),
-            node_types,
-            edge_types,
-            schema,
-            edge_type_map,
+            self.is_directed(), node_types, edge_types, schema, edge_type_map,
         )
 
     ######################################################################
