@@ -18,6 +18,7 @@ import pytest
 import networkx as nx
 import numpy as np
 import tensorflow as tf
+from stellargraph import StellarGraph
 from stellargraph.layer import (
     GraphSAGE,
     GCN,
