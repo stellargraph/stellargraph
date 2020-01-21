@@ -18,7 +18,7 @@
 Sample datasets for stellargraph demonstrations
 """
 
-from .dataset_loader import DatasetLoader
+from .dataset_loader import DatasetLoader  # type: ignore
 from typing import Optional
 
 
@@ -46,7 +46,6 @@ class Cora(
     "The citation network consists of 5429 links. Each publication in the dataset is described by a 0/1-valued word vector "
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
-    data_subdirectory_name=None,
 ):
     pass
 

@@ -22,7 +22,7 @@ import os
 import logging
 from shutil import unpack_archive
 from urllib.request import urlretrieve
-from typing import List, Optional
+from typing import List, Optional, Any
 
 
 log = logging.getLogger(__name__)
@@ -39,6 +39,17 @@ class DatasetLoader(object):
     and each dataset will be downloaded to a subdirectory within this path.
     """
 
+    # define these for mypy benefit (will be set for derived classes in __init_subclass__ below)
+    name = ""
+    directory_name = ""
+    url = ""
+    url_archive_format: Optional[str] = None
+    expected_files: List[str] = []
+    description = ""
+    source = ""
+    data_subdirectory_name: Optional[str] = None
+
+
     @classmethod
     def __init_subclass__(
         cls,
@@ -50,7 +61,7 @@ class DatasetLoader(object):
         description: str,
         source: str,
         data_subdirectory_name: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any
     ) -> None:
         cls.name = name
         cls.directory_name = directory_name
@@ -68,7 +79,11 @@ class DatasetLoader(object):
             )
         cls.__doc__ = f"{cls.description}\n\nFurther details at: {cls.source}"
 
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__(**kwargs)  # type: ignore
+
+    def __init__(self) -> None:
+        if not self.name:
+            raise ValueError(f"{self.__class__.__name__} can't be instantiated directly, please use a derived class")
 
     @property
     def base_directory(self) -> str:
@@ -95,8 +110,8 @@ class DatasetLoader(object):
             os.getenv("STELLARGRAPH_DATASETS_PATH", os.path.join("~", "data"))
         )
 
-    def _resolve_path(self, filename):
-        """Convert dataset relative files to their full path on filesystem"""
+    def _resolve_path(self, filename: str) -> str:
+        """Convert dataset relative file names to their full path on filesystem"""
         return os.path.join(self.base_directory, filename)
 
     def _is_downloaded(self) -> bool:
@@ -119,7 +134,7 @@ class DatasetLoader(object):
         )
         if missing_files:
             raise FileNotFoundError(
-                f"{self.name} dataset failed to download file(s): {missing_files}"
+                f"{self.name} dataset failed to download file(s): {missing_files} to {self.data_directory}"
             )
 
     def download(self, ignore_cache: Optional[bool] = False) -> None:
