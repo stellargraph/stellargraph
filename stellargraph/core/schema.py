@@ -37,13 +37,13 @@ class GraphSchema:
         self.schema = schema
         self.edge_type_map = edge_type_map
 
-    def __getattr__(self, attr):
+    def __getattr__(self, item):
         try:
             return super().__getattribute__(item)
         except AttributeError as e:
             if attr in ("node_type_map", "get_node_type"):
                 raise AttributeError(
-                    f"{e.args[0]}. Access node types through 'StellarGraph.node_type'."
+                    f"{e.args[0]}. This has been replaced by accessing node types through 'StellarGraph.node_type'."
                 )
             # not something we know about
             raise
