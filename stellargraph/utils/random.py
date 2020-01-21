@@ -31,7 +31,11 @@ def get_seed(seed):
 
 def set_seed(seed):
     """
-    Set the seed for all possible randomness in StellarGraph
+    Set the seed for all possible randomness in StellarGraph. Note that this
+    also sets the global random seed for the following external modules:
+        * numpy
+        * tensorflow
+        * random
 
     Args:
         seed (int, optional): seed value
