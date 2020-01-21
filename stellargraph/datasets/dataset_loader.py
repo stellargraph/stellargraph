@@ -19,14 +19,25 @@ Enable easy loading of sample datasets for demonstrations
 """
 
 import os
+import logging
 from shutil import unpack_archive
 from urllib.request import urlretrieve
 from typing import List, Optional
 
 
+log = logging.getLogger(__name__)
+
+
 class DatasetLoader(object):
-    """ A class to download sample datasets.
-    the default path of ~/data can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable."""
+    """
+    Base class for downloading sample datasets.
+
+    This class is used by inherited classes for each specific dataset, providing basic functionality to
+    download a dataset from a URL.
+
+    The default download path of ~/data can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable,
+    and each dataset will be downloaded to a subdirectory within this path.
+    """
 
     def __init__(
         self,
@@ -50,12 +61,12 @@ class DatasetLoader(object):
 
     @property
     def base_directory(self) -> str:
-        """Return the path of the data directory for this dataset"""
+        """str: The path of the directory containing this dataset."""
         return os.path.join(self._all_datasets_directory(), self.directory_name)
 
     @property
     def data_directory(self) -> str:
-        """Return the directory containing the data content files"""
+        """str: The path of the directory containing the data content files for this dataset."""
         if self.data_subdirectory_name is None:
             return self.base_directory
         else:
@@ -75,16 +86,27 @@ class DatasetLoader(object):
 
     def _is_downloaded(self) -> bool:
         """Returns true if the expected files for the dataset are present"""
-        for file in self.expected_files:
-            if not os.path.isfile(os.path.join(self.base_directory, file)):
-                return False
-        return True
+        return all(
+            os.path.isfile(os.path.join(self.base_directory, file))
+            for file in self.expected_files
+        )
 
     def download(self, ignore_cache: Optional[bool] = False) -> None:
-        """Download the dataset (if not already downloaded, unless ignore_cache=True)"""
-        if not self._is_downloaded() or ignore_cache:
-            print(
-                f"{self.name} dataset downloading to {self.base_directory} from {self.url}"
+        """
+        Download the dataset (if not already downloaded)
+
+        Args:
+            ignore_cache bool, optional (default=False): Ignore a cached dataset and force a re-download.
+
+        Raises:
+            FileNotFoundError: If the dataset is not successfully downloaded.
+        """
+        if ignore_cache or not self._is_downloaded():
+            log.info(
+                "%s dataset downloading to %s from",
+                self.name,
+                self.base_directory,
+                self.url,
             )
             if self.url_archive_format is None:
                 # single file to download
@@ -103,6 +125,6 @@ class DatasetLoader(object):
                     filename, self._all_datasets_directory(), self.url_archive_format
                 )
             if not self._is_downloaded():
-                print(f"{self.name} dataset failed to download")
+                raise FileNotFoundError(f"{self.name} dataset failed to download")
         else:
-            print(f"{self.name} dataset is already downloaded")
+            log.info("%s dataset is already downloaded", self.name)

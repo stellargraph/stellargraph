@@ -15,11 +15,12 @@
 # limitations under the License.
 
 import pytest
-from stellargraph.datasets import download_all_datasets, Cora
+import shutil
+import os
+from stellargraph.datasets import download_all_datasets, Cora, CiteSeer
 from urllib.error import URLError
 
 
-@pytest.mark.slow
 def test_re_download_all_datasets() -> None:
     # to force re-downloading, we ignore the cached datasets
     # note that this is fairly slow, as it will re-download all of our demo datasets
@@ -31,3 +32,21 @@ def test_invalid_url() -> None:
     dataset.url = "http://stellargraph-invalid-url/x"
     with pytest.raises(URLError):
         dataset.download(ignore_cache=True)
+
+
+def test_missing_files() -> None:
+    # we start with Cora to a special path, but with the URL from CiteSeer
+    dataset = Cora()
+    dataset.directory_name = "test-missing-files"
+    dataset.url = CiteSeer().url
+
+    # make sure the target directory is empty
+    def remove_dataset_directory():
+        if os.path.exists(dataset.base_directory):
+            shutil.rmtree(dataset.base_directory)
+
+    remove_dataset_directory()
+    # download - the url should work, but the files extracted won't be correct
+    with pytest.raises(FileNotFoundError):
+        dataset.download()
+    remove_dataset_directory()  # cleanup

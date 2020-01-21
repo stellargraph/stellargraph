@@ -23,7 +23,12 @@ from typing import Optional
 
 
 def download_all_datasets(ignore_cache: Optional[bool] = False) -> None:
-    """ download all datasets """
+    """
+    Download all of the demonstration datasets (if not already downloaded to the disk cache)
+
+    Args:
+        ignore_cache bool, optional (default=False): Ignore cached datasets and force a re-download.
+    """
     # obtain all the classes derived from DatasetLoader (note: must be direct descendants)
     for cls in DatasetLoader.__subclasses__():
         dataset = cls()
@@ -34,8 +39,8 @@ class Cora(DatasetLoader):
     def __init__(self) -> None:
         super().__init__(
             "Cora",
-            "cora",
-            "https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz",
+            directory_name="cora",
+            url="https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz",
             url_archive_format="gztar",
             expected_files=["cora.cites", "cora.content"],
             description="The Cora dataset consists of 2708 scientific publications classified into one of seven classes. "
@@ -49,8 +54,8 @@ class CiteSeer(DatasetLoader):
     def __init__(self) -> None:
         super().__init__(
             "CiteSeer",
-            "CiteSeer",
-            "https://linqs-data.soe.ucsc.edu/public/lbc/citeseer.tgz",
+            directory_name="CiteSeer",
+            url="https://linqs-data.soe.ucsc.edu/public/lbc/citeseer.tgz",
             url_archive_format="gztar",
             expected_files=["citeseer.cites", "citeseer.content"],
             description="The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. "
@@ -71,8 +76,8 @@ class PubMedDiabetes(DatasetLoader):
     def __init__(self) -> None:
         super().__init__(
             "PubMed Diabetes",
-            "Pubmed-Diabetes",
-            "https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz",
+            directory_name="Pubmed-Diabetes",
+            url="https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz",
             url_archive_format="gztar",
             expected_files=[
                 "data/Pubmed-Diabetes.DIRECTED.cites.tab",
@@ -91,8 +96,8 @@ class BlogCatalog3(DatasetLoader):
     def __init__(self) -> None:
         super().__init__(
             "BlogCatalog3",
-            "BlogCatalog-dataset",
-            "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip",
+            directory_name="BlogCatalog-dataset",
+            url="http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip",
             url_archive_format="zip",
             expected_files=[
                 "data/edges.csv",
@@ -111,8 +116,8 @@ class MovieLens(DatasetLoader):
     def __init__(self) -> None:
         super().__init__(
             "MovieLens",
-            "ml-100k",
-            "http://files.grouplens.org/datasets/movielens/ml-100k.zip",
+            directory_name="ml-100k",
+            url="http://files.grouplens.org/datasets/movielens/ml-100k.zip",
             url_archive_format="zip",
             expected_files=["u.data", "u.user", "u.item", "u.genre", "u.occupation",],
             description="The MovieLens 100K dataset contains 100,000 ratings from 943 users on 1682 movies.",
@@ -124,8 +129,8 @@ class AIFB(DatasetLoader):
     def __init__(self) -> None:
         super().__init__(
             "AIFB",
-            "aifb",
-            "https://ndownloader.figshare.com/files/1118822",
+            directory_name="aifb",
+            url="https://ndownloader.figshare.com/files/1118822",
             url_archive_format=None,
             expected_files=["aifbfixed_complete.n3",],
             description="The AIFB dataset describes the AIFB research institute in terms of its staff, research group, and publications. "
