@@ -102,3 +102,11 @@ Calibration
 
 .. automodule:: stellargraph.utils.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
+
+
+Random
+------------------------
+
+.. automodule:: stellargraph.utils.random
+  :members: get_seed, set_seed
+

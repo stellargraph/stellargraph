@@ -23,6 +23,16 @@ _sg_seed = None
 
 
 def get_seed(seed):
+    """
+    Convenience function to use the global seed by default if the provided seed is None.
+
+    Args:
+        seed (int, optional): seed value
+
+    Returns:
+        seed if not None, otherwise the global seed
+
+    """
     if seed is None:
         return _sg_seed
     else:
