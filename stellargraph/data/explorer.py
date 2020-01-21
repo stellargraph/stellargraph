@@ -83,6 +83,7 @@ class GraphWalk(object):
                 self._raise_error(
                     "The random number generator seed value, seed, should be non-negative integer or None."
                 )
+        return seed
 
     def _get_random_state(self, seed):
         """
