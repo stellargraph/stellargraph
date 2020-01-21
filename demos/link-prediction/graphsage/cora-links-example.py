@@ -24,7 +24,7 @@ import networkx as nx
 import pandas as pd
 from typing import AnyStr, List
 from tensorflow import keras
-from tensorflow.keras import optimizers, losses, metric
+from tensorflow.keras import optimizers, losses
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
@@ -168,7 +168,7 @@ def train(
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate),
         loss=losses.binary_crossentropy,
-        metrics=[metrics.binary_accuracy],
+        metrics=["acc"],
     )
 
     # Evaluate the initial (untrained) model on the train and test set:
