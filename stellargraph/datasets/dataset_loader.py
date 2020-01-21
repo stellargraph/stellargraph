@@ -49,7 +49,6 @@ class DatasetLoader(object):
     source = ""
     data_subdirectory_name: Optional[str] = None
 
-
     @classmethod
     def __init_subclass__(
         cls,
@@ -61,7 +60,7 @@ class DatasetLoader(object):
         description: str,
         source: str,
         data_subdirectory_name: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         cls.name = name
         cls.directory_name = directory_name
@@ -83,7 +82,9 @@ class DatasetLoader(object):
 
     def __init__(self) -> None:
         if not self.name:
-            raise ValueError(f"{self.__class__.__name__} can't be instantiated directly, please use a derived class")
+            raise ValueError(
+                f"{self.__class__.__name__} can't be instantiated directly, please use a derived class"
+            )
 
     @property
     def base_directory(self) -> str:
