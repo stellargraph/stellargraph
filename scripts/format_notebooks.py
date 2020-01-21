@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
 #
 # Copyright 2019-2020 Data61, CSIRO
@@ -19,7 +21,6 @@ The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
 
 """
-#!/usr/bin/env python3
 import argparse
 import nbformat
 import re
