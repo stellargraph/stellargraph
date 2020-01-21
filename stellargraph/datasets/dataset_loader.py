@@ -39,25 +39,34 @@ class DatasetLoader(object):
     and each dataset will be downloaded to a subdirectory within this path.
     """
 
-    def __init__(
-        self,
-        name: str,
-        directory_name: str,
-        url: str,
-        url_archive_format: Optional[str],
-        expected_files: List[str],
-        description: str,
-        source: str,
-        data_subdirectory_name: Optional[str] = None,
+    @classmethod
+    def __init_subclass__(
+            cls,
+            name: str,
+            directory_name: str,
+            url: str,
+            url_archive_format: Optional[str],
+            expected_files: List[str],
+            description: str,
+            source: str,
+            data_subdirectory_name: Optional[str] = None,
+            **kwargs,
     ) -> None:
-        self.name = name
-        self.directory_name = directory_name
-        self.url = url
-        self.url_archive_format = url_archive_format
-        self.expected_files = expected_files
-        self.description = description
-        self.source = source
-        self.data_subdirectory_name = data_subdirectory_name
+        cls.name = name
+        cls.directory_name = directory_name
+        cls.url = url
+        cls.url_archive_format = url_archive_format
+        cls.expected_files = expected_files
+        cls.description = description
+        cls.source = source
+        cls.data_subdirectory_name = data_subdirectory_name
+
+        # auto generate documentation
+        if cls.__doc__ is not None:
+            raise ValueError("DatasetLoader docs are automatically generated and should be empty")
+        cls.__doc__ = f"{cls.description}\n\nFurther details at: {cls.source}"
+
+        super().__init_subclass__(**kwargs)
 
     @property
     def base_directory(self) -> str:
