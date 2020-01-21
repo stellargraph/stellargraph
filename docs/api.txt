@@ -12,7 +12,7 @@ Data
 ----------------
 
 .. automodule:: stellargraph.data
-  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
+  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, TemporalRandomWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
 
 
 Generators
