@@ -910,7 +910,7 @@ class TemporalRandomWalk(GraphWalk):
 
         walk = deque()
 
-        # take steps until walk is of correct length or reached dead ends
+        # take steps until walk is of maximum length or reached dead ends
         while len(walk) < length and not (forward is None and backward is None):
             if forward is not None:
                 n, t = forward
