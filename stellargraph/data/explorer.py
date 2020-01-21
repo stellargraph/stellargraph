@@ -26,9 +26,7 @@ __all__ = [
 
 
 import numpy as np
-import math
 import random
-import scipy
 import warnings
 from collections import defaultdict, deque
 
@@ -831,20 +829,17 @@ class TemporalRandomWalk(GraphWalk):
             seed (int, optional): Random number generator seed; default is None
 
         Returns:
-            List of lists of nodes ids for each of the random walks
+            List of lists of node ids for each of the random walks
 
         """
         self._check_common_parameters(nodes, n, length, seed)
         np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
 
-        walks = []
-        for node in nodes:  # iterate over root nodes
-            for walk_number in range(n):  # generate n walks per root node
-                walk = self._walk(
-                    node, length, bidirectional, initial_edge_bias, walk_bias, np_rs
-                )
-                walks.append(walk)
-        return walks
+        return [
+            self._walk(node, length, bidirectional, initial_edge_bias, walk_bias, np_rs)
+            for node in nodes
+            for _ in range(n)
+        ]
 
     def _exp_biases(self, times, t_0, decay):
         # t_0 assumed to be smaller than all time values
@@ -852,7 +847,16 @@ class TemporalRandomWalk(GraphWalk):
         sum_dist = np.sum(dist)
         return dist / sum_dist
 
-    def _biases(self, times, t_0, bias_type, is_forward):
+    def _edge_biases(self, neighbours, time, bias_type, is_forward):
+        if bias_type is None:
+            # default to uniform random sampling
+            return None
+
+        times = [t for _, t in neighbours]
+
+        # time is None indicates we should obtain the minimum available time for t_0
+        t_0 = time if time is not None else min(times)
+
         if bias_type == "exponential":
             # exponential decay bias needs to be reversed if looking backwards in time
             return self._exp_biases(times, t_0, decay=is_forward)
@@ -879,19 +883,13 @@ class TemporalRandomWalk(GraphWalk):
             if check_time(t)
         ]
 
-        if len(neighbours) > 0:
-            if bias_type is not None:
-                times = [t for _, t in neighbours]
-
-                # time is None indicates we should obtain the minimum available time for t_0
-                t_0 = time if time is not None else min(times)
-                biases = self._biases(
-                    times, t_0, bias_type=bias_type, is_forward=is_forward
-                )
-            else:
-                # default to uniform random sampling
-                biases = None
-            chosen_index = np_rs.choice(len(neighbours), p=biases)
+        if neighbours:
+            biases = self._edge_biases(neighbours, time, bias_type, is_forward)
+            chosen_index = (
+                naive_weighted_choices(np_rs, biases)
+                if biases is not None
+                else np_rs.choice(len(neighbours))
+            )
             next_node, next_time = neighbours[chosen_index]
             return next_node, next_time
         else:
@@ -910,19 +908,19 @@ class TemporalRandomWalk(GraphWalk):
             return [node]
         backward = node, forward[1]
 
-        walk = []
+        walk = deque()
 
         # take steps until walk is of correct length or reached dead ends
-        while len(walk) < length:
-            if forward is None and backward is None:
-                break
+        while len(walk) < length and not (forward is None and backward is None):
             if forward is not None:
                 n, t = forward
                 walk.append(n)
                 forward = step(n, t, is_forward=True)
+                if len(walk) >= length:
+                    break
             if backward is not None:
                 n, t = backward
-                walk = [n] + walk
+                walk.appendleft(n)
                 backward = step(n, t, is_forward=False) if bidirectional else None
 
-        return walk
+        return list(walk)

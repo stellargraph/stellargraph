@@ -218,7 +218,7 @@ class TestTemporalRandomWalk(object):
             nodes=nodes, n=n, length=length, seed=seed, bidirectional=bidirectional
         )
         assert sorted([list(i) for i in set(tuple(i) for i in walks)]) == [
-            [1, 2, 3, 4, 5, 6],
+            [2, 3, 4, 5, 6],
             [3, 2],
         ]
 
