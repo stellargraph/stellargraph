@@ -109,4 +109,3 @@ Random
 
 .. automodule:: stellargraph.utils.random
   :members: get_seed, set_seed
-
