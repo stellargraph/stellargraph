@@ -41,7 +41,7 @@ class GraphSchema:
         try:
             return super().__getattribute__(item)
         except AttributeError as e:
-            if attr in ("node_type_map", "get_node_type"):
+            if item in ("node_type_map", "get_node_type"):
                 raise AttributeError(
                     f"{e.args[0]}. This has been replaced by accessing node types through 'StellarGraph.node_type'."
                 )
