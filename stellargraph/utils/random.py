@@ -34,7 +34,7 @@ def set_seed(seed):
     Set the seed for all possible randomness in StellarGraph
 
     Args:
-        s (int, optional): seed value
+        seed (int, optional): seed value
 
     """
     global _sg_seed
