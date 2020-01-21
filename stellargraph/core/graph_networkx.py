@@ -547,7 +547,7 @@ class NetworkXStellarGraph(StellarGraph):
         source, target, _ = edge
         triple = EdgeType(
             self.node_type(source),
-            self._get_edge_type(self._graph.edges[e]),
+            self._get_edge_type(self._graph.edges[edge]),
             self.node_type(target),
         )
         if triple == expected_triple:
