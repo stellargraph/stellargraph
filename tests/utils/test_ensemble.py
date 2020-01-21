@@ -16,6 +16,7 @@
 
 import pytest
 import networkx as nx
+import numpy as np
 import tensorflow as tf
 from stellargraph.layer import (
     GraphSAGE,
@@ -32,7 +33,6 @@ from stellargraph.mapper import (
     GraphSAGELinkGenerator,
     HinSAGELinkGenerator,
 )
-from stellargraph.data.converter import *
 from stellargraph.utils import Ensemble, BaggingEnsemble
 
 from tensorflow.keras import layers, Model
