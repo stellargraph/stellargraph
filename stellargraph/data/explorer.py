@@ -32,6 +32,7 @@ from collections import defaultdict, deque
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
+from ..utils.random import get_seed
 
 
 class GraphWalk(object):
@@ -43,7 +44,7 @@ class GraphWalk(object):
         self.graph = graph
 
         # Initialize the random state
-        self._check_seed(seed)
+        seed = self._check_seed(seed)
         self._random_state = random.Random(seed)
 
         # Initialize a numpy random state (for numpy random methods)
@@ -72,6 +73,7 @@ class GraphWalk(object):
         return adj
 
     def _check_seed(self, seed):
+        seed = get_seed(seed)
         if seed is not None:
             if type(seed) != int:
                 self._raise_error(

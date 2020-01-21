@@ -24,6 +24,7 @@ import random
 from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
+from ..utils.random import get_seed
 
 
 class UnsupervisedSampler:
@@ -54,6 +55,8 @@ class UnsupervisedSampler:
             )
         else:
             self.graph = G
+
+        seed = get_seed(seed)
 
         # Instantiate the walker class used to generate random walks in the graph
         self.walker = UniformRandomWalk(G, seed=seed)

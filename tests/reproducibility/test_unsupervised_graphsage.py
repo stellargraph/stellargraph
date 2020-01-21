@@ -22,6 +22,7 @@ from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.mapper.sampled_link_generators import GraphSAGELinkGenerator
 from stellargraph.layer.graphsage import GraphSAGE
 from stellargraph.layer.link_inference import link_classification
+from stellargraph.utils.random import set_seed
 from ..test_utils.graphs import petersen_graph
 from .fixtures import assert_reproducible
 
@@ -60,15 +61,13 @@ def unsup_gs(
     walk_length=5,
     seed=0,
 ):
-    np.random.seed(seed)
-    tf.random.set_seed(seed)
-    random.seed(seed)
+    set_seed(seed)
 
     nodes = list(g.nodes())
     unsupervised_samples = UnsupervisedSampler(
-        g, nodes=nodes, length=walk_length, number_of_walks=number_of_walks, seed=seed
+        g, nodes=nodes, length=walk_length, number_of_walks=number_of_walks
     )
-    generator = GraphSAGELinkGenerator(g, batch_size, num_samples, seed=seed)
+    generator = GraphSAGELinkGenerator(g, batch_size, num_samples)
     train_gen = generator.flow(unsupervised_samples)
 
     model = unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize)
