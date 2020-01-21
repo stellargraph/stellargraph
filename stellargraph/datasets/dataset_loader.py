@@ -41,16 +41,16 @@ class DatasetLoader(object):
 
     @classmethod
     def __init_subclass__(
-            cls,
-            name: str,
-            directory_name: str,
-            url: str,
-            url_archive_format: Optional[str],
-            expected_files: List[str],
-            description: str,
-            source: str,
-            data_subdirectory_name: Optional[str] = None,
-            **kwargs,
+        cls,
+        name: str,
+        directory_name: str,
+        url: str,
+        url_archive_format: Optional[str],
+        expected_files: List[str],
+        description: str,
+        source: str,
+        data_subdirectory_name: Optional[str] = None,
+        **kwargs,
     ) -> None:
         cls.name = name
         cls.directory_name = directory_name
@@ -63,7 +63,9 @@ class DatasetLoader(object):
 
         # auto generate documentation
         if cls.__doc__ is not None:
-            raise ValueError("DatasetLoader docs are automatically generated and should be empty")
+            raise ValueError(
+                "DatasetLoader docs are automatically generated and should be empty"
+            )
         cls.__doc__ = f"{cls.description}\n\nFurther details at: {cls.source}"
 
         super().__init_subclass__(**kwargs)
@@ -93,12 +95,32 @@ class DatasetLoader(object):
             os.getenv("STELLARGRAPH_DATASETS_PATH", os.path.join("~", "data"))
         )
 
+    def _resolve_path(self, filename):
+        """Convert dataset relative files to their full path on filesystem"""
+        return os.path.join(self.base_directory, filename)
+
     def _is_downloaded(self) -> bool:
         """Returns true if the expected files for the dataset are present"""
         return all(
-            os.path.isfile(os.path.join(self.base_directory, file))
-            for file in self.expected_files
+            os.path.isfile(self._resolve_path(file)) for file in self.expected_files
         )
+
+    def _verify_files_downloaded(self) -> None:
+        """
+        Raises:
+            FileNotFoundError: If any files within dataset are missing.
+        """
+        missing_files = ",".join(
+            [
+                file
+                for file in self.expected_files
+                if not os.path.isfile(self._resolve_path(file))
+            ]
+        )
+        if missing_files:
+            raise FileNotFoundError(
+                f"{self.name} dataset failed to download file(s): {missing_files}"
+            )
 
     def download(self, ignore_cache: Optional[bool] = False) -> None:
         """
@@ -133,7 +155,6 @@ class DatasetLoader(object):
                 unpack_archive(
                     filename, self._all_datasets_directory(), self.url_archive_format
                 )
-            if not self._is_downloaded():
-                raise FileNotFoundError(f"{self.name} dataset failed to download")
+            self._verify_files_downloaded()
         else:
             log.info("%s dataset is already downloaded", self.name)
