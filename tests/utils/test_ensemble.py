@@ -33,7 +33,7 @@ from stellargraph.mapper import (
     HinSAGELinkGenerator,
 )
 from stellargraph.data.converter import *
-from stellargraph.utils import Ensemble, BaggingEnsemble
+from stellargraph.utils.ensemble import Ensemble, BaggingEnsemble
 
 from tensorflow.keras import layers, Model
 from tensorflow.keras.optimizers import Adam
