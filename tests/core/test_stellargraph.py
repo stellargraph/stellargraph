@@ -198,7 +198,7 @@ def test_schema_removals():
     schema = sg.create_graph_schema(create_type_maps=True)
 
     with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
-        _ = schema.node_type_maps
+        _ = schema.node_type_map
 
     with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
         _ = schema.get_node_type
