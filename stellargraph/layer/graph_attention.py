@@ -577,10 +577,10 @@ class GAT:
     To use this class as a Keras model, the features and pre-processed adjacency matrix
     should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
     or the :class:`FullBatchLinkGenerator` class for link inference.
-    
+
     To have the appropriate pre-processing the generator object should be instanciated
     with the `method='gat'` argument.
-    
+
     Examples:
         Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
 

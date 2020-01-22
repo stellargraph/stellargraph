@@ -22,7 +22,11 @@ import scipy.sparse as sps
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
-from stellargraph.mapper import FullBatchNodeGenerator, GraphSAGENodeGenerator
+from stellargraph.mapper import (
+    FullBatchNodeGenerator,
+    FullBatchLinkGenerator,
+    GraphSAGENodeGenerator,
+)
 from stellargraph.layer import *
 from ..test_utils.graphs import example_graph_1
 

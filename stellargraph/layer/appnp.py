@@ -171,13 +171,13 @@ class APPNP:
     To use this class as a Keras model, the features and pre-processed adjacency matrix
     should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
     or the :class:`FullBatchLinkGenerator` class for link inference.
-    
+
     To have the appropriate pre-processing the generator object should be instanciated
     with the `method='gcn'` argument.
 
     Example:
         Building an APPNP node model::
-        
+
             generator = FullBatchNodeGenerator(G, method="gcn")
             ppnp = APPNP(
                 layer_sizes=[64, 64, 1], 

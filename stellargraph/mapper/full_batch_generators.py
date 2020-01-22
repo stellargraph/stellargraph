@@ -163,7 +163,7 @@ class FullBatchGenerator(ABC):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)` 
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
 
         Returns:
@@ -199,7 +199,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     The supplied graph G should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
-    
+
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -269,7 +269,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)` 
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
 
         Returns:
@@ -288,7 +288,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     The supplied graph G should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
-    
+
     Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
     of node IDs and (optionally) targets.
 
@@ -358,7 +358,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         Args:
             link_ids: an iterable of link ids specified as tuples of node ids
                 or an array of shape (N_links, 2) specifying the links.
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)` 
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
 
         Returns:

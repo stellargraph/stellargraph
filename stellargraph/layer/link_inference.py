@@ -74,7 +74,7 @@ class LeakyClippedLinear(Layer):
 
 class LinkEmbedding(Layer):
     """
-    Defines an edge inference function that takes source, destination node embeddings 
+    Defines an edge inference function that takes source, destination node embeddings
     (node features) as input, and returns a numeric vector of output_dim size.
 
     This class takes as input as either:
