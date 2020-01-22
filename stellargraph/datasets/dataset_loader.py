@@ -126,7 +126,7 @@ class DatasetLoader(object):
         Raises:
             FileNotFoundError: If any files within dataset are missing.
         """
-        missing_files = ",".join(
+        missing_files = ", ".join(
             [
                 file
                 for file in self.expected_files
@@ -150,7 +150,7 @@ class DatasetLoader(object):
         """
         if ignore_cache or not self._is_downloaded():
             log.info(
-                "%s dataset downloading to %s from",
+                "%s dataset downloading to %s from %s",
                 self.name,
                 self.base_directory,
                 self.url,
