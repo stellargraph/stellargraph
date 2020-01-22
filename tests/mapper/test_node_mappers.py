@@ -536,7 +536,7 @@ def test_hinnodemapper_manual_schema():
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
 
     # Create manual schema
-    schema = G.create_graph_schema(create_type_maps=True)
+    schema = G.create_graph_schema()
     HinSAGENodeGenerator(
         G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
     ).flow(nodes_type_1)

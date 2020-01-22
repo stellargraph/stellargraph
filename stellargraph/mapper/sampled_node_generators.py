@@ -79,7 +79,7 @@ class BatchedNodeGenerator(abc.ABC):
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
-            self.schema = G.create_graph_schema(create_type_maps=True)
+            self.schema = G.create_graph_schema()
         elif isinstance(schema, GraphSchema):
             self.schema = schema
         else:
