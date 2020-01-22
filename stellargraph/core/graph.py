@@ -21,6 +21,7 @@ a machine-learning ready graph used by models.
 __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 
 from typing import Iterable, Any, Mapping, List, Optional, Set
+import warnings
 
 from .. import globalvar
 from .schema import GraphSchema
@@ -387,7 +388,7 @@ class StellarGraph:
         """
         return self._graph.info(show_attributes, sample)
 
-    def create_graph_schema(self, create_type_maps=True, nodes=None):
+    def create_graph_schema(self, create_type_maps=None, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -398,18 +399,20 @@ class StellarGraph:
         is unique.
 
         Arguments:
-            create_type_maps (bool): If True quick lookup of node/edge types is
-                created in the schema. This can be slow.
-
             nodes (list): A list of node IDs to use to build schema. This must
                 represent all node types and all edge types in the graph.
-                If specified, `create_type_maps` must be False.
                 If not specified, all nodes and edges in the graph are used.
 
         Returns:
             GraphSchema object.
         """
-        return self._graph.create_graph_schema(create_type_maps, nodes)
+        if create_type_maps is not None:
+            warnings.warn(
+                "The 'create_type_maps' parameter is ignored now, and does not need to be specified",
+                DeprecationWarning,
+            )
+
+        return self._graph.create_graph_schema(nodes)
 
     def node_degrees(self) -> Mapping[Any, int]:
         """

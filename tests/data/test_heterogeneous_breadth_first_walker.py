@@ -68,7 +68,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
     def test_parameter_checking(self):
         g = create_simple_test_graph()
 
-        graph_schema = g.create_graph_schema(create_type_maps=True)
+        graph_schema = g.create_graph_schema()
         bfw = SampledHeterogeneousBreadthFirstWalk(g, graph_schema)
 
         nodes = [0, 1]
