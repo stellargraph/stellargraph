@@ -22,9 +22,8 @@ from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.mapper.sampled_link_generators import GraphSAGELinkGenerator
 from stellargraph.layer.graphsage import GraphSAGE
 from stellargraph.layer.link_inference import link_classification
-from stellargraph.utils.random import set_seed
 from ..test_utils.graphs import petersen_graph
-from .fixtures import assert_reproducible
+from .fixtures import assert_reproducible, use_seed
 
 
 def unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize):
@@ -61,26 +60,27 @@ def unsup_gs(
     walk_length=5,
     seed=0,
 ):
-    set_seed(seed)
+    with use_seed(seed):
+        nodes = list(g.nodes())
+        unsupervised_samples = UnsupervisedSampler(
+            g, nodes=nodes, length=walk_length, number_of_walks=number_of_walks
+        )
+        generator = GraphSAGELinkGenerator(g, batch_size, num_samples)
+        train_gen = generator.flow(unsupervised_samples)
 
-    nodes = list(g.nodes())
-    unsupervised_samples = UnsupervisedSampler(
-        g, nodes=nodes, length=walk_length, number_of_walks=number_of_walks
-    )
-    generator = GraphSAGELinkGenerator(g, batch_size, num_samples)
-    train_gen = generator.flow(unsupervised_samples)
+        model = unsup_gs_model(
+            num_samples, generator, optimizer, bias, dropout, normalize
+        )
 
-    model = unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize)
-
-    model.fit_generator(
-        train_gen,
-        epochs=epochs,
-        verbose=1,
-        use_multiprocessing=False,
-        workers=4,
-        shuffle=True,
-    )
-    return model
+        model.fit_generator(
+            train_gen,
+            epochs=epochs,
+            verbose=1,
+            use_multiprocessing=False,
+            workers=4,
+            shuffle=True,
+        )
+        return model
 
 
 def test_reproducibility(petersen_graph):

@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from contextlib import contextmanager
 import numpy as np
+from stellargraph.utils.random import get_seed, set_seed
 
 
 def models_equals(model1, model2):
@@ -39,3 +41,19 @@ def assert_reproducible(func, num_iter=20):
             model.get_weights(),
             model_new.get_weights(),
         )
+
+
+@contextmanager
+def use_seed(seed):
+    """
+    Convenience utility to use a particular global seed value with a context manager
+
+    Args:
+        seed: seed value
+    """
+    old_seed = get_seed(None)
+    set_seed(seed)
+    try:
+        yield seed
+    finally:
+        set_seed(old_seed)
