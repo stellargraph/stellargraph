@@ -110,4 +110,3 @@ Datasets
 .. automodule:: stellargraph.datasets.datasets
   :members:
   :inherited-members:
-
