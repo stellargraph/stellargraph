@@ -20,7 +20,7 @@ Enable easy loading of sample datasets for demonstrations
 
 import os
 import logging
-from shutil import unpack_archive
+from shutil import unpack_archive, move
 from urllib.request import urlretrieve
 from typing import List, Optional, Any
 from urllib.error import URLError
@@ -73,6 +73,11 @@ class DatasetLoader(object):
         cls.description = description
         cls.source = source
         cls.data_subdirectory_name = data_subdirectory_name
+
+        if url_archive_format is None and len(expected_files) != 1:
+            raise ValueError(
+                "url_archive_format is None, which requires a single expected_file, found: {expected_files!r}"
+            )
 
         # auto generate documentation
         if cls.__doc__ is not None:
@@ -170,19 +175,15 @@ class DatasetLoader(object):
                 self.base_directory,
                 self.url,
             )
+            filename, _ = urlretrieve(
+                self.url
+            )  # this will download to a temporary location
             if self.url_archive_format is None:
-                # single file to download
+                # not an archive, so the downloaded file is our data and just needs to be put into place
                 self._create_base_directory()
-                destination_filename = os.path.join(
-                    self.base_directory, self.expected_files[0]
-                )
-                urlretrieve(self.url, filename=destination_filename)
+                move(filename, self._resolve_path(self.expected_files[0]))
             else:
-                # archive of files
-                filename, _ = urlretrieve(
-                    self.url
-                )  # this will download to a temporary location
-                self._create_base_directory()
+                # archive, so it needs to be unpacked into the right directory
                 unpack_archive(
                     filename, self._all_datasets_directory(), self.url_archive_format
                 )
