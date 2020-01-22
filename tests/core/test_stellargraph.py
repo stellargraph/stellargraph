@@ -180,8 +180,11 @@ def test_schema_removals():
     with pytest.raises(AttributeError, match="This was removed"):
         _ = schema.get_edge_type
 
-    with pytest.warns(DeprecationWarning, match="'create_type_maps' parameter is ignored"):
+    with pytest.warns(
+        DeprecationWarning, match="'create_type_maps' parameter is ignored"
+    ):
         sg.create_graph_schema(create_type_maps=True)
+
 
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_name="feature", feature_size=8)
