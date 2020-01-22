@@ -67,13 +67,18 @@ def example_graph_1_nx(
     return graph
 
 
+def _repeated_features(values_to_repeat, width):
+    column = np.expand_dims(values_to_repeat, axis=1)
+    return column.repeat(width, axis=1)
+
+
 def example_graph_1(
     feature_size=None, label="default", feature_name="feature", is_directed=False
 ):
     # attr2vec, graphattention, graphsage, node mappers (2), link mappers, types, stellargraph, unsupervised sampler
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (3, 2)], columns=["source", "target"])
     if feature_size is not None:
-        features = np.ones((4, feature_size))
+        features = _repeated_features(np.ones(4), feature_size)
     else:
         features = []
 
@@ -83,21 +88,17 @@ def example_graph_1(
     return cls(nodes={label: nodes}, edges={label: elist})
 
 
-def example_graph_2(feature_size=None, label="default", feature_name="feature"):
+def example_graph_2(feature_size=None, label="default", feature_name="feature") -> StellarGraph:
     # unsupervised sampler, link mapper
-    graph = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
-    graph.add_edges_from(elist)
-    graph.add_nodes_from([1, 2, 3, 4], label=label)
-    graph.add_edges_from(elist, label=label)
-
-    # Add example features
+    elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
+    nodes = [1, 2, 3, 4]
     if feature_size is not None:
-        for v in graph.nodes():
-            graph.nodes[v][feature_name] = int(v) * np.ones(feature_size)
+        features = _repeated_features(nodes, feature_size)
+    else:
+        features = []
 
-    graph = StellarGraph(graph, node_features=feature_name)
-    return graph
+    nodes = pd.DataFrame(features, index=nodes)
+    return StellarGraph(nodes={label: nodes}, edges={label: elist})
 
 
 def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
@@ -122,15 +123,24 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
     return graph
 
 
-def example_hin_1(feature_name=None, for_nodes=None, feature_sizes=None):
-    # stellargraph, hinsage
-    graph = example_hin_1_nx(feature_name, for_nodes, feature_sizes)
+def example_hin_1(feature_sizes=None) -> StellarGraph:
+    def features(label, ids):
+        if feature_sizes is None:
+            return []
+        else:
+            feature_size = feature_sizes.get(label, 10)
+            return _repeated_features(ids, feature_size)
 
-    # Add some numeric node attributes
-    if feature_name is not None:
-        return StellarGraph(graph, node_features=feature_name)
-    else:
-        return StellarGraph(graph)
+    a_ids = [0, 1, 2, 3]
+    a = pd.DataFrame(features("A", a_ids), index=a_ids)
+
+    b_ids = [4, 5, 6]
+    b = pd.DataFrame(features("B", b_ids), index=b_ids)
+
+    r = pd.DataFrame([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"])
+    f = pd.DataFrame([(4, 5)], columns=["source", "target"], index=[6])
+
+    return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
 
 
 def create_test_graph_nx(is_directed=False):

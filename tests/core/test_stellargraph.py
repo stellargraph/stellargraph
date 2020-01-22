@@ -226,19 +226,19 @@ def test_schema_removals():
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_name="feature", feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
-    assert aa == [0, 1, 2, 3]
+    assert list(aa) == [0, 1, 2, 3]
 
-    sg = example_hin_1(feature_name="feature")
+    sg = example_hin_1(feature_sizes={})
     aa = sg._get_index_for_nodes([0, 1, 2, 3])
-    assert aa == [0, 1, 2, 3]
+    assert list(aa) == [0, 1, 2, 3]
     aa = sg._get_index_for_nodes([0, 1, 2, 3], "A")
-    assert aa == [0, 1, 2, 3]
+    assert list(aa) == [0, 1, 2, 3]
     aa = sg._get_index_for_nodes([4, 5, 6])
-    assert aa == [0, 1, 2]
+    assert list(aa) == [4, 5, 6]
     aa = sg._get_index_for_nodes([4, 5, 6], "B")
-    assert aa == [0, 1, 2]
-    with pytest.raises(ValueError):
-        aa = sg._get_index_for_nodes([1, 2, 5])
+    assert list(aa) == [4, 5, 6]
+    aa = sg._get_index_for_nodes([1, 2, 5])
+    assert list(aa) == [1, 2, 5]
 
 
 def test_feature_conversion_from_nodes():
@@ -249,35 +249,11 @@ def test_feature_conversion_from_nodes():
     assert aa.shape == (4, 8)
     assert sg.node_feature_sizes()["default"] == 8
 
-    sg = example_hin_1(
-        feature_name="feature",
-        for_nodes=[0, 1, 2, 3, 4, 5],
-        feature_sizes={"A": 4, "B": 2},
-    )
-    aa = sg.node_features([0, 1, 2, 3], "A")
-    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
-    assert aa.shape == (4, 4)
 
-    fs = sg.node_feature_sizes()
-    assert fs["A"] == 4
-    assert fs["B"] == 2
-
-    ab = sg.node_features([4, 5], "B")
-    assert ab.shape == (2, 2)
-    assert ab[:, 0] == pytest.approx([4, 5])
-
-    # Test mixed types
-    with pytest.raises(ValueError):
-        ab = sg.node_features([1, 5])
-
-    # Test incorrect manual node_type
-    with pytest.raises(ValueError):
-        ab = sg.node_features([4, 5], "A")
-
-    # Test feature for node with no set attributes
-    ab = sg.node_features([4, 5, 6], "B")
-    assert ab.shape == (3, 2)
-    assert ab[:, 0] == pytest.approx([4, 5, 0])
+def test_node_features_missing_id():
+    sg = example_graph_2(feature_size=6)
+    with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
+        sg.node_features([1, 1000, None, 2000])
 
 
 def test_null_node_feature():
@@ -286,7 +262,7 @@ def test_null_node_feature():
     assert aa.shape == (4, 6)
     assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
 
-    sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
+    sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
 
     # Test feature for null node, without node type
     ab = sg.node_features([None, 5, None])
@@ -311,7 +287,7 @@ def test_node_types():
     sg = example_graph_2(feature_name="feature", feature_size=6)
     assert sg.node_types == {"default"}
 
-    sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
+    sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
     assert sg.node_types == {"A", "B"}
 
     sg = example_hin_1()

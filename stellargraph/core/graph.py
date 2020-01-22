@@ -482,8 +482,9 @@ class StellarGraph:
         return self._nodes.ids.from_iloc(ilocs)
 
     def _key_error_for_missing(self, query_ids, node_ilocs):
-        missing_indices = np.where(self._nodes.ids.is_missing(node_ilocs))
-        missing_values = comma_sep(np.asarray(query_ids)[missing_indices])
+        valid = self._nodes.ids.is_valid(node_ilocs)
+        missing_indices = np.where(~valid)
+        missing_values = np.asarray(query_ids)[missing_indices]
         return KeyError(missing_values)
 
     def node_type(self, node):
@@ -520,7 +521,7 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.node_types
 
-        return list(self._nodes.types.pandas_index)
+        return set(self._nodes.types.pandas_index)
 
     def node_feature_sizes(self, node_types=None):
         """
@@ -580,12 +581,16 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.node_features(nodes, node_type)
 
+        nodes = np.asarray(nodes)
+
         node_ilocs = self._nodes.ids.to_iloc(nodes)
+        valid = self._nodes.ids.is_valid(node_ilocs)
+        all_valid = valid.all()
+        valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
+
         if node_type is None:
-            try:
-                types = np.unique(self._nodes.type_of_iloc(node_ilocs))
-            except IndexError:
-                raise self._key_error_for_missing(nodes, node_ilocs)
+            # infer the type based on the valid nodes
+            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
 
             if len(types) == 0:
                 raise ValueError(
@@ -596,7 +601,26 @@ class StellarGraph:
 
             node_type = types[0]
 
-        return self._nodes.features(node_type, node_ilocs)
+        if all_valid:
+            return self._nodes.features(node_type, valid_ilocs)
+
+        # If there's some invalid values, they get replaced by zeros; this is designed to allow
+        # models that build fixed-size structures (e.g. GraphSAGE) based on neighbours to fill out
+        # missing neighbours with zeros automatically, using None as a sentinel.
+
+        # FIXME: None as a sentinel forces nodes to have dtype=object even with integer IDs, could
+        # instead use an impossible integer (e.g. 2**64 - 1)
+
+        nones = nodes == None
+        if not (nones | valid).all():
+            # every ID should be either valid or None, otherwise it was a completely unknown ID
+            raise self._key_error_for_missing(nodes[~nones], node_ilocs[~nones])
+
+        sampled = self._nodes.features(node_type, valid_ilocs)
+        features = np.zeros((len(nodes), sampled.shape[1]))
+        features[valid] = sampled
+
+        return features
 
     ##################################################################
     # Computationally intensive methods:
@@ -683,7 +707,7 @@ class StellarGraph:
         }
 
         return GraphSchema(
-            self.is_directed(), self.node_types, edge_types, schema, None
+            self.is_directed(), sorted(self.node_types), edge_types, schema, None
         )
 
     def node_degrees(self) -> Mapping[Any, int]:

@@ -359,7 +359,7 @@ def test_nodemapper_incorrect_targets():
 
 def test_hinnodemapper_constructor():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes=feature_sizes, feature_name="feature")
+    G = example_hin_1(feature_sizes=feature_sizes)
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
@@ -376,7 +376,7 @@ def test_hinnodemapper_constructor():
 
 def test_hinnodemapper_constructor_all_options():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes=feature_sizes, feature_name="feature")
+    G = example_hin_1(feature_sizes=feature_sizes)
 
     gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
 

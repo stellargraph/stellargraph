@@ -59,11 +59,11 @@ class ExternalIdIndex:
         """
         return id in self._index
 
-    def is_missing(self, ilocs: np.ndarray) -> np.ndarray:
+    def is_valid(self, ilocs: np.ndarray) -> np.ndarray:
         """
-        Flags the locations of any ilocs that are missing (that is, to_iloc failed).
+        Flags the locations of all the ilocs that are valid (that is, where to_iloc didn't fail).
         """
-        return (ilocs < 0) | (ilocs >= len(self))
+        return (0 <= ilocs) & (ilocs < len(self))
 
     def to_iloc(self, ids, smaller_type=True) -> np.ndarray:
         """
@@ -231,7 +231,7 @@ class NodeData(ElementData):
 
         self._features = features
 
-    def features(self, type_name, id_ilocs) -> np.ndarray:
+    def features(self, type_name, id_ilocs, out=None) -> np.ndarray:
         """
         Return features for a set of IDs within a given type.
 
