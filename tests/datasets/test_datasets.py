@@ -24,7 +24,7 @@ from urllib.error import URLError
 def test_re_download_all_datasets() -> None:
     # to force re-downloading, we ignore the cached datasets
     # note that this is fairly slow, as it will re-download all of our demo datasets
-    download_all_datasets(ignore_cache=True)
+    assert download_all_datasets(ignore_cache=True)
 
 
 def test_invalid_url() -> None:
