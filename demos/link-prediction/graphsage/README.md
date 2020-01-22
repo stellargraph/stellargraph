@@ -27,7 +27,7 @@ To run the notebook:
 `stellargraph` library is installed
  - Start `jupyter-notebook`
    - note: you may need to first install `jupyter` by running `pip install jupyter` in your python environment
- - Navigate to the notebook (`/demos/link-prediction/graphsae/cora-links-example.ipynb`), and click on
+ - Navigate to the notebook (`/demos/link-prediction/graphsage/cora-links-example.ipynb`), and click on
  it to launch the notebook.
 
 ## Running the script
