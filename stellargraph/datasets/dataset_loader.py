@@ -29,7 +29,7 @@ from urllib.error import URLError
 log = logging.getLogger(__name__)
 
 
-class DatasetLoader(object):
+class DatasetLoader:
     """
     Base class for downloading sample datasets.
 
