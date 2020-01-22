@@ -36,7 +36,7 @@ class DatasetLoader(object):
     This class is used by inherited classes for each specific dataset, providing basic functionality to
     download a dataset from a URL.
 
-    The default download path of ~/data can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable,
+    The default download path of ~/stellargraph-datasets can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable,
     and each dataset will be downloaded to a subdirectory within this path.
     """
 
@@ -117,7 +117,7 @@ class DatasetLoader(object):
     def _all_datasets_directory() -> str:
         """Return the path of the base directory which contains subdirectories for each dataset."""
         return os.path.expanduser(
-            os.getenv("STELLARGRAPH_DATASETS_PATH", os.path.join("~", "data"))
+            os.getenv("STELLARGRAPH_DATASETS_PATH", os.path.join("~", "stellargraph-datasets"))
         )
 
     def _resolve_path(self, filename: str) -> str:
