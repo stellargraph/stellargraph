@@ -53,7 +53,6 @@ def relational_create_graph_features(is_directed=False):
 def example_graph_nx(
     feature_size=None, label="default", feature_name="feature", is_directed=False
 ):
-    # stellargraph
     graph = nx.DiGraph() if is_directed else nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
     graph.add_nodes_from([1, 2, 3, 4], label=label)
@@ -70,10 +69,9 @@ def example_graph_nx(
 def example_graph(
     feature_size=None, label="default", feature_name="feature", is_directed=False
 ):
-    # unsupervised sampler, link mapper
     graph = example_graph_nx(feature_size, label, feature_name, is_directed)
     cls = StellarDiGraph if is_directed else StellarGraph
-    # Add example features
+
     if feature_size is not None:
         return cls(graph, node_features=feature_name)
     else:
