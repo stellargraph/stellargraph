@@ -330,7 +330,7 @@ class StellarGraph:
             return list(
                 zip(
                     self._edges.sources,
-                    self._edges.sources,
+                    self._edges.targets,
                     self._edges.type_of_iloc(slice(None)),
                 )
             )
