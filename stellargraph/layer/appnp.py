@@ -180,8 +180,8 @@ class APPNP:
 
             generator = FullBatchNodeGenerator(G, method="gcn")
             ppnp = APPNP(
-                layer_sizes=[64, 64, 1], 
-                activations=['relu', 'relu', 'relu'], 
+                layer_sizes=[64, 64, 1],
+                activations=['relu', 'relu', 'relu'],
                 generator=generator,
                 dropout=0.5
             )
