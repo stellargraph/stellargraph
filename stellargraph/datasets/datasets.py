@@ -20,19 +20,34 @@ Sample datasets for stellargraph demonstrations
 
 from .dataset_loader import DatasetLoader  # type: ignore
 from typing import Optional
+from urllib.error import URLError
+import logging
 
 
-def download_all_datasets(ignore_cache: Optional[bool] = False) -> None:
+log = logging.getLogger(__name__)
+
+
+def download_all_datasets(ignore_cache: Optional[bool] = False) -> bool:
     """
     Download all of the demonstration datasets (if not already downloaded to the disk cache)
 
     Args:
         ignore_cache bool, optional (default=False): Ignore cached datasets and force a re-download.
+
+    Returns:
+        True if all datasets were successfully downloaded, else False.
     """
+
     # obtain all the classes derived from DatasetLoader (note: must be direct descendants)
+    download_success = True
     for cls in DatasetLoader.__subclasses__():
         dataset = cls()
-        dataset.download(ignore_cache)
+        try:
+            dataset.download(ignore_cache)
+        except (URLError, FileNotFoundError) as e:
+            download_success = False
+            log.error(e)
+    return download_success
 
 
 class Cora(
