@@ -63,6 +63,8 @@ class DatasetLoader(object):
         data_subdirectory_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        """Used to set class variables during the class definition of derived classes and generate customised docs.
+        NOTE: this is not compatible with python's ABC abstract base class, so this class derives from object."""
         cls.name = name
         cls.directory_name = directory_name
         cls.url = url
@@ -82,6 +84,7 @@ class DatasetLoader(object):
         super().__init_subclass__(**kwargs)  # type: ignore
 
     def __init__(self) -> None:
+        # basic check since this is effectively an abstract base class, and derived classes should have set name
         if not self.name:
             raise ValueError(
                 f"{self.__class__.__name__} can't be instantiated directly, please use a derived class"
