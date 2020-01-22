@@ -44,7 +44,7 @@ class GraphSchema:
                 raise AttributeError(
                     f"{e.args[0]}. This has been replaced by accessing node types through 'StellarGraph.node_type'."
                 )
-            if attr in ("edge_type_map", "get_edge_type"):
+            if item in ("edge_type_map", "get_edge_type"):
                 raise AttributeError(
                     f"{e.args[0]}. This was removed because it wasn't meaningfully used, please file an issue with a use case if you were using it."
                 )

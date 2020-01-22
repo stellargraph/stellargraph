@@ -589,7 +589,7 @@ class NetworkXStellarGraph(StellarGraph):
         else:
             snodes = None
 
-        gs = self.create_graph_schema(create_type_maps=False, nodes=snodes)
+        gs = self.create_graph_schema(nodes=snodes)
 
         # Go over all node types
         s += "\n Node types:\n"
@@ -632,7 +632,7 @@ class NetworkXStellarGraph(StellarGraph):
 
         return s
 
-    def create_graph_schema(self, create_type_maps=True, nodes=None):
+    def create_graph_schema(self, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -643,30 +643,21 @@ class NetworkXStellarGraph(StellarGraph):
         is unique.
 
         Arguments:
-            create_type_maps (bool): If True quick lookup of node/edge types is
-                created in the schema. This can be slow.
-
             nodes (list): A list of node IDs to use to build schema. This must
                 represent all node types and all edge types in the graph.
-                If specified, `create_type_maps` must be False.
                 If not specified, all nodes and edges in the graph are used.
 
         Returns:
             GraphSchema object.
         """
-
         if nodes is None:
             nodes = self.nodes()
             edges = self.edges(triple=True)
-
-        elif create_type_maps is False:
+        else:
             edges = (
                 (src, dst, self._get_edge_type(data))
                 for src, dst, data in self._graph.edges(nodes, data=True)
             )
-
-        else:
-            raise ValueError("Creating type maps for subsampled nodes is not supported")
 
         # Create node type index list
         node_types = sorted({self.node_type(n) for n in nodes}, key=str)

@@ -54,7 +54,7 @@ class GraphWalk(object):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         if not graph_schema:
-            self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
+            self.graph_schema = self.graph.create_graph_schema()
         else:
             self.graph_schema = graph_schema
 
