@@ -481,6 +481,11 @@ class StellarGraph:
         ilocs = self._nodes.type_range(node_type)
         return self._nodes.ids.from_iloc(ilocs)
 
+    def _key_error_for_missing(self, query_ids, node_ilocs):
+        missing_indices = np.where(self._nodes.ids.is_missing(node_ilocs))
+        missing_values = comma_sep(np.asarray(query_ids)[missing_indices])
+        return KeyError(missing_values)
+
     def node_type(self, node):
         """
         Get the type of the node
@@ -498,14 +503,11 @@ class StellarGraph:
             node = np.array([node])
 
         node_ilocs = self._nodes.ids.to_iloc(node)
-        try:
-            type_ilocs = self._nodes.type_ilocs[node_ilocs]
-        except IndexError:
-            missing_indices = np.where(self._nodes.ids.is_missing(node_ilocs))
-            missing_values = comma_sep(node[missing_indices])
-            raise KeyError(missing_values)
 
-        return self._nodes.types.from_iloc(type_ilocs)
+        try:
+            return self._nodes.type_of_iloc(node_ilocs)
+        except IndexError:
+            raise self._key_error_for_missing(node, node_ilocs)
 
     @property
     def node_types(self):
@@ -580,7 +582,11 @@ class StellarGraph:
 
         node_ilocs = self._nodes.ids.to_iloc(nodes)
         if node_type is None:
-            types = np.unique(self._nodes.type_of_iloc(node_ilocs))
+            try:
+                types = np.unique(self._nodes.type_of_iloc(node_ilocs))
+            except IndexError:
+                raise self._key_error_for_missing(nodes, node_ilocs)
+
             if len(types) == 0:
                 raise ValueError(
                     "must have at least one node for inference, if `node_type` is not specified"
