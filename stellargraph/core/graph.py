@@ -479,7 +479,7 @@ class StellarGraph:
             return self.nodes()
 
         ilocs = self._nodes.type_range(node_type)
-        return self._nodes.ids.from_iloc(locations)
+        return self._nodes.ids.from_iloc(ilocs)
 
     def node_type(self, node):
         """
