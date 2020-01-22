@@ -139,6 +139,14 @@ class DatasetLoader(object):
                 f"{self.name} dataset failed to download file(s): {missing_files} to {self.data_directory}"
             )
 
+    def _delete_existing_files(self) -> None:
+        """ Delete the files for this dataset if they already exist """
+        for file in self.expected_files:
+            try:
+                os.remove(self._resolve_path(file))
+            except OSError:
+                pass
+
     def download(self, ignore_cache: Optional[bool] = False) -> None:
         """
         Download the dataset (if not already downloaded)
@@ -149,6 +157,9 @@ class DatasetLoader(object):
         Raises:
             FileNotFoundError: If the dataset is not successfully downloaded.
         """
+        if ignore_cache:
+            self._delete_existing_files()  # remove any existing dataset files to ensure we re-download
+
         if ignore_cache or not self._is_downloaded():
             log.info(
                 "%s dataset downloading to %s from %s",
