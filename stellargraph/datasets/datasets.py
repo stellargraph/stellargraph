@@ -18,7 +18,7 @@
 Sample datasets for stellargraph demonstrations
 """
 
-from .dataset_loader import DatasetLoader  # type: ignore
+from .dataset_loader import DatasetLoader
 import logging
 
 
