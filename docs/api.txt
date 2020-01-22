@@ -107,5 +107,6 @@ Calibration
 Datasets
 ----------------
 
-.. automodule:: stellargraph.datasets
+.. automodule:: stellargraph.datasets.datasets
   :members:
+  :inherited-members:

@@ -92,12 +92,12 @@ class DatasetLoader(object):
 
     @property
     def base_directory(self) -> str:
-        """str: The path of the directory containing this dataset."""
+        """str: The full path of the directory containing this dataset."""
         return os.path.join(self._all_datasets_directory(), self.directory_name)
 
     @property
     def data_directory(self) -> str:
-        """str: The path of the directory containing the data content files for this dataset."""
+        """str: The full path of the directory containing the data content files for this dataset."""
         if self.data_subdirectory_name is None:
             return self.base_directory
         else:

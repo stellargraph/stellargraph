@@ -15,7 +15,10 @@
 # limitations under the License.
 
 """
-Sample datasets for stellargraph demonstrations
+`stellargraph.datasets` contains classes to download sample network datasets.
+
+The default download path of ``~/data`` can be changed by setting the ``STELLARGRAPH_DATASETS_PATH`` environment variable,
+and each dataset will be downloaded to a subdirectory within this path.
 """
 
 from .dataset_loader import DatasetLoader
