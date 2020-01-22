@@ -162,7 +162,7 @@ class DatasetLoader:
         Download the dataset (if not already downloaded)
 
         Args:
-            ignore_cache bool, optional (default=False): Ignore a cached dataset and force a re-download.
+            ignore_cache (bool, optional): Ignore a cached dataset and force a re-download.
 
         Raises:
             FileNotFoundError: If the dataset is not successfully downloaded.
