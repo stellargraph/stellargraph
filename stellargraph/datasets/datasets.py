@@ -50,7 +50,6 @@ class Cora(
     pass
 
 
-"""
 class CiteSeer(
     DatasetLoader,
     name="CiteSeer",
@@ -64,7 +63,6 @@ class CiteSeer(
     source="https://linqs.soe.ucsc.edu/data",
 ):
     pass
-"""
 
 
 class PubMedDiabetes(
