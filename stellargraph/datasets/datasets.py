@@ -43,7 +43,7 @@ class Cora(
 class CiteSeer(
     DatasetLoader,
     name="CiteSeer",
-    directory_name="CiteSeer",
+    directory_name="citeseer",
     url="https://linqs-data.soe.ucsc.edu/public/lbc/citeseer.tgz",
     url_archive_format="gztar",
     expected_files=["citeseer.cites", "citeseer.content"],
