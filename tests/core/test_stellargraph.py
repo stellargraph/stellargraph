@@ -43,6 +43,25 @@ def create_graph_1(is_directed=False, return_nx=False):
 def example_benchmark_graph(
     feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
 ):
+    node_ids = np.arange(n_nodes)
+    edges = pd.DataFrame(
+        np.random.randint(0, n_nodes, size=(n_edges, 2)), columns=["source", "target"]
+    )
+
+    if feature_size is None:
+        features = []
+    else:
+        features = np.ones((n_nodes, feature_size))
+
+    all_nodes = pd.DataFrame(features, index=node_ids)
+    nodes = {ty: all_nodes[node_ids % n_types == ty] for ty in range(n_types)}
+
+    return nodes, edges
+
+
+def example_benchmark_graph_nx(
+    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
+):
     G = nx.Graph()
 
     G.add_nodes_from(range(n_nodes))
@@ -447,7 +466,7 @@ def normalise_edges(g, default_label=False):
 
 @pytest.mark.parametrize("in_nodes", [False, True])
 def test_to_networkx(in_nodes):
-    g, node_features = example_benchmark_graph(
+    g, node_features = example_benchmark_graph_nx(
         feature_size=5, features_in_nodes=in_nodes
     )
 
@@ -472,7 +491,7 @@ def test_to_networkx(in_nodes):
 
 
 def test_to_networkx_no_features():
-    g, _ = example_benchmark_graph(feature_size=None)
+    g, _ = example_benchmark_graph_nx(feature_size=None)
 
     sg = StellarGraph(g)
     new_nx = sg.to_networkx()
@@ -537,9 +556,9 @@ def test_networkx_attribute_message():
 
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
-    g, node_features = example_benchmark_graph()
-    num_nodes = g.number_of_nodes()
-    sg = StellarGraph(g, node_features=node_features)
+    nodes, edges = example_benchmark_graph()
+    sg = StellarGraph(nodes=nodes, edges=edges)
+    num_nodes = sg.number_of_nodes()
 
     # get the neigbours of every node in the graph
     def f():
@@ -556,12 +575,12 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
     SAMPLE_SIZE = 50
     N_NODES = 500
     N_EDGES = 1000
-    g, node_features = example_benchmark_graph(
+    nodes, edges = example_benchmark_graph(
         feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
     )
-    num_nodes = g.number_of_nodes()
 
-    sg = StellarGraph(g, node_features=node_features)
+    sg = StellarGraph(nodes=nodes, edges=edges)
+    num_nodes = sg.number_of_nodes()
 
     ty_ids = [(ty, range(ty, num_nodes, num_types)) for ty in range(num_types)]
 
@@ -582,6 +601,24 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
     benchmark(f)
 
 
+@pytest.mark.benchmark(group="StellarGraph creation (time)")
+# various element counts, to give an indication of the relationship
+# between those and memory use (0,0 gives the overhead of the
+# StellarGraph object itself, without any data)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+# features or not, to capture their cost
+@pytest.mark.parametrize("feature_size", [None, 100])
+def test_benchmark_creation(benchmark, feature_size, num_nodes, num_edges):
+    nodes, edges = example_benchmark_graph(
+        feature_size, num_nodes, num_edges, features_in_nodes=True
+    )
+
+    def f():
+        return StellarGraph(nodes=nodes, edges=edges)
+
+    benchmark(f)
+
+
 @pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
@@ -589,15 +626,15 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-def test_allocation_benchmark_creation_from_networkx(
+def test_allocation_benchmark_creation(
     allocation_benchmark, feature_size, num_nodes, num_edges
 ):
-    g, node_features = example_benchmark_graph(
+    nodes, edges = example_benchmark_graph(
         feature_size, num_nodes, num_edges, features_in_nodes=True
     )
 
     def f():
-        return StellarGraph(g, node_features=node_features)
+        return StellarGraph(nodes=nodes, edges=edges)
 
     allocation_benchmark(f)
 

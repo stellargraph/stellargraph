@@ -22,3 +22,7 @@ TYPE_ATTR_NAME = "label"
 UNKNOWN_TARGET_ATTRIBUTE = "-1"
 NODE_TYPE_DEFAULT = "default"
 EDGE_TYPE_DEFAULT = "default"
+
+SOURCE = "source"
+TARGET = "target"
+WEIGHT = "weight"

@@ -21,11 +21,11 @@ The StellarGraph implementation that encapsulates a NetworkX graph.
 __all__ = ["NetworkXStellarGraph"]
 
 from stellargraph.core.schema import EdgeType
-from stellargraph.core.graph import StellarGraph
+from stellargraph.core.graph import StellarGraph, NeighbourWithWeight
 
 import random
 import itertools as it
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import warnings
 
 import pandas as pd
@@ -36,9 +36,6 @@ from typing import Iterable, Iterator, Any, Mapping, List, Set, Optional
 
 from .schema import GraphSchema
 from .utils import is_real_iterable
-
-
-NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 
 def _convert_from_node_attribute(
