@@ -23,6 +23,7 @@ import logging
 from shutil import unpack_archive
 from urllib.request import urlretrieve
 from typing import List, Optional, Any
+from urllib.error import URLError
 
 
 log = logging.getLogger(__name__)
@@ -174,3 +175,27 @@ class DatasetLoader(object):
             self._verify_files_downloaded()
         else:
             log.info("%s dataset is already downloaded", self.name)
+
+
+def download_all_datasets(ignore_cache: Optional[bool] = False) -> bool:
+    """
+    Download all of the demonstration datasets (if not already downloaded to the disk cache).
+    This is intended for testing - URLError and FileNotFoundError Exceptions during download will be caught and logged.
+
+    Args:
+        ignore_cache bool, optional (default=False): Ignore cached datasets and force a re-download.
+
+    Returns:
+        True if all datasets were successfully downloaded, else False.
+    """
+
+    # obtain all the classes derived from DatasetLoader (note: must be direct descendants)
+    download_success = True
+    for cls in DatasetLoader.__subclasses__():
+        dataset = cls()
+        try:
+            dataset.download(ignore_cache)
+        except (URLError, FileNotFoundError) as e:
+            download_success = False
+            log.error(e)
+    return download_success

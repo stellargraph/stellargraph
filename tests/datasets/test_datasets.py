@@ -17,7 +17,8 @@
 import pytest
 import shutil
 import os
-from stellargraph.datasets import download_all_datasets, Cora, CiteSeer
+from stellargraph.datasets import Cora, CiteSeer
+from stellargraph.datasets.dataset_loader import download_all_datasets
 from urllib.error import URLError
 
 
