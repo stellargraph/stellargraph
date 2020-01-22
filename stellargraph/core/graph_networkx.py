@@ -697,29 +697,21 @@ class NetworkXStellarGraph(StellarGraph):
         # Note: we encode the type index, in the assumption it will take
         # less storage.
         if create_type_maps:
-            node_type_map = {
-                n: node_types.index(self.node_type(n)) for n in self.nodes()
-            }
             edge_type_map = {
                 (src, tgt, key): edge_types.index(
                     EdgeType(
-                        node_types[node_type_map[src]],
+                        self.node_type(src),
                         self._get_edge_type(data),
-                        node_types[node_type_map[tgt]],
+                        self.node_type(tgt),
                     )
                 )
                 for src, tgt, key, data in self._graph.edges(keys=True, data=True)
             }
         else:
-            node_type_map = edge_type_map = None
+            edge_type_map = None
 
         return GraphSchema(
-            self.is_directed(),
-            node_types,
-            edge_types,
-            schema,
-            node_type_map,
-            edge_type_map,
+            self.is_directed(), node_types, edge_types, schema, edge_type_map,
         )
 
     ######################################################################

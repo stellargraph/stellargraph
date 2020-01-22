@@ -30,15 +30,23 @@ class GraphSchema:
     :func:`~stellargraph.core.graph.create_graph_schema` method.
     """
 
-    def __init__(
-        self, is_directed, node_types, edge_types, schema, node_type_map, edge_type_map
-    ):
+    def __init__(self, is_directed, node_types, edge_types, schema, edge_type_map):
         self._is_directed = is_directed
         self.node_types = node_types
         self.edge_types = edge_types
         self.schema = schema
-        self.node_type_map = node_type_map
         self.edge_type_map = edge_type_map
+
+    def __getattr__(self, item):
+        try:
+            return super().__getattribute__(item)
+        except AttributeError as e:
+            if item in ("node_type_map", "get_node_type"):
+                raise AttributeError(
+                    f"{e.args[0]}. This has been replaced by accessing node types through 'StellarGraph.node_type'."
+                )
+            # not something we know about
+            raise
 
     def __repr__(self):
         s = "{}:\n".format(type(self).__name__)
@@ -85,34 +93,6 @@ class GraphSchema:
             raise ValueError("Edge key '{}' not found.".format(edge_type))
 
         return index
-
-    def get_node_type(self, node, index=False):
-        """
-        Returns the type of the node specified either by
-        node ID.
-
-        Args:
-            node: The node ID from the original graph
-            index: Return a numeric type index if True,
-                otherwise return the type name.
-
-        Returns:
-            A node type name or index
-        """
-        # TODO: deprecate this function
-        if self.node_type_map is None:
-            raise RuntimeError("Node type maps not enabled")
-
-        try:
-            nt = self.node_type_map[node]
-            node_type = nt if index else self.node_types[nt]
-
-        except IndexError:
-            warnings.warn(
-                "Node key '{}' not found in type map.".format(node), RuntimeWarning
-            )
-            node_type = None
-        return node_type
 
     def is_of_edge_type(self, edge, edge_type, index=False):
         """
