@@ -30,7 +30,7 @@ import pytest
 import pandas as pd
 import scipy.sparse as sps
 from ..test_utils.graphs import (
-    example_graph_1,
+    example_graph,
     example_graph_random,
     example_hin_1,
     create_graph_features,
@@ -126,7 +126,7 @@ def test_nodemapper_constructor_no_feats():
     """
     n_feat = 4
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -134,7 +134,7 @@ def test_nodemapper_constructor_no_feats():
 def test_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -150,7 +150,7 @@ def test_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = GraphSAGENodeGenerator(G1, batch_size=n_batch, num_samples=[2, 2]).flow(
         G1.nodes()
@@ -265,7 +265,7 @@ def test_nodemapper_zero_samples():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
         G.nodes()
     )
@@ -280,7 +280,7 @@ def test_nodemapper_zero_samples():
         assert nl is None
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
         G.nodes()
     )
@@ -344,7 +344,7 @@ def test_nodemapper_incorrect_targets():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     with pytest.raises(TypeError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
@@ -609,7 +609,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
     Attri2VecNodeGenerator requires the graph to have features
     """
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -617,7 +617,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
 def test_attri2vec_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -633,7 +633,7 @@ def test_attri2vec_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = Attri2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
     assert len(mapper1) == 2

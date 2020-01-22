@@ -19,14 +19,14 @@
 Utils tests:
 
 """
-from ..test_utils.graphs import example_graph_1
+from ..test_utils.graphs import example_graph
 
 
 def test_edges_with_type():
-    G = example_graph_1(label="edge")
+    G = example_graph(label="edge")
     info = G.info()
 
 
 def test_edges_without_type():
-    G = example_graph_1()
+    G = example_graph()
     info = G.info()

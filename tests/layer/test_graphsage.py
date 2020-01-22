@@ -33,7 +33,7 @@ from stellargraph.layer.graphsage import (
     MeanPoolingAggregator,
     AttentionalAggregator,
 )
-from ..test_utils.graphs import example_graph_1
+from ..test_utils.graphs import example_graph
 
 
 # Mean aggregator tests
@@ -432,7 +432,7 @@ def test_graphsage_constructor():
         GraphSAGE(layer_sizes=[4])
 
     # Construction from generator
-    G = example_graph_1(feature_size=3)
+    G = example_graph(feature_size=3)
     gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
     gs = GraphSAGE(layer_sizes=[4, 8], generator=gen, bias=True)
 

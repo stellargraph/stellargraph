@@ -27,7 +27,7 @@ from tensorflow import keras
 import numpy as np
 import networkx as nx
 import pytest
-from ..test_utils.graphs import example_graph_1
+from ..test_utils.graphs import example_graph
 
 
 def test_attri2vec_constructor():
@@ -73,7 +73,7 @@ def test_attri2vec_constructor():
         Attri2Vec(layer_sizes=[4])
 
     # Construction from generator
-    G = example_graph_1(feature_size=3)
+    G = example_graph(feature_size=3)
     gen = Attri2VecNodeGenerator(G, batch_size=2)
     attri2vec = Attri2Vec(layer_sizes=[4, 8], generator=gen, bias=True)
 
