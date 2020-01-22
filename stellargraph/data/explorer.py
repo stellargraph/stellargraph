@@ -604,7 +604,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph_schema.get_node_type(node)
+                node_type = self.graph.node_type(node)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks

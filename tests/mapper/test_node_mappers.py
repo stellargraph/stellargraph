@@ -453,7 +453,7 @@ def test_hinnodemapper_level_2():
         assert bf.shape[0] == batch_size
         assert bf.shape[2] == feature_sizes[nt]
 
-        batch_node_types = {schema.get_node_type(n) for n in np.ravel(bf)}
+        batch_node_types = {G.node_type(n) for n in np.ravel(bf)}
 
         assert len(batch_node_types) == 1
         assert nt in batch_node_types
