@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 import pytest
 from stellargraph.utils.saliency_maps import IntegratedGradientsGAT
 import numpy as np
-from stellargraph.layer import GraphAttention
-from stellargraph import StellarGraph
 from stellargraph.layer import GAT
 from stellargraph.mapper import FullBatchNodeGenerator
 from tensorflow.keras import Model
@@ -26,23 +24,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy
 import networkx as nx
 from tensorflow.keras import backend as K
-from tensorflow import keras
-
-
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(0, 1), (0, 2), (2, 3), (3, 4), (0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
-    G.add_nodes_from([0, 1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+from ..test_utils.graphs import example_graph_1_saliency_maps as example_graph_1
 
 
 def create_GAT_model(graph):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ from . import (
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
 )
+from ..core.experimental import experimental
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
@@ -113,7 +114,7 @@ class FullBatchGenerator(ABC):
             self.use_sparse = sparse
 
         # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
         if transform is not None:
             if callable(transform):
@@ -369,6 +370,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         return super().flow(link_ids, targets)
 
 
+@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
@@ -399,7 +401,7 @@ class RelationalFullBatchNodeGenerator:
         model.fit_generator(train_gen, epochs=num_epochs, ...)
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         transform (callable): an optional function to apply on features and adjacency matrix
             the function takes (features, Aadj) as arguments.
@@ -424,7 +426,7 @@ class RelationalFullBatchNodeGenerator:
         # extract node, feature, and edge type info from G
         self.node_list = list(G.nodes())
 
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
         edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
@@ -469,7 +471,7 @@ class RelationalFullBatchNodeGenerator:
             self.As.append(A)
 
         # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
     def flow(self, node_ids, targets=None):
         """

@@ -8,16 +8,18 @@
 
 - Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 
-- Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
+- *Experimental*: Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
 
-**Implemented enhancements:** 
-- GCN, GAT, APPNP and PPNP can now be used for link-prediction using the `FullBatchLinkGenerator` [\#543](https://github.com/stellargraph/stellargraph/pull/543)
+**Implemented enhancements:**
+- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now support additional parameters to include edge weights in the results or filter by a set of edge types. [\#646](https://github.com/stellargraph/stellargraph/pull/646)
+- Unsupervised GraphSAGE has now been updated and tested for reproducibility. Ensuring all seeds are set, running the same pipeline should give reproducible embeddings. [\#620](https://github.com/stellargraph/stellargraph/pull/620)
 
 **Refactoring:**
 - Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
 
 **Breaking changes:**
 - The stellargraph library now only supports `tensorflow` versions 2.0 and above [\#518](https://github.com/stellargraph/stellargraph/pull/518). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
+- The stellargraph library now only supports Python versions 3.6 and above [\#](). Backward compatibility with earlier versions of Python is not guaranteed.
 
 - The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality.
 In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead.
@@ -26,8 +28,18 @@ In particular, calls like `list(G)` will no longer return a list of nodes; use `
 - Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498).
 Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 
+- Various methods on `StellarGraph` have been renamed to be more succinct and uniform:
+   - `get_feature_for_nodes` is now `node_features`
+   - `type_for_node` is now `node_type`
+
+- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now return a list of neighbours instead of a set. This addresses [\#653](https://github.com/stellargraph/stellargraph/issues/653). This means multi-edges are no longer collapsed into one in the return value. There will be an implicit change in behaviour for explorer classes used for algorithms like GraphSAGE, Node2Vec, since a neighbour connected via multiple edges will now be more likely to be sampled. If this doesn't sound like the desired behaviour, consider pruning the graph of multi-edges before running the algorithm.
+
 **Fixed bugs:**
 
+## [0.8.4](https://github.com/stellargraph/stellargraph/tree/v0.8.4)
+
+**Fixed bugs:**
+- Fix `DirectedGraphSAGENodeGenerator` always hitting `TypeError` exception. [#695](https://github.com/stellargraph/stellargraph/issues/695)
 
 ## [0.8.3](https://github.com/stellargraph/stellargraph/tree/v0.8.3)
 
@@ -56,7 +68,7 @@ Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by p
 - PPNP and APPNP algorithms + demos [\#485](https://github.com/stellargraph/stellargraph/pull/485)
 - GAT saliency maps for interpreting node classification with Graph Attention Networks + demo [\#435](https://github.com/stellargraph/stellargraph/pull/435)
 
-**Implemented enhancements:** 
+**Implemented enhancements:**
 - New demo of node classification on Twitter hateful users [\430](https://github.com/stellargraph/stellargraph/pull/430)
 - New demo of graph saliency on Twitter hateful users [\#448](https://github.com/stellargraph/stellargraph/pull/448)
 - Added Directed SampledBFS walks on directed graphs [\#464](https://github.com/stellargraph/stellargraph/issues/464)
@@ -87,7 +99,7 @@ Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements
 in the recent versions of NetworkX and Tensorflow.
 
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
-Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements, 
+Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements,
 to avoid errors due to API changes in the recent versions of Keras and Tensorflow.
 
 
@@ -97,7 +109,7 @@ to avoid errors due to API changes in the recent versions of Keras and Tensorflo
 
 **Fixed bugs:**
 - Removed igraph and mplleaflet from `demos` requirements in `setup.py`. Python-igraph doesn't install on many systems and is only required for the clustering notebook. See the `README.md` in that directory for requirements and installation directions.
-- Updated GCN interpretability notebook to work with new FullBatchNodeGenerator API [\#429](https://github.com/stellargraph/stellargraph/pull/429)
+- Updated GCN interpretability notebook to work with new FullBatchGenerator API [\#429](https://github.com/stellargraph/stellargraph/pull/429)
 
 ## [0.7.0](https://github.com/stellargraph/stellargraph/tree/v0.7.0)
 
@@ -133,12 +145,12 @@ This replaces the node_model\(\) and link_model\(\) methods, which will be depre
 the optional function to the generator for GCN
 
 **Enhancements:**
-- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb` 
+- separate treatment of `gcn` and `gat` models in `demos/ensembles/ensemble-node-classification-example.ipynb`
 
 ## [0.6.0](https://github.com/stellargraph/stellargraph/tree/v0.6.0) (14 Mar 2019)
 
 **Implemented new features and enhancements:**
-- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216), 
+- Graph Attention (GAT) layer and model (stack of GAT layers), with demos [\#216](https://github.com/stellargraph/stellargraph/issues/216),
 [\#315](https://github.com/stellargraph/stellargraph/pull/315)
 - Unsupervised GraphSAGE [\#331](https://github.com/stellargraph/stellargraph/pull/331) with a demo [\#335](https://github.com/stellargraph/stellargraph/pull/335)
 - Model Ensembles [\#343](https://github.com/stellargraph/stellargraph/pull/343)
