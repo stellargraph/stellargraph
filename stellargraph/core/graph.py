@@ -489,19 +489,6 @@ class StellarGraph:
         """
         return self._graph.edge_weights(source_node, target_node)
 
-    def _node_attributes(self, node: Any) -> Set[Any]:
-        """
-        Obtains the names of any (non-standard) node attributes that are
-        available in the user data.
-
-        Args:
-            node (any): The node of interest.
-
-        Returns:
-            set: The collection of node attributes.
-        """
-        return self._graph.node_attributes(node)
-
 
 # A convenience class that merely specifies that edges have direction.
 class StellarDiGraph(StellarGraph):

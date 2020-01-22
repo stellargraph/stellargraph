@@ -893,20 +893,3 @@ class NetworkXStellarGraph(StellarGraph):
             v.get(edge_weight_label)
             for v in self._graph[source_node][target_node].values()
         ]
-
-    # XXX This has not yet been standardised in the interface.
-    def node_attributes(self, node: Any) -> Set[Any]:
-        """
-        Obtains the names of any (non-standard) node attributes that are
-        available in the user data.
-
-        Args:
-            node (any): The node of interest.
-
-        Returns:
-            set: The collection of node attributes.
-        """
-        attrs = set(self._graph.nodes[node].keys())
-        # Don't use node type as attribute:
-        attrs.discard(self._node_type_attr)
-        return attrs
