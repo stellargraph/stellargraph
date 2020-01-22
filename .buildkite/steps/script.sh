@@ -16,7 +16,7 @@ pip freeze
 
 echo "+++ running tests"
 exitCode=$?
-py.test -ra -o log_cli=true --log-cli-level=INFO --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
+py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
 echo "--- uploading coveralls"
 coveralls
