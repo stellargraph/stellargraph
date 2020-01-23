@@ -29,7 +29,7 @@ from urllib.error import URLError
 log = logging.getLogger(__name__)
 
 
-class DatasetLoader(object):
+class DatasetLoader:
     """
     Base class for downloading sample datasets.
 
@@ -162,7 +162,7 @@ class DatasetLoader(object):
         Download the dataset (if not already downloaded)
 
         Args:
-            ignore_cache bool, optional (default=False): Ignore a cached dataset and force a re-download.
+            ignore_cache (bool, optional): Ignore a cached dataset and force a re-download.
 
         Raises:
             FileNotFoundError: If the dataset is not successfully downloaded.
