@@ -32,51 +32,10 @@ from .experimental import experimental
 from .element_data import NodeData, EdgeData, ExternalIdIndex
 from .utils import is_real_iterable
 from .validation import comma_sep
+from . import convert
 
 
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
-
-_WeightConfig = namedtuple("_WeightConfig", ["default", "label"])
-
-
-def _convert_single(type_name, data, *, shared_cols, weight_config, parent_name):
-    if not isinstance(data, pd.DataFrame):
-        raise TypeError(
-            f"{parent_name}[{type_name!r}]: expected pandas DataFrame, found {type(data)}"
-        )
-
-    if weight_config is not None:
-        if weight_config.label not in data.columns:
-            data = data.assign(**{globalvar.WEIGHT: weight_config.default})
-        else:
-            data = data.rename(columns={weight_config.label: globalvar.WEIGHT})
-
-    shared = data[shared_cols]
-    features = data.drop(columns=shared_cols).to_numpy()
-    return shared, features
-
-
-def _convert_elements(elements, *, default_type, shared_cols, weight_config, name):
-    if isinstance(elements, pd.DataFrame):
-        elements = {default_type: elements}
-
-    if not isinstance(elements, dict):
-        raise TypeError(f"{name}: expected dict, found {type(elements)}")
-
-    singles = {
-        type_name: _convert_single(
-            type_name,
-            data,
-            weight_config=weight_config,
-            shared_cols=shared_cols,
-            parent_name=name,
-        )
-        for type_name, data in elements.items()
-    }
-    return (
-        {type_name: shared for type_name, (shared, _) in singles.items()},
-        {type_name: features for type_name, (_, features) in singles.items()},
-    )
 
 
 class StellarGraph:
@@ -216,29 +175,18 @@ class StellarGraph:
 
             self._is_directed = is_directed
 
-            node_shared, node_features = _convert_elements(
-                nodes,
-                default_type=node_type_default,
-                shared_cols=[],
-                weight_config=None,
-                name="nodes",
+            self._nodes = convert.convert_nodes(
+                nodes, name="nodes", default_type=node_type_default
             )
-            self._nodes = NodeData(node_shared, node_features)
-            edge_shared, edge_features = _convert_elements(
+            self._edges = convert.convert_edges(
                 edges,
-                default_type=edge_type_default,
-                shared_cols=[source_column, target_column, edge_weight_label],
-                weight_config=_WeightConfig(1.0, edge_weight_label),
+                self._nodes,
                 name="edges",
+                default_type=edge_type_default,
+                source_column=source_column,
+                target_column=target_column,
+                weight_column=edge_weight_label,
             )
-            for key, value in edge_features.items():
-                _rows, columns = value.shape
-                if columns:
-                    raise ValueError(
-                        f"edges[{key!r}]: expected zero feature columns, found {columns}"
-                    )
-
-            self._edges = EdgeData(edge_shared, self._nodes)
 
     # customise how a missing attribute is handled to give better error messages for the NetworkX
     # -> no NetworkX transition.
