@@ -176,7 +176,7 @@ texinfo_documents = [
         "StellarGraph Documentation",
         author,
         "StellarGraph",
-        "One line description of project.",
+        "StellarGraph is a graph machine learning library for Python.",
         "Miscellaneous",
     ),
 ]

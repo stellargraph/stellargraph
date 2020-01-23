@@ -48,12 +48,12 @@ optional arguments:
 For example, to perform all formatting on all Jupyter notebooks found in the demos directory, execute the following command in the top-level stellargraph directory:
 
 ```
-> python scripts/format_scripts.py -a demos
+> python scripts/format_notebooks.py -a demos
 ```
 
 To additionally output HTML files:
 ```
-> python scripts/format_scripts.py -a --html demos
+> python scripts/format_notebooks.py -a --html demos
 ```
 
 ### Testing demo Jupyter notebooks
