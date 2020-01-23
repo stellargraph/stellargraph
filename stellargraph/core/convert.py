@@ -18,7 +18,7 @@ import pandas as pd
 
 from ..globalvar import SOURCE, TARGET, WEIGHT
 from .element_data import NodeData, EdgeData
-from .validation import require_dataframe_has_columns
+from .validation import comma_sep, require_dataframe_has_columns
 
 
 class ColumnarConverter:
@@ -59,7 +59,8 @@ class ColumnarConverter:
         known = data[existing]
         other = data.drop(columns=existing)
 
-        # add the defaults to for columns that need one
+        # add the defaults to for columns that need one (this will not overwrite any existing ones
+        # of the same name, because they'll be in `other`, not `known`)
         defaults_required = {
             name: value
             for name, value in self.column_defaults.items()
@@ -78,7 +79,7 @@ class ColumnarConverter:
             features = None
         else:
             raise ValueError(
-                f"{self.name(type_name)}: expected zero feature columns, found {other.columns}"
+                f"{self.name(type_name)}: expected zero feature columns, found {comma_sep(other.columns)}"
             )
 
         return known.rename(columns=self.selected_columns), features
@@ -88,7 +89,7 @@ class ColumnarConverter:
             elements = {self.default_type: elements}
 
         if not isinstance(elements, dict):
-            raise TypeError(f"{name}: expected dict, found {type(elements)}")
+            raise TypeError(f"{self.name()}: expected dict, found {type(elements)}")
 
         singles = {
             type_name: self._convert_single(type_name, data)
