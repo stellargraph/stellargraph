@@ -65,7 +65,9 @@ def test_environment_path_override(monkeypatch) -> None:
 
 
 def test_download_cache() -> None:
-    with patch("stellargraph.datasets.dataset_loader.urlretrieve", wraps=urlretrieve) as mock_urlretrieve:
+    with patch(
+        "stellargraph.datasets.dataset_loader.urlretrieve", wraps=urlretrieve
+    ) as mock_urlretrieve:
         # forcing a re-download should call urlretrieve
         Cora().download(ignore_cache=True)
         assert mock_urlretrieve.called
