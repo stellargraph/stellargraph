@@ -101,6 +101,15 @@ class GraphWalk(object):
             self._raise_error("node {} not in graph".format(node))
         return self.graph.neighbors(node)
 
+    def run(self, *args, **kwargs):
+        """
+        To be overridden by subclasses. It is the main entry point for performing random walks on the given
+        graph.
+
+        It should return the sequences of nodes in each random walk.
+        """
+        raise NotImplementedError
+
     def _raise_error(self, msg):
         raise ValueError("({}) {}".format(type(self).__name__, msg))
 
