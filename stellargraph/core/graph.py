@@ -672,6 +672,9 @@ class StellarGraph:
             selector = self._edges.sources.isin(nodes) & self._edges.targets.isin(nodes)
 
         weights = self._edges.weights[selector]
+        # these indices are computed relative to the index above. If `nodes` is None, they'll be the
+        # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
+        # list.
         src_idx = index.to_iloc(self._edges.sources[selector])
         tgt_idx = index.to_iloc(self._edges.targets[selector])
         n = len(index)
