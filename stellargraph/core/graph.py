@@ -39,7 +39,7 @@ NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 _WeightConfig = namedtuple("_WeightConfig", ["default", "label"])
 
 
-def _convert_single(type_name, data, *, shared_cols, weight_config, parent_name):
+def _convert_single(type_name, data, *, shared_cols, weight_config, parent_name, dtype):
     if not isinstance(data, pd.DataFrame):
         raise TypeError(
             f"{parent_name}[{type_name!r}]: expected pandas DataFrame, found {type(data)}"
@@ -52,11 +52,11 @@ def _convert_single(type_name, data, *, shared_cols, weight_config, parent_name)
             data = data.rename(columns={weight_config.label: globalvar.WEIGHT})
 
     shared = data[shared_cols]
-    features = data.drop(columns=shared_cols).to_numpy()
+    features = data.drop(columns=shared_cols).to_numpy(dtype=dtype)
     return shared, features
 
 
-def _convert_elements(elements, *, default_type, shared_cols, weight_config, name):
+def _convert_elements(elements, *, default_type, shared_cols, weight_config, name, dtype):
     if isinstance(elements, pd.DataFrame):
         elements = {default_type: elements}
 
@@ -70,6 +70,7 @@ def _convert_elements(elements, *, default_type, shared_cols, weight_config, nam
             weight_config=weight_config,
             shared_cols=shared_cols,
             parent_name=name,
+            dtype=dtype,
         )
         for type_name, data in elements.items()
     }
@@ -222,6 +223,7 @@ class StellarGraph:
                 shared_cols=[],
                 weight_config=None,
                 name="nodes",
+                dtype=dtype,
             )
             self._nodes = NodeData(node_shared, node_features)
             edge_shared, edge_features = _convert_elements(
@@ -230,6 +232,7 @@ class StellarGraph:
                 shared_cols=[source_column, target_column, edge_weight_label],
                 weight_config=_WeightConfig(1.0, edge_weight_label),
                 name="edges",
+                dtype=dtype,
             )
             for key, value in edge_features.items():
                 _rows, columns = value.shape
