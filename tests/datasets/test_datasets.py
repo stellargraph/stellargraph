@@ -18,14 +18,14 @@ import pytest
 import shutil
 import os
 from stellargraph.datasets import Cora, CiteSeer
-from stellargraph.datasets.dataset_loader import download_all_datasets
 from urllib.error import URLError
+from stellargraph.datasets.dataset_loader import DatasetLoader
 
 
-def test_re_download_all_datasets() -> None:
-    # to force re-downloading, we ignore the cached datasets
-    # note that this is fairly slow, as it will re-download all of our demo datasets
-    assert download_all_datasets(ignore_cache=True)
+# use parametrize to automatically test each of the datasets that (directly) derive from DatasetLoader
+@pytest.mark.parametrize("dataset_class", list(DatasetLoader.__subclasses__()))
+def test_dataset_download(dataset_class):
+    dataset_class().download(ignore_cache=True)
 
 
 def test_invalid_url() -> None:
@@ -51,3 +51,12 @@ def test_missing_files() -> None:
     with pytest.raises(FileNotFoundError):
         dataset.download()
     remove_dataset_directory()  # cleanup
+
+
+def test_environment_path_override(monkeypatch) -> None:
+    new_datasets_path = os.path.join("~", "test-sg-datasets")
+    monkeypatch.setenv("STELLARGRAPH_DATASETS_PATH", new_datasets_path)
+    dataset = CiteSeer()
+    assert dataset.base_directory == os.path.join(
+        os.path.expanduser(new_datasets_path), dataset.directory_name
+    )

@@ -177,42 +177,18 @@ class DatasetLoader(object):
                 self.base_directory,
                 self.url,
             )
-            filename, _ = urlretrieve(
-                self.url
-            )  # this will download to a temporary location
+            temporary_filename, _ = urlretrieve(self.url)
             if self.url_archive_format is None:
                 # not an archive, so the downloaded file is our data and just needs to be put into place
                 self._create_base_directory()
-                move(filename, self._resolve_path(self.expected_files[0]))
+                move(temporary_filename, self._resolve_path(self.expected_files[0]))
             else:
                 # archive, so it needs to be unpacked into the right directory
                 unpack_archive(
-                    filename, self._all_datasets_directory(), self.url_archive_format
+                    temporary_filename,
+                    self._all_datasets_directory(),
+                    self.url_archive_format,
                 )
             self._verify_files_downloaded()
         else:
             log.info("%s dataset is already downloaded", self.name)
-
-
-def download_all_datasets(ignore_cache: Optional[bool] = False) -> bool:
-    """
-    Download all of the demonstration datasets (if not already downloaded to the disk cache).
-    This is intended for testing - URLError and FileNotFoundError Exceptions during download will be caught and logged.
-
-    Args:
-        ignore_cache bool, optional (default=False): Ignore cached datasets and force a re-download.
-
-    Returns:
-        True if all datasets were successfully downloaded, else False.
-    """
-
-    # obtain all the classes derived from DatasetLoader (note: must be direct descendants)
-    download_success = True
-    for cls in DatasetLoader.__subclasses__():
-        dataset = cls()
-        try:
-            dataset.download(ignore_cache)
-        except (URLError, FileNotFoundError) as e:
-            download_success = False
-            log.error(e)
-    return download_success
