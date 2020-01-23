@@ -88,7 +88,7 @@ def example_graph_1(
     return cls(nodes={label: nodes}, edges={label: elist})
 
 
-def example_graph_2(feature_size=None, label="default", feature_name="feature") -> StellarGraph:
+def example_graph_2(feature_size=None, label="default") -> StellarGraph:
     # unsupervised sampler, link mapper
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
     nodes = [1, 2, 3, 4]
@@ -137,7 +137,9 @@ def example_hin_1(feature_sizes=None) -> StellarGraph:
     b_ids = [4, 5, 6]
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
-    r = pd.DataFrame([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"])
+    r = pd.DataFrame(
+        [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"]
+    )
     f = pd.DataFrame([(4, 5)], columns=["source", "target"], index=[6])
 
     return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
