@@ -896,31 +896,47 @@ class TemporalRandomWalk(GraphWalk):
             return None
 
     def _walk(self, node, length, bidirectional, initial_edge_bias, walk_bias, np_rs):
-        def step(n, t, is_forward, bias_type=walk_bias):
-            return self._step(
-                n, time=t, is_forward=is_forward, bias_type=bias_type, np_rs=np_rs
+        def step(t, is_forward, is_first=False):
+            n = walk[-1] if is_forward else walk[0]
+            bias = initial_edge_bias if is_first else walk_bias
+            result = self._step(
+                n, time=t, is_forward=is_forward, bias_type=bias, np_rs=np_rs
             )
 
-        # sample 1 edge to obtain starting time - any biases are applied as though we are
-        # looking backwards in time.
-        forward = step(node, None, is_forward=False, bias_type=initial_edge_bias)
-        if forward is None:
-            return [node]
-        backward = node, forward[1]
+            if result is None:
+                return None
 
-        walk = deque()
+            next_node, next_time = result
+            # the first step treats times as backwards, but still appends as if forward
+            if is_forward or is_first:
+                walk.append(next_node)
+            else:
+                walk.appendleft(next_node)
 
-        # take steps until walk is of maximum length or reached dead ends
-        while len(walk) < length and not (forward is None and backward is None):
-            if forward is not None:
-                n, t = forward
-                walk.append(n)
-                forward = step(n, t, is_forward=True)
-                if len(walk) >= length:
-                    break
-            if backward is not None:
-                n, t = backward
-                walk.appendleft(n)
-                backward = step(n, t, is_forward=False) if bidirectional else None
+            return next_time
+
+        walk = deque([node])
+        forward_time = None
+        backward_time = None
+
+        while len(walk) < length:
+            if len(walk) == 1:
+                # initial edge selection
+                forward_time = step(None, is_forward=False, is_first=True)
+                if bidirectional:
+                    backward_time = forward_time
+
+            if forward_time is not None:
+                forward_time = step(forward_time, is_forward=True)
+
+            if len(walk) == length:
+                break
+
+            if backward_time is not None:
+                backward_time = step(backward_time, is_forward=False)
+
+            if backward_time is None and forward_time is None:
+                # no eligible neighbours
+                break
 
         return list(walk)
