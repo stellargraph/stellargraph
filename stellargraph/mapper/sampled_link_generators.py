@@ -28,6 +28,7 @@ import itertools as it
 import operator
 import collections
 import abc
+import threading
 import warnings
 from functools import reduce
 from tensorflow import keras
@@ -58,7 +59,7 @@ class BatchedLinkGenerator(abc.ABC):
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
-            self.schema = G.create_graph_schema(create_type_maps=True)
+            self.schema = G.create_graph_schema()
         elif isinstance(schema, GraphSchema):
             self.schema = schema
         else:
@@ -71,7 +72,7 @@ class BatchedLinkGenerator(abc.ABC):
         self.sampler = None
 
     @abc.abstractmethod
-    def sample_features(self, head_links):
+    def sample_features(self, head_links, batch_num):
         pass
 
     def flow(self, link_ids, targets=None, shuffle=False):
@@ -214,10 +215,40 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         self.head_node_types = self.schema.node_types * 2
 
-        # The sampler used to generate random samples of neighbours
-        self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
+        self._graph = G
+        self._seed = seed
+        self.random = random.Random(seed)
+        self._samplers = dict()
+        self._lock = threading.Lock()
 
-    def sample_features(self, head_links):
+    def _sampler(self, batch_num):
+        """
+        Get the sampler for a particular batch number. Each batch number has an associated sampler
+        with its own random state, so that batches being fetched in parallel do not interfere with
+        each other's random states. The seed for each sampler is a combination of the Sequence
+        object's seed and the batch number. For its intended use in a Keras/TF workflow, if there
+        are N batches in an epoch, there will be N samplers created, each corresponding to a
+        particular ``batch_num``.
+
+        Args:
+            batch_num (int): Batch number
+
+        Returns:
+            SampledBreadthFirstWalk object
+        """
+        self._lock.acquire()
+        try:
+            return self._samplers[batch_num]
+        except KeyError:
+            seed = self._seed + batch_num if self._seed is not None else None
+            self._samplers[batch_num] = SampledBreadthFirstWalk(
+                self._graph, graph_schema=self.schema, seed=seed
+            )
+            return self._samplers[batch_num]
+        finally:
+            self._lock.release()
+
+    def sample_features(self, head_links, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
         sampled nodes, and return these as a list of feature arrays for the GraphSAGE
@@ -225,7 +256,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         Args:
             head_links: An iterable of edges to perform sampling for.
-            sampling_schema: The sampling schema for the model
+            batch_num (int): Batch number
 
         Returns:
             A list of the same length as ``num_samples`` of collected features from
@@ -254,7 +285,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         # of 2 nodes, so we are extracting 2 head nodes per edge
         batch_feats = []
         for hns in zip(*head_links):
-            node_samples = self.sampler.run(nodes=hns, n=1, n_size=self.num_samples)
+            node_samples = self._sampler(batch_num).run(
+                nodes=hns, n=1, n_size=self.num_samples
+            )
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
 
@@ -368,7 +401,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
         return batch_feats
 
-    def sample_features(self, head_links):
+    def sample_features(self, head_links, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
         sampled nodes, and return these as a list of feature arrays for the GraphSAGE
@@ -376,7 +409,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
         Args:
             head_links (list): An iterable of edges to perform sampling for.
-            sampling_schema (dict): The sampling schema for the model
+            batch_num (int): Batch number
 
         Returns:
             A list of the same length as `num_samples` of collected features from
@@ -452,13 +485,14 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         self.name = name
 
-    def sample_features(self, head_links):
+    def sample_features(self, head_links, batch_num):
         """
         Sample content features of the target nodes and the ids of the context nodes
         and return these as a list of feature arrays for the attri2vec algorithm.
 
         Args:
             head_links: An iterable of edges to perform sampling for.
+            batch_num (int): Batch number
 
         Returns:
             A list of feature arrays, with each element being the feature of a
@@ -468,7 +502,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         target_ids = [head_link[0] for head_link in head_links]
         context_ids = [head_link[1] for head_link in head_links]
         target_feats = self.graph.node_features(target_ids)
-        context_feats = self.graph.get_index_for_nodes(context_ids)
+        context_feats = self.graph._get_index_for_nodes(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 
         return batch_feats

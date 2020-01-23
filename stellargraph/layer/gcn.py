@@ -14,11 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
-from ..mapper import FullBatchNodeGenerator
+from ..mapper import FullBatchGenerator
 from .misc import SqueezedSparseConversion
 from .preprocessing_layer import GraphPreProcessingLayer
 
@@ -233,16 +234,30 @@ class GCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
-    pre-processing the generator object should be instantiated as follows::
+    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
+    or the :class:`FullBatchLinkGenerator` class for link inference.
 
-        generator = FullBatchNodeGenerator(G, method="gcn")
+    To have the appropriate pre-processing the generator object should be instanciated
+    with the `method='gcn'` argument.
 
     Note that currently the GCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
 
     For more details, please see the GCN demo notebook:
     demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
+
+    Example:
+        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        object ``G``::
+
+            generator = FullBatchNodeGenerator(G, method="gcn")
+            gcn = GCN(
+                    layer_sizes=[32, 4],
+                    activations=["elu","softmax"],
+                    generator=generator,
+                    dropout=0.5
+                )
+            x_inp, predictions = gcn.build()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -256,19 +271,6 @@ class GCN:
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
-
-    Examples:
-        Creating a GCN node classification model from an existing :class:`StellarGraph`
-        object ``G``::
-
-            generator = FullBatchNodeGenerator(G, method="gcn")
-            gcn = GCN(
-                    layer_sizes=[32, 4],
-                    activations=["elu","softmax"],
-                    generator=generator,
-                    dropout=0.5
-                )
-            x_inp, predictions = gcn.node_model()
 
     Args:
         layer_sizes (list of int): Output sizes of GCN layers in the stack.
@@ -284,24 +286,27 @@ class GCN:
     def __init__(
         self, layer_sizes, generator, bias=True, dropout=0.0, activations=None, **kwargs
     ):
-        if not isinstance(generator, FullBatchNodeGenerator):
-            raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
+        if not isinstance(generator, FullBatchGenerator):
+            raise TypeError(
+                "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+            )
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.generator = generator
-        self.support = 1
+
+        # Copy required information from generator
         self.method = generator.method
+        self.multiplicity = generator.multiplicity
+        self.n_nodes = generator.features.shape[0]
+        self.n_features = generator.features.shape[1]
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
         if self.method == "none":
-            self.graph_norm_layer = GraphPreProcessingLayer(
-                num_of_nodes=self.generator.Aadj.shape[0]
-            )
+            self.graph_norm_layer = GraphPreProcessingLayer(num_of_nodes=self.n_nodes)
 
         # Activation function for each layer
         if activations is None:
@@ -406,21 +411,26 @@ class GCN:
 
         return h_layer
 
-    def node_model(self):
+    def build(self, multiplicity=None):
         """
-        Builds a GCN model for node prediction
+        Builds a GCN model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
-            and `x_out` is a Keras tensor for the GCN model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
+            input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
         """
-        # Placeholder for node features
-        N_nodes = self.generator.features.shape[0]
-        N_feat = self.generator.features.shape[1]
+        # Inputs for features
+        x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
 
-        # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, N_nodes, N_feat))
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        # If not specified use multiplicity from instanciation
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        # Indices to gather for model output
+        if multiplicity == 1:
+            out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        else:
+            out_indices_t = Input(batch_shape=(1, None, multiplicity), dtype="int32")
 
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
@@ -431,7 +441,7 @@ class GCN:
 
         else:
             # Placeholders for the dense adjacency matrix
-            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
+            A_m = Input(batch_shape=(1, self.n_nodes, self.n_nodes))
             A_placeholders = [A_m]
 
         # TODO: Support multiple matrices
@@ -446,3 +456,17 @@ class GCN:
             self.x_out_flat = x_out
 
         return x_inp, x_out
+
+    def link_model(self):
+        if self.multiplicity != 2:
+            warnings.warn(
+                "Link model requested but a generator not supporting links was supplied."
+            )
+        return self.build(multiplicity=2)
+
+    def node_model(self):
+        if self.multiplicity != 1:
+            warnings.warn(
+                "Node model requested but a generator not supporting nodes was supplied."
+            )
+        return self.build(multiplicity=1)

@@ -8,10 +8,11 @@
 
 - Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 
-- Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
+- *Experimental*: Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
 
 **Implemented enhancements:**
 - Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now support additional parameters to include edge weights in the results or filter by a set of edge types. [\#646](https://github.com/stellargraph/stellargraph/pull/646)
+- Unsupervised GraphSAGE has now been updated and tested for reproducibility. Ensuring all seeds are set, running the same pipeline should give reproducible embeddings. [\#620](https://github.com/stellargraph/stellargraph/pull/620)
 
 **Refactoring:**
 - Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
@@ -31,8 +32,14 @@ Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by p
    - `get_feature_for_nodes` is now `node_features`
    - `type_for_node` is now `node_type`
 
+- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now return a list of neighbours instead of a set. This addresses [\#653](https://github.com/stellargraph/stellargraph/issues/653). This means multi-edges are no longer collapsed into one in the return value. There will be an implicit change in behaviour for explorer classes used for algorithms like GraphSAGE, Node2Vec, since a neighbour connected via multiple edges will now be more likely to be sampled. If this doesn't sound like the desired behaviour, consider pruning the graph of multi-edges before running the algorithm.
+
 **Fixed bugs:**
 
+## [0.8.4](https://github.com/stellargraph/stellargraph/tree/v0.8.4)
+
+**Fixed bugs:**
+- Fix `DirectedGraphSAGENodeGenerator` always hitting `TypeError` exception. [#695](https://github.com/stellargraph/stellargraph/issues/695)
 
 ## [0.8.3](https://github.com/stellargraph/stellargraph/tree/v0.8.3)
 

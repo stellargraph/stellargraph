@@ -69,7 +69,7 @@ def train(
     )
 
     # Expose the input and output sockets of the model:
-    x_inp, x_out = gcnModel.node_model()
+    x_inp, x_out = gcnModel.build()
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=x_out)

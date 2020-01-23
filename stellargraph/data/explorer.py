@@ -54,7 +54,7 @@ class GraphWalk(object):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         if not graph_schema:
-            self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
+            self.graph_schema = self.graph.create_graph_schema()
         else:
             self.graph_schema = graph_schema
 
@@ -68,7 +68,7 @@ class GraphWalk(object):
         adj = getattr(self, "adj_types", None)
         if not adj:
             # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-            self.adj_types = adj = self.graph.adjacency_types(self.graph_schema)
+            self.adj_types = adj = self.graph._adjacency_types(self.graph_schema)
         return adj
 
     def _check_seed(self, seed):
@@ -99,7 +99,7 @@ class GraphWalk(object):
     def neighbors(self, node):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return list(self.graph.neighbors(node))
+        return self.graph.neighbors(node)
 
     def run(self, **kwargs):
         """
@@ -293,7 +293,7 @@ class BiasedRandomWalk(GraphWalk):
                 for neighbor in self.graph.neighbors(node):
 
                     wts = set()
-                    for weight in self.graph.edge_weights(node, neighbor):
+                    for weight in self.graph._edge_weights(node, neighbor):
                         if weight is None or np.isnan(weight) or weight == np.inf:
                             self._raise_error(
                                 "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
@@ -342,7 +342,7 @@ class BiasedRandomWalk(GraphWalk):
 
                     if weighted:
                         # TODO Encapsulate edge weights
-                        weight_cn = self.graph.edge_weights(current_node, nn)[0]
+                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
                     else:
                         weight_cn = 1.0
 
@@ -554,9 +554,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = [None] * n_size[cur_depth]
                     else:
                         # sample with replacement
-                        neighbours = [
-                            rs.choice(neighbours) for _ in range(n_size[cur_depth])
-                        ]
+                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
 
                     # add them to the back of the queue
                     q.extend((sampled_node, depth) for sampled_node in neighbours)
@@ -606,7 +604,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph_schema.get_node_type(node)
+                node_type = self.graph.node_type(node)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
@@ -632,12 +630,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             # In case of no neighbours of the current node for et, neigh_et == [None],
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
-                                samples = [
-                                    rs.choice(neigh_et)
-                                    for _ in range(n_size[depth - 1])
-                                ]
-                                # Choices limits us to Python 3.6+
-                                # samples = random.choices(neigh_et, k=n_size[depth - 1])
+                                samples = rs.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 samples = [None] * n_size[depth - 1]
 
@@ -777,7 +770,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             # Sampling from empty neighbourhood
             return [None] * size
         # Sample with replacement
-        return [rs.choice(neighbours) for _ in range(size)]
+        return rs.choices(neighbours, k=size)
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """

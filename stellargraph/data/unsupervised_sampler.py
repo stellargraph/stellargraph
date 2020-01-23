@@ -18,6 +18,7 @@
 __all__ = ["UnsupervisedSampler"]
 
 
+import numpy as np
 import random
 
 from stellargraph.core.utils import is_real_iterable
@@ -103,14 +104,15 @@ class UnsupervisedSampler:
 
         # Setup an interal random state with the given seed
         self.random = random.Random(seed)
+        self.np_random = np.random.RandomState(seed)
 
-    def generator(self, batch_size):
-
+    def run(self, batch_size):
         """
-        This method yields a batch_size number of positive and negative samples from the graph.
-        This method generates one walk at a time of a given length from each root node and returns
-        the positive pairs from the walks and the same number of negative pairs from a global
-        node sampling distribution.
+        This method returns a batch_size number of positive and negative samples from the graph.
+        A random walk is generated from each root node, which are transformed into positive context
+        pairs, and the same number of negative pairs are generated from a global node sampling
+        distribution. The resulting list of context pairs are shuffled and converted to batches of
+        size ``batch_size``.
 
         Currently the global node sampling distribution for the negative pairs is the degree
         distribution to the 3/4 power. This is the same used in node2vec
@@ -121,69 +123,50 @@ class UnsupervisedSampler:
                 This must be an even number.
 
         Returns:
-            Tuple of lists of target/context pairs and labels – 0 for a negative and 1 for a
-             positive pair: ([[target, context] ,... ], [label, ...])
+            List of batches, where each batch is a tuple of (list context pairs, list of labels)
         """
         self._check_parameter_values(batch_size)
 
-        positive_pairs = list()
-        negative_pairs = list()
-
-        sample_counter = 0
-
         all_nodes = list(self.graph.nodes())
-
         # Use the sampling distribution as per node2vec
         degrees = self.graph.node_degrees()
-        sampling_distribution = [degrees[n] ** 0.75 for n in all_nodes]
+        sampling_distribution = np.array([degrees[n] ** 0.75 for n in all_nodes])
+        sampling_distribution_norm = sampling_distribution / np.sum(
+            sampling_distribution
+        )
 
-        done = False
-        while not done:
-            self.random.shuffle(self.nodes)
-            for node in self.nodes:  # iterate over root nodes
-                # Get 1 walk at a time. For now its assumed that its a uniform random walker
-                walk = self.walker.run(
-                    nodes=[node],  # root nodes
-                    length=self.length,  # maximum length of a random walk
-                    n=1,  # number of random walks per root node
-                )
+        walks = self.walker.run(
+            nodes=self.nodes, length=self.length, n=self.number_of_walks
+        )
 
-                # (target,contect) pair sampling - GraphSAGE way
-                target = walk[0][0]
-                context_window = walk[0][1:]
-                for context in context_window:
-                    # Don't add self pairs
-                    if context == target:
-                        continue
+        # first item in each walk is the target/head node
+        targets = [walk[0] for walk in walks]
 
-                    positive_pairs.append((target, context))
-                    sample_counter += 1
+        positive_pairs = np.array(
+            [
+                (target, positive_context)
+                for target, walk in zip(targets, walks)
+                for positive_context in walk[1:]
+            ]
+        )
 
-                    # For each positive sample, add a negative sample.
-                    random_sample = self.random.choices(
-                        all_nodes, weights=sampling_distribution, k=1
-                    )
-                    negative_pairs.append((target, *random_sample))
-                    sample_counter += 1
+        negative_samples = self.np_random.choice(
+            all_nodes, size=len(positive_pairs), p=sampling_distribution_norm
+        )
+        negative_pairs = np.column_stack((positive_pairs[:, 0], negative_samples))
 
-                    # If the batch_size number of samples are accumulated, yield.
-                    if sample_counter == batch_size:
-                        all_pairs = positive_pairs + negative_pairs
-                        all_targets = [1] * len(positive_pairs) + [0] * len(
-                            negative_pairs
-                        )
+        pairs = np.concatenate((positive_pairs, negative_pairs), axis=0)
+        labels = np.repeat([1, 0], len(positive_pairs))
 
-                        positive_pairs.clear()
-                        negative_pairs.clear()
-                        sample_counter = 0
+        # shuffle indices - note this doesn't ensure an equal number of positive/negative examples in
+        # each batch, just an equal number overall
+        indices = self.np_random.permutation(len(pairs))
 
-                        edge_ids_labels = list(zip(all_pairs, all_targets))
-                        self.random.shuffle(edge_ids_labels)
-                        edge_ids, edge_labels = [
-                            [z[i] for z in edge_ids_labels] for i in (0, 1)
-                        ]
+        batch_indices = [
+            indices[i : i + batch_size] for i in range(0, len(indices), batch_size)
+        ]
 
-                        yield edge_ids, edge_labels
+        return [(pairs[i], labels[i]) for i in batch_indices]
 
     def _check_parameter_values(self, batch_size):
         """

@@ -29,9 +29,9 @@ Main requirements (all requirements are in ``setup.py``)
 
 * Python 3.6 or 3.7 (http://python.org)
 
-* Tensorflow version<1.15 (https://tensorflow.org/)
+* Tensorflow version 2.0 (https://tensorflow.org/)
 
-* NetworkX (https://networkx.github.io)
+* NetworkX version 2.3 or greater (https://networkx.github.io)
 
 * Scikit-learn (http://scikit-learn.org/)
 
@@ -54,6 +54,17 @@ To install these dependencies using ``pip``, execute the following command::
 
   pip install stellargraph[demos]
 
+The community detection demos requires `python-igraph` which is only available on some platforms. To install this in addition to the other demo requirements::
+
+  pip install stellargraph[demos,igraph]
+
+
+Install StellarGraph in Anaconda Python:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The StellarGraph library is available an [Anaconda Cloud](https://anaconda.org/stellargraph/stellargraph) and can be installed in [Anaconda Python](https://anaconda.com) using the command line `conda` tool, execute the following command::
+
+  conda install -c stellargraph stellargraph
+
 
 Install StellarGraph from Github source:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -61,7 +72,7 @@ Install a git client, for example install the XCode git client by typing::
 
   git --install
 
-First, clone the StellarGraph repository using ``git``::
+Clone the StellarGraph repository using ``git``::
 
   git clone https://github.com/stellargraph/stellargraph.git
 
