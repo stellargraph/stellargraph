@@ -415,86 +415,76 @@ def test_edges_triple():
     assert set(g.edges(triple=True)) == r | f
 
 
-def normalise_nodes(g, default_label=False):
-    def fix_data(data):
-        if default_label:
-            data.setdefault("label", "default")
-        try:
-            data["feature"] = list(data["feature"])
-        except KeyError:
-            # no feature value to be list-ified
-            pass
-        return data
-
-    return sorted((node_id, fix_data(data)) for node_id, data in g.nodes(data=True))
+def numpy_to_list(x):
+    if isinstance(x, np.ndarray):
+        return list(x)
+    if isinstance(x, dict):
+        return {numpy_to_list(k): numpy_to_list(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [numpy_to_list(v) for v in x]
+    if isinstance(x, tuple):
+        return tuple(numpy_to_list(v) for v in x)
+    return x
 
 
-def normalise_edges(g, default_label=False):
-    def fix_data(data):
-        if default_label:
-            data.setdefault("label", "default")
-
-    return sorted(
-        (min(src, dst), max(src, dst), fix_data(data))
-        for src, dst, data in g.edges(data=True)
-    )
+def normalize_edges(edges, directed):
+    if directed:
+        return {(src, tgt): data for src, tgt, data in edges}
+    return {(min(src, tgt), max(src, tgt)): data for src, tgt, data in edges}
 
 
-@pytest.mark.parametrize("in_nodes", [False, True])
-def test_to_networkx(in_nodes):
-    g, node_features = example_benchmark_graph_nx(
-        feature_size=5, features_in_nodes=in_nodes
-    )
+def assert_networkx(g_nx, expected_nodes, expected_edges, *, directed):
+    assert numpy_to_list(dict(g_nx.nodes(data=True))) == expected_nodes
 
-    sg = StellarGraph(g, node_features=node_features)
-    new_nx = sg.to_networkx()
+    computed_edges = numpy_to_list(normalize_edges(g_nx.edges(data=True), directed))
+    assert computed_edges == normalize_edges(expected_edges, directed)
 
-    new_nodes = normalise_nodes(new_nx)
-    if in_nodes:
-        g_nodes = normalise_nodes(g)
+
+@pytest.mark.parametrize("has_features", [False, True])
+def test_to_networkx(has_features):
+    if has_features:
+        a_size = 4
+        b_size = 5
+        feature_sizes = {"A": a_size, "B": b_size}
     else:
-        features = {
-            ty: {row[0]: list(row[1:]) for row in ty_features.itertuples()}
-            for ty, ty_features in node_features.items()
-        }
-        g_nodes = sorted(
-            (node_id, {**data, "feature": features[data["label"]][node_id]})
-            for node_id, data in g.nodes(data=True)
-        )
+        a_size = b_size = 0
+        feature_sizes = None
 
-    assert new_nodes == g_nodes
-    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+    g = example_hin_1(feature_sizes)
+    g_nx = g.to_networkx()
 
+    node_def = {"A": (a_size, [0, 1, 2, 3]), "B": (b_size, [4, 5, 6])}
+    expected_nodes = {
+        x: {"label": label, "feature": [x] * size}
+        for label, (size, ids) in node_def.items()
+        for x in ids
+    }
 
-def test_to_networkx_no_features():
-    g, _ = example_benchmark_graph_nx(feature_size=None)
+    edge_def = {"R": [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], "F": [(4, 5)]}
+    expected_edges = [
+        (src, tgt, {"label": label, "weight": 1.0})
+        for label, pairs in edge_def.items()
+        for src, tgt in pairs
+    ]
 
-    sg = StellarGraph(g)
-    new_nx = sg.to_networkx()
-    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
-    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+    assert_networkx(g_nx, expected_nodes, expected_edges, directed=False)
 
 
 def test_to_networkx_edge_attributes():
-    g = nx.Graph()
-    g.add_nodes_from([1, 2])
-    g.add_edge(1, 2, label="foo", weight=10.0)
-    sg = StellarGraph(g)
-    new_nx = sg.to_networkx()
+    nodes = pd.DataFrame([], index=[1, 10, 100])
+    edges = pd.DataFrame(
+        [(1, 10, 11), (10, 100, 110)], columns=["source", "target", "weight"]
+    )
+    g = StellarGraph(nodes=nodes, edges={"foo": edges})
+    g_nx = g.to_networkx()
 
-    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
-    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+    expected_nodes = {k: {"label": "default", "feature": []} for k in [1, 10, 100]}
+    expected_edges = [
+        (src, dst, {"label": "foo", "weight": src + dst})
+        for src, dst in [(1, 10), (10, 100)]
+    ]
 
-
-def test_to_networkx_default_label():
-    g = nx.Graph()
-    g.add_nodes_from([1, 2])
-    g.add_edge(1, 2)
-    sg = StellarGraph(g)
-    new_nx = sg.to_networkx()
-
-    assert normalise_nodes(new_nx) == normalise_nodes(g, default_label=True)
-    assert normalise_edges(new_nx) == normalise_edges(g, default_label=True)
+    assert_networkx(g_nx, expected_nodes, expected_edges, directed=False)
 
 
 def test_networkx_attribute_message():
