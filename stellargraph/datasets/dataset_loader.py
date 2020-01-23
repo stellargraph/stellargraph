@@ -183,7 +183,8 @@ class DatasetLoader:
                 self._create_base_directory()
                 move(temporary_filename, self._resolve_path(self.expected_files[0]))
             else:
-                # archive, so it needs to be unpacked into the right directory
+                # an archive to unpack.  The folder is created by unpack_archive - therefore the
+                # directory_name for this dataset must match the directory name inside the archive file
                 unpack_archive(
                     temporary_filename,
                     self._all_datasets_directory(),
