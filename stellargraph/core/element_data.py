@@ -284,7 +284,7 @@ class EdgeData(ElementData):
 
         for key, value in shared.items():
             require_dataframe_has_columns(
-                f"features[{key!r}].shared", value, [SOURCE, TARGET, WEIGHT]
+                f"features[{key!r}]", value, [SOURCE, TARGET, WEIGHT]
             )
 
         self._nodes = node_data
