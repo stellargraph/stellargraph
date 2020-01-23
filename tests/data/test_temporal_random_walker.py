@@ -81,7 +81,7 @@ def create_test_temporal_graph():
 
 
 class TestTemporalRandomWalk(object):
-    @pytest.mark.skip(reason="times aren't checked at the moment")
+    @pytest.mark.skip(reason="times aren't validated at the moment")
     def test_time_on_edges(self):
 
         # all positive walks
