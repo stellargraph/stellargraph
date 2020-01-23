@@ -20,6 +20,8 @@ import os
 from stellargraph.datasets import Cora, CiteSeer
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
+from urllib.request import urlretrieve
+from unittest.mock import patch
 
 
 # use parametrize to automatically test each of the datasets that (directly) derive from DatasetLoader
@@ -60,3 +62,16 @@ def test_environment_path_override(monkeypatch) -> None:
     assert dataset.base_directory == os.path.join(
         os.path.expanduser(new_datasets_path), dataset.directory_name
     )
+
+
+def test_download_cache() -> None:
+    with patch("stellargraph.datasets.dataset_loader.urlretrieve", wraps=urlretrieve) as mock_urlretrieve:
+        # forcing a re-download should call urlretrieve
+        Cora().download(ignore_cache=True)
+        assert mock_urlretrieve.called
+
+        mock_urlretrieve.reset_mock()
+
+        # if already downloaded and in the cache, then another download should skip urlretrieve
+        Cora().download()
+        assert not mock_urlretrieve.called
