@@ -738,3 +738,32 @@ def test_info_heterogeneous():
 
     assert " A-R->B: [5]"
     assert " B-F->B: [1]"
+
+
+def test_adjacency_types_undirected():
+    g = example_hin_1(is_directed=False)
+    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+
+    arb_bra = {
+        0: [4],
+        1: [4, 5],
+        2: [4],
+        3: [5],
+        4: [0, 1, 2],
+        5: [1, 3],
+    }
+    assert adj == {
+        ("A", "R", "B"): arb_bra,
+        ("B", "R", "A"): arb_bra,
+        ("B", "F", "B"): {4: [5], 5: [4]},
+    }
+
+def test_adjacency_types_directed():
+    g = example_hin_1(is_directed=True)
+    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+
+    assert adj == {
+        ("A", "R", "B"): {1: [4, 5], 2: [4]},
+        ("B", "R", "A"): {4: [0], 5: [3]},
+        ("B", "F", "B"): {4: [5]},
+    }

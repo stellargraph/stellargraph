@@ -21,7 +21,7 @@ a machine-learning ready graph used by models.
 __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema", "NeighbourWithWeight"]
 
 from typing import Iterable, Any, Mapping, List, Optional, Set
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 import pandas as pd
 import numpy as np
 import scipy.sparse as sps
@@ -904,7 +904,34 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.adjacency_types(graph_schema)
 
-        raise NotImplementedError()
+        source_types, rel_types, target_types = self._edge_type_triples(slice(None))
+
+        triples = defaultdict(lambda: defaultdict(lambda: []))
+
+        iterator = zip(
+            source_types,
+            rel_types,
+            target_types,
+            self._edges.sources,
+            self._edges.targets,
+        )
+        for src_type, rel_type, tgt_type, src, tgt in iterator:
+            triple = EdgeType(src_type, rel_type, tgt_type)
+            triple_dict = triples[triple]
+            triple_dict[src].append(tgt)
+
+            if not self.is_directed() and src != tgt:
+                # non-self loop in an undirected graph, so we should add the other direction too
+                triple_dict[tgt].append(src)
+
+                other_triple = EdgeType(tgt_type, rel_type, src_type)
+                if other_triple != triple:
+                    # the edge type differs too, so we need to add its other direction
+                    other_triple_dict = triples[other_triple]
+                    other_triple_dict[src].append(tgt)
+                    other_triple_dict[tgt].append(src)
+
+        return triples
 
     def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
         """
