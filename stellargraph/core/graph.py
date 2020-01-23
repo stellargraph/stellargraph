@@ -357,14 +357,14 @@ class StellarGraph:
         self, other_node_id, ilocs, include_edge_weight, filter_edge_types
     ):
         if include_edge_weight:
-            weights = self._edges.each_weight[ilocs]
+            weights = self._edges.weights[ilocs]
         else:
             weights = None
 
         if filter_edge_types is not None:
             filter_edge_type_ilocs = self._edges.types.to_iloc(filter_edge_types)
             edge_type_ilocs = self._edges.type_ilocs[ilocs]
-            correct_type = edge_type_ilocs.isin(filter_edge_type_ilocs)
+            correct_type = np.isin(edge_type_ilocs, filter_edge_type_ilocs)
 
             other_node_id = other_node_id[correct_type]
             if weights is not None:

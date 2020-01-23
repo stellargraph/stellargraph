@@ -368,7 +368,7 @@ class EdgeData(ElementData):
 
 
         Returns:
-            A tuple DataFrame containing all the information the edges entering the node.
+            The integer locations of the edges for the given node_id.
         """
 
         if ins and outs:
