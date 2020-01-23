@@ -644,8 +644,7 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.node_degrees()
 
-        degrees = self._edges.degrees()
-        return dict(zip(self._nodes.ids.pandas_index, degrees))
+        return self._edges.degrees()
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
         """

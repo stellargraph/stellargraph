@@ -307,7 +307,19 @@ class EdgeData(ElementData):
         self._edges_dict = _numpyise(undirected)
         self._empty_ids = self.sources[0:0]
 
-    def degrees(self, ins=True, outs=True):
+    def _adj_lookup(self, *, ins, outs):
+        if ins and outs:
+            return self._edges_dict
+        if ins:
+            return self._edges_in_dict
+        if outs:
+            return self._edges_out_dict
+
+        raise ValueError(
+            "expected at least one of 'ins' or 'outs' to be True, found neither"
+        )
+
+    def degrees(self, *, ins=True, outs=True):
         """
         Compute the degrees of every non-isolated node.
 
@@ -319,21 +331,8 @@ class EdgeData(ElementData):
             The in-, out- or total (summed) degree of all non-isolated nodes as a numpy array (if
             ``ret`` is the return value, ``ret[i]`` is the degree of the node with iloc ``i``)
         """
-        if not ins and not outs:
-            raise ValueError("expected at least one of `ins` and `outs` to be True")
-
-        degrees = 0
-        if ins:
-            degrees += np.bincount(
-                self._nodes.ids.to_iloc(self.targets), minlength=len(self._nodes)
-            )
-        if outs:
-            degrees += np.bincount(
-                self._nodes.ids.to_iloc(self.sources), minlength=len(self._nodes)
-            )
-
-        assert len(degrees) == len(self._nodes)
-        return degrees
+        adj = self._adj_lookup(ins=ins, outs=outs)
+        return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
     @property
     def sources(self) -> np.ndarray:
@@ -371,15 +370,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        if ins and outs:
-            lookup = self._edges_dict
-        elif ins:
-            lookup = self._edges_in_dict
-        elif outs:
-            lookup = self._edges_out_dict
-        else:
-            raise ValueError(
-                "expected at least one of 'ins' or 'outs' to be True, found neither"
-            )
-
-        return lookup.get(node_id, self._empty_ids)
+        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ids)
