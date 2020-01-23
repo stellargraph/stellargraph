@@ -345,6 +345,18 @@ def test_feature_conversion_from_iterator():
     aa = gs.node_features([1, 2, None, None])
     assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
+    # Test adjacency matrix
+    adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]])
+
+    A = gs.to_adjacency_matrix()
+    assert A.dtype == "float32"
+    assert np.allclose(A.toarray(), adj_expected)
+
+    # Test adjacency matrix with node arguement
+    A = gs.to_adjacency_matrix(nodes=[3, 2])
+    assert A.dtype == "float32"
+    assert np.allclose(A.toarray(), adj_expected[[2, 1]][:, [2, 1]])
+
     g = example_hin_1_nx()
     nf = {
         t: [
