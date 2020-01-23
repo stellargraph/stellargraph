@@ -231,7 +231,7 @@ class NodeData(ElementData):
 
         self._features = features
 
-    def features(self, type_name, id_ilocs, out=None) -> np.ndarray:
+    def features(self, type_name, id_ilocs) -> np.ndarray:
         """
         Return features for a set of IDs within a given type.
 
