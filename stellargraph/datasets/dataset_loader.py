@@ -116,7 +116,10 @@ class DatasetLoader:
     @staticmethod
     def _all_datasets_directory() -> str:
         """Return the path of the base directory which contains subdirectories for each dataset."""
-        return os.getenv("STELLARGRAPH_DATASETS_PATH", os.path.expanduser(os.path.join("~", "stellargraph-datasets"))
+        return os.getenv(
+            "STELLARGRAPH_DATASETS_PATH",
+            os.path.expanduser(os.path.join("~", "stellargraph-datasets")),
+        )
 
     def _resolve_path(self, filename: str) -> str:
         """Convert dataset relative file names to their full path on filesystem"""
