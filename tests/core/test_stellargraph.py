@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 import random
 from stellargraph.core.graph import *
+from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, allocation_benchmark
 from ..test_utils.graphs import (
     example_graph_1_nx,
@@ -27,6 +28,11 @@ from ..test_utils.graphs import (
     example_hin_1_nx,
     example_hin_1,
 )
+
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # FIXME (#535): Consider using graph fixtures
@@ -734,3 +740,13 @@ def test_out_nodes_unweighted_hom():
     assert_items_equal(
         graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
     )
+
+
+def test_stellargraph_experimental():
+    nodes = pd.DataFrame([], index=[0])
+    edges = pd.DataFrame([], columns=["source", "target"])
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"StellarGraph\(nodes=..., edges=...\)"
+    ):
+        StellarGraph(nodes=nodes, edges=edges)

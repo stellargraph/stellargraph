@@ -25,10 +25,11 @@ from collections import namedtuple
 import pandas as pd
 import numpy as np
 import scipy.sparse as sps
+import warnings
 
 from .. import globalvar
 from .schema import GraphSchema, EdgeType
-from .experimental import experimental
+from .experimental import experimental, ExperimentalWarning
 from .element_data import NodeData, EdgeData, ExternalIdIndex
 from .utils import is_real_iterable
 from .validation import comma_sep
@@ -166,6 +167,12 @@ class StellarGraph:
                 dtype,
             )
         else:
+            warnings.warn(
+                "StellarGraph(nodes=..., edges=...) is experimental: it has not been fully "
+                "validated. It may be difficult to use and may have major changes at any time.",
+                ExperimentalWarning,
+            )
+
             self._graph = None
 
             if nodes is None:

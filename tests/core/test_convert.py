@@ -33,7 +33,9 @@ def test_columnar_convert_type_default():
 def test_columnar_convert_selected_columns():
     df = _EMPTY_DF.assign(before="abc", same=10)
 
-    converter = ColumnarConverter("some_name", "foo", {}, {"before": "after", "same": "same"}, False)
+    converter = ColumnarConverter(
+        "some_name", "foo", {}, {"before": "after", "same": "same"}, False
+    )
     shared, features = converter.convert({"x": df, "y": df})
 
     assert "x" in shared
@@ -44,10 +46,15 @@ def test_columnar_convert_selected_columns():
         assert all(df["after"] == "abc")
         assert all(df["same"] == 10)
 
-def test_columnar_convert_selected_columns_missing():
-    converter = ColumnarConverter("some_name", "foo", {}, {"before": "after", "same": "same"}, False)
 
-    with pytest.raises(ValueError, match=r"some_name\['x'\]: expected 'before', 'same' columns, found:"):
+def test_columnar_convert_selected_columns_missing():
+    converter = ColumnarConverter(
+        "some_name", "foo", {}, {"before": "after", "same": "same"}, False
+    )
+
+    with pytest.raises(
+        ValueError, match=r"some_name\['x'\]: expected 'before', 'same' columns, found:"
+    ):
         converter.convert({"x": _EMPTY_DF})
 
 
@@ -85,17 +92,24 @@ def test_columnar_convert_features():
     assert all(shared["foo"]["x"] == 123)
     assert np.array_equal(features["foo"], [[1, 100], [2, 200]])
 
+
 def test_columnar_convert_disallow_features():
     converter = ColumnarConverter("some_name", "foo", {}, {}, False)
     df = _EMPTY_DF.assign(a=1)
     with pytest.raises(ValueError, match="expected zero feature columns, found 'a'"):
         shared, features = converter.convert(df)
 
+
 def test_columnar_convert_invalid_input():
     converter = ColumnarConverter("some_name", "foo", {}, {}, False)
 
-    with pytest.raises(TypeError, match="some_name: expected dict, found <class 'int'>"):
+    with pytest.raises(
+        TypeError, match="some_name: expected dict, found <class 'int'>"
+    ):
         converter.convert(1)
 
-    with pytest.raises(TypeError, match=r"some_name\['x'\]: expected pandas DataFrame, found <class 'int'>"):
+    with pytest.raises(
+        TypeError,
+        match=r"some_name\['x'\]: expected pandas DataFrame, found <class 'int'>",
+    ):
         converter.convert({"x": 1})
