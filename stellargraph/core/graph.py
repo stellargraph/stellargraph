@@ -28,8 +28,10 @@ import scipy.sparse as sps
 import warnings
 
 from .. import globalvar
+from ..globalvar import SOURCE, TARGET, WEIGHT
 from .schema import GraphSchema, EdgeType
 from .experimental import experimental, ExperimentalWarning
+from .columns import Columns
 from .element_data import NodeData, EdgeData, ExternalIdIndex
 from .utils import is_real_iterable
 from .validation import comma_sep
@@ -282,15 +284,16 @@ class StellarGraph:
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
         if triple:
-            return list(
-                zip(
-                    self._edges.sources,
-                    self._edges.targets,
-                    self._edges.type_of_iloc(slice(None)),
-                )
+            ty = "ty"
+            data = self._edges.pairs.with_columns(
+                {ty: self._edges.type_of_iloc(slice(None))}
             )
+            columns = (SOURCE, TARGET, ty)
+        else:
+            data = self._edges.pairs
+            columns = (SOURCE, TARGET)
 
-        return list(zip(self._edges.sources, self._edges.targets))
+        return list(data.iterrows(columns))
 
     def has_node(self, node: Any) -> bool:
         """
@@ -311,27 +314,25 @@ class StellarGraph:
     def _transform_edges(
         self, other_node_id, ilocs, include_edge_weight, filter_edge_types
     ):
+        id_col = "node_id"
+        columns = Columns({id_col: other_node_id})
         if include_edge_weight:
-            weights = self._edges.weights[ilocs]
-        else:
-            weights = None
+            columns = columns.add_columns({WEIGHT: self._edges.weights[ilocs]})
 
         if filter_edge_types is not None:
             filter_edge_type_ilocs = self._edges.types.to_iloc(filter_edge_types)
             edge_type_ilocs = self._edges.type_ilocs[ilocs]
             correct_type = np.isin(edge_type_ilocs, filter_edge_type_ilocs)
 
-            other_node_id = other_node_id[correct_type]
-            if weights is not None:
-                weights = weights[correct_type]
+            columns = columns.select_rows(correct_type)
 
-        if weights is not None:
+        if include_edge_weight:
             return [
                 NeighbourWithWeight(node, weight)
-                for node, weight in zip(other_node_id, weights)
+                for node, weight in columns.iter_rows(id_col, WEIGHT)
             ]
 
-        return other_node_id
+        return columns.column(id_col)
 
     def neighbors(
         self, node: Any, include_edge_weight=False, edge_types=None
@@ -356,8 +357,7 @@ class StellarGraph:
             )
 
         ilocs = self._edges.edge_ilocs(node, ins=True, outs=True)
-        source = self._edges.sources[ilocs]
-        target = self._edges.targets[ilocs]
+        source, target = self._edges.pairs.select_rows(ilocs).columns(SOURCE, TARGET)
         other_node_id = np.where(source == node, target, source)
         return self._transform_edges(
             other_node_id, ilocs, include_edge_weight, edge_types
@@ -612,12 +612,15 @@ class StellarGraph:
         else:
             selector = self._edges.sources.isin(nodes) & self._edges.targets.isin(nodes)
 
-        source_ilocs = self._nodes.ids.to_iloc(self._edges.sources[selector])
+        sources, targets = self._edges.pairs.select_rows(selector).columns(
+            SOURCE, TARGET
+        )
+        source_ilocs = self._nodes.ids.to_iloc(sources)
         source_types = self._nodes.type_of_iloc(source_ilocs)
 
         rel_types = self._edges.type_of_iloc(selector)
 
-        target_ilocs = self._nodes.ids.to_iloc(self._edges.targets[selector])
+        target_ilocs = self._nodes.ids.to_iloc(targets)
         target_types = self._nodes.type_of_iloc(target_ilocs)
 
         for n1, rel, n2 in zip(source_types, rel_types, target_types):
@@ -679,12 +682,13 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        weights = self._edges.weights[selector]
+        columns = self._edges.pairs_weighted.select_rows(selector)
+        sources, targets, weights = columns.columns(SOURCE, TARGET, WEIGHT)
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
-        src_idx = index.to_iloc(self._edges.sources[selector])
-        tgt_idx = index.to_iloc(self._edges.targets[selector])
+        src_idx = index.to_iloc(sources)
+        tgt_idx = index.to_iloc(targets)
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))

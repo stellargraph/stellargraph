@@ -20,6 +20,7 @@ import pandas as pd
 import scipy.sparse as sps
 
 from ..globalvar import SOURCE, TARGET, WEIGHT
+from .columns import Columns
 from .validation import require_dataframe_has_columns, comma_sep
 
 
@@ -135,9 +136,9 @@ class ElementData:
 
         all_columns = pd.concat(type_dfs)
         self._id_index = ExternalIdIndex(all_columns.index)
-        self._columns = {
-            name: data.to_numpy() for name, data in all_columns.iteritems()
-        }
+        self._columns = Columns(
+            {name: data.to_numpy() for name, data in all_columns.iteritems()}
+        )
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
@@ -152,7 +153,7 @@ class ElementData:
         return self._id_index.contains_external(item)
 
     def _column(self, column) -> np.ndarray:
-        return self._columns[column]
+        return self._columns.column(column)
 
     @property
     def ids(self) -> ExternalIdIndex:
@@ -294,7 +295,7 @@ class EdgeData(ElementData):
         out_dict = {}
         undirected = {}
 
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
+        for i, (src, tgt) in enumerate(self.pairs.iter_rows(SOURCE, TARGET)):
             in_dict.setdefault(tgt, []).append(i)
             out_dict.setdefault(src, []).append(i)
 
@@ -305,7 +306,7 @@ class EdgeData(ElementData):
         self._edges_in_dict = _numpyise(in_dict)
         self._edges_out_dict = _numpyise(out_dict)
         self._edges_dict = _numpyise(undirected)
-        self._empty_ids = self.sources[0:0]
+        self._empty_ids = self._columns.column(SOURCE)[0:0]
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
@@ -336,27 +337,31 @@ class EdgeData(ElementData):
 
     @property
     def sources(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the source node ID for each edge.
-        """
         return self._column(SOURCE)
 
     @property
     def targets(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the target node ID for each edge.
-        """
         return self._column(TARGET)
 
     @property
     def weights(self) -> np.ndarray:
+        return self._column(WEIGHT)
+
+    @property
+    def pairs(self) -> Columns:
         """
         Returns:
-            An numpy array containing the weight for each edge.
+            A Columns containing the source and target for each edge
         """
-        return self._column(WEIGHT)
+        return self._columns.select_columns(SOURCE, TARGET)
+
+    @property
+    def pairs_weighted(self) -> Columns:
+        """
+        Returns:
+            A Columns containing the source, target and weight for each edge
+        """
+        return self._columns.select_columns(SOURCE, TARGET, WEIGHT)
 
     def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
         """
