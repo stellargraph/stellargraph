@@ -602,7 +602,7 @@ class StellarGraph:
             )
 
         if self._graph is not None:
-            return self._graph.create_graph_schema(create_type_maps, nodes)
+            return self._graph.create_graph_schema(nodes)
 
         graph_schema = {nt: set() for nt in self.node_types}
         edge_types = set()
