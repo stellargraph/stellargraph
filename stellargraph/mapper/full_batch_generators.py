@@ -18,7 +18,12 @@
 Mappers to provide input data for the graph models in layers.
 
 """
-__all__ = ["FullBatchNodeGenerator", "RelationalFullBatchNodeGenerator"]
+__all__ = [
+    "FullBatchGenerator",
+    "FullBatchNodeGenerator",
+    "FullBatchLinkGenerator",
+    "RelationalFullBatchNodeGenerator",
+]
 
 import warnings
 import operator
@@ -32,8 +37,8 @@ from functools import reduce
 from tensorflow.keras.utils import Sequence
 
 from . import (
-    FullBatchNodeSequence,
-    SparseFullBatchNodeSequence,
+    FullBatchSequence,
+    SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
 )
 from ..core.experimental import experimental
@@ -41,72 +46,11 @@ from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
+from abc import ABC
 
-class FullBatchNodeGenerator:
-    """
-    A data generator for use with full-batch models on homogeneous graphs,
-    e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
-    Use the :meth:`flow` method supplying the nodes and (optionally) targets
-    to get an object that can be used as a Keras data generator.
 
-    This generator will supply the features array and the adjacency matrix to a
-    full-batch Keras graph ML model.  There is a choice to supply either a sparse
-    adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
-    argument.
-
-    For these algorithms the adjacency matrix requires pre-processing and the
-    'method' option should be specified with the correct pre-processing for
-    each algorithm. The options are as follows:
-
-    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
-        This implements the linearized convolution of Eq. 8 in [1].
-    *   ``method='chebyshev'``: Implements the approximate spectral convolution
-        operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
-    *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
-        to implement the Simplified Graph Convolutions of Eq. 8 in [2].
-    *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
-        of the adjacency matrix to one, effectively adding self-loops to the graph. This is
-        used by the GAT algorithm of [3].
-    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
-
-    [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
-    [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
-    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
-    [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
-
-    Example::
-
-        G_generator = FullBatchNodeGenerator(G)
-        train_data_gen = G_generator.flow(node_ids, node_targets)
-
-        # Fetch the data from train_data_gen, and feed into a Keras model:
-        x_inputs, y_train = train_data_gen[0]
-        model.fit(x=x_inputs, y=y_train)
-
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_gen, epochs=num_epochs, ...)
-
-    For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
-        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
-
-    Args:
-        G (StellarGraph): a machine-learning StellarGraph-type graph
-        name (str): an optional name of the generator
-        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'chebyshev','sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method or the
-            Chebyshev series order for the 'chebyshev' method. In both cases this
-            should be positive integer.
-        transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
-        sparse (bool): If True (default) a sparse adjacency matrix is used,
-            if False a dense adjacency matrix is used.
-        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability" of returning to the
-        starting node in the propagation step as in [4].
-    """
+class FullBatchGenerator(ABC):
+    multiplicity = None
 
     def __init__(
         self,
@@ -118,6 +62,11 @@ class FullBatchNodeGenerator:
         transform=None,
         teleport_probability=0.1,
     ):
+        if self.multiplicity is None:
+            raise TypeError(
+                "Can't instantiate abstract class 'FullBatchGenerator', please"
+                "instantiate either 'FullBatchNodeGenerator' or 'FullBatchLinkGenerator'"
+            )
 
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
@@ -131,9 +80,25 @@ class FullBatchNodeGenerator:
         # Check if the graph has features
         G.check_graph_for_ml()
 
-        # Create sparse adjacency matrix
-        self.node_list = list(G.nodes())
-        self.Aadj = G.to_adjacency_matrix()
+        # Check that there is only a single node type for GAT or GCN
+        node_types = list(G.node_types)
+        if len(node_types) > 1:
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Create sparse adjacency matrix:
+        # Use the node orderings the same as in the graph features
+        self.node_list = G.nodes_of_type(node_types[0])
+        self.Aadj = G.to_adjacency_matrix(self.node_list)
+
+        # Function to map node IDs to indices for quicker node index lookups
+        # TODO: Move this to the graph class
+        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
+        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
@@ -147,15 +112,6 @@ class FullBatchNodeGenerator:
 
         else:
             self.use_sparse = sparse
-
-        # Check that there is only a single node type for GAT or GCN
-        if len(G.node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
 
         # Get the features for the nodes
         self.features = G.node_features(self.node_list)
@@ -205,9 +161,10 @@ class FullBatchNodeGenerator:
         with the supplied node ids and numeric targets.
 
         Args:
-            node_ids: and iterable of node ids for the nodes of interest
+            node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
+                or (len(node_ids), target_size)`
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -224,20 +181,193 @@ class FullBatchNodeGenerator:
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # Dictionary to store node indices for quicker node index lookups
-        node_lookup = dict(zip(self.node_list, range(len(self.node_list))))
-
         # The list of indices of the target nodes in self.node_list
-        node_indices = np.array([node_lookup[n] for n in node_ids], dtype="int32")
+        node_indices = self._node_lookup(node_ids)
 
         if self.use_sparse:
-            return SparseFullBatchNodeSequence(
+            return SparseFullBatchSequence(
                 self.features, self.Aadj, targets, node_indices
             )
         else:
-            return FullBatchNodeSequence(
-                self.features, self.Aadj, targets, node_indices
-            )
+            return FullBatchSequence(self.features, self.Aadj, targets, node_indices)
+
+
+class FullBatchNodeGenerator(FullBatchGenerator):
+    """
+    A data generator for use with full-batch models on homogeneous graphs,
+    e.g., GCN, GAT, SGC.
+    The supplied graph G should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features to be available for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    to get an object that can be used as a Keras data generator.
+
+    This generator will supply the features array and the adjacency matrix to a
+    full-batch Keras graph ML model.  There is a choice to supply either a sparse
+    adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
+    argument.
+
+    For these algorithms the adjacency matrix requires pre-processing and the
+    'method' option should be specified with the correct pre-processing for
+    each algorithm. The options are as follows:
+
+    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+        This implements the linearized convolution of Eq. 8 in [1].
+    *   ``method='chebyshev'``: Implements the approximate spectral convolution
+        operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
+    *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
+        to implement the Simplified Graph Convolutions of Eq. 8 in [2].
+    *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
+        of the adjacency matrix to one, effectively adding self-loops to the graph. This is
+        used by the GAT algorithm of [3].
+    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
+
+    [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
+    [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
+
+    Example::
+
+        G_generator = FullBatchNodeGenerator(G)
+        train_flow = G_generator.flow(node_ids, node_targets)
+
+        # Fetch the data from train_flow, and feed into a Keras model:
+        x_inputs, y_train = train_flow[0]
+        model.fit(x=x_inputs, y=y_train)
+
+        # Alternatively, use the generator itself with model.fit_generator:
+        model.fit_generator(train_flow, epochs=num_epochs)
+
+    For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
+        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+
+    Args:
+        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        name (str): an optional name of the generator
+        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
+            'chebyshev','sgc', 'self_loops', or 'none'.
+        k (None or int): This is the smoothing order for the 'sgc' method or the
+            Chebyshev series order for the 'chebyshev' method. In both cases this
+            should be positive integer.
+        transform (callable): an optional function to apply on features and adjacency matrix
+            the function takes (features, Aadj) as arguments.
+        sparse (bool): If True (default) a sparse adjacency matrix is used,
+            if False a dense adjacency matrix is used.
+        teleport_probability (float): teleport probability between 0.0 and 1.0.
+            "probability" of returning to the starting node in the propagation step as in [4].
+    """
+
+    multiplicity = 1
+
+    def flow(self, node_ids, targets=None):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_ids: an iterable of node ids for the nodes of interest
+                (e.g., training, validation, or test set nodes)
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
+                or (len(node_ids), target_size)`
+
+        Returns:
+            A NodeSequence object to use with GCN or GAT models
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
+
+        """
+        return super().flow(node_ids, targets)
+
+
+class FullBatchLinkGenerator(FullBatchGenerator):
+    """
+    A data generator for use with full-batch models on homogeneous graphs,
+    e.g., GCN, GAT, SGC.
+    The supplied graph G should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features to be available for all
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
+    of node IDs and (optionally) targets.
+
+    This generator will supply the features array and the adjacency matrix to a
+    full-batch Keras graph ML model.  There is a choice to supply either a sparse
+    adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
+    argument.
+
+    For these algorithms the adjacency matrix requires pre-processing and the
+    'method' option should be specified with the correct pre-processing for
+    each algorithm. The options are as follows:
+
+    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+        This implements the linearized convolution of Eq. 8 in [1].
+    *   ``method='chebyshev'``: Implements the approximate spectral convolution
+        operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
+    *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
+        to implement the Simplified Graph Convolutions of Eq. 8 in [2].
+    *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
+        of the adjacency matrix to one, effectively adding self-loops to the graph. This is
+        used by the GAT algorithm of [3].
+    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
+
+    [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
+    [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
+
+    Example::
+
+        G_generator = FullBatchLinkGenerator(G)
+        train_flow = G_generator.flow([(1,2), (3,4), (5,6)], [0, 1, 1])
+
+        # Fetch the data from train_flow, and feed into a Keras model:
+        x_inputs, y_train = train_flow[0]
+        model.fit(x=x_inputs, y=y_train)
+
+        # Alternatively, use the generator itself with model.fit_generator:
+        model.fit_generator(train_flow, epochs=num_epochs)
+
+    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos:
+        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+
+    Args:
+        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        name (str): an optional name of the generator
+        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
+            'chebyshev','sgc', 'self_loops', or 'none'.
+        k (None or int): This is the smoothing order for the 'sgc' method or the
+            Chebyshev series order for the 'chebyshev' method. In both cases this
+            should be positive integer.
+        transform (callable): an optional function to apply on features and adjacency matrix
+            the function takes (features, Aadj) as arguments.
+        sparse (bool): If True (default) a sparse adjacency matrix is used,
+            if False a dense adjacency matrix is used.
+        teleport_probability (float): teleport probability between 0.0 and 1.0. "probability"
+            of returning to the starting node in the propagation step as in [4].
+    """
+
+    multiplicity = 2
+
+    def flow(self, link_ids, targets=None):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            link_ids: an iterable of link ids specified as tuples of node ids
+                or an array of shape (N_links, 2) specifying the links.
+            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
+                or (len(node_ids), target_size)`
+
+        Returns:
+            A NodeSequence object to use with GCN or GAT models
+            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
+            and :meth:`predict_generator`
+
+        """
+        return super().flow(link_ids, targets)
 
 
 @experimental(reason="it has severe known bugs", issues=[649, 677])

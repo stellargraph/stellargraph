@@ -19,7 +19,7 @@ import numpy as np
 from tensorflow.keras import backend as K
 import tensorflow as tf
 from scipy.sparse import csr_matrix
-from stellargraph.mapper import SparseFullBatchNodeSequence, FullBatchNodeSequence
+from stellargraph.mapper import SparseFullBatchSequence, FullBatchSequence
 
 
 class GradientSaliency:
@@ -47,9 +47,9 @@ class GradientSaliency:
         self.is_sparse = generator.use_sparse
 
         if self.is_sparse:
-            if not isinstance(generator, SparseFullBatchNodeSequence):
+            if not isinstance(generator, SparseFullBatchSequence):
                 raise TypeError(
-                    "The generator supplied has to be an object of SparseFullBatchNodeSequence for sparse adjacency matrix."
+                    "The generator supplied has to be an object of SparseFullBatchSequence for sparse adjacency matrix."
                 )
             if len(model.input) != 4:
                 raise RuntimeError(
@@ -59,9 +59,9 @@ class GradientSaliency:
             self.A_indices = generator.A_indices
             features_t, output_indices_t, adj_indices_t, adj_t = model.input
         else:
-            if not isinstance(generator, FullBatchNodeSequence):
+            if not isinstance(generator, FullBatchSequence):
                 raise TypeError(
-                    "The generator supplied has to be an object of FullBatchNodeSequence for dense adjacency matrix."
+                    "The generator supplied has to be an object of FullBatchSequence for dense adjacency matrix."
                 )
             if len(model.input) != 3:
                 raise RuntimeError(
