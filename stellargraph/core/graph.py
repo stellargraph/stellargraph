@@ -675,7 +675,7 @@ class StellarGraph:
         else:
             nodes = list(nodes)
             index = ExternalIdIndex(nodes)
-            selector = self._edges.sources.isin(nodes) & self._edges.targets.isin(nodes)
+            selector = np.isin(self._edges.sources, nodes) & np.isin(self._edges.targets, nodes)
 
         weights = self._edges.weights[selector]
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
