@@ -13,18 +13,11 @@
 
 - The stellargraph library now only supports `tensorflow` versions 2.0 and above [\#518](https://github.com/stellargraph/stellargraph/pull/518). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
 - The stellargraph library now only supports Python versions 3.6 and above [\#](). Backward compatibility with earlier versions of Python is not guaranteed.
-
-- The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality.
-In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead.
-[\#297](https://github.com/stellargraph/stellargraph/issues/297)
-
-- Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498).
-Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
-
+- The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality. In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead. [\#297](https://github.com/stellargraph/stellargraph/issues/297)
+- Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498). Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 - Various methods on `StellarGraph` have been renamed to be more succinct and uniform:
    - `get_feature_for_nodes` is now `node_features`
    - `type_for_node` is now `node_type`
-
 - Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now return a list of neighbours instead of a set. This addresses [\#653](https://github.com/stellargraph/stellargraph/issues/653). This means multi-edges are no longer collapsed into one in the return value. There will be an implicit change in behaviour for explorer classes used for algorithms like GraphSAGE, Node2Vec, since a neighbour connected via multiple edges will now be more likely to be sampled. If this doesn't sound like the desired behaviour, consider pruning the graph of multi-edges before running the algorithm.
 
 ### Experimental features
