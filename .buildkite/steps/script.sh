@@ -20,7 +20,9 @@ py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-
 
 if [ "${CHECK_NOTEBOOK_FORMATTING-0}" = 1 ]; then
   echo "+++ checking notebook formatting"
-  # This script requires non-trivial dependencies, so run it here after installing them
+  # This script takes only 20 seconds but requires non-trivial dependencies, so piggy back off the
+  # installation that is happening in this CI step, rather than run it in a separate parallel step
+  # where it would have to spend ~2 minutes installing dependencies.
   python scripts/format_notebooks.py --all --ci demos/ || exitCode=$?
 fi
 

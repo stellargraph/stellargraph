@@ -255,11 +255,14 @@ if __name__ == "__main__":
             # Process the notebook to a new notebook
             (body, resources) = nb_exporter.from_notebook_node(in_notebook)
 
+            temporary_file = None
+
             # Write notebook file
             if overwrite_notebook:
                 nb_file_loc = str(file_loc.with_suffix(""))
             elif check_notebook:
-                _fd, nb_file_loc = tempfile.mkstemp()
+                tempdir = tempfile.TemporaryDirectory()
+                nb_file_loc = f"{tempdir.name}/notebook"
             else:
                 nb_file_loc = str(file_loc.with_suffix(".mod"))
 
@@ -270,11 +273,13 @@ if __name__ == "__main__":
                 with open(file_loc) as f:
                     original = f.read()
 
-                with open(nb_file_loc + ".ipynb") as f:
+                with open(f"{nb_file_loc}.ipynb") as f:
                     updated = f.read()
 
                 if original != updated:
                     check_failed.append(str(file_loc))
+
+                tempdir.cleanup()
 
         if write_html:
             # Process the notebook to HTML
