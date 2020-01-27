@@ -115,11 +115,8 @@ class ClusterNodeGenerator:
 
         self.node_list = list(G.nodes())
 
-        # We need a schema to check compatibility with ClusterGCN
-        self.schema = G.create_graph_schema(create_type_maps=True)
-
         # Check that there is only a single node type
-        if len(self.schema.node_types) > 1:
+        if len(G.node_types) > 1:
             raise ValueError(
                 "{}: node generator requires graph with single node type; "
                 "a graph with multiple node types is passed. Stopping.".format(

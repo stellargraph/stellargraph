@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
 #
 # Copyright 2019-2020 Data61, CSIRO
@@ -19,7 +21,6 @@ The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
 
 """
-#!/usr/bin/env python3
 import argparse
 import nbformat
 import re
@@ -148,6 +149,14 @@ if __name__ == "__main__":
         help="Format all code cells (currently uses black)",
     )
     parser.add_argument(
+        "-e",
+        "--execute",
+        nargs="?",
+        default=None,
+        const="default",
+        help="Execute notebook before export with specified kernel (default if not given)",
+    )
+    parser.add_argument(
         "-n",
         "--renumber",
         action="store_true",
@@ -160,10 +169,10 @@ if __name__ == "__main__":
         help="Set kernel spec to default 'Python 3'",
     )
     parser.add_argument(
-        "-a",
-        "--all",
+        "-d",
+        "--default",
         action="store_true",
-        help="Perform all formatting, equivalent to -wcnk",
+        help="Perform default formatting, equivalent to -wcnk",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -197,10 +206,11 @@ if __name__ == "__main__":
     overwrite_notebook = args.overwrite
     check_notebook = args.check or args.ci
     on_ci = args.ci
-    format_code = args.format_code or args.all
-    clear_warnings = args.clear_warnings or args.all
-    renumber_code = args.renumber or args.all
-    set_kernel = args.set_kernel or args.all
+    format_code = args.format_code or args.default
+    clear_warnings = args.clear_warnings or args.default
+    renumber_code = args.renumber or args.default
+    set_kernel = args.set_kernel or args.default
+    execute_code = args.execute
 
     # Add preprocessors
     preprocessor_list = []
@@ -216,10 +226,17 @@ if __name__ == "__main__":
     if format_code:
         preprocessor_list.append(FormatCodeCellPreprocessor)
 
+    if execute_code:
+        preprocessor_list.append(preprocessors.ExecutePreprocessor)
+
     # Create the exporters with preprocessing
     c = Config()
     c.NotebookExporter.preprocessors = preprocessor_list
     c.HTMLExporter.preprocessors = preprocessor_list
+
+    if execute_code and execute_code != "default":
+        c.ExecutePreprocessor.kernel_name = execute_code
+
     nb_exporter = NotebookExporter(c)
     html_exporter = HTMLExporter(c)
     # html_exporter.template_file = 'basic'
@@ -294,7 +311,7 @@ if __name__ == "__main__":
 
         notebooks = "\n".join(f"- `{path}`" for path in check_failed)
 
-        command = "python ./scripts/format_notebooks.py --all --overwrite demos/"
+        command = "python ./scripts/format_notebooks.py --default --overwrite demos/"
 
         message = f"""\
 Found notebook(s) with incorrect formatting:
