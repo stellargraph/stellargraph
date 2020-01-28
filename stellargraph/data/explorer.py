@@ -792,9 +792,9 @@ class TemporalRandomWalk(GraphWalk):
 
     def run(
         self,
-        nodes=None,
-        n=None,
-        length=None,
+        nodes,
+        n,
+        length,
         bidirectional=False,
         initial_edge_bias=None,
         walk_bias=None,
