@@ -22,6 +22,7 @@ URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
+    # FIXME(#626,#692): tensorflow 2.1 causes some test and demo failures
     "tensorflow>=2.0.0, <2.1.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
