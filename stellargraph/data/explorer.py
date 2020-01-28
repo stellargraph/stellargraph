@@ -832,6 +832,8 @@ class TemporalRandomWalk(GraphWalk):
             List of lists of node ids for each of the random walks
 
         """
+        if length <= 1:
+            raise ValueError("length: expected at least 2, found {length}")
         self._check_common_parameters(nodes, n, length, seed)
         np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
 
@@ -916,16 +918,10 @@ class TemporalRandomWalk(GraphWalk):
             return next_time
 
         walk = deque([node])
-        forward_time = None
-        backward_time = None
+        forward_time = step(None, is_forward=False, is_first=True)
+        backward_time = forward_time if bidirectional else None
 
         while len(walk) < length:
-            if len(walk) == 1:
-                # initial edge selection
-                forward_time = step(None, is_forward=False, is_first=True)
-                if bidirectional:
-                    backward_time = forward_time
-
             if forward_time is not None:
                 forward_time = step(forward_time, is_forward=True)
 
