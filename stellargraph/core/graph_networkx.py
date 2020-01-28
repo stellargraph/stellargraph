@@ -650,7 +650,7 @@ class NetworkXStellarGraph(StellarGraph):
         """
         if nodes is None:
             nodes = self.nodes()
-            edges = self.edges(triple=True)
+            edges = self.edges(include_edge_type=True)
         else:
             edges = (
                 (src, dst, self._get_edge_type(data))
@@ -709,8 +709,8 @@ class NetworkXStellarGraph(StellarGraph):
     def nodes(self) -> Iterable[Any]:
         return self._graph.nodes()
 
-    def edges(self, triple=False) -> Iterable[Any]:
-        if triple:
+    def edges(self, include_edge_type=False) -> Iterable[Any]:
+        if include_edge_type:
             # returns triples of format (node 1, node 2, edge type)
             return (
                 (src, dst, self._get_edge_type(data))
