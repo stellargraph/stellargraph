@@ -59,7 +59,7 @@ class BatchedLinkGenerator(abc.ABC):
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
-            self.schema = G.create_graph_schema(create_type_maps=True)
+            self.schema = G.create_graph_schema()
         elif isinstance(schema, GraphSchema):
             self.schema = schema
         else:
@@ -502,7 +502,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         target_ids = [head_link[0] for head_link in head_links]
         context_ids = [head_link[1] for head_link in head_links]
         target_feats = self.graph.node_features(target_ids)
-        context_feats = self.graph.get_index_for_nodes(context_ids)
+        context_feats = self.graph._get_index_for_nodes(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 
         return batch_feats

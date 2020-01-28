@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
 
 
 GraphSAGE model
@@ -67,14 +67,14 @@ PPNP model
 -------------
 
 .. automodule:: stellargraph.layer.ppnp
-  :members: PPNPPropagationLayer, PPNP
+  :members: PPNP, PPNPPropagationLayer
 
 
 APPNP model
 -------------
 
 .. automodule:: stellargraph.layer.appnp
-  :members: APPNPPropagationLayer, APPNP
+  :members: APPNP, APPNPPropagationLayer
 
 
 GAT model
@@ -88,7 +88,7 @@ Link prediction layers
 ------------------------
 
 .. automodule:: stellargraph.layer.link_inference
-  :members: link_classification, link_regression, link_inference
+  :members: LinkEmbedding, link_classification, link_regression, link_inference
 
 Ensembles
 ------------------------

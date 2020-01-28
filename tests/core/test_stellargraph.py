@@ -134,49 +134,23 @@ def test_homogeneous_graph_schema():
 def test_graph_schema():
     g = create_graph_1(return_nx=True)
     sg = StellarGraph(g)
-    schema = sg.create_graph_schema(create_type_maps=True)
+    schema = sg.create_graph_schema()
 
     assert "movie" in schema.schema
     assert "user" in schema.schema
     assert len(schema.schema["movie"]) == 1
     assert len(schema.schema["user"]) == 1
-
-    # Test node type lookup
-    for n, ndata in g.nodes(data=True):
-        assert ndata["label"] == schema.get_node_type(n)
-
-    # Test edge type lookup
-    node_labels = nx.get_node_attributes(g, "label")
-    for n1, n2, k, edata in g.edges(keys=True, data=True):
-        assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
-            schema.get_edge_type((n1, n2, k))
-        )
-
-    # Test undirected graph types
-    assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
-    assert schema.get_edge_type((0, 4, 0)) == ("movie", "rating", "user")
 
 
 def test_graph_schema_sampled():
     sg = create_graph_1()
 
-    # Will fail if create_type_maps=True and nodes/edges specified
-    with pytest.raises(ValueError):
-        sg.create_graph_schema(nodes=[0, 4])
-
-    schema = sg.create_graph_schema(create_type_maps=False, nodes=[0, 4])
+    schema = sg.create_graph_schema(nodes=[0, 4])
 
     assert "movie" in schema.schema
     assert "user" in schema.schema
     assert len(schema.schema["movie"]) == 1
     assert len(schema.schema["user"]) == 1
-
-    # Node and edge type lookups will fail with no type maps
-    with pytest.raises(RuntimeError):
-        schema.get_node_type(0)
-
-    with pytest.raises(RuntimeError):
-        schema.get_edge_type((4, 0, 0))
 
 
 def test_digraph_schema():
@@ -189,38 +163,45 @@ def test_digraph_schema():
     assert len(schema.schema["user"]) == 1
     assert len(schema.schema["movie"]) == 0
 
-    # Test node type lookup
-    for n, ndata in g.nodes(data=True):
-        assert ndata["label"] == schema.get_node_type(n)
 
-    # Test edge type lookup
-    node_labels = nx.get_node_attributes(g, "label")
-    for n1, n2, k, edata in g.edges(keys=True, data=True):
-        assert (node_labels[n1], edata["label"], node_labels[n2]) == tuple(
-            schema.get_edge_type((n1, n2, k))
-        )
+def test_schema_removals():
+    sg = create_graph_1()
+    schema = sg.create_graph_schema()
 
-    assert schema.get_edge_type((4, 0, 0)) == ("user", "rating", "movie")
-    with pytest.raises(IndexError):
-        schema.get_edge_type((0, 4, 0))
+    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
+        _ = schema.node_type_map
+
+    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
+        _ = schema.get_node_type
+
+    with pytest.raises(AttributeError, match="This was removed"):
+        _ = schema.edge_type_map
+
+    with pytest.raises(AttributeError, match="This was removed"):
+        _ = schema.get_edge_type
+
+    with pytest.warns(
+        DeprecationWarning, match="'create_type_maps' parameter is ignored"
+    ):
+        sg.create_graph_schema(create_type_maps=True)
 
 
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_name="feature", feature_size=8)
-    aa = sg.get_index_for_nodes([1, 2, 3, 4])
+    aa = sg._get_index_for_nodes([1, 2, 3, 4])
     assert aa == [0, 1, 2, 3]
 
     sg = example_hin_1(feature_name="feature")
-    aa = sg.get_index_for_nodes([0, 1, 2, 3])
+    aa = sg._get_index_for_nodes([0, 1, 2, 3])
     assert aa == [0, 1, 2, 3]
-    aa = sg.get_index_for_nodes([0, 1, 2, 3], "A")
+    aa = sg._get_index_for_nodes([0, 1, 2, 3], "A")
     assert aa == [0, 1, 2, 3]
-    aa = sg.get_index_for_nodes([4, 5, 6])
+    aa = sg._get_index_for_nodes([4, 5, 6])
     assert aa == [0, 1, 2]
-    aa = sg.get_index_for_nodes([4, 5, 6], "B")
+    aa = sg._get_index_for_nodes([4, 5, 6], "B")
     assert aa == [0, 1, 2]
     with pytest.raises(ValueError):
-        aa = sg.get_index_for_nodes([1, 2, 5])
+        aa = sg._get_index_for_nodes([1, 2, 5])
 
 
 def test_feature_conversion_from_nodes():
@@ -363,6 +344,18 @@ def test_feature_conversion_from_iterator():
     # Check None identifier
     aa = gs.node_features([1, 2, None, None])
     assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
+
+    # Test adjacency matrix
+    adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]])
+
+    A = gs.to_adjacency_matrix()
+    assert A.dtype == "float32"
+    assert np.allclose(A.toarray(), adj_expected)
+
+    # Test adjacency matrix with node arguement
+    A = gs.to_adjacency_matrix(nodes=[3, 2])
+    assert A.dtype == "float32"
+    assert np.allclose(A.toarray(), adj_expected[[2, 1]][:, [2, 1]])
 
     g = example_hin_1_nx()
     nf = {

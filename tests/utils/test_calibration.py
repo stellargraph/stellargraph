@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import pytest
-from stellargraph.data.converter import *
+import numpy as np
 from stellargraph.utils.calibration import *
 
 
