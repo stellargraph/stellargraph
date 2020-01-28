@@ -293,7 +293,7 @@ class StellarGraph:
             data = self._edges.pairs
             columns = (SOURCE, TARGET)
 
-        return list(data.iter_rows(columns))
+        return list(data.iter_rows(*columns))
 
     def has_node(self, node: Any) -> bool:
         """
