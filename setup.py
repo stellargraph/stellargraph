@@ -21,10 +21,9 @@ DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
-# full tensorflow is too big for readthedocs's builder
-tensorflow = "tensorflow-cpu" if "READTHEDOCS" in os.environ else "tensorflow"
 REQUIRES = [
-    f"{tensorflow}>=2.0.0",
+    # FIXME(#626,#692): tensorflow 2.1 causes some test and demo failures
+    "tensorflow>=2.0.0, <2.1.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
