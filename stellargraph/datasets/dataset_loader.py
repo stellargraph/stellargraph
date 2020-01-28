@@ -125,28 +125,13 @@ class DatasetLoader:
         """Convert dataset relative file names to their full path on filesystem"""
         return os.path.join(self.base_directory, filename)
 
+    def _missing_files(self) -> List[str]:
+        """Returns a list of files that are missing"""
+        return [file for file in self.expected_files if not os.path.isfile(self._resolve_path(file))]
+
     def _is_downloaded(self) -> bool:
         """Returns true if the expected files for the dataset are present"""
-        return all(
-            os.path.isfile(self._resolve_path(file)) for file in self.expected_files
-        )
-
-    def _verify_files_downloaded(self) -> None:
-        """
-        Raises:
-            FileNotFoundError: If any files within dataset are missing.
-        """
-        missing_files = ", ".join(
-            [
-                file
-                for file in self.expected_files
-                if not os.path.isfile(self._resolve_path(file))
-            ]
-        )
-        if missing_files:
-            raise FileNotFoundError(
-                f"{self.name} dataset failed to download file(s): {missing_files} to {self.data_directory}"
-            )
+        return len(self._missing_files()) == 0
 
     def _delete_existing_files(self) -> None:
         """ Delete the files for this dataset if they already exist """
@@ -189,6 +174,12 @@ class DatasetLoader:
                     self._all_datasets_directory(),
                     self.url_archive_format,
                 )
-            self._verify_files_downloaded()
+            # verify the download
+            missing_files = self._missing_files()
+            if missing_files:
+                missing = ", ".join(missing_files)
+                raise FileNotFoundError(
+                    f"{self.name} dataset failed to download file(s): {missing} to {self.data_directory}"
+                )
         else:
             log.info("%s dataset is already downloaded", self.name)
