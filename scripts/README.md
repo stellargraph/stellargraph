@@ -53,7 +53,6 @@ optional arguments:
 ```
 
 For example, to perform all formatting on all Jupyter notebooks found in the demos directory, execute the following command in the top-level stellargraph directory:
-
 ```
 > python scripts/format_notebooks.py -d demos
 ```
@@ -61,6 +60,11 @@ For example, to perform all formatting on all Jupyter notebooks found in the dem
 To additionally output HTML files:
 ```
 > python scripts/format_notebooks.py -d --html demos
+```
+
+To format and execute all Jupyter notebooks found in the demos directory, overwriting them with the updated versions:
+```
+> python scripts/format_notebooks.py -e -o -d demos
 ```
 
 ### Testing demo Jupyter notebooks
