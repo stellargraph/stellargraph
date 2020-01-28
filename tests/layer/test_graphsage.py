@@ -34,6 +34,10 @@ from stellargraph.layer.graphsage import (
     AttentionalAggregator,
 )
 from ..test_utils.graphs import example_graph_1
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # Mean aggregator tests

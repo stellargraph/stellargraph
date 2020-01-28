@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 import random
 from stellargraph.core.graph import *
+from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, allocation_benchmark
 from ..test_utils.graphs import (
     example_graph_1_nx,
@@ -27,6 +28,11 @@ from ..test_utils.graphs import (
     example_hin_1_nx,
     example_hin_1,
 )
+
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # FIXME (#535): Consider using graph fixtures
@@ -41,6 +47,25 @@ def create_graph_1(is_directed=False, return_nx=False):
 
 
 def example_benchmark_graph(
+    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
+):
+    node_ids = np.arange(n_nodes)
+    edges = pd.DataFrame(
+        np.random.randint(0, n_nodes, size=(n_edges, 2)), columns=["source", "target"]
+    )
+
+    if feature_size is None:
+        features = []
+    else:
+        features = np.ones((n_nodes, feature_size))
+
+    all_nodes = pd.DataFrame(features, index=node_ids)
+    nodes = {ty: all_nodes[node_ids % n_types == ty] for ty in range(n_types)}
+
+    return nodes, edges
+
+
+def example_benchmark_graph_nx(
     feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
 ):
     G = nx.Graph()
@@ -187,69 +212,45 @@ def test_schema_removals():
 
 
 def test_get_index_for_nodes():
-    sg = example_graph_2(feature_name="feature", feature_size=8)
+    sg = example_graph_2(feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
-    assert aa == [0, 1, 2, 3]
+    assert list(aa) == [0, 1, 2, 3]
 
-    sg = example_hin_1(feature_name="feature")
+    sg = example_hin_1(feature_sizes={})
     aa = sg._get_index_for_nodes([0, 1, 2, 3])
-    assert aa == [0, 1, 2, 3]
+    assert list(aa) == [0, 1, 2, 3]
     aa = sg._get_index_for_nodes([0, 1, 2, 3], "A")
-    assert aa == [0, 1, 2, 3]
+    assert list(aa) == [0, 1, 2, 3]
     aa = sg._get_index_for_nodes([4, 5, 6])
-    assert aa == [0, 1, 2]
+    assert list(aa) == [4, 5, 6]
     aa = sg._get_index_for_nodes([4, 5, 6], "B")
-    assert aa == [0, 1, 2]
-    with pytest.raises(ValueError):
-        aa = sg._get_index_for_nodes([1, 2, 5])
+    assert list(aa) == [4, 5, 6]
+    aa = sg._get_index_for_nodes([1, 2, 5])
+    assert list(aa) == [1, 2, 5]
 
 
 def test_feature_conversion_from_nodes():
-    sg = example_graph_2(feature_name="feature", feature_size=8)
+    sg = example_graph_2(feature_size=8)
     aa = sg.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
     assert aa.shape == (4, 8)
     assert sg.node_feature_sizes()["default"] == 8
 
-    sg = example_hin_1(
-        feature_name="feature",
-        for_nodes=[0, 1, 2, 3, 4, 5],
-        feature_sizes={"A": 4, "B": 2},
-    )
-    aa = sg.node_features([0, 1, 2, 3], "A")
-    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
-    assert aa.shape == (4, 4)
 
-    fs = sg.node_feature_sizes()
-    assert fs["A"] == 4
-    assert fs["B"] == 2
-
-    ab = sg.node_features([4, 5], "B")
-    assert ab.shape == (2, 2)
-    assert ab[:, 0] == pytest.approx([4, 5])
-
-    # Test mixed types
-    with pytest.raises(ValueError):
-        ab = sg.node_features([1, 5])
-
-    # Test incorrect manual node_type
-    with pytest.raises(ValueError):
-        ab = sg.node_features([4, 5], "A")
-
-    # Test feature for node with no set attributes
-    ab = sg.node_features([4, 5, 6], "B")
-    assert ab.shape == (3, 2)
-    assert ab[:, 0] == pytest.approx([4, 5, 0])
+def test_node_features_missing_id():
+    sg = example_graph_2(feature_size=6)
+    with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
+        sg.node_features([1, 1000, None, 2000])
 
 
 def test_null_node_feature():
-    sg = example_graph_2(feature_name="feature", feature_size=6)
+    sg = example_graph_2(feature_size=6)
     aa = sg.node_features([1, None, 2, None])
     assert aa.shape == (4, 6)
     assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
 
-    sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
+    sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
 
     # Test feature for null node, without node type
     ab = sg.node_features([None, 5, None])
@@ -271,10 +272,10 @@ def test_null_node_feature():
 
 
 def test_node_types():
-    sg = example_graph_2(feature_name="feature", feature_size=6)
+    sg = example_graph_2(feature_size=6)
     assert sg.node_types == {"default"}
 
-    sg = example_hin_1(feature_name="feature", feature_sizes={"A": 4, "B": 2})
+    sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
     assert sg.node_types == {"A", "B"}
 
     sg = example_hin_1()
@@ -406,12 +407,12 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
-def test_edges_triple():
+def test_edges_include_edge_type():
     g = example_hin_1()
 
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
-    assert set(g.edges(triple=True)) == r | f
+    assert set(g.edges(include_edge_type=True)) == r | f
 
 
 def normalise_nodes(g, default_label=False):
@@ -441,7 +442,7 @@ def normalise_edges(g, default_label=False):
 
 @pytest.mark.parametrize("in_nodes", [False, True])
 def test_to_networkx(in_nodes):
-    g, node_features = example_benchmark_graph(
+    g, node_features = example_benchmark_graph_nx(
         feature_size=5, features_in_nodes=in_nodes
     )
 
@@ -466,7 +467,7 @@ def test_to_networkx(in_nodes):
 
 
 def test_to_networkx_no_features():
-    g, _ = example_benchmark_graph(feature_size=None)
+    g, _ = example_benchmark_graph_nx(feature_size=None)
 
     sg = StellarGraph(g)
     new_nx = sg.to_networkx()
@@ -531,9 +532,9 @@ def test_networkx_attribute_message():
 
 @pytest.mark.benchmark(group="StellarGraph neighbours")
 def test_benchmark_get_neighbours(benchmark):
-    g, node_features = example_benchmark_graph()
-    num_nodes = g.number_of_nodes()
-    sg = StellarGraph(g, node_features=node_features)
+    nodes, edges = example_benchmark_graph()
+    sg = StellarGraph(nodes=nodes, edges=edges)
+    num_nodes = sg.number_of_nodes()
 
     # get the neigbours of every node in the graph
     def f():
@@ -550,12 +551,12 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
     SAMPLE_SIZE = 50
     N_NODES = 500
     N_EDGES = 1000
-    g, node_features = example_benchmark_graph(
+    nodes, edges = example_benchmark_graph(
         feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
     )
-    num_nodes = g.number_of_nodes()
 
-    sg = StellarGraph(g, node_features=node_features)
+    sg = StellarGraph(nodes=nodes, edges=edges)
+    num_nodes = sg.number_of_nodes()
 
     ty_ids = [(ty, range(ty, num_nodes, num_types)) for ty in range(num_types)]
 
@@ -576,6 +577,24 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
     benchmark(f)
 
 
+@pytest.mark.benchmark(group="StellarGraph creation (time)")
+# various element counts, to give an indication of the relationship
+# between those and memory use (0,0 gives the overhead of the
+# StellarGraph object itself, without any data)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+# features or not, to capture their cost
+@pytest.mark.parametrize("feature_size", [None, 100])
+def test_benchmark_creation(benchmark, feature_size, num_nodes, num_edges):
+    nodes, edges = example_benchmark_graph(
+        feature_size, num_nodes, num_edges, features_in_nodes=True
+    )
+
+    def f():
+        return StellarGraph(nodes=nodes, edges=edges)
+
+    benchmark(f)
+
+
 @pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
@@ -583,15 +602,15 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-def test_allocation_benchmark_creation_from_networkx(
+def test_allocation_benchmark_creation(
     allocation_benchmark, feature_size, num_nodes, num_edges
 ):
-    g, node_features = example_benchmark_graph(
+    nodes, edges = example_benchmark_graph(
         feature_size, num_nodes, num_edges, features_in_nodes=True
     )
 
     def f():
-        return StellarGraph(g, node_features=node_features)
+        return StellarGraph(nodes=nodes, edges=edges)
 
     allocation_benchmark(f)
 
@@ -691,3 +710,13 @@ def test_out_nodes_unweighted_hom():
     assert_items_equal(
         graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
     )
+
+
+def test_stellargraph_experimental():
+    nodes = pd.DataFrame([], index=[0])
+    edges = pd.DataFrame([], columns=["source", "target"])
+
+    with pytest.warns(
+        ExperimentalWarning, match=r"StellarGraph\(nodes=..., edges=...\)"
+    ):
+        StellarGraph(nodes=nodes, edges=edges)
