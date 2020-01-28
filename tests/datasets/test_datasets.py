@@ -30,14 +30,19 @@ def test_dataset_download(dataset_class):
     dataset_class().download(ignore_cache=True)
 
 
-@patch("stellargraph.datasets.datasets.Cora.url", new="http://stellargraph-invalid-url/x")
+@patch(
+    "stellargraph.datasets.datasets.Cora.url", new="http://stellargraph-invalid-url/x"
+)
 def test_invalid_url() -> None:
     with pytest.raises(URLError):
         Cora().download(ignore_cache=True)
 
 
 # we add an additional expected file that should break the download
-@patch("stellargraph.datasets.datasets.Cora.expected_files", new=Cora.expected_files + ["test-missing-file.xyz"])
+@patch(
+    "stellargraph.datasets.datasets.Cora.expected_files",
+    new=Cora.expected_files + ["test-missing-file.xyz"],
+)
 def test_missing_files() -> None:
     # download - the url should work, but the files extracted won't be correct
     with pytest.raises(FileNotFoundError):
