@@ -98,6 +98,12 @@ class StellarGraph:
             [feature_vector_1, feature_vector_2, ..])
         Gs = StellarGraph(nx_graph, node_features=node_data)
 
+    .. warning::
+
+        The constructor variant using the ``nodes=..., edges=...`` arguments to create a "new"
+        StellarGraph is experimental: the type is insufficiently documented and does not support
+        some algorithms.
+
 
     Args:
         graph: The NetworkX graph instance.
@@ -126,6 +132,32 @@ class StellarGraph:
             required by some graph models. These are expected to be
             a numeric feature vector for each node in the graph.
 
+        nodes: DataFrame or dict of hashable to DataFrame
+            Features for every node in the graph. Any columns in the dataframe are taken as numeric
+            edge features of type ``dtype``. If there is only one type of node, a DataFrame can be
+            passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
+            have an ID taken from the index of the dataframe, and they have to be unique across all
+            types.  For nodes with no features, an appropriate DataFrame can be created with
+            ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
+            IDs. This must be used with the ``edges`` argument. **Warning**: this is experimental
+            (see warning above for more details).
+
+        edges: DataFrame or dict of hashable to DataFrame
+            An edge list for each type of edges as a Pandas DataFrame containing a source, target
+            and (optionally) weight column (the names of each are taken from the ``source_column``,
+            ``target_column`` and ``edge_weight_label`` parameters). If there is only one type of
+            edges, a DataFrame can be passed directly, and the type defaults to the
+            ``edge_type_default`` parameter. Edges have an ID taken from the index of the dataframe,
+            and they have to be unique across all types. This must be used with the ``nodes``
+            argument. **Warning**: this is experimental (see warning above for more details).
+
+        source_column: str, optional
+            The name of the column to use as the source node of edges in the ``edges`` edge list
+            argument.
+
+        target_column: str, optional
+            The name of the column to use as the target node of edges in the ``edges`` edge list
+            argument.
     """
 
     def __init__(
