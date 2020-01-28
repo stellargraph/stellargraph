@@ -632,14 +632,8 @@ class StellarGraph:
             f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
         ]
 
-        # Sample the nodes for our analysis
-        if sample:
-            all_nodes = list(self._graph.nodes)
-            snodes = random.sample(all_nodes, sample)
-        else:
-            snodes = None
-
-        gs = self.create_graph_schema(nodes=snodes)
+        # Numpy processing is much faster than NetworkX processing, so we don't bother sampling.
+        gs = self.create_graph_schema()
 
         def str_edge_type(et):
             n1, rel, n2 = et
