@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import pytest
-import shutil
+import tempfile
 import os
 from stellargraph.datasets import Cora, CiteSeer
 from urllib.error import URLError
@@ -45,12 +45,13 @@ def test_missing_files() -> None:
 
 
 def test_environment_path_override(monkeypatch) -> None:
-    new_datasets_path = os.path.expanduser(os.path.join("~", "test-sg-datasets"))
-    monkeypatch.setenv("STELLARGRAPH_DATASETS_PATH", new_datasets_path)
-    dataset = CiteSeer()
-    assert dataset.base_directory == os.path.join(
-        new_datasets_path, dataset.directory_name
-    )
+    with tempfile.TemporaryDirectory() as new_datasets_path:
+        monkeypatch.setenv("STELLARGRAPH_DATASETS_PATH", new_datasets_path)
+        dataset = CiteSeer()
+        assert dataset.base_directory == os.path.join(
+            new_datasets_path, dataset.directory_name
+        )
+        dataset.download()
 
 
 @patch("stellargraph.datasets.dataset_loader.urlretrieve", wraps=urlretrieve)
