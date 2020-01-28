@@ -203,7 +203,7 @@ class UniformRandomWalk(GraphWalk):
         current_node = start_node
         for _ in range(length - 1):
             neighbours = self.neighbors(current_node)
-            if not len(neighbours):
+            if not neighbours:
                 # dead end, so stop
                 break
             else:

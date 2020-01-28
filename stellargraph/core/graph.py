@@ -325,13 +325,14 @@ class StellarGraph:
             if weights is not None:
                 weights = weights[correct_type]
 
+        # FIXME(#718): it would be better to return these as ndarrays, instead of (zipped) lists
         if weights is not None:
             return [
                 NeighbourWithWeight(node, weight)
                 for node, weight in zip(other_node_id, weights)
             ]
 
-        return other_node_id
+        return list(other_node_id)
 
     def neighbors(
         self, node: Any, include_edge_weight=False, edge_types=None
