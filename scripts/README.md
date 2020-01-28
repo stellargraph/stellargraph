@@ -22,7 +22,8 @@ The usage is available with the `--help` command line argument:
 ```
 > format_notebooks.py --help
 
-usage: format_notebooks.py [-h] [-w] [-c] [-n] [-k] [-a] [-o] [--html]
+usage: format_notebooks.py [-h] [-w] [-c] [-e [EXECUTE]] [-t CELL_TIMEOUT]
+                           [-n] [-k] [-d] [-o] [--html]
                            locations [locations ...]
 
 Format and clean Jupyter notebooks by removing Tensorflow warnings and stderr
@@ -36,10 +37,16 @@ optional arguments:
   -h, --help            show this help message and exit
   -w, --clear_warnings  Clear Tensorflow warnings and stderr in output
   -c, --format_code     Format all code cells (currently uses black)
+  -e [EXECUTE], --execute [EXECUTE]
+                        Execute notebook before export with specified kernel
+                        (default if not given)
+  -t CELL_TIMEOUT, --cell_timeout CELL_TIMEOUT
+                        Set the execution cell timeout in seconds (default is
+                        timeout disabled)
   -n, --renumber        Renumber all code cells from the top, regardless of
                         execution order
   -k, --set_kernel      Set kernel spec to default 'Python 3'
-  -a, --all             Perform all formatting, equivalent to -wcnk
+  -d, --default         Perform default formatting, equivalent to -wcnk
   -o, --overwrite       Overwrite original notebooks, otherwise a copy will be
                         made with a .mod suffix
   --html                Save HTML as well as notebook output
@@ -48,12 +55,12 @@ optional arguments:
 For example, to perform all formatting on all Jupyter notebooks found in the demos directory, execute the following command in the top-level stellargraph directory:
 
 ```
-> python scripts/format_notebooks.py -a demos
+> python scripts/format_notebooks.py -d demos
 ```
 
 To additionally output HTML files:
 ```
-> python scripts/format_notebooks.py -a --html demos
+> python scripts/format_notebooks.py -d --html demos
 ```
 
 ### Testing demo Jupyter notebooks
