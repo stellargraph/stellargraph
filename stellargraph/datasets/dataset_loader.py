@@ -127,7 +127,11 @@ class DatasetLoader:
 
     def _missing_files(self) -> List[str]:
         """Returns a list of files that are missing"""
-        return [file for file in self.expected_files if not os.path.isfile(self._resolve_path(file))]
+        return [
+            file
+            for file in self.expected_files
+            if not os.path.isfile(self._resolve_path(file))
+        ]
 
     def _is_downloaded(self) -> bool:
         """Returns true if the expected files for the dataset are present"""
