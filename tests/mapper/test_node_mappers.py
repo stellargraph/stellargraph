@@ -35,6 +35,10 @@ from ..test_utils.graphs import (
     example_hin_1,
     create_graph_features,
 )
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # FIXME (#535): Consider using graph fixtures

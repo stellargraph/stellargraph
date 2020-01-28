@@ -29,6 +29,10 @@ from stellargraph.mapper import (
 )
 from stellargraph.layer import *
 from ..test_utils.graphs import example_graph_1
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 class Test_GraphAttention:
