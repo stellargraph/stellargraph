@@ -265,23 +265,23 @@ class StellarGraph:
 
         return self._nodes.ids.pandas_index
 
-    def edges(self, triple=False) -> Iterable[Any]:
+    def edges(self, include_edge_type=False) -> Iterable[Any]:
         """
         Obtains the collection of edges in the graph.
 
         Args:
-            triple (bool): A flag that indicates whether to return edge triples
+            include_edge_type (bool): A flag that indicates whether to return edge triples
             of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
 
         Returns:
             The graph edges.
         """
         if self._graph is not None:
-            return self._graph.edges(triple)
+            return self._graph.edges(include_edge_type)
 
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
-        if triple:
+        if include_edge_type:
             return list(
                 zip(
                     self._edges.sources,
