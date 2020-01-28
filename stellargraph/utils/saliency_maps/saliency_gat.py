@@ -18,14 +18,13 @@
 import numpy as np
 from tensorflow.keras import backend as K
 import scipy.sparse as sp
-from stellargraph.mapper import FullBatchNodeSequence
+from stellargraph.mapper import FullBatchSequence
 import tensorflow as tf
 
 
-class GradientSaliencyGAT(object):
+class GradientSaliencyGAT:
     """
     Class to compute the saliency maps based on the vanilla gradient w.r.t the adjacency and the feature matrix.
-
 
     Args:
         model (Keras model object): The differentiable graph model object.
@@ -40,12 +39,12 @@ class GradientSaliencyGAT(object):
         """
         Args:
             model (Keras model object): The Keras GAT model.
-            generator (FullBatchNodeSequence object): The generator from which we extract the feature and adjacency matrix.
+            generator (FullBatchSequence object): The generator from which we extract the feature and adjacency matirx.
         """
         # The placeholders for features and adjacency matrix (model input):
-        if not isinstance(generator, FullBatchNodeSequence):
+        if not isinstance(generator, FullBatchSequence):
             raise TypeError(
-                "The generator supplied has to be an object of FullBatchNodeSequence."
+                "The generator supplied has to be an object of FullBatchSequence."
             )
         self.model = model
         # Collect variables for IG
@@ -84,7 +83,6 @@ class GradientSaliencyGAT(object):
         return node_gradients
 
     def compute_link_gradients(self, link_mask_tensors):
-
         for i, x in enumerate(link_mask_tensors):
             if not isinstance(x, tf.Tensor):
                 link_mask_tensors[i] = tf.convert_to_tensor(x)

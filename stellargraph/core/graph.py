@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
@@ -22,6 +21,7 @@ a machine-learning ready graph used by models.
 __all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema"]
 
 from typing import Iterable, Any, Mapping, List, Optional, Set
+import warnings
 
 from .. import globalvar
 from .schema import GraphSchema
@@ -388,7 +388,7 @@ class StellarGraph:
         """
         return self._graph.info(show_attributes, sample)
 
-    def create_graph_schema(self, create_type_maps=True, nodes=None):
+    def create_graph_schema(self, create_type_maps=None, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -399,18 +399,20 @@ class StellarGraph:
         is unique.
 
         Arguments:
-            create_type_maps (bool): If True quick lookup of node/edge types is
-                created in the schema. This can be slow.
-
             nodes (list): A list of node IDs to use to build schema. This must
                 represent all node types and all edge types in the graph.
-                If specified, `create_type_maps` must be False.
                 If not specified, all nodes and edges in the graph are used.
 
         Returns:
             GraphSchema object.
         """
-        return self._graph.create_graph_schema(create_type_maps, nodes)
+        if create_type_maps is not None:
+            warnings.warn(
+                "The 'create_type_maps' parameter is ignored now, and does not need to be specified",
+                DeprecationWarning,
+            )
+
+        return self._graph.create_graph_schema(nodes)
 
     def node_degrees(self) -> Mapping[Any, int]:
         """
@@ -446,9 +448,9 @@ class StellarGraph:
         """
         return self._graph.to_networkx()
 
-    # FIXME: Experimental/special-case methods that need to be considered more
-    @experimental(reason="special-case method that needs more consideration")
-    def get_index_for_nodes(self, nodes, node_type=None):
+    # FIXME: Experimental/special-case methods that need to be considered more; the underscores
+    # denote "package private", not fully private, and so are ok to use in the rest of stellargraph
+    def _get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -464,8 +466,7 @@ class StellarGraph:
         """
         return self._graph.get_index_for_nodes(nodes, node_type)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def adjacency_types(self, graph_schema: GraphSchema):
+    def _adjacency_types(self, graph_schema: GraphSchema):
         """
         Obtains the edges in the form of the typed mapping:
 
@@ -478,8 +479,7 @@ class StellarGraph:
         """
         return self._graph.adjacency_types(graph_schema)
 
-    @experimental(reason="special-case method that needs more consideration")
-    def edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
+    def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
         """
         Obtains the weights of edges between the given pair of nodes.
 
@@ -491,20 +491,6 @@ class StellarGraph:
             list: The edge weights.
         """
         return self._graph.edge_weights(source_node, target_node)
-
-    @experimental(reason="special-case method that needs more consideration")
-    def node_attributes(self, node: Any) -> Set[Any]:
-        """
-        Obtains the names of any (non-standard) node attributes that are
-        available in the user data.
-
-        Args:
-            node (any): The node of interest.
-
-        Returns:
-            set: The collection of node attributes.
-        """
-        return self._graph.node_attributes(node)
 
 
 # A convenience class that merely specifies that edges have direction.

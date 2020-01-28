@@ -56,7 +56,7 @@ class GraphWalk(object):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         if not graph_schema:
-            self.graph_schema = self.graph.create_graph_schema(create_type_maps=True)
+            self.graph_schema = self.graph.create_graph_schema()
         else:
             self.graph_schema = graph_schema
 
@@ -70,7 +70,7 @@ class GraphWalk(object):
         adj = getattr(self, "adj_types", None)
         if not adj:
             # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-            self.adj_types = adj = self.graph.adjacency_types(self.graph_schema)
+            self.adj_types = adj = self.graph._adjacency_types(self.graph_schema)
         return adj
 
     def _check_seed(self, seed):
@@ -103,17 +103,12 @@ class GraphWalk(object):
             self._raise_error("node {} not in graph".format(node))
         return self.graph.neighbors(node)
 
-    def run(self, **kwargs):
+    def run(self, *args, **kwargs):
         """
         To be overridden by subclasses. It is the main entry point for performing random walks on the given
         graph.
+
         It should return the sequences of nodes in each random walk.
-
-        Args:
-            **kwargs:
-
-        Returns:
-
         """
         raise NotImplementedError
 
@@ -185,18 +180,18 @@ class UniformRandomWalk(GraphWalk):
     Performs uniform random walks on the given graph
     """
 
-    def run(self, nodes=None, n=None, length=None, seed=None):
+    def run(self, nodes, n, length, seed=None):
         """
         Perform a random walk starting from the root nodes.
 
         Args:
-            nodes: <list> The root nodes as a list of node IDs
-            n: <int> Total number of random walks per root node
-            length: <int> Maximum length of each random walk
-            seed: <int> Random number generator seed; default is None
+            nodes (list): The root nodes as a list of node IDs
+            n (int): Total number of random walks per root node
+            length (int): Maximum length of each random walk
+            seed (int, optional): Random number generator seed; default is None
 
         Returns:
-            <list> List of lists of nodes ids for each of the random walks
+            List of lists of nodes ids for each of the random walks
 
         """
         self._check_common_parameters(nodes, n, length, seed)
@@ -262,24 +257,22 @@ class BiasedRandomWalk(GraphWalk):
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def run(
-        self, nodes=None, n=None, p=1.0, q=1.0, length=None, seed=None, weighted=False
-    ):
+    def run(self, nodes, n, length, p=1.0, q=1.0, seed=None, weighted=False):
 
         """
         Perform a random walk starting from the root nodes.
 
         Args:
-            nodes: <list> The root nodes as a list of node IDs
-            n: <int> Total number of random walks per root node
-            p: <float> Defines probability, 1/p, of returning to source node
-            q: <float> Defines probability, 1/q, for moving to a node away from the source node
-            length: <int> Maximum length of each random walk
-            seed: <int> Random number generator seed; default is None
-            weighted: <False or True> Indicates whether the walk is unweighted or weighted
+            nodes (list): The root nodes as a list of node IDs
+            n (int): Total number of random walks per root node
+            length (int): Maximum length of each random walk
+            p (float, default 1.0): Defines probability, 1/p, of returning to source node
+            q (float, default 1.0): Defines probability, 1/q, for moving to a node away from the source node
+            seed (int, optional): Random number generator seed; default is None
+            weighted (bool, default False): Indicates whether the walk is unweighted or weighted
 
         Returns:
-            <list> List of lists of nodes ids for each of the random walks
+            List of lists of nodes ids for each of the random walks
 
         """
         self._check_common_parameters(nodes, n, length, seed)
@@ -295,7 +288,7 @@ class BiasedRandomWalk(GraphWalk):
                 for neighbor in self.graph.neighbors(node):
 
                     wts = set()
-                    for weight in self.graph.edge_weights(node, neighbor):
+                    for weight in self.graph._edge_weights(node, neighbor):
                         if weight is None or np.isnan(weight) or weight == np.inf:
                             self._raise_error(
                                 "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
@@ -344,7 +337,7 @@ class BiasedRandomWalk(GraphWalk):
 
                     if weighted:
                         # TODO Encapsulate edge weights
-                        weight_cn = self.graph.edge_weights(current_node, nn)[0]
+                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
                     else:
                         weight_cn = 1.0
 
@@ -409,21 +402,21 @@ class UniformRandomMetaPathWalk(GraphWalk):
     For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
 
-    def run(self, nodes=None, n=None, length=None, metapaths=None, seed=None):
+    def run(self, nodes, n, length, metapaths, seed=None):
         """
         Performs metapath-driven uniform random walks on heterogeneous graphs.
 
         Args:
-            nodes: <list> The root nodes as a list of node IDs
-            n: <int> Total number of random walks per root node
-            length: <int> Maximum length of each random walk
-            metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
-            [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
-            schemas of length 3 and 5 respectively.
-            seed: <int> Random number generator seed; default is None
+            nodes (list): The root nodes as a list of node IDs
+            n (int): Total number of random walks per root node
+            length (int): Maximum length of each random walk
+            metapaths (list of list): List of lists of node labels that specify a metapath schema, e.g.,
+                [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+                schemas of length 3 and 5 respectively.
+            seed (int, optional): Random number generator seed; default is None
 
         Returns:
-            <list> List of lists of nodes ids for each of the random walks generated
+            List of lists of nodes ids for each of the random walks generated
         """
         self._check_common_parameters(nodes, n, length, seed)
         self._check_metapath_values(metapaths)
@@ -508,18 +501,18 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes=None, n=1, n_size=None, seed=None):
+    def run(self, nodes, n_size, n=1, seed=None):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
-            nodes:  <list> A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
-            n: <int> Number of walks per node id.
-            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk. Sampling of
+            nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
+                given depth d.
+            n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
+            n (int, default 1): Number of walks per node id.
             neighbours with replacement is always used regardless of the node degree and number of neighbours
             requested.
-            seed: <int> Random number generator seed; default is None
+            seed (int, optional): Random number generator seed; default is None
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
@@ -573,19 +566,17 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes=None, n=1, n_size=None, seed=None):
+    def run(self, nodes, n_size, n=1, seed=None):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
-            nodes:  <list> A list of root node ids such that from each node n BFWs will be generated
+            nodes (list): A list of root node ids such that from each node n BFWs will be generated
                 with the number of samples per hop specified in n_size.
-            n: <int> Number of walks per node id.
-            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk. Sampling of
-            neighbours with replacement is always used regardless of the node degree and number of neighbours
-            requested.
-            graph_schema: <GraphSchema> If None then the graph schema is extracted from self.graph
-            seed: <int> Random number generator seed; default is None
+            n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
+            n (int, default 1): Number of walks per node id. Neighbours with replacement is always used regardless
+                of the node degree and number of neighbours requested.
+            seed (int, optional): Random number generator seed; default is None
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a sampled Heterogeneous
@@ -606,7 +597,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph_schema.get_node_type(node)
+                node_type = self.graph.node_type(node)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
@@ -661,17 +652,17 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         if not graph.is_directed():
             self._raise_error("Graph must be directed")
 
-    def run(self, nodes=None, n=1, in_size=None, out_size=None, seed=None):
+    def run(self, nodes, in_size, out_size, n=1, seed=None):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
-            nodes:  <list> A list of root node ids such that from each node n BFWs will be generated up to the
+            nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
-            n: <int> Number of walks per node id.
-            in_size: <list> The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_size: <list> The number of out-directed nodes to sample with replacement at each depth of the walk.
-            seed: <int> Random number generator seed; default is None
+            in_size (int): The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size (int): The number of out-directed nodes to sample with replacement at each depth of the walk.
+            n (int, default 1): Number of walks per node id.
+            seed (int, optional): Random number generator seed; default is None
 
 
         Returns:
