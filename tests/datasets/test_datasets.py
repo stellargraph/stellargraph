@@ -30,50 +30,37 @@ def test_dataset_download(dataset_class):
     dataset_class().download(ignore_cache=True)
 
 
+@patch("stellargraph.datasets.datasets.Cora.url", new="http://stellargraph-invalid-url/x")
 def test_invalid_url() -> None:
-    dataset = Cora()
-    dataset.url = "http://stellargraph-invalid-url/x"
     with pytest.raises(URLError):
-        dataset.download(ignore_cache=True)
+        Cora().download(ignore_cache=True)
 
 
+# we add an additional expected file that should break the download
+@patch("stellargraph.datasets.datasets.Cora.expected_files", new=Cora.expected_files + ["test-missing-file.xyz"])
 def test_missing_files() -> None:
-    # we start with Cora to a special path, but with the URL from CiteSeer
-    dataset = Cora()
-    dataset.directory_name = "test-missing-files"
-    dataset.url = CiteSeer().url
-
-    # make sure the target directory is empty
-    def remove_dataset_directory():
-        if os.path.exists(dataset.base_directory):
-            shutil.rmtree(dataset.base_directory)
-
-    remove_dataset_directory()
     # download - the url should work, but the files extracted won't be correct
     with pytest.raises(FileNotFoundError):
-        dataset.download()
-    remove_dataset_directory()  # cleanup
+        Cora().download()
 
 
 def test_environment_path_override(monkeypatch) -> None:
-    new_datasets_path = os.path.join("~", "test-sg-datasets")
+    new_datasets_path = os.path.expanduser(os.path.join("~", "test-sg-datasets"))
     monkeypatch.setenv("STELLARGRAPH_DATASETS_PATH", new_datasets_path)
     dataset = CiteSeer()
     assert dataset.base_directory == os.path.join(
-        os.path.expanduser(new_datasets_path), dataset.directory_name
+        new_datasets_path, dataset.directory_name
     )
 
 
-def test_download_cache() -> None:
-    with patch(
-        "stellargraph.datasets.dataset_loader.urlretrieve", wraps=urlretrieve
-    ) as mock_urlretrieve:
-        # forcing a re-download should call urlretrieve
-        Cora().download(ignore_cache=True)
-        assert mock_urlretrieve.called
+@patch("stellargraph.datasets.dataset_loader.urlretrieve", wraps=urlretrieve)
+def test_download_cache(mock_urlretrieve) -> None:
+    # forcing a re-download should call urlretrieve
+    Cora().download(ignore_cache=True)
+    assert mock_urlretrieve.called
 
-        mock_urlretrieve.reset_mock()
+    mock_urlretrieve.reset_mock()
 
-        # if already downloaded and in the cache, then another download should skip urlretrieve
-        Cora().download()
-        assert not mock_urlretrieve.called
+    # if already downloaded and in the cache, then another download should skip urlretrieve
+    Cora().download()
+    assert not mock_urlretrieve.called
