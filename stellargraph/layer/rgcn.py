@@ -318,8 +318,8 @@ class RelationalGraphConvolution(Layer):
 
         if self.num_bases > 0:
             self.relational_kernels = [
-                    tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
-                ]
+                tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
+            ]
 
         for i in range(self.num_relationships):
             h_graph = K.dot(As[i], features)
