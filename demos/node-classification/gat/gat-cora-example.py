@@ -16,19 +16,10 @@
 
 """
 Graph node classification using Graph Attention Network (GAT) model.
-This example uses the CORA dataset, which can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
-
-The following is the description of the dataset:
-> The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
-> The citation network consists of 5429 links. Each publication in the dataset is described by a
-> 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
-> The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
-
-Download and unzip the cora.tgz file to a location on your computer and pass this location
-(which should contain cora.cites and cora.content) as a command line argument to this script.
+This example uses the CORA dataset, which it will download.
 
 Run this script as follows:
-    python gat-cora-example.py -l <path_to_cora_dataset>
+    python gat-cora-example.py
 
 Other optional arguments can be seen by running
     python gat-cora-example.py --help
@@ -47,6 +38,7 @@ from sklearn import preprocessing, feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GAT
 from stellargraph.mapper import FullBatchNodeGenerator
+from stellargraph import datasets
 
 
 def train(
@@ -300,13 +292,6 @@ if __name__ == "__main__":
         help="The number of hidden features at each GAT layer",
     )
     parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the CORA dataset (directory)",
-    )
-    parser.add_argument(
         "-t",
         "--target",
         type=str,
@@ -323,14 +308,12 @@ if __name__ == "__main__":
     args, cmdline_args = parser.parse_known_args()
 
     # Load the dataset - this assumes it is the CORA dataset (in 'cited-paper' <- 'citing-paper' order)
-    # Load graph edgelist
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
+    # This will download the dataset if required:
+    dataset = datasets.Cora()
+    dataset.download()
+    graph_loc = dataset.data_directory
 
+    # Load graph edgelist
     edgelist = pd.read_csv(
         os.path.join(graph_loc, "cora.cites"),
         sep="\t",
