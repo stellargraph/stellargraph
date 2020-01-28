@@ -32,16 +32,24 @@ class ColumnarConverter:
         column_defaults (dict of hashable to any): any default values for columns (using names before renaming!)
         selected_columns (dict of hashable to hashable): renamings for columns, mapping original name to new name
         allow_features (bool): if True, columns that aren't selected are returned as a numpy feature matrix
+        dtype (str or numpy dtype): the data type to use for the feature matrices
     """
 
     def __init__(
-        self, name, default_type, column_defaults, selected_columns, allow_features
+        self,
+        name,
+        default_type,
+        column_defaults,
+        selected_columns,
+        allow_features,
+        dtype=None,
     ):
         self._parent_name = name
         self.column_defaults = column_defaults
         self.selected_columns = selected_columns
         self.default_type = default_type
         self.allow_features = allow_features
+        self.dtype = dtype
 
     def name(self, type_name=None):
         if type_name is None:
@@ -74,7 +82,7 @@ class ColumnarConverter:
         )
 
         if self.allow_features:
-            features = other.to_numpy()
+            features = other.to_numpy(dtype=self.dtype)
         elif len(other.columns) == 0:
             features = None
         else:
@@ -101,9 +109,14 @@ class ColumnarConverter:
         )
 
 
-def convert_nodes(data, *, name, default_type) -> NodeData:
+def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
     converter = ColumnarConverter(
-        name, default_type, column_defaults={}, selected_columns={}, allow_features=True
+        name,
+        default_type,
+        column_defaults={},
+        selected_columns={},
+        allow_features=True,
+        dtype=dtype,
     )
     nodes, node_features = converter.convert(data)
     return NodeData(nodes, node_features)
