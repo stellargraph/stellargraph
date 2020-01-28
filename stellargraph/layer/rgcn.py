@@ -252,6 +252,10 @@ class RelationalGraphConvolution(Layer):
                 for _ in range(self.num_relationships)
             ]
 
+            # To support eager TF the relational_kernels need to be explicitly calculated
+            # each time the layer is called
+            self.relational_kernels = None
+
         else:
             self.bases = None
             self.coefficients = None
@@ -316,15 +320,17 @@ class RelationalGraphConvolution(Layer):
         # Calculate the layer operation of RGCN
         output = K.dot(features, self.self_kernel)
 
-        if self.num_bases > 0:
-            self.relational_kernels = [
+        if self.relational_kernels is None:
+            # explicitly calculate the relational kernels if basis matrices are used
+            relational_kernels = [
                 tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
             ]
+        else:
+            relational_kernels = self.relational_kernels
 
         for i in range(self.num_relationships):
             h_graph = K.dot(As[i], features)
-
-            output += K.dot(h_graph, self.relational_kernels[i])
+            output += K.dot(h_graph, relational_kernels[i])
 
         # Add optional bias & apply activation
         if self.bias is not None:
