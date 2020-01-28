@@ -252,12 +252,6 @@ class RelationalGraphConvolution(Layer):
                 for _ in range(self.num_relationships)
             ]
 
-            # create a kernel for each edge type from a linear combination
-            # of the basis matrices
-            self.relational_kernels = [
-                tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
-            ]
-
         else:
             self.bases = None
             self.coefficients = None
@@ -322,8 +316,14 @@ class RelationalGraphConvolution(Layer):
         # Calculate the layer operation of RGCN
         output = K.dot(features, self.self_kernel)
 
+        if self.num_bases > 0:
+            self.relational_kernels = [
+                    tf.einsum("ijk,k->ij", self.bases, coeff) for coeff in self.coefficients
+                ]
+
         for i in range(self.num_relationships):
             h_graph = K.dot(As[i], features)
+
             output += K.dot(h_graph, self.relational_kernels[i])
 
         # Add optional bias & apply activation
