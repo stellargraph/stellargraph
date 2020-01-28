@@ -19,10 +19,7 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 See README.md for the description of the dataset.
 
-Run this script as follows:
-    python movielens-recommender.py -l <path_to_movielens_dataset>
-
-Other optional arguments can be seen by running
+Optional arguments can be seen by running
     python movielens-recommender.py --help
 
 """
@@ -39,6 +36,7 @@ from sklearn import preprocessing, feature_extraction, model_selection
 import pandas as pd
 import multiprocessing
 import tensorflow.keras.backend as K
+from stellargraph import datasets
 
 
 def read_graph(data_path, config_file):
@@ -211,14 +209,6 @@ class LinkInference(object):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
-
-    parser.add_argument(
-        "-p",
-        "--data_path",
-        type=str,
-        default="../../data/ml-100k",
-        help="Dataset path (directory)",
-    )
     parser.add_argument(
         "-f",
         "--config",
@@ -286,8 +276,10 @@ if __name__ == "__main__":
     )
 
     args, cmdline_args = parser.parse_known_args()
-
-    G = read_graph(args.data_path, args.config)
+    # Load the MovieLens dataset, downloading if necessary
+    dataset = datasets.MovieLens()
+    dataset.download()
+    G = read_graph(dataset.data_directory, args.config)
 
     model = LinkInference(G)
 

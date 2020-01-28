@@ -9,6 +9,8 @@
 - New algorithms:
   - Cluster-GCN: an extension of GCN that can be trained using SGD, with demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
 - Unsupervised GraphSAGE has now been updated and tested for reproducibility. Ensuring all seeds are set, running the same pipeline should give reproducible embeddings. [\#620](https://github.com/stellargraph/stellargraph/pull/620)
+- A `datasets` subpackage provides easier access to sample datasets with inbuilt downloading. [\#690](https://github.com/stellargraph/stellargraph/pull/690)
+
 
 ### Breaking changes
 
