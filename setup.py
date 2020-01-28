@@ -24,7 +24,7 @@ URL = "https://github.com/stellargraph/stellargraph"
 # full tensorflow is too big for readthedocs's builder
 tensorflow = "tensorflow-cpu" if "READTHEDOCS" in os.environ else "tensorflow"
 REQUIRES = [
-    f"{tensorflow}>=2.0.0",
+    f"{tensorflow}>=2.0.0, <2.1.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
     "networkx>=2.2",
