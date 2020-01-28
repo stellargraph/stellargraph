@@ -183,7 +183,7 @@ class StellarGraph:
             self._is_directed = is_directed
 
             self._nodes = convert.convert_nodes(
-                nodes, name="nodes", default_type=node_type_default
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
             )
             self._edges = convert.convert_edges(
                 edges,
@@ -265,23 +265,23 @@ class StellarGraph:
 
         return self._nodes.ids.pandas_index
 
-    def edges(self, triple=False) -> Iterable[Any]:
+    def edges(self, include_edge_type=False) -> Iterable[Any]:
         """
         Obtains the collection of edges in the graph.
 
         Args:
-            triple (bool): A flag that indicates whether to return edge triples
+            include_edge_type (bool): A flag that indicates whether to return edge triples
             of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
 
         Returns:
             The graph edges.
         """
         if self._graph is not None:
-            return self._graph.edges(triple)
+            return self._graph.edges(include_edge_type)
 
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
-        if triple:
+        if include_edge_type:
             return list(
                 zip(
                     self._edges.sources,
@@ -325,13 +325,14 @@ class StellarGraph:
             if weights is not None:
                 weights = weights[correct_type]
 
+        # FIXME(#718): it would be better to return these as ndarrays, instead of (zipped) lists
         if weights is not None:
             return [
                 NeighbourWithWeight(node, weight)
                 for node, weight in zip(other_node_id, weights)
             ]
 
-        return other_node_id
+        return list(other_node_id)
 
     def neighbors(
         self, node: Any, include_edge_weight=False, edge_types=None
