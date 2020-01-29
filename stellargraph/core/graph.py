@@ -645,6 +645,22 @@ class StellarGraph:
             self._nodes.types.from_iloc(tgt_ilocs),
         )
 
+    def _unique_type_triples(self, *, return_counts, selector=slice(None)):
+        all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
+        ret = np.unique(
+            all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
+        )
+        edge_ilocs = ret[1]
+        # we've now got the indices for an edge with each triple, along with the counts of them, so
+        # we can query to get the actual edge types (this is, at the time of writing, easier than
+        # getting the actual type for each type iloc in the triples)
+        unique_ets = self._edge_type_triples(edge_ilocs)
+
+        if return_counts:
+            return zip(*unique_ets, ret[2])
+
+        return zip(*unique_ets)
+
     def info(self, show_attributes=True, sample=None):
         """
         Return an information string summarizing information on the current graph.
@@ -689,16 +705,10 @@ class StellarGraph:
         lines.append("")
         lines.append(" Edge types:")
 
-        all_type_ilocs = self._edge_type_iloc_triples(stacked=True)
-        _, edge_ilocs, counts = np.unique(
-            all_type_ilocs, axis=0, return_index=True, return_counts=True
-        )
-        # we've now got the indices for an edge with each triple, along with the counts of them, so
-        # we can query to get the actual edge types (this is, at the time of writing, easier than
-        # getting the actual type for each type iloc in the triples)
-        unique_ets = self._edge_type_triples(edge_ilocs)
-
-        for src_ty, rel_ty, tgt_ty, count in zip(*unique_ets, counts):
+        # FIXME: it would be better for the schema to just include the counts directly
+        for src_ty, rel_ty, tgt_ty, count in self._unique_type_triples(
+            return_counts=True
+        ):
             et = EdgeType(src_ty, rel_ty, tgt_ty)
             lines.append(f"    {str_edge_type(et)}: [{count}]")
 
@@ -739,8 +749,9 @@ class StellarGraph:
         else:
             selector = self._edges.sources.isin(nodes) & self._edges.targets.isin(nodes)
 
-        source_types, rel_types, target_types = self._edge_type_triples(selector)
-        for n1, rel, n2 in zip(source_types, rel_types, target_types):
+        for n1, rel, n2 in self._unique_type_triples(
+            selector=selector, return_counts=False
+        ):
             edge_type_tri = EdgeType(n1, rel, n2)
             edge_types.add(edge_type_tri)
             graph_schema[n1].add(edge_type_tri)
