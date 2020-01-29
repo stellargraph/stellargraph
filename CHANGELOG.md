@@ -2,7 +2,17 @@
 
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.2)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.9.0...HEAD)
+
+### Major features and improvements
+
+### Breaking changes
+
+### Experimental features
+
+### Bug fixes and other changes
+
+## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
 
 ### Major features and improvements
 
