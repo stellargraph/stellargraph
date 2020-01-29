@@ -1,6 +1,7 @@
 ---
 name: New feature
 about: A new feature to be implemented
+labels: enhancement, sg-library
 
 ---
 
@@ -27,4 +28,3 @@ about: A new feature to be implemented
 - [ ] Version number reflects new status
 - [ ] CHANGELOG.md updated
 - [ ] Team demo
-
