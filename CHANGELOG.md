@@ -15,7 +15,7 @@
 ### Breaking changes
 
 - The stellargraph library now only supports `tensorflow` version 2.0 [\#518](https://github.com/stellargraph/stellargraph/pull/518), [\#732](https://github.com/stellargraph/stellargraph/pull/732). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
-- The stellargraph library now only supports Python versions 3.6 and above [\#](). Backward compatibility with earlier versions of Python is not guaranteed.
+- The stellargraph library now only supports Python versions 3.6 and above [\#641](https://github.com/stellargraph/stellargraph/pull/641). Backward compatibility with earlier versions of Python is not guaranteed.
 - The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality. In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead. [\#297](https://github.com/stellargraph/stellargraph/issues/297) If NetworkX functionality is required, use the new `.to_networkx()` method to convert to a normal `networkx.MultiGraph` or `networkx.MultiDiGraph`.
 - Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498). Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 - Various methods on `StellarGraph` have been renamed to be more succinct and uniform:
