@@ -797,10 +797,39 @@ class StellarGraph:
              An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
              undirected) containing all the nodes & edges and their types & features in this graph.
         """
+        import networkx
+
         if self._graph is not None:
             return self._graph.to_networkx()
 
-        raise NotImplementedError()
+        if self.is_directed():
+            graph = networkx.MultiDiGraph()
+        else:
+            graph = networkx.MultiGraph()
+
+        for ty in self.node_types:
+            node_ids = self.nodes_of_type(ty)
+            ty_dict = {node_type_name: ty}
+
+            features = self.node_features(node_ids, node_type=ty)
+
+            for node_id, node_features in zip(node_ids, features):
+                graph.add_node(
+                    node_id, **ty_dict, **{feature_name: node_features},
+                )
+
+        iterator = zip(
+            self._edges.sources,
+            self._edges.targets,
+            self._edges.type_of_iloc(slice(None)),
+            self._edges.weights,
+        )
+        graph.add_edges_from(
+            (src, dst, {edge_type_name: type_, edge_weight_label: weight})
+            for src, dst, type_, weight in iterator
+        )
+
+        return graph
 
     # FIXME: Experimental/special-case methods that need to be considered more; the underscores
     # denote "package private", not fully private, and so are ok to use in the rest of stellargraph
