@@ -9,6 +9,7 @@
 - StellarGraph is now available as [a conda package on Anaconda Cloud](https://anaconda.org/stellargraph/stellargraph) [\#516](https://github.com/stellargraph/stellargraph/pull/516)
 - New algorithms:
   - Cluster-GCN: an extension of GCN that can be trained using SGD, with demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
+  - Relational-GCN (RGCN): a generalisation of GCN to relational/multi edge type graphs, with demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
   - Link prediction for full-batch models: `FullBatchLinkGenerator` allows doing link prediction with algorithms like GCN, GAT, APPNP and PPNP [\#543](https://github.com/stellargraph/stellargraph/pull/543)
 - Unsupervised GraphSAGE has now been updated and tested for reproducibility. Ensuring all seeds are set, running the same pipeline should give reproducible embeddings. [\#620](https://github.com/stellargraph/stellargraph/pull/620)
 
@@ -29,7 +30,6 @@
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
-- Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
 - The `StellarGraph` and `StellarDiGraph` classes supports using a backend based on NumPy and Pandas that uses dramatically less memory for large graphs than the existing NetworkX-based backend [\#668](https://github.com/stellargraph/stellargraph/pull/668). The new backend can be enabled by constructing with `StellarGraph(nodes=..., edges=...)` using Pandas DataFrames, instead of a NetworkX graph.
 
 ### Bug fixes and other changes
