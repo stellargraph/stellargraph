@@ -413,7 +413,8 @@ def test_edges_include_edge_type():
 
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
-    assert set(g.edges(include_edge_type=True)) == r | f
+    expected = normalize_edges(r | f, directed=False)
+    assert normalize_edges(g.edges(include_edge_type=True), directed=False) == expected
 
 
 def numpy_to_list(x):
@@ -757,6 +758,7 @@ def test_adjacency_types_undirected():
         ("B", "R", "A"): arb_bra,
         ("B", "F", "B"): {4: [5], 5: [4]},
     }
+
 
 def test_adjacency_types_directed():
     g = example_hin_1(is_directed=True)
