@@ -134,13 +134,14 @@ class StellarGraph:
 
         nodes: DataFrame or dict of hashable to DataFrame
             Features for every node in the graph. Any columns in the dataframe are taken as numeric
-            edge features of type ``dtype``. If there is only one type of node, a DataFrame can be
+            node features of type ``dtype``. If there is only one type of node, a DataFrame can be
             passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs. This must be used with the ``edges`` argument. **Warning**: this is experimental
-            (see warning above for more details).
+            IDs. This must be used with the ``edges`` argument. This uses the same basic structure as the
+            ``node_features`` argument, described above. **Warning**: this is experimental (see
+            warning above for more details).
 
         edges: DataFrame or dict of hashable to DataFrame
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
@@ -149,7 +150,8 @@ class StellarGraph:
             edges, a DataFrame can be passed directly, and the type defaults to the
             ``edge_type_default`` parameter. Edges have an ID taken from the index of the dataframe,
             and they have to be unique across all types. This must be used with the ``nodes``
-            argument. **Warning**: this is experimental (see warning above for more details).
+            argument. This uses the same basic structure as the ``node_features`` argument,
+            described above. **Warning**: this is experimental (see warning above for more details).
 
         source_column: str, optional
             The name of the column to use as the source node of edges in the ``edges`` edge list
@@ -158,6 +160,10 @@ class StellarGraph:
         target_column: str, optional
             The name of the column to use as the target node of edges in the ``edges`` edge list
             argument.
+
+        edge_weight_label: str, optional
+            The name of the attribute to use as the weight of edges (for the `nodes`/`edges`
+            DataFrame parameters, this is the name of the column to use).
     """
 
     def __init__(
