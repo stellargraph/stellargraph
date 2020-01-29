@@ -931,6 +931,11 @@ class StellarGraph:
                     other_triple_dict[src].append(tgt)
                     other_triple_dict[tgt].append(src)
 
+        for subdict in triples.values():
+            for k, v in subdict.items():
+                # each list should be in order, to ensure sampling methods are deterministic
+                subdict[k] = sorted(v, key=str)
+
         return triples
 
     def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:

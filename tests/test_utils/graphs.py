@@ -142,7 +142,7 @@ def example_hin_1(feature_sizes=None, is_directed=False) -> StellarGraph:
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
     r = pd.DataFrame(
-        [(4, 0), (1, 4), (1, 5), (2, 4), (5, 3)], columns=["source", "target"]
+        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
     )
     f = pd.DataFrame([(4, 5)], columns=["source", "target"], index=[6])
 
