@@ -581,6 +581,32 @@ class StellarGraph:
     ##################################################################
     # Computationally intensive methods:
 
+    def _edge_type_iloc_triples(self, selector=slice(None), stacked=False):
+        source_ilocs = self._nodes.ids.to_iloc(self._edges.sources[selector])
+        source_type_ilocs = self._nodes.type_ilocs[source_ilocs]
+
+        rel_type_ilocs = self._edges.type_ilocs[selector]
+
+        target_ilocs = self._nodes.ids.to_iloc(self._edges.targets[selector])
+        target_type_ilocs = self._nodes.type_ilocs[target_ilocs]
+
+        all_ilocs = source_type_ilocs, rel_type_ilocs, target_type_ilocs
+        if stacked:
+            return np.stack(all_ilocs, axis=-1)
+
+        return all_ilocs
+
+    def _edge_type_triples(self, selector=slice(None)):
+        src_ilocs, rel_ilocs, tgt_ilocs = self._edge_type_iloc_triples(
+            selector, stacked=False
+        )
+
+        return (
+            self._nodes.types.from_iloc(src_ilocs),
+            self._edges.types.from_iloc(rel_ilocs),
+            self._nodes.types.from_iloc(tgt_ilocs),
+        )
+
     def info(self, show_attributes=True, sample=None):
         """
         Return an information string summarizing information on the current graph.
@@ -600,7 +626,45 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.info(show_attributes, sample)
 
-        raise NotImplementedError()
+        directed_str = "Directed" if self.is_directed() else "Undirected"
+        lines = [
+            f"{type(self)}: {directed_str} multigraph",
+            f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
+        ]
+
+        # Numpy processing is much faster than NetworkX processing, so we don't bother sampling.
+        gs = self.create_graph_schema()
+
+        def str_edge_type(et):
+            n1, rel, n2 = et
+            return f"{n1}-{rel}->{n2}"
+
+        lines.append("")
+        lines.append(" Node types:")
+
+        for nt in gs.node_types:
+            nodes = self.nodes_of_type(nt)
+            lines.append(f"  {nt}: [{len(nodes)}]")
+            edge_types = ", ".join(str_edge_type(et) for et in gs.schema[nt])
+            lines.append(f"    Edge types: {edge_types}")
+
+        lines.append("")
+        lines.append(" Edge types:")
+
+        all_type_ilocs = self._edge_type_iloc_triples(stacked=True)
+        _, edge_ilocs, counts = np.unique(
+            all_type_ilocs, axis=0, return_index=True, return_counts=True
+        )
+        # we've now got the indices for an edge with each triple, along with the counts of them, so
+        # we can query to get the actual edge types (this is, at the time of writing, easier than
+        # getting the actual type for each type iloc in the triples)
+        unique_ets = self._edge_type_triples(edge_ilocs)
+
+        for src_ty, rel_ty, tgt_ty, count in zip(*unique_ets, counts):
+            et = EdgeType(src_ty, rel_ty, tgt_ty)
+            lines.append(f"    {str_edge_type(et)}: [{count}]")
+
+        return "\n".join(lines)
 
     def create_graph_schema(self, create_type_maps=None, nodes=None):
         """
@@ -637,14 +701,7 @@ class StellarGraph:
         else:
             selector = self._edges.sources.isin(nodes) & self._edges.targets.isin(nodes)
 
-        source_ilocs = self._nodes.ids.to_iloc(self._edges.sources[selector])
-        source_types = self._nodes.type_of_iloc(source_ilocs)
-
-        rel_types = self._edges.type_of_iloc(selector)
-
-        target_ilocs = self._nodes.ids.to_iloc(self._edges.targets[selector])
-        target_types = self._nodes.type_of_iloc(target_ilocs)
-
+        source_types, rel_types, target_types = self._edge_type_triples(selector)
         for n1, rel, n2 in zip(source_types, rel_types, target_types):
             edge_type_tri = EdgeType(n1, rel, n2)
             edge_types.add(edge_type_tri)

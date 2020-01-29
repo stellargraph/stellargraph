@@ -73,7 +73,11 @@ def _repeated_features(values_to_repeat, width):
 
 
 def example_graph_1(
-    feature_size=None, label="default", feature_name="feature", is_directed=False
+    feature_size=None,
+    node_label="default",
+    edge_label="default",
+    feature_name="feature",
+    is_directed=False,
 ):
     # attr2vec, graphattention, graphsage, node mappers (2), link mappers, types, stellargraph, unsupervised sampler
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (3, 2)], columns=["source", "target"])
@@ -85,7 +89,7 @@ def example_graph_1(
     nodes = pd.DataFrame(features, index=[1, 2, 3, 4])
 
     cls = StellarDiGraph if is_directed else StellarGraph
-    return cls(nodes={label: nodes}, edges={label: elist})
+    return cls(nodes={node_label: nodes}, edges={edge_label: elist})
 
 
 def example_graph_2(feature_size=None, label="default") -> StellarGraph:
