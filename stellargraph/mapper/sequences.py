@@ -39,7 +39,6 @@ from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 from ..data.unsupervised_sampler import UnsupervisedSampler
-from ..core.experimental import experimental
 from ..core.utils import is_real_iterable
 
 

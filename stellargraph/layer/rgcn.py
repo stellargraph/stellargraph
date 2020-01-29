@@ -20,10 +20,8 @@ from tensorflow.keras.layers import Layer, Lambda, Dropout, Input
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from .misc import SqueezedSparseConversion
 from ..mapper.full_batch_generators import RelationalFullBatchNodeGenerator
-from ..core.experimental import experimental
 
 
-@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalGraphConvolution(Layer):
     """
         Relational Graph Convolution (RGCN) Keras layer.
@@ -348,7 +346,6 @@ class RelationalGraphConvolution(Layer):
         return output
 
 
-@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RGCN:
     """
     A stack of Relational Graph Convolutional layers that implement a relational graph
