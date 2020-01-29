@@ -370,7 +370,6 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         return super().flow(link_ids, targets)
 
 
-@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
