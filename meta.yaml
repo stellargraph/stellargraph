@@ -2,7 +2,7 @@
 # This file is not valid YAML because of the jinja templating
 
 {% set name = "stellargraph" %}
-{% set version = "0.8.1" %}
+{% set version = "0.9.0" %}
 
 package:
   name: "{{ name|lower }}"
