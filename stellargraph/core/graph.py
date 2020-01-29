@@ -184,25 +184,16 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
     ):
-        if graph is not None or (nodes is None and edges is None):
-            # While migrating, maintain complete compatibility by deferring to the networkx
-            # implementation
-
-            # Avoid a circular import
-            from .graph_networkx import NetworkXStellarGraph
-
-            self._graph = NetworkXStellarGraph(
+        if graph is not None:
+            nodes, edges = convert.from_networkx(
                 graph,
-                is_directed,
-                edge_weight_label,
-                node_type_name,
-                edge_type_name,
-                node_type_default,
-                edge_type_default,
-                feature_name,
-                target_name,
-                node_features,
-                dtype,
+                node_type_name=node_type_name,
+                edge_type_name=edge_type_name,
+                node_type_default=node_type_default,
+                edge_type_default=edge_type_default,
+                edge_weight_label="weight",
+                node_features=node_features,
+                dtype=dtype,
             )
         else:
             warnings.warn(
@@ -211,27 +202,24 @@ class StellarGraph:
                 ExperimentalWarning,
             )
 
-            self._graph = None
+        if nodes is None:
+            nodes = {}
+        if edges is None:
+            edges = {}
 
-            if nodes is None:
-                nodes = {}
-            if edges is None:
-                edges = {}
-
-            self._is_directed = is_directed
-
-            self._nodes = convert.convert_nodes(
-                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-            )
-            self._edges = convert.convert_edges(
-                edges,
-                self._nodes,
-                name="edges",
-                default_type=edge_type_default,
-                source_column=source_column,
-                target_column=target_column,
-                weight_column=edge_weight_label,
-            )
+        self._is_directed = is_directed
+        self._nodes = convert.convert_nodes(
+            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
+        )
+        self._edges = convert.convert_edges(
+            edges,
+            self._nodes,
+            name="edges",
+            default_type=edge_type_default,
+            source_column=source_column,
+            target_column=target_column,
+            weight_column=edge_weight_label,
+        )
 
     # customise how a missing attribute is handled to give better error messages for the NetworkX
     # -> no NetworkX transition.
@@ -262,9 +250,6 @@ class StellarGraph:
         Returns:
              bool: The graph directedness status.
         """
-        if self._graph is not None:
-            return self._graph.is_directed()
-
         return self._is_directed
 
     def number_of_nodes(self) -> int:
@@ -274,9 +259,6 @@ class StellarGraph:
         Returns:
              int: The number of nodes.
         """
-        if self._graph is not None:
-            return self._graph.number_of_nodes()
-
         return len(self._nodes)
 
     def number_of_edges(self) -> int:
@@ -286,9 +268,6 @@ class StellarGraph:
         Returns:
              int: The number of edges.
         """
-        if self._graph is not None:
-            return self._graph.number_of_edges()
-
         return len(self._edges)
 
     def nodes(self) -> Iterable[Any]:
@@ -298,9 +277,6 @@ class StellarGraph:
         Returns:
             The graph nodes.
         """
-        if self._graph is not None:
-            return self._graph.nodes()
-
         return self._nodes.ids.pandas_index
 
     def edges(
@@ -318,12 +294,6 @@ class StellarGraph:
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights)
         """
-        if self._graph is not None:
-            return self._graph.edges(
-                include_edge_weight=include_edge_weight,
-                include_edge_type=include_edge_type,
-            )
-
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
         if include_edge_type:
@@ -353,9 +323,6 @@ class StellarGraph:
              bool: A value of True (cf False) if the node is
              (cf is not) in the graph.
         """
-        if self._graph is not None:
-            return self._graph.has_node(node)
-
         return node in self._nodes
 
     def _transform_edges(
@@ -401,11 +368,6 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring nodes.
         """
-        if self._graph is not None:
-            return self._graph.neighbors(
-                node, include_edge_weight=include_edge_weight, edge_types=edge_types
-            )
-
         ilocs = self._edges.edge_ilocs(node, ins=True, outs=True)
         source = self._edges.sources[ilocs]
         target = self._edges.targets[ilocs]
@@ -432,8 +394,8 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        if self._graph is not None:
-            return self._graph.in_nodes(
+        if not self.is_directed():
+            return self.neighbors(
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
@@ -465,8 +427,8 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        if self._graph is not None:
-            return self._graph.out_nodes(
+        if not self.is_directed():
+            return self.neighbors(
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
@@ -490,14 +452,11 @@ class StellarGraph:
         Returns:
             A list of node IDs with type node_type
         """
-        if self._graph is not None:
-            return self._graph.nodes_of_type(node_type)
-
         if node_type is None:
             return self.nodes()
 
         ilocs = self._nodes.type_range(node_type)
-        return self._nodes.ids.from_iloc(ilocs)
+        return list(self._nodes.ids.from_iloc(ilocs))
 
     def _key_error_for_missing(self, query_ids, node_ilocs):
         valid = self._nodes.ids.is_valid(node_ilocs)
@@ -515,18 +474,24 @@ class StellarGraph:
         Returns:
             Node type
         """
-        if self._graph is not None:
-            return self._graph.node_type(node)
-
-        if not is_real_iterable(node):
+        is_single = not is_real_iterable(node)
+        if is_single:
             node = np.array([node])
 
         node_ilocs = self._nodes.ids.to_iloc(node)
 
         try:
-            return self._nodes.type_of_iloc(node_ilocs)
+            types = self._nodes.type_of_iloc(node_ilocs)
         except IndexError:
             raise self._key_error_for_missing(node, node_ilocs)
+
+        if is_single:
+            return types[0]
+
+        # FIXME: we need to choose the type to return here properly
+        raise NotImplementedError(
+            "passing multiple node IDs to node_type is not supported"
+        )
 
     @property
     def node_types(self):
@@ -536,9 +501,6 @@ class StellarGraph:
         Returns:
             set of types
         """
-        if self._graph is not None:
-            return self._graph.node_types
-
         return set(self._nodes.types.pandas_index)
 
     def node_feature_sizes(self, node_types=None):
@@ -552,9 +514,6 @@ class StellarGraph:
         Returns:
             A dictionary of node type and integer feature size.
         """
-        if self._graph is not None:
-            return self._graph.node_feature_sizes(node_types)
-
         all_sizes = self._nodes.feature_sizes()
         if node_types is None:
             return all_sizes
@@ -569,9 +528,6 @@ class StellarGraph:
         Checks if all properties required for machine learning training/inference are set up.
         An error will be raised if the graph is not correctly setup.
         """
-        if self._graph is not None:
-            return self._graph.check_graph_for_ml(features)
-
         if all(size == 0 for _, size in self.node_feature_sizes().items()):
             raise RuntimeError(
                 "This StellarGraph has no numeric feature attributes for nodes"
@@ -596,9 +552,6 @@ class StellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        if self._graph is not None:
-            return self._graph.node_features(nodes, node_type)
-
         nodes = np.asarray(nodes)
 
         node_ilocs = self._nodes.ids.to_iloc(nodes)
@@ -701,9 +654,6 @@ class StellarGraph:
         Returns:
             An information string.
         """
-        if self._graph is not None:
-            return self._graph.info(show_attributes, sample)
-
         directed_str = "Directed" if self.is_directed() else "Undirected"
         lines = [
             f"{type(self)}: {directed_str} multigraph",
@@ -762,9 +712,6 @@ class StellarGraph:
                 DeprecationWarning,
             )
 
-        if self._graph is not None:
-            return self._graph.create_graph_schema(nodes)
-
         graph_schema = {nt: set() for nt in self.node_types}
         edge_types = set()
 
@@ -807,9 +754,6 @@ class StellarGraph:
         Returns:
             The degree of each node.
         """
-        if self._graph is not None:
-            return self._graph.node_degrees()
-
         return self._edges.degrees()
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
@@ -825,9 +769,6 @@ class StellarGraph:
         Returns:
              The weighted adjacency matrix.
         """
-        if self._graph is not None:
-            return self._graph.to_adjacency_matrix(nodes)
-
         if nodes is None:
             index = self._nodes._id_index
             selector = slice(None)
@@ -846,11 +787,15 @@ class StellarGraph:
         tgt_idx = index.to_iloc(self._edges.targets[selector])
         n = len(index)
 
-        adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
+        adj = sps.csr_matrix(
+            (weights, (src_idx, tgt_idx)), shape=(n, n), dtype="float32"
+        )
         if not self.is_directed():
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
-            backward = sps.csr_matrix((weights, (tgt_idx, src_idx)), shape=(n, n))
+            backward = sps.csr_matrix(
+                (weights, (tgt_idx, src_idx)), shape=(n, n), dtype="float32"
+            )
             backward.setdiag(0)
             adj += backward
 
@@ -873,9 +818,6 @@ class StellarGraph:
              undirected) containing all the nodes & edges and their types & features in this graph.
         """
         import networkx
-
-        if self._graph is not None:
-            return self._graph.to_networkx()
 
         if self.is_directed():
             graph = networkx.MultiDiGraph()
@@ -922,9 +864,6 @@ class StellarGraph:
         Returns:
             Numpy array containing the indices for the requested nodes.
         """
-        if self._graph is not None:
-            return self._graph.get_index_for_nodes(nodes, node_type)
-
         return self._nodes._id_index.to_iloc(nodes)
 
     def _adjacency_types(self, graph_schema: GraphSchema):
@@ -938,9 +877,6 @@ class StellarGraph:
         Returns:
              The edge types mapping.
         """
-        if self._graph is not None:
-            return self._graph.adjacency_types(graph_schema)
-
         source_types, rel_types, target_types = self._edge_type_triples(slice(None))
 
         triples = defaultdict(lambda: defaultdict(lambda: []))
@@ -978,9 +914,6 @@ class StellarGraph:
         Returns:
             list: The edge weights.
         """
-        if self._graph is not None:
-            return self._graph.edge_weights(source_node, target_node)
-
         # self loops should only be counted once, which means they're effectively always a directed
         # edge at the storage level, unlikely other edges in an undirected graph. This is
         # particularly important with the intersection1d call, where the source_ilocs and

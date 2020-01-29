@@ -102,25 +102,15 @@ def example_benchmark_graph_nx(
 def test_graph_constructor():
     sg = StellarGraph()
     assert sg.is_directed() == False
-    assert sg._graph._node_type_attr == "label"
-    assert sg._graph._edge_type_attr == "label"
-
-    sg = StellarGraph(node_type_name="type", edge_type_name="type")
-    assert sg.is_directed() == False
-    assert sg._graph._node_type_attr == "type"
-    assert sg._graph._edge_type_attr == "type"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
 
 def test_digraph_constructor():
     sg = StellarDiGraph()
     assert sg.is_directed() == True
-    assert sg._graph._node_type_attr == "label"
-    assert sg._graph._edge_type_attr == "label"
-
-    sg = StellarDiGraph(node_type_name="type", edge_type_name="type")
-    assert sg.is_directed() == True
-    assert sg._graph._node_type_attr == "type"
-    assert sg._graph._edge_type_attr == "type"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
 
 def test_info():
@@ -663,8 +653,7 @@ def test_neighbors_unweighted_hom(is_directed):
     graph = example_unweighted_hom(is_directed=is_directed)
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
-        graph.neighbors(1, include_edge_weight=True),
-        [(0, None), (0, None), (2, None), (3, None)],
+        graph.neighbors(1, include_edge_weight=True), [(0, 1), (0, 1), (2, 1), (3, 1)],
     )
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]), []
@@ -691,9 +680,7 @@ def test_in_nodes_weighted_hin():
 def test_in_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.in_nodes(1), [0, 0])
-    assert_items_equal(
-        graph.in_nodes(1, include_edge_weight=True), [(0, None), (0, None)]
-    )
+    assert_items_equal(graph.in_nodes(1, include_edge_weight=True), [(0, 1), (0, 1)])
     assert_items_equal(
         graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
     )
@@ -713,9 +700,7 @@ def test_out_nodes_weighted_hin():
 def test_out_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.out_nodes(1), [2, 3])
-    assert_items_equal(
-        graph.out_nodes(1, include_edge_weight=True), [(2, None), (3, None)]
-    )
+    assert_items_equal(graph.out_nodes(1, include_edge_weight=True), [(2, 1), (3, 1)])
     assert_items_equal(
         graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
     )

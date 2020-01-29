@@ -213,30 +213,6 @@ class TestBiasedWeightedRandomWalk(object):
             == 4
         )
 
-        g = nx.Graph()
-        edges = [(1, 2), (2, 3), (3, 4), (4, 1)]
-        g.add_edges_from(edges)
-        g[1][2]["wt"] = 1
-        g[2][3]["wt"] = 2
-        g[3][4]["wt"] = 3
-        g[4][1]["wt"] = 4
-
-        # Deliberately use wrong name for edge weight!?
-        g = StellarGraph(g, edge_weight_label="w")
-
-        nodes = list(g.nodes())
-        n = 1
-        length = 1
-        seed = None
-        p = 1.0
-        q = 1.0
-
-        biasedrw = BiasedRandomWalk(g)
-        with pytest.raises(ValueError):
-            biasedrw.run(
-                nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
-            )
-
     def test_benchmark_biasedweightedrandomwalk(self, benchmark):
         g = create_test_weighted_graph()
         biasedrw = BiasedRandomWalk(g)
