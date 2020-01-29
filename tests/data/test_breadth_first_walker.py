@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,52 +17,8 @@
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import SampledBreadthFirstWalk
-from stellargraph.core.graph import StellarGraph, StellarDiGraph
-
-
-def create_test_graph():
-    """
-    Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers.
-
-    :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
-    StellarGraph format.
-    """
-    g = nx.Graph()
-    edges = [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, 7),
-        (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        (7, 7),
-        (8, 8),
-        (2, 2),
-        (5, 5),
-        (9, 9),
-        (
-            "self loner",
-            "self loner",
-        ),  # node that is not connected with any other nodes but has self loop
-    ]
-
-    g.add_edges_from(edges)
-    g.add_node(
-        "loner"
-    )  # node that is not connected to any other nodes and not having a self loop
-
-    g = StellarGraph(g)
-
-    return g
+from stellargraph.core.graph import StellarDiGraph
+from ..test_utils.graphs import create_test_graph
 
 
 def expected_bfw_size(n_size):
@@ -230,15 +186,18 @@ class TestBreadthFirstWalk(object):
                     grandchildren_start = 1 + n_size[0] + child_pos * n_size[1]
                     grandchildren_end = grandchildren_start + n_size[1]
                     grandchildren = walk[grandchildren_start:grandchildren_end]
-                    if child == "0":  # node without children
+                    if child == "root":  # node with three children
                         for grandchild in grandchildren:
-                            assert grandchild is None
+                            assert grandchild in [0, 1, 2]
+                    elif child == "0":  # node without children
+                        for grandchild in grandchildren:
+                            assert grandchild == "root"
                     elif child == 1:  # node with single child
                         for grandchild in grandchildren:
-                            assert grandchild == "c1.1"
+                            assert grandchild in ["c1.1", "root"]
                     elif child == 2:  # node with two children
                         for grandchild in grandchildren:
-                            assert grandchild == "c2.1" or grandchild == "c2.2"
+                            assert grandchild in ["c2.1", "c2.2", "root"]
                     else:
                         assert 1 == 0
 
@@ -250,7 +209,7 @@ class TestBreadthFirstWalk(object):
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
-        assert len(subgraphs[0]) == 1  # all elements should the same node
+        assert len(subgraphs[0]) == 1  # all elements should be the same node
         assert subgraphs[0][0] == "root"
 
         n_size = [1]

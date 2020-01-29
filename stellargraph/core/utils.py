@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,8 +86,9 @@ def rescale_laplacian(laplacian):
         print("Calculating largest eigenvalue of normalized graph Laplacian...")
         largest_eigval = eigsh(laplacian, 1, which="LM", return_eigenvectors=False)[0]
     except ArpackNoConvergence:
-        print(
-            "Eigenvalue calculation did not converge! Using largest_eigval=2 instead."
+        warnings.warn(
+            "Eigenvalue calculation did not converge! Using largest_eigval=2 instead.",
+            RuntimeWarning,
         )
         largest_eigval = 2
 

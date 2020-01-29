@@ -6,7 +6,7 @@ examples demonstrate using the `StellarGraph` library to build machine learning
 workflows on both homogeneous and heterogeneous networks.
 
 Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, attri2vec[4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], PPNP/APPNP [10], SGC [9], 
+state-of-the-art algorithms, attri2vec[4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], PPNP/APPNP [10], SGC [9],
 Node2Vec [1], and Metapath2Vec [2].
 GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
 Metapath2Vec are methods based on graph random walks and representation learning using the
@@ -34,10 +34,10 @@ The examples folder structure is shown below.
 * [`/gat`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gat)
 
     Example of supervised node classification for a homogeneous network with attributed nodes, using the GAT algorithm [7].
-   
+
 * [`/ppnp`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/ppnp)
 
-    Example of supervised node classification for a homogeneous network with attributed nodes, using the PPNP and 
+    Example of supervised node classification for a homogeneous network with attributed nodes, using the PPNP and
     APPNP algorithms [10].
 
 
@@ -51,6 +51,9 @@ The examples folder structure is shown below.
     Example of semi-supervised node classification for a heterogeneous network with multiple node and link types,
     using the HinSAGE algorithm.
 
+* [`/cluster-gnn`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/cluster-gcn)
+
+    Example of semi-supervised node classification for a homogeneous network with attributed nodes using the Cluster-GCN algorithm [11].
 
 ## References
 
@@ -83,3 +86,5 @@ ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
 arXiv:1902.07153. ([link](https://arxiv.org/abs/1902.07153))
 
 10.	Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
+
+11. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))

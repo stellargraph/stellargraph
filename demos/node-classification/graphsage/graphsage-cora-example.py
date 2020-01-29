@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ Download and unzip the cora.tgz file to a location on your computer and pass thi
 (which should contain cora.cites and cora.content) as a command line argument to this script.
 
 Run this script as follows:
-    python graphsage-cora-example.py -l <path_to_cora_dataset>
+    python graphsage-cora-example.py
 
 Other optional arguments can be seen by running
     python graphsage-cora-example.py --help
@@ -51,6 +51,7 @@ from stellargraph.layer import (
     MeanPoolingAggregator,
 )
 from stellargraph.mapper import GraphSAGENodeGenerator
+from stellargraph import datasets
 
 
 def train(
@@ -96,7 +97,12 @@ def train(
     G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
 
     # Split nodes into train/test using stratification.
-    train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
+    (
+        train_nodes,
+        test_nodes,
+        train_targets,
+        test_targets,
+    ) = model_selection.train_test_split(
         node_ids,
         node_targets,
         train_size=140,
@@ -112,13 +118,13 @@ def train(
 
     # Create mappers for GraphSAGE that input data from the graph to the model
     generator = GraphSAGENodeGenerator(G, batch_size, num_samples, seed=5312)
-    train_gen = generator.flow(train_nodes, train_targets, shuffle=True)
-    val_gen = generator.flow(val_nodes, val_targets)
+    train_flow = generator.flow(train_nodes, train_targets, shuffle=True)
+    val_flow = generator.flow(val_nodes, val_targets)
 
     # GraphSAGE model
     model = GraphSAGE(
         layer_sizes=layer_size,
-        generator=train_gen,
+        generator=generator,
         bias=True,
         dropout=dropout,
         aggregator=MeanAggregator,
@@ -140,7 +146,11 @@ def train(
 
     # Train model
     history = model.fit_generator(
-        train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
+        train_flow,
+        epochs=num_epochs,
+        validation_data=val_flow,
+        verbose=2,
+        shuffle=False,
     )
 
     # Evaluate on test set and print metrics
@@ -295,13 +305,6 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the CORA dataset (directory)",
-    )
-    parser.add_argument(
         "-t",
         "--target",
         type=str,
@@ -310,17 +313,15 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
-    # Load graph edgelist
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
-
+    # Load the dataset - this assumes it is the CORA dataset and will download it if required:
+    dataset = datasets.Cora()
+    dataset.download()
+    graph_loc = dataset.data_directory
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["source", "target"]
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["source", "target"],
     )
     edgelist["label"] = "cites"
 
@@ -331,7 +332,10 @@ if __name__ == "__main__":
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
 
     if args.checkpoint is None:
