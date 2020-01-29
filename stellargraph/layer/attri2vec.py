@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class Attri2Vec:
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
-        generator (Sequence): A NodeSequence or LinkSequence. 
+        generator (Sequence): A NodeSequence or LinkSequence.
         input_dim (int): The dimensions of the node features used as input to the model.
         node_num (int): The number of nodes in the given graph.
         bias (bool): If True a bias vector is learnt for each layer in the attri2vec model, default to False.

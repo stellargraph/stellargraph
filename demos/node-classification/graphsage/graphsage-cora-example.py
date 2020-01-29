@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ Download and unzip the cora.tgz file to a location on your computer and pass thi
 (which should contain cora.cites and cora.content) as a command line argument to this script.
 
 Run this script as follows:
-    python graphsage-cora-example.py -l <path_to_cora_dataset>
+    python graphsage-cora-example.py
 
 Other optional arguments can be seen by running
     python graphsage-cora-example.py --help
@@ -51,6 +51,7 @@ from stellargraph.layer import (
     MeanPoolingAggregator,
 )
 from stellargraph.mapper import GraphSAGENodeGenerator
+from stellargraph import datasets
 
 
 def train(
@@ -96,7 +97,12 @@ def train(
     G = sg.StellarGraph(Gnx, node_type_name="label", node_features=node_features)
 
     # Split nodes into train/test using stratification.
-    train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
+    (
+        train_nodes,
+        test_nodes,
+        train_targets,
+        test_targets,
+    ) = model_selection.train_test_split(
         node_ids,
         node_targets,
         train_size=140,
@@ -299,13 +305,6 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the CORA dataset (directory)",
-    )
-    parser.add_argument(
         "-t",
         "--target",
         type=str,
@@ -314,15 +313,10 @@ if __name__ == "__main__":
     )
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
-    # Load graph edgelist
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
-
+    # Load the dataset - this assumes it is the CORA dataset and will download it if required:
+    dataset = datasets.Cora()
+    dataset.download()
+    graph_loc = dataset.data_directory
     edgelist = pd.read_csv(
         os.path.join(graph_loc, "cora.cites"),
         sep="\t",
