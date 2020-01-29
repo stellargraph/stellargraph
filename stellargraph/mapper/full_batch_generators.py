@@ -41,7 +41,6 @@ from . import (
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
 )
-from ..core.experimental import experimental
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op

@@ -20,7 +20,6 @@ from tensorflow.keras.layers import Layer, Lambda, Dropout, Input
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from .misc import SqueezedSparseConversion
 from ..mapper.full_batch_generators import RelationalFullBatchNodeGenerator
-from ..core.experimental import experimental
 
 
 class RelationalGraphConvolution(Layer):
