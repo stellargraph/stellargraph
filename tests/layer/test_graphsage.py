@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,35 +23,21 @@ from tensorflow import keras
 from tensorflow.keras import initializers, regularizers
 
 import numpy as np
-import networkx as nx
 import pytest
 
-from stellargraph.core.graph import StellarGraph
-from stellargraph.mapper.node_mappers import GraphSAGENodeGenerator
+from stellargraph.mapper import GraphSAGENodeGenerator
 from stellargraph.layer.graphsage import (
     GraphSAGE,
-    DirectedGraphSAGE,
     MeanAggregator,
     MaxPoolingAggregator,
     MeanPoolingAggregator,
     AttentionalAggregator,
 )
+from ..test_utils.graphs import example_graph_1
+from .. import test_utils
 
 
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # Mean aggregator tests
@@ -417,7 +403,9 @@ def test_attn_agg_zero_neighbours():
 
 
 def test_graphsage_constructor():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="l2")
+    gs = GraphSAGE(
+        layer_sizes=[4], n_samples=[2], input_dim=2, normalize="l2", multiplicity=1
+    )
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
     assert gs.max_hops == 1
@@ -426,19 +414,36 @@ def test_graphsage_constructor():
 
     # Check incorrect normalization flag
     with pytest.raises(ValueError):
-        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize=lambda x: x)
+        GraphSAGE(
+            layer_sizes=[4],
+            n_samples=[2],
+            input_dim=2,
+            normalize=lambda x: x,
+            multiplicity=1,
+        )
 
     with pytest.raises(ValueError):
-        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, normalize="unknown")
+        GraphSAGE(
+            layer_sizes=[4],
+            n_samples=[2],
+            input_dim=2,
+            normalize="unknown",
+            multiplicity=1,
+        )
 
     # Check requirement for generator or n_samples
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         GraphSAGE(layer_sizes=[4])
 
     # Construction from generator
     G = example_graph_1(feature_size=3)
-    gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2]).flow([1, 2])
+    gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
     gs = GraphSAGE(layer_sizes=[4, 8], generator=gen, bias=True)
+
+    # The GraphSAGE should no longer accept a Sequence
+    t_gen = gen.flow([1, 2])
+    with pytest.raises(TypeError):
+        gs = GraphSAGE(layer_sizes=[4, 8], generator=t_gen, bias=True)
 
     assert gs.dims == [3, 4, 8]
     assert gs.n_samples == [2, 2]
@@ -449,7 +454,11 @@ def test_graphsage_constructor():
 
 def test_graphsage_constructor_passing_aggregator():
     gs = GraphSAGE(
-        layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=MeanAggregator
+        layer_sizes=[4],
+        n_samples=[2],
+        input_dim=2,
+        multiplicity=1,
+        aggregator=MeanAggregator,
     )
     assert gs.dims == [2, 4]
     assert gs.n_samples == [2]
@@ -458,12 +467,19 @@ def test_graphsage_constructor_passing_aggregator():
     assert len(gs._aggs) == 1
 
     with pytest.raises(TypeError):
-        GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, aggregator=1)
+        GraphSAGE(
+            layer_sizes=[4], n_samples=[2], input_dim=2, multiplicity=1, aggregator=1
+        )
 
 
 def test_graphsage_constructor_1():
     gs = GraphSAGE(
-        layer_sizes=[4, 6, 8], n_samples=[2, 4, 6], input_dim=2, bias=True, dropout=0.5
+        layer_sizes=[4, 6, 8],
+        n_samples=[2, 4, 6],
+        input_dim=2,
+        multiplicity=1,
+        bias=True,
+        dropout=0.5,
     )
     assert gs.dims == [2, 4, 6, 8]
     assert gs.n_samples == [2, 4, 6]
@@ -478,6 +494,7 @@ def test_graphsage_apply():
         n_samples=[2],
         bias=False,
         input_dim=2,
+        multiplicity=1,
         normalize=None,
         kernel_initializer="ones",
     )
@@ -494,6 +511,7 @@ def test_graphsage_apply_1():
         n_samples=[2, 2, 2],
         bias=False,
         input_dim=2,
+        multiplicity=1,
         normalize=None,
         kernel_initializer="ones",
     )
@@ -514,14 +532,19 @@ def test_graphsage_apply_1():
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = gs.node_model()
+    xinp, xout = gs.build()
     model2 = keras.Model(inputs=xinp, outputs=xout)
     assert pytest.approx(expected) == model2.predict(x)
 
 
 def test_graphsage_serialize():
     gs = GraphSAGE(
-        layer_sizes=[4], n_samples=[2], bias=False, input_dim=2, normalize=None
+        layer_sizes=[4],
+        n_samples=[2],
+        bias=False,
+        input_dim=2,
+        multiplicity=1,
+        normalize=None,
     )
 
     inp1 = keras.Input(shape=(1, 2))
@@ -556,6 +579,7 @@ def test_graphsage_zero_neighbours():
         n_samples=[0, 0],
         bias=False,
         input_dim=2,
+        multiplicity=1,
         normalize="none",
         kernel_initializer="ones",
     )
@@ -572,13 +596,15 @@ def test_graphsage_zero_neighbours():
 
 
 def test_graphsage_passing_activations():
-    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, multiplicity=1)
     assert gs.activations == ["linear"]
 
-    gs = GraphSAGE(layer_sizes=[4, 4], n_samples=[2, 2], input_dim=2)
+    gs = GraphSAGE(layer_sizes=[4, 4], n_samples=[2, 2], input_dim=2, multiplicity=1)
     assert gs.activations == ["relu", "linear"]
 
-    gs = GraphSAGE(layer_sizes=[4, 4, 4], n_samples=[2, 2, 2], input_dim=2)
+    gs = GraphSAGE(
+        layer_sizes=[4, 4, 4], n_samples=[2, 2, 2], input_dim=2, multiplicity=1
+    )
     assert gs.activations == ["relu", "relu", "linear"]
 
     with pytest.raises(ValueError):
@@ -586,6 +612,7 @@ def test_graphsage_passing_activations():
             layer_sizes=[4, 4, 4],
             n_samples=[2, 2, 2],
             input_dim=2,
+            multiplicity=1,
             activations=["relu"],
         )
 
@@ -594,6 +621,7 @@ def test_graphsage_passing_activations():
             layer_sizes=[4, 4, 4],
             n_samples=[2, 2, 2],
             input_dim=2,
+            multiplicity=1,
             activations=["relu"] * 2,
         )
 
@@ -602,6 +630,7 @@ def test_graphsage_passing_activations():
             layer_sizes=[4, 4, 4],
             n_samples=[2, 2, 2],
             input_dim=2,
+            multiplicity=1,
             activations=["fred", "wilma", "barney"],
         )
 
@@ -609,6 +638,7 @@ def test_graphsage_passing_activations():
         layer_sizes=[4, 4, 4],
         n_samples=[2, 2, 2],
         input_dim=2,
+        multiplicity=1,
         activations=["linear"] * 3,
     )
     assert gs.activations == ["linear"] * 3
@@ -617,15 +647,26 @@ def test_graphsage_passing_activations():
 def test_graphsage_passing_regularisers():
     with pytest.raises(ValueError):
         GraphSAGE(
-            layer_sizes=[4], n_samples=[2], input_dim=2, kernel_initializer="fred"
+            layer_sizes=[4],
+            n_samples=[2],
+            input_dim=2,
+            multiplicity=1,
+            kernel_initializer="fred",
         )
-
-    GraphSAGE(layer_sizes=[4], n_samples=[2], input_dim=2, kernel_initializer="ones")
 
     GraphSAGE(
         layer_sizes=[4],
         n_samples=[2],
         input_dim=2,
+        multiplicity=1,
+        kernel_initializer="ones",
+    )
+
+    GraphSAGE(
+        layer_sizes=[4],
+        n_samples=[2],
+        input_dim=2,
+        multiplicity=1,
         kernel_initializer=initializers.ones(),
     )
 
@@ -633,10 +674,15 @@ def test_graphsage_passing_regularisers():
         layer_sizes=[4],
         n_samples=[2],
         input_dim=2,
+        multiplicity=1,
         kernel_regularizer=regularizers.l2(0.01),
     )
 
     with pytest.raises(ValueError):
         GraphSAGE(
-            layer_sizes=[4], n_samples=[2], input_dim=2, kernel_regularizer="wilma"
+            layer_sizes=[4],
+            n_samples=[2],
+            input_dim=2,
+            multiplicity=1,
+            kernel_regularizer="wilma",
         )

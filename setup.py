@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,16 +15,18 @@
 # limitations under the License.
 
 import setuptools
+import os
 
 DESCRIPTION = "Python library for machine learning on graphs"
 URL = "https://github.com/stellargraph/stellargraph"
 
 # Required packages
 REQUIRES = [
-    "tensorflow>=1.14,<1.15",
+    # FIXME(#626,#692): tensorflow 2.1 causes some test and demo failures
+    "tensorflow>=2.0.0, <2.1.0",
     "numpy>=1.14",
     "scipy>=1.1.0",
-    "networkx>=2.2,<2.4", # FIXME (#503): NetworkX 2.4 removed some attributes
+    "networkx>=2.2",
     "scikit_learn>=0.20",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
@@ -32,22 +34,37 @@ REQUIRES = [
 ]
 
 # The demos requirements are as follows:
-# * demos/community_detection: mplleaflet, python-igraph
-#  *** For now these are not installed as compiled python-igraph is not available for all platforms
+#
+# * demos/community_detection: mplleaflet, python-igraph (separate
+#   'extra', because it's only available on some platforms)
 #
 # * demos/ensembles/ensemble-node-classification-example.ipynb: seaborn
 #
 # * demos/link-prediction/hinsage/utils.py: numba
 #
 # Other demos do not have specific requirements
-EXTRAS_REQURES = {
-    "demos": ["numba", "jupyter", "seaborn"],
-    "test": ["pytest", "pytest-benchmark"],
+EXTRAS_REQUIRES = {
+    "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
+    "igraph": ["python-igraph"],
+    "test": [
+        "pytest==5.3.1",
+        "pytest-benchmark>=3.1",
+        "pytest-cov>=2.6.0",
+        "coveralls>=1.5.1",
+        "coverage>=4.4,<5.0",
+        "black>=19.3b0",
+        "nbconvert>=5.5.0",
+        "treon>=0.1.2",
+    ],
 }
 
 # Long description
-with open("README.md", "r") as fh:
-    LONG_DESCRIPTION = fh.read()
+try:
+    with open("README.md", "r") as fh:
+        LONG_DESCRIPTION = fh.read()
+except FileNotFoundError:
+    # can't find the README (e.g. building the docker image), so skip it
+    LONG_DESCRIPTION = ""
 
 # Get global version
 # see: https://packaging.python.org/guides/single-sourcing-package-version/
@@ -67,9 +84,9 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    python_requires=">=3.5.0, <3.8.0",
+    python_requires=">=3.6.0, <3.8.0",
     install_requires=REQUIRES,
-    extras_require=EXTRAS_REQURES,
+    extras_require=EXTRAS_REQUIRES,
     packages=setuptools.find_packages(exclude=("tests",)),
     classifiers=[
         "Programming Language :: Python :: 3",

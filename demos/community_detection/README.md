@@ -3,13 +3,15 @@
 This is an example of using Unsupervised GraphSAGE embeddings with clustering to demonstrate how to solve community detection problem. The demo guides through the steps and shows the differences between "traditional" community detection (infomap) and the clustering-of-embeddings approach.
 
 ## Requirements
-This example assumes the `stellargraph` library and its requirements have been 
-installed by following the installation instructions in the README 
+This example assumes the `stellargraph` library and its requirements have been
+installed by following the installation instructions in the README
 of the library's [root directory](https://github.com/stellargraph/stellargraph).
 
-To install the requirements for running the notebook, activate an environment where the stellargraph library is installed (see the library installation instructions), navigate to the directory with this script, and execute
+These demos require `python-igraph`, which can be installed via:
 
-`pip install -r requirements.txt`
+```
+pip install stellargraph[demos,igraph]
+```
 
 ## Data
 
@@ -20,4 +22,4 @@ To run the demo notebook, extract the data into a directory, and adjust the data
 
 ## Issues
 
-If you experience problems in installing `igraph-python`, please refer to the installation page https://igraph.org/python/ for help. 
+If you experience problems in installing `igraph-python`, please refer to the installation page https://igraph.org/python/ for help.

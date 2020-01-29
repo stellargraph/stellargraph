@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,32 +17,12 @@
 import pytest
 from stellargraph.utils.saliency_maps import *
 import numpy as np
-from stellargraph.layer import GraphAttention
-from stellargraph import StellarGraph
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
 from tensorflow.keras import Model, regularizers
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import categorical_crossentropy
-import networkx as nx
-from tensorflow.keras import backend as K
-from tensorflow import keras
-
-
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(0, 1), (0, 2), (2, 3), (3, 4), (0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
-    G.add_nodes_from([0, 1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+from ..test_utils.graphs import example_graph_1_saliency_maps as example_graph_1
 
 
 def create_GCN_model_dense(graph):
@@ -60,7 +40,7 @@ def create_GCN_model_dense(graph):
 
     for layer in gcn._layers:
         layer._initializer = "ones"
-    x_inp, x_out = gcn.node_model()
+    x_inp, x_out = gcn.build()
     keras_model = Model(inputs=x_inp, outputs=x_out)
     return gcn, keras_model, generator, train_gen
 
@@ -80,17 +60,21 @@ def create_GCN_model_sparse(graph):
 
     for layer in gcn._layers:
         layer._initializer = "ones"
-    x_inp, x_out = gcn.node_model()
+    x_inp, x_out = gcn.build()
     keras_model = Model(inputs=x_inp, outputs=x_out)
     return gcn, keras_model, generator, train_gen
 
 
 def test_ig_saliency_map():
+
     graph = example_graph_1(feature_size=4)
     base_model, keras_model_gcn, generator, train_gen = create_GCN_model_dense(graph)
-    base_model_sp, keras_model_gcn_sp, generator_sp, train_gen_sp = create_GCN_model_sparse(
-        graph
-    )
+    (
+        base_model_sp,
+        keras_model_gcn_sp,
+        generator_sp,
+        train_gen_sp,
+    ) = create_GCN_model_sparse(graph)
 
     keras_model_gcn.compile(
         optimizer=Adam(lr=0.1), loss=categorical_crossentropy, weighted_metrics=["acc"]
@@ -117,6 +101,7 @@ def test_ig_saliency_map():
 
     keras_model_gcn.set_weights(weights)
     keras_model_gcn_sp.set_weights(weights)
+
     ig_dense = IntegratedGradients(keras_model_gcn, train_gen)
     ig_sparse = IntegratedGradients(keras_model_gcn_sp, train_gen_sp)
 
@@ -156,9 +141,12 @@ def test_ig_saliency_map():
 def test_saliency_init_parameters():
     graph = example_graph_1(feature_size=4)
     base_model, keras_model_gcn, generator, train_gen = create_GCN_model_dense(graph)
-    base_model_sp, keras_model_gcn_sp, generator_sp, train_gen_sp = create_GCN_model_sparse(
-        graph
-    )
+    (
+        base_model_sp,
+        keras_model_gcn_sp,
+        generator_sp,
+        train_gen_sp,
+    ) = create_GCN_model_sparse(graph)
 
     keras_model_gcn.compile(
         optimizer=Adam(lr=0.1), loss=categorical_crossentropy, weighted_metrics=["acc"]

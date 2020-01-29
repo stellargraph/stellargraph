@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2018 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ from stellargraph.data.explorer import UniformRandomMetaPathWalk
 from stellargraph.core.graph import StellarGraph
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_test_graph():
     """
     Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers. Each node
@@ -66,9 +67,9 @@ def create_test_graph():
 
     for node in g.nodes():
         if type(node) == str:  # make these type s for string
-            g.node[node]["label"] = "s"
+            g.nodes[node]["label"] = "s"
         else:  # make these type n for number
-            g.node[node]["label"] = "n"
+            g.nodes[node]["label"] = "n"
 
     g = StellarGraph(g)
     return g

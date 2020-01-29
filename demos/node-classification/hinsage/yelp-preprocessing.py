@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -113,9 +113,17 @@ if __name__ == "__main__":
         default="WI",
         help="Filter yelp dataset to only contain records connected to this US State",
     )
-    parser.add_argument("--users_only", action="store_true", help="Create a graph with only users")
-    parser.add_argument("--save_preprocessors", action="store_true", help="Save the fitted data preprocessors")
-    parser.add_argument("--use_sparse", action="store_true", help="Save features as sparse matrices")
+    parser.add_argument(
+        "--users_only", action="store_true", help="Create a graph with only users"
+    )
+    parser.add_argument(
+        "--save_preprocessors",
+        action="store_true",
+        help="Save the fitted data preprocessors",
+    )
+    parser.add_argument(
+        "--use_sparse", action="store_true", help="Save features as sparse matrices"
+    )
     args = parser.parse_args()
 
     # Parameters
@@ -143,7 +151,9 @@ if __name__ == "__main__":
 
     # Check mandatory arguments
     if not yelp_location:
-        raise RuntimeError("Please specify the location of the Yelp dataset with the -l argument")
+        raise RuntimeError(
+            "Please specify the location of the Yelp dataset with the -l argument"
+        )
     if not output_location:
         raise RuntimeError("Please specify the output directory with the -o argument")
 
@@ -166,9 +176,7 @@ if __name__ == "__main__":
 
     # Load business data from json to a dictionary with the business_id as key
     print("Loading business data")
-    with open(
-        os.path.join(yelp_location, business_dataset_name), "r"
-    ) as f:
+    with open(os.path.join(yelp_location, business_dataset_name), "r") as f:
         business_data_raw = {}
         for line in f:
             d = json.loads(line)
@@ -177,9 +185,7 @@ if __name__ == "__main__":
 
     # Load review data from json to a dictionary with the review_id as key
     print("Loading review data")
-    with open(
-        os.path.join(yelp_location, review_dataset_name), "r"
-    ) as f:
+    with open(os.path.join(yelp_location, review_dataset_name), "r") as f:
         review_data_raw = {}
         for line in f:
             d = json.loads(line)
@@ -238,7 +244,7 @@ if __name__ == "__main__":
         # Connect to friends
         if u["friends"] != "None":
             # Parse friends into list & add "u_" prefix for user ID maps
-            friend_list = ["u_"+f for f in u["friends"].split(", ")]
+            friend_list = ["u_" + f for f in u["friends"].split(", ")]
 
             # optionally include friend nodes not connected to reviews
             if filter_friends:

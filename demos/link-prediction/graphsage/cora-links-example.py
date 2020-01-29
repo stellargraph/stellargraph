@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,29 +16,21 @@
 
 """
 Graph link prediction using GraphSAGE.
-This example requires the CORA dataset - see the README for how to obtain the dataset.
-
-Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora:
-
-    python cora-links-example.py -l ~/data/cora
-
+This example will download the CORA dataset (if not already downloaded).
 """
 import os
 import argparse
 import networkx as nx
 import pandas as pd
 from typing import AnyStr, List
-
 from tensorflow import keras
-from tensorflow.keras import optimizers, losses, metrics
-
+from tensorflow.keras import optimizers, losses
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
 from stellargraph.mapper import GraphSAGELinkGenerator
 from stellargraph import globalvar
-
-from sklearn import feature_extraction
+from stellargraph import datasets
 
 
 def load_data(graph_loc, ignore_attr):
@@ -53,7 +45,10 @@ def load_data(graph_loc, ignore_attr):
 
     # Load the edge list
     edgelist = pd.read_csv(
-        os.path.join(graph_loc, "cora.cites"), sep="\t", header=None, names=["target", "source"]
+        os.path.join(graph_loc, "cora.cites"),
+        sep="\t",
+        header=None,
+        names=["target", "source"],
     )
 
     # Load node features
@@ -63,7 +58,10 @@ def load_data(graph_loc, ignore_attr):
     # Also, there is a "subject" column
     column_names = feature_names + ["subject"]
     node_data = pd.read_csv(
-        os.path.join(graph_loc, "cora.content"), sep="\t", header=None, names=column_names
+        os.path.join(graph_loc, "cora.content"),
+        sep="\t",
+        header=None,
+        names=column_names,
     )
     node_data.drop(columns=["subject"], inplace=True)
 
@@ -71,7 +69,7 @@ def load_data(graph_loc, ignore_attr):
 
     # Extract the feature data. These are the node feature vectors that the Keras model will use as input.
     # The CORA dataset contains attributes 'w_x' that correspond to words found in that publication.
-    predictor_names = sorted(set(column_names) - set(ignore_attr+["subject"]))
+    predictor_names = sorted(set(column_names) - set(ignore_attr + ["subject"]))
 
     # node features are already numeric, no further conversion is needed
     node_features = node_data[predictor_names].values
@@ -79,8 +77,8 @@ def load_data(graph_loc, ignore_attr):
     node_ids = node_data.index
 
     for nid, f in zip(node_ids, node_features):
-        g.node[nid][globalvar.TYPE_ATTR_NAME] = "paper"
-        g.node[nid][globalvar.FEATURE_ATTR_NAME] = f
+        g.nodes[nid][globalvar.TYPE_ATTR_NAME] = "paper"
+        g.nodes[nid][globalvar.FEATURE_ATTR_NAME] = f
 
     return g
 
@@ -144,13 +142,11 @@ def train(
 
     # Mapper feeds link data from sampled subgraphs to GraphSAGE model
     # We need to create two mappers: for training and testing of the model
-    train_gen = GraphSAGELinkGenerator(
-        G_train, batch_size, num_samples, name="train"
-    ).flow(edge_ids_train, edge_labels_train, shuffle=True)
+    train_gen = GraphSAGELinkGenerator(G_train, batch_size, num_samples)
+    train_flow = train_gen.flow(edge_ids_train, edge_labels_train, shuffle=True)
 
-    test_gen = GraphSAGELinkGenerator(
-        G_test, batch_size, num_samples, name="test"
-    ).flow(edge_ids_test, edge_labels_test)
+    test_gen = GraphSAGELinkGenerator(G_test, batch_size, num_samples)
+    test_flow = test_gen.flow(edge_ids_test, edge_labels_test)
 
     # GraphSAGE model
     graphsage = GraphSAGE(
@@ -162,7 +158,9 @@ def train(
 
     # Final estimator layer
     prediction = link_classification(
-        output_dim=1, output_act="sigmoid", edge_embedding_method=args.edge_embedding_method
+        output_dim=1,
+        output_act="sigmoid",
+        edge_embedding_method=args.edge_embedding_method,
     )(x_out)
 
     # Stack the GraphSAGE and prediction layers into a Keras model, and specify the loss
@@ -170,12 +168,12 @@ def train(
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate),
         loss=losses.binary_crossentropy,
-        metrics=[metrics.binary_accuracy],
+        metrics=["acc"],
     )
 
     # Evaluate the initial (untrained) model on the train and test set:
-    init_train_metrics = model.evaluate_generator(train_gen)
-    init_test_metrics = model.evaluate_generator(test_gen)
+    init_train_metrics = model.evaluate_generator(train_flow)
+    init_test_metrics = model.evaluate_generator(test_flow)
 
     print("\nTrain Set Metrics of the initial (untrained) model:")
     for name, val in zip(model.metrics_names, init_train_metrics):
@@ -188,12 +186,16 @@ def train(
     # Train model
     print("\nTraining the model for {} epochs...".format(num_epochs))
     history = model.fit_generator(
-        train_gen, epochs=num_epochs, validation_data=test_gen, verbose=2, shuffle=False
+        train_flow,
+        epochs=num_epochs,
+        validation_data=test_flow,
+        verbose=2,
+        shuffle=False,
     )
 
     # Evaluate and print metrics
-    train_metrics = model.evaluate_generator(train_gen)
-    test_metrics = model.evaluate_generator(test_gen)
+    train_metrics = model.evaluate_generator(train_flow)
+    test_metrics = model.evaluate_generator(test_flow)
 
     print("\nTrain Set Metrics of the trained model:")
     for name, val in zip(model.metrics_names, train_metrics):
@@ -246,12 +248,12 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     G_test = sg.StellarGraph(G_test, node_features="feature")
 
     # Generator feeds data from (source, target) sampled subgraphs to GraphSAGE model
-    test_gen = GraphSAGELinkGenerator(
-        G_test, batch_size, num_samples, name="test"
-    ).flow(edge_ids_test, edge_labels_test)
+    test_flow = GraphSAGELinkGenerator(G_test, batch_size, num_samples).flow(
+        edge_ids_test, edge_labels_test
+    )
 
     # Evaluate and print metrics
-    test_metrics = model.evaluate_generator(test_gen)
+    test_metrics = model.evaluate_generator(test_flow)
 
     print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):
@@ -324,13 +326,6 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the dataset (directory)",
-    )
-    parser.add_argument(
         "-i",
         "--ignore_node_attr",
         nargs="+",
@@ -347,15 +342,10 @@ if __name__ == "__main__":
 
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
-
-    G = load_data(graph_loc, args.ignore_node_attr)
+    # Load the CORA dataset, downloading if necessary
+    dataset = datasets.Cora()
+    dataset.download()
+    G = load_data(dataset.data_directory, args.ignore_node_attr)
 
     if args.checkpoint is None:
         train(

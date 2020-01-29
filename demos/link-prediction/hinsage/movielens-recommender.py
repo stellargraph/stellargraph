@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,10 +19,7 @@ Graph link attribute prediction using HinSAGE, using the movielens data.
 
 See README.md for the description of the dataset.
 
-Run this script as follows:
-    python movielens-recommender.py -l <path_to_movielens_dataset>
-
-Other optional arguments can be seen by running
+Optional arguments can be seen by running
     python movielens-recommender.py --help
 
 """
@@ -39,6 +36,7 @@ from sklearn import preprocessing, feature_extraction, model_selection
 import pandas as pd
 import multiprocessing
 import tensorflow.keras.backend as K
+from stellargraph import datasets
 
 
 def read_graph(data_path, config_file):
@@ -65,7 +63,9 @@ def read_graph(data_path, config_file):
         user_features[feature_names].to_dict("records")
     )
     # Assume that the age can be used as a continuous variable and rescale it
-    user_features_transformed[:, 0] = preprocessing.scale(user_features_transformed[:, 0])
+    user_features_transformed[:, 0] = preprocessing.scale(
+        user_features_transformed[:, 0]
+    )
 
     # Put features back in DataFrame
     user_features = pd.DataFrame(
@@ -148,9 +148,7 @@ class LinkInference(object):
         # The mappers essentially sample k-hop subgraphs of G with randomly selected head nodes, as required by
         # the HinSAGE algorithm, and generate minibatches of those samples to be fed to the input layer of the HinSAGE model.
         generator = HinSAGELinkGenerator(
-            self.g,
-            batch_size,
-            num_samples,
+            self.g, batch_size, num_samples, head_node_types=["user", "movie"]
         )
         train_gen = generator.flow(edgelist_train, labels_train)
         test_gen = generator.flow(edgelist_test, labels_test)
@@ -161,7 +159,7 @@ class LinkInference(object):
         ), "layer_size and num_samples must be of the same length! Stopping."
 
         hinsage = HinSAGE(
-            layer_sizes=layer_size, generator=train_gen, bias=use_bias, dropout=dropout
+            layer_sizes=layer_size, generator=generator, bias=use_bias, dropout=dropout
         )
 
         # Define input and output sockets of hinsage:
@@ -211,14 +209,6 @@ class LinkInference(object):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run GraphSAGE on movielens")
-
-    parser.add_argument(
-        "-p",
-        "--data_path",
-        type=str,
-        default="../../data/ml-100k",
-        help="Dataset path (directory)",
-    )
     parser.add_argument(
         "-f",
         "--config",
@@ -286,8 +276,10 @@ if __name__ == "__main__":
     )
 
     args, cmdline_args = parser.parse_known_args()
-
-    G = read_graph(args.data_path, args.config)
+    # Load the MovieLens dataset, downloading if necessary
+    dataset = datasets.MovieLens()
+    dataset.download()
+    G = read_graph(dataset.data_directory, args.config)
 
     model = LinkInference(G)
 

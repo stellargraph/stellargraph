@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 import random
 
-from stellargraph.mapper.link_mappers import *
-from stellargraph.mapper.node_mappers import *
+from stellargraph.mapper import *
 from stellargraph.core.graph import *
 
 import numpy as np
@@ -25,6 +24,7 @@ import networkx as nx
 import pytest
 
 
+# FIXME (#535): Consider using graph fixtures
 def example_Graph_2(feature_size=None, n_nodes=100, n_edges=200):
     G = nx.Graph()
 
@@ -37,7 +37,7 @@ def example_Graph_2(feature_size=None, n_nodes=100, n_edges=200):
     # Add example features
     if feature_size is not None:
         for v in G.nodes():
-            G.node[v]["feature"] = np.ones(feature_size)
+            G.nodes[v]["feature"] = np.ones(feature_size)
 
     G = StellarGraph(G, node_features="feature")
     return G

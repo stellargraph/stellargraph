@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ from sklearn import feature_extraction, model_selection
 import stellargraph as sg
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
+from stellargraph import datasets
 
 
 def train(
@@ -68,7 +69,7 @@ def train(
     )
 
     # Expose the input and output sockets of the model:
-    x_inp, x_out = gcnModel.node_model()
+    x_inp, x_out = gcnModel.build()
 
     # Create Keras model for training
     model = keras.Model(inputs=x_inp, outputs=x_out)
@@ -152,7 +153,12 @@ def main(graph_loc, layer_sizes, activations, dropout, learning_rate, num_epochs
     G = sg.StellarGraph(Gnx, node_features=node_features)
 
     # Split nodes into train/test using stratification.
-    train_nodes, test_nodes, train_targets, test_targets = model_selection.train_test_split(
+    (
+        train_nodes,
+        test_nodes,
+        train_targets,
+        test_targets,
+    ) = model_selection.train_test_split(
         node_ids,
         node_targets,
         train_size=140,
@@ -228,24 +234,13 @@ if __name__ == "__main__":
         default=[32, 7],
         help="The number of hidden features at each GCN layer",
     )
-    parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the CORA dataset (directory)",
-    )
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
+    # Load the dataset - this assumes it is the CORA dataset and will download it if required:
+    dataset = datasets.Cora()
+    dataset.download()
+    graph_loc = dataset.data_directory
     # Load graph edgelist
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
-
     activations = ["relu", "softmax"]
     main(
         graph_loc,
