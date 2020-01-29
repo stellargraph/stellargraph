@@ -23,6 +23,7 @@ from stellargraph.core.graph import *
 from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, allocation_benchmark
 from ..test_utils.graphs import (
+    example_graph_1,
     example_graph_1_nx,
     example_graph_2,
     example_hin_1_nx,
@@ -720,3 +721,30 @@ def test_stellargraph_experimental():
         ExperimentalWarning, match=r"StellarGraph\(nodes=..., edges=...\)"
     ):
         StellarGraph(nodes=nodes, edges=edges)
+
+
+def test_info_homogeneous():
+    g = example_graph_1(node_label="ABC", edge_label="xyz")
+    info = g.info()
+    assert "Undirected multigraph" in info
+    assert "Nodes: 4, Edges: 4" in info
+
+    assert " ABC: [4]" in info
+    assert " Edge types: ABC-xyz->ABC" in info
+
+    assert " ABC-xyz->ABC: [4]" in info
+
+
+def test_info_heterogeneous():
+    g = example_hin_1()
+    info = g.info()
+    assert "Undirected multigraph" in info
+    assert "Nodes: 7, Edges: 6" in info
+
+    assert " A: [4]" in info
+    assert " Edge types: A-R->B" in info
+    assert " B: [3]" in info
+    assert " Edge types: B-F->B, B-R->A" in info
+
+    assert " A-R->B: [5]"
+    assert " B-F->B: [1]"
