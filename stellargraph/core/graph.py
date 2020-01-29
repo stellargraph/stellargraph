@@ -750,9 +750,7 @@ class StellarGraph:
         else:
             graph = networkx.MultiGraph()
 
-        types = self.node_types
-
-        for ty in types:
+        for ty in self.node_types:
             node_ids = self.nodes_of_type(ty)
             ty_dict = {node_type_name: ty}
 
