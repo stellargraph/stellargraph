@@ -21,11 +21,11 @@ The StellarGraph implementation that encapsulates a NetworkX graph.
 __all__ = ["NetworkXStellarGraph"]
 
 from stellargraph.core.schema import EdgeType
-from stellargraph.core.graph import StellarGraph
+from stellargraph.core.graph import StellarGraph, NeighbourWithWeight
 
 import random
 import itertools as it
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import warnings
 
 import pandas as pd
@@ -36,9 +36,6 @@ from typing import Iterable, Iterator, Any, Mapping, List, Set, Optional
 
 from .schema import GraphSchema
 from .utils import is_real_iterable
-
-
-NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 
 def _convert_from_node_attribute(
@@ -653,7 +650,7 @@ class NetworkXStellarGraph(StellarGraph):
         """
         if nodes is None:
             nodes = self.nodes()
-            edges = self.edges(triple=True)
+            edges = self.edges(include_edge_type=True)
         else:
             edges = (
                 (src, dst, self._get_edge_type(data))
@@ -712,8 +709,8 @@ class NetworkXStellarGraph(StellarGraph):
     def nodes(self) -> Iterable[Any]:
         return self._graph.nodes()
 
-    def edges(self, triple=False) -> Iterable[Any]:
-        if triple:
+    def edges(self, include_edge_type=False) -> Iterable[Any]:
+        if include_edge_type:
             # returns triples of format (node 1, node 2, edge type)
             return (
                 (src, dst, self._get_edge_type(data))

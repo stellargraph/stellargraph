@@ -41,7 +41,6 @@ from . import (
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
 )
-from ..core.experimental import experimental
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
@@ -370,7 +369,6 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         return super().flow(link_ids, targets)
 
 
-@experimental(reason="it has severe known bugs", issues=[649, 677])
 class RelationalFullBatchNodeGenerator:
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
@@ -428,7 +426,7 @@ class RelationalFullBatchNodeGenerator:
 
         self.features = G.node_features(self.node_list)
 
-        edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
+        edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
         # create a list of adjacency matrices - one adj matrix for each edge type
@@ -439,12 +437,12 @@ class RelationalFullBatchNodeGenerator:
 
             col_index = [
                 self.node_index[n1]
-                for n1, n2, etype in G.edges(triple=True)
+                for n1, n2, etype in G.edges(include_edge_type=True)
                 if etype == edge_type
             ]
             row_index = [
                 self.node_index[n2]
-                for n1, n2, etype in G.edges(triple=True)
+                for n1, n2, etype in G.edges(include_edge_type=True)
                 if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)
