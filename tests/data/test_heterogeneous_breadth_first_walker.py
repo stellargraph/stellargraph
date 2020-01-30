@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
 from stellargraph.core.graph import StellarGraph
 
 
+# FIXME (#535): Consider using graph fixtures. These two test graphs are very similar, and should be combined
 def create_simple_test_graph():
     """
     Creates a simple graph for testing the SampledHeterogeneousBreadthFirstWalk class. The node ids are string or integers.
@@ -67,7 +68,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
     def test_parameter_checking(self):
         g = create_simple_test_graph()
 
-        graph_schema = g.create_graph_schema(create_type_maps=True)
+        graph_schema = g.create_graph_schema()
         bfw = SampledHeterogeneousBreadthFirstWalk(g, graph_schema)
 
         nodes = [0, 1]
@@ -231,62 +232,35 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=42)
         assert len(subgraphs) == n
-        # should return [[[3], [1, 1]]]
-        assert subgraphs == [[[3], [1, 1]]]
+        assert subgraphs == [[[3], ["5", 1]]]
 
         n_size = [3]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=42)
         assert len(subgraphs) == n
-        # should return [[[3], [1, 1, '5']]]
-        assert subgraphs == [[[3], [1, 1, "5"]]]
+        assert subgraphs == [[[3], ["5", 1, 1]]]
 
         n_size = [1, 1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=42)
         assert len(subgraphs) == n
-        # should return [[[3], [1], [4], [3]]]
-        assert subgraphs == [[[3], [1], [4], [3]]]
+        assert subgraphs == [[[3], ["5"], [1], [3]]]
 
         nodes = ["5"]
         n_size = [2, 3]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=42)
         assert len(subgraphs) == n
-        # should return
-        # [[['5'],
-        #   [4, 4],
-        #   [3, 6],
-        #   ['5', '5', '5'],
-        #   [2, 2, 2],
-        #   ['5', '5', '5'],
-        #   [2, 2, 2],
-        #   ['5', 1, '5'],
-        #   ['5', '5', '5']]]
-        print(subgraphs)
         assert subgraphs == [
             [
                 ["5"],
-                [1, 1],
-                [6, 3],
-                [4, 4, 4],
-                [2, 3, 2],
-                [4, 4, 4],
-                [2, 2, 2],
+                [4, 1],
+                [3, 3],
                 ["5", "5", "5"],
-                ["5", 1, 1],
+                [2, 2, 2],
+                [4, "5", 4],
+                [2, 3, 3],
+                [1, "5", "5"],
+                [1, "5", "5"],
             ]
         ]
-        # assert subgraphs == [
-        #     [
-        #         ["5"],
-        #         [4, 4],
-        #         [3, 6],
-        #         ["5", "5", "5"],
-        #         [2, 2, 2],
-        #         ["5", "5", "5"],
-        #         [2, 2, 2],
-        #         ["5", 1, "5"],
-        #         ["5", "5", "5"],
-        #     ]
-        # ]
 
         nodes = ["5"]
         n_size = [2, 3]
@@ -296,25 +270,14 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         valid_result = [
             [
                 ["5"],
-                [1, 1],
-                [6, 3],
-                [4, 4, 4],
-                [2, 3, 2],
-                [4, 4, 4],
-                [2, 2, 2],
-                ["5", "5", "5"],
-                ["5", 1, 1],
-            ],
-            [
-                ["5"],
-                [4, 4],
-                [6, 3],
-                [1, "5", 1],
-                [2, 2, 2],
+                [4, 1],
+                [3, 3],
                 ["5", "5", "5"],
                 [2, 2, 2],
-                ["5", "5", "5"],
-                ["5", 1, 1],
+                [4, "5", 4],
+                [2, 3, 3],
+                [1, "5", "5"],
+                [1, "5", "5"],
             ],
             [
                 ["5"],
@@ -322,8 +285,19 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [6, 3],
                 [4, 4, "5"],
                 [3, 3, 3],
-                [4, "5", "5"],
-                [2, 3, 2],
+                ["5", "5", 4],
+                [3, 3, 3],
+                ["5", "5", "5"],
+                [1, 1, 1],
+            ],
+            [
+                ["5"],
+                [1, 1],
+                [3, 3],
+                ["5", 4, 4],
+                [2, 2, 3],
+                ["5", "5", 4],
+                [3, 2, 2],
                 ["5", "5", "5"],
                 ["5", "5", "5"],
             ],
@@ -343,33 +317,31 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=19893839)
         assert len(subgraphs) == n
-        # should return [[[1], [4, 4], [4, 4], [2, 3]]]
-        assert subgraphs == [[[1], [4, 4], [4, 4], [2, 3]]]
+        assert subgraphs == [[[1], [4, 4], [4, 4], [2, 2]]]
 
         n_size = [2, 3]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=19893839)
         assert len(subgraphs) == n
-        #
         valid_result = [
             [
                 [1],
                 [4, 4],
                 [4, 4],
-                [2, 3],
+                [2, 2],
                 [1, 1, 1],
                 ["5", 1, 1],
                 [2, 2, 2],
                 [1, 1, 1],
-                ["5", "5", 1],
-                [2, 2, 2],
-                [1, 1, 1],
-                ["5", "5", 1],
+                [1, "5", 1],
                 [2, 2, 2],
                 [1, 1, 1],
                 ["5", 1, "5"],
                 [2, 2, 2],
-                [1, 1, 4],
-                [1, "5", 1],
+                [1, 1, 1],
+                ["5", "5", 1],
+                [2, 2, 2],
+                [4, 1, 1],
+                [4, 1, 4],
             ]
         ]
         for a, b in zip(subgraphs, valid_result):
@@ -386,7 +358,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [1],
                 [4, 4],
                 [4, 4],
-                [2, 3],
+                [2, 2],
                 [],
                 [],
                 [],
@@ -475,7 +447,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [None, None],
                 [None, None],
             ],
-            [[4], [1, "5"], [2, 2], [4, 4], [2, 2], [4, 1], [3, 6], [4, 1], [4, 4]],
+            [[4], [1, 1], [2, 2], [4, "5"], [3, 2], ["5", 4], [2, 2], [4, 4], [1, 4]],
         ]
         for a, b in zip(subgraphs, valid_result):
             assert a == b
@@ -488,16 +460,16 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         valid_result = [
             [
                 [1],
-                [4, "5"],
-                [3, 2],
-                ["5", 1, 1],
+                ["5", 4],
+                [3, 3],
+                [1, 1, 4],
+                [3, 6, 6],
+                [1, "5", 1],
                 [2, 2, 2],
-                [4, 4, 1],
-                [6, 3, 6],
-                [1, 1, 1],
-                [1, 4, 1],
+                [1, "5", "5"],
+                [1, "5", 1],
             ],
-            [[6], ["5", "5"], [4, 1, 4], [6, 3, 3], [1, 1, 1], [6, 6, 6]],
+            [[6], ["5", "5"], [4, 4, 1], [6, 3, 6], [4, 4, 1], [6, 6, 3]],
         ]
         for a, b in zip(subgraphs, valid_result):
             assert a == b
@@ -518,7 +490,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size, seed=999)
         assert len(subgraphs) == n * len(nodes)
-        valid_result = [[[1], [4, 4], ["5", 4], [3, 2]], [[6], ["5", "5"]]]
+        valid_result = [[[1], [4, 4], ["5", "5"], [2, 2]], [[6], ["5", "5"]]]
         assert subgraphs == valid_result
 
         n = 1

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         node_id (int): The node ID in the StellarGraph object.
         class_of_interest (int): The  class of interest for which the saliency maps are computed.
         X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
-                                              matrix with the size of the original feature matrix for existing features. 
+                                              matrix with the size of the original feature matrix for existing features.
         steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
         non_exist_feature (bool): Setting it to True allows to compute the importance of features that are 0.
         return (Numpy array): Integrated gradients for the node features.

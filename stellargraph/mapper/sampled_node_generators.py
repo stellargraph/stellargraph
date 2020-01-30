@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import warnings
 import operator
 import random
 import abc
+import warnings
 import numpy as np
 import itertools as it
 import networkx as nx
@@ -78,7 +79,7 @@ class BatchedNodeGenerator(abc.ABC):
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
-            self.schema = G.create_graph_schema(create_type_maps=True)
+            self.schema = G.create_graph_schema()
         elif isinstance(schema, GraphSchema):
             self.schema = schema
         else:
@@ -133,7 +134,7 @@ class BatchedNodeGenerator(abc.ABC):
         # Check all IDs are actually in the graph and are of expected type
         for n in node_ids:
             try:
-                node_type = self.graph.type_for_node(n)
+                node_type = self.graph.node_type(n)
             except KeyError:
                 raise KeyError(f"Node ID {n} supplied to generator not found in graph")
 
@@ -202,8 +203,9 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
             )
 
         # Create sampler for GraphSAGE
@@ -245,7 +247,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Get features for sampled nodes
         batch_feats = [
-            self.graph.get_feature_for_nodes(layer_nodes, node_type)
+            self.graph.node_features(layer_nodes, node_type)
             for layer_nodes in nodes_per_hop
         ]
 
@@ -298,8 +300,9 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
-            print(
-                "Warning: running homogeneous GraphSAGE on a graph with multiple node types"
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
             )
 
         # Create sampler for GraphSAGE
@@ -340,9 +343,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
-            features_for_slot = self.graph.get_feature_for_nodes(
-                nodes_in_slot, node_type
-            )
+            features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
@@ -452,7 +453,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # Get features
         batch_feats = [
-            self.graph.get_feature_for_nodes(layer_nodes, nt)
+            self.graph.node_features(layer_nodes, nt)
             for nt, layer_nodes in nodes_by_type
         ]
 
@@ -467,7 +468,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
 class Attri2VecNodeGenerator(BatchedNodeGenerator):
     """
-    A node feature generator for node representation prediction with the 
+    A node feature generator for node representation prediction with the
     attri2vec model.
 
     At minimum, supply the StellarGraph and the batch size.
@@ -476,7 +477,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`flow` method supplying the nodes to get an object 
+    Use the :meth:`flow` method supplying the nodes to get an object
     that can be used as a Keras data generator.
 
     Example::
@@ -496,7 +497,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
     def sample_features(self, head_nodes):
         """
-        Sample content features of the head nodes, and return these as a list of feature 
+        Sample content features of the head nodes, and return these as a list of feature
         arrays for the attri2vec algorithm.
 
         Args:
@@ -507,7 +508,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             head node.
         """
 
-        batch_feats = self.graph.get_feature_for_nodes(head_nodes)
+        batch_feats = self.graph.node_features(head_nodes)
         return batch_feats
 
     def flow(self, node_ids):

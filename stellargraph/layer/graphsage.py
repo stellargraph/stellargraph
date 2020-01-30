@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -291,11 +291,11 @@ class GraphSAGEAggregator(Layer):
     def group_aggregate(self, x_neigh, group_idx=0):
         """
         Override with a method to aggregate tensors over the neighbourhood for each group.
-        
+
         Args:
             x_neigh (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
             group_idx (int, optional): Group index.
-        
+
         Returns:
             [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
@@ -319,11 +319,11 @@ class MeanAggregator(GraphSAGEAggregator):
     def group_aggregate(self, x_group, group_idx=0):
         """
         Mean aggregator for tensors over the neighbourhood for each group.
-        
+
         Args:
             x_group (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
             group_idx (int, optional): Group index.
-        
+
         Returns:
             [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
@@ -407,11 +407,11 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
     def group_aggregate(self, x_group, group_idx=0):
         """
         Aggregates the group tensors by max-pooling of neighbours
-        
+
         Args:
             x_group (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
             group_idx (int, optional): Group index.
-        
+
         Returns:
             [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
@@ -504,11 +504,11 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
     def group_aggregate(self, x_group, group_idx=0):
         """
         Aggregates the group tensors by mean-pooling of neighbours
-        
+
         Args:
             x_group (tf.Tensor): : The input tensor representing the sampled neighbour nodes.
             group_idx (int, optional): Group index.
-        
+
         Returns:
             [tf.Tensor]: A tensor aggregation of the input nodes features.
         """
@@ -604,13 +604,13 @@ class AttentionalAggregator(GraphSAGEAggregator):
 
     def calculate_group_sizes(self, input_shape):
         """
-        Calculates the output size for each input group. 
-        
+        Calculates the output size for each input group.
+
         The results are stored in two variables:
             * self.included_weight_groups: if the corresponding entry is True then the input group
               is valid and should be used.
             * self.weight_sizes: the size of the output from this group.
-        
+
         The AttentionalAggregator is implemented to not use the first (head node) group. This makes
         the implmentation different from other aggregators.
 
@@ -727,7 +727,7 @@ class GraphSAGE:
     :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
 
     To use this class as a Keras model, the features and graph should be supplied using the
-    :class:`GraphSAGENodeGenerator` class for node inference models or the 
+    :class:`GraphSAGENodeGenerator` class for node inference models or the
     :class:`GraphSAGELinkGenerator` class for link inference models.  The `.build` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
@@ -767,10 +767,10 @@ class GraphSAGE:
         If a generator is not specified, then additional keyword arguments must be supplied:
 
         * n_samples (list): The number of samples per layer in the model.
-        
+
         * input_dim (int): The dimensions of the node features used as input to the model.
-        
-        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
           and 2 for link inference (currently no others are supported).
     """
 
@@ -1105,9 +1105,9 @@ class DirectedGraphSAGE(GraphSAGE):
 
         * input_dim (int): The dimensions of the node features used as input to the model.
 
-        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference 
+        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
           and 2 for link inference (currently no others are supported).
-          
+
         Passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
         as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
