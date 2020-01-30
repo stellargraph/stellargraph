@@ -39,7 +39,6 @@ EOF
 
 show_coverage
 
-
 echo "--- uploading coveralls"
 coveralls
 
