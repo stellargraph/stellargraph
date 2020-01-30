@@ -1,7 +1,15 @@
 import tensorflow as tf
 
+from ..core.experimental import experimental
 
+
+@experimental(reason="lack of unit tests")
 def graph_log_likelihood(y_true, y_pred):
+    '''
+    .. warning::
+
+        This function is experimental: it is insufficiently tested.
+    '''
     batch_adj = tf.gather(y_true, [0], axis=1)
 
     expected_walks = tf.gather(y_pred, [0], axis=1)

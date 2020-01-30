@@ -13,6 +13,10 @@ class AdjacencyPowerGenerator:
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first `num_powers`
     of the adjacency matrix row by row.
 
+    .. warning::
+
+        This class is experimental: it is insufficiently tested.
+
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         num_powers (int): the number of adjacency powers to calculate
