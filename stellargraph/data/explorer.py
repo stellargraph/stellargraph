@@ -792,10 +792,9 @@ class TemporalRandomWalk(GraphWalk):
 
     def run(
         self,
-        nodes,
-        n,
-        length,
-        bidirectional=False,
+        num_cw,
+        cw_size,
+        max_walk_length=80,
         initial_edge_bias=None,
         walk_bias=None,
         seed=None,
@@ -804,10 +803,10 @@ class TemporalRandomWalk(GraphWalk):
         Perform a time respecting random walk starting from the root nodes.
 
         Args:
-            nodes (list): The root nodes as a list of node IDs
-            n (int): Total number of random walks per root node
-            length (int): Maximum length of each random walk
-            bidirectional (bool, default False): Whether the walk extends on both direction.
+            num_cw (int): Total number of context windows to generate
+            cw_size (int): Size of context window. Also used as the minimum walk length,
+                since a walk must generate at least 1 context window for it to be useful.
+            max_walk_length (int): Maximum length of each random walk
             initial_edge_bias (str, optional): distribution to use when choosing a random
                 initial temporal edge to start from. Available options are:
                 * None (default) - the initial edge is picked from a uniform distribution
@@ -823,16 +822,38 @@ class TemporalRandomWalk(GraphWalk):
             List of lists of node ids for each of the random walks
 
         """
-        if length <= 1:
-            raise ValueError("length: expected at least 2, found {length}")
-        self._check_common_parameters(nodes, n, length, seed)
         np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
+        walks = []
+        num_cw_curr = 0
 
-        return [
-            self._walk(node, length, bidirectional, initial_edge_bias, walk_bias, np_rs)
-            for node in nodes
-            for _ in range(n)
-        ]
+        edges = self.graph.edges(include_edge_weight=True)
+        edge_biases = self._temporal_biases(
+            [t for _, _, t in edges],
+            None,
+            bias_type=initial_edge_bias,
+            is_forward=False,
+        )
+
+        # loop runs until we have enough context windows in total
+        while num_cw_curr < num_cw:
+            src, dst, t = self._sample(edges, edge_biases, np_rs)
+
+            remaining_length = num_cw - num_cw_curr + cw_size - 1
+
+            walk = self._walk(
+                src, dst, t, min(max_walk_length, remaining_length), walk_bias, np_rs
+            )
+            if len(walk) > cw_size:
+                walks.append(walk)
+                num_cw_curr += len(walk) - cw_size + 1
+
+    def _sample(self, items, biases, np_rs):
+        chosen_index = (
+            naive_weighted_choices(np_rs, biases)
+            if biases is not None
+            else np_rs.choice(len(items))
+        )
+        return items[chosen_index]
 
     def _exp_biases(self, times, t_0, decay):
         # t_0 assumed to be smaller than all time values
@@ -840,12 +861,10 @@ class TemporalRandomWalk(GraphWalk):
         sum_dist = np.sum(dist)
         return dist / sum_dist
 
-    def _edge_biases(self, neighbours, time, bias_type, is_forward):
+    def _temporal_biases(self, times, time, bias_type, is_forward):
         if bias_type is None:
             # default to uniform random sampling
             return None
-
-        times = [t for _, t in neighbours]
 
         # time is None indicates we should obtain the minimum available time for t_0
         t_0 = time if time is not None else min(times)
@@ -856,74 +875,36 @@ class TemporalRandomWalk(GraphWalk):
         else:
             raise ValueError("Unsupported bias type")
 
-    def _step(self, node, time, is_forward, bias_type, np_rs):
+    def _step(self, node, time, bias_type, np_rs):
         """
         Perform 1 temporal step from a node. Returns None if a dead-end is reached.
 
         """
 
-        def check_time(t):
-            # time is None indicates no temporal filtering (i.e. initial edge selection)
-            return (
-                (time is None)
-                or (is_forward and t > time)
-                or (not is_forward and t < time)
-            )
-
         neighbours = [
             (neighbour, t)
             for neighbour, t in self.graph.neighbors(node, include_edge_weight=True)
-            if check_time(t)
+            if t > time
         ]
 
         if neighbours:
-            biases = self._edge_biases(neighbours, time, bias_type, is_forward)
-            chosen_index = (
-                naive_weighted_choices(np_rs, biases)
-                if biases is not None
-                else np_rs.choice(len(neighbours))
-            )
-            next_node, next_time = neighbours[chosen_index]
+            times = [t for _, t in neighbours]
+            biases = self._temporal_biases(times, time, bias_type, is_forward=True)
+            next_node, next_time = self._sample(neighbours, biases, np_rs)
             return next_node, next_time
         else:
             return None
 
-    def _walk(self, node, length, bidirectional, initial_edge_bias, walk_bias, np_rs):
-        def step(t, is_forward, is_first=False):
-            n = walk[-1] if is_forward else walk[0]
-            bias = initial_edge_bias if is_first else walk_bias
-            result = self._step(
-                n, time=t, is_forward=is_forward, bias_type=bias, np_rs=np_rs
-            )
+    def _walk(self, src, dst, t, length, bias_type, np_rs):
+        walk = [src, dst]
+        node, time = dst, t
+        for _ in range(length - 2):
+            result = self._step(node, time=time, bias_type=bias_type, np_rs=np_rs)
 
-            if result is None:
-                return None
-
-            next_node, next_time = result
-            # the first step treats times as backwards, but still appends as if forward
-            if is_forward or is_first:
-                walk.append(next_node)
+            if result is not None:
+                node, time = result
+                walk.append(node)
             else:
-                walk.appendleft(next_node)
-
-            return next_time
-
-        walk = deque([node])
-        forward_time = step(None, is_forward=False, is_first=True)
-        backward_time = forward_time if bidirectional else None
-
-        while len(walk) < length:
-            if forward_time is not None:
-                forward_time = step(forward_time, is_forward=True)
-
-            if len(walk) == length:
                 break
 
-            if backward_time is not None:
-                backward_time = step(backward_time, is_forward=False)
-
-            if backward_time is None and forward_time is None:
-                # no eligible neighbours
-                break
-
-        return list(walk)
+        return walk
