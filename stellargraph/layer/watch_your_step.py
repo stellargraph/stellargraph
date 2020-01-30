@@ -6,7 +6,7 @@ import numpy as np
 
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 from ..core.experimental import experimental
-
+ew
 
 @experimental(reason="lack of unit tests")
 class AttentiveWalk(Layer):
