@@ -28,33 +28,20 @@ class AdjacencyPowerGenerator:
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
-        nodelist = G.nodes()
-
         Aadj = G.to_adjacency_matrix()
         indices = list(zip(Aadj.col, Aadj.row))
 
         self.Aadj_T = tf.sparse.SparseTensor(
             indices=indices,
             values=Aadj.data.astype(np.float32),
-            dense_shape=(len(nodelist), len(nodelist)),
+            dense_shape=(Aadj.shape[0], Aadj.shape[0]),
         )
 
         self.transition_matrix_T = tf.sparse.SparseTensor(
             indices=indices,
             values=normalize_adj(Aadj, symmetric=False).data.astype(np.float32),
-            dense_shape=(len(nodelist), len(nodelist)),
+            dense_shape=(Aadj.shape[0], Aadj.shape[0]),
         )
-
-        # # the transpose of the adjacency matrix
-        # node_index = dict(zip(nodelist, range(len(nodelist))))
-        # edgelist = G.edges()
-        # indices = [[node_index[n2], node_index[n1]] for n1, n2 in edgelist]
-        # values = tf.ones(len(edgelist), tf.float32)
-        # self.Aadj_T = tf.sparse.SparseTensor(
-        #     indices=indices, values=values,
-        #     dense_shape=(len(nodelist), len(nodelist))
-        # )
-        # TODO: row normalize adjacency matrix (column normalize transpose)
 
         self.num_powers = num_powers
 
