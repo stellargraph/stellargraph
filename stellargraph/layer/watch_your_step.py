@@ -14,6 +14,10 @@ class AttentiveWalk(Layer):
     This implements the graph attention as in Watch Your Step: Learning Node Embeddings via Graph Attention
     https://arxiv.org/pdf/1710.09599.pdf.
 
+    .. warning::
+
+        This class is experimental: it is insufficiently tested.
+
     Args:
         walk_length (int): the length of the random walks. Equivalent to the number of adjacency powers used.
         attention_initializer (str or func): The initialiser to use for the attention weights;
@@ -107,6 +111,10 @@ class WatchYourStep:
     This model requires specification of the number of random walks starting from each node, and the embedding dimension
     to use for the node embeddings. Note, that the embedding dimension should be an even number or else will be
     rounded down to nearest even number.
+
+    .. warning::
+
+        This class is experimental: it is insufficiently tested.
 
     Args:
         generator (AdjacencyPowerGenerator): the generator
