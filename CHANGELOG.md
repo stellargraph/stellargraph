@@ -14,6 +14,8 @@
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
+- The Watch Your Step algorithm has been implemented including: new classes, generators, and utils functions. These classes and functions lack testing.
+
 ### Bug fixes and other changes
 
 ## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
