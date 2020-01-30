@@ -16,24 +16,16 @@ pip freeze
 
 echo "+++ running tests"
 exitCode=$?
-py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
+py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
 echo "--- annotating coverage"
 FILE="coverage.xml"
 
-coverage_rate() {
-  rate="$1"
-  file="$2"
-
-  xmllint --xpath "100 * string(//coverage/@${rate}-rate)" "$file"
-}
-
 show_coverage() {
   echo "--- :arrow_up::buildkite: annotating build"
   buildkite-agent annotate --style "info" --context "coverage" << EOF
-Platform-Python code coverage:
-- line: $(coverage_rate line "$FILE")%
-- branch: $(coverage_rate branch "$FILE")%
+Code coverage:
+- branch: $(xmllint --xpath "100 * string(//coverage/@line-rate)" "$FILE")%
 EOF
 }
 
