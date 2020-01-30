@@ -6,6 +6,7 @@ import numpy as np
 
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 
+
 class AttentiveWalk(Layer):
     """
     This implements the graph attention as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -20,6 +21,7 @@ class AttentiveWalk(Layer):
         attention_constraint (str or func): The constraint to use for the attention weights;
             defaults to None.
     """
+
     def __init__(self, walk_length=5, **kwargs):
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
@@ -52,7 +54,9 @@ class AttentiveWalk(Layer):
             kwargs.pop("attention_regularizer", None)
         )
 
-        self.attention_constraint = constraints.get(kwargs.pop("attention_constraint", None))
+        self.attention_constraint = constraints.get(
+            kwargs.pop("attention_constraint", None)
+        )
 
     def build(self, input_shapes):
         """
@@ -108,10 +112,14 @@ class WatchYourStep:
         embedding dimension (int): the dimension to use for the node embeddings
     """
 
-    def __init__(self, generator, num_walks, embedding_dimension):
+    def __init__(
+        self, generator, num_walks, embedding_dimension, attention_regularizer=None
+    ):
 
         if not isinstance(generator, AdjacencyPowerGenerator):
-            raise TypeError("generator should be an instance of AdjacencyPowerGenerator.")
+            raise TypeError(
+                "generator should be an instance of AdjacencyPowerGenerator."
+            )
 
         if not isinstance(num_walks, int):
             raise TypeError("num_walks should be an int.")
@@ -119,10 +127,11 @@ class WatchYourStep:
         if num_walks <= 0:
             raise ValueError("num_walks should be a positive int.")
 
+        self.num_walks = num_walks
         self.num_powers = generator.num_powers
         self.n_nodes = int(generator.Aadj_T.shape[0])
         self.embedding_dimension = embedding_dimension
-
+        self.attention_regularizer = attention_regularizer
 
     def build(self):
         """
@@ -132,31 +141,48 @@ class WatchYourStep:
             A tuple of (inputs, outputs) to use with a keras model.
         """
 
-        input_rows = Input(batch_shape=(None,), name='row_node_ids', dtype='int64')
+        input_rows = Input(batch_shape=(None,), name="row_node_ids", dtype="int64")
         input_powers = Input(batch_shape=(None, self.num_powers, self.n_nodes))
 
-        input_cols = Lambda(lambda x: tf.constant(np.arange(int(self.n_nodes)), dtype='int64'))(input_rows)
-
         left_embedding = Embedding(
-            self.n_nodes, self.embedding_dimension,
-            input_length=None, name='LEFT_EMBEDDINGS'
+            self.n_nodes,
+            self.embedding_dimension,
+            input_length=None,
+            name="LEFT_EMBEDDINGS",
         )
 
         right_embedding = Embedding(
-            self.n_nodes, self.embedding_dimension,
-            input_length=None, name='RIGHT_EMBEDDINGS'
+            self.n_nodes,
+            self.embedding_dimension,
+            input_length=None,
+            name="RIGHT_EMBEDDINGS",
         )
 
         vectors_left = Lambda(lambda x: K.transpose(x))(left_embedding(input_rows))
+
+        # always use all left vectors - currently wastes time looking up embeddings
+        # to keep keras happy
+        # TODO: replace the embedding layer with a custom layer to avoid lookups
+        # input cols but be somehow connected to the input to keep keras happy
+        input_cols = Lambda(
+            lambda x: tf.constant(np.arange(int(self.n_nodes)), dtype="int64")
+        )(input_rows)
         vectors_right = right_embedding(input_cols)
 
-        dot_product = Lambda(lambda x: K.transpose(K.dot(x[0], x[1])))([vectors_right, vectors_left])
+        dot_product = Lambda(lambda x: K.transpose(K.dot(x[0], x[1])))(
+            [vectors_right, vectors_left]
+        )
 
         sigmoids = tf.keras.activations.sigmoid(dot_product)
-        expected_walk = AttentiveWalk(walk_length=self.num_powers)(input_powers)
+        attentive_walk_layer = AttentiveWalk(
+            walk_length=self.num_powers,
+            attention_regularizer=self.attention_regularizer,
+        )
+        expected_walk = self.num_walks * attentive_walk_layer(input_powers)
 
+        # layer  to add batch dimension of 1 to output
         expander = Lambda(lambda x: K.expand_dims(x, axis=1))
 
         output = Concatenate(axis=1)([expander(expected_walk), expander(sigmoids)])
 
-        return [input_rows, input_powers],  output
+        return [input_rows, input_powers], output

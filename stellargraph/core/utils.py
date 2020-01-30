@@ -217,5 +217,3 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
             )
 
     return features, A
-
-
