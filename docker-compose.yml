@@ -1,0 +1,7 @@
+---
+version: "3.4"
+services:
+  stellargraph:
+    build:
+      dockerfile: docker/stellargraph/Dockerfile
+      context: .

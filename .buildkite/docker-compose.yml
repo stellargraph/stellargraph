@@ -1,0 +1,27 @@
+---
+version: "3.4"
+services:
+  runner-3.6: &runner-config
+    image: "python:3.6-slim"
+    working_dir: /workdir
+    volumes:
+      - $PWD:/workdir
+      # We need to manually bring in buildkite-agent
+      # (https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/issues/158)
+      - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - GIT_BRANCH=$BUILDKITE_BRANCH
+      - COVERALLS_REPO_TOKEN
+      - BUILDKITE_AGENT_ACCESS_TOKEN
+      - BUILDKITE_BUILD_NUMBER
+      - BUILDKITE_BRANCH
+      - AWS_LOGS_BUCKET
+      # for coveralls-python, to send more metadata to coveralls.io
+      - BUILDKITE
+      - BUILDKITE_PULL_REQUEST
+      - BUILDKITE_JOB_ID
+
+  runner-3.7:
+    <<: *runner-config
+    image: "python:3.7-slim"

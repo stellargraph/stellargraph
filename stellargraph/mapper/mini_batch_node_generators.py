@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -115,11 +115,8 @@ class ClusterNodeGenerator:
 
         self.node_list = list(G.nodes())
 
-        # We need a schema to check compatibility with ClusterGCN
-        self.schema = G.create_graph_schema(create_type_maps=True)
-
         # Check that there is only a single node type
-        if len(self.schema.node_types) > 1:
+        if len(G.node_types) > 1:
             raise ValueError(
                 "{}: node generator requires graph with single node type; "
                 "a graph with multiple node types is passed. Stopping.".format(
@@ -148,7 +145,7 @@ class ClusterNodeGenerator:
             print(f"{i} cluster has size {len(c)}")
 
         # Get the features for the nodes
-        self.features = G.get_feature_for_nodes(self.node_list)
+        self.features = G.node_features(self.node_list)
 
     def flow(self, node_ids, targets=None, name=None):
         """
@@ -332,7 +329,7 @@ class ClusterNodeSequence(Sequence):
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
 
-        features = self.graph.get_feature_for_nodes(g_node_list)
+        features = self.graph.node_features(g_node_list)
 
         features = np.reshape(features, (1,) + features.shape)
         adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
