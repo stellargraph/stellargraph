@@ -39,8 +39,8 @@ EOF
 
 show_coverage
 
-echo "--- uploading coveralls"
-coveralls
+echo "--- :coverage::codecov::arrow_up: uploading coverage to codecov.io"
+bash <(curl https://codecov.io/bash)
 
 if [ "${BUILDKITE_BRANCH}" = "develop" ] || [ "${BUILDKITE_BRANCH}" = "master" ]; then
   echo "--- uploading JUnit"
