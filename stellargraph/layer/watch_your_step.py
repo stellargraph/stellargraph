@@ -5,8 +5,10 @@ from tensorflow.keras import regularizers, initializers, constraints
 import numpy as np
 
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
+from ..core.experimental import experimental
 
 
+@experimental(reason="lack of unit tests")
 class AttentiveWalk(Layer):
     """
     This implements the graph attention as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -96,6 +98,7 @@ class AttentiveWalk(Layer):
         return expected_walk
 
 
+@experimental(reason="lack of unit tests")
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention

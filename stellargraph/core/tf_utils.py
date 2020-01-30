@@ -1,7 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
+from ..core.experimental import experimental
 
 
+@experimental(reason="lack of unit tests")
 def partial_powers(one_hot_encoded_row, Aadj_T, num_powers=5):
     """
     This function computes the first num_powers powers of the adjacency matrix
@@ -33,6 +35,7 @@ def partial_powers(one_hot_encoded_row, Aadj_T, num_powers=5):
     return K.squeeze(tf.stack(partial_powers_list, axis=1), axis=0)
 
 
+@experimental(reason="lack of unit tests")
 def select_row_from_sparse_tensor(one_hot_encoded_row, sp_tensor_T):
     """
     This function gathers the row specified in one_hot_encoded_row from the input sparse matrix
