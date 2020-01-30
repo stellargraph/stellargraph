@@ -4,8 +4,10 @@ import numpy as np
 from ..core import StellarGraph
 from ..core.utils import normalize_adj
 from ..core.tf_utils import partial_powers, select_row_from_sparse_tensor
+from ..core.experimental import experimental
 
 
+@experimental(reason="lack of unit tests")
 class AdjacencyPowerGenerator:
     """
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first `num_powers`
