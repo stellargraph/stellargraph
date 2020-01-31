@@ -917,19 +917,11 @@ class StellarGraph:
         )
         for src_type, rel_type, tgt_type, src, tgt in iterator:
             triple = EdgeType(src_type, rel_type, tgt_type)
-            triple_dict = triples[triple]
-            triple_dict[src].append(tgt)
+            triples[triple][src].append(tgt)
 
             if not self.is_directed() and src != tgt:
-                # non-self loop in an undirected graph, so we should add the other direction too
-                triple_dict[tgt].append(src)
-
                 other_triple = EdgeType(tgt_type, rel_type, src_type)
-                if other_triple != triple:
-                    # the edge type differs too, so we need to add its other direction
-                    other_triple_dict = triples[other_triple]
-                    other_triple_dict[src].append(tgt)
-                    other_triple_dict[tgt].append(src)
+                triples[other_triple][tgt].append(src)
 
         for subdict in triples.values():
             for k, v in subdict.items():

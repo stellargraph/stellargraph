@@ -745,17 +745,9 @@ def test_adjacency_types_undirected():
     g = example_hin_1(is_directed=False)
     adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
 
-    arb_bra = {
-        0: [4],
-        1: [4, 5],
-        2: [4],
-        3: [5],
-        4: [0, 1, 2],
-        5: [1, 3],
-    }
     assert adj == {
-        ("A", "R", "B"): arb_bra,
-        ("B", "R", "A"): arb_bra,
+        ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
+        ("B", "R", "A"): {4: [0, 1, 2], 5: [1, 3]},
         ("B", "F", "B"): {4: [5], 5: [4]},
     }
 
