@@ -36,7 +36,10 @@ from .validation import comma_sep
 from . import convert
 
 
-NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
+NeighbourWithWeight = namedtuple(
+        "NeighbourWithWeight",
+        ["node", "weight"]
+)
 
 
 class StellarGraph:
