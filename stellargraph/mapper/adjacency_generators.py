@@ -13,34 +13,30 @@ class AdjacencyPowerGenerator:
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first `num_powers`
     of the adjacency matrix row by row.
 
-    .. warning::
-
-        This class is experimental: it is insufficiently tested.
-
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         num_powers (int): the number of adjacency powers to calculate
 
     """
 
-    def __init__(self, G, num_powers=5):
+    def __init__(self, G, num_powers=10):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
-        Aadj = G.to_adjacency_matrix()
-        indices = list(zip(Aadj.col, Aadj.row))
+        Aadj = G.to_adjacency_matrix().tocoo()
+        indices = np.column_stack((Aadj.col, Aadj.row))
 
         self.Aadj_T = tf.sparse.SparseTensor(
             indices=indices,
             values=Aadj.data.astype(np.float32),
-            dense_shape=(Aadj.shape[0], Aadj.shape[0]),
+            dense_shape=Aadj.shape,
         )
 
         self.transition_matrix_T = tf.sparse.SparseTensor(
             indices=indices,
             values=normalize_adj(Aadj, symmetric=False).data.astype(np.float32),
-            dense_shape=(Aadj.shape[0], Aadj.shape[0]),
+            dense_shape=Aadj,
         )
 
         self.num_powers = num_powers
