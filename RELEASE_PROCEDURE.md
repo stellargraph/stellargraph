@@ -78,10 +78,11 @@
      ```
    - Build package
      ```shell
-     conda build . --output
+     conda build .
      ```
    - Upload to Anaconda Cloud in the “stellargraph” organization
      ```shell
+     conda build . --output # find the path to the package
      anaconda login
      anaconda upload -u stellargraph /path/to/conda-package.tar.bz2
      ```

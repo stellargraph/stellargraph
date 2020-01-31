@@ -152,9 +152,15 @@ if __name__ == "__main__":
         "-e",
         "--execute",
         nargs="?",
-        default=None,
         const="default",
         help="Execute notebook before export with specified kernel (default if not given)",
+    )
+    parser.add_argument(
+        "-t",
+        "--cell_timeout",
+        default=-1,
+        type=int,
+        help="Set the execution cell timeout in seconds (default is timeout disabled)",
     )
     parser.add_argument(
         "-n",
@@ -211,6 +217,7 @@ if __name__ == "__main__":
     renumber_code = args.renumber or args.default
     set_kernel = args.set_kernel or args.default
     execute_code = args.execute
+    cell_timeout = args.cell_timeout
 
     # Add preprocessors
     preprocessor_list = []
@@ -234,8 +241,10 @@ if __name__ == "__main__":
     c.NotebookExporter.preprocessors = preprocessor_list
     c.HTMLExporter.preprocessors = preprocessor_list
 
-    if execute_code and execute_code != "default":
-        c.ExecutePreprocessor.kernel_name = execute_code
+    if execute_code:
+        c.ExecutePreprocessor.timeout = cell_timeout
+        if execute_code != "default":
+            c.ExecutePreprocessor.kernel_name = execute_code
 
     nb_exporter = NotebookExporter(c)
     html_exporter = HTMLExporter(c)

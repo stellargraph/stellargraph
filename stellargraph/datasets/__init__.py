@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2020 Data61, CSIROß
+# Copyright 2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,19 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+The datasets package contains classes to download sample datasets
 
 """
-Utils tests:
 
-"""
-from ..test_utils.graphs import example_graph_1
-
-
-def test_edges_with_type():
-    G = example_graph_1(label="edge")
-    info = G.info()
-
-
-def test_edges_without_type():
-    G = example_graph_1()
-    info = G.info()
+from .datasets import *
