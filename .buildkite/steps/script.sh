@@ -16,18 +16,7 @@ pip freeze
 
 echo "+++ running tests"
 exitCode=$?
-py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
-
-show_coverage() {
-  echo "--- :arrow_up::buildkite: annotating build"
-  buildkite-agent annotate --style "info" --context "python-platform coverage" << EOF
-
-Platform-Python code coverage:
-- line: $(xmllint --xpath "100 * string(//coverage/@line-rate)" "$FILE")%
-EOF
-}
-
-show_coverage
+py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$
 
 echo "--- :coverage::codecov::arrow_up: uploading coverage to codecov.io"
 bash <(curl https://codecov.io/bash)
