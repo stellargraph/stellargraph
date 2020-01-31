@@ -332,15 +332,20 @@ class StellarGraph:
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
         if include_edge_type:
-            return list(
+            edges = list(
                 zip(
                     self._edges.sources,
                     self._edges.targets,
                     self._edges.type_of_iloc(slice(None)),
                 )
             )
+        else:
+            edges = list(zip(self._edges.sources, self._edges.targets))
 
-        return list(zip(self._edges.sources, self._edges.targets))
+        if include_edge_weight:
+            return edges, self._edges.weights
+
+        return edges
 
     def has_node(self, node: Any) -> bool:
         """

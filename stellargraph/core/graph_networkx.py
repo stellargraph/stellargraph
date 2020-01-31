@@ -723,13 +723,13 @@ class NetworkXStellarGraph(StellarGraph):
             edges = self._graph.edges()
 
         if include_edge_weight:
-            return (
-                edges,
+            weights = np.array(
                 [
                     data.get(self._edge_weight_label)
                     for _, _, data in self._graph.edges(data=True)
-                ],
+                ]
             )
+            return edges, weights
         else:
             return edges
 
