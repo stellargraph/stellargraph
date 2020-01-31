@@ -745,6 +745,14 @@ def test_edges_include_weights():
     edges, weights = g.edges(include_edge_weight=True)
     nxg = g.to_networkx()
     assert len(edges) == len(weights) == len(nxg.edges())
-    for (src, dst), w in zip(edges, weights):
-        # check weight matches an edge in multi-edges
-        assert w in {data["weight"] for data in nxg.get_edge_data(src, dst).values()}
+
+    grouped = (
+        pd.DataFrame(edges, columns=["source", "target"])
+        .assign(weight=weights)
+        .groupby(["source", "target"])
+        .agg(list)
+    )
+    for (src, tgt), row in grouped.iterrows():
+        assert sorted(row["weight"]) == sorted(
+            [data["weight"] for data in nxg.get_edge_data(src, tgt).values()]
+        )

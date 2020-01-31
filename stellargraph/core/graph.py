@@ -324,11 +324,6 @@ class StellarGraph:
                 include_edge_type=include_edge_type,
             )
 
-        if include_edge_weight:
-            raise NotImplementedError(
-                "see https://github.com/stellargraph/stellargraph/issues/716"
-            )
-
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
         if include_edge_type:
