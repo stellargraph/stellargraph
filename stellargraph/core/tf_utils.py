@@ -9,10 +9,6 @@ def partial_powers(one_hot_encoded_row, Aadj_T, num_powers=5):
     This function computes the first num_powers powers of the adjacency matrix
     for the row specified in one_hot_encoded_row
 
-    .. warning::
-
-        This function is experimental: it is insufficiently tested.
-
     Args:
         one_hot_encoded_row: one-hot-encoded row
         Aadj_T: the transpose of the adjacency matrix
@@ -43,10 +39,6 @@ def partial_powers(one_hot_encoded_row, Aadj_T, num_powers=5):
 def select_row_from_sparse_tensor(one_hot_encoded_row, sp_tensor_T):
     """
     This function gathers the row specified in one_hot_encoded_row from the input sparse matrix
-
-    .. warning::
-
-        This function is experimental: it is insufficiently tested.
 
     Args:
         one_hot_encoded_row: one-hot-encoded row
