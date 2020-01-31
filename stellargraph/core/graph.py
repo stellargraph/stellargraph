@@ -737,7 +737,7 @@ class StellarGraph:
         if nodes is None:
             selector = slice(None)
         else:
-            selector = self._edges.sources.isin(nodes) & self._edges.targets.isin(nodes)
+            selector = np.isin(self._edges.sources, nodes) & np.isin(self._edges.targets, nodes)
 
         source_types, rel_types, target_types = self._edge_type_triples(selector)
         for n1, rel, n2 in zip(source_types, rel_types, target_types):
