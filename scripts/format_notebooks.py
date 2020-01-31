@@ -207,9 +207,6 @@ if __name__ == "__main__":
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
-    if clear_warnings:
-        preprocessor_list.append(ClearWarningsPreprocessor)
-
     if set_kernel:
         preprocessor_list.append(SetKernelSpecPreprocessor)
 
@@ -218,6 +215,10 @@ if __name__ == "__main__":
 
     if execute_code:
         preprocessor_list.append(preprocessors.ExecutePreprocessor)
+
+    # warnings need to be cleared after execution
+    if clear_warnings:
+        preprocessor_list.append(ClearWarningsPreprocessor)
 
     # Create the exporters with preprocessing
     c = Config()
