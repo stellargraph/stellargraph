@@ -17,7 +17,7 @@ def graph_log_likelihood(y_true, y_pred):
 
     adj_mask = tf.cast((batch_adj == 0), "float32")
 
-    loss = tf.math.reduce_mean(
+    loss = tf.math.reduce_sum(
         tf.abs(
             -(expected_walks * tf.math.log(sigmoids + 1e-9))
             - adj_mask * tf.math.log(1 - sigmoids + 1e-9)
