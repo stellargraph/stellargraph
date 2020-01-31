@@ -17,6 +17,7 @@ services:
       - BUILDKITE_BRANCH
       - AWS_LOGS_BUCKET
       # codecov needs extra info from Buildkite environment:
+      - CI
       - BUILDKITE
       - BUILDKITE_PULL_REQUEST
       - BUILDKITE_JOB_ID
