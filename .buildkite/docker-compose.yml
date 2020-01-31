@@ -12,15 +12,10 @@ services:
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - GIT_BRANCH=$BUILDKITE_BRANCH
-      #- COVERALLS_REPO_TOKEN
       - BUILDKITE_AGENT_ACCESS_TOKEN
       - BUILDKITE_BUILD_NUMBER
       - BUILDKITE_BRANCH
       - AWS_LOGS_BUCKET
-      # for coveralls-python, to send more metadata to coveralls.io
-      - BUILDKITE
-      - BUILDKITE_PULL_REQUEST
-      - BUILDKITE_JOB_ID
       - CODECOV_TOKEN
 
   runner-3.7:
