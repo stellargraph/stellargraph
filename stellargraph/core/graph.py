@@ -924,9 +924,9 @@ class StellarGraph:
                 triples[other_triple][tgt].append(src)
 
         for subdict in triples.values():
-            for k, v in subdict.items():
+            for v in subdict.values():
                 # each list should be in order, to ensure sampling methods are deterministic
-                subdict[k] = sorted(v, key=str)
+                v.sort(key=str)
 
         return triples
 
