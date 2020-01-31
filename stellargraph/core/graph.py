@@ -221,7 +221,7 @@ class StellarGraph:
             self._is_directed = is_directed
 
             self._nodes = convert.convert_nodes(
-                nodes, name="nodes", default_type=node_type_default, dtype=dtype
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
             )
             self._edges = convert.convert_edges(
                 edges,
