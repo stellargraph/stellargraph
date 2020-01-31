@@ -40,7 +40,7 @@ class AdjacencyPowerGenerator:
         self.transition_matrix_T = tf.sparse.SparseTensor(
             indices=indices,
             values=normalize_adj(Aadj, symmetric=False).data.astype(np.float32),
-            dense_shape=(Aadj.shape[0], Aadj.shape[0]),
+            dense_shape=Aadj.shape,
         )
 
         self.num_powers = num_powers
@@ -51,6 +51,7 @@ class AdjacencyPowerGenerator:
 
         Args:
             batch_size (int): the number of rows of the adjacency powers to include in each batch.
+            threads (int): the number of threads to use for pre-processing of batches.
 
         Returns:
             A `tensorflow.data.Dataset` object for training node embeddings from powers of the adjacency matrix.
