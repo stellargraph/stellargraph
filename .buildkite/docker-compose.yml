@@ -16,6 +16,9 @@ services:
       - BUILDKITE_BUILD_NUMBER
       - BUILDKITE_BRANCH
       - AWS_LOGS_BUCKET
+      - BUILDKITE
+      - BUILDKITE_PULL_REQUEST
+      - BUILDKITE_JOB_ID
       - CODECOV_TOKEN
 
   runner-3.7:
