@@ -29,7 +29,7 @@ class AdjacencyPowerGenerator:
             raise TypeError("G must be a StellarGraph object.")
 
         Aadj = G.to_adjacency_matrix()
-        indices = list(zip(Aadj.col, Aadj.row))
+        indices = np.column_stack((Aadj.col, Aadj.row))
 
         self.Aadj_T = tf.sparse.SparseTensor(
             indices=indices,
