@@ -29,6 +29,7 @@ import numpy as np
 import random
 import warnings
 from collections import defaultdict, deque
+from scipy import stats
 
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
@@ -797,6 +798,7 @@ class TemporalRandomWalk(GraphWalk):
         max_walk_length=80,
         initial_edge_bias=None,
         walk_bias=None,
+        p_walk_success_threshold=0.01,
         seed=None,
     ):
         """
@@ -816,6 +818,10 @@ class TemporalRandomWalk(GraphWalk):
                 * None (default) - neighbours are picked from a uniform distribution
                 * "exponential" - exponentially decaying probability, resulting in a bias
                     towards shorter time gaps
+            p_walk_success_threshold (float): Lower bound for the proportion of successful
+                (i.e. longer than minimum length) walks. If the 95% percentile of the
+                estimated proportion is less than the provided threshold, a RuntimeError
+                will be raised.
             seed (int, optional): Random number generator seed; default is None
 
         Returns:
@@ -834,6 +840,14 @@ class TemporalRandomWalk(GraphWalk):
             is_forward=False,
         )
 
+        successes = 0
+        failures = 0
+
+        def not_progressing_enough():
+            # (this uses Beta(1, 1) as the prior, since it's uniform on p)
+            posterior = stats.beta(1 + successes, 1 + failures)
+            return posterior.ppf(0.95) < p_walk_success_threshold
+
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
             src, dst, t = self._sample(edges, edge_biases, np_rs)
@@ -846,6 +860,15 @@ class TemporalRandomWalk(GraphWalk):
             if len(walk) > cw_size:
                 walks.append(walk)
                 num_cw_curr += len(walk) - cw_size + 1
+                successes += 1
+            else:
+                failures += 1
+                if not_progressing_enough():
+                    raise RuntimeError(
+                        f"Discarded {failures} walks out of {failures + successes}. "
+                        "Too many temporal walks are being discarded for being too short. "
+                        "Consider using a smaller context window size."
+                    )
 
     def _sample(self, items, biases, np_rs):
         chosen_index = (
