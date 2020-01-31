@@ -738,3 +738,13 @@ def test_info_heterogeneous():
 
     assert " A-R->B: [5]"
     assert " B-F->B: [1]"
+
+
+def test_edges_include_weights():
+    g = example_weighted_hin()
+    edges, weights = g.edges(include_edge_weight=True)
+    nxg = g.to_networkx()
+    assert len(edges) == len(weights) == len(nxg.edges())
+    for (src, dst), w in zip(edges, weights):
+        # check weight matches an edge in multi-edges
+        assert w in {data["weight"] for data in nxg.get_edge_data(src, dst).values()}

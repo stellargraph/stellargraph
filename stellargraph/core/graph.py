@@ -221,7 +221,7 @@ class StellarGraph:
             self._is_directed = is_directed
 
             self._nodes = convert.convert_nodes(
-                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype
             )
             self._edges = convert.convert_edges(
                 edges,
@@ -303,19 +303,31 @@ class StellarGraph:
 
         return self._nodes.ids.pandas_index
 
-    def edges(self, include_edge_type=False) -> Iterable[Any]:
+    def edges(
+        self, include_edge_type=False, include_edge_weight=False
+    ) -> Iterable[Any]:
         """
         Obtains the collection of edges in the graph.
 
         Args:
-            include_edge_type (bool): A flag that indicates whether to return edge triples
+            include_edge_type (bool): A flag that indicates whether to return edge types
             of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
+            include_edge_weight (bool): A flag that indicates whether to return edge weights.
+            Weights are returned in a separate list.
 
         Returns:
-            The graph edges.
+            The graph edges. If edge weights are included then a tuple of (edges, weights)
         """
         if self._graph is not None:
-            return self._graph.edges(include_edge_type)
+            return self._graph.edges(
+                include_edge_weight=include_edge_weight,
+                include_edge_type=include_edge_type,
+            )
+
+        if include_edge_weight:
+            raise NotImplementedError(
+                "see https://github.com/stellargraph/stellargraph/issues/716"
+            )
 
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
@@ -852,9 +864,7 @@ class StellarGraph:
             features = self.node_features(node_ids, node_type=ty)
 
             for node_id, node_features in zip(node_ids, features):
-                graph.add_node(
-                    node_id, **ty_dict, **{feature_name: node_features},
-                )
+                graph.add_node(node_id, **ty_dict, **{feature_name: node_features})
 
         iterator = zip(
             self._edges.sources,
