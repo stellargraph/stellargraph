@@ -741,6 +741,24 @@ def test_info_heterogeneous():
     assert " B-F->B: [1]"
 
 
+def test_edges_include_weights():
+    g = example_weighted_hin()
+    edges, weights = g.edges(include_edge_weight=True)
+    nxg = g.to_networkx()
+    assert len(edges) == len(weights) == len(nxg.edges())
+
+    grouped = (
+        pd.DataFrame(edges, columns=["source", "target"])
+        .assign(weight=weights)
+        .groupby(["source", "target"])
+        .agg(list)
+    )
+    for (src, tgt), row in grouped.iterrows():
+        assert sorted(row["weight"]) == sorted(
+            [data["weight"] for data in nxg.get_edge_data(src, tgt).values()]
+        )
+
+
 def test_adjacency_types_undirected():
     g = example_hin_1(is_directed=False)
     adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
