@@ -46,17 +46,18 @@ class AttentiveWalk(Layer):
         attention_initializer="glorot_uniform",
         attention_regularizer=None,
         attention_constraint=None,
+        input_shape=None,
         **kwargs
     ):
 
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if input_shape is None and "input_dim" in kwargs:
+            input_shape = (kwargs.get("input_dim"),)
 
         self.walk_length = walk_length
         self.attention_initializer = attention_initializer
         self.attention_regularizer = attention_regularizer
         self.attention_constraint = attention_constraint
-        super().__init__(**kwargs)
+        super().__init__(input_shape=input_shape, **kwargs)
 
     def compute_output_shape(self, input_shapes):
         return (input_shapes[0][-1],)
