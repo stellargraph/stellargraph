@@ -832,12 +832,10 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         num_cw_curr = 0
 
-        edges = self.graph.edges(include_edge_weight=True)
+        edges, times = self.graph.edges(include_edge_weight=True)
+        temporal_edges = list(zip(edges, times))
         edge_biases = self._temporal_biases(
-            [t for _, _, t in edges],
-            None,
-            bias_type=initial_edge_bias,
-            is_forward=False,
+            times, None, bias_type=initial_edge_bias, is_forward=False,
         )
 
         successes = 0
@@ -850,14 +848,14 @@ class TemporalRandomWalk(GraphWalk):
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
-            src, dst, t = self._sample(edges, edge_biases, np_rs)
+            (src, dst), t = self._sample(temporal_edges, edge_biases, np_rs)
 
             remaining_length = num_cw - num_cw_curr + cw_size - 1
 
             walk = self._walk(
                 src, dst, t, min(max_walk_length, remaining_length), walk_bias, np_rs
             )
-            if len(walk) > cw_size:
+            if len(walk) >= cw_size:
                 walks.append(walk)
                 num_cw_curr += len(walk) - cw_size + 1
                 successes += 1
@@ -869,6 +867,8 @@ class TemporalRandomWalk(GraphWalk):
                         "Too many temporal walks are being discarded for being too short. "
                         "Consider using a smaller context window size."
                     )
+
+        return walks
 
     def _sample(self, items, biases, np_rs):
         chosen_index = (
