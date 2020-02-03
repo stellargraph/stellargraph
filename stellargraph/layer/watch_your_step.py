@@ -38,6 +38,7 @@ class AttentiveWalk(Layer):
             defaults to None.
         attention_constraint (str or func): The constraint to use for the attention weights;
             defaults to None.
+        input_shape (tuple of ints): The shape of the input to the layer.
     """
 
     def __init__(
