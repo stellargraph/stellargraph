@@ -115,9 +115,13 @@ class WatchYourStep:
     """
 
     def __init__(
-        self, generator, num_walks=80, embedding_dimension=64,
-        attention_regularizer=None, attention_initializer=None,
-        attention_constraint=None
+        self,
+        generator,
+        num_walks=80,
+        embedding_dimension=64,
+        attention_regularizer=None,
+        attention_initializer=None,
+        attention_constraint=None,
     ):
 
         if not isinstance(generator, AdjacencyPowerGenerator):
