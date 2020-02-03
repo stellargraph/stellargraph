@@ -31,15 +31,6 @@ from ..test_utils.graphs import (
 )
 
 
-# FIXME(#649,#677): silence the current experimental warnings
-pytestmark = [
-    pytest.mark.filterwarnings(
-        f"ignore:{name}:stellargraph.core.experimental.ExperimentalWarning"
-    )
-    for name in ["Relational", "RGCN"]
-]
-
-
 def test_RelationalGraphConvolution_config():
     rgcn_layer = RelationalGraphConvolution(units=16, num_relationships=5)
     conf = rgcn_layer.get_config()
@@ -360,7 +351,7 @@ def test_RelationalGraphConvolution_edge_cases():
 
 def get_edge_types(G):
     assert isinstance(G, StellarGraph)
-    return sorted(set(etype for _, _, etype in G.edges(triple=True)))
+    return sorted(set(etype for _, _, etype in G.edges(include_edge_type=True)))
 
 
 def get_As(G):
@@ -372,12 +363,12 @@ def get_As(G):
     for edge_type in edge_types:
         col_index = [
             node_index[n1]
-            for n1, n2, etype in G.edges(triple=True)
+            for n1, n2, etype in G.edges(include_edge_type=True)
             if etype == edge_type
         ]
         row_index = [
             node_index[n2]
-            for n1, n2, etype in G.edges(triple=True)
+            for n1, n2, etype in G.edges(include_edge_type=True)
             if etype == edge_type
         ]
         data = np.ones(len(col_index), np.float64)

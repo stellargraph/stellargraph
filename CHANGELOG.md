@@ -2,40 +2,71 @@
 
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/HEAD...v0.8.2)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.9.0...HEAD)
 
-**New algorithms:**
+### Major features and improvements
 
-- Cluster-GCN algorithm (an extension of GCN that can be trained using SGD) + demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
-
-- *Experimental*: Relational-GCN (RGCN) algorithm (a generalisation of GCN to relational/multi edge type graphs) + demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
-
-**Implemented enhancements:**
-- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now support additional parameters to include edge weights in the results or filter by a set of edge types. [\#646](https://github.com/stellargraph/stellargraph/pull/646)
-- Unsupervised GraphSAGE has now been updated and tested for reproducibility. Ensuring all seeds are set, running the same pipeline should give reproducible embeddings. [\#620](https://github.com/stellargraph/stellargraph/pull/620)
+- New algorithms:
 - A global stellargraph random seed is now available via `stellargraph.utils.random.set_seed`. This can be used to create reproducible pipelines in the same way they are being tested. [\#684](https://github.com/stellargraph/stellargraph/issues/684)
 
-**Refactoring:**
-- Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
+### Breaking changes
 
-**Breaking changes:**
-- The stellargraph library now only supports `tensorflow` versions 2.0 and above [\#518](https://github.com/stellargraph/stellargraph/pull/518). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
-- The stellargraph library now only supports Python versions 3.6 and above [\#](). Backward compatibility with earlier versions of Python is not guaranteed.
+### Experimental features
 
-- The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality.
-In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead.
-[\#297](https://github.com/stellargraph/stellargraph/issues/297)
+Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
-- Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498).
-Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
+### Bug fixes and other changes
 
+## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
+
+### Major features and improvements
+
+- StellarGraph is now available as [a conda package on Anaconda Cloud](https://anaconda.org/stellargraph/stellargraph) [\#516](https://github.com/stellargraph/stellargraph/pull/516)
+- New algorithms:
+  - Cluster-GCN: an extension of GCN that can be trained using SGD, with demo [\#487](https://github.com/stellargraph/stellargraph/issues/487)
+  - Relational-GCN (RGCN): a generalisation of GCN to relational/multi edge type graphs, with demo [\#490](https://github.com/stellargraph/stellargraph/issues/490)
+  - Link prediction for full-batch models: `FullBatchLinkGenerator` allows doing link prediction with algorithms like GCN, GAT, APPNP and PPNP [\#543](https://github.com/stellargraph/stellargraph/pull/543)
+- Unsupervised GraphSAGE has now been updated and tested for reproducibility. Ensuring all seeds are set, running the same pipeline should give reproducible embeddings. [\#620](https://github.com/stellargraph/stellargraph/pull/620)
+- A `datasets` subpackage provides easier access to sample datasets with inbuilt downloading. [\#690](https://github.com/stellargraph/stellargraph/pull/690)
+
+
+### Breaking changes
+
+- The stellargraph library now only supports `tensorflow` version 2.0 [\#518](https://github.com/stellargraph/stellargraph/pull/518), [\#732](https://github.com/stellargraph/stellargraph/pull/732). Backward compatibility with earlier versions of `tensorflow` is not guaranteed.
+- The stellargraph library now only supports Python versions 3.6 and above [\#641](https://github.com/stellargraph/stellargraph/pull/641). Backward compatibility with earlier versions of Python is not guaranteed.
+- The `StellarGraph` class no longer exposes `NetworkX` internals, only required functionality. In particular, calls like `list(G)` will no longer return a list of nodes; use `G.nodes()` instead. [\#297](https://github.com/stellargraph/stellargraph/issues/297) If NetworkX functionality is required, use the new `.to_networkx()` method to convert to a normal `networkx.MultiGraph` or `networkx.MultiDiGraph`.
+- Passing a `NodeSequence` or `LinkSequence` object to `GraphSAGE` and `HinSAGE` classes is now deprecated and no longer supported [\#498](https://github.com/stellargraph/stellargraph/pull/498). Users might need to update their calls of `GraphSAGE` and `HinSAGE` classes by passing `generator` objects instead of `generator.flow()` objects.
 - Various methods on `StellarGraph` have been renamed to be more succinct and uniform:
    - `get_feature_for_nodes` is now `node_features`
    - `type_for_node` is now `node_type`
-
 - Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now return a list of neighbours instead of a set. This addresses [\#653](https://github.com/stellargraph/stellargraph/issues/653). This means multi-edges are no longer collapsed into one in the return value. There will be an implicit change in behaviour for explorer classes used for algorithms like GraphSAGE, Node2Vec, since a neighbour connected via multiple edges will now be more likely to be sampled. If this doesn't sound like the desired behaviour, consider pruning the graph of multi-edges before running the algorithm.
+- `GraphSchema` has been simplified to remove type look-ups for individual nodes and edges [\#702](https://github.com/stellargraph/stellargraph/pull/702) [\#703](https://github.com/stellargraph/stellargraph/pull/703). Migration: for nodes, use `StellarGraph.node_type`; for edges, use the `triple` argument to the `edges` method, or filter when doing neighbour queries using the `edge_types` argument.
+- `NodeAttributeSpecification` and the supporting `Converter` classes have been removed [\#707](https://github.com/stellargraph/stellargraph/pull/707). Migration: use the more powerful and flexible preprocessing tools from pandas and sklearn (see the linked PR for specifics)
 
-**Fixed bugs:**
+### Experimental features
+
+Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
+
+- The `StellarGraph` and `StellarDiGraph` classes supports using a backend based on NumPy and Pandas that uses dramatically less memory for large graphs than the existing NetworkX-based backend [\#668](https://github.com/stellargraph/stellargraph/pull/668). The new backend can be enabled by constructing with `StellarGraph(nodes=..., edges=...)` using Pandas DataFrames, instead of a NetworkX graph.
+
+### Bug fixes and other changes
+
+- Documentation for every relased version is published under a permanent URL, in addition to the `stable` alias for the latest release, e.g. <https://stellargraph.readthedocs.io/en/v0.8.4/> for `v0.8.4` [#612](https://github.com/stellargraph/stellargraph/issues/612)
+- Neighbourhood methods in `StellarGraph` class (`neighbors`, `in_nodes`, `out_nodes`) now support additional parameters to include edge weights in the results or filter by a set of edge types. [\#646](https://github.com/stellargraph/stellargraph/pull/646)
+- Changed `GraphSAGE` and `HinSAGE` class API to accept generator objects the same as GCN/GAT models. Passing a `NodeSequence` or `LinkSequence` object is now deprecated.  [\#498](https://github.com/stellargraph/stellargraph/pull/498)
+- `SampledBreadthFirstWalk`, `SampledHeterogeneousBreadthFirstWalk` and `DirectedBreadthFirstNeighbours` have been made 1.2-1.5× faster [\#628](https://github.com/stellargraph/stellargraph/pull/628)
+- `UniformRandomWalk` has been made 2× faster [\#625](https://github.com/stellargraph/stellargraph/pull/625)
+- `FullBatchNodeGenerator.flow` has been reduced from `O(n^2)` quadratic complexity to `O(n)`, where `n` is the number of nodes in the graph, making it orders of magnitude faster for large graphs [\#513](https://github.com/stellargraph/stellargraph/pull/513)
+- The dependencies required for demos and testing have been included as "extras" in the main package: `demos` and `igraph` for demos, and `test` for testing. For example, `pip install stellargraph[demos,igraph]` will install the dependencies required to run every demo. [\#661](https://github.com/stellargraph/stellargraph/pull/661)
+- The `StellarGraph` and `StellarDiGraph` constructors now list their arguments explicitly for clearer documentation (rather than using `*arg` and `**kwargs` splats) [\#659](https://github.com/stellargraph/stellargraph/pull/659)
+- `sys.exit(0)` is no longer called on failure in `load_dataset_BlogCatalog3` [\#648](https://github.com/stellargraph/stellargraph/pull/648)
+- Warnings are printed using the Python `warnings` module [\#583](https://github.com/stellargraph/stellargraph/pull/583)
+- Numerous DevOps changes:
+  - CI results are now publicly viewable: <https://buildkite.com/stellar/stellargraph-public>
+  - CI: [\#524](https://github.com/stellargraph/stellargraph/pull/524), [\#534](https://github.com/stellargraph/stellargraph/pull/534), [\#544](https://github.com/stellargraph/stellargraph/pull/544), [\#550](https://github.com/stellargraph/stellargraph/pull/550), [\#551](https://github.com/stellargraph/stellargraph/pull/551), [\#557](https://github.com/stellargraph/stellargraph/pull/557), [\#562](https://github.com/stellargraph/stellargraph/pull/562), [\#574](https://github.com/stellargraph/stellargraph/issues/574) [\#578](https://github.com/stellargraph/stellargraph/pull/578), [\#579](https://github.com/stellargraph/stellargraph/pull/579), [\#587](https://github.com/stellargraph/stellargraph/pull/587), [\#592](https://github.com/stellargraph/stellargraph/pull/592), [\#595](https://github.com/stellargraph/stellargraph/pull/595), [\#596](https://github.com/stellargraph/stellargraph/pull/596), [\#602](https://github.com/stellargraph/stellargraph/issues/602), [\#609](https://github.com/stellargraph/stellargraph/pull/609), [\#613](https://github.com/stellargraph/stellargraph/pull/613), [\#615](https://github.com/stellargraph/stellargraph/pull/615), [\#631](https://github.com/stellargraph/stellargraph/pull/631), [\#637](https://github.com/stellargraph/stellargraph/pull/637), [\#639](https://github.com/stellargraph/stellargraph/pull/639), [\#640](https://github.com/stellargraph/stellargraph/pull/640), [\#652](https://github.com/stellargraph/stellargraph/pull/652), [\#656](https://github.com/stellargraph/stellargraph/pull/656), [\#663](https://github.com/stellargraph/stellargraph/pull/663), [\#675](https://github.com/stellargraph/stellargraph/pull/675)
+  - Git and Github configuration: [\#516](https://github.com/stellargraph/stellargraph/pull/516), [\#588](https://github.com/stellargraph/stellargraph/pull/588), [\#624](https://github.com/stellargraph/stellargraph/pull/624), [\#672](https://github.com/stellargraph/stellargraph/pull/672), [\#682](https://github.com/stellargraph/stellargraph/pull/682), [\#683](https://github.com/stellargraph/stellargraph/pull/683),
+  - Other: [\#523](https://github.com/stellargraph/stellargraph/pull/523), [\#582](https://github.com/stellargraph/stellargraph/pull/582), [\#590](https://github.com/stellargraph/stellargraph/pull/590), [\#654](https://github.com/stellargraph/stellargraph/pull/654)
+
 
 ## [0.8.4](https://github.com/stellargraph/stellargraph/tree/v0.8.4)
 

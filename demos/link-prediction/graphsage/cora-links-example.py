@@ -16,29 +16,21 @@
 
 """
 Graph link prediction using GraphSAGE.
-This example requires the CORA dataset - see the README for how to obtain the dataset.
-
-Example usage, assuming the CORA dataset has been downloaded and extracted into ~/data/cora:
-
-    python cora-links-example.py -l ~/data/cora
-
+This example will download the CORA dataset (if not already downloaded).
 """
 import os
 import argparse
 import networkx as nx
 import pandas as pd
 from typing import AnyStr, List
-
 from tensorflow import keras
-from tensorflow.keras import optimizers, losses, metrics
-
+from tensorflow.keras import optimizers, losses
 import stellargraph as sg
 from stellargraph.data import EdgeSplitter
 from stellargraph.layer import GraphSAGE, MeanAggregator, link_classification
 from stellargraph.mapper import GraphSAGELinkGenerator
 from stellargraph import globalvar
-
-from sklearn import feature_extraction
+from stellargraph import datasets
 
 
 def load_data(graph_loc, ignore_attr):
@@ -176,7 +168,7 @@ def train(
     model.compile(
         optimizer=optimizers.Adam(lr=learning_rate),
         loss=losses.binary_crossentropy,
-        metrics=[metrics.binary_accuracy],
+        metrics=["acc"],
     )
 
     # Evaluate the initial (untrained) model on the train and test set:
@@ -334,13 +326,6 @@ if __name__ == "__main__":
         help="The number of hidden features at each GraphSAGE layer",
     )
     parser.add_argument(
-        "-l",
-        "--location",
-        type=str,
-        default=None,
-        help="Location of the dataset (directory)",
-    )
-    parser.add_argument(
         "-i",
         "--ignore_node_attr",
         nargs="+",
@@ -357,15 +342,10 @@ if __name__ == "__main__":
 
     args, cmdline_args = parser.parse_known_args()
 
-    # Load the dataset - this assumes it is the CORA dataset
-    if args.location is not None:
-        graph_loc = os.path.expanduser(args.location)
-    else:
-        raise ValueError(
-            "Please specify the directory containing the dataset using the '-l' flag"
-        )
-
-    G = load_data(graph_loc, args.ignore_node_attr)
+    # Load the CORA dataset, downloading if necessary
+    dataset = datasets.Cora()
+    dataset.download()
+    G = load_data(dataset.data_directory, args.ignore_node_attr)
 
     if args.checkpoint is None:
         train(

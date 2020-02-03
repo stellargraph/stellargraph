@@ -15,45 +15,28 @@ pip install .[test]
 
 ### Format and clean up demo Jupyter notebooks
 
-The script `format_notebooks.py` uses `nbconvert` to process all code and output cells in the specified locations optionally remove Tensorflow warnings and stderr outputs, format and number the code cells, and set the kernel to the default of "Python 3".
+The script `format_notebooks.py` uses `nbconvert` to process all code and output cells in the specified locations, optionally remove Tensorflow warnings and stderr outputs, format and number the code cells, and set the kernel to the default of "Python 3".
 
-The usage is available with the `--help` command line argument:
-
+The usage options are available with the `--help` command line argument:
 ```
 > format_notebooks.py --help
-
-usage: format_notebooks.py [-h] [-w] [-c] [-n] [-k] [-a] [-o] [--html]
-                           locations [locations ...]
-
-Format and clean Jupyter notebooks by removing Tensorflow warnings and stderr
-outputs, formatting and numbering the code cells, and setting the kernel. See
-the options below to select which of these operations is performed.
-
-positional arguments:
-  locations             Paths(s) to search for Jupyter notebooks to format
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -w, --clear_warnings  Clear Tensorflow warnings and stderr in output
-  -c, --format_code     Format all code cells (currently uses black)
-  -n, --renumber        Renumber all code cells from the top, regardless of
-                        execution order
-  -k, --set_kernel      Set kernel spec to default 'Python 3'
-  -a, --all             Perform all formatting, equivalent to -wcnk
-  -o, --overwrite       Overwrite original notebooks, otherwise a copy will be
-                        made with a .mod suffix
-  --html                Save HTML as well as notebook output
 ```
 
-For example, to perform all formatting on all Jupyter notebooks found in the demos directory, execute the following command in the top-level stellargraph directory:
+#### Example usage
 
+To perform all formatting on all Jupyter notebooks found in the demos directory, execute the following command in the top-level stellargraph directory:
 ```
-> python scripts/format_scripts.py -a demos
+> python scripts/format_notebooks.py -d demos
 ```
 
 To additionally output HTML files:
 ```
-> python scripts/format_scripts.py -a --html demos
+> python scripts/format_notebooks.py -d --html demos
+```
+
+To format and execute all Jupyter notebooks found in the demos directory, overwriting them with the updated versions:
+```
+> python scripts/format_notebooks.py -e -o -d demos
 ```
 
 ### Testing demo Jupyter notebooks

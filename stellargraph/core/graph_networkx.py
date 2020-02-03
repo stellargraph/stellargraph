@@ -21,11 +21,11 @@ The StellarGraph implementation that encapsulates a NetworkX graph.
 __all__ = ["NetworkXStellarGraph"]
 
 from stellargraph.core.schema import EdgeType
-from stellargraph.core.graph import StellarGraph
+from stellargraph.core.graph import StellarGraph, NeighbourWithWeight
 
 import random
 import itertools as it
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import warnings
 
 import pandas as pd
@@ -36,9 +36,6 @@ from typing import Iterable, Iterator, Any, Mapping, List, Set, Optional
 
 from .schema import GraphSchema
 from .utils import is_real_iterable
-
-
-NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 
 def _convert_from_node_attribute(
@@ -494,25 +491,26 @@ class NetworkXStellarGraph(StellarGraph):
         fsize = {nt: self._node_attribute_arrays[nt].shape[1] for nt in node_types}
         return fsize
 
-    def nodes_of_type(self, node_type=None):
+    def nodes_of_type(self, node_type):
         """
         Get the nodes of the graph with the specified node types.
+        The returned list of nodes is in the same order as
+        the features, not the same order as the graph.
 
         Args:
-            node_type:
+            node_type: the type of the nodes to return
 
         Returns:
             A list of node IDs with type node_type
         """
         # TODO: unit test!
-        if node_type is None:
-            return list(self)
+        if node_type in self._node_index_maps:
+            return list(
+                n for n in self._node_index_maps[node_type].keys() if n is not None
+            )
+
         else:
-            return [
-                n
-                for n, ndata in self._graph.nodes(data=True)
-                if self._get_node_type(ndata) == node_type
-            ]
+            return [n for n in self.nodes() if self.node_type(n) == node_type]
 
     def node_type(self, node):
         """
@@ -543,6 +541,24 @@ class NetworkXStellarGraph(StellarGraph):
                 self._get_node_type(ndata) for n, ndata in self._graph.nodes(data=True)
             }
 
+    def _is_of_edge_type(self, edge, expected_triple):
+        source, target, _ = edge
+        triple = EdgeType(
+            self.node_type(source),
+            self._get_edge_type(self._graph.edges[edge]),
+            self.node_type(target),
+        )
+        if triple == expected_triple:
+            return True
+
+        if self.is_directed:
+            # directed, so the order of the source/target types matters
+            return False
+
+        # undirected, try the other order
+        other = EdgeType(triple.n2, triple.rel, triple.n1)
+        return other == expected_triple
+
     def info(self, show_attributes=True, sample=None):
         """
         Return an information string summarizing information on the current graph.
@@ -571,15 +587,7 @@ class NetworkXStellarGraph(StellarGraph):
         else:
             snodes = None
 
-        gs = self.create_graph_schema(create_type_maps=False, nodes=snodes)
-
-        def is_of_edge_type(e, edge_type):
-            et2 = (
-                self._get_node_type(self._graph.nodes[e[0]]),
-                self._get_edge_type(self._graph.edges[e]),
-                self._get_node_type(self._graph.nodes[e[1]]),
-            )
-            return et2 == edge_type
+        gs = self.create_graph_schema(nodes=snodes)
 
         # Go over all node types
         s += "\n Node types:\n"
@@ -607,7 +615,7 @@ class NetworkXStellarGraph(StellarGraph):
             et_edges = [
                 e[3]
                 for e in self._graph.edges(keys=True, data=True)
-                if is_of_edge_type(e[:3], et)
+                if self._is_of_edge_type(e[:3], et)
             ]
             if len(et_edges) > 0:
                 s += "    {et[0]}-{et[1]}->{et[2]}: [{len}]\n".format(
@@ -622,7 +630,7 @@ class NetworkXStellarGraph(StellarGraph):
 
         return s
 
-    def create_graph_schema(self, create_type_maps=True, nodes=None):
+    def create_graph_schema(self, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -633,30 +641,21 @@ class NetworkXStellarGraph(StellarGraph):
         is unique.
 
         Arguments:
-            create_type_maps (bool): If True quick lookup of node/edge types is
-                created in the schema. This can be slow.
-
             nodes (list): A list of node IDs to use to build schema. This must
                 represent all node types and all edge types in the graph.
-                If specified, `create_type_maps` must be False.
                 If not specified, all nodes and edges in the graph are used.
 
         Returns:
             GraphSchema object.
         """
-
         if nodes is None:
             nodes = self.nodes()
-            edges = self.edges(triple=True)
-
-        elif create_type_maps is False:
+            edges = self.edges(include_edge_type=True)
+        else:
             edges = (
                 (src, dst, self._get_edge_type(data))
                 for src, dst, data in self._graph.edges(nodes, data=True)
             )
-
-        else:
-            raise ValueError("Creating type maps for subsampled nodes is not supported")
 
         # Create node type index list
         node_types = sorted({self.node_type(n) for n in nodes}, key=str)
@@ -693,34 +692,7 @@ class NetworkXStellarGraph(StellarGraph):
             for node_label, node_data in graph_schema.items()
         }
 
-        # Create quick type lookups for nodes and edges.
-        # Note: we encode the type index, in the assumption it will take
-        # less storage.
-        if create_type_maps:
-            node_type_map = {
-                n: node_types.index(self.node_type(n)) for n in self.nodes()
-            }
-            edge_type_map = {
-                (src, tgt, key): edge_types.index(
-                    EdgeType(
-                        node_types[node_type_map[src]],
-                        self._get_edge_type(data),
-                        node_types[node_type_map[tgt]],
-                    )
-                )
-                for src, tgt, key, data in self._graph.edges(keys=True, data=True)
-            }
-        else:
-            node_type_map = edge_type_map = None
-
-        return GraphSchema(
-            self.is_directed(),
-            node_types,
-            edge_types,
-            schema,
-            node_type_map,
-            edge_type_map,
-        )
+        return GraphSchema(self.is_directed(), node_types, edge_types, schema)
 
     ######################################################################
     # Generic graph interface:
@@ -737,16 +709,29 @@ class NetworkXStellarGraph(StellarGraph):
     def nodes(self) -> Iterable[Any]:
         return self._graph.nodes()
 
-    def edges(self, triple=False) -> Iterable[Any]:
-        if triple:
+    def edges(
+        self, include_edge_type=False, include_edge_weight=False
+    ) -> Iterable[Any]:
+        if include_edge_type:
             # returns triples of format (node 1, node 2, edge type)
-            return (
+            edges = (
                 (src, dst, self._get_edge_type(data))
                 for src, dst, data in self._graph.edges(data=True)
             )
         else:
             # returns pairs of format (node 1, node 2)
-            return self._graph.edges()
+            edges = self._graph.edges()
+
+        if include_edge_weight:
+            weights = np.array(
+                [
+                    data.get(self._edge_weight_label)
+                    for _, _, data in self._graph.edges(data=True)
+                ]
+            )
+            return edges, weights
+        else:
+            return edges
 
     def has_node(self, node: Any) -> bool:
         return self._graph.__contains__(node)
@@ -820,10 +805,12 @@ class NetworkXStellarGraph(StellarGraph):
         return self._graph.degree()
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
-        if nodes is not None:
-            return nx.adjacency_matrix(self._graph.subgraph(nodes))
         return nx.to_scipy_sparse_matrix(
-            self._graph, dtype="float32", weight=self._edge_weight_label, format="coo"
+            self._graph,
+            nodelist=nodes,
+            dtype="float32",
+            weight=self._edge_weight_label,
+            format="coo",
         )
 
     def to_networkx(self):
@@ -846,7 +833,7 @@ class NetworkXStellarGraph(StellarGraph):
 
                 for node_id, node_features in zip(node_ids, features):
                     graph.add_node(
-                        node_id, **ty_dict, **{self._feature_attr: node_features},
+                        node_id, **ty_dict, **{self._feature_attr: node_features}
                     )
             else:
                 # no features, so just add the type
@@ -876,7 +863,7 @@ class NetworkXStellarGraph(StellarGraph):
                     n2
                     for n2, nkeys in nbrdict.items()
                     for k in nkeys
-                    if graph_schema.is_of_edge_type((n1, n2, k), et)
+                    if self._is_of_edge_type((n1, n2, k), et)
                 ]
                 # Create adjacency list in lexicographical order
                 # Otherwise sampling methods will not be deterministic
@@ -901,20 +888,3 @@ class NetworkXStellarGraph(StellarGraph):
             v.get(edge_weight_label)
             for v in self._graph[source_node][target_node].values()
         ]
-
-    # XXX This has not yet been standardised in the interface.
-    def node_attributes(self, node: Any) -> Set[Any]:
-        """
-        Obtains the names of any (non-standard) node attributes that are
-        available in the user data.
-
-        Args:
-            node (any): The node of interest.
-
-        Returns:
-            set: The collection of node attributes.
-        """
-        attrs = set(self._graph.nodes[node].keys())
-        # Don't use node type as attribute:
-        attrs.discard(self._node_type_attr)
-        return attrs

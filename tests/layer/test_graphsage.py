@@ -34,6 +34,10 @@ from stellargraph.layer.graphsage import (
     AttentionalAggregator,
 )
 from ..test_utils.graphs import example_graph_1
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # Mean aggregator tests
@@ -528,7 +532,7 @@ def test_graphsage_apply_1():
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = gs.node_model()
+    xinp, xout = gs.build()
     model2 = keras.Model(inputs=xinp, outputs=xout)
     assert pytest.approx(expected) == model2.predict(x)
 

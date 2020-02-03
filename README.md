@@ -26,8 +26,8 @@
   <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
     <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
   </a>
-  <a href="https://coveralls.io/github/stellargraph/stellargraph" alt="code coverage">
-    <img src="https://coveralls.io/repos/github/stellargraph/stellargraph/badge.svg"/>
+  <a href="https://codecov.io/gh/stellargraph/stellargraph">
+    <img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" />
   </a>
   <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
     <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">

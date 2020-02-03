@@ -28,6 +28,10 @@ import numpy as np
 import networkx as nx
 import pytest
 from ..test_utils.graphs import example_graph_1
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 def test_attri2vec_constructor():

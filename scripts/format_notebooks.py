@@ -145,6 +145,20 @@ if __name__ == "__main__":
         help="Format all code cells (currently uses black)",
     )
     parser.add_argument(
+        "-e",
+        "--execute",
+        nargs="?",
+        const="default",
+        help="Execute notebook before export with specified kernel (default if not given)",
+    )
+    parser.add_argument(
+        "-t",
+        "--cell_timeout",
+        default=-1,
+        type=int,
+        help="Set the execution cell timeout in seconds (default is timeout disabled)",
+    )
+    parser.add_argument(
         "-n",
         "--renumber",
         action="store_true",
@@ -157,10 +171,10 @@ if __name__ == "__main__":
         help="Set kernel spec to default 'Python 3'",
     )
     parser.add_argument(
-        "-a",
-        "--all",
+        "-d",
+        "--default",
         action="store_true",
-        help="Perform all formatting, equivalent to -wcnk",
+        help="Perform default formatting, equivalent to -wcnk",
     )
     parser.add_argument(
         "-o",
@@ -181,18 +195,17 @@ if __name__ == "__main__":
     write_notebook = True
     write_html = args.html
     overwrite_notebook = args.overwrite
-    format_code = args.format_code or args.all
-    clear_warnings = args.clear_warnings or args.all
-    renumber_code = args.renumber or args.all
-    set_kernel = args.set_kernel or args.all
+    format_code = args.format_code or args.default
+    clear_warnings = args.clear_warnings or args.default
+    renumber_code = args.renumber or args.default
+    set_kernel = args.set_kernel or args.default
+    execute_code = args.execute
+    cell_timeout = args.cell_timeout
 
     # Add preprocessors
     preprocessor_list = []
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
-
-    if clear_warnings:
-        preprocessor_list.append(ClearWarningsPreprocessor)
 
     if set_kernel:
         preprocessor_list.append(SetKernelSpecPreprocessor)
@@ -200,10 +213,23 @@ if __name__ == "__main__":
     if format_code:
         preprocessor_list.append(FormatCodeCellPreprocessor)
 
+    if execute_code:
+        preprocessor_list.append(preprocessors.ExecutePreprocessor)
+
+    # warnings need to be cleared after execution
+    if clear_warnings:
+        preprocessor_list.append(ClearWarningsPreprocessor)
+
     # Create the exporters with preprocessing
     c = Config()
     c.NotebookExporter.preprocessors = preprocessor_list
     c.HTMLExporter.preprocessors = preprocessor_list
+
+    if execute_code:
+        c.ExecutePreprocessor.timeout = cell_timeout
+        if execute_code != "default":
+            c.ExecutePreprocessor.kernel_name = execute_code
+
     nb_exporter = NotebookExporter(c)
     html_exporter = HTMLExporter(c)
     # html_exporter.template_file = 'basic'
