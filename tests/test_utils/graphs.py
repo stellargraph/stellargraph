@@ -86,7 +86,9 @@ def example_graph(
         features = []
 
     nodes = pd.DataFrame(features, index=nodes)
-    return StellarGraph(nodes={node_label: nodes}, edges={edge_label: elist})
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={node_label: nodes}, edges={edge_label: elist})
 
 
 def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):

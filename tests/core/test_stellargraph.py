@@ -212,7 +212,7 @@ def test_schema_removals():
 
 
 def test_get_index_for_nodes():
-    sg = example_graph(feature_name="feature", feature_size=8)
+    sg = example_graph(feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
     assert list(aa) == [0, 1, 2, 3]
 
@@ -230,7 +230,7 @@ def test_get_index_for_nodes():
 
 
 def test_feature_conversion_from_nodes():
-    sg = example_graph(feature_name="feature", feature_size=8)
+    sg = example_graph(feature_size=8)
     aa = sg.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
@@ -239,13 +239,13 @@ def test_feature_conversion_from_nodes():
 
 
 def test_node_features_missing_id():
-    sg = example_graph_2(feature_size=6)
+    sg = example_graph(feature_size=6)
     with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
         sg.node_features([1, 1000, None, 2000])
 
 
 def test_null_node_feature():
-    sg = example_graph(feature_name="feature", feature_size=6)
+    sg = example_graph(feature_size=6)
     aa = sg.node_features([1, None, 2, None])
     assert aa.shape == (4, 6)
     assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
@@ -272,7 +272,7 @@ def test_null_node_feature():
 
 
 def test_node_types():
-    sg = example_graph(feature_name="feature", feature_size=6)
+    sg = example_graph(feature_size=6)
     assert sg.node_types == {"default"}
 
     sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
@@ -347,7 +347,7 @@ def test_feature_conversion_from_iterator():
     assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
     # Test adjacency matrix
-    adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]])
+    adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0]])
 
     A = gs.to_adjacency_matrix()
     assert A.dtype == "float32"
@@ -714,7 +714,7 @@ def test_stellargraph_experimental():
 
 
 def test_info_homogeneous():
-    g = example_graph_1(node_label="ABC", edge_label="xyz")
+    g = example_graph(node_label="ABC", edge_label="xyz")
     info = g.info()
     assert "Undirected multigraph" in info
     assert "Nodes: 4, Edges: 4" in info
