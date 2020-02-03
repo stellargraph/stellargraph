@@ -441,7 +441,7 @@ class Test_GAT:
 
     def test_gat_build_linkmodel_constructor(self):
         G = example_graph(feature_size=self.F_in)
-        gen = FullBatchNodeGenerator(G, sparse=self.sparse, method=self.method)
+        gen = FullBatchLinkGenerator(G, sparse=self.sparse, method=self.method)
         gat = GAT(
             layer_sizes=self.layer_sizes,
             activations=self.activations,
