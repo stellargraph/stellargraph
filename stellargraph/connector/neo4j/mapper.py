@@ -102,7 +102,21 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         self.sampler = Neo4JSampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed) 
 
     def sample_features(self, head_nodes):
+        """
+        Collect the features of the nodes sampled from Neo4J, 
+        and return these as a list of feature arrays for the GraphSAGE
+        algorithm.
 
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+
+        Returns:
+            A list of the same length as ``num_samples`` of collected features from
+            the sampled nodes of shape:
+            ``(len(head_nodes), num_sampled_at_layer, feature_size)``
+            where num_sampled_at_layer is the cumulative product of `num_samples`
+            for that layer.
+        """
         nodes_per_hop = self.sampler.run(self.neo4j_graphdb, nodes=head_nodes, n=1, n_size=self.num_samples)
         node_type = self.head_node_types[0]
 
@@ -173,9 +187,8 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
     def sample_features(self, head_nodes):
         """
-        Sample neighbours recursively from the head nodes, collect the features of the
-        sampled nodes, and return these as a list of feature arrays for the GraphSAGE
-        algorithm.
+        Collect the features of the sampled nodes from Neo4J, 
+        and return these as a list of feature arrays for the GraphSAGE algorithm.
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
