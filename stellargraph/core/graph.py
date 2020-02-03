@@ -944,10 +944,20 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.edge_weights(source_node, target_node)
 
-        all_ilocs = self._edges.edge_ilocs(source_node, ins=False, outs=True)
-        targets = self._edges.targets[all_ilocs]
-        filtered_ilocs = all_ilocs[targets[all_ilocs] == target_node]
-        return weight[filtered_ilocs]
+        # self loops should only be counted once, which means they're effectively always a directed
+        # edge at the storage level, unlikely other edges in an undirected graph. This is
+        # particularly important with the intersection1d call, where the source_ilocs and
+        # target_ilocs will be equal, when source_node == target_node, and thus the intersection
+        # will contain all incident edges.
+        effectively_directed = self.is_directed() or source_node == target_node
+        both_dirs = not effectively_directed
+
+        source_ilocs = self._edges.edge_ilocs(source_node, ins=both_dirs, outs=True)
+        target_ilocs = self._edges.edge_ilocs(target_node, ins=True, outs=both_dirs)
+
+        ilocs = np.intersect1d(source_ilocs, target_ilocs, assume_unique=True)
+
+        return [float(x) for x in self._edges.weights[ilocs]]
 
 
 # A convenience class that merely specifies that edges have direction.
