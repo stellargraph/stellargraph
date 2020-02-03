@@ -761,3 +761,55 @@ def test_adjacency_types_directed():
         ("B", "R", "A"): {4: [0], 5: [3]},
         ("B", "F", "B"): {4: [5]},
     }
+
+
+def test_to_adjacency_matrix_undirected():
+    g = example_hin_1(is_directed=False, self_loop=True, weights=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7), dtype=matrix.dtype)
+    actual[0, 4] = actual[4, 0] = 1
+    actual[1, 5] = actual[5, 1] = 1
+    actual[1, 4] = actual[4, 1] = 1
+    actual[2, 4] = actual[4, 2] = 1
+    actual[3, 5] = actual[5, 3] = 1
+    actual[4, 5] = actual[5, 4] = 10
+    actual[5, 5] = 11 + 12
+    assert np.array_equal(matrix, actual)
+
+    # just to confirm, it should be symmetric
+    assert np.array_equal(matrix, matrix.T)
+
+    # use a funny order to verify order
+    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    # indices are relative to the specified list
+    one, six, five = 0, 1, 2
+    actual = np.zeros((3, 3), dtype=subgraph.dtype)
+    actual[one, five] = actual[five, one] = 1
+    actual[five, five] = 11 + 12
+    assert np.array_equal(subgraph, actual)
+
+
+def test_to_adjacency_matrix_directed():
+    g = example_hin_1(is_directed=True, self_loop=True, weights=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7))
+    actual[4, 0] = 1
+    actual[1, 5] = 1
+    actual[1, 4] = 1
+    actual[2, 4] = 1
+    actual[5, 3] = 1
+    actual[4, 5] = 10
+    actual[5, 5] = 11 + 12
+
+    assert np.array_equal(matrix, actual)
+
+    # use a funny order to verify order
+    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    # indices are relative to the specified list
+    one, six, five = 0, 1, 2
+    actual = np.zeros((3, 3), dtype=subgraph.dtype)
+    actual[one, five] = 1
+    actual[five, five] = 11 + 12
+    assert np.array_equal(subgraph, actual)
