@@ -128,7 +128,7 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None, is_directed=False, self_loop=False, weights=True
+    feature_sizes=None, is_directed=False, self_loop=False
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
@@ -153,12 +153,9 @@ def example_hin_1(
         f_index.extend([7, 8])
 
     # add some weights for the f edges, but not others
-    if weights:
-        f_columns = ["source", "target", "weight"]
-        for i, src_tgt in enumerate(f_edges):
-            f_edges[i] = src_tgt + (10 + i,)
-    else:
-        f_columns = ["source", "target"]
+    f_columns = ["source", "target", "weight"]
+    for i, src_tgt in enumerate(f_edges):
+        f_edges[i] = src_tgt + (10 + i,)
 
     f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
 
