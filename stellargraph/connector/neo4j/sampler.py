@@ -71,8 +71,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
                 
                 "WITH apoc.coll.flatten(collect(value.neighbors)) AS next_nodes, ",
                 "subgraph + [apoc.coll.flatten(collect(value.neighbors_id))] AS subgraph "
-            ))
-                            
+            ))      
             query = '\n'.join((query, loop_subquery))
         
         return '\n'.join((query, "return subgraph"))
