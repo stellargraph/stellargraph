@@ -34,7 +34,8 @@ class AdjacencyPowerGenerator:
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
-        num_powers (int): the number of adjacency powers to calculate
+        num_powers (int): the number of adjacency powers to calculate. Defaults
+            to `10` as this value was found to perform well by the authors of the paper.
 
     """
 
