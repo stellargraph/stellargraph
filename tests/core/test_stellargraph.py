@@ -212,6 +212,17 @@ def test_schema_removals():
         sg.create_graph_schema(create_type_maps=True)
 
 
+@pytest.mark.benchmark(group="StellarGraph create_graph_schema")
+@pytest.mark.parametrize("num_types", [1, 4])
+def test_benchmark_graph_schema(benchmark, num_types):
+    nodes, edges = example_benchmark_graph(
+        n_nodes=1000, n_edges=5000, n_types=num_types
+    )
+    sg = StellarGraph(nodes=nodes, edges=edges)
+
+    benchmark(sg.create_graph_schema)
+
+
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
