@@ -464,7 +464,7 @@ def test_to_networkx(has_features):
 
     edge_def = {"R": [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], "F": [(4, 5)]}
     expected_edges = [
-        (src, tgt, {"label": label, "weight": 1.0})
+        (src, tgt, {"label": label, "weight": 1.0 if label == "R" else 10.0})
         for label, pairs in edge_def.items()
         for src, tgt in pairs
     ]
