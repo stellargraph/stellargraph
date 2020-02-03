@@ -42,9 +42,7 @@ def test_temporal_walks(temporal_graph):
     expected = {(1, 2, 4), (2, 4, 6), (3, 2, 4), (5, 4, 6)}
 
     rw = TemporalRandomWalk(temporal_graph)
-    num_cw = (
-        10  # how many walks to obtain to be sure we're getting valid temporal walks
-    )
+    num_cw = 20  # how many walks to be sure we're getting valid temporal walks
 
     for walk in rw.run(num_cw=num_cw, cw_size=3, max_walk_length=3, seed=None):
         assert tuple(walk) in expected
