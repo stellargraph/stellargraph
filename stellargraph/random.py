@@ -39,7 +39,7 @@ def generate_seed(seed=None):
         return seed
 
 
-def set_seed(seed, set_np_seed=True, set_tf_seed=True, set_random_seed=True):
+def set_seed(seed, set_numpy=True, set_tensorflow=True, set_random=True):
     """
     Set the seed for all possible randomness in StellarGraph. Note that this
     also sets the global random seed for the following external modules:
@@ -49,17 +49,17 @@ def set_seed(seed, set_np_seed=True, set_tf_seed=True, set_random_seed=True):
 
     Args:
         seed (int, optional): seed value
-        set_np_seed (bool, default True): If true, mutate the global numpy seed
-        set_tf_seed (bool, default True): If true, mutate the global tensorflow seed
-        set_random_seed (bool, default True): If true, mutate the global random module seed
+        set_numpy (bool): If true, mutate the global numpy seed
+        set_tensorflow (bool): If true, mutate the global tensorflow seed
+        set_random (bool): If true, mutate the global random module seed
 
     """
     global _sg_random
     _sg_random = random.Random(seed)
 
-    if set_np_seed:
+    if set_numpy:
         np.random.seed(seed)
-    if set_tf_seed:
+    if set_tensorflow:
         tf.random.set_seed(seed)
-    if set_random_seed:
+    if set_random:
         random.seed(seed)
