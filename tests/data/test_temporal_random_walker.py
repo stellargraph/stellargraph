@@ -14,36 +14,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import TemporalRandomWalk
 from stellargraph.core.graph import StellarGraph
 
 
-class TestTemporalRandomWalk(object):
-    def test_temporal_walks(self):
+@pytest.fixture()
+def temporal_graph():
+    g = nx.MultiGraph()
+    edges = [(1, 2, 5), (2, 3, 2), (2, 4, 10), (4, 5, 3), (4, 6, 12)]
+    g.add_weighted_edges_from(edges)
+    g = StellarGraph(g)
+    return g
 
-        g = nx.MultiGraph()
-        edges = [(1, 2, 5), (2, 3, 2), (2, 4, 10), (4, 5, 3), (4, 6, 12)]
 
-        """
-        valid time respecting walks (node -[time]-> node):
+def test_temporal_walks(temporal_graph):
 
-            1 -[2]-> 2 -[10]-> 4
-            2 -[10]-> 4 -[12]-> 6
-            3 -[2]-> 2 -[10]-> 4
-            5 -[4]-> 4 -[12]-> 6
-        """
-        expected = {(1, 2, 4), (2, 4, 6), (3, 2, 4), (5, 4, 6)}
+    """
+    valid time respecting walks (node -[time]-> node):
 
-        g.add_weighted_edges_from(edges)
-        g = StellarGraph(g)
+        1 -[2]-> 2 -[10]-> 4
+        2 -[10]-> 4 -[12]-> 6
+        3 -[2]-> 2 -[10]-> 4
+        5 -[4]-> 4 -[12]-> 6
+    """
+    expected = {(1, 2, 4), (2, 4, 6), (3, 2, 4), (5, 4, 6)}
 
-        temporalrw = TemporalRandomWalk(g)
-        num_cw = 10  # how many walks to obtain
+    rw = TemporalRandomWalk(temporal_graph)
+    num_cw = (
+        10  # how many walks to obtain to be sure we're getting valid temporal walks
+    )
 
-        for walk in temporalrw.run(
-            num_cw=num_cw, cw_size=3, max_walk_length=3, seed=None
-        ):
-            assert tuple(walk) in expected
+    for walk in rw.run(num_cw=num_cw, cw_size=3, max_walk_length=3, seed=None):
+        assert tuple(walk) in expected
+
+
+def test_not_progressing_enough(temporal_graph):
+
+    rw = TemporalRandomWalk(temporal_graph)
+    cw_size = 5  # no valid temporal walks of this size
+
+    with pytest.raises(RuntimeError, match=r".* discarded .*"):
+        rw.run(num_cw=1, cw_size=cw_size, max_walk_length=cw_size, seed=None)
