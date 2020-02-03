@@ -30,7 +30,8 @@ class AttentiveWalk(Layer):
     https://arxiv.org/pdf/1710.09599.pdf.
 
     Args:
-        walk_length (int): the length of the random walks. Equivalent to the number of adjacency powers used.
+        walk_length (int): the length of the random walks. Equivalent to the number of adjacency powers used. Defaults
+            to `10` as this value was found to perform well by the authors of the paper.
         attention_initializer (str or func): The initialiser to use for the attention weights;
             defaults to 'glorot_uniform'.
         attention_regularizer (str or func): The regulariser to use for the attention weights;
@@ -108,12 +109,13 @@ class WatchYourStep:
     Args:
         generator (AdjacencyPowerGenerator): the generator
         num_walks (int): the number of random walks starting at each node to use when calculating the expected random
-        walks.
-        embedding dimension (int): the dimension to use for the node embeddings
+            walks. Defaults to `80` as this value was found to perform well by the authors of the paper.
+        embedding dimension (int): the dimension to use for the node embeddings. Defaults to `64`
+            as this value was found to perform well by the authors of the paper.
     """
 
     def __init__(
-        self, generator, num_walks, embedding_dimension,
+        self, generator, num_walks=80, embedding_dimension=64,
         attention_regularizer=None, attention_initializer=None,
         attention_constraint=None
     ):
