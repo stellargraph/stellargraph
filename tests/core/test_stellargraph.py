@@ -764,7 +764,7 @@ def test_adjacency_types_directed():
 
 
 def test_to_adjacency_matrix_undirected():
-    g = example_hin_1(is_directed=False, self_loop=True, weights=True)
+    g = example_hin_1(is_directed=False, self_loop=True)
 
     matrix = g.to_adjacency_matrix().todense()
     actual = np.zeros((7, 7), dtype=matrix.dtype)
@@ -791,7 +791,7 @@ def test_to_adjacency_matrix_undirected():
 
 
 def test_to_adjacency_matrix_directed():
-    g = example_hin_1(is_directed=True, self_loop=True, weights=True)
+    g = example_hin_1(is_directed=True, self_loop=True)
 
     matrix = g.to_adjacency_matrix().todense()
     actual = np.zeros((7, 7))
