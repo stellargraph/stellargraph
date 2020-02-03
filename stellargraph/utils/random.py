@@ -19,7 +19,7 @@ import random
 import tensorflow as tf
 
 
-_sg_seed = None
+_sg_random = random.Random()
 
 
 def get_seed(seed):
@@ -34,7 +34,7 @@ def get_seed(seed):
 
     """
     if seed is None:
-        return _sg_seed
+        return _sg_random.randint(0, 2 ** 32 - 1)
     else:
         return seed
 
@@ -54,8 +54,8 @@ def set_seed(seed, set_np_seed=True, set_tf_seed=True, set_random_seed=True):
         set_random_seed (bool, default True): If true, mutate the global random module seed
 
     """
-    global _sg_seed
-    _sg_seed = seed
+    global _sg_random
+    _sg_random = random.Random(seed)
 
     if set_np_seed:
         np.random.seed(seed)
