@@ -805,10 +805,13 @@ class TemporalRandomWalk(GraphWalk):
         Perform a time respecting random walk starting from the root nodes.
 
         Args:
-            num_cw (int): Total number of context windows to generate
+            num_cw (int): Total number of context windows to generate. For comparable
+                results to most other random walks, this should be a multiple of the number
+                of nodes in the graph.
             cw_size (int): Size of context window. Also used as the minimum walk length,
                 since a walk must generate at least 1 context window for it to be useful.
-            max_walk_length (int): Maximum length of each random walk
+            max_walk_length (int): Maximum length of each random walk. Should be greater
+                than or equal to the context window size.
             initial_edge_bias (str, optional): distribution to use when choosing a random
                 initial temporal edge to start from. Available options are:
                 * None (default) - the initial edge is picked from a uniform distribution
@@ -828,6 +831,13 @@ class TemporalRandomWalk(GraphWalk):
             List of lists of node ids for each of the random walks
 
         """
+        if cw_size < 2:
+            raise ValueError("Context window size should be greater than 1.")
+        if max_walk_length < cw_size:
+            raise ValueError(
+                "Maximum walk length should not be less than the context window size."
+            )
+
         np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
         walks = []
         num_cw_curr = 0
