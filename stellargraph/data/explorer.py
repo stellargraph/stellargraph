@@ -832,10 +832,12 @@ class TemporalRandomWalk(GraphWalk):
 
         """
         if cw_size < 2:
-            raise ValueError("Context window size should be greater than 1.")
+            raise ValueError(
+                f"cw_size: context window size should be greater than 1, found {cw_size}"
+            )
         if max_walk_length < cw_size:
             raise ValueError(
-                "Maximum walk length should not be less than the context window size."
+                f"max_walk_length: maximum walk length should not be less than the context window size, found {max_walk_length}"
             )
 
         np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
