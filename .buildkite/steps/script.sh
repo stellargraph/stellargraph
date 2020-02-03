@@ -16,7 +16,7 @@ pip freeze
 
 echo "+++ running tests"
 exitCode=$?
-py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$
+py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
 echo "--- :coverage::codecov::arrow_up: uploading coverage to codecov.io"
 bash <(curl https://codecov.io/bash)
