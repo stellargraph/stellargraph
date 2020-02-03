@@ -23,7 +23,6 @@ import warnings
 import numpy as np
 import itertools as it
 
-
 from .sampler import (
     Neo4JDirectedBreadthFirstNeighbors,
     Neo4JSampledBreadthFirstWalk,
@@ -57,7 +56,6 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
         super().__init__(G, batch_size, schema)
         # Create neo4J driver 
         self.neo4j_graphdb = neo4j_graphdb
-
 
 class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     """
@@ -106,7 +104,6 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     def sample_features(self, head_nodes):
 
         nodes_per_hop = self.sampler.run(self.neo4j_graphdb, nodes=head_nodes, n=1, n_size=self.num_samples)
-
         node_type = self.head_node_types[0]
 
         #Get features for sampled nodes
