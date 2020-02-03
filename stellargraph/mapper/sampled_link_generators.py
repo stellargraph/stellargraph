@@ -40,7 +40,7 @@ from ..data import (
     UnsupervisedSampler,
 )
 from ..core.utils import is_real_iterable
-from ..utils.random import get_seed
+from ..random import generate_seed
 from . import LinkSequence, OnDemandLinkSequence
 
 
@@ -217,7 +217,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self.head_node_types = self.schema.node_types * 2
 
         self._graph = G
-        self._seed = get_seed(seed)
+        self._seed = generate_seed(seed)
         self.random = random.Random(self._seed)
         self._samplers = dict()
         self._lock = threading.Lock()

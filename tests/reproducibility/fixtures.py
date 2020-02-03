@@ -16,7 +16,7 @@
 
 from contextlib import contextmanager
 import numpy as np
-from stellargraph.utils.random import set_seed
+from stellargraph.random import set_seed
 
 
 def models_equals(model1, model2):

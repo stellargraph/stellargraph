@@ -32,7 +32,7 @@ from collections import defaultdict, deque
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from ..utils.random import get_seed
+from ..random import generate_seed
 
 
 class GraphWalk(object):
@@ -73,7 +73,7 @@ class GraphWalk(object):
         return adj
 
     def _check_seed(self, seed):
-        seed = get_seed(seed)
+        seed = generate_seed(seed)
         if seed is not None:
             if type(seed) != int:
                 self._raise_error(

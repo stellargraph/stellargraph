@@ -22,7 +22,7 @@ import tensorflow as tf
 _sg_random = random.Random()
 
 
-def get_seed(seed):
+def generate_seed(seed=None):
     """
     Convenience function to use the global seed by default if the provided seed is None.
 
