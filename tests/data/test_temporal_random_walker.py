@@ -27,12 +27,15 @@ class TestTemporalRandomWalk(object):
         g = nx.MultiGraph()
         edges = [(1, 2, 5), (2, 3, 2), (2, 4, 10), (4, 5, 3), (4, 6, 12)]
 
-        # time respecting valid walks are (notated as node -[time]-> node):
-        #
-        # 1 -[2]-> 2 -[10]-> 4
-        # 2 -[10]-> 4 -[12]-> 6
-        # 3 -[2]-> 2 -[10]-> 4
-        # 5 -[4]-> 4 -[12]-> 6
+        """
+        valid time respecting walks (node -[time]-> node):
+
+            1 -[2]-> 2 -[10]-> 4
+            2 -[10]-> 4 -[12]-> 6
+            3 -[2]-> 2 -[10]-> 4
+            5 -[4]-> 4 -[12]-> 6
+        """
+        expected = {(1, 2, 4), (2, 4, 6), (3, 2, 4), (5, 4, 6)}
 
         g.add_weighted_edges_from(edges)
         g = StellarGraph(g)
@@ -40,9 +43,7 @@ class TestTemporalRandomWalk(object):
         temporalrw = TemporalRandomWalk(g)
         num_cw = 10  # how many walks to obtain
 
-        assert all(
-            walk in {[1, 2, 4], [1, 4, 6], [3, 2, 4], [5, 4, 6]}
-            for walk in temporalrw.run(
-                num_cw=num_cw, cw_size=3, max_walk_length=3, seed=None
-            )
-        )
+        for walk in temporalrw.run(
+            num_cw=num_cw, cw_size=3, max_walk_length=3, seed=None
+        ):
+            assert tuple(walk) in expected
