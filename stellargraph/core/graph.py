@@ -425,6 +425,12 @@ class StellarGraph:
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
+        if not self.is_directed():
+            # all edges are both incoming and outgoing for undirected graphs
+            return self.neighbors(
+                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+            )
+
         ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
         source = self._edges.sources[ilocs]
         return self._transform_edges(source, ilocs, include_edge_weight, edge_types)
@@ -449,6 +455,12 @@ class StellarGraph:
         """
         if self._graph is not None:
             return self._graph.out_nodes(
+                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+            )
+
+        if not self.is_directed():
+            # all edges are both incoming and outgoing for undirected graphs
+            return self.neighbors(
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
