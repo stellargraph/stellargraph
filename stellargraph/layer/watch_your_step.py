@@ -1,7 +1,22 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright 2020 Data61, CSIRO
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate
 from tensorflow.keras import backend as K
-from tensorflow.keras import regularizers, initializers, constraints
 import numpy as np
 
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
@@ -98,7 +113,9 @@ class WatchYourStep:
     """
 
     def __init__(
-        self, generator, num_walks, embedding_dimension, attention_regularizer=None
+        self, generator, num_walks, embedding_dimension,
+        attention_regularizer=None, attention_initializer=None,
+        attention_constraint=None
     ):
 
         if not isinstance(generator, AdjacencyPowerGenerator):
@@ -117,6 +134,8 @@ class WatchYourStep:
         self.n_nodes = int(generator.Aadj_T.shape[0])
         self.embedding_dimension = embedding_dimension
         self.attention_regularizer = attention_regularizer
+        self.attention_initializer = attention_initializer
+        self.attention_constraint = attention_constraint
 
     def build(self):
         """
@@ -161,7 +180,9 @@ class WatchYourStep:
         sigmoids = tf.keras.activations.sigmoid(outer_product)
         attentive_walk_layer = AttentiveWalk(
             walk_length=self.num_powers,
+            attention_constraint=self.attention_constraint,
             attention_regularizer=self.attention_regularizer,
+            attention_initializer=self.attention_initializer,
         )
         expected_walk = self.num_walks * attentive_walk_layer(input_powers)
 
