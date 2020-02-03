@@ -17,7 +17,7 @@ Some new algorithms and features are still under active development, and are ava
 ### Bug fixes and other changes
 
 - DevOps changes:
-  - CI: Code coverage analysis is now performed using codecov: [\#760](https://github.com/stellargraph/stellargraph/pull/760)
+  - CI: [\#760](https://github.com/stellargraph/stellargraph/pull/760)
 
 ## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
 
