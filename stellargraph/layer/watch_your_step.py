@@ -24,50 +24,30 @@ class AttentiveWalk(Layer):
             defaults to None.
     """
 
-    def __init__(self, walk_length=5, **kwargs):
+    def __init__(
+        self,
+        walk_length=10,
+        attention_initializer="glorot_uniform",
+        attention_regularizer=None,
+        attention_constraint=None,
+        **kwargs
+    ):
+
         if "input_shape" not in kwargs and "input_dim" in kwargs:
             kwargs["input_shape"] = (kwargs.get("input_dim"),)
 
         self.walk_length = walk_length
-
-        self._get_regularisers_from_keywords(kwargs)
+        self.attention_initializer = attention_initializer
+        self.attention_regularizer = attention_regularizer
+        self.attention_constraint = attention_constraint
         super().__init__(**kwargs)
 
     def compute_output_shape(self, input_shapes):
-        """
-        Computes the output shape of the layer.
-        Assumes the following inputs:
-
-        Args:
-            input_shapes (tuple of ints)
-                Shape tuples can include None for free dimensions, instead of an integer.
-
-        Returns:
-            An input shape tuple.
-        """
         return (input_shapes[0][-1],)
 
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.attention_initializer = initializers.get(
-            kwargs.pop("attention_initializer", "glorot_uniform")
-        )
-
-        self.attention_regularizer = regularizers.get(
-            kwargs.pop("attention_regularizer", None)
-        )
-
-        self.attention_constraint = constraints.get(
-            kwargs.pop("attention_constraint", None)
-        )
+    compute_output_shape.__doc__ = Layer.compute_output_shape.__doc__
 
     def build(self, input_shapes):
-        """
-        Builds the layer
-
-        Args:
-            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
-
-        """
 
         self.attention_weights = self.add_weight(
             shape=(self.walk_length,),
@@ -78,6 +58,8 @@ class AttentiveWalk(Layer):
         )
 
         self.built = True
+
+    build.__doc__ = Layer.build.__doc__
 
     def call(self, partial_powers):
         """
@@ -161,22 +143,22 @@ class WatchYourStep:
             name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
         )
 
-        vectors_left = Lambda(lambda x: K.transpose(x))(left_embedding(input_rows))
+        vectors_left = left_embedding(input_rows)
 
-        # always use all left vectors - currently wastes time looking up embeddings
-        # to keep keras happy
         # TODO: replace the embedding layer with a custom layer to avoid lookups
         # input cols but be somehow connected to the input to keep keras happy
-        input_cols = Lambda(
+        all_cols = Lambda(
             lambda x: tf.constant(np.arange(int(self.n_nodes)), dtype="int64")
         )(input_rows)
-        vectors_right = right_embedding(input_cols)
 
-        dot_product = Lambda(lambda x: K.transpose(K.dot(x[0], x[1])))(
-            [vectors_right, vectors_left]
+        # always use all right vectors - currently wastes time looking up embeddings
+        vectors_right = right_embedding(all_cols)
+
+        outer_product = Lambda(lambda x: K.dot(x[0], K.transpose(x[1])))(
+            [vectors_left, vectors_right]
         )
 
-        sigmoids = tf.keras.activations.sigmoid(dot_product)
+        sigmoids = tf.keras.activations.sigmoid(outer_product)
         attentive_walk_layer = AttentiveWalk(
             walk_length=self.num_powers,
             attention_regularizer=self.attention_regularizer,
