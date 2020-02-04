@@ -619,12 +619,19 @@ def test_allocation_benchmark_creation(
 
 
 def example_weighted_hin(is_directed=True):
-    graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
-    graph.add_nodes_from([0, 1], label="A")
-    graph.add_nodes_from([2, 3], label="B")
-    graph.add_weighted_edges_from([(0, 1, 0.0), (0, 1, 1.0)], label="AA")
-    graph.add_weighted_edges_from([(1, 2, 10.0), (1, 3, 10.0)], label="AB")
-    return StellarDiGraph(graph) if is_directed else StellarGraph(graph)
+    edge_cols = ["source", "target", "weight"]
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(
+        nodes={"A": pd.DataFrame(index=[0, 1]), "B": pd.DataFrame(index=[2, 3])},
+        edges={
+            "AA": pd.DataFrame(
+                [(0, 1, 0.0), (0, 1, 1.0)], columns=edge_cols, index=[0, 1]
+            ),
+            "AB": pd.DataFrame(
+                [(1, 2, 10.0), (1, 3, 10.0)], columns=edge_cols, index=[2, 3]
+            ),
+        },
+    )
 
 
 def example_unweighted_hom(is_directed=True):
