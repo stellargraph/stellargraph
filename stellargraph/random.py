@@ -19,9 +19,6 @@ import random
 import tensorflow as tf
 
 
-_sg_random = random.Random()
-
-
 def generate_seed(seed=None):
     """
     Convenience function to use the global seed by default if the provided seed is None.
@@ -34,7 +31,7 @@ def generate_seed(seed=None):
 
     """
     if seed is None:
-        return _sg_random.randint(0, 2 ** 32 - 1)
+        return random.randint(0, 2 ** 32 - 1)
     else:
         return seed
 
@@ -54,9 +51,6 @@ def set_seed(seed, set_numpy=True, set_tensorflow=True, set_random=True):
         set_random (bool): If true, mutate the global random module seed
 
     """
-    global _sg_random
-    _sg_random = random.Random(seed)
-
     if set_numpy:
         np.random.seed(seed)
     if set_tensorflow:
