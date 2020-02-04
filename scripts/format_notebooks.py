@@ -24,6 +24,10 @@ a machine-learning ready graph used by models.
 import argparse
 import nbformat
 import re
+import shlex
+import subprocess
+import sys
+import tempfile
 from itertools import chain
 from traitlets import Set, Integer, Bool
 from traitlets.config import Config
@@ -176,11 +180,22 @@ if __name__ == "__main__":
         action="store_true",
         help="Perform default formatting, equivalent to -wcnk",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-o",
         "--overwrite",
         action="store_true",
         help="Overwrite original notebooks, otherwise a copy will be made with a .mod suffix",
+    )
+    group.add_argument(
+        "--check",
+        action="store_true",
+        help="Check that no changes happened, instead of writing the file",
+    )
+    group.add_argument(
+        "--ci",
+        action="store_true",
+        help="Same as `--check`, but with an annotation for buildkite CI",
     )
     parser.add_argument(
         "--html", action="store_true", help="Save HTML as well as notebook output"
@@ -195,6 +210,8 @@ if __name__ == "__main__":
     write_notebook = True
     write_html = args.html
     overwrite_notebook = args.overwrite
+    check_notebook = args.check or args.ci
+    on_ci = args.ci
     format_code = args.format_code or args.default
     clear_warnings = args.clear_warnings or args.default
     renumber_code = args.renumber or args.default
@@ -207,9 +224,6 @@ if __name__ == "__main__":
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
-    if clear_warnings:
-        preprocessor_list.append(ClearWarningsPreprocessor)
-
     if set_kernel:
         preprocessor_list.append(SetKernelSpecPreprocessor)
 
@@ -218,6 +232,10 @@ if __name__ == "__main__":
 
     if execute_code:
         preprocessor_list.append(preprocessors.ExecutePreprocessor)
+
+    # warnings need to be cleared after execution
+    if clear_warnings:
+        preprocessor_list.append(ClearWarningsPreprocessor)
 
     # Create the exporters with preprocessing
     c = Config()
@@ -244,6 +262,8 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"Specified location not '{path}'a file or directory.")
 
+    check_failed = []
+
     # Go through all notebooks files in specified directory
     for file_loc in all_files:
         # Skip Modified files
@@ -262,13 +282,31 @@ if __name__ == "__main__":
             # Process the notebook to a new notebook
             (body, resources) = nb_exporter.from_notebook_node(in_notebook)
 
+            temporary_file = None
+
             # Write notebook file
             if overwrite_notebook:
                 nb_file_loc = str(file_loc.with_suffix(""))
+            elif check_notebook:
+                tempdir = tempfile.TemporaryDirectory()
+                nb_file_loc = f"{tempdir.name}/notebook"
             else:
                 nb_file_loc = str(file_loc.with_suffix(".mod"))
+
             print(f"Writing notebook to {nb_file_loc}.ipynb")
             writer.write(body, resources, nb_file_loc)
+
+            if check_notebook:
+                with open(file_loc) as f:
+                    original = f.read()
+
+                with open(f"{nb_file_loc}.ipynb") as f:
+                    updated = f.read()
+
+                if original != updated:
+                    check_failed.append(str(file_loc))
+
+                tempdir.cleanup()
 
         if write_html:
             # Process the notebook to HTML
@@ -277,3 +315,34 @@ if __name__ == "__main__":
             html_file_loc = str(file_loc.with_suffix(""))
             print(f"Writing HTML to {html_file_loc}.html")
             writer.write(body, resources, html_file_loc)
+
+    if check_failed:
+        assert check_notebook, "things failed check without check being enabled"
+
+        notebooks = "\n".join(f"- `{path}`" for path in check_failed)
+
+        command = "python ./scripts/format_notebooks.py --default --overwrite demos/"
+
+        message = f"""\
+Found notebook(s) with incorrect formatting:
+
+{notebooks}
+
+Fix by running:
+
+    {command}"""
+
+        print(f"\n\033[1;91;40mError:\033[0m {message}")
+
+        if on_ci:
+            subprocess.run(
+                [
+                    "buildkite-agent",
+                    "annotate",
+                    "--style=error",
+                    "--context=format_notebooks",
+                    message,
+                ]
+            )
+
+        sys.exit(1)

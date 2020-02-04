@@ -212,6 +212,17 @@ def test_schema_removals():
         sg.create_graph_schema(create_type_maps=True)
 
 
+@pytest.mark.benchmark(group="StellarGraph create_graph_schema")
+@pytest.mark.parametrize("num_types", [1, 4])
+def test_benchmark_graph_schema(benchmark, num_types):
+    nodes, edges = example_benchmark_graph(
+        n_nodes=1000, n_edges=5000, n_types=num_types
+    )
+    sg = StellarGraph(nodes=nodes, edges=edges)
+
+    benchmark(sg.create_graph_schema)
+
+
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
@@ -413,7 +424,8 @@ def test_edges_include_edge_type():
 
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
-    assert set(g.edges(include_edge_type=True)) == r | f
+    expected = normalize_edges(r | f, directed=False)
+    assert normalize_edges(g.edges(include_edge_type=True), directed=False) == expected
 
 
 def numpy_to_list(x):
@@ -463,7 +475,7 @@ def test_to_networkx(has_features):
 
     edge_def = {"R": [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], "F": [(4, 5)]}
     expected_edges = [
-        (src, tgt, {"label": label, "weight": 1.0})
+        (src, tgt, {"label": label, "weight": 1.0 if label == "R" else 10.0})
         for label, pairs in edge_def.items()
         for src, tgt in pairs
     ]
@@ -738,3 +750,95 @@ def test_info_heterogeneous():
 
     assert " A-R->B: [5]"
     assert " B-F->B: [1]"
+
+
+def test_edges_include_weights():
+    g = example_weighted_hin()
+    edges, weights = g.edges(include_edge_weight=True)
+    nxg = g.to_networkx()
+    assert len(edges) == len(weights) == len(nxg.edges())
+
+    grouped = (
+        pd.DataFrame(edges, columns=["source", "target"])
+        .assign(weight=weights)
+        .groupby(["source", "target"])
+        .agg(list)
+    )
+    for (src, tgt), row in grouped.iterrows():
+        assert sorted(row["weight"]) == sorted(
+            [data["weight"] for data in nxg.get_edge_data(src, tgt).values()]
+        )
+
+
+def test_adjacency_types_undirected():
+    g = example_hin_1(is_directed=False)
+    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+
+    assert adj == {
+        ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
+        ("B", "R", "A"): {4: [0, 1, 2], 5: [1, 3]},
+        ("B", "F", "B"): {4: [5], 5: [4]},
+    }
+
+
+def test_adjacency_types_directed():
+    g = example_hin_1(is_directed=True)
+    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+
+    assert adj == {
+        ("A", "R", "B"): {1: [4, 5], 2: [4]},
+        ("B", "R", "A"): {4: [0], 5: [3]},
+        ("B", "F", "B"): {4: [5]},
+    }
+
+
+def test_to_adjacency_matrix_undirected():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7), dtype=matrix.dtype)
+    actual[0, 4] = actual[4, 0] = 1
+    actual[1, 5] = actual[5, 1] = 1
+    actual[1, 4] = actual[4, 1] = 1
+    actual[2, 4] = actual[4, 2] = 1
+    actual[3, 5] = actual[5, 3] = 1
+    actual[4, 5] = actual[5, 4] = 10
+    actual[5, 5] = 11 + 12
+    assert np.array_equal(matrix, actual)
+
+    # just to confirm, it should be symmetric
+    assert np.array_equal(matrix, matrix.T)
+
+    # use a funny order to verify order
+    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    # indices are relative to the specified list
+    one, six, five = 0, 1, 2
+    actual = np.zeros((3, 3), dtype=subgraph.dtype)
+    actual[one, five] = actual[five, one] = 1
+    actual[five, five] = 11 + 12
+    assert np.array_equal(subgraph, actual)
+
+
+def test_to_adjacency_matrix_directed():
+    g = example_hin_1(is_directed=True, self_loop=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7))
+    actual[4, 0] = 1
+    actual[1, 5] = 1
+    actual[1, 4] = 1
+    actual[2, 4] = 1
+    actual[5, 3] = 1
+    actual[4, 5] = 10
+    actual[5, 5] = 11 + 12
+
+    assert np.array_equal(matrix, actual)
+
+    # use a funny order to verify order
+    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    # indices are relative to the specified list
+    one, six, five = 0, 1, 2
+    actual = np.zeros((3, 3), dtype=subgraph.dtype)
+    actual[one, five] = 1
+    actual[five, five] = 11 + 12
+    assert np.array_equal(subgraph, actual)

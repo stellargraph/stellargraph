@@ -127,7 +127,9 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
     return graph
 
 
-def example_hin_1(feature_sizes=None) -> StellarGraph:
+def example_hin_1(
+    feature_sizes=None, is_directed=False, self_loop=False
+) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
             return []
@@ -142,11 +144,23 @@ def example_hin_1(feature_sizes=None) -> StellarGraph:
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
     r = pd.DataFrame(
-        [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"]
+        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
     )
-    f = pd.DataFrame([(4, 5)], columns=["source", "target"], index=[6])
+    f_edges, f_index = [(4, 5)], [6]
+    if self_loop:
+        # make it a multigraph
+        f_edges.extend([(5, 5), (5, 5)])
+        f_index.extend([7, 8])
 
-    return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
+    # add some weights for the f edges, but not others
+    f_columns = ["source", "target", "weight"]
+    for i, src_tgt in enumerate(f_edges):
+        f_edges[i] = src_tgt + (10 + i,)
+
+    f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
 
 
 def create_test_graph_nx(is_directed=False):
