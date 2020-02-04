@@ -53,7 +53,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
                 (f"MATCH(head_node) WHERE ID(head_node) IN {{head_nodes}} ",
                 f"WITH apoc.coll.flatten(collect(head_node)) as next_nodes, ",
                 #add the list of node ids into subgraph
-                f"[apoc.coll.flatten(collect(id(head_node)))] AS subgraph ") 
+                f"[apoc.coll.flatten(collect(id(head_node)))] AS subgraph ")
             )
 
         for n in num_samples:
@@ -65,17 +65,17 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
                 "      WITH (CASE neighbors_list WHEN [] THEN [null] ELSE neighbors_list END) AS neighbors_list ",
                 "      UNWIND neighbors_list AS neighbors ",
                 "      RETURN neighbors_list AS neighbors, ",
-                f"     (CASE collect(id(neighbors)) WHEN [] THEN [ _ in range(0, {n} - 1) | null] ", 
+                f"     (CASE collect(id(neighbors)) WHEN [] THEN [ _ in range(0, {n} - 1) | null] ",
                 "      ELSE collect(id(neighbors)) END) AS neighbors_id', ",
                 "{head_node: next_node}) YIELD value",
-                
+
                 "WITH apoc.coll.flatten(collect(value.neighbors)) AS next_nodes, ",
                 "subgraph + [apoc.coll.flatten(collect(value.neighbors_id))] AS subgraph "
-            ))      
+            ))
             query = '\n'.join((query, loop_subquery))
-        
+
         return '\n'.join((query, "return subgraph"))
-    
+
     def run(self, neo4j_graphdb, nodes=None, n=1, n_size=None, seed = None):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
@@ -95,12 +95,12 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
         """
         self._check_sizes(n_size)
         self._check_common_parameters(nodes, n, len(n_size), seed)
-        
+
         bfsQuery = self.breadth_first_search_query_builder(n_size)
-        
+
         result_records = neo4j_graphdb.run(bfsQuery, {"head_nodes": nodes})
         walks = pd.DataFrame(result_records)[0][0]
-        
+
         return walks
 
 class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
@@ -121,7 +121,7 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         Args:
             in_samples (int): The number of in-directed nodes to sample with replacement at each depth of the walk.
             out_samples (int): The number of out-directed nodes to sample with replacement at each depth of the walk.
-        
+
         Returns:
             Cypher query to retrieve all node ids of the sampled subgraph.
         """
@@ -129,36 +129,36 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         query = '\n'.join((
             #find the head_nodes
             "OPTIONAL MATCH (head_node) WHERE ID(head_node) in {head_nodes}",
-            
+
             #put the current level of nodes into a list of list
             "WITH [apoc.coll.flatten(collect(head_node))] as current_depth_list,",
-            
+
             #add the list of node ids into subgraph
             "[apoc.coll.flatten(collect(id(head_node)))] AS subgraph "
         ))
 
         for in_node, out_node in zip(in_samples, out_samples):
             loop_subquery = '\n'.join((
-            
+
             "UNWIND current_depth_list as current_depth",
 
-            "CALL apoc.cypher.run(\" ",        
+            "CALL apoc.cypher.run(\" ",
             "WITH {current_depth} as current_depth" ,
             "UNWIND current_depth AS current_depth_child",
-            
+
             # call the subprocedure to collect random in-nodes.
             "CALL apoc.cypher.run(",
             "    'WITH {current_node} AS current_node ",
 
             # find all in-neighbors
             "     MATCH (current_node)<-[]-(in_neighbors) ",
-            
+
             # turn the rows into a list
             "     WITH CASE collect(in_neighbors) WHEN [] THEN [null] ELSE collect(in_neighbors) END as in_neighbors_list",
-            
+
             # choose random nodes from the list with replacement
             "     WITH apoc.coll.randomItems(in_neighbors_list, {in_nodes}, True) AS in_samples_list",
-            
+
             # turn the list into rows for collecting ids
             "     UNWIND in_samples_list as in_samples",
             "     RETURN in_samples_list, ",
@@ -171,23 +171,23 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
             "    apoc.coll.flatten(collect(value.in_samples_id_list)) as samples_id_list",
 
             "UNION ALL",
-        
+
             "WITH {current_depth} as current_depth",
             "UNWIND current_depth AS current_depth_child",
-            
+
             #call the subprocedure to collect random out-nodes.
             "CALL apoc.cypher.run(",
             "    'WITH {current_node} AS current_node ",
 
             #find all out-neighbors
             "     MATCH (current_node)-[]->(out_neighbors) ",
-            
+
             # turn the rows into a list
             "     WITH CASE collect(out_neighbors) WHEN [] THEN [null] ELSE collect(out_neighbors) END as out_neighbors_list",
-            
+
             #choose random nodes from the list with replacement
             "     WITH apoc.coll.randomItems((CASE out_neighbors_list WHEN [] THEN [null] ELSE out_neighbors_list END), {out_nodes}, True) AS out_samples_list",
-            
+
             # turn the list into rows for collecting ids
             "     UNWIND out_samples_list as out_samples",
             "     RETURN out_samples_list, ",
@@ -202,13 +202,13 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
             f" {{current_depth: current_depth, in_nodes: {in_node}, out_nodes: {out_node} }}) YIELD value ",
 
             "WITH apoc.coll.flatten(collect([value.samples_list])) as current_depth_list, subgraph + apoc.coll.flatten(collect([value.samples_id_list])) as subgraph",
-    
+
             ))
 
             query = '\n'.join((query, loop_subquery))
 
         return '\n'.join((query, "return subgraph"))
-        
+
     def run(self, neo4j_graphdb, nodes=None, n=1, in_size=None, out_size=None, seed=None):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
@@ -240,14 +240,14 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         """
         self._check_neighbourhood_sizes(in_size, out_size)
         self._check_common_parameters(nodes, n, len(in_size), seed)
-        
+
         bfsQuery = self.directed_breadth_first_search_query_builder(in_size, out_size)
-        
+
         result_records = neo4j_graphdb.run(bfsQuery, {"head_nodes": nodes})
         samples = pd.DataFrame(result_records)[0][0]
-        
+
         return [samples]
-        
+
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the

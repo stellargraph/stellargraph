@@ -46,7 +46,7 @@ from ..mapper import (
 )
 
 from ..connector.neo4j.mapper import (
-    Neo4JGraphSAGENodeGenerator, 
+    Neo4JGraphSAGENodeGenerator,
     Neo4JDirectedGraphSAGENodeGenerator,
 )
 
