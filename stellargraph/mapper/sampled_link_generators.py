@@ -217,7 +217,6 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         self._graph = G
         self._seed = seed
-        self.random = random.Random(seed)
         self._samplers = dict()
         self._lock = threading.Lock()
 
@@ -242,7 +241,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         except KeyError:
             seed = self._seed + batch_num if self._seed is not None else None
             self._samplers[batch_num] = SampledBreadthFirstWalk(
-                self._graph, graph_schema=self.schema, seed=seed
+                self._graph, graph_schema=self.schema, seed=batch_num
             )
             return self._samplers[batch_num]
         finally:
