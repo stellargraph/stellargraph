@@ -25,10 +25,10 @@ if [ "${CHECK_NOTEBOOK_FORMATTING-0}" = 1 ]; then
 fi
 
 echo "+++ running tests"
-py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
+py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
-echo "--- uploading coveralls"
-coveralls
+echo "--- :coverage::codecov::arrow_up: uploading coverage to codecov.io"
+bash <(curl https://codecov.io/bash)
 
 if [ "${BUILDKITE_BRANCH}" = "develop" ] || [ "${BUILDKITE_BRANCH}" = "master" ]; then
   echo "--- uploading JUnit"

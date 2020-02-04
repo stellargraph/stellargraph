@@ -212,6 +212,17 @@ def test_schema_removals():
         sg.create_graph_schema(create_type_maps=True)
 
 
+@pytest.mark.benchmark(group="StellarGraph create_graph_schema")
+@pytest.mark.parametrize("num_types", [1, 4])
+def test_benchmark_graph_schema(benchmark, num_types):
+    nodes, edges = example_benchmark_graph(
+        n_nodes=1000, n_edges=5000, n_types=num_types
+    )
+    sg = StellarGraph(nodes=nodes, edges=edges)
+
+    benchmark(sg.create_graph_schema)
+
+
 def test_get_index_for_nodes():
     sg = example_graph_2(feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
@@ -413,7 +424,8 @@ def test_edges_include_edge_type():
 
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
-    assert set(g.edges(include_edge_type=True)) == r | f
+    expected = normalize_edges(r | f, directed=False)
+    assert normalize_edges(g.edges(include_edge_type=True), directed=False) == expected
 
 
 def numpy_to_list(x):
@@ -738,3 +750,43 @@ def test_info_heterogeneous():
 
     assert " A-R->B: [5]"
     assert " B-F->B: [1]"
+
+
+def test_edges_include_weights():
+    g = example_weighted_hin()
+    edges, weights = g.edges(include_edge_weight=True)
+    nxg = g.to_networkx()
+    assert len(edges) == len(weights) == len(nxg.edges())
+
+    grouped = (
+        pd.DataFrame(edges, columns=["source", "target"])
+        .assign(weight=weights)
+        .groupby(["source", "target"])
+        .agg(list)
+    )
+    for (src, tgt), row in grouped.iterrows():
+        assert sorted(row["weight"]) == sorted(
+            [data["weight"] for data in nxg.get_edge_data(src, tgt).values()]
+        )
+
+
+def test_adjacency_types_undirected():
+    g = example_hin_1(is_directed=False)
+    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+
+    assert adj == {
+        ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
+        ("B", "R", "A"): {4: [0, 1, 2], 5: [1, 3]},
+        ("B", "F", "B"): {4: [5], 5: [4]},
+    }
+
+
+def test_adjacency_types_directed():
+    g = example_hin_1(is_directed=True)
+    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+
+    assert adj == {
+        ("A", "R", "B"): {1: [4, 5], 2: [4]},
+        ("B", "R", "A"): {4: [0], 5: [3]},
+        ("B", "F", "B"): {4: [5]},
+    }

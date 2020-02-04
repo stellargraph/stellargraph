@@ -709,16 +709,29 @@ class NetworkXStellarGraph(StellarGraph):
     def nodes(self) -> Iterable[Any]:
         return self._graph.nodes()
 
-    def edges(self, include_edge_type=False) -> Iterable[Any]:
+    def edges(
+        self, include_edge_type=False, include_edge_weight=False
+    ) -> Iterable[Any]:
         if include_edge_type:
             # returns triples of format (node 1, node 2, edge type)
-            return (
+            edges = (
                 (src, dst, self._get_edge_type(data))
                 for src, dst, data in self._graph.edges(data=True)
             )
         else:
             # returns pairs of format (node 1, node 2)
-            return self._graph.edges()
+            edges = self._graph.edges()
+
+        if include_edge_weight:
+            weights = np.array(
+                [
+                    data.get(self._edge_weight_label)
+                    for _, _, data in self._graph.edges(data=True)
+                ]
+            )
+            return edges, weights
+        else:
+            return edges
 
     def has_node(self, node: Any) -> bool:
         return self._graph.__contains__(node)
