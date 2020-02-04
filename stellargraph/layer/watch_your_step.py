@@ -15,10 +15,9 @@
 # limitations under the License.
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate
+from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate, Dense
 from tensorflow.keras import backend as K
-import numpy as np
-
+import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 from ..core.experimental import experimental
 
@@ -32,13 +31,10 @@ class AttentiveWalk(Layer):
     Args:
         walk_length (int): the length of the random walks. Equivalent to the number of adjacency powers used. Defaults
             to `10` as this value was found to perform well by the authors of the paper.
-        attention_initializer (str or func): The initialiser to use for the attention weights;
-            defaults to 'glorot_uniform'.
-        attention_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
-        attention_constraint (str or func): The constraint to use for the attention weights;
-            defaults to None.
-        input_shape (tuple of ints): The shape of the input to the layer.
+        attention_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attention_constraint (str or func, optional): The constraint to use for the attention weights.
+        input_dim (tuple of ints, optional): The shape of the input to the layer.
     """
 
     def __init__(
@@ -47,18 +43,18 @@ class AttentiveWalk(Layer):
         attention_initializer="glorot_uniform",
         attention_regularizer=None,
         attention_constraint=None,
-        input_shape=None,
+        input_dim=None,
         **kwargs
     ):
 
-        if input_shape is None and "input_dim" in kwargs:
-            input_shape = (kwargs.get("input_dim"),)
+        if (not "input_shape" in kwargs) and (not input_dim is None):
+            kwargs["input_shape"] = input_dim
 
         self.walk_length = walk_length
         self.attention_initializer = attention_initializer
         self.attention_regularizer = attention_regularizer
         self.attention_constraint = attention_constraint
-        super().__init__(input_shape=input_shape, **kwargs)
+        super().__init__(**kwargs)
 
     def compute_output_shape(self, input_shapes):
         return (input_shapes[0][-1],)
@@ -114,6 +110,9 @@ class WatchYourStep:
             walks. Defaults to `80` as this value was found to perform well by the authors of the paper.
         embedding dimension (int): the dimension to use for the node embeddings. Defaults to `64`
             as this value was found to perform well by the authors of the paper.
+        attention_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attention_constraint (str or func, optional): The constraint to use for the attention weights.
     """
 
     def __init__(
@@ -121,8 +120,8 @@ class WatchYourStep:
         generator,
         num_walks=80,
         embedding_dimension=64,
+        attention_initializer="glorot_uniform",
         attention_regularizer=None,
-        attention_initializer=None,
         attention_constraint=None,
     ):
 
@@ -140,6 +139,12 @@ class WatchYourStep:
         self.num_walks = num_walks
         self.num_powers = generator.num_powers
         self.n_nodes = int(generator.Aadj_T.shape[0])
+
+        if embedding_dimension % 2:
+            embedding_dimension = embedding_dimension - 1
+            warnings.warn(
+                "embedding_dimension must be even. embedding_dimension will be rounded down to the nearest even number."
+            )
         self.embedding_dimension = embedding_dimension
         self.attention_regularizer = attention_regularizer
         self.attention_initializer = attention_initializer
@@ -158,31 +163,14 @@ class WatchYourStep:
 
         left_embedding = Embedding(
             self.n_nodes,
-            self.embedding_dimension,
+            int(self.embedding_dimension / 2),
             input_length=None,
             name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
         )
 
-        right_embedding = Embedding(
-            self.n_nodes,
-            self.embedding_dimension,
-            input_length=None,
-            name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
-        )
-
         vectors_left = left_embedding(input_rows)
-
-        # TODO: replace the embedding layer with a custom layer to avoid lookups
-        # input cols but be somehow connected to the input to keep keras happy
-        all_cols = Lambda(
-            lambda x: tf.constant(np.arange(int(self.n_nodes)), dtype="int64")
-        )(input_rows)
-
-        # always use all right vectors - currently wastes time looking up embeddings
-        vectors_right = right_embedding(all_cols)
-
-        outer_product = Lambda(lambda x: K.dot(x[0], K.transpose(x[1])))(
-            [vectors_left, vectors_right]
+        outer_product = Dense(self.n_nodes, name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS")(
+            vectors_left
         )
 
         sigmoids = tf.keras.activations.sigmoid(outer_product)
@@ -194,7 +182,7 @@ class WatchYourStep:
         )
         expected_walk = self.num_walks * attentive_walk_layer(input_powers)
 
-        # layer  to add batch dimension of 1 to output
+        # layer to add batch dimension of 1 to output
         expander = Lambda(lambda x: K.expand_dims(x, axis=1))
 
         output = Concatenate(axis=1)([expander(expected_walk), expander(sigmoids)])
