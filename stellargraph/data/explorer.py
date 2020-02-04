@@ -845,7 +845,6 @@ class TemporalRandomWalk(GraphWalk):
         num_cw_curr = 0
 
         edges, times = self.graph.edges(include_edge_weight=True)
-        temporal_edges = list(zip(edges, times))
         edge_biases = self._temporal_biases(
             times, None, bias_type=initial_edge_bias, is_forward=False,
         )
@@ -854,13 +853,17 @@ class TemporalRandomWalk(GraphWalk):
         failures = 0
 
         def not_progressing_enough():
-            # (this uses Beta(1, 1) as the prior, since it's uniform on p)
+            # Estimate the probability p of a walk being long enough; the 95% percentile is used to
+            # be more stable with respect to randomness. This uses Beta(1, 1) as the prior, since
+            # it's uniform on p
             posterior = stats.beta(1 + successes, 1 + failures)
             return posterior.ppf(0.95) < p_walk_success_threshold
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
-            (src, dst), t = self._sample(temporal_edges, edge_biases, np_rs)
+            first_edge_index = self._sample(len(edges), edge_biases, np_rs)
+            src, dst = edges[first_edge_index]
+            t = times[first_edge_index]
 
             remaining_length = num_cw - num_cw_curr + cw_size - 1
 
@@ -877,18 +880,16 @@ class TemporalRandomWalk(GraphWalk):
                     raise RuntimeError(
                         f"Discarded {failures} walks out of {failures + successes}. "
                         "Too many temporal walks are being discarded for being too short. "
-                        "Consider using a smaller context window size."
+                        f"Consider using a smaller context window size (currently cw_size={cw_size})."
                     )
 
         return walks
 
-    def _sample(self, items, biases, np_rs):
-        chosen_index = (
-            naive_weighted_choices(np_rs, biases)
-            if biases is not None
-            else np_rs.choice(len(items))
-        )
-        return items[chosen_index]
+    def _sample(self, n, biases, np_rs):
+        if biases is not None:
+            return naive_weighted_choices(np_rs, biases)
+        else:
+            return np_rs.choice(n)
 
     def _exp_biases(self, times, t_0, decay):
         # t_0 assumed to be smaller than all time values
@@ -925,7 +926,8 @@ class TemporalRandomWalk(GraphWalk):
         if neighbours:
             times = [t for _, t in neighbours]
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
-            next_node, next_time = self._sample(neighbours, biases, np_rs)
+            chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
+            next_node, next_time = neighbours[chosen_neighbour_index]
             return next_node, next_time
         else:
             return None
