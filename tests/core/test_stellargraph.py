@@ -849,3 +849,23 @@ def test_to_adjacency_matrix_directed():
     actual[one, five] = 1
     actual[five, five] = 11 + 12
     assert np.array_equal(subgraph, actual)
+
+
+def test_edge_weights_undirected():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(4, 5) == [10.0]
+    assert g._edge_weights(5, 4) == [10.0]
+    assert g._edge_weights(0, 4) == [1]
+    assert g._edge_weights(4, 0) == [1]
+
+
+def test_edge_weights_directed():
+    g = example_hin_1(is_directed=True, self_loop=True)
+
+    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(4, 5) == [10.0]
+    assert g._edge_weights(5, 4) == []
+    assert g._edge_weights(0, 4) == []
+    assert g._edge_weights(4, 0) == [1]
