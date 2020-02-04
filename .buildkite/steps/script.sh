@@ -14,9 +14,7 @@ pip install -q --no-cache-dir '.[test]'
 echo "--- listing dependency versions"
 pip freeze
 
-echo "+++ running tests"
-exitCode=$?
-py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
+exitCode=0
 
 if [ "${CHECK_NOTEBOOK_FORMATTING-0}" = 1 ]; then
   echo "+++ checking notebook formatting"
@@ -25,6 +23,9 @@ if [ "${CHECK_NOTEBOOK_FORMATTING-0}" = 1 ]; then
   # where it would have to spend ~2 minutes installing dependencies.
   python scripts/format_notebooks.py --default --ci demos/ || exitCode=$?
 fi
+
+echo "+++ running tests"
+py.test -ra --cov=stellargraph tests/ --doctest-modules --doctest-modules --cov-report=term-missing -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
 echo "--- uploading coveralls"
 coveralls
