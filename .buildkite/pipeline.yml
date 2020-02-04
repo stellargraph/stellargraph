@@ -17,6 +17,8 @@ steps:
       docker-compose#v3.1.0:
         <<: *compose-config
         run: runner-3.6
+        env:
+          - CHECK_NOTEBOOK_FORMATTING=1
     agents:
       queue: "t2medium"
 
