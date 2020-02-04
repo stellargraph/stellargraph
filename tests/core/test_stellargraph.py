@@ -715,6 +715,17 @@ def test_out_nodes_unweighted_hom():
     )
 
 
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_isolated_node_neighbor_methods(is_directed):
+    cls = StellarDiGraph if is_directed else StellarGraph
+    graph = cls(
+        nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
+    )
+    assert graph.neighbors(1) == []
+    assert graph.in_nodes(1) == []
+    assert graph.out_nodes(1) == []
+
+
 def test_stellargraph_experimental():
     nodes = pd.DataFrame([], index=[0])
     edges = pd.DataFrame([], columns=["source", "target"])
