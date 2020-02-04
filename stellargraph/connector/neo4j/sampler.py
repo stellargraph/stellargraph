@@ -103,7 +103,6 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
         
         return walks
 
-
 class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
     """
     Breadth First sampler that generates the composite of a number of sampled paths from a starting node.
