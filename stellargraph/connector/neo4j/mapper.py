@@ -15,8 +15,8 @@
 # limitations under the License.
 
 __all__ = [
-            "Neo4JGraphSAGENodeGenerator",
-            "Neo4JDirectedGraphSAGENodeGenerator",
+    "Neo4JGraphSAGENodeGenerator",
+    "Neo4JDirectedGraphSAGENodeGenerator",
 ]
 
 import warnings
@@ -32,6 +32,8 @@ from ...core.graph import StellarGraph, GraphSchema
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
 
+
+@experimental(reason="the class is not fully tested")
 class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
     """
     Abstract base class for graph data generators from Neo4J.
@@ -57,6 +59,8 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
         # Create neo4J driver
         self.neo4j_graphdb = neo4j_graphdb
 
+
+@experimental(reason="the class is not fully tested")
 class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     """
     A data generator for node prediction with Homogeneous GraphSAGE models
@@ -84,14 +88,15 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object.
         seed (int): [Optional] Random seed for the node sampler.
     """
-    def __init__(self, G, batch_size, num_samples, neo4j_graphdb, seed = None, name = None):
+
+    def __init__(self, G, batch_size, num_samples, neo4j_graphdb, seed=None, name=None):
         super().__init__(G, batch_size, neo4j_graphdb)
 
         self.num_samples = num_samples
         self.head_node_types = self.schema.node_types
         self.name = name
 
-        #check that there is only a single node type for GraphSAGE
+        # check that there is only a single node type for GraphSAGE
 
         if len(self.head_node_types) > 1:
             warnings.warn(
@@ -99,7 +104,9 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
                 RuntimeWarning,
             )
 
-        self.sampler = Neo4JSampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
+        self.sampler = Neo4JSampledBreadthFirstWalk(
+            G, graph_schema=self.schema, seed=seed
+        )
 
     def sample_features(self, head_nodes):
         """
@@ -117,22 +124,26 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
-        nodes_per_hop = self.sampler.run(self.neo4j_graphdb, nodes=head_nodes, n=1, n_size=self.num_samples)
+        nodes_per_hop = self.sampler.run(
+            self.neo4j_graphdb, nodes=head_nodes, n=1, n_size=self.num_samples
+        )
         node_type = self.head_node_types[0]
 
-        #Get features for sampled nodes
+        # Get features for sampled nodes
         batch_feats = [
             self.graph.node_features(layer_nodes, node_type)
             for layer_nodes in nodes_per_hop
         ]
 
-        #Resize features for sampled nodes
+        # Resize features for sampled nodes
         batch_feats = [
             np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
             for a in batch_feats
         ]
         return batch_feats
 
+
+@experimental(reason="the class is not fully tested")
 class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     """
     A data generator for node prediction with homogeneous GraphSAGE models
@@ -164,7 +175,16 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         seed (int): [Optional] Random seed for the node sampler.
     """
 
-    def __init__(self, G, batch_size, in_samples, out_samples, neo4j_graphdb, seed=None, name=None):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        in_samples,
+        out_samples,
+        neo4j_graphdb,
+        seed=None,
+        name=None,
+    ):
         super().__init__(G, batch_size, neo4j_graphdb)
 
         # TODO Add checks for in- and out-nodes sizes
@@ -200,8 +220,12 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             of nodes sampled at the given number of hops from each head node,
             given the sequence of in/out directions.
         """
-        node_samples = self.sampler.run(self.neo4j_graphdb,
-            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples
+        node_samples = self.sampler.run(
+            self.neo4j_graphdb,
+            nodes=head_nodes,
+            n=1,
+            in_size=self.in_samples,
+            out_size=self.out_samples,
         )
 
         # Reshape node samples to sensible format
