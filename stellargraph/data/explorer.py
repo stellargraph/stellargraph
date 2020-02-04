@@ -856,8 +856,8 @@ class TemporalRandomWalk(GraphWalk):
             # Estimate the probability p of a walk being long enough; the 95% percentile is used to
             # be more stable with respect to randomness. This uses Beta(1, 1) as the prior, since
             # it's uniform on p
-            posterior = stats.beta(1 + successes, 1 + failures)
-            return posterior.ppf(0.95) < p_walk_success_threshold
+            posterior = stats.beta.ppf(0.95, 1 + successes, 1 + failures)
+            return posterior < p_walk_success_threshold
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
@@ -887,6 +887,7 @@ class TemporalRandomWalk(GraphWalk):
 
     def _sample(self, n, biases, np_rs):
         if biases is not None:
+            assert len(biases) == n
             return naive_weighted_choices(np_rs, biases)
         else:
             return np_rs.choice(n)
