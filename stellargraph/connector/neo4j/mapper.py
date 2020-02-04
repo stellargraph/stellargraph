@@ -15,8 +15,8 @@
 # limitations under the License.
 
 __all__ = [
-            "Neo4JGraphSAGENodeGenerator", 
-            "Neo4JDirectedGraphSAGENodeGenerator", 
+            "Neo4JGraphSAGENodeGenerator",
+            "Neo4JDirectedGraphSAGENodeGenerator",
 ]
 
 import warnings
@@ -45,16 +45,16 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
     Args:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
-        neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object 
+        neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object
         schema (GraphSchema): [Optional] Schema for the graph, for heterogeneous graphs.
     """
 
     def __init__(self, G, batch_size, neo4j_graphdb, schema=None):
-        
+
         import py2neo
-        
+
         super().__init__(G, batch_size, schema)
-        # Create neo4J driver 
+        # Create neo4J driver
         self.neo4j_graphdb = neo4j_graphdb
 
 class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
@@ -98,12 +98,12 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
             )
-        
-        self.sampler = Neo4JSampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed) 
+
+        self.sampler = Neo4JSampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
 
     def sample_features(self, head_nodes):
         """
-        Collect the features of the nodes sampled from Neo4J, 
+        Collect the features of the nodes sampled from Neo4J,
         and return these as a list of feature arrays for the GraphSAGE
         algorithm.
 
@@ -125,7 +125,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             self.graph.node_features(layer_nodes, node_type)
             for layer_nodes in nodes_per_hop
         ]
-    
+
         #Resize features for sampled nodes
         batch_feats = [
             np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
@@ -187,7 +187,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
     def sample_features(self, head_nodes):
         """
-        Collect the features of the sampled nodes from Neo4J, 
+        Collect the features of the sampled nodes from Neo4J,
         and return these as a list of feature arrays for the GraphSAGE algorithm.
 
         Args:
