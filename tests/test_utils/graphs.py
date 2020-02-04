@@ -50,19 +50,18 @@ def relational_create_graph_features(is_directed=False):
     return SG(graph, node_features=node_features), features
 
 
-def example_graph_1_nx(
+def example_graph_nx(
     feature_size=None, label="default", feature_name="feature", is_directed=False
 ):
-    # stellargraph
     graph = nx.DiGraph() if is_directed else nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
     graph.add_nodes_from([1, 2, 3, 4], label=label)
     graph.add_edges_from(elist, label=label)
 
     # Add example features
     if feature_size is not None:
         for v in graph.nodes():
-            graph.nodes[v][feature_name] = np.ones(feature_size)
+            graph.nodes[v][feature_name] = int(v) * np.ones(feature_size)
 
     return graph
 
@@ -72,28 +71,13 @@ def _repeated_features(values_to_repeat, width):
     return column.repeat(width, axis=1)
 
 
-def example_graph_1(
+def example_graph(
     feature_size=None,
     node_label="default",
     edge_label="default",
     feature_name="feature",
     is_directed=False,
 ):
-    # attr2vec, graphattention, graphsage, node mappers (2), link mappers, types, stellargraph, unsupervised sampler
-    elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (3, 2)], columns=["source", "target"])
-    if feature_size is not None:
-        features = _repeated_features(np.ones(4), feature_size)
-    else:
-        features = []
-
-    nodes = pd.DataFrame(features, index=[1, 2, 3, 4])
-
-    cls = StellarDiGraph if is_directed else StellarGraph
-    return cls(nodes={node_label: nodes}, edges={edge_label: elist})
-
-
-def example_graph_2(feature_size=None, label="default") -> StellarGraph:
-    # unsupervised sampler, link mapper
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
     nodes = [1, 2, 3, 4]
     if feature_size is not None:
@@ -102,7 +86,9 @@ def example_graph_2(feature_size=None, label="default") -> StellarGraph:
         features = []
 
     nodes = pd.DataFrame(features, index=nodes)
-    return StellarGraph(nodes={label: nodes}, edges={label: elist})
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={node_label: nodes}, edges={edge_label: elist})
 
 
 def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
