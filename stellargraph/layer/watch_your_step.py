@@ -17,12 +17,12 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate, Dense
 from tensorflow.keras import backend as K
+import numpy as np
 import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 from ..core.experimental import experimental
 
 
-@experimental(reason="lack of unit tests")
 class AttentiveWalk(Layer):
     """
     This implements the graph attention as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -44,10 +44,10 @@ class AttentiveWalk(Layer):
         attention_regularizer=None,
         attention_constraint=None,
         input_dim=None,
-        **kwargs
+        **kwargs,
     ):
 
-        if (not "input_shape" in kwargs) and (not input_dim is None):
+        if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = input_dim
 
         self.walk_length = walk_length
@@ -95,14 +95,39 @@ class AttentiveWalk(Layer):
 
 
 @experimental(reason="lack of unit tests")
+def get_embeddings(model):
+    """
+    This function returns the embeddings from a model with Watch Your Step embeddings.
+
+    Args:
+        model (keras Model): a keras model that contains Watch Your Step embeddings.
+
+    Returns:
+        embeddings (np.array): a numpy array of the model's embeddings.
+    """
+    embeddings = np.hstack(
+        [
+            model.get_layer("WATCH_YOUR_STEP_LEFT_EMBEDDINGS").embeddings.numpy(),
+            model.get_layer("WATCH_YOUR_STEP_RIGHT_EMBEDDINGS")
+            .kernel.numpy()
+            .transpose(),
+        ]
+    )
+
+    return embeddings
+
+
+@experimental(reason="lack of unit tests")
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention
     https://arxiv.org/pdf/1710.09599.pdf.
 
     This model requires specification of the number of random walks starting from each node, and the embedding dimension
-    to use for the node embeddings. Note, that the embedding dimension should be an even number or else will be
-    rounded down to nearest even number.
+    to use for the node embeddings.
+
+    Note:
+        - the embedding dimension should be an even number or else will be rounded down to nearest even number.
 
     Args:
         generator (AdjacencyPowerGenerator): the generator
@@ -140,11 +165,12 @@ class WatchYourStep:
         self.num_powers = generator.num_powers
         self.n_nodes = int(generator.Aadj_T.shape[0])
 
-        if embedding_dimension % 2:
-            embedding_dimension = embedding_dimension - 1
+        if embedding_dimension % 2 != 0:
             warnings.warn(
-                "embedding_dimension must be even. embedding_dimension will be rounded down to the nearest even number."
+                f"embedding_dimension: expected even number, found odd number ({embedding_dimension}). It will be rounded down to {embedding_dimension - 1}."
             )
+            embedding_dimension -= 1
+
         self.embedding_dimension = embedding_dimension
         self.attention_regularizer = attention_regularizer
         self.attention_initializer = attention_initializer
@@ -169,9 +195,16 @@ class WatchYourStep:
         )
 
         vectors_left = left_embedding(input_rows)
-        outer_product = Dense(self.n_nodes, name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS")(
-            vectors_left
-        )
+
+        # all right embeddings are used in every batch. to avoid unnecessary lookups the right embeddings are stored
+        # in a dense layer to enable efficient dot product between the left vectors in the current batch and all right
+        # vectors
+        outer_product = Dense(
+            self.n_nodes,
+            use_bias=False,
+            kernel_initializer="uniform",
+            name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
+        )(vectors_left)
 
         sigmoids = tf.keras.activations.sigmoid(outer_product)
         attentive_walk_layer = AttentiveWalk(
