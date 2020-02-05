@@ -433,7 +433,12 @@ class StellarGraph:
         return node in self._nodes
 
     def _transform_edges(
-        self, other_node_id, ilocs, include_edge_weight, filter_edge_types
+        self,
+        other_node_id,
+        ilocs,
+        include_edge_weight,
+        filter_edge_types,
+        return_ndarrays,
     ):
         if include_edge_weight:
             weights = self._edges.weights[ilocs]
@@ -449,7 +454,12 @@ class StellarGraph:
             if weights is not None:
                 weights = weights[correct_type]
 
-        # FIXME(#718): it would be better to return these as ndarrays, instead of (zipped) lists
+        if return_ndarrays:
+            if weights is not None:
+                return other_node_id, weights
+
+            return other_node_id
+
         if weights is not None:
             return [
                 NeighbourWithWeight(node, weight)
@@ -459,7 +469,11 @@ class StellarGraph:
         return list(other_node_id)
 
     def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self,
+        node: Any,
+        include_edge_weight=False,
+        edge_types=None,
+        return_ndarrays=False,
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
@@ -480,11 +494,15 @@ class StellarGraph:
         target = self._edges.targets[ilocs]
         other_node_id = np.where(source == node, target, source)
         return self._transform_edges(
-            other_node_id, ilocs, include_edge_weight, edge_types
+            other_node_id, ilocs, include_edge_weight, edge_types, return_ndarrays
         )
 
     def in_nodes(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self,
+        node: Any,
+        include_edge_weight=False,
+        edge_types=None,
+        return_ndarrays=False,
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
@@ -509,10 +527,16 @@ class StellarGraph:
 
         ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
         source = self._edges.sources[ilocs]
-        return self._transform_edges(source, ilocs, include_edge_weight, edge_types)
+        return self._transform_edges(
+            source, ilocs, include_edge_weight, edge_types, return_ndarrays
+        )
 
     def out_nodes(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self,
+        node: Any,
+        include_edge_weight=False,
+        edge_types=None,
+        return_ndarrays=False,
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
@@ -537,7 +561,9 @@ class StellarGraph:
 
         ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
         target = self._edges.targets[ilocs]
-        return self._transform_edges(target, ilocs, include_edge_weight, edge_types)
+        return self._transform_edges(
+            target, ilocs, include_edge_weight, edge_types, return_ndarrays
+        )
 
     def nodes_of_type(self, node_type=None):
         """
@@ -1006,32 +1032,6 @@ class StellarGraph:
                 v.sort(key=str)
 
         return triples
-
-    def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
-        """
-        Obtains the weights of edges between the given pair of nodes.
-
-        Args:
-            source_node (any): The source node.
-            target_node (any): The target node.
-
-        Returns:
-            list: The edge weights.
-        """
-        # self loops should only be counted once, which means they're effectively always a directed
-        # edge at the storage level, unlikely other edges in an undirected graph. This is
-        # particularly important with the intersection1d call, where the source_ilocs and
-        # target_ilocs will be equal, when source_node == target_node, and thus the intersection
-        # will contain all incident edges.
-        effectively_directed = self.is_directed() or source_node == target_node
-        both_dirs = not effectively_directed
-
-        source_ilocs = self._edges.edge_ilocs(source_node, ins=both_dirs, outs=True)
-        target_ilocs = self._edges.edge_ilocs(target_node, ins=True, outs=both_dirs)
-
-        ilocs = np.intersect1d(source_ilocs, target_ilocs, assume_unique=True)
-
-        return [float(x) for x in self._edges.weights[ilocs]]
 
 
 # A convenience class that merely specifies that edges have direction.
