@@ -306,7 +306,11 @@ class EdgeData(ElementData):
         self._edges_in_dict = _numpyise(in_dict)
         self._edges_out_dict = _numpyise(out_dict)
         self._edges_dict = _numpyise(undirected)
-        self._empty_ids = self.sources[0:0]
+
+        # when there's no neighbors for something, an empty array should be returned; this uses a
+        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
+        # array, the result will still be int32).
+        self._empty_ilocs = np.array([], dtype=np.uint8)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
@@ -371,4 +375,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ids)
+        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)
