@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pandas as pd
 
 from ..globalvar import SOURCE, TARGET, WEIGHT
@@ -122,7 +123,7 @@ def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
     return NodeData(nodes, node_features)
 
 
-DEFAULT_WEIGHT = 1
+DEFAULT_WEIGHT = np.float32(1)
 
 
 def convert_edges(
