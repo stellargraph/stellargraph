@@ -152,6 +152,7 @@ def read_graph(graph_file, dataset_name, directed=False, weighted=False):
     )
     return g
 
+
 @pytest.fixture(scope="module")
 def cora():
     print(os.getcwd())
@@ -170,18 +171,14 @@ def cora():
     return g, es_obj
 
 
-
 class TestEdgeSplitterHomogeneous(object):
-
     def test_split_data_global(self, cora):
         g, es_obj = cora
         p = 0.1
 
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = es_obj.train_test_split(p=p, method="global", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="global", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -201,19 +198,15 @@ class TestEdgeSplitterHomogeneous(object):
                 g_test,
                 edge_data_ids_test,
                 edge_data_labels_test,
-            ) = es_obj.train_test_split(
-                p=0.8, method="global", keep_connected=True
-            )
+            ) = es_obj.train_test_split(p=0.8, method="global", keep_connected=True)
 
     def test_split_data_local(self, cora):
         g, es_obj = cora
         p = 0.1
         # using default sampling probabilities
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = es_obj.train_test_split(p=p, method="local", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="local", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -227,11 +220,7 @@ class TestEdgeSplitterHomogeneous(object):
         assert nx.is_connected(g_test)
 
         sampling_probs = [0.0, 0.0, 0.1, 0.2, 0.5, 0.2]
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="local", probs=sampling_probs, keep_connected=True
         )
 
@@ -258,7 +247,6 @@ class TestEdgeSplitterHomogeneous(object):
 
 
 class TestEdgeSplitterHeterogeneous(object):
-
     def test_split_data_by_edge_type_and_attribute(self, heterogeneous_graph):
         g, es_obj = heterogeneous_graph
         # test global method for negative edge sampling
@@ -430,11 +418,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
     def _test_split_data_by_edge_type(self, g, es_obj, method):
         p = 0.1
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method=method, edge_label="friend", keep_connected=True
         )
 
@@ -468,11 +452,9 @@ class TestEdgeSplitterHeterogeneous(object):
     def test_split_data_global(self, heterogeneous_graph):
         g, es_obj = heterogeneous_graph
         p = 0.1
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = es_obj.train_test_split(p=p, method="global", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="global", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -490,11 +472,9 @@ class TestEdgeSplitterHeterogeneous(object):
         p = 0.1
 
         # using default sampling probabilities
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = es_obj.train_test_split(p=p, method="local", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="local", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -509,7 +489,6 @@ class TestEdgeSplitterHeterogeneous(object):
 
 
 class TestEdgeSplitterCommon(object):
-
     def test_split_data_keep_connected_parameter(self, heterogeneous_graph):
         g, es_obj = heterogeneous_graph
 
