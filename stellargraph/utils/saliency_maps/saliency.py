@@ -224,7 +224,7 @@ class GradientSaliency:
         """
         For nodes, the saliency mask we get gives us the importance of each features. For visualization purpose, we may
         want to see a summary of the importance for the node. The importance of each node can be defined as the sum of
-        all the partial gradients w.r.t its features.
+        all the partial gradients w.r.t its features, normalised by the number of features.
 
         Args:
             X_val, A_val, node_idx, class_of_interest: The values to feed while computing the gradients.
@@ -234,4 +234,4 @@ class GradientSaliency:
         gradients = self.get_node_masks(
             node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
         )
-        return np.sum(gradients, axis=1)
+        return np.sum(gradients, axis=1) / np.sqrt(gradients.shape[1])
