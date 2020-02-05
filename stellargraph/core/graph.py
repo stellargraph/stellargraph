@@ -497,7 +497,7 @@ class StellarGraph:
             return self.nodes()
 
         ilocs = self._nodes.type_range(node_type)
-        return self._nodes.ids.from_iloc(ilocs)
+        return list(self._nodes.ids.from_iloc(ilocs))
 
     def _key_error_for_missing(self, query_ids, node_ilocs):
         valid = self._nodes.ids.is_valid(node_ilocs)
