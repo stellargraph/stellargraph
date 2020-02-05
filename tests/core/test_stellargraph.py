@@ -100,6 +100,11 @@ def example_benchmark_graph_nx(
 
 
 def test_graph_constructor():
+    sg = StellarGraph()
+    assert sg.is_directed() == False
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
+
     sg = StellarGraph(nodes={}, edges={})
     assert sg.is_directed() == False
     assert sg.number_of_nodes() == 0
@@ -107,6 +112,11 @@ def test_graph_constructor():
 
 
 def test_digraph_constructor():
+    sg = StellarDiGraph()
+    assert sg.is_directed() == True
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
+
     sg = StellarDiGraph(nodes={}, edges={})
     assert sg.is_directed() == True
     assert sg.number_of_nodes() == 0
