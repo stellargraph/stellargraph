@@ -31,6 +31,7 @@ from .sampler import (
 from ...core.graph import StellarGraph, GraphSchema
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
+from ...core.experimental import experimental
 
 
 @experimental(reason="the class is not fully tested")
