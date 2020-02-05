@@ -501,8 +501,11 @@ class StellarGraph:
 
     def _key_error_for_missing(self, query_ids, node_ilocs):
         valid = self._nodes.ids.is_valid(node_ilocs)
-        missing_indices = np.where(~valid)
-        missing_values = np.asarray(query_ids)[missing_indices]
+        missing_values = np.asarray(query_ids)[~valid]
+
+        if len(missing_values) == 1:
+            return KeyError(missing_values[0])
+
         return KeyError(missing_values)
 
     def node_type(self, node):
@@ -518,15 +521,15 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.node_type(node)
 
-        if not is_real_iterable(node):
-            node = np.array([node])
-
-        node_ilocs = self._nodes.ids.to_iloc(node)
-
+        nodes = [node]
+        node_ilocs = self._nodes.ids.to_iloc(nodes)
         try:
-            return self._nodes.type_of_iloc(node_ilocs)
+            type_sequence = self._nodes.type_of_iloc(node_ilocs)
         except IndexError:
-            raise self._key_error_for_missing(node, node_ilocs)
+            raise self._key_error_for_missing(nodes, node_ilocs)
+
+        assert len(type_sequence) == 1
+        return type_sequence[0]
 
     @property
     def node_types(self):
