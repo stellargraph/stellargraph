@@ -85,7 +85,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
 
     def run(self, neo4j_graphdb, nodes=None, n=1, n_size=None, seed=None):
         """
-        Performs a sampled breadth-first walk starting from the root nodes.
+        Send queries to Neo4J graph databases and collect sampled breadth-first walks starting from the root nodes.
 
         Args:
             neo4j_graphdb: (py2neo.Graph) the Neo4J Graph Database object
@@ -205,7 +205,7 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         self, neo4j_graphdb, nodes=None, n=1, in_size=None, out_size=None, seed=None
     ):
         """
-        Performs a sampled breadth-first walk starting from the root nodes.
+        Send queries to Neo4J databases and collect sampled breadth-first walks starting from the root nodes.
 
         Args:
             neo4j_graphdb: (py2neo.Graph) the Neo4J Graph Database object
