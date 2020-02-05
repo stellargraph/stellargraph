@@ -149,7 +149,8 @@ class IntegratedGradients(GradientSaliency):
         steps=20,
     ):
         """
-        The importance of the node is defined as the sum of all the feature importance of the node.
+        The importance of the node is defined as the sum of all the feature importance of the node,
+        normalised by the number of features.
 
         Args:
             Refer to the parameters in get_integrated_node_masks.
@@ -172,4 +173,4 @@ class IntegratedGradients(GradientSaliency):
             A_val=A_val,
         )
 
-        return np.sum(gradients, axis=-1)
+        return np.sum(gradients, axis=-1) / np.sqrt(gradients.shape[-1])
