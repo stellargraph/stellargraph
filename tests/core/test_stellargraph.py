@@ -868,3 +868,12 @@ def test_edge_weights_directed():
     assert g._edge_weights(5, 4) == []
     assert g._edge_weights(0, 4) == []
     assert g._edge_weights(4, 0) == [1]
+
+
+def test_node_type():
+    g = example_hin_1()
+    assert g.node_type(0) == "A"
+    assert g.node_type(4) == "B"
+
+    with pytest.raises(KeyError, match="1234"):
+        g.node_type(1234)
