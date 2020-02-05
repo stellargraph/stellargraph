@@ -385,7 +385,7 @@ class StellarGraph:
         return list(other_node_id)
 
     def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
+            self, node: Any, include_edge_weight=False, edge_types=None, ndarray=False
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
@@ -966,35 +966,6 @@ class StellarGraph:
                 v.sort(key=str)
 
         return triples
-
-    def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
-        """
-        Obtains the weights of edges between the given pair of nodes.
-
-        Args:
-            source_node (any): The source node.
-            target_node (any): The target node.
-
-        Returns:
-            list: The edge weights.
-        """
-        if self._graph is not None:
-            return self._graph.edge_weights(source_node, target_node)
-
-        # self loops should only be counted once, which means they're effectively always a directed
-        # edge at the storage level, unlikely other edges in an undirected graph. This is
-        # particularly important with the intersection1d call, where the source_ilocs and
-        # target_ilocs will be equal, when source_node == target_node, and thus the intersection
-        # will contain all incident edges.
-        effectively_directed = self.is_directed() or source_node == target_node
-        both_dirs = not effectively_directed
-
-        source_ilocs = self._edges.edge_ilocs(source_node, ins=both_dirs, outs=True)
-        target_ilocs = self._edges.edge_ilocs(target_node, ins=True, outs=both_dirs)
-
-        ilocs = np.intersect1d(source_ilocs, target_ilocs, assume_unique=True)
-
-        return [float(x) for x in self._edges.weights[ilocs]]
 
 
 # A convenience class that merely specifies that edges have direction.

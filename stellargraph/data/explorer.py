@@ -32,6 +32,7 @@ from collections import defaultdict, deque
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
+from ..core.validation import comma_sep
 
 
 class GraphWalk(object):
@@ -96,10 +97,10 @@ class GraphWalk(object):
         # seed the random number generator
         return random.Random(seed)
 
-    def neighbors(self, node):
+    def neighbors(self, node, include_edge_weight=True):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbors(node)
+        return self.graph.neighbors(node, include_edge_weight=include_edge_weight)
 
     def run(self, *args, **kwargs):
         """
@@ -281,39 +282,17 @@ class BiasedRandomWalk(GraphWalk):
             # Check that all edge weights are greater than or equal to 0.
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
-            for node in self.graph.nodes():
-                # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbors(node):
-
-                    wts = set()
-                    for weight in self.graph._edge_weights(node, neighbor):
-                        if weight is None or np.isnan(weight) or weight == np.inf:
-                            self._raise_error(
-                                "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
-                                    weight, node, neighbor
-                                )
-                            )
-                        if not isinstance(weight, (int, float)):
-                            self._raise_error(
-                                "Edge weight between nodes ({}) and ({}) is not numeric ({}).".format(
-                                    node, neighbor, weight
-                                )
-                            )
-                        if weight < 0:  # check if edge has a negative weight
-                            self._raise_error(
-                                "An edge weight between nodes ({}) and ({}) is negative ({}).".format(
-                                    node, neighbor, weight
-                                )
-                            )
-
-                        wts.add(weight)
-                    if len(wts) > 1:
-                        # multigraph with different weights on edges between same pair of nodes
-                        self._raise_error(
-                            "({}) and ({}) have multiple edges with weights ({}). Ambiguous to choose an edge for the random walk.".format(
-                                node, neighbor, list(wts)
-                            )
-                        )
+            edges, weights = self.graph.edges(include_edge_weight=True)
+            valid = (0 <= weight) & (weight < np.inf)
+            if not valid.all():
+                invalid_ilocs, = (~valid).nonzero()
+                edges = list(edges)
+                invalid_edges = (edges[i] + (weights[i],) for i in invalid_ilocs)
+                formatted = [f"{src!r}--{dst!r} (weight={wgt})" for src, tgt, wgt in invalid_edges]
+                string = comma_sep(formatted, stringify=str)
+                self._raise_error(
+                    f"Expected edge weights to be finite and non-negative, found some invalid: {formatted}"
+                )
 
         ip = 1.0 / p
         iq = 1.0 / q
@@ -324,33 +303,26 @@ class BiasedRandomWalk(GraphWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.neighbors(node)
+                neighbours = self.neighbors(node, include_edge_weight=True)
 
                 previous_node = node
                 previous_node_neighbours = neighbours
 
                 # calculate the appropriate unnormalised transition
                 # probability, given the history of the walk
-                def transition_probability(nn, current_node, weighted):
-
-                    if weighted:
-                        # TODO Encapsulate edge weights
-                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
-                    else:
-                        weight_cn = 1.0
-
+                def transition_probability(nn, current_node, weight):
                     if nn == previous_node:  # d_tx = 0
-                        return ip * weight_cn
+                        return ip * weight
                     elif nn in previous_node_neighbours:  # d_tx = 1
-                        return 1.0 * weight_cn
+                        return 1.0 * weight
                     else:  # d_tx = 2
-                        return iq * weight_cn
+                        return iq * weight
 
                 if neighbours:
-                    current_node = rs.choice(neighbours)
+                    current_node, _weight = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
-                        neighbours = self.neighbors(current_node)
+                        neighbours = self.neighbors(current_node, include_edge_weight=True)
 
                         if not neighbours:
                             break
@@ -361,7 +333,7 @@ class BiasedRandomWalk(GraphWalk):
                             rs,
                             (
                                 transition_probability(nn, current_node, weighted)
-                                for nn in neighbours
+                                for nn, weight in neighbours
                             ),
                         )
 
