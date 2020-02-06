@@ -20,6 +20,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
+
 def is_real_iterable(x):
     """
     Tests if x is an iterable and is not a string.
@@ -219,22 +220,3 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
             )
 
     return features, A
-
-
-def empirical_characteristic_function(samples, ts):
-    # ns samples from probability distribution for each scale with shape (ns, scales)
-    # nt points to sample char func
-
-    # samples (1, ns)
-    samples = K.expand_dims(samples, 0)  # (ns, scales) -> (1, ns, scales)
-    ts = K.expand_dims(K.expand_dims(ts, 1))  # (nt,) -> (nt, 1, 1)
-
-    t_psi = samples * ts  # (1, ns, scales) * (nt, 1, 1) -> (nt, ns, scales) via broadcasting rules
-
-    mean_cos_t_psi = tf.math.reduce_mean(tf.math.cos(t_psi), axis=1)  # (nt, ns) -> (nt,)
-
-    mean_sin_t_psi = tf.math.reduce_mean(tf.math.sin(t_psi), axis=1)  # (nt, ns) -> (nt,)
-
-    embedding = K.flatten(tf.concat([mean_cos_t_psi, mean_sin_t_psi], axis=0))
-
-    return embedding
