@@ -19,7 +19,7 @@ import tensorflow as tf
 from ..core.experimental import experimental
 
 
-@experimental(reason="lack of unit tests")
+@experimental(reason="lack of unit tests", issues=[804])
 def graph_log_likelihood(y_true, y_pred):
     """
     """

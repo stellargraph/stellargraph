@@ -22,15 +22,11 @@ from ..core.utils import normalize_adj
 from ..core.experimental import experimental
 
 
-@experimental(reason="lack of unit tests")
+@experimental(reason="lack of unit tests", issues=[804])
 class AdjacencyPowerGenerator:
     """
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first `num_powers`
     of the adjacency matrix row by row.
-
-    .. warning::
-
-        This class is experimental: it is insufficiently tested.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph

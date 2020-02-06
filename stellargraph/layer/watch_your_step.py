@@ -94,7 +94,7 @@ class AttentiveWalk(Layer):
         return expected_walk
 
 
-@experimental(reason="lack of unit tests")
+@experimental(reason="lack of unit tests", issues=[804])
 def get_embeddings(model):
     """
     This function returns the embeddings from a model with Watch Your Step embeddings.
@@ -117,7 +117,7 @@ def get_embeddings(model):
     return embeddings
 
 
-@experimental(reason="lack of unit tests")
+@experimental(reason="lack of unit tests", issues=[804])
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -126,15 +126,11 @@ class WatchYourStep:
     This model requires specification of the number of random walks starting from each node, and the embedding dimension
     to use for the node embeddings.
 
-    Note:
-        - the embedding dimension should be an even number or else will be rounded down to nearest even number.
-
     Args:
         generator (AdjacencyPowerGenerator): the generator
         num_walks (int): the number of random walks starting at each node to use when calculating the expected random
             walks. Defaults to `80` as this value was found to perform well by the authors of the paper.
-        embedding dimension (int): the dimension to use for the node embeddings. Defaults to `64`
-            as this value was found to perform well by the authors of the paper.
+        embedding dimension (int): the dimension to use for the node embeddings (must be an even number).
         attention_initializer (str or func, optional): The initialiser to use for the attention weights.
         attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
         attention_constraint (str or func, optional): The constraint to use for the attention weights.
