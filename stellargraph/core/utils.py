@@ -17,7 +17,8 @@ import collections
 import scipy.sparse as sp
 from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 import numpy as np
-
+import tensorflow as tf
+from tensorflow.keras import backend as K
 
 def is_real_iterable(x):
     """
@@ -218,3 +219,21 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
             )
 
     return features, A
+
+
+def empirical_characteristic_function(samples, ts):
+    # ns samples from probability distibution
+    # nt points to sample char func
+
+    # samples (1, ns)
+    ts = K.expand_dims(ts, 1) # (nt,) -> (nt, 1)
+
+    t_psi = samples * ts # (nt, ns)
+
+    mean_cos_t_psi = tf.math.reduce_mean(tf.math.cos(t_psi), axis=1)  # (nt, ns) -> (nt,)
+
+    mean_sin_t_psi = tf.math.reduce_mean(tf.math.sin(t_psi), axis=1)  # (nt, ns) -> (nt,)
+
+    embedding = K.flatten(tf.concat([mean_cos_t_psi, mean_sin_t_psi], axis=0))
+
+    return embedding
