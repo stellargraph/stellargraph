@@ -88,7 +88,7 @@ Watch Your Step model
 -------------------------
 
 .. automodule:: stellargraph.layer.watch_your_step
-  :members: WatchYourStep, AttentiveWalk
+  :members: WatchYourStep
 
 
 Link prediction layers
