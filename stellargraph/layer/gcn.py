@@ -57,46 +57,45 @@ class GraphConvolution(Layer):
         use_bias (bool): toggles an optional bias
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
-        kernel_initializer (str or func): The initialiser to use for the weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the bias;
-            defaults to None.
+        kernel_initializer (str or func): The initialiser to use for the weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights.
+        kernel_constraint (str or func, optional): The constraint to use for the weights.
+        bias_initializer (str or func): The initialiser to use for the bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias.
+        bias_constraint (str or func, optional): The constraint to use for the bias.
     """
 
     def __init__(
-        self, units, activation=None, use_bias=True, final_layer=False, **kwargs
+        self,
+        units,
+        activation=None,
+        use_bias=True,
+        final_layer=False,
+        input_dim=None,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        **kwargs
     ):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         self.units = units
         self.activation = activations.get(activation)
         self.use_bias = use_bias
         self.final_layer = final_layer
-        self._get_regularisers_from_keywords(kwargs)
-        super().__init__(**kwargs)
 
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+
+        super().__init__(**kwargs)
 
     def get_config(self):
         """
