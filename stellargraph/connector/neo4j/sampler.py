@@ -140,19 +140,20 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
                 # find the head_nodes
                 "OPTIONAL MATCH (head_node) WHERE ID(head_node) in {head_nodes}",
                 # put the current level of nodes into a list of list
-                "WITH [apoc.coll.flatten(collect(head_node))] AS current_depth_list,",
+                "WITH [apoc.coll.flatten(collect(head_node))] AS cur_depth_list,",
                 # add the list of node ids into subgraph
                 "[apoc.coll.flatten(collect(id(head_node)))] AS subgraph",
             )
         )
 
-        for in_node, out_node in zip(in_samples, out_samples):
+        for in_num, out_num in zip(in_samples, out_samples):
             next_hop_query = "\n".join(
                 (
-                    "UNWIND current_depth_list AS cur_node_list",
+                    # unpack cur_depth_list which is a list of list of nodes, into single list of nodes
+                    "UNWIND cur_depth_list AS cur_node_list",
                     'CALL apoc.cypher.run("',
                     "WITH {cur_node_list} AS cur_node_list",
-                    "UNWIND cur_node_list AS current_depth_child",
+                    "UNWIND cur_node_list AS cur_node",
                     # call the subprocedure to collect random in-nodes.
                     "CALL apoc.cypher.run(",
                     "    'WITH {current_node} AS current_node",
@@ -161,19 +162,19 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
                     # turn the rows into a list
                     "     WITH CASE collect(in_neighbors) WHEN [] THEN [null] ELSE collect(in_neighbors) END AS in_neighbors_list",
                     # choose random nodes from the list with replacement
-                    "     WITH apoc.coll.randomItems(in_neighbors_list, {in_nodes}, True) AS in_samples_list",
+                    "     WITH apoc.coll.randomItems(in_neighbors_list, {num_in_nodes}, True) AS in_samples_list",
                     # turn the list into rows for collecting ids
                     "     UNWIND in_samples_list AS in_samples",
                     "     RETURN in_samples_list,",
-                    "     (CASE collect(id(in_samples)) WHEN [] THEN [ _ in range(0, {in_nodes} - 1) | null]",
+                    "     (CASE collect(id(in_samples)) WHEN [] THEN [ _ in range(0, {num_in_nodes} - 1) | null]",
                     "     ELSE collect(id(in_samples)) END) AS in_samples_id_list',",
-                    "    { current_node: current_depth_child, in_nodes: {in_nodes} }",
+                    "    { current_node: cur_node, num_in_nodes: {in_nodes} }",
                     "    ) YIELD value",
                     "RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS samples_list,",
                     "    apoc.coll.flatten(collect(value.in_samples_id_list)) AS samples_id_list",
                     "UNION ALL",
                     "WITH {cur_node_list} AS cur_node_list",
-                    "UNWIND cur_node_list AS current_depth_child",
+                    "UNWIND cur_node_list AS cur_node",
                     # call the subprocedure to collect random out-nodes.
                     "CALL apoc.cypher.run(",
                     "    'WITH {current_node} AS current_node",
@@ -182,18 +183,18 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
                     # turn the rows into a list
                     "     WITH CASE collect(out_neighbors) WHEN [] THEN [null] ELSE collect(out_neighbors) END AS out_neighbors_list",
                     # choose random nodes from the list with replacement
-                    "     WITH apoc.coll.randomItems((CASE out_neighbors_list WHEN [] THEN [null] ELSE out_neighbors_list END), {out_nodes}, True) AS out_samples_list",
+                    "     WITH apoc.coll.randomItems((CASE out_neighbors_list WHEN [] THEN [null] ELSE out_neighbors_list END), {num_out_nodes}, True) AS out_samples_list",
                     # turn the list into rows for collecting ids
                     "     UNWIND out_samples_list AS out_samples",
                     "     RETURN out_samples_list,",
-                    "     (CASE collect(id(out_samples)) WHEN [] THEN [ _ in range(0, {out_nodes} - 1) | null]",
+                    "     (CASE collect(id(out_samples)) WHEN [] THEN [ _ in range(0, {num_out_nodes} - 1) | null]",
                     "     ELSE collect(id(out_samples)) END) AS out_samples_id_list',",
-                    "    {current_node: current_depth_child, out_nodes: {out_nodes} }",
+                    "    {current_node: cur_node, num_out_nodes: {out_nodes} }",
                     "    ) YIELD value",
                     "RETURN apoc.coll.flatten(collect(value.out_samples_list)) AS samples_list,",
                     '       apoc.coll.flatten(collect(value.out_samples_id_list)) AS samples_id_list",',
-                    f" {{cur_node_list: cur_node_list, in_nodes: {in_node}, out_nodes: {out_node} }}) YIELD value",
-                    "WITH apoc.coll.flatten(collect([value.samples_list])) AS current_depth_list, subgraph + apoc.coll.flatten(collect([value.samples_id_list])) AS subgraph",
+                    f" {{cur_node_list: cur_node_list, in_nodes: {in_num}, out_nodes: {out_num} }}) YIELD value",
+                    "WITH apoc.coll.flatten(collect([value.samples_list])) AS cur_depth_list, subgraph + apoc.coll.flatten(collect([value.samples_id_list])) AS subgraph",
                 )
             )
 
