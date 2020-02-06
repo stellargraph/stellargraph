@@ -30,7 +30,7 @@ def _seeded_state(s):
     return RandomState(rn.Random(s), np_rn.RandomState(s))
 
 
-_rs = RandomState
+_rs = _global_state()
 
 
 def random_state(seed):
