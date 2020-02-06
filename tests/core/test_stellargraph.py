@@ -888,3 +888,67 @@ def test_node_type():
 
     with pytest.raises(KeyError, match="1234"):
         g.node_type(1234)
+
+
+def test_from_networkx_empty():
+    empty = StellarGraph.from_networkx(nx.Graph())
+    assert not empty.is_directed()
+    assert isinstance(empty, StellarGraph)
+
+    empty = StellarGraph.from_networkx(nx.DiGraph())
+    assert empty.is_directed()
+    assert isinstance(empty, StellarDiGraph)
+
+
+def test_from_networkx_smoke():
+    g = nx.MultiGraph()
+    g.add_node(1, node_label="a", features=[1])
+    g.add_node(2)
+    g.add_node(3, features=[2, 3, 4, 5])
+    g.add_edge(1, 2, weight_attr=123)
+    g.add_edge(2, 2, edge_label="X", weight_attr=456)
+    g.add_edge(1, 2, edge_label="Y")
+    g.add_edge(1, 1)
+
+    from_nx = StellarGraph.from_networkx(
+        g,
+        edge_weight_label="weight_attr",
+        node_type_name="node_label",
+        edge_type_name="edge_label",
+        node_type_default="b",
+        edge_type_default="X",
+        node_features="features",
+    )
+
+    raw = StellarGraph(
+        nodes={
+            "a": pd.DataFrame([1], index=[1]),
+            "b": pd.DataFrame([(0, 0, 0, 0), (2, 3, 4, 5)], index=[2, 3]),
+        },
+        edges={
+            "X": pd.DataFrame(
+                [(1, 2, 123.0), (2, 2, 456.0), (1, 1, 1.0)],
+                columns=["source", "target", "weight"],
+            ),
+            "Y": pd.DataFrame(
+                [(1, 2, 1.0)], columns=["source", "target", "weight"], index=[3]
+            ),
+        },
+    )
+
+    def both(f, numpy=False):
+        if numpy:
+            assert np.array_equal(f(from_nx), f(raw))
+        else:
+            assert f(from_nx) == f(raw)
+
+    both(lambda g: sorted(g.nodes()))
+    nodes = raw.nodes()
+
+    for n in nodes:
+        both(lambda g: g.node_type(n))
+        both(lambda g: g.node_features([n]), numpy=True)
+
+    both(
+        lambda g: dict(zip(*g.edges(include_edge_type=True, include_edge_weight=True)))
+    )
