@@ -291,7 +291,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self._sampler(batch_num).run(
-                nodes=hns, n=1, n_size=self.num_samples,
+                nodes=hns, n=1, n_size=self.num_samples
             )
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
