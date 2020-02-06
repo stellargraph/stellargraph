@@ -36,7 +36,7 @@ import random
 from stellargraph.mapper import *
 from stellargraph.core.graph import *
 from stellargraph.data.unsupervised_sampler import *
-from ..test_utils.graphs import example_graph_1, example_graph_2, example_graph_random
+from ..test_utils.graphs import example_graph, example_graph_random
 from .. import test_utils
 
 
@@ -150,7 +150,7 @@ class Test_GraphSAGELinkGenerator:
 
     def test_LinkMapper_constructor(self):
 
-        G = example_graph_1(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         edge_labels = [0] * G.number_of_edges()
 
         generator = GraphSAGELinkGenerator(
@@ -161,7 +161,7 @@ class Test_GraphSAGELinkGenerator:
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
 
-        G = example_graph_1(feature_size=self.n_feat, is_directed=True)
+        G = example_graph(feature_size=self.n_feat, is_directed=True)
         edge_labels = [0] * G.number_of_edges()
         generator = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
@@ -173,7 +173,7 @@ class Test_GraphSAGELinkGenerator:
 
     def test_GraphSAGELinkGenerator_1(self):
 
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         data_size = G.number_of_edges()
         edge_labels = [0] * data_size
 
@@ -206,7 +206,7 @@ class Test_GraphSAGELinkGenerator:
 
     def test_GraphSAGELinkGenerator_shuffle(self):
         def test_edge_consistency(shuffle):
-            G = example_graph_2(feature_size=1)
+            G = example_graph(feature_size=1)
             edges = list(G.edges())
             edge_labels = list(range(len(edges)))
 
@@ -230,7 +230,7 @@ class Test_GraphSAGELinkGenerator:
 
     # def test_GraphSAGELinkGenerator_2(self):
     #
-    #     G = example_graph_1(feature_size=self.n_feat)
+    #     G = example_graph(feature_size=self.n_feat)
     #     data_size = G.number_of_edges()
     #     edge_labels = [0] * data_size
     #
@@ -260,7 +260,7 @@ class Test_GraphSAGELinkGenerator:
 
     def test_GraphSAGELinkGenerator_zero_samples(self):
 
-        G = example_graph_1(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         data_size = G.number_of_edges()
         edge_labels = [0] * data_size
 
@@ -295,7 +295,7 @@ class Test_GraphSAGELinkGenerator:
         This might change in the future, so this test might have to be re-written.
 
         """
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         data_size = G.number_of_edges()
         edge_labels = [0] * data_size
 
@@ -311,7 +311,7 @@ class Test_GraphSAGELinkGenerator:
         """
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         gen = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
         ).flow(G.edges())
@@ -382,7 +382,7 @@ class Test_GraphSAGELinkGenerator:
 
     def test_GraphSAGELinkGenerator_unsupervisedSampler_sample_generation(self):
 
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
 
         unsupervisedSamples = UnsupervisedSampler(G)
 
@@ -652,7 +652,7 @@ class Test_Attri2VecLinkGenerator:
 
     def test_LinkMapper_constructor(self):
 
-        G = example_graph_1(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         edge_labels = [0] * G.number_of_edges()
 
         generator = Attri2VecLinkGenerator(G, batch_size=self.batch_size)
@@ -661,7 +661,7 @@ class Test_Attri2VecLinkGenerator:
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
 
-        G = example_graph_1(feature_size=self.n_feat, is_directed=True)
+        G = example_graph(feature_size=self.n_feat, is_directed=True)
         edge_labels = [0] * G.number_of_edges()
         generator = Attri2VecLinkGenerator(G, batch_size=self.batch_size)
         mapper = generator.flow(G.edges(), edge_labels)
@@ -671,7 +671,7 @@ class Test_Attri2VecLinkGenerator:
 
     def test_Attri2VecLinkGenerator_1(self):
 
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         data_size = G.number_of_edges()
         edge_labels = [0] * data_size
 
@@ -693,7 +693,7 @@ class Test_Attri2VecLinkGenerator:
             nf, nl = mapper[2]
 
     def test_edge_consistency(self):
-        G = example_graph_2(feature_size=1)
+        G = example_graph(feature_size=1)
         edges = list(G.edges())
         nodes = list(G.nodes())
         edge_labels = list(range(len(edges)))
@@ -727,7 +727,7 @@ class Test_Attri2VecLinkGenerator:
         """
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
         gen = Attri2VecLinkGenerator(G, batch_size=self.batch_size).flow(G.edges())
         for i in range(len(gen)):
             assert gen[i][1] is None
@@ -760,7 +760,7 @@ class Test_Attri2VecLinkGenerator:
 
     def test_Attri2VecLinkGenerator_unsupervisedSampler_sample_generation(self):
 
-        G = example_graph_2(feature_size=self.n_feat)
+        G = example_graph(feature_size=self.n_feat)
 
         unsupervisedSamples = UnsupervisedSampler(G)
 

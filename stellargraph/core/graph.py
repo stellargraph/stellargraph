@@ -303,32 +303,44 @@ class StellarGraph:
 
         return self._nodes.ids.pandas_index
 
-    def edges(self, include_edge_type=False) -> Iterable[Any]:
+    def edges(
+        self, include_edge_type=False, include_edge_weight=False
+    ) -> Iterable[Any]:
         """
         Obtains the collection of edges in the graph.
 
         Args:
-            include_edge_type (bool): A flag that indicates whether to return edge triples
+            include_edge_type (bool): A flag that indicates whether to return edge types
             of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
+            include_edge_weight (bool): A flag that indicates whether to return edge weights.
+            Weights are returned in a separate list.
 
         Returns:
-            The graph edges.
+            The graph edges. If edge weights are included then a tuple of (edges, weights)
         """
         if self._graph is not None:
-            return self._graph.edges(include_edge_type)
+            return self._graph.edges(
+                include_edge_weight=include_edge_weight,
+                include_edge_type=include_edge_type,
+            )
 
         # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
         # (the same applies to all other instances of zip in this file)
         if include_edge_type:
-            return list(
+            edges = list(
                 zip(
                     self._edges.sources,
                     self._edges.targets,
                     self._edges.type_of_iloc(slice(None)),
                 )
             )
+        else:
+            edges = list(zip(self._edges.sources, self._edges.targets))
 
-        return list(zip(self._edges.sources, self._edges.targets))
+        if include_edge_weight:
+            return edges, self._edges.weights
+
+        return edges
 
     def has_node(self, node: Any) -> bool:
         """
@@ -425,6 +437,12 @@ class StellarGraph:
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
+        if not self.is_directed():
+            # all edges are both incoming and outgoing for undirected graphs
+            return self.neighbors(
+                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+            )
+
         ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
         source = self._edges.sources[ilocs]
         return self._transform_edges(source, ilocs, include_edge_weight, edge_types)
@@ -452,6 +470,12 @@ class StellarGraph:
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
+        if not self.is_directed():
+            # all edges are both incoming and outgoing for undirected graphs
+            return self.neighbors(
+                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+            )
+
         ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
         target = self._edges.targets[ilocs]
         return self._transform_edges(target, ilocs, include_edge_weight, edge_types)
@@ -473,12 +497,15 @@ class StellarGraph:
             return self.nodes()
 
         ilocs = self._nodes.type_range(node_type)
-        return self._nodes.ids.from_iloc(ilocs)
+        return list(self._nodes.ids.from_iloc(ilocs))
 
     def _key_error_for_missing(self, query_ids, node_ilocs):
         valid = self._nodes.ids.is_valid(node_ilocs)
-        missing_indices = np.where(~valid)
-        missing_values = np.asarray(query_ids)[missing_indices]
+        missing_values = np.asarray(query_ids)[~valid]
+
+        if len(missing_values) == 1:
+            return KeyError(missing_values[0])
+
         return KeyError(missing_values)
 
     def node_type(self, node):
@@ -494,15 +521,15 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.node_type(node)
 
-        if not is_real_iterable(node):
-            node = np.array([node])
-
-        node_ilocs = self._nodes.ids.to_iloc(node)
-
+        nodes = [node]
+        node_ilocs = self._nodes.ids.to_iloc(nodes)
         try:
-            return self._nodes.type_of_iloc(node_ilocs)
+            type_sequence = self._nodes.type_of_iloc(node_ilocs)
         except IndexError:
-            raise self._key_error_for_missing(node, node_ilocs)
+            raise self._key_error_for_missing(nodes, node_ilocs)
+
+        assert len(type_sequence) == 1
+        return type_sequence[0]
 
     @property
     def node_types(self):
@@ -645,6 +672,22 @@ class StellarGraph:
             self._nodes.types.from_iloc(tgt_ilocs),
         )
 
+    def _unique_type_triples(self, *, return_counts, selector=slice(None)):
+        all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
+        ret = np.unique(
+            all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
+        )
+        edge_ilocs = ret[1]
+        # we've now got the indices for an edge with each triple, along with the counts of them, so
+        # we can query to get the actual edge types (this is, at the time of writing, easier than
+        # getting the actual type for each type iloc in the triples)
+        unique_ets = self._edge_type_triples(edge_ilocs)
+
+        if return_counts:
+            return zip(*unique_ets, ret[2])
+
+        return zip(*unique_ets)
+
     def info(self, show_attributes=True, sample=None):
         """
         Return an information string summarizing information on the current graph.
@@ -689,16 +732,10 @@ class StellarGraph:
         lines.append("")
         lines.append(" Edge types:")
 
-        all_type_ilocs = self._edge_type_iloc_triples(stacked=True)
-        _, edge_ilocs, counts = np.unique(
-            all_type_ilocs, axis=0, return_index=True, return_counts=True
-        )
-        # we've now got the indices for an edge with each triple, along with the counts of them, so
-        # we can query to get the actual edge types (this is, at the time of writing, easier than
-        # getting the actual type for each type iloc in the triples)
-        unique_ets = self._edge_type_triples(edge_ilocs)
-
-        for src_ty, rel_ty, tgt_ty, count in zip(*unique_ets, counts):
+        # FIXME: it would be better for the schema to just include the counts directly
+        for src_ty, rel_ty, tgt_ty, count in self._unique_type_triples(
+            return_counts=True
+        ):
             et = EdgeType(src_ty, rel_ty, tgt_ty)
             lines.append(f"    {str_edge_type(et)}: [{count}]")
 
@@ -741,8 +778,9 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        source_types, rel_types, target_types = self._edge_type_triples(selector)
-        for n1, rel, n2 in zip(source_types, rel_types, target_types):
+        for n1, rel, n2 in self._unique_type_triples(
+            selector=selector, return_counts=False
+        ):
             edge_type_tri = EdgeType(n1, rel, n2)
             edge_types.add(edge_type_tri)
             graph_schema[n1].add(edge_type_tri)
@@ -812,7 +850,7 @@ class StellarGraph:
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
-        if not self.is_directed:
+        if not self.is_directed():
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
             backward = sps.csr_matrix((weights, (tgt_idx, src_idx)), shape=(n, n))
@@ -946,10 +984,20 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.edge_weights(source_node, target_node)
 
-        all_ilocs = self._edges.edge_ilocs(source_node, ins=False, outs=True)
-        targets = self._edges.targets[all_ilocs]
-        filtered_ilocs = all_ilocs[targets[all_ilocs] == target_node]
-        return weight[filtered_ilocs]
+        # self loops should only be counted once, which means they're effectively always a directed
+        # edge at the storage level, unlikely other edges in an undirected graph. This is
+        # particularly important with the intersection1d call, where the source_ilocs and
+        # target_ilocs will be equal, when source_node == target_node, and thus the intersection
+        # will contain all incident edges.
+        effectively_directed = self.is_directed() or source_node == target_node
+        both_dirs = not effectively_directed
+
+        source_ilocs = self._edges.edge_ilocs(source_node, ins=both_dirs, outs=True)
+        target_ilocs = self._edges.edge_ilocs(target_node, ins=True, outs=both_dirs)
+
+        ilocs = np.intersect1d(source_ilocs, target_ilocs, assume_unique=True)
+
+        return [float(x) for x in self._edges.weights[ilocs]]
 
 
 # A convenience class that merely specifies that edges have direction.
