@@ -222,13 +222,14 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
 
 
 def empirical_characteristic_function(samples, ts):
-    # ns samples from probability distibution
+    # ns samples from probability distribution for each scale with shape (ns, scales)
     # nt points to sample char func
 
     # samples (1, ns)
-    ts = K.expand_dims(ts, 1) # (nt,) -> (nt, 1)
+    samples = K.expand_dims(samples, 0)  # (ns, scales) -> (1, ns, scales)
+    ts = K.expand_dims(K.expand_dims(ts, 1))  # (nt,) -> (nt, 1, 1)
 
-    t_psi = samples * ts # (nt, ns)
+    t_psi = samples * ts  # (1, ns, scales) * (nt, 1, 1) -> (nt, ns, scales) via broadcasting rules
 
     mean_cos_t_psi = tf.math.reduce_mean(tf.math.cos(t_psi), axis=1)  # (nt, ns) -> (nt,)
 

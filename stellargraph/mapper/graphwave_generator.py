@@ -9,7 +9,7 @@ class GraphWaveGenerator:
     '''
     '''
 
-    def __init__(self, G, filter_func=np.exp, num_eigenvecs=-1):
+    def __init__(self, G, scales=[1.0,], num_eigenvecs=-1):
         '''
         '''
 
@@ -27,14 +27,16 @@ class GraphWaveGenerator:
         self.eigen_vals = np.real(self.eigen_vals).astype(np.float32)
         self.eigen_vecs = np.real(self.eigen_vecs).astype(np.float32)
 
-        self.eU = np.diag(filter_func(self.eigen_vals)).dot(self.eigen_vecs.transpose())
-        self.eU = tf.convert_to_tensor(self.eU)
+        self.eUs = [np.diag(np.exp(s * self.eigen_vals)).dot(self.eigen_vecs.transpose()) for s in scales]
+        self.eUs = tf.convert_to_tensor(np.dstack(self.eUs))
+
 
     def flow(self, batch_size, targets=None, embed_dim=64, repeat=True):
-        ts = tf.linspace(-10.0, 10.0, (embed_dim // 2))
 
-        dataset = tf.data.Dataset.from_tensor_slices(self.eigen_vecs).batch(1).map(
-            lambda x: tf.linalg.matmul(x, self.eU)
+        ts = tf.linspace(0.0, 10.0, (embed_dim // 2))
+
+        dataset = tf.data.Dataset.from_tensor_slices(self.eigen_vecs).map(
+            lambda x: tf.einsum('ijk,i->jk', self.eUs, x)
         ).map(
             lambda x: empirical_characteristic_function(x, ts)
         )
