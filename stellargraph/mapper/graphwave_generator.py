@@ -16,6 +16,25 @@ class GraphWaveGenerator:
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
+        node_types = list(G.node_types)
+        if len(node_types) > 1:
+            raise TypeError(
+                "{}: node generator requires graph with single node type; "
+                "a graph with multiple node types is passed. Stopping.".format(
+                    type(self).__name__
+                )
+            )
+
+        # Create sparse adjacency matrix:
+        # Use the node orderings the same as in the graph features
+        self.node_list = G.nodes_of_type(node_types[0])
+        self.Aadj = G.to_adjacency_matrix(self.node_list)
+
+        # Function to map node IDs to indices for quicker node index lookups
+        # TODO: Move this to the graph class
+        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
+        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
+
         Aadj = G.to_adjacency_matrix().tocoo()
         _, Aadj = GCN_Aadj_feats_op(None, Aadj)
 
@@ -27,15 +46,16 @@ class GraphWaveGenerator:
         self.eigen_vals = np.real(self.eigen_vals).astype(np.float32)
         self.eigen_vecs = np.real(self.eigen_vecs).astype(np.float32)
 
+        # TODO: add in option to automatically determine scales
+
         self.eUs = [np.diag(np.exp(s * self.eigen_vals)).dot(self.eigen_vecs.transpose()) for s in scales]
         self.eUs = tf.convert_to_tensor(np.dstack(self.eUs))
 
+    def flow(self, node_ids, sample_points, batch_size, targets=None, repeat=True):
 
-    def flow(self, batch_size, targets=None, embed_dim=64, repeat=True):
+        ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
-        ts = tf.linspace(0.0, 10.0, (embed_dim // 2))
-
-        dataset = tf.data.Dataset.from_tensor_slices(self.eigen_vecs).map(
+        dataset = tf.data.Dataset.from_tensor_slices(self.eigen_vecs[self._node_lookup(node_ids)]).map(
             lambda x: tf.einsum('ijk,i->jk', self.eUs, x)
         ).map(
             lambda x: empirical_characteristic_function(x, ts)
