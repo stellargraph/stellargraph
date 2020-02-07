@@ -26,7 +26,7 @@ fi
 
 
 echo "--- installing dependencies"
-pip install -q --no-cache-dir '.[demos,igraph]'
+pip install -q --no-cache-dir '.[demos]'
 
 echo "--- listing dependency versions"
 pip freeze
@@ -36,7 +36,7 @@ f=${NOTEBOOKS[$INDEX]}
 
 echo "+++ :python: running $f"
 case $(basename "$f") in
-  'Scenario2 (1.b) Distributed - Twitter.ipynb')
+  'attacks_clustering_analysis.ipynb'|'ensemble-node-classification-example.ipynb'|'hateful-twitters-interpretability.ipynb'|'stellargraph-attri2vec-DBLP.ipynb')
     # FIXME: these notebooks do not yet work on CI (#2261)
     ;;
   *) # fine, run this one
