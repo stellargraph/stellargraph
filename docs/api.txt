@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator
 
 
 GraphSAGE model
@@ -82,6 +82,13 @@ GAT model
 
 .. automodule:: stellargraph.layer.graph_attention
   :members: GAT, GraphAttention, GraphAttentionSparse
+
+
+Watch Your Step model
+-------------------------
+
+.. automodule:: stellargraph.layer.watch_your_step
+  :members: WatchYourStep
 
 
 Link prediction layers
