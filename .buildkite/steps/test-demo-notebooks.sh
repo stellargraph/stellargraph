@@ -2,7 +2,6 @@
 
 set -xeo pipefail
 
-home_dir=/home/hadoop
 stellargraph_dir="$PWD"
 
 SPLIT="${BUILDKITE_PARALLEL_JOB_COUNT:-1}"

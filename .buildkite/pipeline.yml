@@ -33,8 +33,8 @@ steps:
     agents:
       queue: "t2medium"
 
-  - label: ":python::book: test Python notebooks %n"
-    key: "test-python-notebooks"
+  - label: ":python::book: test notebooks %n"
+    key: "test-notebooks"
     parallelism: 11
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
