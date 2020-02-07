@@ -43,7 +43,7 @@ steps:
         <<: *compose-config
         run: runner-3.6
     agents:
-      queue: "t2medium"
+      queue: "t2large"
 
   - label: ":python-black: format"
     plugins:

@@ -41,6 +41,6 @@ case $(basename "$f") in
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
-    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=1200 "$f"
+    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=1800 "$f"
     ;;
 esac
