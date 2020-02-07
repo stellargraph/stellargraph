@@ -46,6 +46,8 @@ from ..data import (
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
 from . import NodeSequence
+from .util import SeededSamplers
+from ..random import random_state
 
 
 class BatchedNodeGenerator(abc.ABC):
@@ -95,7 +97,7 @@ class BatchedNodeGenerator(abc.ABC):
     def sample_features(self, head_nodes):
         pass
 
-    def flow(self, node_ids, targets=None, shuffle=False):
+    def flow(self, node_ids, targets=None, shuffle=False, seed=None):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -144,7 +146,12 @@ class BatchedNodeGenerator(abc.ABC):
                 )
 
         return NodeSequence(
-            self.sample_features, self.batch_size, node_ids, targets, shuffle=shuffle
+            self.sample_features,
+            self.batch_size,
+            node_ids,
+            targets,
+            shuffle=shuffle,
+            seed=seed,
         )
 
     def flow_from_dataframe(self, node_targets, shuffle=False):
@@ -209,9 +216,13 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             )
 
         # Create sampler for GraphSAGE
-        self.sampler = SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=seed)
+        self._rs, _ = random_state(seed)
+        self._samplers = SeededSamplers(
+            lambda s: SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=s),
+            rs=self._rs,
+        )
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
         sampled nodes, and return these as a list of feature arrays for the GraphSAGE
@@ -227,7 +238,9 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
-        node_samples = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
+        node_samples = self._samplers[batch_num].run(
+            nodes=head_nodes, n=1, n_size=self.num_samples
+        )
 
         # The number of samples for each head node (not including itself)
         num_full_samples = np.sum(np.cumprod(self.num_samples))

@@ -42,6 +42,7 @@ from ..data import (
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
 from ..random import random_state
+from .util import SeededSamplers
 
 
 class BatchedLinkGenerator(abc.ABC):
@@ -218,40 +219,12 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         self._graph = G
         self._batch_sampler_rs, _ = random_state(seed)
-        self._samplers = list()
-        self._lock = threading.Lock()
-
-    def _sampler(self, batch_num):
-        """
-        Get the sampler for a particular batch number. Each batch number has an associated sampler
-        with its own random state, so that batches being fetched in parallel do not interfere with
-        each other's random states. The seed for each sampler is a combination of the Sequence
-        object's seed and the batch number. For its intended use in a Keras/TF workflow, if there
-        are N batches in an epoch, there will be N samplers created, each corresponding to a
-        particular ``batch_num``.
-
-        Args:
-            batch_num (int): Batch number
-
-        Returns:
-            SampledBreadthFirstWalk object
-        """
-        self._lock.acquire()
-        try:
-            return self._samplers[batch_num]
-        except IndexError:
-            # always create a new seeded sampler in ascending order of batch number
-            # this ensures seeds are deterministic even when batches are run in parallel
-            for n in range(len(self._samplers), batch_num + 1):
-                seed = self._batch_sampler_rs.randint(0, 2 ** 32 - 1)
-                self._samplers.append(
-                    SampledBreadthFirstWalk(
-                        self._graph, graph_schema=self.schema, seed=seed,
-                    )
-                )
-            return self._samplers[batch_num]
-        finally:
-            self._lock.release()
+        self._samplers = SeededSamplers(
+            lambda s: SampledBreadthFirstWalk(
+                self._graph, graph_schema=self.schema, seed=s
+            ),
+            rs=self._batch_sampler_rs,
+        )
 
     def sample_features(self, head_links, batch_num):
         """
@@ -290,7 +263,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         # of 2 nodes, so we are extracting 2 head nodes per edge
         batch_feats = []
         for hns in zip(*head_links):
-            node_samples = self._sampler(batch_num).run(
+            node_samples = self._samplers[batch_num].run(
                 nodes=hns, n=1, n_size=self.num_samples
             )
 
