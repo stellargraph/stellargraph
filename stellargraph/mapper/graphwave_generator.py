@@ -2,8 +2,8 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 import numpy as np
 from ..core import StellarGraph
-from ..core.utils import GCN_Aadj_feats_op
 from scipy.sparse.linalg import eigs
+from scipy.sparse import diags
 
 
 class GraphWaveGenerator:
@@ -15,11 +15,13 @@ class GraphWaveGenerator:
     DataSet that contains the GraphWave embeddings.
     """
 
-    def __init__(self, G, scales=[1.0,], num_eigenvecs=-1):
+    def __init__(self, G, scales="auto", num_scales=3, num_eigenvecs=-1):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
-            scales (list of floats): the wavelet scales to use.
+            scales (str or list of floats): the wavelet scales to use. "auto" will cause the scale values to be
+                automatically calculated.
+            num_scales (int): the number of scales when scales = "auto".
             num_eigenvecs (int): the number of eigenvectors to use. When set to `-1` the maximum number of eigenvectors
                 is calculated.
         """
@@ -46,26 +48,42 @@ class GraphWaveGenerator:
         node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
         self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
 
-        Aadj = G.to_adjacency_matrix().tocoo()
-        _, Aadj = GCN_Aadj_feats_op(None, Aadj)
+        adj = G.to_adjacency_matrix().tocoo()
+        degree_mat = diags(np.array(adj.sum(1)).flatten())
+        laplacian = degree_mat - adj
 
         if num_eigenvecs == -1:
-            num_eigenvecs = Aadj.shape[0] - 2
+            num_eigenvecs = laplacian.shape[0] - 2
 
-        self.eigen_vals, self.eigen_vecs = eigs(Aadj, k=num_eigenvecs)
-
+        self.eigen_vals, self.eigen_vecs = eigs(laplacian, k=num_eigenvecs)
         self.eigen_vals = np.real(self.eigen_vals).astype(np.float32)
         self.eigen_vecs = np.real(self.eigen_vecs).astype(np.float32)
 
-        # TODO: add in option to automatically determine scales
+        if scales == "auto":
 
-        self.eUs = [
-            np.diag(np.exp(s * self.eigen_vals)).dot(self.eigen_vecs.transpose())
-            for s in scales
-        ]
-        self.eUs = tf.convert_to_tensor(np.dstack(self.eUs))
+            e2 = self.eigen_vals[self.eigen_vals > 0].min()
+            eN = self.eigen_vals.max()
 
-    def flow(self, node_ids, sample_points, batch_size, targets=None, repeat=True):
+            min_scale = -np.log(0.95) / np.sqrt(eN * e2)
+            max_scale = -np.log(0.85) / np.sqrt(eN * e2)
+
+            scales = np.linspace(min_scale, max_scale, num_scales)
+
+        self.scales = scales
+
+        # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
+        # (each column corresponds to a node)
+        # to avoid computing a dense NxN matrix when only several eigenvalues are specified
+        # U exp(-scale * eigenvalues) is computed and stored - which is an N x num_eigenvectors matrix
+        # the columns of exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
+        self.Ues = [
+            self.eigen_vecs.dot(np.diag(np.exp(-s * self.eigen_vals))) for s in scales
+        ]  # a list of [U exp(-scale * eigenvalues) for scale in scales]
+        self.Ues = tf.convert_to_tensor(np.dstack(self.Ues))
+
+    def flow(
+        self, node_ids, sample_points, batch_size, targets=None, repeat=True, threads=1
+    ):
         """
         Creates a tensorflow DataSet object of GraphWave embeddings.
 
@@ -78,7 +96,7 @@ class GraphWaveGenerator:
                 or (len(node_ids), target_size)`
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one
                 full pass.
-
+            threads (int): number of threads to use.
         """
         ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
@@ -86,8 +104,14 @@ class GraphWaveGenerator:
             tf.data.Dataset.from_tensor_slices(
                 self.eigen_vecs[self._node_lookup(node_ids)]
             )
-            .map(lambda x: tf.einsum("ijk,i->jk", self.eUs, x))
-            .map(lambda x: _empirical_characteristic_function(x, ts))
+            .map(  # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
+                lambda x: tf.einsum("ijk,j->ik", self.Ues, x),
+                num_parallel_calls=threads,
+            )
+            .map(  # samples the characteristic function for each row
+                lambda x: _empirical_characteristic_function(x, ts),
+                num_parallel_calls=threads,
+            )
         )
 
         if not targets is None:
@@ -96,10 +120,11 @@ class GraphWaveGenerator:
 
             dataset = tf.data.Dataset.zip((dataset, target_dataset))
 
+        # cache embeddings in memory for performance
         if repeat:
-            return dataset.batch(batch_size).repeat()
+            return dataset.cache().batch(batch_size).repeat()
         else:
-            return dataset.batch(batch_size)
+            return dataset.cache().batch(batch_size)
 
 
 def _empirical_characteristic_function(samples, ts):
