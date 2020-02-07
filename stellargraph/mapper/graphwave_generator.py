@@ -7,7 +7,7 @@ from scipy.sparse import diags
 from ..core.experimental import experimental
 
 
-@experimental(reason="lacks unit tests", issues=[])
+@experimental(reason="lacks unit tests", issues=[815,])
 class GraphWaveGenerator:
     """
     Implementation of the GraphWave structural embedding algorithm from the paper:
@@ -110,7 +110,7 @@ class GraphWaveGenerator:
                 lambda x: tf.einsum("ijk,j->ik", self.Ues, x),
                 num_parallel_calls=threads,
             )
-            .map(  # samples the characteristic function for each row
+            .map(  # empirically the characteristic function for each column of U exp(-scale * eigenvalues) U^T
                 lambda x: _empirical_characteristic_function(x, ts),
                 num_parallel_calls=threads,
             )
