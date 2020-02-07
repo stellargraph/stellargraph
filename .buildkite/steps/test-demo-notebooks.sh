@@ -26,7 +26,7 @@ fi
 
 
 echo "--- installing dependencies"
-pip install -q --no-cache-dir '.[demos]'
+pip install -q --no-cache-dir '.[demos,igraph]'
 
 echo "--- listing dependency versions"
 pip freeze
@@ -41,6 +41,6 @@ case $(basename "$f") in
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
-    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=1800 "$f"
+    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=2400 "$f"
     ;;
 esac
