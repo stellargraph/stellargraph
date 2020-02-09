@@ -44,6 +44,8 @@ steps:
         run: runner-3.6
     agents:
       queue: "t2large"
+    soft_fail:
+      - exit_status: 2
 
   - label: ":python-black: format"
     plugins:
