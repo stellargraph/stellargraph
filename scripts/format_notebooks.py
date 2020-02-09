@@ -124,6 +124,12 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
         return cell, resources
 
 
+# ANSI terminal escape sequences
+YELLOW_BOLD = "\033[1;33;40m"
+LIGHT_RED_BOLD = "\033[1;91;40m"
+RESET = "\033[0m"
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -273,7 +279,7 @@ if __name__ == "__main__":
         if ignore_checkpoints and ".ipynb_checkpoint" in str(file_loc):
             continue
 
-        print(f"\033[1;33;40m \nProcessing file {file_loc}\033[0m")
+        print(f"{YELLOW_BOLD} \nProcessing file {file_loc}{RESET}")
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
         writer = writers.FilesWriter()
@@ -332,7 +338,7 @@ Fix by running:
 
     {command}"""
 
-        print(f"\n\033[1;91;40mError:\033[0m {message}")
+        print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
 
         if on_ci:
             subprocess.run(
