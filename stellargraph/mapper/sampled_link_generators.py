@@ -217,7 +217,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self.head_node_types = self.schema.node_types * 2
 
         self._graph = G
-        self._rs, _ = random_state(seed)
+        self._batch_sampler_rs, _ = random_state(seed)
         self._samplers = list()
         self._lock = threading.Lock()
 
@@ -243,7 +243,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             # always create a new seeded sampler in ascending order of batch number
             # this ensures seeds are deterministic even when batches are run in parallel
             for n in range(len(self._samplers), batch_num + 1):
-                seed = self._rs.randint(0, 2 ** 32 - 1)
+                seed = self._batch_sampler_rs.randint(0, 2 ** 32 - 1)
                 self._samplers.append(
                     SampledBreadthFirstWalk(
                         self._graph, graph_schema=self.schema, seed=seed,

@@ -34,6 +34,15 @@ _rs = _global_state()
 
 
 def random_state(seed):
+    """
+    Create a RandomState using the provided seed. If seed is None, return the global RandomState.
+
+    Args:
+        seed (int, optional): random seed
+
+    Returns:
+        RandomState object
+    """
     if seed is None:
         return _rs
     else:
@@ -41,6 +50,14 @@ def random_state(seed):
 
 
 def set_seed(seed):
+    """
+    Create a new global RandomState using the provided seed. If seed is None, StellarGraph's global
+    RandomState object simply wraps the global random state for each external module.
+
+    Args:
+        seed (int, optional): random seed
+
+    """
     global _rs
     if seed is None:
         _rs = _global_state()
