@@ -107,6 +107,8 @@ class ElementData:
         shared (dict of type name to pandas DataFrame): information for the elements of each type
     """
 
+    # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
+    # overridden by subclasses as appropriate)
     _SHARED_REQUIRED_COLUMNS = []
 
     def __init__(self, shared):
