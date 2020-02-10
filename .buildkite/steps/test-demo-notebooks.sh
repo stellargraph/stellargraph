@@ -36,10 +36,12 @@ echo "+++ :python: running $f"
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'ensemble-node-classification-example.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
-    'stellargraph-metapath2vec.ipynb' )
+    'stellargraph-metapath2vec.ipynb' | \
+    'ensemble-node-classification-example.ipynb' | 'cora-gcn-links-example.ipynb')
     # FIXME: these notebooks do not yet work on CI (#818 - datasets can't be downloaded)
     # FIXME: these notebooks do not yet work on CI (#819 - out-of-memory)
     # FIXME: these notebooks do not yet work on CI (#833 - too slow)
+    # FIXME: these notebooks do not yet work on CI (#816 - missing dataset download)
     exit 2
     ;;
   *) # fine, run this one
