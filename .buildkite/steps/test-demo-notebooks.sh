@@ -22,6 +22,15 @@ if [ "$NUM_NOTEBOOKS_TOTAL" -ne "$SPLIT" ]; then
   exit 1
 fi
 
+echo "--- :python: installing papermill"
+# `click` (used by papermill's CLI) requires more configuration for Python 3.6
+# https://click.palletsprojects.com/en/7.x/python3/
+export LC_ALL=en_AU.utf8
+export LANG=en_AU.utf8
+# Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't
+# been released yet
+pip install --user https://github.com/nteract/papermill/archive/master.tar.gz
+
 echo "--- installing dependencies"
 pip install -q --no-cache-dir '.[demos]'
 
@@ -44,6 +53,12 @@ case $(basename "$f") in
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
-    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=2400 "$f"
+    # run the notebook, saving it back to where it was, printing everything
+    exitCode=0
+    papermill --execution-timeout=2400 --log-output "$f" "$f" || exitCode=$?
+
+    # and also upload the notebook with outputs, for someone to download and look at
+    buildkite-agent artifact upload "$(basename "$f")"
+    exit $exitCode
     ;;
 esac
