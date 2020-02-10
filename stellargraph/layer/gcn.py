@@ -57,46 +57,45 @@ class GraphConvolution(Layer):
         use_bias (bool): toggles an optional bias
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
-        kernel_initializer (str or func): The initialiser to use for the weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the bias;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights.
+        kernel_constraint (str or func, optional): The constraint to use for the weights.
+        bias_initializer (str or func, optional): The initialiser to use for the bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias.
+        bias_constraint (str or func, optional): The constraint to use for the bias.
     """
 
     def __init__(
-        self, units, activation=None, use_bias=True, final_layer=False, **kwargs
+        self,
+        units,
+        activation=None,
+        use_bias=True,
+        final_layer=False,
+        input_dim=None,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        **kwargs
     ):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         self.units = units
         self.activation = activations.get(activation)
         self.use_bias = use_bias
         self.final_layer = final_layer
-        self._get_regularisers_from_keywords(kwargs)
-        super().__init__(**kwargs)
 
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+
+        super().__init__(**kwargs)
 
     def get_config(self):
         """
@@ -279,12 +278,27 @@ class GCN:
         dropout (float): Dropout rate applied to input features of each GCN layer.
         activations (list of str or func): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu'].
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
 
     def __init__(
-        self, layer_sizes, generator, bias=True, dropout=0.0, activations=None, **kwargs
+        self,
+        layer_sizes,
+        generator,
+        bias=True,
+        dropout=0.0,
+        activations=None,
+        kernel_initializer=None,
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer=None,
+        bias_regularizer=None,
+        bias_constraint=None,
     ):
         if not isinstance(generator, FullBatchGenerator):
             raise TypeError(
@@ -317,9 +331,6 @@ class GCN:
             )
         self.activations = activations
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Initialize a stack of GCN layers
         self._layers = []
         for ii in range(n_layers):
@@ -330,24 +341,14 @@ class GCN:
                     activation=self.activations[ii],
                     use_bias=self.bias,
                     final_layer=ii == (n_layers - 1),
-                    **self._regularisers
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, x):
         """
