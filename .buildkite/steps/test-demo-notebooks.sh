@@ -23,8 +23,7 @@ if [ "$NUM_NOTEBOOKS_TOTAL" -ne "$SPLIT" ]; then
 fi
 
 echo "--- :python: installing papermill"
-# Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't
-# been released yet
+# Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't been released yet
 pip install --user https://github.com/nteract/papermill/archive/master.tar.gz
 
 echo "--- installing dependencies"
@@ -51,7 +50,7 @@ case $(basename "$f") in
     cd "$(dirname "$f")"
     # run the notebook, saving it back to where it was, printing everything
     exitCode=0
-    papermill --execution-timeout=2400 --log-output "$f" "$f" || exitCode=$?
+    python3 -m papermill --execution-timeout=2400 --log-output "$f" "$f" || exitCode=$?
 
     # and also upload the notebook with outputs, for someone to download and look at
     buildkite-agent artifact upload "$(basename "$f")"
