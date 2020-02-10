@@ -40,7 +40,7 @@ case $(basename "$f") in
     # FIXME: these notebooks do not yet work on CI (#819 - out-of-memory)
     # FIXME: these notebooks do not yet work on CI (#833 - too slow)
     # FIXME: these notebooks do not yet work on CI (#816 - missing dataset download)
-    exit 2  # this will be a soft-fail for buildkite
+    exit 2 # this will be a soft-fail for buildkite
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
