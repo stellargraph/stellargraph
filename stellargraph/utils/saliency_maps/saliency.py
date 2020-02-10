@@ -75,14 +75,12 @@ class GradientSaliency:
         self.X = generator.features
 
         self.model = model
-        # Placeholder for class prediction (model output):
-        output = model.output
 
-    def compute_node_gradients(self, node_mask_tensors):
+    def compute_gradients(self, mask_tensors, variable):
 
-        for i, x in enumerate(node_mask_tensors):
+        for i, x in enumerate(mask_tensors):
             if not isinstance(x, tf.Tensor):
-                node_mask_tensors[i] = tf.convert_to_tensor(x)
+                mask_tensors[i] = tf.convert_to_tensor(x)
 
         if self.is_sparse:
             (
@@ -92,8 +90,9 @@ class GradientSaliency:
                 adj_t,
                 _,
                 class_of_interest,
-            ) = node_mask_tensors
+            ) = mask_tensors
             model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
+
         else:
             (
                 features_t,
@@ -101,55 +100,25 @@ class GradientSaliency:
                 adj_t,
                 _,
                 class_of_interest,
-            ) = node_mask_tensors
+            ) = mask_tensors
             model_input = [features_t, output_indices_t, adj_t]
 
         with tf.GradientTape() as tape:
-            tape.watch(features_t)
+            if variable == 'nodes':
+                tape.watch(features_t)
+            elif variable == 'links':
+                tape.watch(adj_t)
+
             output = self.model(model_input)
 
             cost_value = K.gather(output[0, 0], class_of_interest)
 
-        node_gradients = tape.gradient(cost_value, features_t)
+        if variable == 'nodes':
+            gradients = tape.gradient(cost_value, features_t)
+        elif variable == 'links':
+            gradients = tape.gradient(cost_value, adj_t)
 
-        return node_gradients
-
-    def compute_link_gradients(self, link_mask_tensors):
-
-        for i, x in enumerate(link_mask_tensors):
-
-            if not isinstance(x, tf.Tensor):
-                link_mask_tensors[i] = tf.convert_to_tensor(x)
-
-        if self.is_sparse:
-            (
-                features_t,
-                output_indices_t,
-                adj_indices_t,
-                adj_t,
-                _,
-                class_of_interest,
-            ) = link_mask_tensors
-            model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
-        else:
-            (
-                features_t,
-                output_indices_t,
-                adj_t,
-                _,
-                class_of_interest,
-            ) = link_mask_tensors
-            model_input = [features_t, output_indices_t, adj_t]
-
-        with tf.GradientTape() as tape:
-            tape.watch(adj_t)
-            output = self.model(model_input)
-
-            cost_value = K.gather(output[0, 0], class_of_interest)
-
-        link_gradients = tape.gradient(cost_value, adj_t)
-
-        return link_gradients
+        return gradients
 
     def get_node_masks(
         self, node_idx, class_of_interest, X_val=None, A_index=None, A_val=None
