@@ -14,10 +14,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
+
 import numpy as np
 
+class ColumnsBase(abc.ABC):
+    def __init__(self, columns):
+        self._columns = columns
 
-class Columns:
+    @property
+    def column_names(self):
+        return self._columns.keys()
+
+    @abc.abstractmethod
+    def column(self, name): ...
+
+    @abc.abstractmethod
+    def columns(self, *names): ...
+
+    @abc.abstractmethod
+    def add_columns(self, new_columns): ...
+
+    def _drop_columns_dict(self, to_drop):
+        to_drop = set(to_drop)
+        return {name: data for name, data in self._columns.items() if name not in to_drop}
+
+    @abc.abstractmethod
+    def drop_columns(self, *to_drop): ...
+
+    def _select_columns_dict(self, to_keep):
+        return {name: self._columns[name] for name in to_keep}
+
+    @abc.abstractmethod
+    def select_columns(self, *to_keep): ...
+
+    @abc.abstractmethod
+    def select_rows(self, selector): ...
+
+    @abc.abstractmethod
+    def iter_rows(self, *columns): ...
+
+class Columns(ColumnsBase):
     """
     Columns is a very basic columnar data store, that is much less flexible and thus much faster
     than pandas DataFrames.
@@ -50,6 +87,10 @@ class Columns:
         self._columns = columns
 
     @property
+    def lazy(self) -> "LazyColumns":
+        return LazyColumns(self)
+
+    @property
     def column_names(self):
         return self._columns.keys()
 
@@ -63,16 +104,10 @@ class Columns:
         return Columns({**self._columns, **new_columns})
 
     def drop_columns(self, *to_drop):
-        to_drop = set(to_drop)
-        return Columns(
-            {name: data for name, data in self._columns.items() if name not in to_drop},
-            unsafe_unchecked=True,
-        )
+        return Columns(self._drop_columns_dict(to_drop) unsafe_unchecked=True)
 
     def select_columns(self, *to_keep):
-        return Columns(
-            {name: self._columns[name] for name in to_keep}, unsafe_unchecked=True
-        )
+        return Columns(self._select_columns_dict(to_keep), unsafe_unchecked=True)
 
     def select_rows(self, selector) -> "Columns":
         """
@@ -94,3 +129,54 @@ class Columns:
 
         """
         return zip(*(self.column(name) for name in columns))
+
+
+class LazyColumns(ColumnsBase):
+    def __init__(self, columns=None, unsafe_columns_dict=None, row_selectors=[]):
+        if columns is not None:
+            if not isinstance(columns, Columns):
+                raise TypeError(f"columns: expected Columns, found {type(columns)}")
+
+            columns_dict = self._columns
+        else:
+            if not isinstance(unsafe_columns_dict, dict):
+                raise TypeError("unsafe_columns_dict: expected dict, found {type(unsafe_columns_dict)}")
+            columns_dict = unsafe_columns_dict
+
+        super().__init__(columns_dict)
+        self._row_selectors = row_selectors
+
+    @cached_property
+    def force(self) -> "Columns":
+        c = self._columns.copy()
+        for sel in self._row_selectors:
+            for k, v in c.items():
+                c[k] = v[sel]
+        return Columns(c, unsafe_unchecked=True)
+
+    def _nonlazy_method(self, method_name):
+        raise TypeError(f"'{method_name}' can only be applied to 'Columns', found 'LazyColumns'; use '.force' to apply lazy transformations and create a 'Columns'")
+
+    def column(self, name):
+        self._nonlazy_method("column")
+
+    def columns(self, *names):
+        self._nonlazy_method("columns")
+
+    def add_columns(self, new_columns):
+        self._nonlazy_method("add_columns")
+
+    def drop_columns(self, *to_drop):
+        return LazyColumns(unsafe_columns_dict=self._drop_columns_dict(to_drop), self.row_selectors)
+
+    def select_columns(self, *to_keep):
+        return LazyColumns(unsafe_columns_dict=self._select_columns_dict(to_drop), self.row_selectors)
+
+    def select_rows(self, selector):
+        new_selectors = self.row_selectors.copy()
+        new_selectors.append(selector)
+        return LazyColumns(unsafe_columns_dict=self._columns, new_selectors)
+
+    @abc.abstractmethod
+    def iter_rows(self, *columns):
+        self._nonlazy_method("iter_rows")
