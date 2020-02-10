@@ -35,13 +35,15 @@ f=${NOTEBOOKS[$INDEX]}
 echo "+++ :python: running $f"
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'ensemble-node-classification-example.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
-    'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb')
+    'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
+    'stellargraph-metapath2vec.ipynb' )
     # FIXME: these notebooks do not yet work on CI (#818 - datasets can't be downloaded)
-    # FIXME: these notebooks do not yet work on CI (#819 - out of memory)
+    # FIXME: these notebooks do not yet work on CI (#819 - out-of-memory)
+    # FIXME: these notebooks do not yet work on CI (#833 - too slow)
     exit 2
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
-    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=4000 "$f"
+    jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=2400 "$f"
     ;;
 esac
