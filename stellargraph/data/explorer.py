@@ -785,10 +785,14 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             )
 
 
-@experimental(reason="requires more thorough testing and documentation")
+@experimental(
+    reason="requires more thorough testing and documentation", issues=[827, 828, 832]
+)
 class TemporalRandomWalk(GraphWalk):
     """
-    Performs uniform temporal random walks on the given graph
+    Performs temporal random walks on the given graph. The graph should contain numerical edge
+    weights that correspond to the time at which the edge was created. Exact units are not relevant
+    for the algorithm, only the relative differences (e.g. seconds, days, etc).
     """
 
     def run(
@@ -824,7 +828,10 @@ class TemporalRandomWalk(GraphWalk):
             p_walk_success_threshold (float): Lower bound for the proportion of successful
                 (i.e. longer than minimum length) walks. If the 95% percentile of the
                 estimated proportion is less than the provided threshold, a RuntimeError
-                will be raised.
+                will be raised. The default value of 0.01 means an error is raised if less than 1%
+                of the attempted random walks are successful. This parameter exists to catch any
+                potential situation where too many unsuccessful walks can cause an infinite or very
+                slow loop.
             seed (int, optional): Random number generator seed; default is None
 
         Returns:
