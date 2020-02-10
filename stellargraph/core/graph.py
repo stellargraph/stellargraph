@@ -183,7 +183,10 @@ class StellarGraph:
         edges=None,
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
+        _internal_raw_data=None,
     ):
+        self._is_directed = is_directed
+
         if graph is not None or (nodes is None and edges is None):
             # While migrating, maintain complete compatibility by deferring to the networkx
             # implementation
@@ -204,6 +207,9 @@ class StellarGraph:
                 node_features,
                 dtype,
             )
+        elif _internal_raw_data is not None:
+            # trust the user
+            self._nodes, self._edges = _internal_raw_data
         else:
             warnings.warn(
                 "StellarGraph(nodes=..., edges=...) is experimental: it has not been fully "
@@ -217,8 +223,6 @@ class StellarGraph:
                 nodes = {}
             if edges is None:
                 edges = {}
-
-            self._is_directed = is_directed
 
             self._nodes = convert.convert_nodes(
                 nodes, name="nodes", default_type=node_type_default, dtype=dtype,
@@ -1018,6 +1022,7 @@ class StellarDiGraph(StellarGraph):
         edges=None,
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
+        _internal_raw_data=None,
     ):
         super().__init__(
             graph=graph,
@@ -1035,4 +1040,5 @@ class StellarDiGraph(StellarGraph):
             edges=edges,
             source_column=source_column,
             target_column=target_column,
+            _internal_raw_data=_internal_raw_data,
         )
