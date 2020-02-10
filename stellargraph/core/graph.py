@@ -759,12 +759,6 @@ class StellarGraph:
         Returns:
             GraphSchema object.
         """
-        if create_type_maps is not None:
-            warnings.warn(
-                "The 'create_type_maps' parameter is ignored now, and does not need to be specified",
-                DeprecationWarning,
-            )
-
         if self._graph is not None:
             return self._graph.create_graph_schema(nodes)
 
