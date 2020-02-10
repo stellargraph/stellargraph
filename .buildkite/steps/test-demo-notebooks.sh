@@ -40,17 +40,17 @@ case $(basename "$f") in
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
     'stellargraph-metapath2vec.ipynb' | \
     'ensemble-node-classification-example.ipynb' | 'cora-gcn-links-example.ipynb')
-    # FIXME: these notebooks do not yet work on CI (#818 - datasets can't be downloaded)
-    # FIXME: these notebooks do not yet work on CI (#819 - out-of-memory)
-    # FIXME: these notebooks do not yet work on CI (#833 - too slow)
-    # FIXME: these notebooks do not yet work on CI (#816 - missing dataset download)
+    # FIXME: #818 - datasets can't be downloaded
+    # FIXME: #819 - out-of-memory
+    # FIXME: #833 - too slow
+    # FIXME: #816 - missing dataset download
     exit 2 # this will be a soft-fail for buildkite
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
     # run the notebook, saving it back to where it was, printing everything
     exitCode=0
-    python3 -m papermill --execution-timeout=2400 --log-output "$f" "$f" || exitCode=$?
+    papermill --execution-timeout=2400 --log-output "$f" "$f" || exitCode=$?
 
     # and also upload the notebook with outputs, for someone to download and look at
     buildkite-agent artifact upload "$(basename "$f")"
