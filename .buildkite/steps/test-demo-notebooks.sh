@@ -40,6 +40,7 @@ case $(basename "$f") in
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
     'stellargraph-metapath2vec.ipynb' | \
     'ensemble-node-classification-example.ipynb' | 'cora-gcn-links-example.ipynb')
+    # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
     # FIXME #833: too slow
