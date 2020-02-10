@@ -8,9 +8,7 @@ SPLIT="${BUILDKITE_PARALLEL_JOB_COUNT:-1}"
 INDEX="${BUILDKITE_PARALLEL_JOB:-0}"
 
 echo "--- :books: collecting notebooks"
-# Create array with all notebooks in notebooks' directories. Notebooks are
-# available in /home/hadoop/scenarios and /home/hadoop/demos on the edgenode
-# with correct permissions for user hadoop.
+# Create array with all notebooks in demo directories.
 cd "${stellargraph_dir}"
 NOTEBOOKS=()
 while IFS= read -r -d $'\0'; do
@@ -42,7 +40,7 @@ case $(basename "$f") in
     # FIXME: these notebooks do not yet work on CI (#819 - out-of-memory)
     # FIXME: these notebooks do not yet work on CI (#833 - too slow)
     # FIXME: these notebooks do not yet work on CI (#816 - missing dataset download)
-    exit 2
+    exit 2  # this will be a soft-fail for buildkite
     ;;
   *) # fine, run this one
     cd "$(dirname "$f")"
