@@ -767,7 +767,7 @@ def test_edges_include_weights():
 
 def test_adjacency_types_undirected():
     g = example_hin_1(is_directed=False)
-    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+    adj = g._adjacency_types(g.create_graph_schema())
 
     assert adj == {
         ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
@@ -778,7 +778,7 @@ def test_adjacency_types_undirected():
 
 def test_adjacency_types_directed():
     g = example_hin_1(is_directed=True)
-    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+    adj = g._adjacency_types(g.create_graph_schema())
 
     assert adj == {
         ("A", "R", "B"): {1: [4, 5], 2: [4]},

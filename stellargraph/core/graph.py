@@ -741,7 +741,7 @@ class StellarGraph:
 
         return "\n".join(lines)
 
-    def create_graph_schema(self, create_type_maps=None, nodes=None):
+    def create_graph_schema(self, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
