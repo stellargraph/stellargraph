@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+`stellargraph.random` contains functions to control the randomness behaviour in StellarGraph.
+
+"""
+
 import random as rn
 import numpy.random as np_rn
 from collections import namedtuple
@@ -53,6 +58,11 @@ def set_seed(seed):
     """
     Create a new global RandomState using the provided seed. If seed is None, StellarGraph's global
     RandomState object simply wraps the global random state for each external module.
+
+    When trying to create a reproducible workflow using this function, please note that this seed
+    only controls the randomness of the non-tensorflow part of the library. Randomness within
+    Tensorflow layers is controlled via Tensorflow's own global random seed, which can be set using
+    `tensorflow.random.set_seed`.
 
     Args:
         seed (int, optional): random seed

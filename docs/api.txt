@@ -117,3 +117,10 @@ Datasets
 .. automodule:: stellargraph.datasets.datasets
   :members:
   :inherited-members:
+
+
+Random
+------------------------
+
+.. automodule:: stellargraph.random
+  :members: set_seed
