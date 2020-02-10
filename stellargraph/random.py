@@ -18,6 +18,8 @@
 `stellargraph.random` contains functions to control the randomness behaviour in StellarGraph.
 
 """
+# `random_state` is not user-facing
+__all__ = ["set_seed"]
 
 import random as rn
 import numpy.random as np_rn
