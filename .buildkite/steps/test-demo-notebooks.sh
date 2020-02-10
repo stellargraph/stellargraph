@@ -23,10 +23,6 @@ if [ "$NUM_NOTEBOOKS_TOTAL" -ne "$SPLIT" ]; then
 fi
 
 echo "--- :python: installing papermill"
-# `click` (used by papermill's CLI) requires more configuration for Python 3.6
-# https://click.palletsprojects.com/en/7.x/python3/
-export LC_ALL=en_AU.utf8
-export LANG=en_AU.utf8
 # Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't
 # been released yet
 pip install --user https://github.com/nteract/papermill/archive/master.tar.gz
