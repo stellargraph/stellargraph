@@ -24,7 +24,7 @@ fi
 
 echo "--- :python: installing papermill"
 # Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't been released yet
-pip install --user https://github.com/nteract/papermill/archive/master.tar.gz
+pip install https://github.com/nteract/papermill/archive/master.tar.gz
 
 echo "--- installing dependencies"
 pip install -q --no-cache-dir '.[demos]'
