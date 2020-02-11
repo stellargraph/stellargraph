@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-    The Neo4J connector package contains classes and functions to support subsampling from Neo4J databases.
+    The Neo4J connector package contains classes and functions to support sampling from Neo4J databases.
 """
 
 from .sampler import *

@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """
-    The connector package contains classes and functions to support subsampling for remote databases.
+    The connector package contains classes and functions to support sampling for remote databases.
 """
 
 __all__ = [

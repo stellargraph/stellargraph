@@ -58,7 +58,13 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
 
         super().__init__(G, batch_size, schema)
         # Create neo4J driver
-        self.neo4j_graphdb = neo4j_graphdb
+        if not isinstance(neo4j_graphdb, py2neo.Graph):
+            raise TypeError(
+                f"neo4j_graphdb: expected py2neo.Graph, found {type(neo4j_graphdb)}"
+            )
+
+        else:
+            self.neo4j_graphdb = neo4j_graphdb
 
 
 @experimental(reason="the class is not fully tested")
@@ -87,7 +93,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
         neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object.
-        seed (int): [Optional] Random seed for the node sampler.
+        seed (int, optional): Random seed for the node sampler.
     """
 
     def __init__(self, G, batch_size, num_samples, neo4j_graphdb, seed=None, name=None):
@@ -173,7 +179,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         in_samples (list): The number of in-node samples per layer (hop) to take.
         out_samples (list): The number of out-node samples per layer (hop) to take.
         neo4j_graphdb (py2neo.Graph): The Neo4J Graph database object
-        seed (int): [Optional] Random seed for the node sampler.
+        seed (int, optional) Random seed for the node sampler.
     """
 
     def __init__(
@@ -241,7 +247,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         features = [None] * max_slots  # flattened binary tree
 
         for slot in range(max_slots):
-            nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
+            nodes_in_slot = node_samples[slot]
             features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(

@@ -21,8 +21,6 @@ __all__ = [
 
 
 import numpy as np
-import pandas as pd
-import random
 import warnings
 from collections import defaultdict, deque
 
@@ -38,50 +36,6 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
     Breadth First Walk that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4J database.
     """
-
-    def breadth_first_search_query_builder(self, num_samples):
-        """
-        Build the Cypher query to perform undirected breadth first search from a list of root nodes.
-
-        Args:
-            num_samples: An iterable of head nodes to perform sampling on.
-
-        Returns:
-            Cypher query to retrieve all node ids of the sampled subgraph.
-        """
-
-        query = "\n".join(
-            (
-                # find the head_nodes in the database
-                "MATCH(head_node) WHERE ID(head_node) IN {head_nodes}",
-                # place all nodes into a list
-                "WITH apoc.coll.flatten(collect(head_node)) AS cur_hop_node_list,",
-                # add the list of node ids into subgraph
-                "[apoc.coll.flatten(collect(id(head_node)))] AS subgraph",
-            )
-        )
-
-        for n in num_samples:
-            next_hop_query = "\n".join(
-                (
-                    "UNWIND (CASE cur_hop_node_list WHEN [] THEN [null] ELSE cur_hop_node_list END) AS cur_node",
-                    "CALL apoc.cypher.run(",
-                    "     'WITH {cur_node} AS cur_node MATCH (cur_node)-[]-(neighbors)",
-                    f"      WITH apoc.coll.randomItems(collect(neighbors), {n}, True) AS neighbor_list",
-                    "      WITH (CASE neighbor_list WHEN [] THEN [null] ELSE neighbor_list END) AS neighbor_list",
-                    "      UNWIND neighbor_list AS neighbor_node",
-                    "      RETURN neighbor_list AS neighbor_list,",
-                    # put all ids of the neighbors into a list, or create a list of n null elements if no elements found
-                    f"     (CASE collect(id(neighbor_node)) WHEN [] THEN [ _ in range(0, {n} - 1) | null]",
-                    "      ELSE collect(id(neighbor_node)) END) AS neighbor_id_list',",
-                    "{cur_node: cur_node}) YIELD value",
-                    "WITH apoc.coll.flatten(collect(value.neighbor_list)) AS cur_hop_node_list,",
-                    "subgraph + [apoc.coll.flatten(collect(value.neighbor_id_list))] AS subgraph",
-                )
-            )
-            query = "\n".join((query, next_hop_query))
-
-        return "\n".join((query, "return subgraph"))
 
     def run(self, neo4j_graphdb, nodes=None, n=1, n_size=None, seed=None):
         """
@@ -100,13 +54,47 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
-        self._check_sizes(n_size)
-        self._check_common_parameters(nodes, n, len(n_size), seed)
 
-        bfsQuery = self.breadth_first_search_query_builder(n_size)
+        def bfs_neighbor_query(sampling_direction):
+            direction = {"BOTH": "--", "IN": "<--", "OUT": "-->"}
 
-        result_records = neo4j_graphdb.run(bfsQuery, {"head_nodes": nodes})
-        walks = pd.DataFrame(result_records)[0][0]
+            return f"""
+                // expand the list of node id in seperate rows of ids.
+                UNWIND {{node_id_list}} AS node_id
+
+                // for each node id in every row, collect the random list of its neighbors.
+                CALL apoc.cypher.run(
+
+                    'MATCH(cur_node) WHERE id(cur_node) = {{node_id}}
+
+                    // find the neighbors
+                    MATCH (cur_node){direction[sampling_direction]}(neighbors)
+
+                    // put all ids into a list
+                    WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
+
+                    // pick random nodes with replacement
+                    WITH apoc.coll.randomItems(in_neighbors_list, {{num_samples}}, True) AS in_samples_list
+
+                    RETURN in_samples_list',
+                    {{ node_id: node_id, num_samples: {{num_samples}}  }}) YIELD value
+
+                RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
+            """
+
+        walks = [[head_node for head_node in nodes for _ in range(n)]]
+        sample_query = bfs_neighbor_query(sampling_direction="BOTH")
+
+        for num_sample in n_size:
+
+            cur_nodes = walks[-1]
+
+            result = neo4j_graphdb.run(
+                sample_query,
+                parameters={"node_id_list": cur_nodes, "num_samples": num_sample},
+            )
+
+            walks.append(result.data()[0]["next_samples"])
 
         return walks
 
@@ -114,134 +102,89 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
 @experimental(reason="the class is not fully tested")
 class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
     """
-    Breadth First sampler that generates the composite of a number of sampled paths from a starting node.
-    It can be used to extract a random sub-graph starting from a set of initial nodes from the Neo4J graph database.
+    Breadth First Walk that generates a sampled number of paths from a starting node.
+    It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4J database.
     """
-
-    def __init__(self, graph, graph_schema=None, seed=None):
-        super().__init__(graph, graph_schema, seed)
-        if not graph.is_directed():
-            self._raise_error("Graph must be directed")
-
-    def directed_breadth_first_search_query_builder(self, in_samples, out_samples):
-        """
-        Build the Cypher query to perform a sampled directed breadth-first search walk from root nodes.
-
-        Args:
-            in_samples (int): The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_samples (int): The number of out-directed nodes to sample with replacement at each depth of the walk.
-
-        Returns:
-            Cypher query to retrieve all node ids of the sampled subgraph.
-        """
-
-        query = "\n".join(
-            (
-                # find the head_nodes
-                "OPTIONAL MATCH (head_node) WHERE ID(head_node) in {head_nodes}",
-                # put the current level of nodes into a list of list
-                "WITH [apoc.coll.flatten(collect(head_node))] AS cur_depth_list,",
-                # add the list of node ids into subgraph
-                "[apoc.coll.flatten(collect(id(head_node)))] AS subgraph",
-            )
-        )
-
-        for in_num, out_num in zip(in_samples, out_samples):
-            next_hop_query = "\n".join(
-                (
-                    # unpack cur_depth_list which is a list of list of nodes, into single list of nodes
-                    "UNWIND cur_depth_list AS cur_node_list",
-                    'CALL apoc.cypher.run("',
-                    "WITH {cur_node_list} AS cur_node_list",
-                    "UNWIND cur_node_list AS cur_node",
-                    # call the subprocedure to collect random in-nodes.
-                    "CALL apoc.cypher.run(",
-                    "    'WITH {current_node} AS current_node",
-                    # find all in-neighbors
-                    "     MATCH (current_node)<-[]-(in_neighbors)",
-                    # turn the rows into a list
-                    "     WITH CASE collect(in_neighbors) WHEN [] THEN [null] ELSE collect(in_neighbors) END AS in_neighbors_list",
-                    # choose random nodes from the list with replacement
-                    "     WITH apoc.coll.randomItems(in_neighbors_list, {num_in_nodes}, True) AS in_samples_list",
-                    # turn the list into rows for collecting ids
-                    "     UNWIND in_samples_list AS in_samples",
-                    "     RETURN in_samples_list,",
-                    "     (CASE collect(id(in_samples)) WHEN [] THEN [ _ in range(0, {num_in_nodes} - 1) | null]",
-                    "     ELSE collect(id(in_samples)) END) AS in_samples_id_list',",
-                    "    { current_node: cur_node, num_in_nodes: {in_nodes} }",
-                    "    ) YIELD value",
-                    "RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS samples_list,",
-                    "    apoc.coll.flatten(collect(value.in_samples_id_list)) AS samples_id_list",
-                    "UNION ALL",
-                    "WITH {cur_node_list} AS cur_node_list",
-                    "UNWIND cur_node_list AS cur_node",
-                    # call the subprocedure to collect random out-nodes.
-                    "CALL apoc.cypher.run(",
-                    "    'WITH {current_node} AS current_node",
-                    # find all out-neighbors
-                    "     MATCH (current_node)-[]->(out_neighbors)",
-                    # turn the rows into a list
-                    "     WITH CASE collect(out_neighbors) WHEN [] THEN [null] ELSE collect(out_neighbors) END AS out_neighbors_list",
-                    # choose random nodes from the list with replacement
-                    "     WITH apoc.coll.randomItems((CASE out_neighbors_list WHEN [] THEN [null] ELSE out_neighbors_list END), {num_out_nodes}, True) AS out_samples_list",
-                    # turn the list into rows for collecting ids
-                    "     UNWIND out_samples_list AS out_samples",
-                    "     RETURN out_samples_list,",
-                    "     (CASE collect(id(out_samples)) WHEN [] THEN [ _ in range(0, {num_out_nodes} - 1) | null]",
-                    "     ELSE collect(id(out_samples)) END) AS out_samples_id_list',",
-                    "    {current_node: cur_node, num_out_nodes: {out_nodes} }",
-                    "    ) YIELD value",
-                    "RETURN apoc.coll.flatten(collect(value.out_samples_list)) AS samples_list,",
-                    '       apoc.coll.flatten(collect(value.out_samples_id_list)) AS samples_id_list",',
-                    f" {{cur_node_list: cur_node_list, in_nodes: {in_num}, out_nodes: {out_num} }}) YIELD value",
-                    "WITH apoc.coll.flatten(collect([value.samples_list])) AS cur_depth_list, subgraph + apoc.coll.flatten(collect([value.samples_id_list])) AS subgraph",
-                )
-            )
-
-            query = "\n".join((query, next_hop_query))
-
-        return "\n".join((query, "return subgraph"))
 
     def run(
         self, neo4j_graphdb, nodes=None, n=1, in_size=None, out_size=None, seed=None
     ):
         """
-        Send queries to Neo4J databases and collect sampled breadth-first walks starting from the root nodes.
+        Send queries to Neo4J graph databases and collect sampled breadth-first walks starting from the root nodes.
 
         Args:
             neo4j_graphdb: (py2neo.Graph) the Neo4J Graph Database object
-            nodes:  (list) A list of root node ids such that from each node n BFWs will be generated up to the
+            nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
-            n: (int) Number of walks per node id.
-            in_size: (list) The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_size: (list) The number of out-directed nodes to sample with replacement at each depth of the walk.
-            seed: (int) Random number generator seed; default is None
-
+            n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
+            n (int, default 1): Number of walks per node id.
+            neighbours with replacement is always used regardless of the node degree and number of neighbours
+            requested.
+            seed (int, optional): Random number generator seed; default is None
 
         Returns:
-            A list of multi-hop neighbourhood samples. Each sample expresses multiple undirected walks, but the in-node
-            neighbours and out-node neighbours are sampled separately. Each sample has the format:
-
-                [[node]
-                 [in_1...in_n]  [out_1...out_m]
-                 [in_1.in_1...in_n.in_p] [in_1.out_1...in_n.out_q]
-                    [out_1.in_1...out_m.in_p] [out_1.out_1...out_m.out_q]
-                 [in_1.in_1.in_1...in_n.in_p.in_r] [in_1.in_1.out_1...in_n.in_p.out_s] ...
-                 ...]
-
-            where a single, undirected walk might be, for example:
-
-                [node out_i  out_i.in_j  out_i.in_j.in_k ...]
+            A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
+
+        def bfs_neighbor_query(sampling_direction):
+            direction = {"BOTH": "--", "IN": "<--", "OUT": "-->"}
+
+            return f"""
+                // expand the list of node id in seperate rows of ids.
+                UNWIND {{node_id_list}} AS node_id
+
+                // for each node id in every row, collect the random list of its neighbors.
+                CALL apoc.cypher.run(
+
+                    'MATCH(cur_node) WHERE id(cur_node) = {{node_id}}
+
+                    // find the neighbors
+                    MATCH (cur_node){direction[sampling_direction]}(neighbors)
+
+                    // put all ids into a list
+                    WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
+
+                    // pick random nodes with replacement
+                    WITH apoc.coll.randomItems(in_neighbors_list, {{num_samples}}, True) AS in_samples_list
+
+                    RETURN in_samples_list',
+                    {{ node_id: node_id, num_samples: {{num_samples}}  }}) YIELD value
+
+                RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
+            """
+
         self._check_neighbourhood_sizes(in_size, out_size)
         self._check_common_parameters(nodes, n, len(in_size), seed)
 
-        bfsQuery = self.directed_breadth_first_search_query_builder(in_size, out_size)
+        walks = [[head_node for head_node in nodes for _ in range(n)]]
 
-        result_records = neo4j_graphdb.run(bfsQuery, {"head_nodes": nodes})
-        samples = pd.DataFrame(result_records)[0][0]
+        cur_tree_node = 0
+        tree_level_end = 0
 
-        return [samples]
+        in_sample_query = bfs_neighbor_query(sampling_direction="IN")
+        out_sample_query = bfs_neighbor_query(sampling_direction="OUT")
+        #
+        for in_num, out_num in zip(in_size, out_size):
+            while cur_tree_node <= tree_level_end:
+                cur_nodes = walks[cur_tree_node]
+
+                neighbor_records = neo4j_graphdb.run(
+                    in_sample_query,
+                    parameters={"node_id_list": cur_nodes, "num_samples": in_num},
+                )
+                walks.append(neighbor_records.data()[0]["next_samples"])
+
+                neighbor_records = neo4j_graphdb.run(
+                    out_sample_query,
+                    parameters={"node_id_list": cur_nodes, "num_samples": out_num},
+                )
+                walks.append(neighbor_records.data()[0]["next_samples"])
+
+                cur_tree_node += 1
+
+            tree_level_end = tree_level_end * 2 + 2
+
+        return walks
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
