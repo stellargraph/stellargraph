@@ -22,19 +22,8 @@ if [ "$NUM_NOTEBOOKS_TOTAL" -ne "$SPLIT" ]; then
   exit 1
 fi
 
-echo "--- :python: installing papermill"
-# Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't been released yet
-pip install https://github.com/nteract/papermill/archive/master.tar.gz
-
-echo "--- installing dependencies"
-pip install -q --no-cache-dir '.[demos]'
-
-echo "--- listing dependency versions"
-pip freeze
-
 f=${NOTEBOOKS[$INDEX]}
 
-echo "+++ :python: running $f"
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
@@ -45,17 +34,27 @@ case $(basename "$f") in
     # FIXME #819: out-of-memory
     # FIXME #820: too slow
     # FIXME #816: missing dataset download
+    echo "+++ :python: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
-
-  *) # this is a demo notebook with no expected issues, and should run to completion
-    cd "$(dirname "$f")"
-    # run the notebook, saving it back to where it was, printing everything
-    exitCode=0
-    papermill --execution-timeout=300 --log-output "$f" "$f" || exitCode=$?
-
-    # and also upload the notebook with outputs, for someone to download and look at
-    buildkite-agent artifact upload "$(basename "$f")"
-    exit $exitCode
-    ;;
 esac
+
+echo "--- :python: installing papermill"
+# Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which hasn't been released yet
+pip install https://github.com/nteract/papermill/archive/master.tar.gz
+
+echo "--- installing dependencies"
+pip install -q --no-cache-dir '.[demos]'
+
+echo "--- listing dependency versions"
+pip freeze
+
+echo "+++ :python: running $f"
+cd "$(dirname "$f")"
+# run the notebook, saving it back to where it was, printing everything
+exitCode=0
+papermill --execution-timeout=300 --log-output "$f" "$f" || exitCode=$?
+
+# and also upload the notebook with outputs, for someone to download and look at
+buildkite-agent artifact upload "$(basename "$f")"
+exit $exitCode
