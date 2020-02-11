@@ -348,6 +348,22 @@ def test_from_networkx_heterogeneous_features(feature_type, dtype):
     assert edges == {}
 
 
+def test_from_networkx_default_features():
+    abc = [1, 2, 3, 4]
+    expected_nodes = {
+        "a": pd.DataFrame([abc, [0] * len(abc)], index=["abc", "def"], dtype="float32")
+    }
+    g = nx.MultiDiGraph()
+    g.add_node("abc", f=abc)
+    g.add_node("def")
+
+    with pytest.warns(UserWarning, match="type 'a'.*4-dimensional zero vector: 'def'$"):
+        nodes, edges = from_networkx_for_testing(g, "f")
+
+    assert_dataframe_dict_equal(nodes, expected_nodes)
+    assert edges == {}
+
+
 def test_from_networkx_errors():
     het = nx.MultiDiGraph()
     het.add_nodes_from([(0, {"n": "a"}), (1, {"n": "b"})])
