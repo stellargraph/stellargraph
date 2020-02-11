@@ -77,7 +77,7 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
 
         def calculate_gradient(alpha):
             X_step = X_baseline + alpha * X_diff
-            return super().get_node_masks(node_idx, class_of_interest, X_val=X_step)
+            return self.get_node_masks(node_idx, class_of_interest, X_val=X_step)
 
         total_gradients = _integrate(calculate_gradient, steps)
 
@@ -114,7 +114,7 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         )
 
         def calculate_gradient(alpha):
-            gradient = super().get_link_masks(
+            gradient = self.get_link_masks(
                 alpha, node_idx, class_of_interest, non_exist_edge
             )
             if self.is_sparse:
