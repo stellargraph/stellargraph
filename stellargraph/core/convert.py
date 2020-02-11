@@ -218,6 +218,8 @@ def _features_from_node_data(nodes, data, dtype):
             if isinstance(this_data, pd.DataFrame):
                 df = this_data.astype(dtype, copy=False)
             elif isinstance(this_data, (Iterable, list)):
+                # this functionality is a bit peculiar (Pandas is generally nicer), and is
+                # undocumented. Consider deprecating and removing it.
                 ids, values = zip(*this_data)
                 df = pd.DataFrame(values, index=ids, dtype=dtype)
             else:
