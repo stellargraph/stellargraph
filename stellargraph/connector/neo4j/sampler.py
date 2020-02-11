@@ -52,7 +52,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
             seed (int, optional): Random number generator seed; default is None
 
         Returns:
-            A list of lists, each list is a sequence of ids at a certain hop.
+            A list of lists, each list is a sequence of sampled node ids at a certain hop.
         """
 
         def bfs_neighbor_query(sampling_direction):
