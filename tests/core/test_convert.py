@@ -349,22 +349,26 @@ def test_from_networkx_errors():
     with pytest.raises(TypeError, match="more than one node type"):
         from_networkx_for_testing(het, node_features=pd.DataFrame())
 
-    with pytest.raises(ValueError, match=": missing from data \(0\)$"):
+    with pytest.raises(ValueError, match=r"\['a'\]:.*: missing from data \(0\)$"):
         from_networkx_for_testing(
             het, node_features={"a": pd.DataFrame(), "b": pd.DataFrame()}
         )
 
-    with pytest.raises(ValueError, match=": extra in data \(1\)$"):
+    with pytest.raises(ValueError, match=r"\['a'\]:.*: extra in data \(1\)$"):
         from_networkx_for_testing(
             het, node_features={"a": pd.DataFrame(index=[0, 1]), "b": pd.DataFrame()}
         )
 
     with pytest.raises(
-        ValueError, match=": missing from data \(0\) and extra in data \(1\)$"
+        ValueError,
+        match=r"\['a'\]:.*: missing from data \(0\) and extra in data \(1\)$",
     ):
         from_networkx_for_testing(
             het, node_features={"a": pd.DataFrame(index=[1]), "b": pd.DataFrame()}
         )
+
+    with pytest.raises(TypeError, match=r"\['a'\]: .*, found NoneType"):
+        from_networkx_for_testing(het, node_features={"a": None})
 
     attrs = nx.DiGraph()
     attrs.add_nodes_from([(0, {"f": [1]}), (1, {"f": [2, 3]})])

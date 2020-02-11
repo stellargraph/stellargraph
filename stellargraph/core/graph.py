@@ -241,8 +241,6 @@ class StellarGraph:
         edge_type_name=globalvar.TYPE_ATTR_NAME,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
-        target_name=globalvar.TARGET_ATTR_NAME,
         node_features=None,
         dtype="float32",
     ):
@@ -265,7 +263,7 @@ class StellarGraph:
         the same size feature vectors.
 
         Alternatively, supply the node features as Pandas DataFrame objects with
-        the of the DataFrame set to the node IDs. For graphs with a single node
+        the index of the DataFrame set to the node IDs. For graphs with a single node
         type, you can supply the DataFrame object directly to StellarGraph::
 
             node_data = pd.DataFrame(

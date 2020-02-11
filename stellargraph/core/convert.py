@@ -201,6 +201,10 @@ def _features_from_node_data(nodes, data, dtype):
             elif isinstance(this_data, (Iterable, list)):
                 ids, values = zip(*this_data)
                 df = pd.DataFrame(values, index=ids, dtype=dtype)
+            else:
+                raise TypeError(
+                    f"node_features[{node_type!r}]: expected DataFrame or iterable, found {type(this_data).__name__}"
+                )
 
             graph_ids = set(node_info.ids)
             data_ids = set(df.index)
@@ -208,13 +212,13 @@ def _features_from_node_data(nodes, data, dtype):
                 parts = []
                 missing = graph_ids - data_ids
                 if missing:
-                    parts.append(f"missing from data ({comma_sep(missing)})")
+                    parts.append(f"missing from data ({comma_sep(list(missing))})")
                 extra = data_ids - graph_ids
                 if extra:
-                    parts.append(f"extra in data ({comma_sep(extra)})")
+                    parts.append(f"extra in data ({comma_sep(list(extra))})")
                 message = " and ".join(parts)
                 raise ValueError(
-                    f"expected feature node IDs to exactly match nodes in graph; found: {message}"
+                    f"node_features[{node_type!r}]: expected feature node IDs to exactly match nodes in graph; found: {message}"
                 )
 
             return df
