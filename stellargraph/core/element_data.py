@@ -107,6 +107,10 @@ class ElementData:
         shared (dict of type name to pandas DataFrame): information for the elements of each type
     """
 
+    # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
+    # overridden by subclasses as appropriate)
+    _SHARED_REQUIRED_COLUMNS = []
+
     def __init__(self, shared):
         if not isinstance(shared, dict):
             raise TypeError(f"shared: expected dict, found {type(shared)}")
@@ -116,6 +120,10 @@ class ElementData:
                 raise TypeError(
                     f"shared[{key!r}]: expected pandas DataFrame', found {type(value)}"
                 )
+
+            require_dataframe_has_columns(
+                f"features[{key!r}]", value, self._SHARED_REQUIRED_COLUMNS
+            )
 
         type_element_ilocs = {}
         rows_so_far = 0
@@ -134,7 +142,11 @@ class ElementData:
             type_sizes.append(size)
             type_dfs.append(type_data)
 
-        all_columns = pd.concat(type_dfs)
+        if type_dfs:
+            all_columns = pd.concat(type_dfs)
+        else:
+            all_columns = pd.DataFrame(columns=self._SHARED_REQUIRED_COLUMNS)
+
         self._id_index = ExternalIdIndex(all_columns.index)
         self._columns = {
             name: data.to_numpy() for name, data in all_columns.iteritems()
@@ -280,13 +292,10 @@ class EdgeData(ElementData):
         node_data (NodeData): the nodes that these edges correspond to
     """
 
+    _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
+
     def __init__(self, shared, node_data: NodeData):
         super().__init__(shared)
-
-        for key, value in shared.items():
-            require_dataframe_has_columns(
-                f"features[{key!r}]", value, [SOURCE, TARGET, WEIGHT]
-            )
 
         self._nodes = node_data
 

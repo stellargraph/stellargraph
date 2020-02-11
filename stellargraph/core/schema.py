@@ -36,21 +36,6 @@ class GraphSchema:
         self.edge_types = edge_types
         self.schema = schema
 
-    def __getattr__(self, item):
-        try:
-            return super().__getattribute__(item)
-        except AttributeError as e:
-            if item in ("node_type_map", "get_node_type"):
-                raise AttributeError(
-                    f"{e.args[0]}. This has been replaced by accessing node types through 'StellarGraph.node_type'."
-                )
-            if item in ("edge_type_map", "get_edge_type"):
-                raise AttributeError(
-                    f"{e.args[0]}. This was removed because it wasn't meaningfully used, please file an issue with a use case if you were using it."
-                )
-            # not something we know about
-            raise
-
     def __repr__(self):
         s = "{}:\n".format(type(self).__name__)
         for nt in self.schema:
