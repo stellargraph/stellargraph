@@ -31,6 +31,7 @@ import numpy as np
 from .saliency_gat import GradientSaliencyGAT
 import scipy.sparse as sp
 from tensorflow.keras import backend as K
+from .integrated_gradients import _integrate
 
 
 class IntegratedGradientsGAT(GradientSaliencyGAT):
@@ -73,13 +74,13 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
                 X_baseline = X_val
                 X_val = np.ones_like(X_val)
         X_diff = X_val - X_baseline
-        total_gradients = np.zeros(X_val.shape)
 
-        for alpha in np.linspace(1.0 / steps, 1, steps):
+        def calculate_gradient(alpha):
             X_step = X_baseline + alpha * X_diff
-            total_gradients += super().get_node_masks(
-                node_idx, class_of_interest, X_val=X_step
-            )
+            return super().get_node_masks(node_idx, class_of_interest, X_val=X_step)
+
+        total_gradients = _integrate(calculate_gradient, steps)
+
         return np.squeeze(total_gradients * X_diff, 0)
 
     def get_link_importance(
@@ -101,25 +102,31 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
         """
         node_idx = self.node_list.index(node_id)
 
-        A_val = self.A
-        total_gradients = np.zeros(A_val.shape)
+        if self.is_sparse:
+            A_val = sp.lil_matrix(self.A)
+        else:
+            A_val = self.A
+
         A_diff = (
             A_val
             if not non_exist_edge
             else (np.ones_like(A_val) - np.eye(A_val.shape[0]) - A_val)
         )
-        for alpha in np.linspace(1.0 / steps, 1.0, steps):
-            if self.is_sparse:
-                A_val = sp.lil_matrix(A_val)
-            tmp = super().get_link_masks(
-                alpha, node_idx, class_of_interest, int(non_exist_edge)
+
+        def calculate_gradient(alpha):
+            gradient = super().get_link_masks(
+                alpha, node_idx, class_of_interest, non_exist_edge
             )
             if self.is_sparse:
-                tmp = sp.csr_matrix(
-                    (tmp, A_val.indices, A_val.indptr), shape=A_val.shape
+                return sp.csr_matrix(
+                    (gradient, A_val.indices, A_val.indptr), shape=A_val.shape
                 ).toarray()
-            total_gradients += tmp
-        return np.squeeze(np.multiply(total_gradients, A_diff) / steps, 0)
+            else:
+                return gradient
+
+        total_gradients = _integrate(calculate_gradient, steps)
+
+        return np.squeeze(np.multiply(total_gradients, A_diff), 0)
 
     def get_node_importance(self, node_id, class_of_interest, steps=20):
         """
