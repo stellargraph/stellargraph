@@ -38,3 +38,6 @@ def graph_log_likelihood(y_true, y_pred):
     )
 
     return tf.expand_dims(loss, 0)
+
+def knowledge_graph_score(y_true, y_pred):
+    return tf.expand_dims(tf.reduce_sum(tf.math.softplus(-y_true * y_pred)), 0)
