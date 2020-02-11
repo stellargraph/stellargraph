@@ -181,6 +181,11 @@ if __name__ == "__main__":
         help="Set kernel spec to default 'Python 3'",
     )
     parser.add_argument(
+        "--coalesce_streams",
+        action="store_true",
+        help="Coalesce streamed output into a single chunk of output",
+    )
+    parser.add_argument(
         "-d",
         "--default",
         action="store_true",
@@ -220,6 +225,7 @@ if __name__ == "__main__":
     on_ci = args.ci
     format_code = args.format_code or args.default
     clear_warnings = args.clear_warnings or args.default
+    coalesce_streams = args.coalesce_streams or args.default
     renumber_code = args.renumber or args.default
     set_kernel = args.set_kernel or args.default
     execute_code = args.execute
@@ -239,9 +245,12 @@ if __name__ == "__main__":
     if execute_code:
         preprocessor_list.append(preprocessors.ExecutePreprocessor)
 
-    # warnings need to be cleared after execution
+    # these clean up the result of execution and so should happen after it
     if clear_warnings:
         preprocessor_list.append(ClearWarningsPreprocessor)
+
+    if coalesce_streams:
+        preprocessor_list.append(preprocessors.coalesce_streams)
 
     # Create the exporters with preprocessing
     c = Config()
