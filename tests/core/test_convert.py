@@ -146,13 +146,14 @@ def assert_dataframe_dict_equal(new, expected):
     for k, expected_value in expected.items():
         pd.testing.assert_frame_equal(new[k], expected_value)
 
+DEFAULT_WEIGHT = np.float32(1)
 
 def test_from_networkx_graph_only():
     raw_edges = [(0, 1), (0, 2), (0, 2), (1, 2), (1, 2)]
     expected_nodes = {"a": pd.DataFrame(columns=range(0), index=[0, 1, 2])}
     expected_edges = {
         "x": pd.DataFrame(
-            [t + (1,) for t in raw_edges], columns=["source", "target", "w"]
+            [t + (DEFAULT_WEIGHT,) for t in raw_edges], columns=["source", "target", "w"]
         )
     }
 
@@ -169,7 +170,7 @@ def test_from_networkx_ignore_unknown_attrs():
     raw_edges = [(0, 0, {"bar": 456})]
     expected_nodes = {"a": pd.DataFrame(columns=range(0), index=[0])}
     expected_edges = {
-        "x": pd.DataFrame([(0, 0, 1)], columns=["source", "target", "w"], index=[0])
+        "x": pd.DataFrame([(0, 0, DEFAULT_WEIGHT)], columns=["source", "target", "w"], index=[0])
     }
 
     g = nx.MultiDiGraph()
@@ -195,12 +196,12 @@ def test_from_networkx_heterogeneous_partial():
     ys = len(y_edges)
     expected_edges = {
         "x": pd.DataFrame(
-            [t[:2] + (1,) for t in x_edges],
+            [t[:2] + (DEFAULT_WEIGHT,) for t in x_edges],
             columns=["source", "target", "w"],
             index=[0, 1, 3, 4],
         ),
         "y": pd.DataFrame(
-            [t[:2] + (1,) for t in y_edges],
+            [t[:2] + (DEFAULT_WEIGHT,) for t in y_edges],
             columns=["source", "target", "w"],
             index=[2],
         ),
