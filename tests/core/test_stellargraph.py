@@ -189,28 +189,6 @@ def test_digraph_schema():
     assert len(schema.schema["movie"]) == 0
 
 
-def test_schema_removals():
-    sg = create_graph_1()
-    schema = sg.create_graph_schema()
-
-    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
-        _ = schema.node_type_map
-
-    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
-        _ = schema.get_node_type
-
-    with pytest.raises(AttributeError, match="This was removed"):
-        _ = schema.edge_type_map
-
-    with pytest.raises(AttributeError, match="This was removed"):
-        _ = schema.get_edge_type
-
-    with pytest.warns(
-        DeprecationWarning, match="'create_type_maps' parameter is ignored"
-    ):
-        sg.create_graph_schema(create_type_maps=True)
-
-
 @pytest.mark.benchmark(group="StellarGraph create_graph_schema")
 @pytest.mark.parametrize("num_types", [1, 4])
 def test_benchmark_graph_schema(benchmark, num_types):
@@ -789,7 +767,7 @@ def test_edges_include_weights():
 
 def test_adjacency_types_undirected():
     g = example_hin_1(is_directed=False)
-    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+    adj = g._adjacency_types(g.create_graph_schema())
 
     assert adj == {
         ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
@@ -800,7 +778,7 @@ def test_adjacency_types_undirected():
 
 def test_adjacency_types_directed():
     g = example_hin_1(is_directed=True)
-    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+    adj = g._adjacency_types(g.create_graph_schema())
 
     assert adj == {
         ("A", "R", "B"): {1: [4, 5], 2: [4]},
