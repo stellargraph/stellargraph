@@ -52,7 +52,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
             seed (int, optional): Random number generator seed; default is None
 
         Returns:
-            A list of lists such that each list element is a sequence of ids corresponding to a BFW.
+            A list of lists, each list is a sequence of ids at a certain hop.
         """
 
         def bfs_neighbor_query(sampling_direction):
@@ -82,21 +82,18 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
                 RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
             """
 
-        walks = [[head_node for head_node in nodes for _ in range(n)]]
-        sample_query = bfs_neighbor_query(sampling_direction="BOTH")
+        samples = [[head_node for head_node in nodes for _ in range(n)]]
+        neighbor_query = bfs_neighbor_query(sampling_direction="BOTH")
 
         for num_sample in n_size:
-
-            cur_nodes = walks[-1]
-
+            cur_nodes = samples[-1]
             result = neo4j_graphdb.run(
-                sample_query,
+                neighbor_query,
                 parameters={"node_id_list": cur_nodes, "num_samples": num_sample},
             )
+            samples.append(result.data()[0]["next_samples"])
 
-            walks.append(result.data()[0]["next_samples"])
-
-        return walks
+        return samples
 
 
 @experimental(reason="the class is not fully tested")
@@ -111,15 +108,15 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
     ):
         """
         Send queries to Neo4J databases and collect sampled breadth-first walks starting from the root nodes.
-        
+
         Args:
             neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object
             nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
-            n: (int) Number of walks per node id.
-            in_size: (list) The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_size: (list) The number of out-directed nodes to sample with replacement at each depth of the walk.
-            seed: (int) Random number generator seed; default is None
+            n (int): Number of walks per node id.
+            in_size (list): The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size (list): The number of out-directed nodes to sample with replacement at each depth of the walk.
+            seed (int): Random number generator seed; default is None
         Returns:
             A list of multi-hop neighbourhood samples. Each sample expresses multiple undirected walks, but the in-node
             neighbours and out-node neighbours are sampled separately. Each sample has the format:
@@ -155,35 +152,35 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         self._check_neighbourhood_sizes(in_size, out_size)
         self._check_common_parameters(nodes, n, len(in_size), seed)
 
-        walks = [[head_node for head_node in nodes for _ in range(n)]]
+        samples = [[head_node for head_node in nodes for _ in range(n)]]
 
-        cur_tree_node = 0
-        tree_level_end = 0
+        tree_cur_index = 0
+        tree_end_index = 0
 
         in_sample_query = bfs_neighbor_query(sampling_direction="IN")
         out_sample_query = bfs_neighbor_query(sampling_direction="OUT")
-        #
-        for in_num, out_num in zip(in_size, out_size):
-            while cur_tree_node <= tree_level_end:
-                cur_nodes = walks[cur_tree_node]
 
+        for in_num, out_num in zip(in_size, out_size):
+            while tree_cur_index <= tree_end_index:
+                cur_nodes = samples[tree_cur_index]
+                # get in-neighbor nodes
                 neighbor_records = neo4j_graphdb.run(
                     in_sample_query,
                     parameters={"node_id_list": cur_nodes, "num_samples": in_num},
                 )
-                walks.append(neighbor_records.data()[0]["next_samples"])
-
+                samples.append(neighbor_records.data()[0]["next_samples"])
+                # set out-neighbor nodes
                 neighbor_records = neo4j_graphdb.run(
                     out_sample_query,
                     parameters={"node_id_list": cur_nodes, "num_samples": out_num},
                 )
-                walks.append(neighbor_records.data()[0]["next_samples"])
+                samples.append(neighbor_records.data()[0]["next_samples"])
 
-                cur_tree_node += 1
+                tree_cur_index += 1
 
-            tree_level_end = tree_level_end * 2 + 2
+            tree_end_index = tree_end_index * 2 + 2
 
-        return walks
+        return samples
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """

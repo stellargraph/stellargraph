@@ -54,9 +54,17 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
 
     def __init__(self, G, batch_size, neo4j_graphdb, schema=None):
 
-        import py2neo
-
         super().__init__(G, batch_size, schema)
+
+        try:
+            import py2neo
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                f"{e.msg}. StellarGraph can only connect to Neo4j using the 'py2neo' module; please install it",
+                name=e.name,
+                path=e.path,
+            ) from None
+
         # Create neo4J driver
         if not isinstance(neo4j_graphdb, py2neo.Graph):
             raise TypeError(
