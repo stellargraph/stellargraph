@@ -872,6 +872,12 @@ class StellarGraph:
         Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
 
         Args:
+            node_type_name (str): the name of the attribute to use to store a node's type (or label).
+
+            edge_type_name (str): the name of the attribute to use to store a edge's type (or label).
+
+            edge_weight_label (str): the name of the attribute to use to store a edge's weight.
+
             feature_name (str, optional): the name of the attribute to use to store a node's feature
                 vector; if ``None``, feature vectors are not stored within each node.
 
