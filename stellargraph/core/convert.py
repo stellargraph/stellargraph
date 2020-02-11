@@ -240,8 +240,9 @@ def _features_from_node_data(nodes, data, dtype):
 
 def _fill_or_assign(df, column, default):
     if column in df.columns:
-        return df.fillna({column: default})
-    return df.assign(**{column: default})
+        df.fillna({column: default}, inplace=True)
+    else:
+        df[column] = default
 
 
 def from_networkx(
@@ -282,13 +283,9 @@ def from_networkx(
         node_frames = _features_from_node_data(nodes, node_features, dtype)
 
     edges = nx.to_pandas_edgelist(graph, source=SOURCE, target=TARGET)
-    edges_with_types = _fill_or_assign(edges, edge_type_name, edge_type_default)
-    edges_with_weights = _fill_or_assign(
-        edges_with_types, edge_weight_label, DEFAULT_WEIGHT
-    )
-    edges_limited_columns = edges_with_weights[
-        [SOURCE, TARGET, edge_type_name, edge_weight_label]
-    ]
+    _fill_or_assign(edges, edge_type_name, edge_type_default)
+    _fill_or_assign(edges, edge_weight_label, DEFAULT_WEIGHT)
+    edges_limited_columns = edges[[SOURCE, TARGET, edge_type_name, edge_weight_label]]
     edge_frames = {
         edge_type: data.drop(columns=edge_type_name)
         for edge_type, data in edges_limited_columns.groupby(edge_type_name)
