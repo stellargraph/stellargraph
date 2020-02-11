@@ -848,7 +848,7 @@ class StellarGraph:
 
         return "\n".join(lines)
 
-    def create_graph_schema(self, create_type_maps=None, nodes=None):
+    def create_graph_schema(self, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -866,12 +866,6 @@ class StellarGraph:
         Returns:
             GraphSchema object.
         """
-        if create_type_maps is not None:
-            warnings.warn(
-                "The 'create_type_maps' parameter is ignored now, and does not need to be specified",
-                DeprecationWarning,
-            )
-
         if self._graph is not None:
             return self._graph.create_graph_schema(nodes)
 

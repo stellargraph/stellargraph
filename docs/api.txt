@@ -12,14 +12,14 @@ Data
 ----------------
 
 .. automodule:: stellargraph.data
-  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
+  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, TemporalRandomWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
 
 
 Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator
 
 
 GraphSAGE model
@@ -84,6 +84,13 @@ GAT model
   :members: GAT, GraphAttention, GraphAttentionSparse
 
 
+Watch Your Step model
+-------------------------
+
+.. automodule:: stellargraph.layer.watch_your_step
+  :members: WatchYourStep
+
+
 Link prediction layers
 ------------------------
 
@@ -110,3 +117,10 @@ Datasets
 .. automodule:: stellargraph.datasets.datasets
   :members:
   :inherited-members:
+
+
+Random
+------------------------
+
+.. automodule:: stellargraph.random
+  :members: set_seed
