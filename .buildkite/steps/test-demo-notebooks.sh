@@ -38,24 +38,14 @@ echo "+++ :python: running $f"
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
+    'calibration-pubmed-link-prediction.ipynb' | 'ensemble-link-prediction-example.ipynb' | 'movielens-recommender.ipynb' | 'stellargraph-metapath2vec.ipynb' | \
     'ensemble-node-classification-example.ipynb' | 'cora-gcn-links-example.ipynb')
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
+    # FIXME #820: too slow
     # FIXME #816: missing dataset download
     exit 2 # this will be a soft-fail for buildkite
-    ;;
-
-  'calibration-pubmed-link-prediction.ipynb' | 'ensemble-link-prediction-example.ipynb' | 'movielens-recommender.ipynb' | \
-    'stellargraph-metapath2vec.ipynb' )
-    # These notebooks are very slow and are expected to time out (which will be a buildkite soft-fail):
-    # FIXME #820: too slow
-    # FIXME #833: too slow
-    exitCode=0
-    papermill --execution-timeout=300 --log-output "$f" "$f" || exitCode=$?
-    # and also upload the notebook with outputs, for someone to download and look at
-    buildkite-agent artifact upload "$(basename "$f")"
-    exit $exitCode
     ;;
 
   *) # this is a demo notebook with no expected issues, and should run to completion
