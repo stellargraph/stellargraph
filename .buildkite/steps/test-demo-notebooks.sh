@@ -34,7 +34,7 @@ case $(basename "$f") in
     # FIXME #819: out-of-memory
     # FIXME #820: too slow
     # FIXME #816: missing dataset download
-    echo "+++ :python: skipping $f"
+    echo "+++ :python: :skull_and_crossbones: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
 esac
