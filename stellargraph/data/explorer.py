@@ -35,6 +35,7 @@ from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.experimental import experimental
+from ..random import random_state
 
 
 class GraphWalk(object):
@@ -47,10 +48,8 @@ class GraphWalk(object):
 
         # Initialize the random state
         self._check_seed(seed)
-        self._random_state = random.Random(seed)
 
-        # Initialize a numpy random state (for numpy random methods)
-        self._np_random_state = np.random.RandomState(seed=seed)
+        self._random_state, self._np_random_state = random_state(seed)
 
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraph):
@@ -97,7 +96,8 @@ class GraphWalk(object):
             # Restore the random state
             return self._random_state
         # seed the random number generator
-        return random.Random(seed)
+        rs, _ = random_state(seed)
+        return rs
 
     def neighbors(self, node):
         if not self.graph.has_node(node):
