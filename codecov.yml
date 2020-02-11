@@ -1,0 +1,9 @@
+---
+coverage:
+  precision: 1
+  round: nearest
+  status:
+    project:
+      default:
+        # dropping slightly is ok
+        threshold: 1.0
