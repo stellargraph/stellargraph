@@ -156,11 +156,13 @@ def convert_edges(
     return EdgeData(edges, node_data)
 
 
-NodeInfo = namedtuple("NodeInfo", ["ids", "features"])
+SingleTypeNodeIdsAndFeatures = namedtuple(
+    "SingleTypeNodeIdsAndFeatures", ["ids", "features"]
+)
 
 
-def _empty_node_info() -> NodeInfo:
-    return NodeInfo([], [])
+def _empty_node_info() -> SingleTypeNodeIdsAndFeatures:
+    return SingleTypeNodeIdsAndFeatures([], [])
 
 
 def _features_from_attributes(node_type, num_nodes, values, dtype):
