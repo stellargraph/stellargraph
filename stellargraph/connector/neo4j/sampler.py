@@ -81,7 +81,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
 
                 RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
             """
-        
+
         samples = [[head_node for head_node in nodes for _ in range(n)]]
         neighbor_query = bfs_neighbor_query(sampling_direction="BOTH")
 
@@ -153,7 +153,6 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         self._check_common_parameters(nodes, n, len(in_size), seed)
 
         samples = [[head_node for head_node in nodes for _ in range(n)]]
-        
 
         tree_cur_index = 0
         tree_end_index = 0
@@ -162,7 +161,7 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         out_sample_query = bfs_neighbor_query(sampling_direction="OUT")
 
         for in_num, out_num in zip(in_size, out_size):
-            # BFS traversal in the binary tree
+            # BFS traversal in the flattened binary tree
             while tree_cur_index <= tree_end_index:
                 cur_nodes = samples[tree_cur_index]
                 # get in-neighbor nodes
