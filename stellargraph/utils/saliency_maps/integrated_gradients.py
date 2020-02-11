@@ -32,6 +32,14 @@ from .saliency import GradientSaliency
 from scipy.sparse import csr_matrix
 
 
+def _integrate(func, steps):
+    """Simple numerical integration of func by steps from 0 to 1"""
+    dx = 1.0 / steps
+    lower = dx / 2
+    upper = 1 - dx / 2
+    return sum(func(x) for x in np.linspace(lower, upper, steps)) * dx
+
+
 class IntegratedGradients(GradientSaliency):
     """
     A SaliencyMask class that implements the integrated gradients method.
@@ -70,12 +78,13 @@ class IntegratedGradients(GradientSaliency):
             X_baseline = np.zeros(X_val.shape)
         X_diff = X_val - X_baseline
 
-        total_gradients = np.zeros(X_val.shape)
-        for alpha in np.linspace(0, 1, steps):
+        def calculate_gradient(alpha):
             X_step = X_baseline + alpha * X_diff
-            total_gradients += self.get_node_masks(
+            return self.get_node_masks(
                 node_idx, class_of_interest, X_step, A_index, A_val
             )
+
+        total_gradients = _integrate(calculate_gradient, steps)
         return np.squeeze(total_gradients * X_diff, 0)
 
     def get_integrated_link_masks(
@@ -116,26 +125,20 @@ class IntegratedGradients(GradientSaliency):
             else:
                 A_baseline = np.zeros(A_val.shape)
         A_diff = A_val - A_baseline
-        total_gradients = np.zeros_like(A_val)
-        if self.is_sparse:
-            A_dense_shape = csr_matrix(
-                (A_val[0], (A_index[0, :, 0], A_index[0, :, 1]))
-            ).shape
-            total_gradients = csr_matrix(A_dense_shape)
-        for alpha in np.linspace(1.0 / steps, 1.0, steps):
+
+        def calculate_gradient(alpha):
             A_step = A_baseline + alpha * A_diff
-            tmp = self.get_link_masks(
+            return self.get_link_masks(
                 node_idx, class_of_interest, X_val, A_index, A_step
             )
-            total_gradients += tmp
+
+        total_gradients = _integrate(calculate_gradient, steps)
 
         if self.is_sparse:
             A_diff = csr_matrix((A_diff[0], (A_index[0, :, 0], A_index[0, :, 1])))
-            total_gradients = total_gradients.multiply(A_diff) / steps
+            total_gradients = total_gradients.multiply(A_diff)
         else:
-            total_gradients = np.squeeze(
-                np.multiply(total_gradients, A_diff) / steps, 0
-            )
+            total_gradients = np.squeeze(np.multiply(total_gradients, A_diff), 0)
 
         return total_gradients
 
