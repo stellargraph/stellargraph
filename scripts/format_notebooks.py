@@ -181,6 +181,7 @@ if __name__ == "__main__":
         help="Set kernel spec to default 'Python 3'",
     )
     parser.add_argument(
+        "-s",
         "--coalesce_streams",
         action="store_true",
         help="Coalesce streamed output into a single chunk of output",
@@ -189,7 +190,7 @@ if __name__ == "__main__":
         "-d",
         "--default",
         action="store_true",
-        help="Perform default formatting, equivalent to -wcnk",
+        help="Perform default formatting, equivalent to -wcnks",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
