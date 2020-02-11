@@ -23,9 +23,8 @@ from stellargraph.core.graph import *
 from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, allocation_benchmark
 from ..test_utils.graphs import (
-    example_graph_1,
-    example_graph_1_nx,
-    example_graph_2,
+    example_graph_nx,
+    example_graph,
     example_hin_1_nx,
     example_hin_1,
 )
@@ -212,8 +211,19 @@ def test_schema_removals():
         sg.create_graph_schema(create_type_maps=True)
 
 
+@pytest.mark.benchmark(group="StellarGraph create_graph_schema")
+@pytest.mark.parametrize("num_types", [1, 4])
+def test_benchmark_graph_schema(benchmark, num_types):
+    nodes, edges = example_benchmark_graph(
+        n_nodes=1000, n_edges=5000, n_types=num_types
+    )
+    sg = StellarGraph(nodes=nodes, edges=edges)
+
+    benchmark(sg.create_graph_schema)
+
+
 def test_get_index_for_nodes():
-    sg = example_graph_2(feature_size=8)
+    sg = example_graph(feature_size=8)
     aa = sg._get_index_for_nodes([1, 2, 3, 4])
     assert list(aa) == [0, 1, 2, 3]
 
@@ -231,7 +241,7 @@ def test_get_index_for_nodes():
 
 
 def test_feature_conversion_from_nodes():
-    sg = example_graph_2(feature_size=8)
+    sg = example_graph(feature_size=8)
     aa = sg.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
 
@@ -240,13 +250,13 @@ def test_feature_conversion_from_nodes():
 
 
 def test_node_features_missing_id():
-    sg = example_graph_2(feature_size=6)
+    sg = example_graph(feature_size=6)
     with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
         sg.node_features([1, 1000, None, 2000])
 
 
 def test_null_node_feature():
-    sg = example_graph_2(feature_size=6)
+    sg = example_graph(feature_size=6)
     aa = sg.node_features([1, None, 2, None])
     assert aa.shape == (4, 6)
     assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
@@ -273,7 +283,7 @@ def test_null_node_feature():
 
 
 def test_node_types():
-    sg = example_graph_2(feature_size=6)
+    sg = example_graph(feature_size=6)
     assert sg.node_types == {"default"}
 
     sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
@@ -284,7 +294,7 @@ def test_node_types():
 
 
 def test_feature_conversion_from_dataframe():
-    g = example_graph_1_nx()
+    g = example_graph_nx()
 
     # Create features for nodes
     df = pd.DataFrame({v: np.ones(10) * float(v) for v in list(g)}).T
@@ -334,7 +344,7 @@ def test_feature_conversion_from_dataframe():
 
 
 def test_feature_conversion_from_iterator():
-    g = example_graph_1_nx()
+    g = example_graph_nx()
 
     # Create features for nodes
     node_features = [(v, np.ones(10) * float(v)) for v in list(g)]
@@ -348,7 +358,7 @@ def test_feature_conversion_from_iterator():
     assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
 
     # Test adjacency matrix
-    adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 0], [1, 0, 0, 0]])
+    adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0]])
 
     A = gs.to_adjacency_matrix()
     assert A.dtype == "float32"
@@ -464,7 +474,7 @@ def test_to_networkx(has_features):
 
     edge_def = {"R": [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], "F": [(4, 5)]}
     expected_edges = [
-        (src, tgt, {"label": label, "weight": 1.0})
+        (src, tgt, {"label": label, "weight": 1.0 if label == "R" else 10.0})
         for label, pairs in edge_def.items()
         for src, tgt in pairs
     ]
@@ -608,12 +618,19 @@ def test_allocation_benchmark_creation(
 
 
 def example_weighted_hin(is_directed=True):
-    graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
-    graph.add_nodes_from([0, 1], label="A")
-    graph.add_nodes_from([2, 3], label="B")
-    graph.add_weighted_edges_from([(0, 1, 0.0), (0, 1, 1.0)], label="AA")
-    graph.add_weighted_edges_from([(1, 2, 10.0), (1, 3, 10.0)], label="AB")
-    return StellarDiGraph(graph) if is_directed else StellarGraph(graph)
+    edge_cols = ["source", "target", "weight"]
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(
+        nodes={"A": pd.DataFrame(index=[0, 1]), "B": pd.DataFrame(index=[2, 3])},
+        edges={
+            "AA": pd.DataFrame(
+                [(0, 1, 0.0), (0, 1, 1.0)], columns=edge_cols, index=[0, 1]
+            ),
+            "AB": pd.DataFrame(
+                [(1, 2, 10.0), (1, 3, 10.0)], columns=edge_cols, index=[2, 3]
+            ),
+        },
+    )
 
 
 def example_unweighted_hom(is_directed=True):
@@ -704,6 +721,17 @@ def test_out_nodes_unweighted_hom():
     )
 
 
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_isolated_node_neighbor_methods(is_directed):
+    cls = StellarDiGraph if is_directed else StellarGraph
+    graph = cls(
+        nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
+    )
+    assert graph.neighbors(1) == []
+    assert graph.in_nodes(1) == []
+    assert graph.out_nodes(1) == []
+
+
 def test_stellargraph_experimental():
     nodes = pd.DataFrame([], index=[0])
     edges = pd.DataFrame([], columns=["source", "target"])
@@ -715,7 +743,7 @@ def test_stellargraph_experimental():
 
 
 def test_info_homogeneous():
-    g = example_graph_1(node_label="ABC", edge_label="xyz")
+    g = example_graph(node_label="ABC", edge_label="xyz")
     info = g.info()
     assert "Undirected multigraph" in info
     assert "Nodes: 4, Edges: 4" in info
@@ -779,3 +807,84 @@ def test_adjacency_types_directed():
         ("B", "R", "A"): {4: [0], 5: [3]},
         ("B", "F", "B"): {4: [5]},
     }
+
+
+def test_to_adjacency_matrix_undirected():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7), dtype=matrix.dtype)
+    actual[0, 4] = actual[4, 0] = 1
+    actual[1, 5] = actual[5, 1] = 1
+    actual[1, 4] = actual[4, 1] = 1
+    actual[2, 4] = actual[4, 2] = 1
+    actual[3, 5] = actual[5, 3] = 1
+    actual[4, 5] = actual[5, 4] = 10
+    actual[5, 5] = 11 + 12
+    assert np.array_equal(matrix, actual)
+
+    # just to confirm, it should be symmetric
+    assert np.array_equal(matrix, matrix.T)
+
+    # use a funny order to verify order
+    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    # indices are relative to the specified list
+    one, six, five = 0, 1, 2
+    actual = np.zeros((3, 3), dtype=subgraph.dtype)
+    actual[one, five] = actual[five, one] = 1
+    actual[five, five] = 11 + 12
+    assert np.array_equal(subgraph, actual)
+
+
+def test_to_adjacency_matrix_directed():
+    g = example_hin_1(is_directed=True, self_loop=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7))
+    actual[4, 0] = 1
+    actual[1, 5] = 1
+    actual[1, 4] = 1
+    actual[2, 4] = 1
+    actual[5, 3] = 1
+    actual[4, 5] = 10
+    actual[5, 5] = 11 + 12
+
+    assert np.array_equal(matrix, actual)
+
+    # use a funny order to verify order
+    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    # indices are relative to the specified list
+    one, six, five = 0, 1, 2
+    actual = np.zeros((3, 3), dtype=subgraph.dtype)
+    actual[one, five] = 1
+    actual[five, five] = 11 + 12
+    assert np.array_equal(subgraph, actual)
+
+
+def test_edge_weights_undirected():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(4, 5) == [10.0]
+    assert g._edge_weights(5, 4) == [10.0]
+    assert g._edge_weights(0, 4) == [1]
+    assert g._edge_weights(4, 0) == [1]
+
+
+def test_edge_weights_directed():
+    g = example_hin_1(is_directed=True, self_loop=True)
+
+    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(4, 5) == [10.0]
+    assert g._edge_weights(5, 4) == []
+    assert g._edge_weights(0, 4) == []
+    assert g._edge_weights(4, 0) == [1]
+
+
+def test_node_type():
+    g = example_hin_1()
+    assert g.node_type(0) == "A"
+    assert g.node_type(4) == "B"
+
+    with pytest.raises(KeyError, match="1234"):
+        g.node_type(1234)
