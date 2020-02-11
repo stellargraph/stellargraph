@@ -453,7 +453,8 @@ def assert_networkx(g_nx, expected_nodes, expected_edges, *, directed):
 
 
 @pytest.mark.parametrize("has_features", [False, True])
-def test_to_networkx(has_features):
+@pytest.mark.parametrize("include_features", [False, True])
+def test_to_networkx(has_features, include_features):
     if has_features:
         a_size = 4
         b_size = 5
@@ -462,12 +463,24 @@ def test_to_networkx(has_features):
         a_size = b_size = 0
         feature_sizes = None
 
+    if include_features:
+        feature_name = "feature"
+    else:
+        feature_name = None
+
     g = example_hin_1(feature_sizes)
-    g_nx = g.to_networkx()
+    g_nx = g.to_networkx(feature_name=feature_name)
 
     node_def = {"A": (a_size, [0, 1, 2, 3]), "B": (b_size, [4, 5, 6])}
+
+    def node_attrs(label, x, size):
+        d = {"label": label}
+        if feature_name:
+            d[feature_name] = [x] * size
+        return d
+
     expected_nodes = {
-        x: {"label": label, "feature": [x] * size}
+        x: node_attrs(label, x, size)
         for label, (size, ids) in node_def.items()
         for x in ids
     }
