@@ -16,6 +16,8 @@ services:
       - BUILDKITE_BUILD_NUMBER
       - BUILDKITE_BRANCH
       - AWS_LOGS_BUCKET
+      - BUILDKITE_PARALLEL_JOB_COUNT
+      - BUILDKITE_PARALLEL_JOB
       # codecov needs extra info from Buildkite environment:
       - CI
       - BUILDKITE

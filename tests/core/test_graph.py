@@ -102,25 +102,25 @@ def example_benchmark_graph_nx(
 def test_graph_constructor():
     sg = StellarGraph()
     assert sg.is_directed() == False
-    assert sg._graph._node_type_attr == "label"
-    assert sg._graph._edge_type_attr == "label"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
-    sg = StellarGraph(node_type_name="type", edge_type_name="type")
+    sg = StellarGraph(nodes={}, edges={})
     assert sg.is_directed() == False
-    assert sg._graph._node_type_attr == "type"
-    assert sg._graph._edge_type_attr == "type"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
 
 def test_digraph_constructor():
     sg = StellarDiGraph()
     assert sg.is_directed() == True
-    assert sg._graph._node_type_attr == "label"
-    assert sg._graph._edge_type_attr == "label"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
-    sg = StellarDiGraph(node_type_name="type", edge_type_name="type")
+    sg = StellarDiGraph(nodes={}, edges={})
     assert sg.is_directed() == True
-    assert sg._graph._node_type_attr == "type"
-    assert sg._graph._edge_type_attr == "type"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
 
 def test_info():
@@ -187,28 +187,6 @@ def test_digraph_schema():
     assert "user" in schema.schema
     assert len(schema.schema["user"]) == 1
     assert len(schema.schema["movie"]) == 0
-
-
-def test_schema_removals():
-    sg = create_graph_1()
-    schema = sg.create_graph_schema()
-
-    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
-        _ = schema.node_type_map
-
-    with pytest.raises(AttributeError, match="'StellarGraph.node_type'"):
-        _ = schema.get_node_type
-
-    with pytest.raises(AttributeError, match="This was removed"):
-        _ = schema.edge_type_map
-
-    with pytest.raises(AttributeError, match="This was removed"):
-        _ = schema.get_edge_type
-
-    with pytest.warns(
-        DeprecationWarning, match="'create_type_maps' parameter is ignored"
-    ):
-        sg.create_graph_schema(create_type_maps=True)
 
 
 @pytest.mark.benchmark(group="StellarGraph create_graph_schema")
@@ -453,7 +431,8 @@ def assert_networkx(g_nx, expected_nodes, expected_edges, *, directed):
 
 
 @pytest.mark.parametrize("has_features", [False, True])
-def test_to_networkx(has_features):
+@pytest.mark.parametrize("include_features", [False, True])
+def test_to_networkx(has_features, include_features):
     if has_features:
         a_size = 4
         b_size = 5
@@ -462,12 +441,24 @@ def test_to_networkx(has_features):
         a_size = b_size = 0
         feature_sizes = None
 
+    if include_features:
+        feature_name = "feature"
+    else:
+        feature_name = None
+
     g = example_hin_1(feature_sizes)
-    g_nx = g.to_networkx()
+    g_nx = g.to_networkx(feature_name=feature_name)
 
     node_def = {"A": (a_size, [0, 1, 2, 3]), "B": (b_size, [4, 5, 6])}
+
+    def node_attrs(label, x, size):
+        d = {"label": label}
+        if feature_name:
+            d[feature_name] = [x] * size
+        return d
+
     expected_nodes = {
-        x: {"label": label, "feature": [x] * size}
+        x: node_attrs(label, x, size)
         for label, (size, ids) in node_def.items()
         for x in ids
     }
@@ -789,7 +780,7 @@ def test_edges_include_weights():
 
 def test_adjacency_types_undirected():
     g = example_hin_1(is_directed=False)
-    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+    adj = g._adjacency_types(g.create_graph_schema())
 
     assert adj == {
         ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
@@ -800,7 +791,7 @@ def test_adjacency_types_undirected():
 
 def test_adjacency_types_directed():
     g = example_hin_1(is_directed=True)
-    adj = g._adjacency_types(g.create_graph_schema(create_type_maps=True))
+    adj = g._adjacency_types(g.create_graph_schema())
 
     assert adj == {
         ("A", "R", "B"): {1: [4, 5], 2: [4]},
@@ -888,3 +879,67 @@ def test_node_type():
 
     with pytest.raises(KeyError, match="1234"):
         g.node_type(1234)
+
+
+def test_from_networkx_empty():
+    empty = StellarGraph.from_networkx(nx.Graph())
+    assert not empty.is_directed()
+    assert isinstance(empty, StellarGraph)
+
+    empty = StellarGraph.from_networkx(nx.DiGraph())
+    assert empty.is_directed()
+    assert isinstance(empty, StellarDiGraph)
+
+
+def test_from_networkx_smoke():
+    g = nx.MultiGraph()
+    g.add_node(1, node_label="a", features=[1])
+    g.add_node(2)
+    g.add_node(3, features=[2, 3, 4, 5])
+    g.add_edge(1, 2, weight_attr=123)
+    g.add_edge(2, 2, edge_label="X", weight_attr=456)
+    g.add_edge(1, 2, edge_label="Y")
+    g.add_edge(1, 1)
+
+    from_nx = StellarGraph.from_networkx(
+        g,
+        edge_weight_label="weight_attr",
+        node_type_name="node_label",
+        edge_type_name="edge_label",
+        node_type_default="b",
+        edge_type_default="X",
+        node_features="features",
+    )
+
+    raw = StellarGraph(
+        nodes={
+            "a": pd.DataFrame([1], index=[1]),
+            "b": pd.DataFrame([(0, 0, 0, 0), (2, 3, 4, 5)], index=[2, 3]),
+        },
+        edges={
+            "X": pd.DataFrame(
+                [(1, 2, 123.0), (2, 2, 456.0), (1, 1, 1.0)],
+                columns=["source", "target", "weight"],
+            ),
+            "Y": pd.DataFrame(
+                [(1, 2, 1.0)], columns=["source", "target", "weight"], index=[3]
+            ),
+        },
+    )
+
+    def both(f, numpy=False):
+        if numpy:
+            assert np.array_equal(f(from_nx), f(raw))
+        else:
+            assert f(from_nx) == f(raw)
+
+    both(lambda g: sorted(g.nodes()))
+    nodes = raw.nodes()
+
+    for n in nodes:
+        both(lambda g: g.node_type(n))
+        both(lambda g: g.node_features([n]), numpy=True)
+
+    both(
+        lambda g: dict(zip(*g.edges(include_edge_type=True, include_edge_weight=True)))
+    )
