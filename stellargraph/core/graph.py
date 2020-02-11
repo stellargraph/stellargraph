@@ -184,7 +184,7 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
     ):
-        if graph is not None or (nodes is None and edges is None):
+        if graph is not None:
             # While migrating, maintain complete compatibility by deferring to the networkx
             # implementation
 

@@ -102,25 +102,25 @@ def example_benchmark_graph_nx(
 def test_graph_constructor():
     sg = StellarGraph()
     assert sg.is_directed() == False
-    assert sg._graph._node_type_attr == "label"
-    assert sg._graph._edge_type_attr == "label"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
-    sg = StellarGraph(node_type_name="type", edge_type_name="type")
+    sg = StellarGraph(nodes={}, edges={})
     assert sg.is_directed() == False
-    assert sg._graph._node_type_attr == "type"
-    assert sg._graph._edge_type_attr == "type"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
 
 def test_digraph_constructor():
     sg = StellarDiGraph()
     assert sg.is_directed() == True
-    assert sg._graph._node_type_attr == "label"
-    assert sg._graph._edge_type_attr == "label"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
-    sg = StellarDiGraph(node_type_name="type", edge_type_name="type")
+    sg = StellarDiGraph(nodes={}, edges={})
     assert sg.is_directed() == True
-    assert sg._graph._node_type_attr == "type"
-    assert sg._graph._edge_type_attr == "type"
+    assert sg.number_of_nodes() == 0
+    assert sg.number_of_edges() == 0
 
 
 def test_info():
