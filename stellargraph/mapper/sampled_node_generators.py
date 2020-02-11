@@ -46,7 +46,7 @@ from ..data import (
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
 from . import NodeSequence
-from .util import SeededSamplers
+from ..data.explorer import ConcurrentGraphWalk
 from ..random import random_state
 
 
@@ -217,7 +217,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Create sampler for GraphSAGE
         self._rs, _ = random_state(seed)
-        self._samplers = SeededSamplers(
+        self._samplers = ConcurrentGraphWalk(
             lambda s: SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=s),
             rs=self._rs,
         )

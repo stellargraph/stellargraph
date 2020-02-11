@@ -27,6 +27,7 @@ __all__ = [
 
 import numpy as np
 import random
+import threading
 import warnings
 from collections import defaultdict, deque
 from scipy import stats
@@ -953,3 +954,31 @@ class TemporalRandomWalk(GraphWalk):
                 break
 
         return walk
+
+
+class ConcurrentGraphWalk:
+    """
+    Internal utility class for using GraphWalk classes in a multi-threaded
+    environment.
+
+    """
+
+    def __init__(self, create_with_seed, rs):
+        self._create_with_seed = create_with_seed
+        self._walkers = []
+        self._lock = threading.Lock()
+        self._rs = rs
+
+    def __getitem__(self, index):
+        self._lock.acquire()
+        try:
+            return self._walkers[index]
+        except IndexError:
+            # always create a new seeded sampler in ascending order of batch number
+            # this ensures seeds are deterministic even when batches are run in parallel
+            for n in range(len(self._walkers), index + 1):
+                seed = self._rs.randint(0, 2 ** 32 - 1)
+                self._walkers.append(self._create_with_seed(seed))
+            return self._walkers[index]
+        finally:
+            self._lock.release()

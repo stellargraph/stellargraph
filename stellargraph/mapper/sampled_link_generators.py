@@ -39,10 +39,10 @@ from ..data import (
     UniformRandomWalk,
     UnsupervisedSampler,
 )
+from ..data.explorer import ConcurrentGraphWalk
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
 from ..random import random_state
-from .util import SeededSamplers
 
 
 class BatchedLinkGenerator(abc.ABC):
@@ -219,7 +219,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
         self._graph = G
         self._batch_sampler_rs, _ = random_state(seed)
-        self._samplers = SeededSamplers(
+        self._samplers = ConcurrentGraphWalk(
             lambda s: SampledBreadthFirstWalk(
                 self._graph, graph_schema=self.schema, seed=s
             ),
