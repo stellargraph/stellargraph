@@ -110,20 +110,19 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         self, neo4j_graphdb, nodes=None, n=1, in_size=None, out_size=None, seed=None
     ):
         """
-        Send queries to Neo4J graph databases and collect sampled breadth-first walks starting from the root nodes.
-
+        Send queries to Neo4J databases and collect sampled breadth-first walks starting from the root nodes.
+        
         Args:
-            neo4j_graphdb: (py2neo.Graph) the Neo4J Graph Database object
+            neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object
             nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
-            n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
-            n (int, default 1): Number of walks per node id.
-            neighbours with replacement is always used regardless of the node degree and number of neighbours
-            requested.
-            seed (int, optional): Random number generator seed; default is None
-
+            n: (int) Number of walks per node id.
+            in_size: (list) The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size: (list) The number of out-directed nodes to sample with replacement at each depth of the walk.
+            seed: (int) Random number generator seed; default is None
         Returns:
-            A list of lists such that each list element is a sequence of ids corresponding to a BFW.
+            A list of multi-hop neighbourhood samples. Each sample expresses multiple undirected walks, but the in-node
+            neighbours and out-node neighbours are sampled separately. Each sample has the format:
         """
 
         def bfs_neighbor_query(sampling_direction):
