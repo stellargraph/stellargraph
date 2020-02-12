@@ -895,6 +895,16 @@ class StellarGraph:
         """
         Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
 
+        Args:
+            node_type_name (str): the name of the attribute to use to store a node's type (or label).
+
+            edge_type_name (str): the name of the attribute to use to store a edge's type (or label).
+
+            edge_weight_label (str): the name of the attribute to use to store a edge's weight.
+
+            feature_name (str, optional): the name of the attribute to use to store a node's feature
+                vector; if ``None``, feature vectors are not stored within each node.
+
         Returns:
              An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
              undirected) containing all the nodes & edges and their types & features in this graph.
@@ -910,12 +920,15 @@ class StellarGraph:
             node_ids = self.nodes_of_type(ty)
             ty_dict = {node_type_name: ty}
 
-            features = self.node_features(node_ids, node_type=ty)
+            if feature_name is not None:
+                features = self.node_features(node_ids, node_type=ty)
 
-            for node_id, node_features in zip(node_ids, features):
-                graph.add_node(
-                    node_id, **ty_dict, **{feature_name: node_features},
-                )
+                for node_id, node_features in zip(node_ids, features):
+                    graph.add_node(
+                        node_id, **ty_dict, **{feature_name: node_features},
+                    )
+            else:
+                graph.add_nodes_from(node_ids, **ty_dict)
 
         iterator = zip(
             self._edges.sources,
