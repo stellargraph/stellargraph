@@ -296,6 +296,8 @@ class Ensemble(object):
 
         return self.history
 
+    fit_generator = fit
+
     def evaluate(
         self,
         generator,
@@ -388,6 +390,8 @@ class Ensemble(object):
 
         # Return the mean and standard deviation of the metrics
         return np.mean(test_metrics, axis=0), np.std(test_metrics, axis=0)
+
+    evaluate_generator = evaluate
 
     def predict(
         self,
@@ -501,6 +505,8 @@ class Ensemble(object):
         #     predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
         return predictions
+
+    predict_generator = predict
 
 
 #
@@ -680,3 +686,5 @@ class BaggingEnsemble(Ensemble):
             )
 
         return self.history
+
+    fit_generator = fit
