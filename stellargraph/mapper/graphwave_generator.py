@@ -24,7 +24,7 @@ from ..core.experimental import experimental
 
 @experimental(
     reason="lacks unit tests, and the time complexity could be reduced using Chebyshev polynomials.",
-    issues=[815, 853]
+    issues=[815, 853],
 )
 class GraphWaveGenerator:
     """
@@ -97,12 +97,19 @@ class GraphWaveGenerator:
         # U exp(-scale * eigenvalues) is computed and stored - which is an N x num_eigenvectors matrix
         # the columns of U exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
         Ues = [
-            self.eigen_vecs.dot(np.diag(np.exp(-s * eigen_vals)))[np.newaxis, :] for s in scales
+            self.eigen_vecs.dot(np.diag(np.exp(-s * eigen_vals)))[np.newaxis, :]
+            for s in scales
         ]  # a list of [U exp(-scale * eigenvalues) for scale in scales]
         self.Ues = tf.convert_to_tensor(np.concatenate(Ues, axis=0))
 
     def flow(
-        self, node_ids, sample_points, batch_size, targets=None, repeat=True, num_parallel_calls=1
+        self,
+        node_ids,
+        sample_points,
+        batch_size,
+        targets=None,
+        repeat=True,
+        num_parallel_calls=1,
     ):
         """
         Creates a tensorflow DataSet object of GraphWave embeddings.
@@ -121,11 +128,17 @@ class GraphWaveGenerator:
         """
         ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
-        dataset = tf.data.Dataset.from_tensor_slices(self.eigen_vecs[self._node_lookup(node_ids)])
+        dataset = tf.data.Dataset.from_tensor_slices(
+            self.eigen_vecs[self._node_lookup(node_ids)]
+        )
 
         # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
         # and empirically the characteristic function for each column of U exp(-scale * eigenvalues) U^T
-        dataset = dataset.map(lambda x: _empirical_characteristic_function(tf.linalg.matvec(self.Ues, x), ts))
+        dataset = dataset.map(
+            lambda x: _empirical_characteristic_function(
+                tf.linalg.matvec(self.Ues, x), ts
+            )
+        )
 
         if not targets is None:
 
