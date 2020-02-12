@@ -103,8 +103,8 @@ class BatchedLinkGenerator(abc.ABC):
 
         Returns:
             A NodeSequence object to use with with StellarGraph models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods ``fit``, ``evaluate``,
+            and ``predict``
 
         """
         if self.head_node_types is not None:
@@ -163,8 +163,8 @@ class BatchedLinkGenerator(abc.ABC):
 
         Returns:
             A NodeSequence object to use with StellarGraph models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods ``fit``, ``evaluate``,
+            and ``predict``
 
         """
         return self.flow(

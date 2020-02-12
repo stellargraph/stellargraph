@@ -188,7 +188,7 @@ class Ensemble(object):
 
         self.metrics_names = self.models[0].metrics_names  # assumes all models are same
 
-    def fit_generator(
+    def fit(
         self,
         generator,
         steps_per_epoch=None,
@@ -277,7 +277,7 @@ class Ensemble(object):
 
         for model in self.models:
             self.history.append(
-                model.fit_generator(
+                model.fit(
                     generator=generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=epochs,
@@ -296,7 +296,7 @@ class Ensemble(object):
 
         return self.history
 
-    def evaluate_generator(
+    def evaluate(
         self,
         generator,
         test_data=None,
@@ -376,20 +376,20 @@ class Ensemble(object):
             tm = []
             for _ in range(self.n_predictions):
                 tm.append(
-                    model.evaluate_generator(
+                    model.evaluate(
                         generator=data_generator,
                         max_queue_size=max_queue_size,
                         workers=workers,
                         use_multiprocessing=use_multiprocessing,
                         verbose=verbose,
-                    )  # Keras evaluate_generator returns a scalar
+                    )  # Keras evaluate returns a scalar
                 )
             test_metrics.append(np.mean(tm, axis=0))
 
         # Return the mean and standard deviation of the metrics
         return np.mean(test_metrics, axis=0), np.std(test_metrics, axis=0)
 
-    def predict_generator(
+    def predict(
         self,
         generator,
         predict_data=None,
@@ -480,7 +480,7 @@ class Ensemble(object):
             model_predictions = []
             for _ in range(self.n_predictions):
                 model_predictions.append(
-                    model.predict_generator(
+                    model.predict(
                         generator=data_generator,
                         max_queue_size=max_queue_size,
                         workers=workers,
@@ -532,7 +532,7 @@ class BaggingEnsemble(Ensemble):
             model=model, n_estimators=n_estimators, n_predictions=n_predictions
         )
 
-    def fit_generator(
+    def fit(
         self,
         generator,
         train_data,
@@ -662,7 +662,7 @@ class BaggingEnsemble(Ensemble):
                 ]
 
             self.history.append(
-                model.fit_generator(
+                model.fit(
                     generator=di_gen,
                     steps_per_epoch=steps_per_epoch,
                     epochs=epochs,

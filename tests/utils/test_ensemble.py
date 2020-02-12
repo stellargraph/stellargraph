@@ -318,7 +318,7 @@ def test_compile():
             )
 
 
-def test_Ensemble_fit_generator():
+def test_Ensemble_fit():
     tf.keras.backend.clear_session()
 
     graph = example_graph_1(feature_size=10)
@@ -342,10 +342,10 @@ def test_Ensemble_fit_generator():
             optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
         )
 
-        ens.fit_generator(train_gen, epochs=1, verbose=0, shuffle=False)
+        ens.fit(train_gen, epochs=1, verbose=0, shuffle=False)
 
         with pytest.raises(ValueError):
-            ens.fit_generator(
+            ens.fit(
                 generator=generator,  # wrong type
                 epochs=10,
                 validation_data=train_gen,
@@ -354,7 +354,7 @@ def test_Ensemble_fit_generator():
             )
 
 
-def test_BaggingEnsemble_fit_generator():
+def test_BaggingEnsemble_fit():
     tf.keras.backend.clear_session()
 
     train_data = np.array([1, 2])
@@ -381,7 +381,7 @@ def test_BaggingEnsemble_fit_generator():
             optimizer=Adam(), loss=categorical_crossentropy, weighted_metrics=["acc"]
         )
 
-        ens.fit_generator(
+        ens.fit(
             generator=generator,
             train_data=train_data,
             train_targets=train_targets,
@@ -393,7 +393,7 @@ def test_BaggingEnsemble_fit_generator():
 
         # This is a BaggingEnsemble so the generator in the below call is of the wrong type.
         with pytest.raises(ValueError):
-            ens.fit_generator(
+            ens.fit(
                 train_gen,
                 train_data=train_data,
                 train_targets=train_targets,
@@ -403,7 +403,7 @@ def test_BaggingEnsemble_fit_generator():
             )
 
         with pytest.raises(ValueError):
-            ens.fit_generator(
+            ens.fit(
                 generator=generator,
                 train_data=train_data,
                 train_targets=None,  # Should not be None
@@ -414,7 +414,7 @@ def test_BaggingEnsemble_fit_generator():
             )
 
         with pytest.raises(ValueError):
-            ens.fit_generator(
+            ens.fit(
                 generator=generator,
                 train_data=None,
                 train_targets=None,
@@ -425,7 +425,7 @@ def test_BaggingEnsemble_fit_generator():
             )
 
         with pytest.raises(ValueError):
-            ens.fit_generator(
+            ens.fit(
                 generator=generator,
                 train_data=train_data,
                 train_targets=train_targets,
@@ -437,7 +437,7 @@ def test_BaggingEnsemble_fit_generator():
             )
 
         with pytest.raises(ValueError):
-            ens.fit_generator(
+            ens.fit(
                 generator=generator,
                 train_data=train_data,
                 train_targets=train_targets,
@@ -449,7 +449,7 @@ def test_BaggingEnsemble_fit_generator():
             )
 
 
-def test_evaluate_generator():
+def test_evaluate():
     tf.keras.backend.clear_session()
 
     test_data = np.array([3, 4, 5])
@@ -478,27 +478,27 @@ def test_evaluate_generator():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator, test_data=test_data, test_targets=test_targets
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator,
                 test_data=test_data,
                 test_targets=None,  # must give test_targets
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator.flow(test_data, test_targets),
                 test_data=test_data,
                 test_targets=test_targets,
             )
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_metrics_mean, test_metrics_std = ens.evaluate_generator(
+        # the evaluate method.
+        test_metrics_mean, test_metrics_std = ens.evaluate(
             generator.flow(test_data, test_targets)
         )
 
@@ -518,27 +518,27 @@ def test_evaluate_generator():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator, test_data=test_data, test_targets=test_targets
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator,
                 test_data=test_data,
                 test_targets=None,  # must give test_targets
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator.flow(test_data, test_targets),
                 test_data=test_data,
                 test_targets=test_targets,
             )
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_metrics_mean, test_metrics_std = ens.evaluate_generator(
+        # the evaluate method.
+        test_metrics_mean, test_metrics_std = ens.evaluate(
             generator.flow(test_data, test_targets)
         )
 
@@ -547,7 +547,7 @@ def test_evaluate_generator():
         assert len(test_metrics_std.shape) == 1
 
 
-def test_predict_generator():
+def test_predict():
 
     tf.keras.backend.clear_session()
 
@@ -579,11 +579,11 @@ def test_predict_generator():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.predict_generator(generator=test_gen, predict_data=test_data)
+            ens.predict(generator=test_gen, predict_data=test_data)
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_predictions = ens.predict_generator(test_gen, summarise=True)
+        # the evaluate method.
+        test_predictions = ens.predict(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
         if i > 1:
@@ -594,7 +594,7 @@ def test_predict_generator():
             assert len(test_predictions) == len(test_data)
         assert test_predictions.shape[-1] == test_targets.shape[-1]
 
-        test_predictions = ens.predict_generator(test_gen, summarise=False)
+        test_predictions = ens.predict(test_gen, summarise=False)
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions
@@ -616,11 +616,11 @@ def test_predict_generator():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.predict_generator(generator=test_gen, predict_data=test_data)
+            ens.predict(generator=test_gen, predict_data=test_data)
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_predictions = ens.predict_generator(test_gen, summarise=True)
+        # the evaluate method.
+        test_predictions = ens.predict(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
         if i > 1:
@@ -631,7 +631,7 @@ def test_predict_generator():
             assert len(test_predictions) == len(test_data)
         assert test_predictions.shape[-1] == test_targets.shape[-1]
 
-        test_predictions = ens.predict_generator(test_gen, summarise=False)
+        test_predictions = ens.predict(test_gen, summarise=False)
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions
@@ -645,7 +645,7 @@ def test_predict_generator():
 #
 # Tests for link prediction that can't be combined easily with the node attribute inference workflow above.
 #
-def test_evaluate_generator_link_prediction():
+def test_evaluate_link_prediction():
     tf.keras.backend.clear_session()
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
     edge_labels_test = np.array([1, 1, 0])
@@ -671,29 +671,29 @@ def test_evaluate_generator_link_prediction():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator,
                 test_data=edge_ids_test,
                 test_targets=edge_labels_test,
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator,
                 test_data=edge_labels_test,
                 test_targets=None,  # must give test_targets
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator.flow(edge_ids_test, edge_labels_test),
                 test_data=edge_ids_test,
                 test_targets=edge_labels_test,
             )
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_metrics_mean, test_metrics_std = ens.evaluate_generator(
+        # the evaluate method.
+        test_metrics_mean, test_metrics_std = ens.evaluate(
             generator.flow(edge_ids_test, edge_labels_test)
         )
 
@@ -713,29 +713,29 @@ def test_evaluate_generator_link_prediction():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator,
                 test_data=edge_ids_test,
                 test_targets=edge_labels_test,
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator,
                 test_data=edge_labels_test,
                 test_targets=None,  # must give test_targets
             )
 
         with pytest.raises(ValueError):
-            ens.evaluate_generator(
+            ens.evaluate(
                 generator=generator.flow(edge_ids_test, edge_labels_test),
                 test_data=edge_ids_test,
                 test_targets=edge_labels_test,
             )
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_metrics_mean, test_metrics_std = ens.evaluate_generator(
+        # the evaluate method.
+        test_metrics_mean, test_metrics_std = ens.evaluate(
             generator.flow(edge_ids_test, edge_labels_test)
         )
 
@@ -744,7 +744,7 @@ def test_evaluate_generator_link_prediction():
         assert len(test_metrics_std.shape) == 1
 
 
-def test_predict_generator_link_prediction():
+def test_predict_link_prediction():
     tf.keras.backend.clear_session()
     edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
 
@@ -770,18 +770,18 @@ def test_predict_generator_link_prediction():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.predict_generator(generator=test_gen, predict_data=edge_ids_test)
+            ens.predict(generator=test_gen, predict_data=edge_ids_test)
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_predictions = ens.predict_generator(test_gen, summarise=True)
+        # the evaluate method.
+        test_predictions = ens.predict(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
         assert len(test_predictions) == len(edge_ids_test)
 
         assert test_predictions.shape[1] == 1
 
-        test_predictions = ens.predict_generator(test_gen, summarise=False)
+        test_predictions = ens.predict(test_gen, summarise=False)
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions
@@ -800,18 +800,18 @@ def test_predict_generator_link_prediction():
         # Check that passing invalid parameters is handled correctly. We will not check error handling for those
         # parameters that Keras will be responsible for.
         with pytest.raises(ValueError):
-            ens.predict_generator(generator=test_gen, predict_data=edge_ids_test)
+            ens.predict(generator=test_gen, predict_data=edge_ids_test)
 
         # We won't train the model instead use the initial random weights to test
-        # the evaluate_generator method.
-        test_predictions = ens.predict_generator(test_gen, summarise=True)
+        # the evaluate method.
+        test_predictions = ens.predict(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
         assert len(test_predictions) == len(edge_ids_test)
 
         assert test_predictions.shape[1] == 1
 
-        test_predictions = ens.predict_generator(test_gen, summarise=False)
+        test_predictions = ens.predict(test_gen, summarise=False)
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions

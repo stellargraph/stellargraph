@@ -145,7 +145,7 @@ def train(
     print(model.summary())
 
     # Train model
-    history = model.fit_generator(
+    history = model.fit(
         train_flow,
         epochs=num_epochs,
         validation_data=val_flow,
@@ -154,13 +154,13 @@ def train(
     )
 
     # Evaluate on test set and print metrics
-    test_metrics = model.evaluate_generator(generator.flow(test_nodes, test_targets))
+    test_metrics = model.evaluate(generator.flow(test_nodes, test_targets))
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
         print("\t{}: {:0.4f}".format(name, val))
 
     # Get predictions for all nodes
-    all_predictions = model.predict_generator(generator.flow(node_ids))
+    all_predictions = model.predict(generator.flow(node_ids))
 
     # Turn predictions back into the original categories
     node_predictions = pd.DataFrame(
@@ -245,7 +245,7 @@ def test(edgelist, node_data, model_file, batch_size, target_name="subject"):
     all_gen = generator.flow(node_ids, node_targets)
 
     # Evaluate and print metrics
-    all_metrics = model.evaluate_generator(all_gen)
+    all_metrics = model.evaluate(all_gen)
 
     print("\nAll-node Evaluation:")
     for name, val in zip(model.metrics_names, all_metrics):

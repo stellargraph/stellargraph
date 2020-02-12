@@ -76,7 +76,7 @@ def unsup_gs(
 
     model = unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize)
 
-    model.fit_generator(
+    model.fit(
         train_gen,
         epochs=epochs,
         verbose=1,

@@ -172,8 +172,8 @@ def train(
     )
 
     # Evaluate the initial (untrained) model on the train and test set:
-    init_train_metrics = model.evaluate_generator(train_flow)
-    init_test_metrics = model.evaluate_generator(test_flow)
+    init_train_metrics = model.evaluate(train_flow)
+    init_test_metrics = model.evaluate(test_flow)
 
     print("\nTrain Set Metrics of the initial (untrained) model:")
     for name, val in zip(model.metrics_names, init_train_metrics):
@@ -185,7 +185,7 @@ def train(
 
     # Train model
     print("\nTraining the model for {} epochs...".format(num_epochs))
-    history = model.fit_generator(
+    history = model.fit(
         train_flow,
         epochs=num_epochs,
         validation_data=test_flow,
@@ -194,8 +194,8 @@ def train(
     )
 
     # Evaluate and print metrics
-    train_metrics = model.evaluate_generator(train_flow)
-    test_metrics = model.evaluate_generator(test_flow)
+    train_metrics = model.evaluate(train_flow)
+    test_metrics = model.evaluate(test_flow)
 
     print("\nTrain Set Metrics of the trained model:")
     for name, val in zip(model.metrics_names, train_metrics):
@@ -253,7 +253,7 @@ def test(G, model_file: AnyStr, batch_size: int = 100):
     )
 
     # Evaluate and print metrics
-    test_metrics = model.evaluate_generator(test_flow)
+    test_metrics = model.evaluate(test_flow)
 
     print("\nTest Set Evaluation:")
     for name, val in zip(model.metrics_names, test_metrics):

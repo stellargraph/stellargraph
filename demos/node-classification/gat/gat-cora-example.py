@@ -164,8 +164,8 @@ def train(
             callbacks=[es_callback, tb_callback, mc_callback],
         )
     else:
-        print("\nUsing model.fit_generator() to train the model\n")
-        history = model.fit_generator(
+        print("\nUsing model.fit() to train the model\n")
+        history = model.fit(
             train_gen,
             epochs=num_epochs,
             validation_data=val_gen,
@@ -181,7 +181,7 @@ def train(
     if args.interface == "fit":
         val_metrics = model.evaluate(x=inputs_val, y=y_val)
     else:
-        val_metrics = model.evaluate_generator(val_gen)
+        val_metrics = model.evaluate(val_gen)
 
     print("\nBest model's Validation Set Metrics:")
     for name, val in zip(model.metrics_names, val_metrics):
@@ -192,7 +192,7 @@ def train(
         inputs_test, y_test = generator.flow(test_nodes, test_targets)[0]
         test_metrics = model.evaluate(x=inputs_test, y=y_test)
     else:
-        test_metrics = model.evaluate_generator(
+        test_metrics = model.evaluate(
             generator.flow(test_nodes, test_targets)
         )
 
@@ -201,7 +201,7 @@ def train(
         print("\t{}: {:0.4f}".format(name, val))
 
     # Get predictions for all nodes
-    all_predictions = model.predict_generator(generator.flow(node_ids))
+    all_predictions = model.predict(generator.flow(node_ids))
 
     # Remove singleton batch dimension
     all_predictions = np.squeeze(all_predictions)
@@ -302,8 +302,8 @@ if __name__ == "__main__":
         "-i",
         "--interface",
         type=str,
-        default="fit_generator",
-        help="Defines which method is used for model training (.fit() or .fit_generator())",
+        default="fit",
+        help="Defines which method is used for model training (.fit() or .fit())",
     )
     args, cmdline_args = parser.parse_known_args()
 

@@ -184,7 +184,7 @@ class LinkInference(object):
                 num_epochs, learning_rate
             )
         )
-        history = model.fit_generator(
+        history = model.fit(
             train_gen,
             validation_data=test_gen,
             epochs=num_epochs,
@@ -195,7 +195,7 @@ class LinkInference(object):
         )
 
         # Evaluate and print metrics
-        test_metrics = model.evaluate_generator(test_gen)
+        test_metrics = model.evaluate(test_gen)
 
         print("Test Evaluation:")
         for name, val in zip(model.metrics_names, test_metrics):

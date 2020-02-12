@@ -161,7 +161,7 @@ class ClusterNodeGenerator:
 
         Returns:
             A ClusterNodeSequence object to use with ClusterGCN in Keras
-            methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
+            methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
@@ -195,9 +195,9 @@ class ClusterNodeGenerator:
 class ClusterNodeSequence(Sequence):
     """
     A Keras-compatible data generator for node inference using ClusterGCN model.
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
     :class:`ClusterNodeGenerator`.

@@ -128,8 +128,8 @@ def test_ClusterGCN_apply():
     x_in, x_out = cluster_gcn_model.build()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b", "c"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b", "c"]))
     assert preds_2.shape == (1, 3, 2)
 
 

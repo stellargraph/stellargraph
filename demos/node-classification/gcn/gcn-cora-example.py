@@ -80,7 +80,7 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(
+    history = model.fit(
         train_gen, epochs=num_epochs, validation_data=val_gen, verbose=2, shuffle=False
     )
 
@@ -110,7 +110,7 @@ def test(test_nodes, test_targets, generator, model_file):
     print(model.summary())
 
     # Evaluate on test set and print metrics
-    test_metrics = model.evaluate_generator(test_gen)
+    test_metrics = model.evaluate(test_gen)
 
     print("\nTest Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):

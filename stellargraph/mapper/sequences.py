@@ -44,8 +44,8 @@ from ..core.utils import is_real_iterable
 
 class NodeSequence(Sequence):
     """Keras-compatible data generator to use with the Keras
-    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
-    and :meth:`keras.Model.predict_generator`.
+    methods :meth:`keras.Model.fit`, :meth:`keras.Model.evaluate`,
+    and :meth:`keras.Model.predict`.
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
@@ -145,8 +145,8 @@ class NodeSequence(Sequence):
 
 class LinkSequence(Sequence):
     """
-    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
-    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit`,
+    :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
     :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
@@ -243,8 +243,8 @@ class LinkSequence(Sequence):
 
 class OnDemandLinkSequence(Sequence):
     """
-    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
-    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit`,
+    :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
@@ -343,9 +343,9 @@ class FullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
     :class:`FullBatchNodeGenerator`.
@@ -401,9 +401,9 @@ class SparseFullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class uses sparse matrix representations to send data to the models,
     and only works with the Keras tensorflow backend. For any other backends,
@@ -467,9 +467,9 @@ class RelationalFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models on relational graphs
     that require full-batch training (e.g., RGCN).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class uses either dense or sparse representations to send data to the models.
 

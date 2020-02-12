@@ -568,6 +568,6 @@ def test_hinsage_from_generator():
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
-    actual = model.predict_generator(gen.flow([1, 2]))
+    actual = model.predict(gen.flow([1, 2]))
     expected = np.array([[26, 29], [32, 31]], dtype=np.float32)
     assert actual == pytest.approx(expected)
