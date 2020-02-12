@@ -64,7 +64,7 @@ class GraphWaveGenerator:
         # Function to map node IDs to indices for quicker node index lookups
         self._node_lookup = G._get_index_for_nodes
 
-        degree_mat = diags(np.array(adj.sum(1)).flatten())
+        degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
 
         if num_eigenvecs == -1:
@@ -92,10 +92,12 @@ class GraphWaveGenerator:
         # to avoid computing a dense NxN matrix when only several eigenvalues are specified
         # U exp(-scale * eigenvalues) is computed and stored - which is an N x num_eigenvectors matrix
         # the columns of U exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
+
+        # a list of [U exp(-scale * eigenvalues) for scale in scales]
         Ues = [
-            self.eigen_vecs.dot(np.diag(np.exp(-s * eigen_vals)))[np.newaxis, :]
+            (self.eigen_vecs * np.exp(-s * eigen_vals))[np.newaxis, :, :]
             for s in scales
-        ]  # a list of [U exp(-scale * eigenvalues) for scale in scales]
+        ]
         self.Ues = tf.convert_to_tensor(np.concatenate(Ues, axis=0))
 
     def flow(
@@ -133,7 +135,8 @@ class GraphWaveGenerator:
         dataset = dataset.map(
             lambda x: _empirical_characteristic_function(
                 tf.linalg.matvec(self.Ues, x), ts
-            )
+            ),
+            num_parallel_calls=num_parallel_calls,
         )
 
         if not targets is None:
