@@ -59,14 +59,10 @@ class GraphWaveGenerator:
             )
 
         # Create sparse adjacency matrix:
-        # Use the node orderings the same as in the graph features
-        self.node_list = G.nodes_of_type(node_types[0])
-        adj = G.to_adjacency_matrix(self.node_list).tocoo()
+        adj = G.to_adjacency_matrix().tocoo()
 
         # Function to map node IDs to indices for quicker node index lookups
-        # TODO: Move this to the graph class
-        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
-        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
+        self._node_lookup = G._get_index_for_nodes
 
         degree_mat = diags(np.array(adj.sum(1)).flatten())
         laplacian = degree_mat - adj
