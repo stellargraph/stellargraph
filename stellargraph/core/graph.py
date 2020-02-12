@@ -622,7 +622,7 @@ class StellarGraph:
 
         # everything that's not the sentinel should be valid
         non_nones = nodes != None
-        self._nodes.require_valid(nodes[non_nones], node_ilocs[non_nones])
+        self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
         sampled = self._nodes.features(node_type, valid_ilocs)
         features = np.zeros((len(nodes), sampled.shape[1]))
