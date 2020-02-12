@@ -67,7 +67,6 @@ class IntegratedGradients:
                 )
             self.A = generator.A_values
             self.A_indices = generator.A_indices
-            features_t, output_indices_t, adj_indices_t, adj_t = model.input
         else:
             if not isinstance(generator, FullBatchSequence):
                 raise TypeError(
@@ -79,11 +78,9 @@ class IntegratedGradients:
                 )
 
             self.A = generator.A_dense
-            features_t, output_indices_t, adj_t = model.input
 
         # Extract features from generator
         self.X = generator.features
-
         self.model = model
 
     def get_integrated_node_masks(
@@ -95,13 +92,14 @@ class IntegratedGradients:
     ):
         """
         Args:
-        X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
-                                                   which are used to compute the vanilla gradients.
-        X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
-                                              matrix with the size of the original feature matrix.
-        steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
+            node_idx: the index of the node to calculate gradients for.
+            class_of_interest: the index for the class probability that the gradients will be calculated for.
+            X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set
+                X_baseline to a all-zero matrix with the size of the original feature matrix.
+            steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
-        return (Numpy array): Integrated gradients for the node features.
+        Returns
+            (Numpy array): Integrated gradients for the node features.
         """
         if X_baseline is None:
             X_baseline = np.zeros(self.X.shape)
@@ -111,13 +109,13 @@ class IntegratedGradients:
         for alpha in np.linspace(0, 1, steps):
             X_step = X_baseline + alpha * X_diff
             if self.is_sparse:
-                grads = self.compute_gradients(
-                    [X_step, np.array([[node_idx]]), self.A_indices, self.A, 0, class_of_interest],
+                grads = self._compute_gradients(
+                    [X_step, np.array([[node_idx]]), self.A_indices, self.A, class_of_interest],
                     variable='nodes',
                 )
             else:
-                grads = self.compute_gradients(
-                    [X_step, np.array([[node_idx]]), self.A, 0, class_of_interest],
+                grads = self._compute_gradients(
+                    [X_step, np.array([[node_idx]]), self.A, class_of_interest],
                     variable='nodes',
                 )
 
@@ -130,20 +128,17 @@ class IntegratedGradients:
         node_idx,
         class_of_interest,
         non_exist_edge=False,
-        steps=20,
         A_baseline=None,
+        steps=20,
     ):
         """
         Args:
-        X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
-                                                   which are used to compute the vanilla gradients.
-        X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
-                                              matrix with the size of the original adjacency matrix.
-        steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.\
-
-        non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
-            adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
-            could only accurately measure the importance of existing edges.
+            node_idx: the index of the node to calculate gradients for.
+            class_of_interest: the index for the class probability that the gradients will be calculated for.
+            A_baseline: For integrated gradients, A_baseline is the reference adjacency matrix to start with. Generally
+                we should set A_baseline to an all-zero matrix or all-one matrix with the size of the original
+                A_baseline matrix.
+            steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
         return (Numpy array): shape the same with A_val. Integrated gradients for the links.
         """
@@ -162,12 +157,12 @@ class IntegratedGradients:
 
             # TODO: what is 0?
             if self.is_sparse:
-                grads = self.compute_gradients(
+                grads = self._compute_gradients(
                     [self.X, np.array([[node_idx]]), self.A_indices, A_step, 0, class_of_interest],
                     variable="links"
                 )
             else:
-                grads = self.compute_gradients(
+                grads = self._compute_gradients(
                     [self.X, np.array([[node_idx]]), A_step, 0, class_of_interest],
                     variable="links"
                 )
@@ -197,7 +192,9 @@ class IntegratedGradients:
         The importance of the node is defined as the sum of all the feature importance of the node.
 
         Args:
-            Refer to the parameters in get_integrated_node_masks.
+            node_idx: the index of the node to calculate gradients for.
+            class_of_interest: the index for the class probability that the gradients will be calculated for.
+            steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
         return (float): Importance score for the node.
         """
@@ -210,7 +207,7 @@ class IntegratedGradients:
 
         return np.sum(gradients, axis=-1)
 
-    def compute_gradients(self, mask_tensors, variable):
+    def _compute_gradients(self, mask_tensors, variable):
 
         for i, x in enumerate(mask_tensors):
             if not isinstance(x, tf.Tensor):
@@ -222,7 +219,6 @@ class IntegratedGradients:
                 output_indices_t,
                 adj_indices_t,
                 adj_t,
-                _,
                 class_of_interest,
             ) = mask_tensors
             model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
