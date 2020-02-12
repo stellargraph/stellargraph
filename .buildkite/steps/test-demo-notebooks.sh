@@ -27,7 +27,7 @@ f=${NOTEBOOKS[$INDEX]}
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
-    'calibration-pubmed-link-prediction.ipynb' | 'ensemble-link-prediction-example.ipynb' | 'movielens-recommender.ipynb' | 'stellargraph-metapath2vec.ipynb' | 'stellargraph-node2vec-weighted-random-walks.ipynb' | 'calibration-pubmed-node-classification.ipynb' | 'ensemble-node-classification-example.ipynb')
+    'calibration-pubmed-link-prediction.ipynb' | 'ensemble-link-prediction-example.ipynb' | 'movielens-recommender.ipynb' | 'stellargraph-metapath2vec.ipynb' | 'stellargraph-node2vec-weighted-random-walks.ipynb' | 'ensemble-node-classification-example.ipynb')
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
@@ -51,7 +51,7 @@ echo "+++ :python: running $f"
 cd "$(dirname "$f")"
 # run the notebook, saving it back to where it was, printing everything
 exitCode=0
-papermill --execution-timeout=600 --log-output "$f" "$f" || exitCode=$?
+papermill --execution-timeout=600 -p epocs 2 -p n_predictions 2 --log-output "$f" "$f" || exitCode=$?
 
 # and also upload the notebook with outputs, for someone to download and look at
 buildkite-agent artifact upload "$(basename "$f")"
