@@ -572,11 +572,15 @@ def test_hinsage_from_generator():
     # the prediction nodes are type  "A" : "A" nodes only have "B" neighbours, while "B" nodes have both "A" and "B"
     # neighbours.
 
-    kernel_1_A = np.ones((8, 1))
-    kernel_1_B = np.ones((4, 1))
+    def transform_neighbours(neighs, dim):
+        return np.expand_dims(neighs.reshape(
+            1, dim, int(neighs.shape[1] / dim), neighs.shape[2]
+        ).sum(axis=-1), -1).mean(2)
 
-    kernel_2_A = np.ones((2, 1))
-    kernel_2_B = np.ones((2, 1))
+    def hinsage_layer(head, neighs_by_type):
+        head_trans = np.expand_dims(head.sum(axis=-1), -1)
+        neigh_trans = sum(transform_neighbours(neigh, head.shape[1]) for neigh in neighs_by_type) / len(neighs_by_type)
+        return np.concatenate([head_trans, neigh_trans], axis=-1)
 
     for i, feats in enumerate(batch_feats):
         # 1st layer
@@ -585,22 +589,7 @@ def test_hinsage_from_generator():
         head = feats[0][0]
         B_neighs = feats[0][1]
 
-        neighs_trans = (
-            B_neighs.reshape(
-                (
-                    1,
-                    head.shape[1],
-                    int(B_neighs.shape[1] / head.shape[1]),
-                    B_neighs.shape[2],
-                )
-            )
-            .dot(kernel_1_B)
-            .mean(2)
-        )
-
-        head_trans = head.dot(kernel_1_A)
-
-        layer_1_out.append(np.concatenate([head_trans, neighs_trans], axis=-1))
+        layer_1_out.append(hinsage_layer(head, [B_neighs,]))
 
         # 1st layer
         # aggregate for the neighbour nodes
@@ -608,34 +597,7 @@ def test_hinsage_from_generator():
         B_neighs = feats[0][2]
         A_neighs = feats[0][3]
 
-        neighs_trans = (
-            B_neighs.reshape(
-                (
-                    1,
-                    head.shape[1],
-                    int(B_neighs.shape[1] / head.shape[1]),
-                    B_neighs.shape[2],
-                )
-            )
-            .dot(kernel_1_B)
-            .mean(2)
-        )
-
-        neighs_trans += (
-            A_neighs.reshape(
-                (
-                    1,
-                    head.shape[1],
-                    int(A_neighs.shape[1] / head.shape[1]),
-                    A_neighs.shape[2],
-                )
-            )
-            .dot(kernel_1_A)
-            .mean(2)
-        )
-
-        head_trans = head.dot(kernel_1_B)
-        layer_1_out.append(np.concatenate([head_trans, neighs_trans / 2], axis=-1))
+        layer_1_out.append(hinsage_layer(head, [B_neighs, A_neighs]))
 
         # 2nd layer
         # aggregate for the prediction nodes
@@ -643,22 +605,7 @@ def test_hinsage_from_generator():
         head = layer_1_out[0]
         B_neighs = layer_1_out[1]
 
-        neighs_trans = (
-            B_neighs.reshape(
-                (
-                    1,
-                    head.shape[1],
-                    int(B_neighs.shape[1] / head.shape[1]),
-                    B_neighs.shape[2],
-                )
-            )
-            .dot(kernel_2_B)
-            .mean(2)
-        )
-
-        head_trans = head.dot(kernel_2_A)
-
-        layer_2_out.append(np.concatenate([head_trans, neighs_trans], axis=-1))
+        layer_2_out.append(hinsage_layer(head, [B_neighs,]))
 
         actual = model.predict(batch_feats[i][0])
         assert np.isclose(layer_2_out[0], actual).all()
