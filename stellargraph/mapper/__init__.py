@@ -29,3 +29,4 @@ from .sampled_node_generators import *
 from .full_batch_generators import *
 from .mini_batch_node_generators import *
 from .adjacency_generators import *
+from .knowledge_graph import *

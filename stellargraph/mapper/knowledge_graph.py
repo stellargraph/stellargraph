@@ -37,11 +37,14 @@ class KGTripleGenerator:
 
         batch_size (int): the size of the batches to generate
     """
+
     def __init__(self, G, batch_size):
         self.G = G
 
         if not isinstance(batch_size, int):
-            raise TypeError(f"batch_size: expected int, found {type(batch_size).__name__}")
+            raise TypeError(
+                f"batch_size: expected int, found {type(batch_size).__name__}"
+            )
 
         self.batch_size = batch_size
 

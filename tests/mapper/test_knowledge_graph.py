@@ -57,8 +57,10 @@ def check_sequence_output(
             assert np.all((0 <= s) & (s <= max_node_iloc))
             assert np.all((0 <= r) & (r <= max_node_iloc))
 
+
 def triple_df(*values):
     return pd.DataFrame(values, columns=["source", "label", "target"])
+
 
 def test_kg_triple_generator(knowledge_graph):
     gen = KGTripleGenerator(knowledge_graph, 2)

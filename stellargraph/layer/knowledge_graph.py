@@ -21,9 +21,9 @@ from tensorflow.keras import activations, initializers, constraints, regularizer
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embedding
 
 from ..mapper.knowledge_graph import KGTripleGenerator
+from ..core.experimental import experimental
 
 
-@experimental(reason="results from the reference paper have not been reproduced yet")
 class ComplExScore(Layer):
     """
     ComplEx scoring Keras layer.

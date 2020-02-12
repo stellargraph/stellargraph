@@ -30,7 +30,12 @@ from .. import test_utils
 from ..test_utils.graphs import knowledge_graph
 
 
-pytestmark = test_utils.ignore_stellargraph_experimental_mark
+pytestmark = [
+    test_utils.ignore_stellargraph_experimental_mark,
+    pytest.mark.filterwarnings(
+        r"ignore:ComplEx:stellargraph.core.experimental.ExperimentalWarning"
+    ),
+]
 
 
 def triple_df(*values):
@@ -48,7 +53,11 @@ def test_complex(knowledge_graph):
 
     model = Model(x_inp, x_out)
 
-    every_edge = itertools.product(knowledge_graph.nodes(), knowledge_graph._edges.types.pandas_index, knowledge_graph.nodes())
+    every_edge = itertools.product(
+        knowledge_graph.nodes(),
+        knowledge_graph._edges.types.pandas_index,
+        knowledge_graph.nodes(),
+    )
     df = triple_df(*every_edge)
 
     # compute the exact values based on the model by extracting the embeddings for each element and
