@@ -155,15 +155,14 @@ class IntegratedGradients:
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             A_step = A_baseline + alpha * A_diff
 
-            # TODO: what is 0?
             if self.is_sparse:
                 grads = self._compute_gradients(
-                    [self.X, np.array([[node_idx]]), self.A_indices, A_step, 0, class_of_interest],
+                    [self.X, np.array([[node_idx]]), self.A_indices, A_step, class_of_interest],
                     variable="links"
                 )
             else:
                 grads = self._compute_gradients(
-                    [self.X, np.array([[node_idx]]), A_step, 0, class_of_interest],
+                    [self.X, np.array([[node_idx]]), A_step, class_of_interest],
                     variable="links"
                 )
 
@@ -228,7 +227,6 @@ class IntegratedGradients:
                 features_t,
                 output_indices_t,
                 adj_t,
-                _,
                 class_of_interest,
             ) = mask_tensors
             model_input = [features_t, output_indices_t, adj_t]
