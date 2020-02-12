@@ -124,9 +124,7 @@ def train(
     )
 
     # Train model
-    history = model.fit(
-        train_gen, epochs=num_epochs, verbose=2, shuffle=False
-    )
+    history = model.fit(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
 
     # Evaluate on test set and print metrics
     predictions = model.predict(test_gen)

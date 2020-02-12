@@ -192,9 +192,7 @@ def train(
         inputs_test, y_test = generator.flow(test_nodes, test_targets)[0]
         test_metrics = model.evaluate(x=inputs_test, y=y_test)
     else:
-        test_metrics = model.evaluate(
-            generator.flow(test_nodes, test_targets)
-        )
+        test_metrics = model.evaluate(generator.flow(test_nodes, test_targets))
 
     print("\nBest model's Test Set Metrics:")
     for name, val in zip(model.metrics_names, test_metrics):
