@@ -65,14 +65,12 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
                 path=e.path,
             ) from None
 
-        # Create neo4J driver
         if not isinstance(neo4j_graphdb, py2neo.Graph):
             raise TypeError(
                 f"neo4j_graphdb: expected py2neo.Graph, found {type(neo4j_graphdb)}"
             )
-
-        else:
-            self.neo4j_graphdb = neo4j_graphdb
+        # Create Neo4J graph database object
+        self.neo4j_graphdb = neo4j_graphdb
 
 
 @experimental(reason="the class is not fully tested")

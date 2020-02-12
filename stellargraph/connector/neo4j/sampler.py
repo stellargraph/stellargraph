@@ -19,8 +19,8 @@ __all__ = [
     "Neo4JDirectedBreadthFirstNeighbors",
 ]
 
-
 import numpy as np
+import itertools as it
 import warnings
 from collections import defaultdict, deque
 
@@ -28,6 +28,42 @@ from ...core.schema import GraphSchema
 from ...core.graph import StellarGraph
 from ...data.explorer import GraphWalk
 from ...core.experimental import experimental
+
+
+def _bfs_neighbor_query(sampling_direction):
+    """
+    Generate the Cypher neighbor sampling query for a batch of nodes.
+
+    Args:
+        sampling_direction (String): indicate type of neighbors needed to sample. Direction must be 'in', 'out' or 'both'.
+    Returns:
+        The cypher query that samples the neighbor ids for a batch of nodes.
+    """
+    direction_arrow = {"BOTH": "--", "IN": "<--", "OUT": "-->"}[sampling_direction]
+
+    return f"""
+        // expand the list of node id in seperate rows of ids.
+        UNWIND {{node_id_list}} AS node_id
+
+        // for each node id in every row, collect the random list of its neighbors.
+        CALL apoc.cypher.run(
+
+            'MATCH(cur_node) WHERE id(cur_node) = {{node_id}}
+
+            // find the neighbors
+            MATCH (cur_node){direction_arrow}(neighbors)
+
+            // put all ids into a list
+            WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
+
+            // pick random nodes with replacement
+            WITH apoc.coll.randomItems(in_neighbors_list, {{num_samples}}, True) AS in_samples_list
+
+            RETURN in_samples_list',
+            {{ node_id: node_id, num_samples: {{num_samples}}  }}) YIELD value
+
+        RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
+        """
 
 
 @experimental(reason="the class is not fully tested")
@@ -55,35 +91,8 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
             A list of lists, each list is a sequence of sampled node ids at a certain hop.
         """
 
-        def bfs_neighbor_query(sampling_direction):
-            direction = {"BOTH": "--", "IN": "<--", "OUT": "-->"}
-
-            return f"""
-                // expand the list of node id in seperate rows of ids.
-                UNWIND {{node_id_list}} AS node_id
-
-                // for each node id in every row, collect the random list of its neighbors.
-                CALL apoc.cypher.run(
-
-                    'MATCH(cur_node) WHERE id(cur_node) = {{node_id}}
-
-                    // find the neighbors
-                    MATCH (cur_node){direction[sampling_direction]}(neighbors)
-
-                    // put all ids into a list
-                    WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
-
-                    // pick random nodes with replacement
-                    WITH apoc.coll.randomItems(in_neighbors_list, {{num_samples}}, True) AS in_samples_list
-
-                    RETURN in_samples_list',
-                    {{ node_id: node_id, num_samples: {{num_samples}}  }}) YIELD value
-
-                RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
-            """
-
         samples = [[head_node for head_node in nodes for _ in range(n)]]
-        neighbor_query = bfs_neighbor_query(sampling_direction="BOTH")
+        neighbor_query = _bfs_neighbor_query(sampling_direction="BOTH")
 
         for num_sample in n_size:
             cur_nodes = samples[-1]
@@ -122,66 +131,36 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
             neighbours and out-node neighbours are sampled separately. Each sample has the format:
         """
 
-        def bfs_neighbor_query(sampling_direction):
-            direction = {"BOTH": "--", "IN": "<--", "OUT": "-->"}
-
-            return f"""
-                // expand the list of node id in seperate rows of ids.
-                UNWIND {{node_id_list}} AS node_id
-
-                // for each node id in every row, collect the random list of its neighbors.
-                CALL apoc.cypher.run(
-
-                    'MATCH(cur_node) WHERE id(cur_node) = {{node_id}}
-
-                    // find the neighbors
-                    MATCH (cur_node){direction[sampling_direction]}(neighbors)
-
-                    // put all ids into a list
-                    WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
-
-                    // pick random nodes with replacement
-                    WITH apoc.coll.randomItems(in_neighbors_list, {{num_samples}}, True) AS in_samples_list
-
-                    RETURN in_samples_list',
-                    {{ node_id: node_id, num_samples: {{num_samples}}  }}) YIELD value
-
-                RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
-            """
-
         self._check_neighbourhood_sizes(in_size, out_size)
         self._check_common_parameters(nodes, n, len(in_size), seed)
 
-        samples = [[head_node for head_node in nodes for _ in range(n)]]
+        head_nodes = [head_node for head_node in nodes for _ in range(n)]
+        hops = [[head_nodes]]
 
-        tree_cur_index = 0
-        tree_end_index = 0
-
-        in_sample_query = bfs_neighbor_query(sampling_direction="IN")
-        out_sample_query = bfs_neighbor_query(sampling_direction="OUT")
+        in_sample_query = _bfs_neighbor_query(sampling_direction="IN")
+        out_sample_query = _bfs_neighbor_query(sampling_direction="OUT")
 
         for in_num, out_num in zip(in_size, out_size):
-            # BFS traversal in the flattened binary tree
-            while tree_cur_index <= tree_end_index:
-                cur_nodes = samples[tree_cur_index]
+            last_hop = hops[-1]
+            this_hop = []
+            for cur_nodes in last_hop:
                 # get in-neighbor nodes
                 neighbor_records = neo4j_graphdb.run(
                     in_sample_query,
                     parameters={"node_id_list": cur_nodes, "num_samples": in_num},
                 )
-                samples.append(neighbor_records.data()[0]["next_samples"])
+                this_hop.append(neighbor_records.data()[0]["next_samples"])
+
                 # get out-neighbor nodes
                 neighbor_records = neo4j_graphdb.run(
                     out_sample_query,
                     parameters={"node_id_list": cur_nodes, "num_samples": out_num},
                 )
-                samples.append(neighbor_records.data()[0]["next_samples"])
+                this_hop.append(neighbor_records.data()[0]["next_samples"])
 
-                tree_cur_index += 1
-            # go to next binary tree depth
-            tree_end_index = tree_end_index * 2 + 2
+            hops.append(this_hop)
 
-        return samples
+        return list(it.chain(*hops))
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
