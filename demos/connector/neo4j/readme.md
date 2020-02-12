@@ -10,4 +10,3 @@ Required Installations:
 - **Neo4J**: Instruction to download [here](https://neo4j.com/docs/operations-manual/current/installation/).
 - **APOC library** plug-in: APOC provides utilities for common procedures and functions in Neo4J. Instruction to download [here](https://neo4j.com/developer/neo4j-apoc/).
 - **py2neo**: A client library and toolkit to connect to Neo4J database from within python applications. Install ```py2neo``` by using pip: `pip install py2neo`. `py2neo` documentation [here](https://py2neo.org/v4/).
-
