@@ -499,15 +499,6 @@ class StellarGraph:
         ilocs = self._nodes.type_range(node_type)
         return list(self._nodes.ids.from_iloc(ilocs))
 
-    def _key_error_for_missing(self, query_ids, node_ilocs):
-        valid = self._nodes.ids.is_valid(node_ilocs)
-        missing_values = np.asarray(query_ids)[~valid]
-
-        if len(missing_values) == 1:
-            return KeyError(missing_values[0])
-
-        return KeyError(missing_values)
-
     def node_type(self, node):
         """
         Get the type of the node
@@ -522,11 +513,8 @@ class StellarGraph:
             return self._graph.node_type(node)
 
         nodes = [node]
-        node_ilocs = self._nodes.ids.to_iloc(nodes)
-        try:
-            type_sequence = self._nodes.type_of_iloc(node_ilocs)
-        except IndexError:
-            raise self._key_error_for_missing(nodes, node_ilocs)
+        node_ilocs = self._nodes.ids.to_iloc(nodes, strict=True)
+        type_sequence = self._nodes.type_of_iloc(node_ilocs)
 
         assert len(type_sequence) == 1
         return type_sequence[0]
@@ -632,10 +620,9 @@ class StellarGraph:
         # FIXME: None as a sentinel forces nodes to have dtype=object even with integer IDs, could
         # instead use an impossible integer (e.g. 2**64 - 1)
 
-        nones = nodes == None
-        if not (nones | valid).all():
-            # every ID should be either valid or None, otherwise it was a completely unknown ID
-            raise self._key_error_for_missing(nodes[~nones], node_ilocs[~nones])
+        # everything that's not the sentinel should be valid
+        non_nones = nodes != None
+        self._nodes.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
         sampled = self._nodes.features(node_type, valid_ilocs)
         features = np.zeros((len(nodes), sampled.shape[1]))
@@ -928,7 +915,7 @@ class StellarGraph:
         if self._graph is not None:
             return self._graph.get_index_for_nodes(nodes, node_type)
 
-        return self._nodes._id_index.to_iloc(nodes)
+        return self._nodes._id_index.to_iloc(nodes, strict=True)
 
     def _adjacency_types(self, graph_schema: GraphSchema):
         """
