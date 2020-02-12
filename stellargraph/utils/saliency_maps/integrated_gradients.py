@@ -33,6 +33,7 @@ from scipy.sparse import csr_matrix
 import tensorflow as tf
 from stellargraph.mapper import SparseFullBatchSequence, FullBatchSequence
 
+
 class IntegratedGradients:
     """
     A SaliencyMask class that implements the integrated gradients method.
@@ -84,11 +85,7 @@ class IntegratedGradients:
         self.model = model
 
     def get_integrated_node_masks(
-        self,
-        node_idx,
-        class_of_interest,
-        X_baseline=None,
-        steps=20,
+        self, node_idx, class_of_interest, X_baseline=None, steps=20,
     ):
         """
         Args:
@@ -110,13 +107,19 @@ class IntegratedGradients:
             X_step = X_baseline + alpha * X_diff
             if self.is_sparse:
                 grads = self._compute_gradients(
-                    [X_step, np.array([[node_idx]]), self.A_indices, self.A, class_of_interest],
-                    variable='nodes',
+                    [
+                        X_step,
+                        np.array([[node_idx]]),
+                        self.A_indices,
+                        self.A,
+                        class_of_interest,
+                    ],
+                    variable="nodes",
                 )
             else:
                 grads = self._compute_gradients(
                     [X_step, np.array([[node_idx]]), self.A, class_of_interest],
-                    variable='nodes',
+                    variable="nodes",
                 )
 
             total_gradients += grads
@@ -157,13 +160,19 @@ class IntegratedGradients:
 
             if self.is_sparse:
                 grads = self._compute_gradients(
-                    [self.X, np.array([[node_idx]]), self.A_indices, A_step, class_of_interest],
-                    variable="links"
+                    [
+                        self.X,
+                        np.array([[node_idx]]),
+                        self.A_indices,
+                        A_step,
+                        class_of_interest,
+                    ],
+                    variable="links",
                 )
             else:
                 grads = self._compute_gradients(
                     [self.X, np.array([[node_idx]]), A_step, class_of_interest],
-                    variable="links"
+                    variable="links",
                 )
 
             total_gradients += grads.numpy()
@@ -172,7 +181,9 @@ class IntegratedGradients:
             total_gradients = csr_matrix(
                 (total_gradients[0], (self.A_indices[0, :, 0], self.A_indices[0, :, 1]))
             )
-            A_diff = csr_matrix((A_diff[0], (self.A_indices[0, :, 0], self.A_indices[0, :, 1])))
+            A_diff = csr_matrix(
+                (A_diff[0], (self.A_indices[0, :, 0], self.A_indices[0, :, 1]))
+            )
             total_gradients = total_gradients.multiply(A_diff) / steps
         else:
             total_gradients = np.squeeze(
@@ -182,10 +193,7 @@ class IntegratedGradients:
         return total_gradients
 
     def get_node_importance(
-        self,
-        node_idx,
-        class_of_interest,
-        steps=20,
+        self, node_idx, class_of_interest, steps=20,
     ):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
@@ -199,9 +207,7 @@ class IntegratedGradients:
         """
 
         gradients = self.get_integrated_node_masks(
-            node_idx,
-            class_of_interest,
-            steps=steps,
+            node_idx, class_of_interest, steps=steps,
         )
 
         return np.sum(gradients, axis=-1)
@@ -223,27 +229,22 @@ class IntegratedGradients:
             model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
 
         else:
-            (
-                features_t,
-                output_indices_t,
-                adj_t,
-                class_of_interest,
-            ) = mask_tensors
+            (features_t, output_indices_t, adj_t, class_of_interest,) = mask_tensors
             model_input = [features_t, output_indices_t, adj_t]
 
         with tf.GradientTape() as tape:
-            if variable == 'nodes':
+            if variable == "nodes":
                 tape.watch(features_t)
-            elif variable == 'links':
+            elif variable == "links":
                 tape.watch(adj_t)
 
             output = self.model(model_input)
 
             cost_value = K.gather(output[0, 0], class_of_interest)
 
-        if variable == 'nodes':
+        if variable == "nodes":
             gradients = tape.gradient(cost_value, features_t)
-        elif variable == 'links':
+        elif variable == "links":
             gradients = tape.gradient(cost_value, adj_t)
 
         return gradients
