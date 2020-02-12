@@ -7,5 +7,3 @@ This folder contains notebook demos of running Stellargraph ML algorithms with a
 Install ```py2neo``` by using pip: `pip install py2neo`. Link to [`py2neo` documentation](https://py2neo.org/v4/).
 
 [load-cora-into-neo4j.ipynb](./load-cora-into-neo4j.ipynb) provides demo of loading Cora network citation dataset into neo4j database.
-
-
