@@ -842,7 +842,9 @@ class StellarGraph:
         """
         return self._edges.degrees()
 
-    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
+    def to_adjacency_matrix(
+        self, nodes: Optional[Iterable] = None, ignore_weights=True
+    ):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
 
@@ -851,6 +853,9 @@ class StellarGraph:
                 comprising the subgraph. If specified, then the
                 adjacency matrix is computed for the subgraph;
                 otherwise, it is computed for the full graph.
+            ignore_weights (bool): If true, treat all edges as having a weight
+                of 1. Multi-edges are still combined to produce values in the
+                adjacency matrix greater than 1.
 
         Returns:
              The weighted adjacency matrix.
@@ -865,12 +870,16 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        weights = self._edges.weights[selector]
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
         src_idx = index.to_iloc(self._edges.sources[selector])
         tgt_idx = index.to_iloc(self._edges.targets[selector])
+        if ignore_weights:
+            weights = np.ones(src_idx.shape, dtype=self._edges.weights.dtype)
+        else:
+            weights = self._edges.weights[selector]
+
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
