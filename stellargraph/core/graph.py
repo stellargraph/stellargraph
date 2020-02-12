@@ -184,7 +184,7 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
     ):
-        if graph is not None or (nodes is None and edges is None):
+        if graph is not None:
             # While migrating, maintain complete compatibility by deferring to the networkx
             # implementation
 
@@ -232,6 +232,113 @@ class StellarGraph:
                 target_column=target_column,
                 weight_column=edge_weight_label,
             )
+
+    @staticmethod
+    def from_networkx(
+        graph,
+        edge_weight_label="weight",
+        node_type_name=globalvar.TYPE_ATTR_NAME,
+        edge_type_name=globalvar.TYPE_ATTR_NAME,
+        node_type_default=globalvar.NODE_TYPE_DEFAULT,
+        edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
+        node_features=None,
+        dtype="float32",
+    ):
+        """
+        Construct a ``StellarGraph`` object from a NetworkX graph::
+
+            Gs = StellarGraph.from_networkx(nx_graph)
+
+        To create a StellarGraph object with node features, supply the features
+        as a numeric feature vector for each node.
+
+        To take the feature vectors from a node attribute in the original NetworkX
+        graph, supply the attribute name to the ``node_features`` argument::
+
+            Gs = StellarGraph.from_networkx(nx_graph, node_features="feature")
+
+
+        where the nx_graph contains nodes that have a "feature" attribute containing
+        the feature vector for the node. All nodes of the same type must have
+        the same size feature vectors.
+
+        Alternatively, supply the node features as Pandas DataFrame objects with
+        the index of the DataFrame set to the node IDs. For graphs with a single node
+        type, you can supply the DataFrame object directly to StellarGraph::
+
+            node_data = pd.DataFrame(
+                [feature_vector_1, feature_vector_2, ..],
+                index=[node_id_1, node_id_2, ...])
+            Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
+
+        For graphs with multiple node types, provide the node features as Pandas
+        DataFrames for each type separately, as a dictionary by node type.
+        This allows node features to have different sizes for each node type::
+
+            node_data = {
+                node_type_1: pd.DataFrame(...),
+                node_type_2: pd.DataFrame(...),
+            }
+            Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
+
+
+        You can also supply the node feature vectors as an iterator of `node_id`
+        and feature vector pairs, for graphs with single and multiple node types::
+
+            node_data = zip([node_id_1, node_id_2, ...],
+                [feature_vector_1, feature_vector_2, ..])
+            Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
+
+
+        Args:
+            graph: The NetworkX graph instance.
+            node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+                This is the name for the node types that StellarGraph uses
+                when processing heterogeneous graphs. StellarGraph will
+                look for this attribute in the nodes of the graph to determine
+                their type.
+
+            node_type_default: str, optional (default=globals.NODE_TYPE_DEFAULT)
+                This is the default node type to use for nodes that do not have
+                an explicit type.
+
+            edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+                This is the name for the edge types that StellarGraph uses
+                when processing heterogeneous graphs. StellarGraph will
+                look for this attribute in the edges of the graph to determine
+                their type.
+
+            edge_type_default: str, optional (default=globals.EDGE_TYPE_DEFAULT)
+                This is the default edge type to use for edges that do not have
+                an explicit type.
+
+            node_features: str, dict, list or DataFrame optional (default=None)
+                This tells StellarGraph where to find the node feature information
+                required by some graph models. These are expected to be
+                a numeric feature vector for each node in the graph.
+
+            edge_weight_label: str, optional
+                The name of the attribute to use as the weight of edges.
+
+        Returns:
+            A ``StellarGraph`` (if ``graph`` is undirected) or ``StellarDiGraph`` (if ``graph`` is
+            directed) instance representing the data in ``graph`` and ``node_features``.
+        """
+        nodes, edges = convert.from_networkx(
+            graph,
+            node_type_name=node_type_name,
+            edge_type_name=edge_type_name,
+            node_type_default=node_type_default,
+            edge_type_default=edge_type_default,
+            edge_weight_label=edge_weight_label,
+            node_features=node_features,
+            dtype=dtype,
+        )
+
+        cls = StellarDiGraph if graph.is_directed() else StellarGraph
+        return cls(
+            nodes=nodes, edges=edges, edge_weight_label=edge_weight_label, dtype=dtype
+        )
 
     # customise how a missing attribute is handled to give better error messages for the NetworkX
     # -> no NetworkX transition.
@@ -741,7 +848,7 @@ class StellarGraph:
 
         return "\n".join(lines)
 
-    def create_graph_schema(self, create_type_maps=None, nodes=None):
+    def create_graph_schema(self, nodes=None):
         """
         Create graph schema in dict of dict format from current graph.
 
@@ -759,12 +866,6 @@ class StellarGraph:
         Returns:
             GraphSchema object.
         """
-        if create_type_maps is not None:
-            warnings.warn(
-                "The 'create_type_maps' parameter is ignored now, and does not need to be specified",
-                DeprecationWarning,
-            )
-
         if self._graph is not None:
             return self._graph.create_graph_schema(nodes)
 
@@ -871,6 +972,16 @@ class StellarGraph:
         """
         Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
 
+        Args:
+            node_type_name (str): the name of the attribute to use to store a node's type (or label).
+
+            edge_type_name (str): the name of the attribute to use to store a edge's type (or label).
+
+            edge_weight_label (str): the name of the attribute to use to store a edge's weight.
+
+            feature_name (str, optional): the name of the attribute to use to store a node's feature
+                vector; if ``None``, feature vectors are not stored within each node.
+
         Returns:
              An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
              undirected) containing all the nodes & edges and their types & features in this graph.
@@ -889,12 +1000,15 @@ class StellarGraph:
             node_ids = self.nodes_of_type(ty)
             ty_dict = {node_type_name: ty}
 
-            features = self.node_features(node_ids, node_type=ty)
+            if feature_name is not None:
+                features = self.node_features(node_ids, node_type=ty)
 
-            for node_id, node_features in zip(node_ids, features):
-                graph.add_node(
-                    node_id, **ty_dict, **{feature_name: node_features},
-                )
+                for node_id, node_features in zip(node_ids, features):
+                    graph.add_node(
+                        node_id, **ty_dict, **{feature_name: node_features},
+                    )
+            else:
+                graph.add_nodes_from(node_ids, **ty_dict)
 
         iterator = zip(
             self._edges.sources,
