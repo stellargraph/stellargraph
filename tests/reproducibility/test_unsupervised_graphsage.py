@@ -15,13 +15,14 @@
 # limitations under the License.
 
 
-import numpy as np
-import tensorflow as tf
+import pytest
 import random
+import tensorflow as tf
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
 from stellargraph.mapper.sampled_link_generators import GraphSAGELinkGenerator
 from stellargraph.layer.graphsage import GraphSAGE
 from stellargraph.layer.link_inference import link_classification
+from stellargraph.random import set_seed
 from ..test_utils.graphs import petersen_graph
 from .fixtures import assert_reproducible
 
@@ -59,16 +60,18 @@ def unsup_gs(
     number_of_walks=1,
     walk_length=5,
     seed=0,
+    shuffle=True,
 ):
-    np.random.seed(seed)
+    set_seed(seed)
     tf.random.set_seed(seed)
-    random.seed(seed)
+    if shuffle:
+        random.seed(seed)
 
     nodes = list(g.nodes())
     unsupervised_samples = UnsupervisedSampler(
-        g, nodes=nodes, length=walk_length, number_of_walks=number_of_walks, seed=seed
+        g, nodes=nodes, length=walk_length, number_of_walks=number_of_walks
     )
-    generator = GraphSAGELinkGenerator(g, batch_size, num_samples, seed=seed)
+    generator = GraphSAGELinkGenerator(g, batch_size, num_samples)
     train_gen = generator.flow(unsupervised_samples)
 
     model = unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize)
@@ -79,12 +82,13 @@ def unsup_gs(
         verbose=1,
         use_multiprocessing=False,
         workers=4,
-        shuffle=True,
+        shuffle=shuffle,
     )
     return model
 
 
-def test_reproducibility(petersen_graph):
+@pytest.mark.parametrize("shuffle", [True, False])
+def test_reproducibility(petersen_graph, shuffle):
     assert_reproducible(
         lambda: unsup_gs(
             petersen_graph,
@@ -93,5 +97,6 @@ def test_reproducibility(petersen_graph):
             epochs=4,
             walk_length=2,
             batch_size=4,
+            shuffle=shuffle,
         )
     )

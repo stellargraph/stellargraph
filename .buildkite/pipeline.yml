@@ -33,6 +33,20 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":python::book: test notebooks %n"
+    key: "test-notebooks"
+    parallelism: 32
+    command: ".buildkite/steps/test-demo-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3.6
+    agents:
+      queue: "t2large"
+    soft_fail:
+      - exit_status: 2
+
   - label: ":python-black: format"
     plugins:
       <<: *plugins

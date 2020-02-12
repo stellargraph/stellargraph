@@ -447,7 +447,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
                 [None, None],
                 [None, None],
             ],
-            [[4], [1, 1], [2, 2], [4, "5"], [3, 2], ["5", 4], [2, 2], [4, 4], [1, 4]],
+            [[4], ["5", 1], [2, 2], [1, 1], [6, 3], ["5", "5"], [2, 3], [1, 1], [4, 4]],
         ]
         for a, b in zip(subgraphs, valid_result):
             assert a == b
