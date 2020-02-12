@@ -71,7 +71,7 @@ class GraphWaveGenerator:
             num_eigenvecs = laplacian.shape[0] - 2
 
         # TODO: add in option to compute wavelet transform using Chebysev polynomials
-        eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs)
+        eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, which='SM')
         eigen_vals = np.real(eigen_vals).astype(np.float32)
         self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
 
