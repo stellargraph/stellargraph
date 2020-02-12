@@ -23,6 +23,7 @@ from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embe
 from ..mapper.knowledge_graph import KGTripleGenerator
 
 
+@experimental(reason="results from the reference paper have not been reproduced yet")
 class ComplExScore(Layer):
     """
     ComplEx scoring Keras layer.
@@ -58,6 +59,7 @@ class ComplExScore(Layer):
         return score
 
 
+@experimental(reason="results from the reference paper have not been reproduced yet")
 class ComplEx:
     """
     Embedding layers and a ComplEx scoring layers that implement the ComplEx knowledge graph
@@ -85,46 +87,34 @@ class ComplEx:
         graph = generator.G
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
-        self.batch_size = generator.batch_size
         self.k = k
         self.embedding_initializer = initializers.get(embedding_initializer)
         self.embedding_regularizer = regularizers.get(embedding_regularizer)
 
-    def ranks(self, model, test_seq):
-        n_re = model.get_layer("NODE_REAL").embeddings.numpy()
-        n_im = model.get_layer("NODE_IMAG").embeddings.numpy()
+    # layer names
+    _NODE_REAL = "COMPLEX_NODE_REAL"
+    _NODE_IMAG = "COMPLEX_NODE_IMAG"
 
-        all_r_re = model.get_layer("EDGE_TYPE_REAL").embeddings.numpy()
-        all_r_im = model.get_layer("EDGE_TYPE_IMAG").embeddings.numpy()
+    _REL_REAL = "COMPLEX_EDGE_TYPE_REAL"
+    _REL_IMAG = "COMPLEX_EDGE_TYPE_IMAG"
 
-        ranks = []
+    @staticmethod
+    def embeddings(model):
+        """
+        Retrieve the embeddings for nodes/entities and edge types/relations in this model.
 
-        def rank(r_re, r_im, e_re, e_im, real_index):
-            scores = np.dot(r_re * e_re - r_im * e_im, n_re.T) + np.dot(
-                r_re * e_im + r_im * e_re, n_im.T
-            )
-            better = scores > scores[real_index]
-            return better.sum()
+        Returns:
+            A tuple of numpy complex arrays: the first element is the embeddings for nodes/entities
+            (``shape = number of nodes × k``), the second element is the embeddings for edge
+            types/relations (``shape = number of edge types x k``).
+        """
+        node = 1j * model.get_layer(ComplEx._NODE_IMAG).embeddings.numpy()
+        node += model.get_layer(ComplEx._NODE_REAL).embeddings.numpy()
 
-        for i in range(len(test_seq)):
-            (subjects, rels, objects), _ = test_seq[i]
+        rel = 1j * model.get_layer(ComplEx._REL_IMAG).embeddings.numpy()
+        rel += model.get_layer(ComplEx._REL_REAL).embeddings.numpy()
 
-            for s, r, o in zip(subjects, rels, objects):
-                s_re = n_re[s, :]
-                s_im = n_im[s, :]
-
-                r_re = all_r_re[r, :]
-                r_im = all_r_im[r, :]
-
-                o_re = n_re[o, :]
-                o_im = n_im[o, :]
-
-                s_rank = rank(r_re, r_im, s_re, s_im, real_index=o)
-                o_rank = rank(r_re, r_im, o_re, o_im, real_index=s)
-
-                ranks.append(s_rank)
-                ranks.append(o_rank)
-        return ranks
+        return node, rel
 
     def _embed(self, count, name):
         return Embedding(
@@ -144,10 +134,10 @@ class ComplEx:
 
         # ComplEx generates embeddings in C, which we model as separate real and imaginary
         # embeddings
-        node_embeddings_real = self._embed(self.num_nodes, "NODE_REAL")
-        node_embeddings_imag = self._embed(self.num_nodes, "NODE_IMAG")
-        edge_type_embeddings_real = self._embed(self.num_nodes, "EDGE_TYPE_REAL")
-        edge_type_embeddings_imag = self._embed(self.num_nodes, "EDGE_TYPE_IMAG")
+        node_embeddings_real = self._embed(self.num_nodes, self._NODE_REAL)
+        node_embeddings_imag = self._embed(self.num_nodes, self._NODE_IMAG)
+        edge_type_embeddings_real = self._embed(self.num_nodes, self._REL_REAL)
+        edge_type_embeddings_imag = self._embed(self.num_nodes, self._REL_IMAG)
 
         s_re = node_embeddings_real(s_iloc)
         s_im = node_embeddings_imag(s_iloc)

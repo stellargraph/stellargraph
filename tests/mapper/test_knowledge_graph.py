@@ -19,35 +19,12 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from stellargraph import StellarDiGraph
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 
 from .. import test_utils
+from ..test_utils import knowledge_graph
 
 pytestmark = test_utils.ignore_stellargraph_experimental_mark
-
-
-@pytest.fixture
-def kg():
-    nodes = ["a", "b", "c", "d"]
-
-    edge_counter = 0
-
-    def edge_df(*elements):
-        nonlocal edge_counter
-        end = edge_counter + len(elements)
-        index = range(edge_counter, end)
-        edge_counter = end
-        return pd.DataFrame(elements, columns=["source", "target"], index=index)
-
-    edges = {
-        "W": edge_df(("a", "b")),
-        "X": edge_df(("a", "b"), ("b", "c")),
-        "Y": edge_df(("b", "a")),
-        "Z": edge_df(("d", "b")),
-    }
-
-    return StellarDiGraph(nodes=pd.DataFrame(index=nodes), edges=edges)
 
 
 def check_sequence_output(
@@ -83,8 +60,8 @@ def check_sequence_output(
 def triple_df(*values):
     return pd.DataFrame(values, columns=["source", "label", "target"])
 
-def test_kg_triple_generator(kg):
-    gen = KGTripleGenerator(kg, 2)
+def test_kg_triple_generator(knowledge_graph):
+    gen = KGTripleGenerator(knowledge_graph, 2)
 
     edges = triple_df(("a", "W", "b"), ("c", "X", "a"), ("d", "Y", "c"))
 
@@ -93,11 +70,11 @@ def test_kg_triple_generator(kg):
     check_sequence_output(seq[1], 1, None)
 
     seq = gen.flow(edges, negative_samples=10)
-    check_sequence_output(seq[0], 2, 10, kg.number_of_nodes())
+    check_sequence_output(seq[0], 2, 10, knowledge_graph.number_of_nodes())
 
 
-def test_kg_triple_generator_errors(kg):
-    gen = KGTripleGenerator(kg, 10)
+def test_kg_triple_generator_errors(knowledge_graph):
+    gen = KGTripleGenerator(knowledge_graph, 10)
 
     with pytest.raises(TypeError, match="edges: expected.*found int"):
         gen.flow(1)
