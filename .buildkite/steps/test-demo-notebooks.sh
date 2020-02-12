@@ -51,7 +51,7 @@ echo "+++ :python: running $f"
 cd "$(dirname "$f")"
 # run the notebook, saving it back to where it was, printing everything
 exitCode=0
-papermill --execution-timeout=600 -p epocs 2 -p n_predictions 2 --log-output "$f" "$f" || exitCode=$?
+papermill --execution-timeout=600 -p epochs 2 --log-output "$f" "$f" || exitCode=$?
 
 # and also upload the notebook with outputs, for someone to download and look at
 buildkite-agent artifact upload "$(basename "$f")"
