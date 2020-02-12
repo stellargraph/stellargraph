@@ -573,13 +573,18 @@ def test_hinsage_from_generator():
     # neighbours.
 
     def transform_neighbours(neighs, dim):
-        return np.expand_dims(neighs.reshape(
-            1, dim, int(neighs.shape[1] / dim), neighs.shape[2]
-        ).sum(axis=-1), -1).mean(2)
+        return np.expand_dims(
+            neighs.reshape(1, dim, int(neighs.shape[1] / dim), neighs.shape[2]).sum(
+                axis=-1
+            ),
+            -1,
+        ).mean(2)
 
     def hinsage_layer(head, neighs_by_type):
         head_trans = np.expand_dims(head.sum(axis=-1), -1)
-        neigh_trans = sum(transform_neighbours(neigh, head.shape[1]) for neigh in neighs_by_type) / len(neighs_by_type)
+        neigh_trans = sum(
+            transform_neighbours(neigh, head.shape[1]) for neigh in neighs_by_type
+        ) / len(neighs_by_type)
         return np.concatenate([head_trans, neigh_trans], axis=-1)
 
     for i, feats in enumerate(batch_feats):
