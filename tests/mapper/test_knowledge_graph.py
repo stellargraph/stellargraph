@@ -74,27 +74,19 @@ def check_sequence_output(
     else:
         assert len(l) == expected_length
         assert set(l[:batch_size]) == {1}
-        assert set(l[batch_size:]) == {-1}
+        assert set(l[batch_size:]) == {0}
 
         if max_node_iloc is not None:
             assert np.all((0 <= s) & (s <= max_node_iloc))
             assert np.all((0 <= r) & (r <= max_node_iloc))
 
+def triple_df(*values):
+    return pd.DataFrame(values, columns=["source", "label", "target"])
 
-@pytest.mark.parametrize("input_type", ["df", "tuple", "list"])
-def test_kg_triple_generator(kg, input_type):
+def test_kg_triple_generator(kg):
     gen = KGTripleGenerator(kg, 2)
 
-    sources = ["a", "c", "d"]
-    rels = ["W", "X", "Y"]
-    targets = ["b", "a", "c"]
-
-    if input_type == "df":
-        edges = pd.DataFrame({"source": sources, "label": rels, "target": targets})
-    elif input_type == "tuple":
-        edges = (sources, rels, targets)
-    else:
-        edges = list(zip(sources, rels, targets))
+    edges = triple_df(("a", "W", "b"), ("c", "X", "a"), ("d", "Y", "c"))
 
     seq = gen.flow(edges)
     check_sequence_output(seq[0], 2, None)
@@ -110,14 +102,20 @@ def test_kg_triple_generator_errors(kg):
     with pytest.raises(TypeError, match="edges: expected.*found int"):
         gen.flow(1)
 
-    with pytest.raises(KeyError):
-        gen.flow([("fake", "W", "b")])
+    with pytest.raises(KeyError, match="fake"):
+        gen.flow(triple_df(("fake", "W", "b")))
 
-    with pytest.raises(KeyError):
-        gen.flow([("a", "fake", "b")])
+    with pytest.raises(KeyError, match="fake"):
+        gen.flow(triple_df(("a", "fake", "b")))
 
-    with pytest.raises(KeyError):
-        gen.flow([("a", "W", "fake")])
+    with pytest.raises(KeyError, match="fake"):
+        gen.flow(triple_df(("a", "W", "fake")))
+
+    with pytest.raises(TypeError, match="negative_samples: expected.*found str"):
+        gen.flow(triple_df(), negative_samples="foo")
+
+    with pytest.raises(ValueError, match="negative_samples: expected.*found -1"):
+        gen.flow(triple_df(), negative_samples=-1)
 
 
 @pytest.mark.parametrize("negative_samples", [None, 1, 10])

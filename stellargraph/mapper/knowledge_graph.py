@@ -25,23 +25,59 @@ from ..globalvar import SOURCE, TARGET, TYPE_ATTR_NAME
 
 
 class KGTripleGenerator:
+    """
+    A data generator for working with triple-based knowledge graph models, like ComplEx.
+
+    This requires a StellarGraph that contains all nodes/entities and every edge/relation type that
+    will be trained or predicted upon. The graph does not need to contain the edges/triples that are
+    used for training or prediction.
+
+    Args:
+        G (StellarGraph): the graph containing all nodes, and all edge types.
+
+        batch_size (int): the size of the batches to generate
+    """
     def __init__(self, G, batch_size):
         self.G = G
+
+        if not isinstance(batch_size, int):
+            raise TypeError(f"batch_size: expected int, found {type(batch_size).__name__}")
+
         self.batch_size = batch_size
 
     def flow(self, edges, negative_samples=None, shuffle=False, seed=None):
+        """
+        Create a Keras Sequence yielding the edges/triples in ``edges``, potentially with some negative
+        edges.
+
+        The negative edges are sampled using the "local closed world assumption", where a
+        source/subject or a target/object is randomly mutated.
+
+        Args:
+            edges: the edges/triples to feed into a knowledge graph model.
+            negative_samples (int, optional): the number of negative samples to generate for each positive edge.
+
+        Returns:
+            A Keras sequence that can be passed to the ``fit`` and ``predict`` method of knowledge-graph models.
+        """
         if isinstance(edges, pd.DataFrame):
             sources = edges[SOURCE]
             rels = edges[TYPE_ATTR_NAME]
             targets = edges[TARGET]
-        elif isinstance(edges, tuple):
-            sources, rels, targets = edges
-        elif isinstance(edges, list):
-            sources, rels, targets = zip(*edges)
         else:
             raise TypeError(
-                f"edges: expected pandas.DataFrame, tuple or list; found {type(edges).__name__}"
+                f"edges: expected pandas.DataFrame; found {type(edges).__name__}"
             )
+
+        if negative_samples is not None:
+            if not isinstance(negative_samples, int):
+                raise TypeError(
+                    f"negative_samples: expected int or None, found {type(negative_samples).__name__}"
+                )
+            if negative_samples < 0:
+                raise ValueError(
+                    f"negative_samples: expected non-negative integer, found {negative_samples}"
+                )
 
         source_ilocs = self.G._get_index_for_nodes(sources)
         rel_ilocs = self.G._edges.types.to_iloc(rels, strict=True)
