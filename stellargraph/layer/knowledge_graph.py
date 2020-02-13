@@ -101,7 +101,10 @@ class ComplEx:
     @staticmethod
     def embeddings(model):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in this model.
+        Retrieve the embeddings for nodes/entities and edge types/relations in the given model.
+
+        Args:
+            model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
 
         Returns:
             A tuple of numpy complex arrays: the first element is the embeddings for nodes/entities
