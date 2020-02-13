@@ -715,9 +715,20 @@ class StellarGraph:
 
     def _unique_type_triples(self, *, return_counts, selector=slice(None)):
         all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
-        ret = np.unique(
-            all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
-        )
+
+        if len(all_type_ilocs) == 0:
+            # if there's no edges, np.unique is being called on a shape=(0, 3) ndarray, and hits
+            # "ValueError: cannot reshape array of size 0 into shape (0,newaxis)", so we manually
+            # reproduce what would be returned
+            if return_counts:
+                ret = None, [], []
+            else:
+                ret = None, []
+        else:
+            ret = np.unique(
+                all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
+            )
+
         edge_ilocs = ret[1]
         # we've now got the indices for an edge with each triple, along with the counts of them, so
         # we can query to get the actual edge types (this is, at the time of writing, easier than
