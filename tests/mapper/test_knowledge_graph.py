@@ -22,7 +22,7 @@ import numpy as np
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 
 from .. import test_utils
-from ..test_utils import knowledge_graph
+from ..test_utils.graphs import knowledge_graph
 
 pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
