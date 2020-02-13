@@ -103,7 +103,11 @@ class GraphWalk(object):
     def neighbors(self, node, include_edge_weight=True, return_ndarrays=False):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbors(node, include_edge_weight=include_edge_weight, return_ndarrays=return_ndarrays)
+        return self.graph.neighbors(
+            node,
+            include_edge_weight=include_edge_weight,
+            return_ndarrays=return_ndarrays,
+        )
 
     def run(self, *args, **kwargs):
         """
@@ -230,27 +234,19 @@ def naive_weighted_choices(rs, weights):
     does a lot of conversions/checks/preprocessing internally.
     """
 
-    # divide the interval [0, sum(weights)) into len(weights)
-    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
-    # weights[i]
-    subinterval_ends = []
-    running_total = 0
-    for w in weights:
-        if w < 0:
-            raise ValueError("Detected negative weight: {}".format(w))
-        running_total += w
-        subinterval_ends.append(running_total)
+    # implicitly divide the interval [0, sum(weights)) into len(weights) subintervals [x_i,
+    # x_{i+1}), where the width x_{i+1} - x_i == weights[i]
+    subinterval_ends = np.cumsum(weights)
+    negative = weights < 0
+    if negative.any():
+        raise ValueError(f"Detected negative weight: {comma_sep(weights[negative])}")
 
     # pick a place in the overall interval
-    x = rs.random() * running_total
+    x = rs.random() * subinterval_ends[-1]
 
     # find the subinterval that contains the place, by looking for the
     # first subinterval where the end is (strictly) after it
-    for idx, end in enumerate(subinterval_ends):
-        if x < end:
-            break
-
-    return idx
+    return np.searchsorted(subinterval_ends, x)
 
 
 class BiasedRandomWalk(GraphWalk):
@@ -288,10 +284,13 @@ class BiasedRandomWalk(GraphWalk):
             edges, weights = self.graph.edges(include_edge_weight=True)
             valid = (0 <= weight) & (weight < np.inf)
             if not valid.all():
-                invalid_ilocs, = (~valid).nonzero()
+                (invalid_ilocs,) = (~valid).nonzero()
                 edges = list(edges)
                 invalid_edges = (edges[i] + (weights[i],) for i in invalid_ilocs)
-                formatted = [f"{src!r}--{dst!r} (weight={wgt})" for src, tgt, wgt in invalid_edges]
+                formatted = [
+                    f"{src!r}--{dst!r} (weight={wgt})"
+                    for src, tgt, wgt in invalid_edges
+                ]
                 string = comma_sep(formatted, stringify=str)
                 self._raise_error(
                     f"Expected edge weights to be finite and non-negative, found some invalid: {formatted}"
@@ -307,11 +306,13 @@ class BiasedRandomWalk(GraphWalk):
                 walk = [node]
 
                 previous_node = None
-                previous_node_neighbours = []
+                previous_node_neighbours = np.ndarray([])
                 current_node = node
 
                 for _ in range(length - 1):
-                    ret = self.neighbors(node, include_edge_weight=weighted, return_ndarrays=True)
+                    ret = self.neighbors(
+                        node, include_edge_weight=weighted, return_ndarrays=True
+                    )
                     if weighted:
                         neighbours, weights = ret
                     else:
@@ -319,7 +320,9 @@ class BiasedRandomWalk(GraphWalk):
                         weights = None
 
                     was_previous = neighbours == previous_node
-                    was_previous_neighbour = np.isin(neighbours, previous_node_neighbours)
+                    was_previous_neighbour = np.isin(
+                        neighbours, previous_node_neighbours
+                    )
 
                     # d_tx = 1 and d_tx = 2
                     transition_probs = np.where(was_previous_neighbour, 1.0, iq)
