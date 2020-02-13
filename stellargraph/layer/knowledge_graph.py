@@ -191,3 +191,126 @@ class ComplEx:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+
+class DistMultScore(Layer):
+    """
+    DistMult scoring Keras layer.
+
+    Original Paper: Embedding Entities and Relations for Learning and Inference in Knowledge
+    Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, Li Deng. ICLR 2015
+
+    This combines subject, relation and object embeddings into a score of the likelihood of the
+    link.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build(self, input_shape):
+        self.built = True
+
+    def call(self, inputs):
+        e1, r, e2 = inputs
+        # y_(e_1)^T M_r y_(e_2), where M_r = diag(w_r) is a diagonal matrix
+        score = tf.reduce_sum(e1 * r * e2, axis=2)
+        return score
+
+
+@experimental(reason="results from the reference paper have not been reproduced yet")
+class DistMult:
+    """
+    Embedding layers and a DistMult scoring layers that implement the DistMult knowledge graph
+    embedding algorithm as in https://arxiv.org/pdf/1412.6575.pdf
+
+    Args:
+        generator (KGTripleGenerator): A generator of triples to feed into the model.
+
+        k (int): the dimension of the embedding (that is, a vector in R^k is learnt for each node
+            and each link type)
+
+        embedding_initializer (str or func, optional): The initialiser to use for the embeddings.
+
+        embedding_regularizer (str or func, optional): The regularizer to use for the embeddings.
+    """
+
+    def __init__(
+        self, generator, k, embedding_initializer=None, embedding_regularizer=None,
+    ):
+        if not isinstance(generator, KGTripleGenerator):
+            raise TypeError(
+                f"generator: expected KGTripleGenerator, found {type(generator).__name__}"
+            )
+
+        graph = generator.G
+        self.num_nodes = graph.number_of_nodes()
+        self.num_edge_types = len(graph._edges.types)
+        self.k = k
+        self.embedding_initializer = initializers.get(embedding_initializer)
+        self.embedding_regularizer = regularizers.get(embedding_regularizer)
+
+    # layer names
+    _NODE = "DISTMULT_NODE"
+    _REL = "DISTMULT_EDGE_TYPE"
+
+    @staticmethod
+    def embeddings(model):
+        """
+        Retrieve the embeddings for nodes/entities and edge types/relations in the given model.
+
+        Args:
+            model (tensorflow.keras.Model): a Keras model created using a ``DistMult`` instance.
+
+        Returns:
+            A tuple of numpy arrays: the first element is the embeddings for nodes/entities
+            (``shape = number of nodes × k``), the second element is the embeddings for edge
+            types/relations (``shape = number of edge types x k``).
+        """
+        node = model.get_layer(DistMult._NODE).embeddings.numpy()
+        rel = model.get_layer(DistMult._REL).embeddings.numpy()
+
+        return node, rel
+
+    def _embed(self, count, name):
+        return Embedding(
+            count,
+            self.k,
+            name=name,
+            embeddings_initializer=self.embedding_initializer,
+            embeddings_regularizer=self.embedding_regularizer,
+        )
+
+    def __call__(self, x):
+        """
+        Apply embedding layers to the source, relation and object input "ilocs" (sequential integer
+        labels for the nodes and edge types).
+        """
+        e1_iloc, r_iloc, e2_iloc = x
+
+        # DistMult generates embeddings in R
+        node_embeddings = self._embed(self.num_nodes, self._NODE)
+        edge_type_embeddings = self._embed(self.num_edge_types, self._REL)
+
+        e1 = node_embeddings(e1_iloc)
+        r = edge_type_embeddings(r_iloc)
+        e2 = node_embeddings(e2_iloc)
+
+        scoring = DistMultScore()
+
+        return scoring([e1, r, e2])
+
+    def build(self):
+        """
+        Builds a DistMult model.
+
+        Returns:
+            A tuple of (list of input tensors, tensor for DistMult model score outputs)
+        """
+        s_iloc = Input(shape=(None,))
+        r_iloc = Input(shape=(None,))
+        o_iloc = Input(shape=(None,))
+
+        x_inp = [s_iloc, r_iloc, o_iloc]
+        x_out = self(x_inp)
+
+        return x_inp, x_out
