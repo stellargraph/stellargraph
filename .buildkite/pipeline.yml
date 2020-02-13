@@ -43,7 +43,7 @@ steps:
         <<: *compose-config
         run: runner-3.6
     agents:
-      queue: "t2large"
+      queue: "t2medium"
     soft_fail:
       - exit_status: 2
 
