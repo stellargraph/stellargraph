@@ -139,8 +139,8 @@ class ComplEx:
         # embeddings
         node_embeddings_real = self._embed(self.num_nodes, self._NODE_REAL)
         node_embeddings_imag = self._embed(self.num_nodes, self._NODE_IMAG)
-        edge_type_embeddings_real = self._embed(self.num_nodes, self._REL_REAL)
-        edge_type_embeddings_imag = self._embed(self.num_nodes, self._REL_IMAG)
+        edge_type_embeddings_real = self._embed(self.num_edge_types, self._REL_REAL)
+        edge_type_embeddings_imag = self._embed(self.num_edge_types, self._REL_IMAG)
 
         s_re = node_embeddings_real(s_iloc)
         s_im = node_embeddings_imag(s_iloc)
