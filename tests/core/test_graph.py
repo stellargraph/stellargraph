@@ -189,6 +189,14 @@ def test_digraph_schema():
     assert len(schema.schema["movie"]) == 0
 
 
+def test_graph_schema_no_edges():
+    nodes = pd.DataFrame(index=[0])
+    g = StellarGraph(nodes=nodes, edges={})
+    schema = g.create_graph_schema()
+    assert len(schema.node_types) == 1
+    assert len(schema.edge_types) == 0
+
+
 @pytest.mark.benchmark(group="StellarGraph create_graph_schema")
 @pytest.mark.parametrize("num_types", [1, 4])
 def test_benchmark_graph_schema(benchmark, num_types):
