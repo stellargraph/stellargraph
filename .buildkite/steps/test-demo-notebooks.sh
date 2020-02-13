@@ -51,6 +51,7 @@ echo "+++ :python: running $f"
 cd "$(dirname "$f")"
 # run the notebook, saving it back to where it was, printing everything
 exitCode=0
+# papermill will replace parameters on some notebooks to make them run faster in CI
 papermill --execution-timeout=600 -p epochs 2 -p walk_length 5 -p batch_size 5 -p n_estimators 2 -p n_predictions 2 --log-output "$f" "$f" || exitCode=$?
 
 # and also upload the notebook with outputs, for someone to download and look at
