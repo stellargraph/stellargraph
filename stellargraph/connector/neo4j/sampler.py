@@ -20,7 +20,6 @@ __all__ = [
 ]
 
 import numpy as np
-import itertools as it
 import warnings
 from collections import defaultdict, deque
 
@@ -94,6 +93,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
         samples = [[head_node for head_node in nodes for _ in range(n)]]
         neighbor_query = _bfs_neighbor_query(sampling_direction="BOTH")
 
+        # this sends O(number of hops) queries to the database, because the code is cleanest like that
         for num_sample in n_size:
             cur_nodes = samples[-1]
             result = neo4j_graphdb.run(
@@ -127,8 +127,15 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
             out_size (list): The number of out-directed nodes to sample with replacement at each depth of the walk.
             seed (int): Random number generator seed; default is None
         Returns:
-            A list of multi-hop neighbourhood samples. Each sample expresses multiple undirected walks, but the in-node
-            neighbours and out-node neighbours are sampled separately. Each sample has the format:
+            A list of multi-hop neighbourhood samples. Each sample expresses a collection of nodes, which could be either in-neighbors,
+            or out-neighbors of the previous hops.
+            Result has the format:
+            [[head1, head2, ...],
+            [in1_head1, in2_head1, ..., in1_head2, in2_head2, ...], [out1_head1, out2_head1, ..., out1_head2, out2_head2, ...],
+            [in1_in1_head1, in2_in1_head1, ..., in1_in2_head1, ...], [out1_in1_head1, out2_in1_head1, ..., out1_in2_head1, ...], 
+            [in1_out1_head1, in2_out1_head1, ..., in1_out2_head1, ...], [out1_out1_head1, out2_out1_head1, ..., out1_out2_head1, ...], 
+            ...
+            ]
         """
 
         self._check_neighbourhood_sizes(in_size, out_size)
@@ -140,6 +147,7 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         in_sample_query = _bfs_neighbor_query(sampling_direction="IN")
         out_sample_query = _bfs_neighbor_query(sampling_direction="OUT")
 
+        # this sends O(2^number of hops) queries to the database, because the code is cleanest like that
         for in_num, out_num in zip(in_size, out_size):
             last_hop = hops[-1]
             this_hop = []
@@ -160,7 +168,7 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
 
             hops.append(this_hop)
 
-        return list(it.chain(*hops))
+        return sum(hops, [])
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
@@ -168,10 +176,8 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
         parameter (the first one encountered in the checks) with invalid value.
 
         Args:
-            nodes: (list) A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
-            n_size: (list) The number of neighbouring nodes to expand at each depth of the walk.
-            seed: (int) Random number generator seed; default is None
+            in_size (list): The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size (list): The number of out-directed nodes to sample with replacement at each depth of the walk.
         """
         self._check_sizes(in_size)
         self._check_sizes(out_size)
