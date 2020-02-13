@@ -27,7 +27,7 @@ f=${NOTEBOOKS[$INDEX]}
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
-    'calibration-pubmed-link-prediction.ipynb')
+    'calibration-pubmed-link-prediction.ipynb' | 'movielens-recommender.ipynb' | 'stellargraph-metapath2vec.ipynb')
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
@@ -52,7 +52,7 @@ cd "$(dirname "$f")"
 # run the notebook, saving it back to where it was, printing everything
 exitCode=0
 # papermill will replace parameters on some notebooks to make them run faster in CI
-papermill --execution-timeout=600 -p epochs 1 -p walk_length 2 -p batch_size 2 -p n_estimators 2 -p n_predictions 2 --log-output "$f" "$f" || exitCode=$?
+papermill --execution-timeout=600 -p epochs 2 -p walk_length 5 -p batch_size 5 -p n_estimators 2 -p n_predictions 2 --log-output "$f" "$f" || exitCode=$?
 
 # and also upload the notebook with outputs, for someone to download and look at
 buildkite-agent artifact upload "$(basename "$f")"
