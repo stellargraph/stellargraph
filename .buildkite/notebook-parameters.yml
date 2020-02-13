@@ -5,5 +5,5 @@ walk_length: 5
 batch_size: 5
 n_estimators: 2
 n_predictions: 2
-train_size: 0.3
-test_size: 0.2
+train_size: 0.1
+test_size: 0.1
