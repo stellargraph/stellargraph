@@ -100,10 +100,10 @@ class GraphWalk(object):
         rs, _ = random_state(seed)
         return rs
 
-    def neighbors(self, node, include_edge_weight=True):
+    def neighbors(self, node, include_edge_weight=True, return_ndarrays=False):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbors(node, include_edge_weight=include_edge_weight)
+        return self.graph.neighbors(node, include_edge_weight=include_edge_weight, return_ndarrays=return_ndarrays)
 
     def run(self, *args, **kwargs):
         """
@@ -306,43 +306,35 @@ class BiasedRandomWalk(GraphWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.neighbors(node, include_edge_weight=True)
+                previous_node = None
+                previous_node_neighbours = []
+                current_node = node
 
-                previous_node = node
-                previous_node_neighbours = neighbours
+                for _ in range(length - 1):
+                    ret = self.neighbors(node, include_edge_weight=weighted, return_ndarrays=True)
+                    if weighted:
+                        neighbours, weights = ret
+                    else:
+                        neighbours = ret
+                        weights = None
 
-                # calculate the appropriate unnormalised transition
-                # probability, given the history of the walk
-                def transition_probability(nn, current_node, weight):
-                    if nn == previous_node:  # d_tx = 0
-                        return ip * weight
-                    elif nn in previous_node_neighbours:  # d_tx = 1
-                        return 1.0 * weight
-                    else:  # d_tx = 2
-                        return iq * weight
+                    was_previous = neighbours == previous_node
+                    was_previous_neighbour = np.isin(neighbours, previous_node_neighbours)
 
-                if neighbours:
-                    current_node, _weight = rs.choice(neighbours)
-                    for _ in range(length - 1):
-                        walk.append(current_node)
-                        neighbours = self.neighbors(current_node, include_edge_weight=True)
+                    # d_tx = 1 and d_tx = 2
+                    transition_probs = np.where(was_previous_neighbour, 1.0, iq)
+                    # overwrite with d_tx = 0 (note that was_previous_neighbour & was_previous might
+                    # be true in the same place, with self-loop, so this must be second)
+                    transition_probs[was_previous] = ip
 
-                        if not neighbours:
-                            break
+                    if weighted:
+                        transition_probs *= weights
 
-                        # select one of the neighbours using the
-                        # appropriate transition probabilities
-                        choice = naive_weighted_choices(
-                            rs,
-                            (
-                                transition_probability(nn, current_node, weighted)
-                                for nn, weight in neighbours
-                            ),
-                        )
-
-                        previous_node = current_node
-                        previous_node_neighbours = neighbours
-                        current_node = neighbours[choice]
+                    choice = naive_weighted_choices(rs, transition_probs)
+                    previous_node = current_node
+                    previous_node_neighbours = neighbours
+                    current_node = neighbours[choice]
+                    walk.append(current_node)
 
                 walks.append(walk)
 
