@@ -83,6 +83,7 @@ class KGTripleGenerator:
                 )
 
         source_ilocs = self.G._get_index_for_nodes(sources)
+        # FIXME(#870): this would be best expressed without poking into the _edges proprety of G
         rel_ilocs = self.G._edges.types.to_iloc(rels, strict=True)
         target_ilocs = self.G._get_index_for_nodes(targets)
 
