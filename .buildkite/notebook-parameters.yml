@@ -1,8 +1,9 @@
 ---
 # configure the parameters replaced in jupyter notebooks when running on CI with papermill
 epochs: 2
-walk_length: 3
+walk_length: 5
 batch_size: 5
 n_estimators: 2
 n_predictions: 2
-wor2vec_model_dimensions: 32
+train_size: 0.3
+test_size: 0.2
