@@ -53,7 +53,8 @@ echo "+++ :python: running $f"
 cd "$(dirname "$f")"
 # run the notebook, saving it back to where it was, printing everything
 exitCode=0
-papermill --execution-timeout=600 --log-output "$f" "$f" || exitCode=$?
+# papermill will replace parameters on some notebooks to make them run faster in CI
+papermill --execution-timeout=600 --parameters_file "${stellargraph_dir}/.buildkite/notebook-parameters.yml" --log-output "$f" "$f" || exitCode=$?
 
 # and also upload the notebook with outputs, for someone to download and look at
 buildkite-agent artifact upload "$(basename "$f")"
