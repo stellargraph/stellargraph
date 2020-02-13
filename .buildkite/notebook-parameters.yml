@@ -3,5 +3,5 @@
 epochs: 2
 walk_length: 5
 batch_size: 5
-n_estimators: 2
-n_predictors: 1
+n_estimators: 1
+n_predictors: 2
