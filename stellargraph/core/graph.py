@@ -717,9 +717,9 @@ class StellarGraph:
         all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
 
         if len(all_type_ilocs) == 0:
-            # if there's no edges, np.unique is being called on a shape=(0, 3) ndarray, and hits
-            # "ValueError: cannot reshape array of size 0 into shape (0,newaxis)", so we manually
-            # reproduce what would be returned
+            # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
+            # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
+            # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
             if return_counts:
                 ret = None, [], []
             else:
