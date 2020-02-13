@@ -35,7 +35,7 @@ class GraphWaveGenerator:
     DataSet that contains the GraphWave embeddings.
     """
 
-    def __init__(self, G, scales="auto", num_scales=3, num_eigenvecs=-1):
+    def __init__(self, G, scales="auto", num_scales=3, num_eigenvecs=-1, noise_tol=1e-3):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
@@ -67,25 +67,28 @@ class GraphWaveGenerator:
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
 
-        if num_eigenvecs == -1:
-            num_eigenvecs = laplacian.shape[0] - 2
-
         # TODO: add in option to compute wavelet transform using Chebysev polynomials
-        eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, which="SM")
-        eigen_vals = np.real(eigen_vals).astype(np.float32)
-        self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
 
         if scales == "auto":
 
-            e2 = eigen_vals[eigen_vals > 0].min()
-            eN = eigen_vals.max()
+            min_eigenvalue, max_eigenvalue = self.min_max_eigenvalues(laplacian, noise_tol)
 
-            min_scale = -np.log(0.95) / np.sqrt(eN * e2)
-            max_scale = -np.log(0.85) / np.sqrt(eN * e2)
+            min_scale = -np.log(0.95) / np.sqrt(max_eigenvalue * min_eigenvalue)
+            max_scale = -np.log(0.85) / np.sqrt(max_eigenvalue * min_eigenvalue)
 
             scales = np.linspace(min_scale, max_scale, num_scales)
 
-        self.scales = scales
+        self.scales = np.array(scales).astype(np.float32)
+
+        if num_eigenvecs == -1:
+            eigen_vals, eigen_vecs = self.sufficiently_sampled_eigs(laplacian, noise_tol, self.scales[-1])
+        else:
+            eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=noise_tol)
+            eigen_vals = np.real(eigen_vals).astype(np.float32)
+            eigen_vecs = eigen_vecs[:, np.where(eigen_vals > noise_tol)[0]]
+            eigen_vals = eigen_vals[eigen_vals > noise_tol]
+
+        self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
 
         # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
         # (each column corresponds to a node)
@@ -95,10 +98,73 @@ class GraphWaveGenerator:
 
         # a list of [U exp(-scale * eigenvalues) for scale in scales]
         Ues = [
-            (self.eigen_vecs * np.exp(-s * eigen_vals))[np.newaxis, :, :]
+            (self.eigen_vecs * np.exp(-s * eigen_vals))[np.newaxis, :, :].astype(np.float32)
             for s in scales
         ]
         self.Ues = tf.convert_to_tensor(np.concatenate(Ues, axis=0))
+
+    @staticmethod
+    def min_max_eigenvalues(laplacian, noise_tol):
+
+        max_num_eigs = laplacian.shape[0] - 2
+
+        max_eigenvalue, _ = eigs(laplacian, k=1, which="LM")
+        max_eigenvalue = np.real(max_eigenvalue[0]).astype(np.float32)
+
+        # efficiently calculate smallest non-noise eigenvalue
+        # search for eigenvalues near the noise_tol
+        # linearly increase the number of eigenvalues to search for until 1 larger
+        min_eigenvalue = noise_tol
+        k = min(10, max_num_eigs)
+        while (k <= max_num_eigs) and (min_eigenvalue == noise_tol):
+
+            small_eigen_vals, _ = eigs(laplacian, k=k, sigma=noise_tol)
+            small_eigen_vals = np.real(small_eigen_vals).astype(np.float32)
+            small_eigen_vals = small_eigen_vals[small_eigen_vals > noise_tol]
+
+            if len(small_eigen_vals) > 0:
+                min_eigenvalue = small_eigen_vals.min().astype(np.float32)
+
+            k += 10
+
+        return min_eigenvalue, max_eigenvalue
+
+    @staticmethod
+    def sufficiently_sampled_eigs(laplacian, noise_tol, min_scale):
+
+        max_num_eigs = laplacian.shape[0] - 2
+
+        prev_eig_l2_norm = 0.0
+        eig_l2_norm = -1
+        prev_eig_max = noise_tol
+        eigen_vals = np.array([])
+        eigen_vecs = np.empty((laplacian.shape[0], 0), dtype=np.float32)
+        k = min(16, max_num_eigs)
+
+        while (k <= max_num_eigs) and ((prev_eig_l2_norm / eig_l2_norm) < 0.9):
+
+            prev_eig_l2_norm = eig_l2_norm
+            # use increasing sigma to efficiently search for increasingly larger eigenvalues
+            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=2*prev_eig_max)
+            new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
+
+            # only append newly found new_eigen_vecs and new_eigen_vals
+            new_eigen_vecs = new_eigen_vecs[:, np.where(new_eigen_vals > prev_eig_max)[0]]
+            new_eigen_vals = new_eigen_vals[new_eigen_vals > prev_eig_max]
+
+            # append new eigenvalues and eigen vectors
+            eigen_vals = np.append(eigen_vals, new_eigen_vals)
+            eigen_vecs = np.concatenate([eigen_vecs, new_eigen_vecs], axis=1)
+
+            # update prev_eig_max to the largest eigenvalue found
+            if len(eigen_vals) != 0:
+                prev_eig_max = eigen_vals.max()
+
+            eig_l2_norm = np.sqrt(np.sum(np.exp(-min_scale * eigen_vals) ** 2))
+            k *= 2
+
+        return eigen_vals, eigen_vecs
+
 
     def flow(
         self,
