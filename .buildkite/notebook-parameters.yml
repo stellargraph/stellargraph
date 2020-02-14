@@ -8,9 +8,10 @@ walk_length: 3
 # minimal ensembles:
 n_estimators: 2
 n_predictions: 2
-# reduce graph size for demos/link-prediction/hinsage/movielens-recommender.ipynb:
+# reduce graph size for movielens-recommender.ipynb and calibration-pubmed-link-prediction.ipynb:
 train_size: 0.005
 test_size: 0.01
+val_size: 0.01
 # minimal metapath for demos/embeddings/stellargraph-metapath2vec.ipynb:
 metapaths:
   - - "group"
