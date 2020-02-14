@@ -3,7 +3,7 @@
 # common parameters used in several notebooks:
 epochs: 1
 walk_length: 3
-batch_size: 5
+batch_size: 2
 # very minimal ensembles:
 n_estimators: 2
 n_predictions: 2
