@@ -19,7 +19,12 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE, HinSAGE and Attri2Vec.
 
 """
-__all__ = ["GraphSAGELinkGenerator", "HinSAGELinkGenerator", "Attri2VecLinkGenerator", "DirectedGraphSAGELinkGenerator"]
+__all__ = [
+    "GraphSAGELinkGenerator",
+    "HinSAGELinkGenerator",
+    "Attri2VecLinkGenerator",
+    "DirectedGraphSAGELinkGenerator",
+]
 
 import random
 import operator
@@ -636,7 +641,9 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
             features = [None] * max_slots  # flattened binary tree
 
             for slot in range(max_slots):
-                nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
+                nodes_in_slot = list(
+                    it.chain(*[sample[slot] for sample in node_samples])
+                )
                 features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
                 resize = -1 if np.size(features_for_slot) > 0 else 0
                 features[slot] = np.reshape(
@@ -650,7 +657,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         # and re-pack features into a list where source, target feats alternate
         # This matches the GraphSAGE link model with (node_src, node_dst) input sockets:
         batch_feats = [
-            feats #np.reshape(feats, (len(head_links), -1, feats.shape[1]))
+            feats  # np.reshape(feats, (len(head_links), -1, feats.shape[1]))
             for ab in zip(*batch_feats)
             for feats in ab
         ]

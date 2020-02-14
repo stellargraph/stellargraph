@@ -1120,7 +1120,9 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              generator: The supplied generator.
         """
-        if not isinstance(generator, (DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator,)):
+        if not isinstance(
+            generator, (DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator,)
+        ):
             errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"
             if isinstance(generator, (NodeSequence, LinkSequence)):
                 errmsg = (
