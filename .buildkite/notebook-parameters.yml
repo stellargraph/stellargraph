@@ -1,5 +1,6 @@
 ---
 # configure the parameters replaced in jupyter notebooks when running on CI with papermill
+# common parameters used in several notebooks:
 epochs: 2
 walk_length: 5
 batch_size: 5
@@ -11,6 +12,5 @@ train_size: 0.005
 test_size: 0.1
 # minimal metapath for demos/embeddings/stellargraph-metapath2vec.ipynb:
 metapaths:
-  -
-    - "group"
+  - - "group"
     - "group"
