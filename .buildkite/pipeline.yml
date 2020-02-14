@@ -9,9 +9,8 @@ plugins: &plugins
     mode: checkout
 
 steps:
-  - label: ":python: 3.6"
-    key: "python_3_6"
-    command: ".buildkite/steps/script.sh"
+  - label: ":docker::python: build 3.6 runner"
+    key: "runner-3_6"
     plugins:
       <<: *plugins
       huonw/docker-compose#a18b2c39e0682cf806be8f121750047bc05f7e4e:
@@ -23,12 +22,22 @@ steps:
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
 
+        push:
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
+  - label: ":python: 3.6"
+    key: "python_3_6"
+    depends_on: "runner-3_6"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      huonw/docker-compose#a18b2c39e0682cf806be8f121750047bc05f7e4e:
+        <<: *compose-config
         run: runner-3_6
         env:
           - CHECK_NOTEBOOK_FORMATTING=1
-
-        push:
-          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
     agents:
       queue: "t2medium"
 
@@ -55,6 +64,7 @@ steps:
 
   - label: ":python::book: test notebooks %n"
     key: "test-notebooks"
+    depends_on: "runner-3_6"
     parallelism: 32
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
