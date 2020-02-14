@@ -3,10 +3,13 @@
 epochs: 2
 walk_length: 5
 batch_size: 5
+# very minimal ensembles:
 n_estimators: 2
 n_predictions: 2
+# reduce graph size for demos/link-prediction/hinsage/movielens-recommender.ipynb:
 train_size: 0.005
 test_size: 0.1
+# minimal metapath for demos/embeddings/stellargraph-metapath2vec.ipynb:
 metapaths:
   -
     - "group"
