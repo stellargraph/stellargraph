@@ -44,7 +44,7 @@ Where:
 The number of trainable parameters in layer :math:`k` for the mean
 aggregator is
 
-   :math:`d_{k - 1} + d_{k} = d_{k}d_{k - 1} + d_{k}` if concat=True, or
+   :math:`d_{k}d_{k - 1} + d_{k}` if concat=True, or
 
    :math:`{2d}_{k}d_{k - 1} + d_{k}` if concat=False.
 
