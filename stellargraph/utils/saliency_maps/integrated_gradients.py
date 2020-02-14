@@ -66,8 +66,8 @@ class IntegratedGradients:
                 raise RuntimeError(
                     "Keras model for sparse adjacency is expected to have four inputs"
                 )
-            self.A = generator.A_values
-            self.A_indices = generator.A_indices
+            self.adj = generator.A_values
+            self.adj_inds = generator.A_indices
         else:
             if not isinstance(generator, FullBatchSequence):
                 raise TypeError(
@@ -78,116 +78,122 @@ class IntegratedGradients:
                     "Keras model for dense adjacency is expected to have three inputs"
                 )
 
-            self.A = generator.A_dense
+            self.adj = generator.A_dense
 
         # Extract features from generator
-        self.X = generator.features
+        self.features = generator.features
         self.model = model
 
     def get_integrated_node_masks(
-        self, node_idx, class_of_interest, X_baseline=None, steps=20,
+        self, node_idx, class_of_interest, features_baseline=None, steps=20,
     ):
         """
         Args:
             node_idx: the index of the node to calculate gradients for.
             class_of_interest: the index for the class probability that the gradients will be calculated for.
-            X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set
+            features_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set
                 X_baseline to a all-zero matrix with the size of the original feature matrix.
             steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
         Returns
             (Numpy array): Integrated gradients for the node features.
         """
-        if X_baseline is None:
-            X_baseline = np.zeros(self.X.shape)
-        X_diff = self.X - X_baseline
+        if features_baseline is None:
+            features_baseline = np.zeros(self.features.shape)
+        features_diff = self.features - features_baseline
 
-        total_gradients = np.zeros(self.X.shape)
+        total_gradients = np.zeros(self.features.shape)
         for alpha in np.linspace(0, 1, steps):
-            X_step = X_baseline + alpha * X_diff
+            features_step = features_baseline + alpha * features_diff
+
             if self.is_sparse:
-                grads = self._compute_gradients(
-                    [
-                        X_step,
-                        np.array([[node_idx]]),
-                        self.A_indices,
-                        self.A,
-                        class_of_interest,
-                    ],
-                    variable="nodes",
-                )
+                model_input = [
+                    features_step,
+                    np.array([[node_idx]]),
+                    self.adj_inds,
+                    self.adj,
+                ]
             else:
-                grads = self._compute_gradients(
-                    [X_step, np.array([[node_idx]]), self.A, class_of_interest],
-                    variable="nodes",
-                )
+                model_input = [features_step, np.array([[node_idx]]), self.adj]
+
+            model_input = [tf.convert_to_tensor(x) for x in model_input]
+            grads = self._compute_gradients(
+                model_input, class_of_interest, wrt=model_input[0]
+            )
 
             total_gradients += grads
 
-        return np.squeeze(total_gradients * X_diff, 0)
+        return np.squeeze(total_gradients * features_diff, 0)
 
     def get_integrated_link_masks(
         self,
         node_idx,
         class_of_interest,
         non_exist_edge=False,
-        A_baseline=None,
+        adj_baseline=None,
         steps=20,
     ):
         """
         Args:
             node_idx: the index of the node to calculate gradients for.
             class_of_interest: the index for the class probability that the gradients will be calculated for.
-            A_baseline: For integrated gradients, A_baseline is the reference adjacency matrix to start with. Generally
+            non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges.
+                This is useful when we want to understand adding which edges could change the current predictions.
+                But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
+                could only accurately measure the importance of existing edges.
+            adj_baseline: For integrated gradients, adj_baseline is the reference adjacency matrix to start with. Generally
                 we should set A_baseline to an all-zero matrix or all-one matrix with the size of the original
                 A_baseline matrix.
             steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
-        return (Numpy array): shape the same with A_val. Integrated gradients for the links.
+        Returns
+            (Numpy array): Integrated gradients for the links.
         """
-        if A_baseline is None:
+        if adj_baseline is None:
             if non_exist_edge:
-                A_baseline = np.ones(self.A.shape)
+                adj_baseline = np.ones(self.adj.shape)
             else:
-                A_baseline = np.zeros(self.A.shape)
+                adj_baseline = np.zeros(self.adj.shape)
 
-        A_diff = self.A - A_baseline
+        adj_diff = self.adj - adj_baseline
 
-        total_gradients = np.zeros_like(self.A)
+        total_gradients = np.zeros_like(self.adj)
 
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
-            A_step = A_baseline + alpha * A_diff
+            adj_step = adj_baseline + alpha * adj_diff
 
             if self.is_sparse:
-                grads = self._compute_gradients(
-                    [
-                        self.X,
-                        np.array([[node_idx]]),
-                        self.A_indices,
-                        A_step,
-                        class_of_interest,
-                    ],
-                    variable="links",
-                )
+                model_input = [
+                    self.features,
+                    np.array([[node_idx]]),
+                    self.adj_inds,
+                    adj_step,
+                ]
             else:
-                grads = self._compute_gradients(
-                    [self.X, np.array([[node_idx]]), A_step, class_of_interest],
-                    variable="links",
-                )
+                model_input = [
+                    self.features,
+                    np.array([[node_idx]]),
+                    adj_step,
+                ]
+
+            model_input = [tf.convert_to_tensor(x) for x in model_input]
+            grads = self._compute_gradients(
+                model_input, class_of_interest, wrt=model_input[-1]
+            )
 
             total_gradients += grads.numpy()
 
         if self.is_sparse:
             total_gradients = csr_matrix(
-                (total_gradients[0], (self.A_indices[0, :, 0], self.A_indices[0, :, 1]))
+                (total_gradients[0], (self.adj_inds[0, :, 0], self.adj_inds[0, :, 1]))
             )
-            A_diff = csr_matrix(
-                (A_diff[0], (self.A_indices[0, :, 0], self.A_indices[0, :, 1]))
+            adj_diff = csr_matrix(
+                (adj_diff[0], (self.adj_inds[0, :, 0], self.adj_inds[0, :, 1]))
             )
-            total_gradients = total_gradients.multiply(A_diff) / steps
+            total_gradients = total_gradients.multiply(adj_diff) / steps
         else:
             total_gradients = np.squeeze(
-                np.multiply(total_gradients, A_diff) / steps, 0
+                np.multiply(total_gradients, adj_diff) / steps, 0
             )
 
         return total_gradients
@@ -212,39 +218,18 @@ class IntegratedGradients:
 
         return np.sum(gradients, axis=-1)
 
-    def _compute_gradients(self, mask_tensors, variable):
+    def _compute_gradients(self, model_input, class_of_interest, wrt):
 
-        for i, x in enumerate(mask_tensors):
-            if not isinstance(x, tf.Tensor):
-                mask_tensors[i] = tf.convert_to_tensor(x)
-
-        if self.is_sparse:
-            (
-                features_t,
-                output_indices_t,
-                adj_indices_t,
-                adj_t,
-                class_of_interest,
-            ) = mask_tensors
-            model_input = [features_t, output_indices_t, adj_indices_t, adj_t]
-
-        else:
-            (features_t, output_indices_t, adj_t, class_of_interest,) = mask_tensors
-            model_input = [features_t, output_indices_t, adj_t]
+        class_of_interest = tf.convert_to_tensor(class_of_interest)
 
         with tf.GradientTape() as tape:
-            if variable == "nodes":
-                tape.watch(features_t)
-            elif variable == "links":
-                tape.watch(adj_t)
+
+            tape.watch(wrt)
 
             output = self.model(model_input)
 
             cost_value = K.gather(output[0, 0], class_of_interest)
 
-        if variable == "nodes":
-            gradients = tape.gradient(cost_value, features_t)
-        elif variable == "links":
-            gradients = tape.gradient(cost_value, adj_t)
+        gradients = tape.gradient(cost_value, wrt)
 
         return gradients
