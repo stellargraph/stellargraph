@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
 #
 # Copyright 2019-2020 Data61, CSIRO
@@ -19,10 +21,13 @@ The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
 
 """
-#!/usr/bin/env python3
 import argparse
 import nbformat
 import re
+import shlex
+import subprocess
+import sys
+import tempfile
 from itertools import chain
 from traitlets import Set, Integer, Bool
 from traitlets.config import Config
@@ -119,6 +124,12 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
         return cell, resources
 
 
+# ANSI terminal escape sequences
+YELLOW_BOLD = "\033[1;33;40m"
+LIGHT_RED_BOLD = "\033[1;91;40m"
+RESET = "\033[0m"
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -144,6 +155,20 @@ if __name__ == "__main__":
         help="Format all code cells (currently uses black)",
     )
     parser.add_argument(
+        "-e",
+        "--execute",
+        nargs="?",
+        const="default",
+        help="Execute notebook before export with specified kernel (default if not given)",
+    )
+    parser.add_argument(
+        "-t",
+        "--cell_timeout",
+        default=-1,
+        type=int,
+        help="Set the execution cell timeout in seconds (default is timeout disabled)",
+    )
+    parser.add_argument(
         "-n",
         "--renumber",
         action="store_true",
@@ -156,16 +181,33 @@ if __name__ == "__main__":
         help="Set kernel spec to default 'Python 3'",
     )
     parser.add_argument(
-        "-a",
-        "--all",
+        "-s",
+        "--coalesce_streams",
         action="store_true",
-        help="Perform all formatting, equivalent to -wcnk",
+        help="Coalesce streamed output into a single chunk of output",
     )
     parser.add_argument(
+        "-d",
+        "--default",
+        action="store_true",
+        help="Perform default formatting, equivalent to -wcnks",
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "-o",
         "--overwrite",
         action="store_true",
         help="Overwrite original notebooks, otherwise a copy will be made with a .mod suffix",
+    )
+    group.add_argument(
+        "--check",
+        action="store_true",
+        help="Check that no changes happened, instead of writing the file",
+    )
+    group.add_argument(
+        "--ci",
+        action="store_true",
+        help="Same as `--check`, but with an annotation for buildkite CI",
     )
     parser.add_argument(
         "--html", action="store_true", help="Save HTML as well as notebook output"
@@ -180,18 +222,20 @@ if __name__ == "__main__":
     write_notebook = True
     write_html = args.html
     overwrite_notebook = args.overwrite
-    format_code = args.format_code or args.all
-    clear_warnings = args.clear_warnings or args.all
-    renumber_code = args.renumber or args.all
-    set_kernel = args.set_kernel or args.all
+    check_notebook = args.check or args.ci
+    on_ci = args.ci
+    format_code = args.format_code or args.default
+    clear_warnings = args.clear_warnings or args.default
+    coalesce_streams = args.coalesce_streams or args.default
+    renumber_code = args.renumber or args.default
+    set_kernel = args.set_kernel or args.default
+    execute_code = args.execute
+    cell_timeout = args.cell_timeout
 
     # Add preprocessors
     preprocessor_list = []
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
-
-    if clear_warnings:
-        preprocessor_list.append(ClearWarningsPreprocessor)
 
     if set_kernel:
         preprocessor_list.append(SetKernelSpecPreprocessor)
@@ -199,10 +243,26 @@ if __name__ == "__main__":
     if format_code:
         preprocessor_list.append(FormatCodeCellPreprocessor)
 
+    if execute_code:
+        preprocessor_list.append(preprocessors.ExecutePreprocessor)
+
+    # these clean up the result of execution and so should happen after it
+    if clear_warnings:
+        preprocessor_list.append(ClearWarningsPreprocessor)
+
+    if coalesce_streams:
+        preprocessor_list.append(preprocessors.coalesce_streams)
+
     # Create the exporters with preprocessing
     c = Config()
     c.NotebookExporter.preprocessors = preprocessor_list
     c.HTMLExporter.preprocessors = preprocessor_list
+
+    if execute_code:
+        c.ExecutePreprocessor.timeout = cell_timeout
+        if execute_code != "default":
+            c.ExecutePreprocessor.kernel_name = execute_code
+
     nb_exporter = NotebookExporter(c)
     html_exporter = HTMLExporter(c)
     # html_exporter.template_file = 'basic'
@@ -218,6 +278,8 @@ if __name__ == "__main__":
         else:
             raise ValueError(f"Specified location not '{path}'a file or directory.")
 
+    check_failed = []
+
     # Go through all notebooks files in specified directory
     for file_loc in all_files:
         # Skip Modified files
@@ -227,7 +289,7 @@ if __name__ == "__main__":
         if ignore_checkpoints and ".ipynb_checkpoint" in str(file_loc):
             continue
 
-        print(f"\033[1;33;40m \nProcessing file {file_loc}\033[0m")
+        print(f"{YELLOW_BOLD} \nProcessing file {file_loc}{RESET}")
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
         writer = writers.FilesWriter()
@@ -236,13 +298,31 @@ if __name__ == "__main__":
             # Process the notebook to a new notebook
             (body, resources) = nb_exporter.from_notebook_node(in_notebook)
 
+            temporary_file = None
+
             # Write notebook file
             if overwrite_notebook:
                 nb_file_loc = str(file_loc.with_suffix(""))
+            elif check_notebook:
+                tempdir = tempfile.TemporaryDirectory()
+                nb_file_loc = f"{tempdir.name}/notebook"
             else:
                 nb_file_loc = str(file_loc.with_suffix(".mod"))
+
             print(f"Writing notebook to {nb_file_loc}.ipynb")
             writer.write(body, resources, nb_file_loc)
+
+            if check_notebook:
+                with open(file_loc) as f:
+                    original = f.read()
+
+                with open(f"{nb_file_loc}.ipynb") as f:
+                    updated = f.read()
+
+                if original != updated:
+                    check_failed.append(str(file_loc))
+
+                tempdir.cleanup()
 
         if write_html:
             # Process the notebook to HTML
@@ -251,3 +331,34 @@ if __name__ == "__main__":
             html_file_loc = str(file_loc.with_suffix(""))
             print(f"Writing HTML to {html_file_loc}.html")
             writer.write(body, resources, html_file_loc)
+
+    if check_failed:
+        assert check_notebook, "things failed check without check being enabled"
+
+        notebooks = "\n".join(f"- `{path}`" for path in check_failed)
+
+        command = "python ./scripts/format_notebooks.py --default --overwrite demos/"
+
+        message = f"""\
+Found notebook(s) with incorrect formatting:
+
+{notebooks}
+
+Fix by running:
+
+    {command}"""
+
+        print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
+
+        if on_ci:
+            subprocess.run(
+                [
+                    "buildkite-agent",
+                    "annotate",
+                    "--style=error",
+                    "--context=format_notebooks",
+                    message,
+                ]
+            )
+
+        sys.exit(1)

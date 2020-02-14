@@ -33,7 +33,11 @@ from stellargraph.layer.graphsage import (
     MeanPoolingAggregator,
     AttentionalAggregator,
 )
-from ..test_utils.graphs import example_graph_1
+from ..test_utils.graphs import example_graph
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # Mean aggregator tests
@@ -432,7 +436,7 @@ def test_graphsage_constructor():
         GraphSAGE(layer_sizes=[4])
 
     # Construction from generator
-    G = example_graph_1(feature_size=3)
+    G = example_graph(feature_size=3)
     gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
     gs = GraphSAGE(layer_sizes=[4, 8], generator=gen, bias=True)
 
@@ -528,7 +532,7 @@ def test_graphsage_apply_1():
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = gs.node_model()
+    xinp, xout = gs.build()
     model2 = keras.Model(inputs=xinp, outputs=xout)
     assert pytest.approx(expected) == model2.predict(x)
 

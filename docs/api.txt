@@ -12,14 +12,14 @@ Data
 ----------------
 
 .. automodule:: stellargraph.data
-  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
+  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, TemporalRandomWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
 
 
 Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator
 
 
 GraphSAGE model
@@ -67,14 +67,14 @@ PPNP model
 -------------
 
 .. automodule:: stellargraph.layer.ppnp
-  :members: PPNPPropagationLayer, PPNP
+  :members: PPNP, PPNPPropagationLayer
 
 
 APPNP model
 -------------
 
 .. automodule:: stellargraph.layer.appnp
-  :members: APPNPPropagationLayer, APPNP
+  :members: APPNP, APPNPPropagationLayer
 
 
 GAT model
@@ -84,11 +84,18 @@ GAT model
   :members: GAT, GraphAttention, GraphAttentionSparse
 
 
+Watch Your Step model
+-------------------------
+
+.. automodule:: stellargraph.layer.watch_your_step
+  :members: WatchYourStep
+
+
 Link prediction layers
 ------------------------
 
 .. automodule:: stellargraph.layer.link_inference
-  :members: link_classification, link_regression, link_inference
+  :members: LinkEmbedding, link_classification, link_regression, link_inference
 
 Ensembles
 ------------------------
@@ -102,3 +109,18 @@ Calibration
 
 .. automodule:: stellargraph.utils.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
+
+
+Datasets
+----------------
+
+.. automodule:: stellargraph.datasets.datasets
+  :members:
+  :inherited-members:
+
+
+Random
+------------------------
+
+.. automodule:: stellargraph.random
+  :members: set_seed

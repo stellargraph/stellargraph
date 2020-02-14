@@ -20,7 +20,6 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
-from stellargraph.core.graph_networkx import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
@@ -30,11 +29,15 @@ import pytest
 import pandas as pd
 import scipy.sparse as sps
 from ..test_utils.graphs import (
-    example_graph_1,
+    example_graph,
     example_graph_random,
     example_hin_1,
     create_graph_features,
 )
+from .. import test_utils
+
+
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # FIXME (#535): Consider using graph fixtures
@@ -126,7 +129,7 @@ def test_nodemapper_constructor_no_feats():
     """
     n_feat = 4
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -134,7 +137,7 @@ def test_nodemapper_constructor_no_feats():
 def test_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -150,7 +153,7 @@ def test_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = GraphSAGENodeGenerator(G1, batch_size=n_batch, num_samples=[2, 2]).flow(
         G1.nodes()
@@ -265,7 +268,7 @@ def test_nodemapper_zero_samples():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
         G.nodes()
     )
@@ -280,7 +283,7 @@ def test_nodemapper_zero_samples():
         assert nl is None
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
         G.nodes()
     )
@@ -304,9 +307,7 @@ def test_nodemapper_isolated_nodes():
     G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    assert isinstance(G._graph, NetworkXStellarGraph)
-    # XXX Hack - Only works for NetworkXStellarGraph instances
-    Gnx = G._graph._graph
+    Gnx = G.to_networkx()
     ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
@@ -346,7 +347,7 @@ def test_nodemapper_incorrect_targets():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     with pytest.raises(TypeError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
@@ -361,7 +362,7 @@ def test_nodemapper_incorrect_targets():
 
 def test_hinnodemapper_constructor():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes=feature_sizes, feature_name="feature")
+    G = example_hin_1(feature_sizes=feature_sizes)
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
@@ -378,7 +379,7 @@ def test_hinnodemapper_constructor():
 
 def test_hinnodemapper_constructor_all_options():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes=feature_sizes, feature_name="feature")
+    G = example_hin_1(feature_sizes=feature_sizes)
 
     gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
 
@@ -455,7 +456,7 @@ def test_hinnodemapper_level_2():
         assert bf.shape[0] == batch_size
         assert bf.shape[2] == feature_sizes[nt]
 
-        batch_node_types = {schema.get_node_type(n) for n in np.ravel(bf)}
+        batch_node_types = {G.node_type(n) for n in np.ravel(bf)}
 
         assert len(batch_node_types) == 1
         assert nt in batch_node_types
@@ -538,7 +539,7 @@ def test_hinnodemapper_manual_schema():
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
 
     # Create manual schema
-    schema = G.create_graph_schema(create_type_maps=True)
+    schema = G.create_graph_schema()
     HinSAGENodeGenerator(
         G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
     ).flow(nodes_type_1)
@@ -611,7 +612,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
     Attri2VecNodeGenerator requires the graph to have features
     """
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -619,7 +620,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
 def test_attri2vec_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -635,7 +636,7 @@ def test_attri2vec_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = Attri2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
     assert len(mapper1) == 2

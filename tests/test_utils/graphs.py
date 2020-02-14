@@ -20,6 +20,7 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 import random
+import pytest
 
 
 def create_graph_features():
@@ -33,47 +34,27 @@ def create_graph_features():
 
 def relational_create_graph_features(is_directed=False):
     # RGCN, relational node mappers
+    r1 = {"label": "r1"}
+    r2 = {"label": "r2"}
+    nodes = ["a", "b", "c"]
+    features = np.array([[1, 1], [1, 0], [0, 1]])
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, features)}, orient="index"
+    )
+
     graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
-    graph.add_nodes_from(["a", "b", "c"])
-    graph.add_edges_from([("a", "b", "r1"), ("b", "c", "r1"), ("a", "c", "r2")])
-    return graph, np.array([[1, 1], [1, 0], [0, 1]])
+    graph.add_nodes_from(nodes)
+    graph.add_edges_from([("a", "b", r1), ("b", "c", r1), ("a", "c", r2)])
+
+    SG = StellarDiGraph if is_directed else StellarGraph
+    return SG(graph, node_features=node_features), features
 
 
-def example_graph_1_nx(
+def example_graph_nx(
     feature_size=None, label="default", feature_name="feature", is_directed=False
 ):
-    # stellargraph
     graph = nx.DiGraph() if is_directed else nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    graph.add_nodes_from([1, 2, 3, 4], label=label)
-    graph.add_edges_from(elist, label=label)
-
-    # Add example features
-    if feature_size is not None:
-        for v in graph.nodes():
-            graph.nodes[v][feature_name] = np.ones(feature_size)
-
-    return graph
-
-
-def example_graph_1(
-    feature_size=None, label="default", feature_name="feature", is_directed=False
-):
-    # attr2vec, graphattention, graphsage, node mappers (2), link mappers, types, stellargraph, unsupervised sampler
-    graph = example_graph_1_nx(feature_size, label, feature_name, is_directed)
-    cls = StellarDiGraph if is_directed else StellarGraph
-    if feature_size is not None:
-        return cls(graph, node_features=feature_name)
-
-    else:
-        return cls(graph)
-
-
-def example_graph_2(feature_size=None, label="default", feature_name="feature"):
-    # unsupervised sampler, link mapper
-    graph = nx.Graph()
     elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
-    graph.add_edges_from(elist)
     graph.add_nodes_from([1, 2, 3, 4], label=label)
     graph.add_edges_from(elist, label=label)
 
@@ -82,8 +63,32 @@ def example_graph_2(feature_size=None, label="default", feature_name="feature"):
         for v in graph.nodes():
             graph.nodes[v][feature_name] = int(v) * np.ones(feature_size)
 
-    graph = StellarGraph(graph, node_features=feature_name)
     return graph
+
+
+def _repeated_features(values_to_repeat, width):
+    column = np.expand_dims(values_to_repeat, axis=1)
+    return column.repeat(width, axis=1)
+
+
+def example_graph(
+    feature_size=None,
+    node_label="default",
+    edge_label="default",
+    feature_name="feature",
+    is_directed=False,
+):
+    elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
+    nodes = [1, 2, 3, 4]
+    if feature_size is not None:
+        features = _repeated_features(nodes, feature_size)
+    else:
+        features = []
+
+    nodes = pd.DataFrame(features, index=nodes)
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={node_label: nodes}, edges={edge_label: elist})
 
 
 def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
@@ -108,15 +113,40 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
     return graph
 
 
-def example_hin_1(feature_name=None, for_nodes=None, feature_sizes=None):
-    # stellargraph, hinsage
-    graph = example_hin_1_nx(feature_name, for_nodes, feature_sizes)
+def example_hin_1(
+    feature_sizes=None, is_directed=False, self_loop=False
+) -> StellarGraph:
+    def features(label, ids):
+        if feature_sizes is None:
+            return []
+        else:
+            feature_size = feature_sizes.get(label, 10)
+            return _repeated_features(ids, feature_size)
 
-    # Add some numeric node attributes
-    if feature_name is not None:
-        return StellarGraph(graph, node_features=feature_name)
-    else:
-        return StellarGraph(graph)
+    a_ids = [0, 1, 2, 3]
+    a = pd.DataFrame(features("A", a_ids), index=a_ids)
+
+    b_ids = [4, 5, 6]
+    b = pd.DataFrame(features("B", b_ids), index=b_ids)
+
+    r = pd.DataFrame(
+        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
+    )
+    f_edges, f_index = [(4, 5)], [6]
+    if self_loop:
+        # make it a multigraph
+        f_edges.extend([(5, 5), (5, 5)])
+        f_index.extend([7, 8])
+
+    # add some weights for the f edges, but not others
+    f_columns = ["source", "target", "weight"]
+    for i, src_tgt in enumerate(f_edges):
+        f_edges[i] = src_tgt + (10 + i,)
+
+    f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
 
 
 def create_test_graph_nx(is_directed=False):
@@ -208,3 +238,23 @@ def example_graph_random(feature_size=4, n_edges=20, n_nodes=6, n_isolates=1):
 
     else:
         return StellarGraph(graph)
+
+
+def node_features(seed=0) -> pd.DataFrame:
+    random = np.random.RandomState(seed)
+    node_data_np = random.rand(10, 10)
+    return pd.DataFrame(node_data_np)
+
+
+@pytest.fixture
+def petersen_graph() -> StellarGraph:
+    nxg = nx.petersen_graph()
+    return StellarGraph(nxg, node_features=node_features())
+
+
+@pytest.fixture
+def line_graph() -> StellarGraph:
+    nxg = nx.MultiGraph()
+    nxg.add_nodes_from(range(10))
+    nxg.add_edges_from([(i, i + 1) for i in range(9)])
+    return StellarGraph(nxg, node_features=node_features())

@@ -35,14 +35,9 @@ class Test_RelationalFullBatchNodeGenerator:
     n_feat = 2
     target_dim = 5
 
-    gnx, features = create_graph_features()
-    nodes = list(gnx.nodes)
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarDiGraph(gnx, node_features=node_features)
+    G, features = create_graph_features()
     N = len(G.nodes())
-    edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
+    edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
     num_relationships = len(edge_types)
 
     def test_generator_constructor(self):
@@ -55,7 +50,7 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_generator_constructor_wrong_G_type(self):
         with pytest.raises(TypeError):
-            generator = RelationalFullBatchNodeGenerator(nx.Graph(self.G._graph._graph))
+            generator = RelationalFullBatchNodeGenerator(self.G.to_networkx())
 
     def generator_flow(self, G, node_ids, node_targets, sparse=False):
         generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)
@@ -141,23 +136,13 @@ class Test_RelationalFullBatchNodeGenerator:
 
     def test_fullbatch_generator_init_1(self):
         G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
         generator = RelationalFullBatchNodeGenerator(G, name="test")
         assert generator.name == "test"
         assert np.array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+        G, _ = create_graph_features()
 
         func = "Not callable"
 
@@ -165,12 +150,7 @@ class Test_RelationalFullBatchNodeGenerator:
             generator = RelationalFullBatchNodeGenerator(G, "test", transform=func)
 
     def test_fullbatch_generator_transform(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarDiGraph(G, node_type_name="node", node_features=node_features)
+        G, _ = create_graph_features()
 
         def func(features, A, **kwargs):
             return features, A.dot(A)
@@ -179,18 +159,18 @@ class Test_RelationalFullBatchNodeGenerator:
         assert generator.name == "test"
 
         As = []
-        edge_types = sorted(set(e[-1] for e in G.edges(triple=True)))
+        edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
         node_list = list(G.nodes())
         node_index = dict(zip(node_list, range(len(node_list))))
         for edge_type in edge_types:
             col_index = [
                 node_index[n1]
-                for n1, n2, etype in G.edges(triple=True)
+                for n1, n2, etype in G.edges(include_edge_type=True)
                 if etype == edge_type
             ]
             row_index = [
                 node_index[n2]
-                for n1, n2, etype in G.edges(triple=True)
+                for n1, n2, etype in G.edges(include_edge_type=True)
                 if etype == edge_type
             ]
             data = np.ones(len(col_index), np.float64)

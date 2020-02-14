@@ -550,13 +550,10 @@ def test_hinsage_unitary_layer_size():
         )
 
 
-@pytest.mark.xfail(
-    struct=True, reason="#626: tensorflow 2.1 changed the predicted values"
-)
 def test_hinsage_from_generator():
     G = example_hin_1({"A": 8, "B": 4})
 
-    gen = HinSAGENodeGenerator(G, 1, [2, 2], "A", seed=1234)
+    gen = HinSAGENodeGenerator(G, 1, [2, 2], "A")
 
     hs = HinSAGE(
         layer_sizes=[2, 2],
@@ -568,6 +565,52 @@ def test_hinsage_from_generator():
 
     xin, xout = hs.build()
     model = keras.Model(inputs=xin, outputs=xout)
-    actual = model.predict_generator(gen.flow([1, 2]))
-    expected = np.array([[26, 29], [32, 31]], dtype=np.float32)
-    assert actual == pytest.approx(expected)
+
+    batch_feats = list(gen.flow([1, 2]))
+
+    # manually calculate the output of HinSage. All kernels are tensors of 1s
+    # the prediction nodes are type  "A" : "A" nodes only have "B" neighbours, while "B" nodes have both "A" and "B"
+    # neighbours.
+
+    def transform_neighbours(neighs, dim):
+        return np.expand_dims(
+            neighs.reshape(1, dim, int(neighs.shape[1] / dim), neighs.shape[2]).sum(
+                axis=-1
+            ),
+            -1,
+        ).mean(2)
+
+    def hinsage_layer(head, neighs_by_type):
+        head_trans = np.expand_dims(head.sum(axis=-1), -1)
+        neigh_trans = sum(
+            transform_neighbours(neigh, head.shape[1]) for neigh in neighs_by_type
+        ) / len(neighs_by_type)
+        return np.concatenate([head_trans, neigh_trans], axis=-1)
+
+    for i, feats in enumerate(batch_feats):
+        # 1st layer
+        # aggregate for the prediction node
+        layer_1_out = []
+        head = feats[0][0]
+        B_neighs = feats[0][1]
+
+        layer_1_out.append(hinsage_layer(head, [B_neighs,]))
+
+        # 1st layer
+        # aggregate for the neighbour nodes
+        head = feats[0][1]
+        B_neighs = feats[0][2]
+        A_neighs = feats[0][3]
+
+        layer_1_out.append(hinsage_layer(head, [B_neighs, A_neighs]))
+
+        # 2nd layer
+        # aggregate for the prediction nodes
+        layer_2_out = []
+        head = layer_1_out[0]
+        B_neighs = layer_1_out[1]
+
+        layer_2_out.append(hinsage_layer(head, [B_neighs,]))
+
+        actual = model.predict(batch_feats[i][0])
+        assert np.isclose(layer_2_out[0], actual).all()

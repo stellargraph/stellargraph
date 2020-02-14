@@ -24,6 +24,8 @@ steps:
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
 
         run: runner-3_6
+        env:
+          - CHECK_NOTEBOOK_FORMATTING=1
 
         push:
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
@@ -50,6 +52,20 @@ steps:
           - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
     agents:
       queue: "t2medium"
+
+  - label: ":python::book: test notebooks %n"
+    key: "test-notebooks"
+    parallelism: 32
+    command: ".buildkite/steps/test-demo-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3.6
+    agents:
+      queue: "t2large"
+    soft_fail:
+      - exit_status: 2
 
   - label: ":python-black: format"
     plugins:

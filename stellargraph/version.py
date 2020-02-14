@@ -15,4 +15,4 @@
 # limitations under the License.
 
 # Global version information
-__version__ = "0.9.0b"
+__version__ = "0.10.0b"

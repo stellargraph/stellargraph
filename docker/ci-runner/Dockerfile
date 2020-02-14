@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION}-slim
+FROM python:${PYTHON_VERSION}
 
 WORKDIR /build
 # Copy requirements first to install dependencies without having to recompute when the source code
