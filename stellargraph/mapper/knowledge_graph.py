@@ -128,7 +128,7 @@ class KGTripleSequence(Sequence):
 
         self.shuffle = shuffle
 
-        self._global_rs = np.random.default_rng(seed)
+        self._global_rs = np.random.RandomState(seed)
         self._batch_samplers = []
         self._global_lock = threading.Lock()
 
@@ -138,8 +138,8 @@ class KGTripleSequence(Sequence):
             return self._batch_samplers[batch_num]
         except IndexError:
             new_samplers = batch_num - len(self._batch_samplers) + 1
-            seeds = self._global_rs.integers(2 ** 32, size=new_samplers)
-            self._batch_samplers.extend(np.random.default_rng(seed) for seed in seeds)
+            seeds = self._global_rs.randint(2 ** 32, size=new_samplers)
+            self._batch_samplers.extend(np.random.RandomState(seed) for seed in seeds)
             return self._batch_samplers[batch_num]
         finally:
             self._global_lock.release()
@@ -169,9 +169,9 @@ class KGTripleSequence(Sequence):
 
             rng = self._batch_sampler(batch_num)
 
-            change_source = rng.integers(2, size=negative_count) == 1
+            change_source = rng.randint(2, size=negative_count).astype(bool)
             source_changes = change_source.sum()
-            new_nodes = rng.integers(self.max_node_iloc, size=negative_count)
+            new_nodes = rng.randint(self.max_node_iloc, size=negative_count)
 
             s_iloc[positive_count:][change_source] = new_nodes[:source_changes]
             o_iloc[positive_count:][~change_source] = new_nodes[source_changes:]
