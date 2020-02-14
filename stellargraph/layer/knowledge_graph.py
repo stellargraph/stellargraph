@@ -43,6 +43,16 @@ class ComplExScore(Layer):
         self.built = True
 
     def call(self, inputs):
+        """
+        Applies the layer.
+
+        Args:
+
+            inputs: a list of 6 tensors (each batch size x embedding dimension k), where the three
+                consecutive pairs represent real and imaginary parts of the subject, relation and
+                object embeddings, respectively, that is, ``inputs == [Re(subject), Im(subject),
+                Re(relation), ...]``
+        """
         s_re, s_im, r_re, r_im, o_re, o_im = inputs
 
         def inner(r, s, o):
@@ -71,13 +81,13 @@ class ComplEx:
         k (int): the dimension of the embedding (that is, a vector in C^k is learnt for each node
             and each link type)
 
-        embedding_initializer (str or func, optional): The initialiser to use for the embeddings.
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
 
-        embedding_regularizer (str or func, optional): The regularizer to use for the embeddings.
+        embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
     """
 
     def __init__(
-        self, generator, k, embedding_initializer=None, embedding_regularizer=None,
+        self, generator, k, embeddings_initializer=None, embeddings_regularizer=None,
     ):
         if not isinstance(generator, KGTripleGenerator):
             raise TypeError(
@@ -88,8 +98,8 @@ class ComplEx:
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
         self.k = k
-        self.embedding_initializer = initializers.get(embedding_initializer)
-        self.embedding_regularizer = regularizers.get(embedding_regularizer)
+        self.embeddings_initializer = initializers.get(embeddings_initializer)
+        self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
 
     # layer names
     _NODE_REAL = "COMPLEX_NODE_REAL"
@@ -124,14 +134,18 @@ class ComplEx:
             count,
             self.k,
             name=name,
-            embeddings_initializer=self.embedding_initializer,
-            embeddings_regularizer=self.embedding_regularizer,
+            embeddings_initializer=self.embeddings_initializer,
+            embeddings_regularizer=self.embeddings_regularizer,
         )
 
     def __call__(self, x):
         """
         Apply embedding layers to the source, relation and object input "ilocs" (sequential integer
         labels for the nodes and edge types).
+
+        Args:
+            x (list): list of 3 tensors (each batch size x 1) storing the ilocs of the subject,
+                relation and object elements for each edge in the batch.
         """
         s_iloc, r_iloc, o_iloc = x
 

@@ -49,7 +49,7 @@ def test_complex(knowledge_graph):
 
     # use a random initializer with a large positive range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    x_inp, x_out = ComplEx(gen, 5, embedding_initializer=init).build()
+    x_inp, x_out = ComplEx(gen, 5, embeddings_initializer=init).build()
 
     model = Model(x_inp, x_out)
 
