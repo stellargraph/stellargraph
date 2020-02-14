@@ -98,7 +98,7 @@ class EdgeSplitter(object):
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
-        if keep_connected:
+        if self.g.is_directed() and keep_connected:
             self.minedges = self._get_minimum_spanning_edges()
         else:
             self.minedges = []

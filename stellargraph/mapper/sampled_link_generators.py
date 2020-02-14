@@ -19,7 +19,7 @@ Generators that create batches of data from a machine-learnign ready graph
 for link prediction/link attribute inference problems using GraphSAGE, HinSAGE and Attri2Vec.
 
 """
-__all__ = ["GraphSAGELinkGenerator", "HinSAGELinkGenerator", "Attri2VecLinkGenerator"]
+__all__ = ["GraphSAGELinkGenerator", "HinSAGELinkGenerator", "Attri2VecLinkGenerator", "DirectedGraphSAGELinkGenerator"]
 
 import random
 import operator
@@ -32,12 +32,13 @@ import threading
 import warnings
 from functools import reduce
 from tensorflow import keras
-from ..core.graph import StellarGraph
+from ..core.graph import StellarGraph, GraphSchema
 from ..data import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
     UniformRandomWalk,
     UnsupervisedSampler,
+    DirectedBreadthFirstNeighbours,
 )
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
@@ -125,10 +126,15 @@ class BatchedLinkGenerator(abc.ABC):
                 src, dst = link
                 try:
                     node_type_src = self.graph.node_type(src)
+                except KeyError:
+                    raise KeyError(
+                        f"Node ID {src} supplied to generator not found in graph"
+                    )
+                try:
                     node_type_dst = self.graph.node_type(dst)
                 except KeyError:
                     raise KeyError(
-                        f"Node ID {n} supplied to generator not found in graph"
+                        f"Node ID {dst} supplied to generator not found in graph"
                     )
 
                 if self.head_node_types is not None and (
@@ -510,4 +516,142 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         context_feats = self.graph._get_index_for_nodes(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 
+        return batch_feats
+
+
+class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
+    """
+    A data generator for link prediction with Homogeneous GraphSAGE models
+
+    At minimum, supply the StellarGraph, the batch size, and the number of
+    node samples for each layer of the GraphSAGE model.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model requires node features for all
+    nodes in the graph.
+
+    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = GraphSageLinkGenerator(G, 50, [10,10])
+        train_data_gen = G_generator.flow(edge_ids)
+
+    Args:
+        G (StellarGraph): A machine-learning ready graph.
+        batch_size (int): Size of batch of links to return.
+        in_samples (list): The number of in-node samples per layer (hop) to take.
+        out_samples (list): The number of out-node samples per layer (hop) to take.
+        seed (int or str), optional: Random seed for the sampling methods.
+    """
+
+    def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
+        super().__init__(G, batch_size)
+
+        self.in_samples = in_samples
+        self.out_samples = out_samples
+        self.name = name
+
+        # Check that there is only a single node type for GraphSAGE
+        if len(self.schema.node_types) > 1:
+            warnings.warn(
+                "running homogeneous GraphSAGE on a graph with multiple node types",
+                RuntimeWarning,
+            )
+
+        self.head_node_types = self.schema.node_types * 2
+
+        self._graph = G
+        self._batch_sampler_rs, _ = random_state(seed)
+        self._samplers = list()
+        self._lock = threading.Lock()
+
+    def _sampler(self, batch_num):
+        """
+        Get the sampler for a particular batch number. Each batch number has an associated sampler
+        with its own random state, so that batches being fetched in parallel do not interfere with
+        each other's random states. The seed for each sampler is a combination of the Sequence
+        object's seed and the batch number. For its intended use in a Keras/TF workflow, if there
+        are N batches in an epoch, there will be N samplers created, each corresponding to a
+        particular ``batch_num``.
+
+        Args:
+            batch_num (int): Batch number
+
+        Returns:
+            SampledBreadthFirstWalk object
+        """
+        self._lock.acquire()
+        try:
+            return self._samplers[batch_num]
+        except IndexError:
+            # always create a new seeded sampler in ascending order of batch number
+            # this ensures seeds are deterministic even when batches are run in parallel
+            for n in range(len(self._samplers), batch_num + 1):
+                seed = self._batch_sampler_rs.randint(0, 2 ** 32 - 1)
+                self._samplers.append(
+                    DirectedBreadthFirstNeighbours(
+                        self._graph, graph_schema=self.schema, seed=seed,
+                    )
+                )
+            return self._samplers[batch_num]
+        finally:
+            self._lock.release()
+
+    def sample_features(self, head_links, batch_num):
+        """
+        Sample neighbours recursively from the head nodes, collect the features of the
+        sampled nodes, and return these as a list of feature arrays for the GraphSAGE
+        algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+
+        Returns:
+            A list of feature tensors from the sampled nodes at each layer, each of shape:
+            ``(len(head_nodes), num_sampled_at_layer, feature_size)``
+            where num_sampled_at_layer is the total number (cumulative product)
+            of nodes sampled at the given number of hops from each head node,
+            given the sequence of in/out directions.
+        """
+
+        batch_feats = []
+        for hns in zip(*head_links):
+
+            node_samples = self._sampler(batch_num).run(
+                nodes=hns, n=1, in_size=self.in_samples, out_size=self.out_samples
+            )
+
+            # Reshape node samples to sensible format
+            # Each 'slot' represents the list of nodes sampled from some neighbourhood, and will have a corresponding
+            # NN input layer. Every hop potentially generates both in-nodes and out-nodes, held separately,
+            # and thus the slot (or directed hop sequence) structure forms a binary tree.
+
+            node_type = self.head_node_types[0]
+
+            max_hops = len(self.in_samples)
+            max_slots = 2 ** (max_hops + 1) - 1
+            features = [None] * max_slots  # flattened binary tree
+
+            for slot in range(max_slots):
+                nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
+                features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
+                resize = -1 if np.size(features_for_slot) > 0 else 0
+                features[slot] = np.reshape(
+                    features_for_slot, (len(hns), resize, features_for_slot.shape[1])
+                )
+
+            # Get features for the sampled nodes
+            batch_feats.append(features)
+
+        # Resize features to (batch_size, n_neighbours, feature_size)
+        # and re-pack features into a list where source, target feats alternate
+        # This matches the GraphSAGE link model with (node_src, node_dst) input sockets:
+        batch_feats = [
+            feats #np.reshape(feats, (len(head_links), -1, feats.shape[1]))
+            for ab in zip(*batch_feats)
+            for feats in ab
+        ]
         return batch_feats

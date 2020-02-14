@@ -41,6 +41,7 @@ from ..mapper import (
     GraphSAGENodeGenerator,
     GraphSAGELinkGenerator,
     DirectedGraphSAGENodeGenerator,
+    DirectedGraphSAGELinkGenerator,
     NodeSequence,
     LinkSequence,
 )
@@ -1119,7 +1120,7 @@ class DirectedGraphSAGE(GraphSAGE):
         Args:
              generator: The supplied generator.
         """
-        if not isinstance(generator, (DirectedGraphSAGENodeGenerator,)):
+        if not isinstance(generator, (DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator,)):
             errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"
             if isinstance(generator, (NodeSequence, LinkSequence)):
                 errmsg = (
