@@ -71,7 +71,7 @@ steps:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        run: runner-3.6
+        run: runner-3_6
     agents:
       queue: "t2large"
     soft_fail:
