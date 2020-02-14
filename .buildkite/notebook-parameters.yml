@@ -7,3 +7,7 @@ n_estimators: 2
 n_predictions: 2
 train_size: 0.01
 test_size: 0.1
+metapaths:
+  -
+    - "group"
+    - "group"
