@@ -55,9 +55,9 @@ class IntegratedGradients:
 
         """
         # Set sparse flag from the generator
-        self.is_sparse = generator.use_sparse
+        self._is_sparse = generator.use_sparse
 
-        if self.is_sparse:
+        if self._is_sparse:
             if not isinstance(generator, SparseFullBatchSequence):
                 raise TypeError(
                     "The generator supplied has to be an object of SparseFullBatchSequence for sparse adjacency matrix."
@@ -66,8 +66,8 @@ class IntegratedGradients:
                 raise RuntimeError(
                     "Keras model for sparse adjacency is expected to have four inputs"
                 )
-            self.adj = generator.A_values
-            self.adj_inds = generator.A_indices
+            self._adj = generator.A_values
+            self._adj_inds = generator.A_indices
         else:
             if not isinstance(generator, FullBatchSequence):
                 raise TypeError(
@@ -78,11 +78,11 @@ class IntegratedGradients:
                     "Keras model for dense adjacency is expected to have three inputs"
                 )
 
-            self.adj = generator.A_dense
+            self._adj = generator.A_dense
 
         # Extract features from generator
-        self.features = generator.features
-        self.model = model
+        self._features = generator.features
+        self._model = model
 
     def get_integrated_node_masks(
         self, node_idx, class_of_interest, features_baseline=None, steps=20,
@@ -99,22 +99,23 @@ class IntegratedGradients:
             (Numpy array): Integrated gradients for the node features.
         """
         if features_baseline is None:
-            features_baseline = np.zeros(self.features.shape)
-        features_diff = self.features - features_baseline
+            features_baseline = np.zeros(self._features.shape)
 
-        total_gradients = np.zeros(self.features.shape)
+        features_diff = self._features - features_baseline
+        total_gradients = np.zeros(self._features.shape)
+
         for alpha in np.linspace(0, 1, steps):
             features_step = features_baseline + alpha * features_diff
 
-            if self.is_sparse:
+            if self._is_sparse:
                 model_input = [
                     features_step,
                     np.array([[node_idx]]),
-                    self.adj_inds,
-                    self.adj,
+                    self._adj_inds,
+                    self._adj,
                 ]
             else:
-                model_input = [features_step, np.array([[node_idx]]), self.adj]
+                model_input = [features_step, np.array([[node_idx]]), self._adj]
 
             model_input = [tf.convert_to_tensor(x) for x in model_input]
             grads = self._compute_gradients(
@@ -151,27 +152,27 @@ class IntegratedGradients:
         """
         if adj_baseline is None:
             if non_exist_edge:
-                adj_baseline = np.ones(self.adj.shape)
+                adj_baseline = np.ones(self._adj.shape)
             else:
-                adj_baseline = np.zeros(self.adj.shape)
+                adj_baseline = np.zeros(self._adj.shape)
 
-        adj_diff = self.adj - adj_baseline
+        adj_diff = self._adj - adj_baseline
 
-        total_gradients = np.zeros_like(self.adj)
+        total_gradients = np.zeros_like(self._adj)
 
         for alpha in np.linspace(1.0 / steps, 1.0, steps):
             adj_step = adj_baseline + alpha * adj_diff
 
-            if self.is_sparse:
+            if self._is_sparse:
                 model_input = [
-                    self.features,
+                    self._features,
                     np.array([[node_idx]]),
-                    self.adj_inds,
+                    self._adj_inds,
                     adj_step,
                 ]
             else:
                 model_input = [
-                    self.features,
+                    self._features,
                     np.array([[node_idx]]),
                     adj_step,
                 ]
@@ -183,12 +184,12 @@ class IntegratedGradients:
 
             total_gradients += grads.numpy()
 
-        if self.is_sparse:
+        if self._is_sparse:
             total_gradients = csr_matrix(
-                (total_gradients[0], (self.adj_inds[0, :, 0], self.adj_inds[0, :, 1]))
+                (total_gradients[0], (self._adj_inds[0, :, 0], self._adj_inds[0, :, 1]))
             )
             adj_diff = csr_matrix(
-                (adj_diff[0], (self.adj_inds[0, :, 0], self.adj_inds[0, :, 1]))
+                (adj_diff[0], (self._adj_inds[0, :, 0], self._adj_inds[0, :, 1]))
             )
             total_gradients = total_gradients.multiply(adj_diff) / steps
         else:
@@ -226,7 +227,7 @@ class IntegratedGradients:
 
             tape.watch(wrt)
 
-            output = self.model(model_input)
+            output = self._model(model_input)
 
             cost_value = K.gather(output[0, 0], class_of_interest)
 
