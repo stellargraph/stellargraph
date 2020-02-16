@@ -33,6 +33,10 @@ class GraphWaveGenerator:
 
     This class is minimally initialized with a StellarGraph object. Calling the flow function will return a tensorflow
     DataSet that contains the GraphWave embeddings.
+
+    This implementation differs from the paper by removing the automatic method of calculating scales. This method was
+    found to not work well in practice, and replicating the results of the paper require manually specifying much larger
+    scales than those automatically calculated.
     """
 
     def __init__(self, G, scales, num_eigenvecs=-1):
@@ -126,6 +130,7 @@ class GraphWaveGenerator:
         while (k <= max_num_eigs) and ((prev_eig_l2_norm / eig_l2_norm) < 0.9):
 
             prev_eig_l2_norm = eig_l2_norm
+
             # use increasing sigma to efficiently search for increasingly larger eigenvalues
             new_eigen_vals, new_eigen_vecs = eigs(
                 laplacian, k=k, sigma=2 * prev_eig_max
