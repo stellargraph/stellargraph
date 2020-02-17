@@ -94,7 +94,7 @@ class BatchedNodeGenerator(abc.ABC):
         self.sampler = None
 
     @abc.abstractmethod
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         pass
 
     def flow(self, node_ids, targets=None, shuffle=False, seed=None):
@@ -230,6 +230,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
+            batch_num (int): Batch number
 
         Returns:
             A list of the same length as ``num_samples`` of collected features from
@@ -431,7 +432,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
             G, graph_schema=self.schema, seed=seed
         )
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
         sampled nodes, and return these as a list of feature arrays for the GraphSAGE
@@ -439,6 +440,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
+            batch_num (int): Batch number
 
         Returns:
             A list of the same length as ``num_samples`` of collected features from
@@ -508,13 +510,14 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
         super().__init__(G, batch_size)
         self.name = name
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Sample content features of the head nodes, and return these as a list of feature
         arrays for the attri2vec algorithm.
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
+            batch_num (int): Batch number
 
         Returns:
             A list of feature arrays, with each element being the feature of a
