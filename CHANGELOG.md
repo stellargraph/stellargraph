@@ -20,6 +20,7 @@ Some new algorithms and features are still under active development, and are ava
 
 ### Bug fixes and other changes
 
+- StellarGraph now uses [`tensorflow` 2.1](https://github.com/tensorflow/tensorflow/releases/tag/v2.1.0), which includes GPU support by default: [\#875](https://github.com/stellargraph/stellargraph/pull/875)
 - DevOps changes:
   - CI: [\#760](https://github.com/stellargraph/stellargraph/pull/760)
 
