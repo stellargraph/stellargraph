@@ -7,6 +7,7 @@
 ### Major features and improvements
 
 - New algorithms:
+  - Support has been added for link prediction with directed GraphSAGE with the addition of a `DirectedGraphSAGELinkGenerator.`
 
 ### Breaking changes
 

@@ -101,7 +101,6 @@ class EdgeSplitter(object):
 
         if (not self.g.is_directed()) and keep_connected:
             self.minedges = self._get_minimum_spanning_edges()
-            self.minedges_set = set(self.minedges)
         else:
             self.minedges = []
             self.minedges_set = set()

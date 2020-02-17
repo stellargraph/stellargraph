@@ -641,13 +641,11 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
             features = [None] * max_slots  # flattened binary tree
 
             for slot in range(max_slots):
-                nodes_in_slot = list(
-                    it.chain(*[sample[slot] for sample in node_samples])
-                )
+                nodes_in_slot = [element for sample in node_samples for element in sample[slot]]
                 features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
-                resize = -1 if np.size(features_for_slot) > 0 else 0
+
                 features[slot] = np.reshape(
-                    features_for_slot, (len(hns), resize, features_for_slot.shape[1])
+                    features_for_slot, (len(hns), -1, features_for_slot.shape[1])
                 )
 
             # Get features for the sampled nodes
@@ -656,9 +654,5 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         # Resize features to (batch_size, n_neighbours, feature_size)
         # and re-pack features into a list where source, target feats alternate
         # This matches the GraphSAGE link model with (node_src, node_dst) input sockets:
-        batch_feats = [
-            feats  # np.reshape(feats, (len(head_links), -1, feats.shape[1]))
-            for ab in zip(*batch_feats)
-            for feats in ab
-        ]
+        batch_feats = [feats for ab in zip(*batch_feats) for feats in ab]
         return batch_feats
