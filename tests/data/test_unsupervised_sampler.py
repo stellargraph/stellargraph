@@ -45,22 +45,6 @@ class TestUnsupervisedSampler(object):
         sampler = UnsupervisedSampler(G=line_graph, nodes=None)
         assert sampler.nodes == list(line_graph.nodes())
 
-        # if the seed value is provided check
-        # that the random choices is reproducable
-        sampler = UnsupervisedSampler(G=line_graph, seed=1)
-        assert sampler.random.choices(range(100), k=10) == [
-            13,
-            84,
-            76,
-            25,
-            49,
-            44,
-            65,
-            78,
-            9,
-            2,
-        ]
-
     def test_run_batch_sizes(self, line_graph):
         batch_size = 4
         sampler = UnsupervisedSampler(G=line_graph, length=2, number_of_walks=2)
