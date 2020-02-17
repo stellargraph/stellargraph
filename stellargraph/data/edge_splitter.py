@@ -99,7 +99,7 @@ class EdgeSplitter(object):
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
         # have been sampled.
 
-        if (not self.g.is_directed()) and keep_connected:
+        if keep_connected:
             self.minedges = self._get_minimum_spanning_edges()
         else:
             self.minedges = []
@@ -1052,9 +1052,12 @@ class EdgeSplitter(object):
             <list> The minimum spanning edges of the undirected graph self.g
 
         """
-        mst = nx.minimum_spanning_edges(self.g, data=False)
-        edges = list(mst)
+        if self.g.is_directed():
+            mst = nx.algorithms.tree.branchings.Edmonds(self.g).find_optimum().edges
+        else:
+            mst = nx.minimum_spanning_edges(self.g, data=False)
 
+        edges = list(mst)
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         self.minedges_set = {(u[0], u[1]) for u in edges}
