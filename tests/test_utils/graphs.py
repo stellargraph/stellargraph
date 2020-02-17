@@ -219,9 +219,15 @@ def example_graph_1_saliency_maps(feature_size=None):
         return StellarGraph(graph)
 
 
-def example_graph_random(feature_size=4, n_edges=20, n_nodes=6, n_isolates=1):
+def example_graph_random(
+    feature_size=4, n_edges=20, n_nodes=6, n_isolates=1, is_directed=False
+):
     # core/utils, link mapper, node mapper graph 3
-    graph = nx.Graph()
+
+    if is_directed:
+        graph = nx.DiGraph()
+    else:
+        graph = nx.Graph()
     n_noniso = n_nodes - n_isolates
     edges = [
         (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
@@ -234,8 +240,14 @@ def example_graph_random(feature_size=4, n_edges=20, n_nodes=6, n_isolates=1):
     if feature_size is not None:
         for v in graph.nodes():
             graph.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(graph, node_features="feature")
 
+        if is_directed:
+            return StellarDiGraph(graph, node_features="feature")
+        else:
+            return StellarGraph(graph, node_features="feature")
+
+    elif is_directed:
+        return StellarDiGraph(graph)
     else:
         return StellarGraph(graph)
 

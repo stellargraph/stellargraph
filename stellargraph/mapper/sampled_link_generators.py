@@ -526,10 +526,10 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
 class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
     """
-    A data generator for link prediction with Homogeneous GraphSAGE models
+    A data generator for link prediction with directed Homogeneous GraphSAGE models
 
     At minimum, supply the StellarGraph, the batch size, and the number of
-    node samples for each layer of the GraphSAGE model.
+    node samples (separately for in-nodes and out-nodes) for each layer of the GraphSAGE model.
 
     The supplied graph should be a StellarGraph object that is ready for
     machine learning. Currently the model requires node features for all
@@ -612,7 +612,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         algorithm.
 
         Args:
-            head_nodes: An iterable of head nodes to perform sampling on.
+            head_nodes: An iterable of head links to perform sampling on.
 
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
