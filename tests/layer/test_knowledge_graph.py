@@ -21,7 +21,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from tensorflow.keras import Model, initializers
+from tensorflow.keras import Model, initializers, losses
 
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
 from stellargraph.layer.knowledge_graph import ComplEx
@@ -52,6 +52,7 @@ def test_complex(knowledge_graph):
     x_inp, x_out = ComplEx(gen, 5, embeddings_initializer=init).build()
 
     model = Model(x_inp, x_out)
+    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
@@ -59,6 +60,12 @@ def test_complex(knowledge_graph):
         knowledge_graph.nodes(),
     )
     df = triple_df(*every_edge)
+
+    # check the model can be trained on a few (uneven) batches
+    model.fit(
+        gen.flow(df.iloc[:7], negative_samples=2),
+        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+    )
 
     # compute the exact values based on the model by extracting the embeddings for each element and
     # doing the Re(<e_s, w_r, conj(e_o)>) inner product

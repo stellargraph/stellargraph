@@ -182,7 +182,11 @@ class KGTripleSequence(Sequence):
             assert len(targets) == len(s_iloc)
 
         assert len(s_iloc) == len(r_iloc) == len(o_iloc)
-        return [s_iloc, r_iloc, o_iloc], targets
+
+        if targets is None:
+            return (s_iloc, r_iloc, o_iloc),
+
+        return (s_iloc, r_iloc, o_iloc), targets
 
     def on_epoch_end(self):
         if self.shuffle:
