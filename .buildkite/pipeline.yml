@@ -13,7 +13,7 @@ steps:
     key: "runner-3_6"
     plugins:
       <<: *plugins
-      huonw/docker-compose#a18b2c39e0682cf806be8f121750047bc05f7e4e:
+      docker-compose#v3.1.0:
         <<: *compose-config
         build: runner-3_6
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
@@ -27,13 +27,31 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":docker::python: build 3.7 runner"
+    key: "runner-3_7"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        build: runner-3_7
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
+
+        push:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
   - label: ":python: 3.6"
     key: "python_3_6"
     depends_on: "runner-3_6"
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
-      huonw/docker-compose#a18b2c39e0682cf806be8f121750047bc05f7e4e:
+      docker-compose#v3.1.0:
         <<: *compose-config
         run: runner-3_6
         env:
@@ -43,22 +61,13 @@ steps:
 
   - label: ":python: 3.7"
     key: "python_3_7"
+    depends_on: "runner-3_7"
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
-      huonw/docker-compose#a18b2c39e0682cf806be8f121750047bc05f7e4e:
+      docker-compose#v3.1.0:
         <<: *compose-config
-        build: runner-3_7
-        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
-        no-cache: ${REFRESH_BUILD-false}
-        cache-from:
-          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
-          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
-
         run: runner-3_7
-
-        push:
-          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
     agents:
       queue: "t2medium"
 
