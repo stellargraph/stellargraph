@@ -607,12 +607,12 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
 
     def sample_features(self, head_links, batch_num):
         """
-        Sample neighbours recursively from the head nodes, collect the features of the
+        Sample neighbours recursively from the head links, collect the features of the
         sampled nodes, and return these as a list of feature arrays for the GraphSAGE
         algorithm.
 
         Args:
-            head_nodes: An iterable of head links to perform sampling on.
+            head_links: An iterable of head links to perform sampling on.
 
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
