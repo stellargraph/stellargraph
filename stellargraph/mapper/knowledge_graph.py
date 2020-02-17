@@ -184,7 +184,7 @@ class KGTripleSequence(Sequence):
         assert len(s_iloc) == len(r_iloc) == len(o_iloc)
 
         if targets is None:
-            return (s_iloc, r_iloc, o_iloc),
+            return ((s_iloc, r_iloc, o_iloc),)
 
         return (s_iloc, r_iloc, o_iloc), targets
 
