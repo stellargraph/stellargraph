@@ -26,12 +26,10 @@ f=${NOTEBOOKS[$INDEX]}
 
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
-    'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
-    'calibration-pubmed-link-prediction.ipynb' | 'movielens-recommender.ipynb' | 'stellargraph-metapath2vec.ipynb')
+    'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb')
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
-    # FIXME #820: too slow
     echo "+++ :python: :skull_and_crossbones: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
