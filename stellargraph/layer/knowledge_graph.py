@@ -81,13 +81,14 @@ class ComplEx:
         k (int): the dimension of the embedding (that is, a vector in C^k is learnt for each node
             and each link type)
 
-        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings
+            (the default of random normal values matches the paper's reference implementation).
 
         embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
     """
 
     def __init__(
-        self, generator, k, embeddings_initializer=None, embeddings_regularizer=None,
+        self, generator, k, embeddings_initializer="normal", embeddings_regularizer=None,
     ):
         if not isinstance(generator, KGTripleGenerator):
             raise TypeError(
