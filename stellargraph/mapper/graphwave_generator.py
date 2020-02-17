@@ -123,7 +123,7 @@ class GraphWaveGenerator:
         # increases by less than 10% since the last iter.
         while True:
             # if sigma=eigenvalue eigs will throw an error
-            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max+1e-7)
+            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max + 1e-7)
             new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
 
             is_new_eig = new_eigen_vals > eig_max
