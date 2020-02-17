@@ -122,8 +122,8 @@ class GraphWaveGenerator:
         # use increasing k (doubling per iter) until the filtered eigenvalue l2 norm
         # increases by less than 10% since the last iter.
         while True:
-
-            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max)
+            # if sigma=eigenvalue eigs will throw an error
+            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max+1e-7)
             new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
 
             is_new_eig = new_eigen_vals > eig_max
@@ -136,8 +136,7 @@ class GraphWaveGenerator:
             eig_norm = np.linalg.norm(np.exp(-min_scale * eigen_vals))
 
             if len(eigen_vals) != 0:
-                # avoid error in eigs(..., sigma=eig_max) by adding small float
-                eig_max = eigen_vals.max() + 1e-7
+                eig_max = eigen_vals.max()
 
             if eig_norm < (1 + min_delta) * prev_eig_norm:
                 break
