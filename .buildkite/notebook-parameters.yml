@@ -15,4 +15,3 @@ val_size: 0.01
 # minimal metapath for demos/embeddings/stellargraph-metapath2vec.ipynb:
 metapaths:
   - ["group", "group"]
-  - ["user", "user"]
