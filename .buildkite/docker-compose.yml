@@ -4,7 +4,7 @@ services:
   runner-3_6: &runner-config
     build: &runner-build
       context: .
-      dockerfile: docker/ci-runner/Dockerfile
+      dockerfile: docker/stellargraph-ci-runner/Dockerfile
       args:
         PYTHON_VERSION: "3.6"
     working_dir: /workdir
