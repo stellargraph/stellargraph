@@ -31,7 +31,7 @@ class GraphWaveGenerator:
     Implementation of the GraphWave structural embedding algorithm from the paper:
         "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
 
-    This class is minimally initialized with a StellarGraph object. Calling the flow function will return a tensorflow
+    This class is minimally z with a StellarGraph object. Calling the flow function will return a tensorflow
     DataSet that contains the GraphWave embeddings.
 
     This implementation differs from the paper by removing the automatic method of calculating scales. This method was
@@ -76,14 +76,12 @@ class GraphWaveGenerator:
         self.scales = np.array(scales).astype(np.float32)
 
         if num_eigenvecs == -1:
-            eigen_vals, eigen_vecs = self.sufficiently_sampled_eigs(
+            eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
                 laplacian, self.scales.min()
             )
         else:
-            eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=1e-3)
+            eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=-1e-3)
             eigen_vals = np.real(eigen_vals).astype(np.float32)
-            eigen_vecs = eigen_vecs[:, 1:]
-            eigen_vals = eigen_vals[1:]
 
         self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
 
@@ -119,7 +117,7 @@ class GraphWaveGenerator:
 
         prev_eig_l2_norm = 0.0
         eig_l2_norm = -1
-        prev_eig_max = 1e-3
+        prev_eig_max = -1e-3
         k = min(16, max_num_eigs)
 
         eigen_vals = np.array([])
@@ -133,7 +131,7 @@ class GraphWaveGenerator:
 
             # use increasing sigma to efficiently search for increasingly larger eigenvalues
             new_eigen_vals, new_eigen_vecs = eigs(
-                laplacian, k=k, sigma=2 * prev_eig_max
+                laplacian, k=k, sigma=prev_eig_max
             )
             new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
 
@@ -151,8 +149,8 @@ class GraphWaveGenerator:
             if len(eigen_vals) != 0:
                 prev_eig_max = eigen_vals.max()
 
-            eig_l2_norm = np.sqrt(np.sum(np.exp(-min_scale * eigen_vals) ** 2))
-            k *= 2
+            eig_l2_norm = np.linalg.norm(np.exp(-min_scale * eigen_vals))
+            k = min(2*k, max_num_eigs)
 
         return eigen_vals, eigen_vecs
 
