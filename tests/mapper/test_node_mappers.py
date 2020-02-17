@@ -20,7 +20,6 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
-from stellargraph.core.graph_networkx import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
