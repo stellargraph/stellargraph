@@ -39,13 +39,16 @@ class GraphWaveGenerator:
     scales than those automatically calculated.
     """
 
-    def __init__(self, G, scales, num_eigenvecs=None):
+    def __init__(self, G, scales, num_eigenvecs=None, min_delta=0.1):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
             scales (list of floats): the wavelet scales to use.
-            num_eigenvecs (int): the number of eigenvectors to use. When set to `-1` the number of eigenvectors
+            num_eigenvecs (int): the number of eigenvectors to use. When set to `None` the number of eigenvectors
                 is automatically determined.
+            min_delta (float): when `num_eigenvecs=None` this controls the error of the GraphWave approximation.
+                A small `min_delta` will result in a better approximation but is more computationally expensive and
+                vice verse.
         """
 
         if not isinstance(G, StellarGraph):
@@ -75,7 +78,7 @@ class GraphWaveGenerator:
 
         if num_eigenvecs is None:
             eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
-                laplacian, self.scales.min()
+                laplacian, self.scales.min(), min_delta=min_delta,
             )
         else:
             eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=-1e-3)
@@ -94,7 +97,7 @@ class GraphWaveGenerator:
         self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
 
     @staticmethod
-    def _sufficiently_sampled_eigs(laplacian, min_scale):
+    def _sufficiently_sampled_eigs(laplacian, min_scale, min_delta):
         """
         This function calculates increasing numbers of eigenvalues using a binary search until a sufficient number of
         eigenvalues have been found to ensure accurate results of the GraphWave algorithm.
@@ -102,6 +105,8 @@ class GraphWaveGenerator:
         Args:
             laplacian: the un-normalized graph laplacian.
             min_scale: the smallest wavelet scale used.
+            min_delta: the minimum relative change in the eigenvalue norm. A relative change less than this stops
+                the eigenvalue search.
         Returns:
             eigen_vals: the eigenvalues found.
             eigen_vecs: the eigenvectors found.
@@ -134,7 +139,7 @@ class GraphWaveGenerator:
                 # avoid error in eigs(..., sigma=eig_max) by adding small float
                 eig_max = eigen_vals.max() + 1e-7
 
-            if eig_norm < 1.1 * prev_eig_norm:
+            if eig_norm < (1 + min_delta) * prev_eig_norm:
                 break
             elif k >= max_num_eigs:
                 break
