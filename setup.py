@@ -54,6 +54,7 @@ EXTRAS_REQUIRES = {
         "black>=19.3b0",
         "nbconvert>=5.5.0",
         "treon>=0.1.2",
+        "papermill>=2.0.0",
     ],
 }
 
