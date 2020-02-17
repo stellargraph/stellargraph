@@ -1093,7 +1093,7 @@ class Test_DirectedGraphSAGELinkGenerator:
                 out_samples=self.out_samples,
             ).flow()
 
-    def test_GraphSAGELinkGenerator_unsupervisedSampler_sample_generation(self):
+    def test_DirectedGraphSAGELinkGenerator_unsupervisedSampler_sample_generation(self):
 
         G = example_graph(feature_size=self.n_feat, is_directed=True)
 
