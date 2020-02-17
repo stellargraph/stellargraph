@@ -103,7 +103,7 @@ class GraphWaveGenerator:
         self.Ues = tf.convert_to_tensor(np.concatenate(Ues, axis=0))
 
     @staticmethod
-    def sufficiently_sampled_eigs(laplacian, min_scale):
+    def _sufficiently_sampled_eigs(laplacian, min_scale):
         """
         This function calculates increasing numbers of eigenvalues using a binary search until a sufficient number of
         eigenvalues have been found to ensure accurate results of the GraphWave algorithm.
