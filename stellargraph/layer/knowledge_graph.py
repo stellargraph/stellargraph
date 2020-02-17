@@ -177,9 +177,9 @@ class ComplEx:
         Returns:
             A tuple of (list of input tensors, tensor for ComplEx model score outputs)
         """
-        s_iloc = Input(shape=(None,))
-        r_iloc = Input(shape=(None,))
-        o_iloc = Input(shape=(None,))
+        s_iloc = Input(shape=1)
+        r_iloc = Input(shape=1)
+        o_iloc = Input(shape=1)
 
         x_inp = [s_iloc, r_iloc, o_iloc]
         x_out = self(x_inp)
