@@ -641,7 +641,9 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
             features = [None] * max_slots  # flattened binary tree
 
             for slot in range(max_slots):
-                nodes_in_slot = [element for sample in node_samples for element in sample[slot]]
+                nodes_in_slot = [
+                    element for sample in node_samples for element in sample[slot]
+                ]
                 features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
 
                 features[slot] = np.reshape(
