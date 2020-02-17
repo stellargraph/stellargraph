@@ -31,21 +31,19 @@ class GraphWaveGenerator:
     Implementation of the GraphWave structural embedding algorithm from the paper:
         "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
 
-    This class is minimally z with a StellarGraph object. Calling the flow function will return a tensorflow
+    This class is minimally with a StellarGraph object. Calling the flow function will return a tensorflow
     DataSet that contains the GraphWave embeddings.
 
     This implementation differs from the paper by removing the automatic method of calculating scales. This method was
-    found to not work well in practice, and replicating the results of the paper require manually specifying much larger
+    found to not work well in practice, and replicating the results of the paper requires manually specifying much larger
     scales than those automatically calculated.
     """
 
-    def __init__(self, G, scales, num_eigenvecs=-1):
+    def __init__(self, G, scales, num_eigenvecs=None):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
-            scales (str or list of floats): the wavelet scales to use. "auto" will cause the scale values to be
-                automatically calculated.
-            num_scales (int): the number of scales when scales = "auto".
+            scales (list of floats): the wavelet scales to use.
             num_eigenvecs (int): the number of eigenvectors to use. When set to `-1` the number of eigenvectors
                 is automatically determined.
         """
@@ -71,11 +69,11 @@ class GraphWaveGenerator:
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
 
-        # TODO: add in option to compute wavelet transform using Chebysev polynomials
+        # FIXME(#853): add in option to compute wavelet transform using Chebysev polynomials
 
         self.scales = np.array(scales).astype(np.float32)
 
-        if num_eigenvecs == -1:
+        if num_eigenvecs is None:
             eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
                 laplacian, self.scales.min()
             )
@@ -92,13 +90,8 @@ class GraphWaveGenerator:
         # the columns of U exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
 
         # a list of [U exp(-scale * eigenvalues) for scale in scales]
-        Ues = [
-            (self.eigen_vecs * np.exp(-s * eigen_vals))[np.newaxis, :, :].astype(
-                np.float32
-            )
-            for s in scales
-        ]
-        self.Ues = tf.convert_to_tensor(np.concatenate(Ues, axis=0))
+        Ues = [self.eigen_vecs * np.exp(-s * eigen_vals) for s in scales]
+        self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
 
     @staticmethod
     def _sufficiently_sampled_eigs(laplacian, min_scale):
@@ -115,44 +108,41 @@ class GraphWaveGenerator:
         """
         max_num_eigs = laplacian.shape[0] - 2
 
-        prev_eig_l2_norm = 0.0
-        eig_l2_norm = -1
-        prev_eig_max = -1e-3
+        prev_eig_norm = 0.0
+        eig_max = -1e-3
         k = min(16, max_num_eigs)
-
-        eigen_vals = np.array([])
-        eigen_vecs = np.empty((laplacian.shape[0], 0), dtype=np.float32)
+        eigen_vals = np.array([], dtype=np.float32)
+        eigen_vecs = []
 
         # use increasing k (doubling per iter) until the filtered eigenvalue l2 norm
         # increases by less than 10% since the last iter.
-        while (k <= max_num_eigs) and ((prev_eig_l2_norm / eig_l2_norm) < 0.9):
+        while True:
 
-            prev_eig_l2_norm = eig_l2_norm
-
-            # use increasing sigma to efficiently search for increasingly larger eigenvalues
-            new_eigen_vals, new_eigen_vecs = eigs(
-                laplacian, k=k, sigma=prev_eig_max
-            )
+            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max)
             new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
 
-            # only append newly found new_eigen_vecs and new_eigen_vals
-            new_eigen_vecs = new_eigen_vecs[
-                :, np.where(new_eigen_vals > prev_eig_max)[0]
-            ]
-            new_eigen_vals = new_eigen_vals[new_eigen_vals > prev_eig_max]
+            is_new_eig = new_eigen_vals > eig_max
+            new_eigen_vecs = new_eigen_vecs[:, is_new_eig]
+            new_eigen_vals = new_eigen_vals[is_new_eig]
 
             # append new eigenvalues and eigen vectors
             eigen_vals = np.append(eigen_vals, new_eigen_vals)
-            eigen_vecs = np.concatenate([eigen_vecs, new_eigen_vecs], axis=1)
+            eigen_vecs.append(new_eigen_vecs)
+            eig_norm = np.linalg.norm(np.exp(-min_scale * eigen_vals))
 
-            # update prev_eig_max to the largest eigenvalue found
             if len(eigen_vals) != 0:
-                prev_eig_max = eigen_vals.max()
+                # avoid error in eigs(..., sigma=eig_max) by adding small float
+                eig_max = eigen_vals.max() + 1e-7
 
-            eig_l2_norm = np.linalg.norm(np.exp(-min_scale * eigen_vals))
-            k = min(2*k, max_num_eigs)
+            if eig_norm < 1.1 * prev_eig_norm:
+                break
+            elif k >= max_num_eigs:
+                break
 
-        return eigen_vals, eigen_vecs
+            prev_eig_norm = eig_norm
+            k = min(2 * k, max_num_eigs)
+
+        return eigen_vals, np.concatenate(eigen_vecs, axis=1)
 
     def flow(
         self,
