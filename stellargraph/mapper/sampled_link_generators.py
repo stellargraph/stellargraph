@@ -528,10 +528,10 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
     """
     A data generator for link prediction with directed Homogeneous GraphSAGE models
 
-    At minimum, supply the StellarGraph, the batch size, and the number of
+    At minimum, supply the StellarDiGraph, the batch size, and the number of
     node samples (separately for in-nodes and out-nodes) for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
+    The supplied graph should be a StellarDiGraph object that is ready for
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
@@ -541,7 +541,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
 
     Example::
 
-        G_generator = GraphSageLinkGenerator(G, 50, [10,10])
+        G_generator = DirectedGraphSageLinkGenerator(G, 50, [10,10], [10,10])
         train_data_gen = G_generator.flow(edge_ids)
 
     Args:
