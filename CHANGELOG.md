@@ -24,6 +24,8 @@ Some new algorithms and features are still under active development, and are ava
 - DevOps changes:
   - CI: [\#760](https://github.com/stellargraph/stellargraph/pull/760)
 
+- More detailed information about Heterogeneous GraphSAGE (HinSAGE) has been added to StellarGraph's readthedocs documentation [\#839](https://github.com/stellargraph/stellargraph/pull/839).
+
 ## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
 
 ### Major features and improvements
