@@ -54,6 +54,9 @@ EXTRAS_REQUIRES = {
         "black>=19.3b0",
         "nbconvert>=5.5.0",
         "treon>=0.1.2",
+        # Pulling in https://github.com/nteract/papermill/pull/459 for --execution-timeout, which
+        # hasn't been released yet
+        "papermill @ https://github.com/nteract/papermill/archive/master.tar.gz"
     ],
 }
 
