@@ -13,14 +13,6 @@ pip freeze
 
 exitCode=0
 
-if [ "${CHECK_NOTEBOOK_FORMATTING-0}" = 1 ]; then
-  echo "+++ checking notebook formatting"
-  # This script takes only 20 seconds but requires non-trivial dependencies, so piggy back off the
-  # installation that is happening in this CI step, rather than run it in a separate parallel step
-  # where it would have to spend ~2 minutes installing dependencies.
-  python scripts/format_notebooks.py --default --ci demos/ || exitCode=$?
-fi
-
 echo "+++ running tests"
 py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
 
