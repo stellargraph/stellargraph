@@ -226,8 +226,11 @@ def example_graph_random(
 
     if is_directed:
         graph = nx.DiGraph()
+        cls = StellarDiGraph
     else:
         graph = nx.Graph()
+        cls = StellarGraph
+
     n_noniso = n_nodes - n_isolates
     edges = [
         (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
@@ -240,16 +243,9 @@ def example_graph_random(
     if feature_size is not None:
         for v in graph.nodes():
             graph.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-
-        if is_directed:
-            return StellarDiGraph(graph, node_features="feature")
-        else:
-            return StellarGraph(graph, node_features="feature")
-
-    elif is_directed:
-        return StellarDiGraph(graph)
+        return cls(graph, node_features="feature")
     else:
-        return StellarGraph(graph)
+        return cls(graph)
 
 
 def node_features(seed=0) -> pd.DataFrame:
