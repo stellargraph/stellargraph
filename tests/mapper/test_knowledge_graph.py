@@ -36,7 +36,9 @@ def check_sequence_output(
     rel_ilocs=None,
     target_ilocs=None,
 ):
-    (s, r, o), l = output
+    s, r, o = output[0]
+    l = output[1] if len(output) == 2 else None
+
     expected_length = batch_size * (1 + (negatives or 0))
     assert len(s) == len(r) == len(o) == expected_length
 
