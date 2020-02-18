@@ -324,7 +324,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             G, graph_schema=self.schema, seed=seed
         )
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
         sampled nodes, and return these as a list of feature arrays for the GraphSAGE
@@ -332,6 +332,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
+            batch_num (int): Batch number
 
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
