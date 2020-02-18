@@ -41,7 +41,7 @@ class GraphWaveGenerator:
 
     # This code looks for small eigenvalues of the graph Laplacian. The minimum eigenvalue of the graph Laplacian
     # is always 0, however numerical errors can cause small negative number as large as -1e-5.
-    # To initialize a search that will reliably include the smallest eigenvalue an intial value
+    # To initialize a search that will reliably include the smallest eigenvalue an initial value
     # of -1e-3 is used
     _INITIAL_EIGS_SIGMA = -1e-3
 
