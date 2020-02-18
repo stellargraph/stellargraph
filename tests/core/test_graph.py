@@ -108,7 +108,11 @@ def test_graph_constructor():
 
 
 def test_digraph_constructor():
-    graphs = [StellarDiGraph(), StellarDiGraph({}, {}), StellarDiGraph(nodes={}, edges={})]
+    graphs = [
+        StellarDiGraph(),
+        StellarDiGraph({}, {}),
+        StellarDiGraph(nodes={}, edges={}),
+    ]
     for sg in graphs:
         assert sg.is_directed() == True
         assert sg.number_of_nodes() == 0
