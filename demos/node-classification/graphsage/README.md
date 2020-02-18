@@ -19,9 +19,6 @@ the Jupyter project website: http://jupyter.org/install.html
 
 After starting the Jupyter server on your computer, load either of the two notebooks and follow the instructions inside.
 
-Instructions for downloading the Cora dataset and running the script `graphsage-cora-example.py` follow.
-
-
 ## Requirements
 All examples use Python 3.6 and the StellarGraph library. To install the StellarGraph library
 follow the instructions at: https://github.com/stellargraph/stellargraph
@@ -34,31 +31,6 @@ the example.
 
 Currently the examples in this directory are tested on the CORA dataset. The GraphSAGE model assumes that node
 features are available for all nodes in the graph.
-
-The dataset can be downloaded from https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz
-
-The following is the description of the dataset:
-> The Cora dataset consists of 2708 scientific publications classified into one of seven classes.
-> The citation network consists of 5429 links. Each publication in the dataset is described by a
-> 0/1-valued word vector indicating the absence/presence of the corresponding word from the dictionary.
-> The dictionary consists of 1433 unique words. The README file in the dataset provides more details.
-
-Download and unzip the [cora.tgz](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz) file to a location on your computer and pass this location
-as a command line argument to this script.
-
-## Running the script
-
-The example script can be run on supplying the location of the downloaded CORA dataset
-with the following command:
-```
-python graphsage-cora-example.py -l <path_to_cora_dataset>
-```
-
-Additional arguments can be specified that change the GraphSAGE model and training parameters, a
-description of these arguments is displayed using the help option to the script:
-```
-python graphsage-cora-example.py --help
-```
 
 ## References
 

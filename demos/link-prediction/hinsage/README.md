@@ -37,22 +37,6 @@ To run through the notebook, you need to launch jupyter notebook:
  - Navigate to `/demos/link-prediction-hinsage/movielens-recommender.ipynb`, and click on
  it to launch the notebook.
 
-
-## Running the script
-
-Run the script example for ML-100k dataset with movie & user features using the following command:
-```
-python movielens-recommender.py --data_path=<path_to_ml-100k_dataset>
-```
-
-This examples trains HinSAGE to predict the "score" attribute on links. This
-example runs for 10 epochs, training a heterogeneous GraphSAGE (HinSAGE) model
-with a link regression predictor on top, with default parameters
-that specify the model architecture.
-
-There are a number of other command line options that affect the training of the
-model.  Use the `--help` option to see the list of these commands.
-
 ## References
 
 [1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017
