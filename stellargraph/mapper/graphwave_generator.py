@@ -39,11 +39,18 @@ class GraphWaveGenerator:
     scales than those automatically calculated.
     """
 
-    def __init__(self, G, scales, num_eigenvecs=None, min_delta=0.1):
+    # This code looks for small eigenvalues of the graph Laplacian. The minimum eigenvalue of the graph Laplacian
+    # is always 0, however numerical errors can cause small negative number as large as -1e-5.
+    # To initialize a search that will reliably include the smallest eigenvalue an intial value
+    # of -1e-3 is used
+    _INITIAL_EIGS_SIGMA = -1e-3
+
+    def __init__(self, G, scales=(5, 10), num_eigenvecs=None, min_delta=0.1):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
-            scales (list of floats): the wavelet scales to use.
+            scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
+                features, and larger values embed larger structural features.
             num_eigenvecs (int): the number of eigenvectors to use. When set to `None` the number of eigenvectors
                 is automatically determined.
             min_delta (float): when `num_eigenvecs=None` this controls the error of the GraphWave approximation.
@@ -78,10 +85,15 @@ class GraphWaveGenerator:
 
         if num_eigenvecs is None:
             eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
-                laplacian, self.scales.min(), min_delta=min_delta,
+                laplacian,
+                self.scales.min(),
+                min_delta=min_delta,
+                initial_sigma=self._INITIAL_EIGS_SIGMA,
             )
         else:
-            eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=-1e-3)
+            eigen_vals, eigen_vecs = eigs(
+                laplacian, k=num_eigenvecs, sigma=self._INITIAL_EIGS_SIGMA
+            )
             eigen_vals = np.real(eigen_vals).astype(np.float32)
 
         self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
@@ -97,7 +109,7 @@ class GraphWaveGenerator:
         self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
 
     @staticmethod
-    def _sufficiently_sampled_eigs(laplacian, min_scale, min_delta):
+    def _sufficiently_sampled_eigs(laplacian, min_scale, min_delta, initial_sigma):
         """
         This function calculates increasing numbers of eigenvalues using a binary search until a sufficient number of
         eigenvalues have been found to ensure accurate results of the GraphWave algorithm.
@@ -114,7 +126,7 @@ class GraphWaveGenerator:
         max_num_eigs = laplacian.shape[0] - 2
 
         prev_eig_norm = 0.0
-        eig_max = -1e-3
+        eig_max = initial_sigma
         k = min(16, max_num_eigs)
         eigen_vals = np.array([], dtype=np.float32)
         eigen_vecs = []
@@ -126,9 +138,17 @@ class GraphWaveGenerator:
             new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max + 1e-7)
             new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
 
+            is_valid = ~np.isnan(new_eigen_vals) * ~np.isnan(new_eigen_vecs).any(0)
+            new_eigen_vals, new_eigen_vecs = (
+                new_eigen_vals[is_valid],
+                new_eigen_vecs[:, is_valid],
+            )
+
             is_new_eig = new_eigen_vals > eig_max
-            new_eigen_vecs = new_eigen_vecs[:, is_new_eig]
-            new_eigen_vals = new_eigen_vals[is_new_eig]
+            new_eigen_vecs, new_eigen_vals = (
+                new_eigen_vecs[:, is_new_eig],
+                new_eigen_vals[is_new_eig],
+            )
 
             # append new eigenvalues and eigen vectors
             eigen_vals = np.append(eigen_vals, new_eigen_vals)
