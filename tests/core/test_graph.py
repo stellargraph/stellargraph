@@ -100,27 +100,19 @@ def example_benchmark_graph_nx(
 
 
 def test_graph_constructor():
-    sg = StellarGraph()
-    assert sg.is_directed() == False
-    assert sg.number_of_nodes() == 0
-    assert sg.number_of_edges() == 0
-
-    sg = StellarGraph(nodes={}, edges={})
-    assert sg.is_directed() == False
-    assert sg.number_of_nodes() == 0
-    assert sg.number_of_edges() == 0
+    graphs = [StellarGraph(), StellarGraph({}, {}), StellarGraph(nodes={}, edges={})]
+    for sg in graphs:
+        assert sg.is_directed() == False
+        assert sg.number_of_nodes() == 0
+        assert sg.number_of_edges() == 0
 
 
 def test_digraph_constructor():
-    sg = StellarDiGraph()
-    assert sg.is_directed() == True
-    assert sg.number_of_nodes() == 0
-    assert sg.number_of_edges() == 0
-
-    sg = StellarDiGraph(nodes={}, edges={})
-    assert sg.is_directed() == True
-    assert sg.number_of_nodes() == 0
-    assert sg.number_of_edges() == 0
+    graphs = [StellarDiGraph(), StellarDiGraph({}, {}), StellarDiGraph(nodes={}, edges={})]
+    for sg in graphs:
+        assert sg.is_directed() == True
+        assert sg.number_of_nodes() == 0
+        assert sg.number_of_edges() == 0
 
 
 def test_info():
@@ -724,16 +716,6 @@ def test_isolated_node_neighbor_methods(is_directed):
     assert graph.neighbors(1) == []
     assert graph.in_nodes(1) == []
     assert graph.out_nodes(1) == []
-
-
-def test_stellargraph_experimental():
-    nodes = pd.DataFrame([], index=[0])
-    edges = pd.DataFrame([], columns=["source", "target"])
-
-    with pytest.warns(
-        ExperimentalWarning, match=r"StellarGraph\(nodes=..., edges=...\)"
-    ):
-        StellarGraph(nodes=nodes, edges=edges)
 
 
 def test_info_homogeneous():

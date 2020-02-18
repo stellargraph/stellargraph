@@ -41,14 +41,33 @@ NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 class StellarGraph:
     """
-    StellarGraph class for directed or undirected graph ML models. It stores both
-    graph structure and features for machine learning.
+    StellarGraph class for graph machine learning.
 
-    To create a StellarGraph object ready for machine learning, at a minimum pass the nodes and
-    edges as Pandas DataFrames. Each row of the nodes dataframe represents a node in the graph,
-    where the index is the ID of the node. Each row of the edges dataframes represents an edge,
-    where the index is the ID of the edge, and the ``source`` and ``target`` columns store the node
-    ID of the source and target nodes.
+    Summary of a StellarGraph and the terminology used:
+
+    - it stores graph structure, as a collection of *nodes* and a collection of *edges* that connect
+      a *source* node to a *target* node
+
+    - each node and edge has an associated *type*
+
+    - each node has a numeric vector of *features*, and the vectors of all nodes with the same type
+      have the same dimension
+
+    - it is *homogeneous* if there is only one type of node and one type of edge
+
+    - it is *heterogeneous* if it is not homgeneous (more than one type of node, or more than
+      one type of edge)
+
+    - it is *directed* if the direction of an edge starting at its source node and finishing at
+      its target node is important
+
+    - it is *undirected* if the direction does not matter
+
+    To create a StellarGraph object, at a minimum pass the nodes and edges as Pandas
+    DataFrames. Each row of the nodes DataFrame represents a node in the graph, where the index is
+    the ID of the node. Each row of the edges DataFrame represents an edge, where the index is the
+    ID of the edge, and the ``source`` and ``target`` columns store the node ID of the source and
+    target nodes.
 
     For example, suppose we're modelling a graph that's a square with a diagonal::
 
@@ -57,7 +76,7 @@ class StellarGraph:
         |  \ |
         d -- c
 
-    The DataFrames might look like:
+    The DataFrames might look like::
 
         nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
         edges = pd.DataFrame(
@@ -78,7 +97,7 @@ class StellarGraph:
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
     above has two features ``x`` and ``y`` associated with each node:
 
-        nodes = pd.DataFrame({"x": [-1, 2, -3, 4], "y": [0.4, 0.1, 0.9, 0.0]}, index=["a", "b", "c", "d"])
+        nodes = pd.DataFrame({"x": [-1, 2, -3, 4], "y": [0.4, 0.1, 0.9, 0]}, index=["a", "b", "c", "d"])
 
     Edge weights are taken as the optional ``weight`` column of the edges DataFrame:
 
@@ -86,14 +105,38 @@ class StellarGraph:
             {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"], "weight": [10, 0.5, 1, 3, 13]}
         )
 
-
     Heterogeneous graphs, with multiple node or edge types, can be created by passing multiple
-    dataframes in a dictionary. TODO: ...
+    DataFrames in a dictionary. The dictionary keys are the names/identifiers for the type. For
+    example, if the graph above has node ``a`` of type ``foo``, and the rest as type ``bar``, the
+    construction might look like::
 
+        foo_nodes = pd.DataFrame({"x": [-1]}, index=["a"])
+        bar_nodes = pd.DataFrame({"y": [0.4, 0.1, 0.9], "z": [100, 200, 300]}, index=["b", "c", "d"])
+
+        StellarGraph({"foo": foo_nodes, "bar": bar_nodes}, edges)
+
+    Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
+    ``z``. A heterogeneous graph can have different features for each type.
+
+    Edges of different types work in the same way. example instance, if edges have different types based
+    on their orientation::
+
+        horizontal_edges = pd.DataFrame({"source": ["a", "c"], "target": ["b", "d"]}, index=[0, 2])
+        vertical_edges = pd.DataFrame({"source": ["b", "d"], "target": ["c", "a"]}, index=[1, 3])
+        diagonal_edges = pd.DataFrame({"source": ["a"], "target": ["c"]}, index=[4])
+
+        StellarGraph(nodes, {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges})
+
+    A dictionary can be passed for both arguments::
+
+        StellarGraph(
+            {"foo": foo_nodes, "bar": bar_nodes},
+            {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
+        )
 
     Args:
         nodes (DataFrame or dict of hashable to Pandas DataFrame):
-            Features for every node in the graph. Any columns in the dataframe are taken as numeric
+            Features for every node in the graph. Any columns in the DataFrame are taken as numeric
             node features of type ``dtype``. If there is only one type of node, a DataFrame can be
             passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
             have an ID taken from the index of the dataframe, and they have to be unique across all
@@ -102,7 +145,7 @@ class StellarGraph:
             IDs.
 
         edges (DataFrame or dict of hashable to Pandas DataFrame):
-            An edge list for each type of edges as a Pandas ``DataFrame`` containing a source, target
+            An edge list for each type of edges as a Pandas DataFrame containing a source, target
             and (optionally) weight column (the names of each are taken from the ``source_column``,
             ``target_column`` and ``edge_weight_label`` parameters). If there is only one type of
             edges, a DataFrame can be passed directly, and the type defaults to the
@@ -111,9 +154,6 @@ class StellarGraph:
 
         is_directed (bool, optional):
             If True, the data represents a directed multigraph, otherwise an undirected multigraph.
-
-        dtype (numpy data-type, optional):
-            The numpy data-type to use for the features extracted from the ``nodes`` DataFrame(s).
 
         source_column (str, optional):
             The name of the column to use as the source node of edges in the ``edges`` edge list
@@ -124,14 +164,32 @@ class StellarGraph:
             argument.
 
         edge_weight_column (str, optional):
-            The name of the column in each of the ``edges`` ``DataFrame``s to use as the weight of
-            edges. If the column does not exist, the weight defaults to ``1``.
+            The name of the column in each of the ``edges`` DataFrames to use as the weight of
+            edges. If the column does not exist in any of them, it is defaulted to ``1``.
 
         node_type_default (str, optional):
-            The default node type to use, if ``nodes`` is passed as a ``DataFrame`` (not a ``dict``).
+            The default node type to use, if ``nodes`` is passed as a DataFrame (not a ``dict``).
 
         node_type_default (str, optional):
-            The default edge type to use, if ``edges`` is passed as a ``DataFrame`` (not a ``dict``).
+            The default edge type to use, if ``edges`` is passed as a DataFrame (not a ``dict``).
+
+        dtype (numpy data-type, optional):
+            The numpy data-type to use for the features extracted from each of the ``nodes`` DataFrames.
+
+        graph:
+            Deprecated, see :meth:`from_networkx`.
+        node_type_name:
+            Deprecated, see :meth:`from_networkx`.
+        edge_type_name:
+            Deprecated, see :meth:`from_networkx`.
+        feature_name:
+            Deprecated, see :meth:`from_networkx`.
+        target_name:
+            Deprecated, see :meth:`from_networkx`.
+        edge_weight_label:
+            Deprecated, see :meth:`from_networkx`.
+        node_features:
+            Deprecated, see :meth:`from_networkx`.
     """
 
     def __init__(
@@ -155,6 +213,8 @@ class StellarGraph:
         edge_weight_label=None,
         node_features=None,
     ):
+        import networkx
+
         # support for legacy arguments, translate to the new form
         if edge_weight_label is not None:
             # `edge_weight_label` -> `edge_weight_column`
@@ -164,20 +224,23 @@ class StellarGraph:
             )
             edge_weight_column = edge_weight_label
 
-        import networkx
-        if isinstance(nodes, nx.Graph):
+        if isinstance(nodes, networkx.Graph):
             # `StellarGraph(nx_graph)` -> `graph`
             graph = nodes
             nodes = None
             if edges is not None:
-                raise ValueError("edges: expected no value when using legacy NetworkX constructor, found: {edges!r}")
+                raise ValueError(
+                    "edges: expected no value when using legacy NetworkX constructor, found: {edges!r}"
+                )
 
         # legacy NetworkX construction
         if graph is not None:
             # FIXME(#717): this should have a deprecation warning, once the tests and examples have
             # stopped using it
             if nodes is not None or edges is not None:
-                raise ValueError("graph: expected no value when using new 'nodes' and 'edges' parameters, found: {graph!r}")
+                raise ValueError(
+                    "graph: expected no value when using new 'nodes' and 'edges' parameters, found: {graph!r}"
+                )
 
             nodes, edges = convert.from_networkx(
                 graph,
@@ -1058,6 +1121,7 @@ class StellarDiGraph(StellarGraph):
         super().__init__(
             nodes=nodes,
             edges=edges,
+            is_directed=True,
             source_column=source_column,
             target_column=target_column,
             edge_weight_column=edge_weight_column,
