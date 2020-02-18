@@ -736,10 +736,15 @@ def test_stellargraph_experimental():
         StellarGraph(nodes=nodes, edges=edges)
 
 
-def test_info_homogeneous():
-    g = example_graph(node_label="ABC", edge_label="xyz")
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_info_homogeneous(is_directed):
+
+    g = example_graph(node_label="ABC", edge_label="xyz", is_directed=is_directed)
     info = g.info()
-    assert "Undirected multigraph" in info
+    if is_directed:
+        assert "StellarDiGraph: Directed multigraph" in info
+    else:
+        assert "StellarGraph: Undirected multigraph" in info
     assert "Nodes: 4, Edges: 4" in info
 
     assert " ABC: [4]" in info
@@ -751,7 +756,7 @@ def test_info_homogeneous():
 def test_info_heterogeneous():
     g = example_hin_1()
     info = g.info()
-    assert "Undirected multigraph" in info
+    assert "StellarGraph: Undirected multigraph" in info
     assert "Nodes: 7, Edges: 6" in info
 
     assert " A: [4]" in info
