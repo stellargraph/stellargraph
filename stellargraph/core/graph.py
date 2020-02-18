@@ -213,7 +213,6 @@ class StellarGraph:
         )
         self._edges = convert.convert_edges(
             edges,
-            self._nodes,
             name="edges",
             default_type=edge_type_default,
             source_column=source_column,
