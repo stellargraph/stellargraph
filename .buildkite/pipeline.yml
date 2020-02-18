@@ -54,8 +54,6 @@ steps:
       docker-compose#v3.1.0:
         <<: *compose-config
         run: runner-3_6
-        env:
-          - CHECK_NOTEBOOK_FORMATTING=1
     agents:
       queue: "t2medium"
 
@@ -91,6 +89,17 @@ steps:
       <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/black:snapshot"
+
+  - label: ":python-black::jupyter: check notebook format"
+    depends_on: "runner-3_6"
+    command: "python scripts/format_notebooks.py --default --ci demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
 
   - label: ":shell: format"
     plugins:
