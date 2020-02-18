@@ -270,7 +270,7 @@ class Test_GraphSAGELinkGenerator:
 
         assert len(mapper) == 2
 
-        for ii in range(1):
+        for ii in range(len(mapper)):
             nf, nl = mapper[ii]
             assert len(nf) == 2 * 2
             for j in range(len(nf)):
@@ -795,7 +795,7 @@ class Test_DirectedGraphSAGELinkGenerator:
     in_samples = [2, 4]
     out_samples = [6, 8]
 
-    def test_LinkMapper_constructor(self):
+    def test_constructor(self):
 
         G = example_graph(feature_size=self.n_feat, is_directed=True)
         edge_labels = [0] * G.number_of_edges()
@@ -811,7 +811,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
 
-    def test_DirectedGraphSAGELinkGenerator_1(self):
+    def test_batch_feature_shapes(self):
 
         G = example_graph(feature_size=self.n_feat, is_directed=True)
         data_size = G.number_of_edges()
@@ -831,101 +831,46 @@ class Test_DirectedGraphSAGELinkGenerator:
 
             assert len(nf) == 2 ** (len(self.in_samples) + 2) - 2
 
-            for ii in range(len(nf) // 2):
-                assert nf[2 * ii].shape == nf[2 * ii + 1].shape
+            ins, outs = self.in_samples, self.out_samples
+            dims = [
+                1,
+                ins[0],
+                outs[0],
+                ins[0] * ins[1],
+                ins[0] * outs[1],
+                outs[0] * ins[1],
+                outs[0] * outs[1],
+            ]
 
-            # head nodes
-            for ii in range(2):
-                assert nf[ii].shape == (min(self.batch_size, data_size), 1, self.n_feat)
-
-            # first hop in samples
-            for ii in range(2, 4):
-                assert nf[ii].shape == (
-                    min(self.batch_size, data_size),
-                    self.in_samples[0],
-                    self.n_feat,
-                )
-
-            for ii in range(4, 6):
-                assert nf[ii].shape == (
-                    min(self.batch_size, data_size),
-                    self.out_samples[0],
-                    self.n_feat,
-                )
-
-            for ii in range(6, 8):
-                assert nf[ii].shape == (
-                    min(self.batch_size, data_size),
-                    self.in_samples[0] * self.in_samples[1],
-                    self.n_feat,
-                )
-
-            for ii in range(8, 10):
-                assert nf[ii].shape == (
-                    min(self.batch_size, data_size),
-                    self.in_samples[0] * self.out_samples[1],
-                    self.n_feat,
-                )
-
-            for ii in range(10, 12):
-                assert nf[ii].shape == (
-                    min(self.batch_size, data_size),
-                    self.out_samples[0] * self.in_samples[1],
-                    self.n_feat,
-                )
-
-            for ii in range(12, 14):
-                assert nf[ii].shape == (
-                    min(self.batch_size, data_size),
-                    self.out_samples[0] * self.out_samples[1],
-                    self.n_feat,
-                )
+            for ii, dim in zip(range(7), dims):
+                assert nf[2*ii].shape == nf[2*ii + 1].shape == (min(self.batch_size, data_size), dim, self.n_feat)
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
 
-    def test_DirectedGraphSAGELinkGenerator_shuffle(self):
-        def test_edge_consistency(shuffle):
-            G = example_graph(feature_size=1, is_directed=True)
-            edges = list(G.edges())
-            edge_labels = list(range(len(edges)))
+    @pytest.mark.parametrize("shuffle", [True, False])
+    def test_shuffle(self, shuffle):
 
-            mapper = DirectedGraphSAGELinkGenerator(
-                G, batch_size=2, in_samples=[0], out_samples=[0]
-            ).flow(edges, edge_labels, shuffle=shuffle)
+        G = example_graph(feature_size=1, is_directed=True)
+        edges = list(G.edges())
+        edge_labels = list(range(len(edges)))
 
-            assert len(mapper) == 2
+        mapper = DirectedGraphSAGELinkGenerator(
+            G, batch_size=2, in_samples=[0], out_samples=[0]
+        ).flow(edges, edge_labels, shuffle=shuffle)
 
-            for batch in range(len(mapper)):
-                nf, nl = mapper[batch]
-                e1 = edges[nl[0]]
-                e2 = edges[nl[1]]
-                assert nf[0][0, 0, 0] == e1[0]
-                assert nf[1][0, 0, 0] == e1[1]
-                assert nf[0][1, 0, 0] == e2[0]
-                assert nf[1][1, 0, 0] == e2[1]
+        assert len(mapper) == 2
 
-        test_edge_consistency(True)
-        test_edge_consistency(False)
+        for batch in range(len(mapper)):
+            nf, nl = mapper[batch]
+            e1 = edges[nl[0]]
+            e2 = edges[nl[1]]
+            assert nf[0][0, 0, 0] == e1[0]
+            assert nf[1][0, 0, 0] == e1[1]
+            assert nf[0][1, 0, 0] == e2[0]
+            assert nf[1][1, 0, 0] == e2[1]
 
-    def test_DirectedGraphSAGELinkGenerator_not_Stellargraph(self):
-        G = nx.Graph()
-        elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-        G.add_edges_from(elist)
-
-        # Add example features
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(1)
-
-        with pytest.raises(TypeError):
-            DirectedGraphSAGELinkGenerator(
-                G,
-                batch_size=self.batch_size,
-                in_samples=self.in_samples,
-                out_samples=self.out_samples,
-            )
-
-    def test_DirectedGraphSAGELinkGenerator_zero_samples(self):
+    def test_zero_dim_samples(self):
 
         G = example_graph(feature_size=self.n_feat, is_directed=True)
         data_size = G.number_of_edges()
@@ -937,26 +882,21 @@ class Test_DirectedGraphSAGELinkGenerator:
 
         assert len(mapper) == 2
 
-        for ii in range(1):
+        for ii in range(len(mapper)):
             nf, nl = mapper[ii]
             assert len(nf) == 2 ** (len([0]) + 2) - 2
-            for j in range(len(nf)):
-                if j < self.batch_size:
-                    assert nf[j].shape == (
-                        min(self.batch_size, data_size),
-                        1,
-                        self.n_feat,
-                    )
-                else:
-                    assert nf[j].shape == (
-                        min(self.batch_size, data_size),
-                        0,
-                        self.n_feat,
-                    )
+            for f in nf[:2]:
+                assert f.shape == (self.batch_size, 1, self.n_feat)
+
+            # neighbours
+            for f in nf[2:]:
+                assert f.shape == (self.batch_size, 0, self.n_feat)
+
             assert len(nl) == min(self.batch_size, data_size)
             assert all(nl == 0)
 
-    def test_DirectedGraphSAGELinkGeneratorr_no_samples(self):
+    @pytest.mark.parametrize("samples", [([], []), ([], [0]), ([0], [])])
+    def test_no_samples(self, samples):
         """
         The SampledBFS sampler, created inside the mapper, currently throws a ValueError when the num_samples list is empty.
         This might change in the future, so this test might have to be re-written.
@@ -965,32 +905,18 @@ class Test_DirectedGraphSAGELinkGenerator:
         G = example_graph(feature_size=self.n_feat)
         data_size = G.number_of_edges()
         edge_labels = [0] * data_size
+        in_samples, out_samples = samples
 
         mapper = DirectedGraphSAGELinkGenerator(
-            G, batch_size=self.batch_size, in_samples=[], out_samples=[],
+            G, batch_size=self.batch_size, in_samples=in_samples, out_samples=out_samples,
         ).flow(G.edges(), edge_labels)
 
         assert len(mapper) == 2
         with pytest.raises(ValueError):
             nf, nl = mapper[0]
 
-        mapper = DirectedGraphSAGELinkGenerator(
-            G, batch_size=self.batch_size, in_samples=[], out_samples=[0],
-        ).flow(G.edges(), edge_labels)
 
-        assert len(mapper) == 2
-        with pytest.raises(ValueError):
-            nf, nl = mapper[0]
-
-        mapper = DirectedGraphSAGELinkGenerator(
-            G, batch_size=self.batch_size, in_samples=[0], out_samples=[],
-        ).flow(G.edges(), edge_labels)
-
-        assert len(mapper) == 2
-        with pytest.raises(ValueError):
-            nf, nl = mapper[0]
-
-    def test_DirectedGraphSAGELinkGenerator_no_targets(self):
+    def test_no_targets(self):
         """
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
@@ -1004,7 +930,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         for i in range(len(gen)):
             assert gen[i][1] is None
 
-    def test_DirectedGraphSAGELinkGenerator_isolates(self):
+    def test_isolates(self):
         """
         Test for handling of isolated nodes
         """
@@ -1053,7 +979,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         ne, nl = gen[0]
         assert pytest.approx(expected_sizes) == [x.shape[1] for x in ne]
 
-    def test_DirectedGraphSAGELinkGenerator_unsupervisedSampler_flow(self):
+    def test_unsupervisedSampler_flow(self):
         """
         This tests link generator's initialization for on demand link generation i.e. there is no pregenerated list of samples provided to it.
         """
@@ -1093,7 +1019,7 @@ class Test_DirectedGraphSAGELinkGenerator:
                 out_samples=self.out_samples,
             ).flow()
 
-    def test_DirectedGraphSAGELinkGenerator_unsupervisedSampler_sample_generation(self):
+    def test_unsupervisedSampler_sample_generation(self):
 
         G = example_graph(feature_size=self.n_feat, is_directed=True)
 
@@ -1117,56 +1043,20 @@ class Test_DirectedGraphSAGELinkGenerator:
 
             assert len(nf) == 2 ** (len(self.in_samples) + 2) - 2
 
-            for ii in range(len(nf) // 2):
-                assert nf[2 * ii].shape == nf[2 * ii + 1].shape
+            ins, outs = self.in_samples, self.out_samples
+            dims = [
+                1,
+                ins[0],
+                outs[0],
+                ins[0] * ins[1],
+                ins[0] * outs[1],
+                outs[0] * ins[1],
+                outs[0] * outs[1],
+            ]
 
-            # head nodes
-            for ii in range(2):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    1,
-                    self.n_feat,
-                )
+            for ii, dim in zip(range(7), dims):
+                assert nf[2*ii].shape == nf[2*ii+1].shape == (min(self.batch_size, mapper.data_size), dim, self.n_feat)
 
-            # first hop in samples
-            for ii in range(2, 4):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    self.in_samples[0],
-                    self.n_feat,
-                )
 
-            for ii in range(4, 6):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    self.out_samples[0],
-                    self.n_feat,
-                )
 
-            for ii in range(6, 8):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    self.in_samples[0] * self.in_samples[1],
-                    self.n_feat,
-                )
 
-            for ii in range(8, 10):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    self.in_samples[0] * self.out_samples[1],
-                    self.n_feat,
-                )
-
-            for ii in range(10, 12):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    self.out_samples[0] * self.in_samples[1],
-                    self.n_feat,
-                )
-
-            for ii in range(12, 14):
-                assert nf[ii].shape == (
-                    min(self.batch_size, mapper.data_size),
-                    self.out_samples[0] * self.out_samples[1],
-                    self.n_feat,
-                )

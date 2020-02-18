@@ -550,14 +550,15 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         in_samples (list): The number of in-node samples per layer (hop) to take.
         out_samples (list): The number of out-node samples per layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
+        name, optional: Name of generator.
     """
 
     def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
         super().__init__(G, batch_size)
 
-        self.in_samples = in_samples
-        self.out_samples = out_samples
-        self.name = name
+        self._in_samples = in_samples
+        self._out_samples = out_samples
+        self._name = name
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -626,7 +627,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         for hns in zip(*head_links):
 
             node_samples = self._sampler(batch_num).run(
-                nodes=hns, n=1, in_size=self.in_samples, out_size=self.out_samples
+                nodes=hns, n=1, in_size=self._in_samples, out_size=self._out_samples
             )
 
             # Reshape node samples to sensible format
@@ -636,7 +637,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
 
             node_type = self.head_node_types[0]
 
-            max_hops = len(self.in_samples)
+            max_hops = len(self._in_samples)
             max_slots = 2 ** (max_hops + 1) - 1
             features = [None] * max_slots  # flattened binary tree
 
