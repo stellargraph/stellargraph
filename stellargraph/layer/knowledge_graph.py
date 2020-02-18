@@ -69,7 +69,9 @@ class ComplExScore(Layer):
         return score
 
 
-@experimental(reason="results from the reference paper have not been reproduced yet")
+@experimental(
+    reason="results from the reference paper have not been reproduced yet", issues=[862]
+)
 class ComplEx:
     """
     Embedding layers and a ComplEx scoring layers that implement the ComplEx knowledge graph

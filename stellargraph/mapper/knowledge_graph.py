@@ -169,8 +169,10 @@ class KGTripleSequence(Sequence):
 
             rng = self._batch_sampler(batch_num)
 
+            # FIXME (#882): this sampling may be able to be optimised to a slice-write
             change_source = rng.random(size=negative_count) < 0.5
             source_changes = change_source.sum()
+
             new_nodes = rng.randint(self.max_node_iloc, size=negative_count)
 
             s_iloc[positive_count:][change_source] = new_nodes[:source_changes]
