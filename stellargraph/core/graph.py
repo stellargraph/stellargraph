@@ -95,15 +95,19 @@ class StellarGraph:
 
 
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
-    above has two features ``x`` and ``y`` associated with each node:
+    above has two features ``x`` and ``y`` associated with each node::
 
-        nodes = pd.DataFrame({"x": [-1, 2, -3, 4], "y": [0.4, 0.1, 0.9, 0]}, index=["a", "b", "c", "d"])
-
-    Edge weights are taken as the optional ``weight`` column of the edges DataFrame:
-
-        edges = pd.DataFrame(
-            {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"], "weight": [10, 0.5, 1, 3, 13]}
+        nodes = pd.DataFrame(
+            {"x": [-1, 2, -3, 4], "y": [0.4, 0.1, 0.9, 0]}, index=["a", "b", "c", "d"]
         )
+
+    Edge weights are taken as the optional ``weight`` column of the edges DataFrame::
+
+        edges = pd.DataFrame({
+            "source": ["a", "b", "c", "d", "a"],
+            "target": ["b", "c", "d", "a", "c"],
+            "weight": [10, 0.5, 1, 3, 13]
+        })
 
     Heterogeneous graphs, with multiple node or edge types, can be created by passing multiple
     DataFrames in a dictionary. The dictionary keys are the names/identifiers for the type. For
@@ -111,7 +115,9 @@ class StellarGraph:
     construction might look like::
 
         foo_nodes = pd.DataFrame({"x": [-1]}, index=["a"])
-        bar_nodes = pd.DataFrame({"y": [0.4, 0.1, 0.9], "z": [100, 200, 300]}, index=["b", "c", "d"])
+        bar_nodes = pd.DataFrame(
+            {"y": [0.4, 0.1, 0.9], "z": [100, 200, 300]}, index=["b", "c", "d"]
+        )
 
         StellarGraph({"foo": foo_nodes, "bar": bar_nodes}, edges)
 
@@ -121,8 +127,12 @@ class StellarGraph:
     Edges of different types work in the same way. example instance, if edges have different types based
     on their orientation::
 
-        horizontal_edges = pd.DataFrame({"source": ["a", "c"], "target": ["b", "d"]}, index=[0, 2])
-        vertical_edges = pd.DataFrame({"source": ["b", "d"], "target": ["c", "a"]}, index=[1, 3])
+        horizontal_edges = pd.DataFrame(
+            {"source": ["a", "c"], "target": ["b", "d"]}, index=[0, 2]
+        )
+        vertical_edges = pd.DataFrame(
+            {"source": ["b", "d"], "target": ["c", "a"]}, index=[1, 3]
+        )
         diagonal_edges = pd.DataFrame({"source": ["a"], "target": ["c"]}, index=[4])
 
         StellarGraph(nodes, {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges})
@@ -133,6 +143,8 @@ class StellarGraph:
             {"foo": foo_nodes, "bar": bar_nodes},
             {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
         )
+
+    .. seealso:: :meth:`from_networkx` for construction from a NetworkX graph.
 
     Args:
         nodes (DataFrame or dict of hashable to Pandas DataFrame):
@@ -170,26 +182,26 @@ class StellarGraph:
         node_type_default (str, optional):
             The default node type to use, if ``nodes`` is passed as a DataFrame (not a ``dict``).
 
-        node_type_default (str, optional):
+        edge_type_default (str, optional):
             The default edge type to use, if ``edges`` is passed as a DataFrame (not a ``dict``).
 
         dtype (numpy data-type, optional):
             The numpy data-type to use for the features extracted from each of the ``nodes`` DataFrames.
 
         graph:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
         node_type_name:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
         edge_type_name:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
         feature_name:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
         target_name:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
         edge_weight_label:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
         node_features:
-            Deprecated, see :meth:`from_networkx`.
+            Deprecated, use :meth:`from_networkx`.
     """
 
     def __init__(
