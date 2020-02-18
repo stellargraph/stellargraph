@@ -132,13 +132,7 @@ DEFAULT_WEIGHT = np.float32(1)
 
 
 def convert_edges(
-    data,
-    *,
-    name,
-    default_type,
-    source_column,
-    target_column,
-    weight_column,
+    data, *, name, default_type, source_column, target_column, weight_column,
 ):
     converter = ColumnarConverter(
         name,
