@@ -289,15 +289,12 @@ class EdgeData(ElementData):
     """
     Args:
         shared (dict of type name to pandas DataFrame): information for the edges of each type
-        node_data (NodeData): the nodes that these edges correspond to
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, node_data: NodeData):
+    def __init__(self, shared):
         super().__init__(shared)
-
-        self._nodes = node_data
 
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
