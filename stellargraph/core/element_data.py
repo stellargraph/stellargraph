@@ -289,15 +289,17 @@ class EdgeData(ElementData):
     """
     Args:
         shared (dict of type name to pandas DataFrame): information for the edges of each type
-        node_data (NodeData): the nodes that these edges correspond to
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, node_data: NodeData):
+    def __init__(self, shared):
         super().__init__(shared)
 
-        self._nodes = node_data
+        # cache these columns to avoid having to do more method and dict look-ups
+        self.sources = self._column(SOURCE)
+        self.targets = self._column(TARGET)
+        self.weights = self._column(WEIGHT)
 
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
@@ -347,30 +349,6 @@ class EdgeData(ElementData):
         """
         adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
-
-    @property
-    def sources(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the source node ID for each edge.
-        """
-        return self._column(SOURCE)
-
-    @property
-    def targets(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the target node ID for each edge.
-        """
-        return self._column(TARGET)
-
-    @property
-    def weights(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the weight for each edge.
-        """
-        return self._column(WEIGHT)
 
     def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
         """

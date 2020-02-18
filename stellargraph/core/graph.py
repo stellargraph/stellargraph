@@ -213,7 +213,6 @@ class StellarGraph:
         )
         self._edges = convert.convert_edges(
             edges,
-            self._nodes,
             name="edges",
             default_type=edge_type_default,
             source_column=source_column,
@@ -758,7 +757,7 @@ class StellarGraph:
         """
         directed_str = "Directed" if self.is_directed() else "Undirected"
         lines = [
-            f"{type(self)}: {directed_str} multigraph",
+            f"{type(self).__name__}: {directed_str} multigraph",
             f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
         ]
 
