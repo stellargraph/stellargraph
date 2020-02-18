@@ -1133,7 +1133,12 @@ class DirectedGraphSAGE(GraphSAGE):
              generator: The supplied generator.
         """
         if not isinstance(
-            generator, (DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator,Neo4JDirectedGraphSAGENodeGenerator)
+            generator,
+            (
+                DirectedGraphSAGENodeGenerator,
+                DirectedGraphSAGELinkGenerator,
+                Neo4JDirectedGraphSAGENodeGenerator,
+            ),
         ):
             errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"
             if isinstance(generator, (NodeSequence, LinkSequence)):
