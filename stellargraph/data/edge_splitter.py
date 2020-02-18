@@ -1053,7 +1053,7 @@ class EdgeSplitter(object):
 
         """
         if self.g.is_directed():
-            mst = nx.algorithms.tree.branchings.Edmonds(self.g).find_optimum().edges
+            mst = nx.minimum_branching(self.g).edges
         else:
             mst = nx.minimum_spanning_edges(self.g, data=False)
 
