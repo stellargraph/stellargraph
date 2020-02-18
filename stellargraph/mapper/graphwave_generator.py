@@ -39,7 +39,7 @@ class GraphWaveGenerator:
     scales than those automatically calculated.
     """
 
-    def __init__(self, G, scales, num_eigenvecs=None, min_delta=0.1):
+    def __init__(self, G, scales, method="cheby", deg=20, num_eigenvecs=None, min_delta=0.1):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
@@ -68,33 +68,53 @@ class GraphWaveGenerator:
 
         # Function to map node IDs to indices for quicker node index lookups
         self._node_lookup = G._get_index_for_nodes
+        self.method = method
+        self.deg = deg
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
+        laplacian = laplacian.tocoo()
 
         # FIXME(#853): add in option to compute wavelet transform using Chebysev polynomials
 
         self.scales = np.array(scales).astype(np.float32)
 
-        if num_eigenvecs is None:
-            eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
-                laplacian, self.scales.min(), min_delta=min_delta,
+        if self.method == "eigs":
+            if num_eigenvecs is None:
+                eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
+                    laplacian, self.scales.min(), min_delta=min_delta,
+                )
+            else:
+                eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=-1e-3)
+                eigen_vals = np.real(eigen_vals).astype(np.float32)
+
+            self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
+
+            # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
+            # (each column corresponds to a node)
+            # to avoid computing a dense NxN matrix when only several eigenvalues are specified
+            # U exp(-scale * eigenvalues) is computed and stored - which is an N x num_eigenvectors matrix
+            # the columns of U exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
+
+            # a list of [U exp(-scale * eigenvalues) for scale in scales]
+            Ues = [self.eigen_vecs * np.exp(-s * eigen_vals) for s in scales]
+            self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
+
+        elif self.method == "cheby":
+            max_eig = eigs(laplacian, k=1, return_eigenvectors=False)
+            max_eig = np.real(max_eig).astype(np.float32)[0]
+            xs = np.linspace(0, max_eig, 100)
+
+            coeffs = [np.polynomial.chebyshev.chebfit(xs, np.exp(-scale * xs), deg=self.deg) for scale in scales]
+            self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0).astype(np.float32))
+
+            self.laplacian_T = tf.sparse.SparseTensor(
+                indices=np.column_stack((laplacian.col, laplacian.row)),
+                values=laplacian.data.astype(np.float32),
+                dense_shape=laplacian.shape,
             )
         else:
-            eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=-1e-3)
-            eigen_vals = np.real(eigen_vals).astype(np.float32)
-
-        self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
-
-        # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
-        # (each column corresponds to a node)
-        # to avoid computing a dense NxN matrix when only several eigenvalues are specified
-        # U exp(-scale * eigenvalues) is computed and stored - which is an N x num_eigenvectors matrix
-        # the columns of U exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
-
-        # a list of [U exp(-scale * eigenvalues) for scale in scales]
-        Ues = [self.eigen_vecs * np.exp(-s * eigen_vals) for s in scales]
-        self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
+            raise ValueError("method must be either 'cheby' or 'eigs', received {}".format(self.method))
 
     @staticmethod
     def _sufficiently_sampled_eigs(laplacian, min_scale, min_delta):
@@ -174,16 +194,27 @@ class GraphWaveGenerator:
         """
         ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
-        dataset = tf.data.Dataset.from_tensor_slices(
-            self.eigen_vecs[self._node_lookup(node_ids)]
-        )
+        if self.method == "eigs":
 
-        # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
-        # and empirically the characteristic function for each column of U exp(-scale * eigenvalues) U^T
+            # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
+            dataset = tf.data.Dataset.from_tensor_slices(
+                self.eigen_vecs[self._node_lookup(node_ids)]
+            ).map(
+                lambda x: tf.linalg.matvec(self.Ues, x),
+                num_parallel_calls=num_parallel_calls,
+            )
+        else:
+            # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
+            dataset = tf.data.Dataset.from_tensor_slices(
+                tf.sparse.eye(int(self.laplacian_T.shape[0]))
+            ).map(
+                lambda x: _chebyshev(x, self.laplacian_T, self.coeffs, self.deg),
+                num_parallel_calls=num_parallel_calls,
+            )
+
+        # empirically calculate the characteristic function for each column of U exp(-scale * eigenvalues) U^T
         dataset = dataset.map(
-            lambda x: _empirical_characteristic_function(
-                tf.linalg.matvec(self.Ues, x), ts
-            ),
+            lambda x: _empirical_characteristic_function(x, ts),
             num_parallel_calls=num_parallel_calls,
         )
 
@@ -228,3 +259,18 @@ def _empirical_characteristic_function(samples, ts):
     embedding = K.flatten(tf.concat([mean_cos_t_psi, mean_sin_t_psi], axis=0))
 
     return embedding
+
+
+def _chebyshev(one_hot_encoded_row, laplacian_T, coeffs, k):
+    T_0 = tf.reshape(
+        tf.sparse.to_dense(one_hot_encoded_row), shape=(1, laplacian_T.shape[1])
+    )
+    T_1 = K.transpose(K.dot(laplacian_T, K.transpose(T_0)))
+    cheby_polys = [T_0, T_1]
+    for i in range(k - 1):
+        cheby_poly = 2 * K.transpose(K.dot(laplacian_T, K.transpose(cheby_polys[-1]))) - cheby_polys[-2]
+        cheby_polys.append(cheby_poly)
+
+    cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=1), axis=0)
+    return tf.matmul(coeffs, cheby_polys)
+
