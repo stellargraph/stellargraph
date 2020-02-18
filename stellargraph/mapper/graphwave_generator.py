@@ -45,7 +45,7 @@ class GraphWaveGenerator:
     # of -1e-3 is used
     _INITIAL_EIGS_SIGMA = -1e-3
 
-    def __init__(self, G, scales=(5, 10), method="cheby", deg=20, num_eigenvecs=None, min_delta=0.1):
+    def __init__(self, G, scales=(5, 10), method="eigs", deg=20, num_eigenvecs=None, min_delta=0.1):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
@@ -115,8 +115,8 @@ class GraphWaveGenerator:
             coeffs = [np.polynomial.chebyshev.chebfit(xs, np.exp(-scale * xs), deg=self.deg) for scale in scales]
             self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0).astype(np.float32))
 
-            self.laplacian_T = tf.sparse.SparseTensor(
-                indices=np.column_stack((laplacian.col, laplacian.row)),
+            self.laplacian = tf.sparse.SparseTensor(
+                indices=np.column_stack((laplacian.row, laplacian.col)),
                 values=laplacian.data.astype(np.float32),
                 dense_shape=laplacian.shape,
             )
@@ -221,9 +221,9 @@ class GraphWaveGenerator:
         else:
             # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
             dataset = tf.data.Dataset.from_tensor_slices(
-                tf.sparse.eye(int(self.laplacian_T.shape[0]))
+                tf.sparse.eye(int(self.laplacian.shape[0]))
             ).map(
-                lambda x: _chebyshev(x, self.laplacian_T, self.coeffs, self.deg),
+                lambda x: _chebyshev(x, self.laplacian, self.coeffs, self.deg),
                 num_parallel_calls=num_parallel_calls,
             )
 
@@ -276,16 +276,28 @@ def _empirical_characteristic_function(samples, ts):
     return embedding
 
 
-def _chebyshev(one_hot_encoded_row, laplacian_T, coeffs, k):
+def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg):
+    """
+    This function calculates one column of the Chebyshev approximation of exp(-scale * laplacian) for
+    all scales.
+
+    Args:
+        one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column to calculate.
+        laplacian (SparseTensor): the unormalized graph laplacian
+        coeffs: the Chebyshev coefficients for exp(-scale * x) for each scale in the shape (num_scales, deg)
+        deg: the degree of the Chebyshev polynomial
+    Returns:
+        Tensor
+    """
     T_0 = tf.reshape(
-        tf.sparse.to_dense(one_hot_encoded_row), shape=(1, laplacian_T.shape[1])
+        tf.sparse.to_dense(one_hot_encoded_row), shape=(laplacian.shape[0], 1)
     )
-    T_1 = K.transpose(K.dot(laplacian_T, K.transpose(T_0)))
+    T_1 = K.dot(laplacian, T_0)
     cheby_polys = [T_0, T_1]
-    for i in range(k - 1):
-        cheby_poly = 2 * K.transpose(K.dot(laplacian_T, K.transpose(cheby_polys[-1]))) - cheby_polys[-2]
+    for i in range(deg - 1):
+        cheby_poly = 2 * K.dot(laplacian, cheby_polys[-1]) - cheby_polys[-2]
         cheby_polys.append(cheby_poly)
 
-    cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=1), axis=0)
+    cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=0), axis=-1)
     return tf.matmul(coeffs, cheby_polys)
 
