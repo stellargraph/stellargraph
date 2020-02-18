@@ -121,6 +121,9 @@ class BlogCatalog3(
 
     @staticmethod
     def _load_from_location(location):
+        """
+        Support code for the old `load_dataset_BlogCatalog3` function.
+        """
         if not os.path.isdir(location):
             raise NotADirectoryError(
                 "The location {} is not a directory.".format(location)
