@@ -843,7 +843,11 @@ class Test_DirectedGraphSAGELinkGenerator:
             ]
 
             for ii, dim in zip(range(7), dims):
-                assert nf[2*ii].shape == nf[2*ii + 1].shape == (min(self.batch_size, data_size), dim, self.n_feat)
+                assert (
+                    nf[2 * ii].shape
+                    == nf[2 * ii + 1].shape
+                    == (min(self.batch_size, data_size), dim, self.n_feat)
+                )
 
         with pytest.raises(IndexError):
             nf, nl = mapper[2]
@@ -908,13 +912,15 @@ class Test_DirectedGraphSAGELinkGenerator:
         in_samples, out_samples = samples
 
         mapper = DirectedGraphSAGELinkGenerator(
-            G, batch_size=self.batch_size, in_samples=in_samples, out_samples=out_samples,
+            G,
+            batch_size=self.batch_size,
+            in_samples=in_samples,
+            out_samples=out_samples,
         ).flow(G.edges(), edge_labels)
 
         assert len(mapper) == 2
         with pytest.raises(ValueError):
             nf, nl = mapper[0]
-
 
     def test_no_targets(self):
         """
@@ -1055,8 +1061,8 @@ class Test_DirectedGraphSAGELinkGenerator:
             ]
 
             for ii, dim in zip(range(7), dims):
-                assert nf[2*ii].shape == nf[2*ii+1].shape == (min(self.batch_size, mapper.data_size), dim, self.n_feat)
-
-
-
-
+                assert (
+                    nf[2 * ii].shape
+                    == nf[2 * ii + 1].shape
+                    == (min(self.batch_size, mapper.data_size), dim, self.n_feat)
+                )
