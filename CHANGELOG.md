@@ -20,8 +20,11 @@ Some new algorithms and features are still under active development, and are ava
 
 ### Bug fixes and other changes
 
+- StellarGraph now supports [`tensorflow 2.1`](https://github.com/tensorflow/tensorflow/releases/tag/v2.1.0), which includes GPU support by default: [\#875](https://github.com/stellargraph/stellargraph/pull/875)
 - DevOps changes:
   - CI: [\#760](https://github.com/stellargraph/stellargraph/pull/760)
+
+- More detailed information about Heterogeneous GraphSAGE (HinSAGE) has been added to StellarGraph's readthedocs documentation [\#839](https://github.com/stellargraph/stellargraph/pull/839).
 
 ## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
 
