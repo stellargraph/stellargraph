@@ -44,162 +44,150 @@ class StellarGraph:
     StellarGraph class for directed or undirected graph ML models. It stores both
     graph structure and features for machine learning.
 
-    To create a StellarGraph object ready for machine learning, at a
-    minimum pass the graph structure to the StellarGraph as a NetworkX
-    graph:
+    To create a StellarGraph object ready for machine learning, at a minimum pass the nodes and
+    edges as Pandas DataFrames. Each row of the nodes dataframe represents a node in the graph,
+    where the index is the ID of the node. Each row of the edges dataframes represents an edge,
+    where the index is the ID of the edge, and the ``source`` and ``target`` columns store the node
+    ID of the source and target nodes.
 
-    For undirected models::
+    For example, suppose we're modelling a graph that's a square with a diagonal::
 
-        Gs = StellarGraph(nx_graph)
+        a -- b
+        | \  |
+        |  \ |
+        d -- c
 
+    The DataFrames might look like:
 
-    For directed models::
+        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
+        edges = pd.DataFrame(
+            {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"]}
+        )
 
-        Gs = StellarDiGraph(nx_graph)
+    If this data represents an undirected graph (the ordering of each edge source/target doesn't
+    matter)::
 
-
-    To create a StellarGraph object with node features, supply the features
-    as a numeric feature vector for each node.
-
-    To take the feature vectors from a node attribute in the original NetworkX
-    graph, supply the attribute name to the ``node_features`` argument::
-
-        Gs = StellarGraph(nx_graph, node_features="feature")
-
-
-    where the nx_graph contains nodes that have a "feature" attribute containing
-    the feature vector for the node. All nodes of the same type must have
-    the same size feature vectors.
-
-    Alternatively, supply the node features as Pandas DataFrame objects with
-    the of the DataFrame set to the node IDs. For graphs with a single node
-    type, you can supply the DataFrame object directly to StellarGraph::
-
-        node_data = pd.DataFrame(
-            [feature_vector_1, feature_vector_2, ..],
-            index=[node_id_1, node_id_2, ...])
-        Gs = StellarGraph(nx_graph, node_features=node_data)
-
-    For graphs with multiple node types, provide the node features as Pandas
-    DataFrames for each type separately, as a dictionary by node type.
-    This allows node features to have different sizes for each node type::
-
-        node_data = {
-            node_type_1: pd.DataFrame(...),
-            node_type_2: pd.DataFrame(...),
-        }
-        Gs = StellarGraph(nx_graph, node_features=node_data)
+        Gs = StellarGraph(nodes, edges)
 
 
-    You can also supply the node feature vectors as an iterator of `node_id`
-    and feature vector pairs, for graphs with single and multiple node types::
+    If this data represents a directed graph (the ordering does matter)::
 
-        node_data = zip([node_id_1, node_id_2, ...],
-            [feature_vector_1, feature_vector_2, ..])
-        Gs = StellarGraph(nx_graph, node_features=node_data)
+        Gs = StellarDiGraph(nodes, edges)
 
-    .. warning::
 
-        The constructor variant using the ``nodes=..., edges=...`` arguments to create a "new"
-        StellarGraph is experimental: the type is insufficiently documented and does not support
-        some algorithms.
+    Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
+    above has two features ``x`` and ``y`` associated with each node:
+
+        nodes = pd.DataFrame({"x": [-1, 2, -3, 4], "y": [0.4, 0.1, 0.9, 0.0]}, index=["a", "b", "c", "d"])
+
+    Edge weights are taken as the optional ``weight`` column of the edges DataFrame:
+
+        edges = pd.DataFrame(
+            {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"], "weight": [10, 0.5, 1, 3, 13]}
+        )
+
+
+    Heterogeneous graphs, with multiple node or edge types, can be created by passing multiple
+    dataframes in a dictionary. TODO: ...
 
 
     Args:
-        graph: The NetworkX graph instance.
-        node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
-            This is the name for the node types that StellarGraph uses
-            when processing heterogeneous graphs. StellarGraph will
-            look for this attribute in the nodes of the graph to determine
-            their type.
-
-        node_type_default: str, optional (default=globals.NODE_TYPE_DEFAULT)
-            This is the default node type to use for nodes that do not have
-            an explicit type.
-
-        edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
-            This is the name for the edge types that StellarGraph uses
-            when processing heterogeneous graphs. StellarGraph will
-            look for this attribute in the edges of the graph to determine
-            their type.
-
-        edge_type_default: str, optional (default=globals.EDGE_TYPE_DEFAULT)
-            This is the default edge type to use for edges that do not have
-            an explicit type.
-
-        node_features: str, dict, list or DataFrame optional (default=None)
-            This tells StellarGraph where to find the node feature information
-            required by some graph models. These are expected to be
-            a numeric feature vector for each node in the graph.
-
-        nodes: DataFrame or dict of hashable to DataFrame
+        nodes (DataFrame or dict of hashable to Pandas DataFrame):
             Features for every node in the graph. Any columns in the dataframe are taken as numeric
             node features of type ``dtype``. If there is only one type of node, a DataFrame can be
             passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs. This must be used with the ``edges`` argument. This uses the same basic structure as the
-            ``node_features`` argument, described above. **Warning**: this is experimental (see
-            warning above for more details).
+            IDs.
 
-        edges: DataFrame or dict of hashable to DataFrame
-            An edge list for each type of edges as a Pandas DataFrame containing a source, target
+        edges (DataFrame or dict of hashable to Pandas DataFrame):
+            An edge list for each type of edges as a Pandas ``DataFrame`` containing a source, target
             and (optionally) weight column (the names of each are taken from the ``source_column``,
             ``target_column`` and ``edge_weight_label`` parameters). If there is only one type of
             edges, a DataFrame can be passed directly, and the type defaults to the
             ``edge_type_default`` parameter. Edges have an ID taken from the index of the dataframe,
-            and they have to be unique across all types. This must be used with the ``nodes``
-            argument. This uses the same basic structure as the ``node_features`` argument,
-            described above. **Warning**: this is experimental (see warning above for more details).
+            and they have to be unique across all types.
 
-        source_column: str, optional
+        is_directed (bool, optional):
+            If True, the data represents a directed multigraph, otherwise an undirected multigraph.
+
+        dtype (numpy data-type, optional):
+            The numpy data-type to use for the features extracted from the ``nodes`` DataFrame(s).
+
+        source_column (str, optional):
             The name of the column to use as the source node of edges in the ``edges`` edge list
             argument.
 
-        target_column: str, optional
+        target_column (str, optional):
             The name of the column to use as the target node of edges in the ``edges`` edge list
             argument.
 
-        edge_weight_label: str, optional
-            The name of the attribute to use as the weight of edges (for the `nodes`/`edges`
-            DataFrame parameters, this is the name of the column to use).
+        edge_weight_column (str, optional):
+            The name of the column in each of the ``edges`` ``DataFrame``s to use as the weight of
+            edges. If the column does not exist, the weight defaults to ``1``.
+
+        node_type_default (str, optional):
+            The default node type to use, if ``nodes`` is passed as a ``DataFrame`` (not a ``dict``).
+
+        node_type_default (str, optional):
+            The default edge type to use, if ``edges`` is passed as a ``DataFrame`` (not a ``dict``).
     """
 
     def __init__(
         self,
-        graph=None,
-        is_directed=False,
-        edge_weight_label="weight",
-        node_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_type_name=globalvar.TYPE_ATTR_NAME,
-        node_type_default=globalvar.NODE_TYPE_DEFAULT,
-        edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
-        target_name=globalvar.TARGET_ATTR_NAME,
-        node_features=None,
-        dtype="float32",
         nodes=None,
         edges=None,
+        *,
+        is_directed=False,
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
+        edge_weight_column=globalvar.WEIGHT,
+        node_type_default=globalvar.NODE_TYPE_DEFAULT,
+        edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
+        dtype="float32",
+        # legacy arguments:
+        graph=None,
+        node_type_name=globalvar.TYPE_ATTR_NAME,
+        edge_type_name=globalvar.TYPE_ATTR_NAME,
+        feature_name=globalvar.FEATURE_ATTR_NAME,
+        target_name=globalvar.TARGET_ATTR_NAME,
+        edge_weight_label=None,
+        node_features=None,
     ):
+        # support for legacy arguments, translate to the new form
+        if edge_weight_label is not None:
+            # `edge_weight_label` -> `edge_weight_column`
+            warnings.warn(
+                "the 'edge_weight_label' parameters has been replaced by 'edge_weight_column'",
+                DeprecationWarning,
+            )
+            edge_weight_column = edge_weight_label
+
+        import networkx
+        if isinstance(nodes, nx.Graph):
+            # `StellarGraph(nx_graph)` -> `graph`
+            graph = nodes
+            nodes = None
+            if edges is not None:
+                raise ValueError("edges: expected no value when using legacy NetworkX constructor, found: {edges!r}")
+
+        # legacy NetworkX construction
         if graph is not None:
+            # FIXME(#717): this should have a deprecation warning, once the tests and examples have
+            # stopped using it
+            if nodes is not None or edges is not None:
+                raise ValueError("graph: expected no value when using new 'nodes' and 'edges' parameters, found: {graph!r}")
+
             nodes, edges = convert.from_networkx(
                 graph,
                 node_type_name=node_type_name,
                 edge_type_name=edge_type_name,
                 node_type_default=node_type_default,
                 edge_type_default=edge_type_default,
-                edge_weight_label=edge_weight_label,
+                edge_weight_label=edge_weight_column,
                 node_features=node_features,
                 dtype=dtype,
-            )
-        else:
-            warnings.warn(
-                "StellarGraph(nodes=..., edges=...) is experimental: it has not been fully "
-                "validated. It may be difficult to use and may have major changes at any time.",
-                ExperimentalWarning,
             )
 
         if nodes is None:
@@ -218,7 +206,7 @@ class StellarGraph:
             default_type=edge_type_default,
             source_column=source_column,
             target_column=target_column,
-            weight_column=edge_weight_label,
+            weight_column=edge_weight_column,
         )
 
     @staticmethod
@@ -1049,35 +1037,39 @@ class StellarGraph:
 class StellarDiGraph(StellarGraph):
     def __init__(
         self,
-        graph=None,
-        edge_weight_label="weight",
-        node_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_type_name=globalvar.TYPE_ATTR_NAME,
-        node_type_default=globalvar.NODE_TYPE_DEFAULT,
-        edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
-        target_name=globalvar.TARGET_ATTR_NAME,
-        node_features=None,
-        dtype="float32",
         nodes=None,
         edges=None,
+        *,
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
+        edge_weight_column=globalvar.WEIGHT,
+        node_type_default=globalvar.NODE_TYPE_DEFAULT,
+        edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
+        dtype="float32",
+        # legacy arguments
+        graph=None,
+        node_type_name=globalvar.TYPE_ATTR_NAME,
+        edge_type_name=globalvar.TYPE_ATTR_NAME,
+        feature_name=globalvar.FEATURE_ATTR_NAME,
+        target_name=globalvar.TARGET_ATTR_NAME,
+        edge_weight_label=None,
+        node_features=None,
     ):
         super().__init__(
-            graph=graph,
-            is_directed=True,
-            edge_weight_label=edge_weight_label,
-            node_type_name=node_type_name,
-            edge_type_name=edge_type_name,
-            node_type_default=node_type_default,
-            edge_type_default=edge_type_default,
-            feature_name=feature_name,
-            target_name=target_name,
-            node_features=node_features,
-            dtype=dtype,
             nodes=nodes,
             edges=edges,
             source_column=source_column,
             target_column=target_column,
+            edge_weight_column=edge_weight_column,
+            node_type_default=node_type_default,
+            edge_type_default=edge_type_default,
+            dtype=dtype,
+            # legacy arguments
+            graph=graph,
+            node_type_name=node_type_name,
+            edge_type_name=edge_type_name,
+            feature_name=feature_name,
+            target_name=target_name,
+            edge_weight_label=edge_weight_label,
+            node_features=node_features,
         )
