@@ -78,16 +78,15 @@ For the examples we use 2 different datasets. The **Cora** dataset that is a hom
 **BlogCatalog3** can be downloaded from [here.]( http://socialcomputing.asu.edu/datasets/BlogCatalog3)
 
 The **BlogCatalog3** dataset must be loaded into a `networkx` graph object. The `stellargraph` library provides a
-utility method, `stellargraph.data.loader.load_dataset_BlogCatalog3(location)`, that loads the dataset,
-and returns a `networkx` graph object. Assuming that the **BlogCatalog3** dataset has been downloaded and unzipped
-in directory `~/data`, the following 3 lines of code will prepare the dataset for use in the below examples.
+utility method, `stellargraph.datasets.BlogCatalog3.load()`, that loads the dataset,
+and returns a `StellarGraph` graph object. The following 3 lines of code will prepare the dataset for use in the below examples.
 
 ```
 import networkx as nx
 import os
-from stellargraph.data.loader import load_dataset_BlogCatalog3
-g = load_dataset_BlogCatalog3(location='~/data/BlogCatalog-dataset/data/')
-nx.write_gpickle(g, os.path.expanduser('~/data/BlogCatalog3.gpickle'))
+from stellargraph.datasets import BlogCatalog3
+g = BlogCatalog3().load()
+nx.write_gpickle(g.to_networkx(), os.path.expanduser('~/data/BlogCatalog3.gpickle'))
 ```
 
 

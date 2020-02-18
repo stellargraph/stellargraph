@@ -22,7 +22,10 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 """
 
 from .dataset_loader import DatasetLoader
+from ..core.graph import StellarGraph
 import logging
+import os
+import pandas as pd
 
 
 log = logging.getLogger(__name__)
@@ -95,7 +98,76 @@ class BlogCatalog3(
     source="http://socialcomputing.asu.edu/datasets/BlogCatalog3",
     data_subdirectory_name="data",
 ):
-    pass
+    def load(self):
+        """
+        Load this dataset into an undirected heterogeneous graph, downloading it if required.
+
+        The graph has two types of nodes, 'user' and 'group', and two types of edges, 'friend' and 'belongs'.
+        The 'friend' edges connect two 'user' nodes and the 'belongs' edges connects 'user' and 'group' nodes.
+
+        The node and edge types are not included in the dataset that is a collection of node and group ids along with
+        the list of edges in the graph.
+
+        Important note about the node IDs: The dataset uses integers for node ids. However, the integers from 1 to 39 are
+        used as IDs for both users and groups. This would cause a confusion when constructing the graph object.
+        As a result, we convert all IDs to string and append the character 'u' to the integer ID for user nodes and the
+        character 'g' to the integer ID for group nodes.
+
+        Returns:
+            A :class:`StellarGraph` object.
+        """
+        self.download()
+        return self._load_from_location(self.data_directory)
+
+    @staticmethod
+    def _load_from_location(location):
+        if not os.path.isdir(location):
+            raise NotADirectoryError(
+                "The location {} is not a directory.".format(location)
+            )
+
+        # load the raw data
+        user_node_ids = pd.read_csv(os.path.join(location, "nodes.csv"), header=None)
+        group_ids = pd.read_csv(os.path.join(location, "groups.csv"), header=None)
+        edges = pd.read_csv(
+            os.path.join(location, "edges.csv"), header=None, names=["source", "target"]
+        )
+        group_edges = pd.read_csv(
+            os.path.join(location, "group-edges.csv"),
+            header=None,
+            names=["source", "target"],
+        )
+
+        # The dataset uses integers for node ids. However, the integers from 1 to 39 are used as IDs
+        # for both users and groups. This is disambiguated by converting everything to strings and
+        # prepending u to user IDs, and g to group IDs.
+        def u(users):
+            return "u" + users.astype(str)
+
+        def g(groups):
+            return "g" + groups.astype(str)
+
+        # nodes:
+        user_node_ids = u(user_node_ids)
+        group_ids = g(group_ids)
+
+        # node IDs in each edge:
+        edges = u(edges)
+        group_edges["source"] = u(group_edges["source"])
+        group_edges["target"] = g(group_edges["target"])
+
+        # arrange the DataFrame indices appropriately: nodes use their node IDs, which have
+        # been made distinct above, and the group edges have IDs after the other edges
+        user_node_ids.set_index(0, inplace=True)
+        group_ids.set_index(0, inplace=True)
+
+        start = len(edges)
+        group_edges.index = range(start, start + len(group_edges))
+
+        return StellarGraph(
+            nodes={"user": user_node_ids, "group": group_ids},
+            edges={"friend": edges, "belongs": group_edges},
+        )
 
 
 class MovieLens(

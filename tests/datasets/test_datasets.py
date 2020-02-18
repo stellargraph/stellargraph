@@ -17,7 +17,7 @@
 import pytest
 import tempfile
 import os
-from stellargraph.datasets import Cora, CiteSeer
+from stellargraph.datasets import Cora, CiteSeer, BlogCatalog3
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
 from urllib.request import urlretrieve
@@ -70,3 +70,18 @@ def test_download_cache(mock_urlretrieve) -> None:
     # if already downloaded and in the cache, then another download should skip urlretrieve
     Cora().download()
     assert not mock_urlretrieve.called
+
+
+def test_blogcatalog3_load() -> None:
+    g = BlogCatalog3().load()
+
+    n_users = 10312
+    n_groups = 39
+    n_friendships = 333983
+    n_belongs_to = 14476
+
+    assert g.number_of_nodes() == n_users + n_groups
+    assert g.number_of_edges() == n_friendships + n_belongs_to
+
+    assert g.nodes_of_type("user") == [f"u{x}" for x in range(1, n_users + 1)]
+    assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
