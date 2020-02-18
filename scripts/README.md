@@ -41,11 +41,11 @@ To format and execute all Jupyter notebooks found in the demos directory, overwr
 
 ### Testing demo Jupyter notebooks
 
-The `test_demos.py` script runs the demo scripts and Jupyter notebooks that use the CORA dataset, it currently skips the demos that use other datasets (due to dataset licencing issues) and those that require complicated dependencies (such as iGraph which requires a pre-compiled library not installable through PyPI).  The script has a dependency on `treon` which is used to test the notebooks.
+The `test_demos.py` script runs the demo Jupyter notebooks that use the CORA dataset, it currently skips the demos that use other datasets (due to dataset licencing issues) and those that require complicated dependencies (such as iGraph which requires a pre-compiled library not installable through PyPI).  The script has a dependency on `treon` which is used to test the notebooks.
 
 The script currently has no command line arguments and is just run as follows:
 ```
 python scripts/test_demos.py
 ```
 
-The script takes a while to run, as it loops through all supported demo notebooks and scripts. FInally, it will print the number of passed and failed notebooks and scripts.
+The script takes a while to run, as it loops through all supported demo notebooks. Finally, it will print the number of passed and failed notebooks and scripts.

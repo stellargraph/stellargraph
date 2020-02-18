@@ -46,6 +46,11 @@ from ..mapper import (
     LinkSequence,
 )
 
+from ..connector.neo4j.mapper import (
+    Neo4JGraphSAGENodeGenerator,
+    Neo4JDirectedGraphSAGENodeGenerator,
+)
+
 
 class GraphSAGEAggregator(Layer):
     """
@@ -847,7 +852,14 @@ class GraphSAGE:
         Args:
              generator: The supplied generator.
         """
-        if not isinstance(generator, (GraphSAGENodeGenerator, GraphSAGELinkGenerator)):
+        if not isinstance(
+            generator,
+            (
+                GraphSAGENodeGenerator,
+                GraphSAGELinkGenerator,
+                Neo4JGraphSAGENodeGenerator,
+            ),
+        ):
             errmsg = "Generator should be an instance of GraphSAGENodeGenerator or GraphSAGELinkGenerator"
             if isinstance(generator, (NodeSequence, LinkSequence)):
                 errmsg = (
@@ -1121,7 +1133,7 @@ class DirectedGraphSAGE(GraphSAGE):
              generator: The supplied generator.
         """
         if not isinstance(
-            generator, (DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator,)
+            generator, (DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator,Neo4JDirectedGraphSAGENodeGenerator)
         ):
             errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"
             if isinstance(generator, (NodeSequence, LinkSequence)):
