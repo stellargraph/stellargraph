@@ -46,8 +46,7 @@ from ..data import (
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
 from . import NodeSequence
-from ..data.explorer import ConcurrentGraphWalk
-from ..random import random_state
+from ..random import SeededPerBatch
 
 
 class BatchedNodeGenerator(abc.ABC):
@@ -216,10 +215,9 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             )
 
         # Create sampler for GraphSAGE
-        self._rs, _ = random_state(seed)
-        self._samplers = ConcurrentGraphWalk(
+        self._samplers = SeededPerBatch(
             lambda s: SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=s),
-            rs=self._rs,
+            seed=seed,
         )
 
     def sample_features(self, head_nodes, batch_num):

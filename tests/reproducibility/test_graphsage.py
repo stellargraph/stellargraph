@@ -150,7 +150,7 @@ def test_unsupervised(petersen_graph, shuffle):
     assert_reproducible(
         lambda: unsup_gs(
             petersen_graph,
-            [2],
+            [2, 2],
             tf.optimizers.Adam(1e-3),
             epochs=4,
             walk_length=2,
@@ -166,6 +166,6 @@ def test_nai(petersen_graph, shuffle):
     targets = np.random.rand(len(petersen_graph.nodes()), target_size)
     assert_reproducible(
         lambda: gs_nai(
-            petersen_graph, targets, [2], tf.optimizers.Adam(1e-3), shuffle=shuffle
+            petersen_graph, targets, [2, 2], tf.optimizers.Adam(1e-3), shuffle=shuffle
         )
     )

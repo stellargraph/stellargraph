@@ -28,7 +28,6 @@ import itertools as it
 import operator
 import collections
 import abc
-import threading
 import warnings
 from functools import reduce
 from tensorflow import keras
@@ -39,10 +38,9 @@ from ..data import (
     UniformRandomWalk,
     UnsupervisedSampler,
 )
-from ..data.explorer import ConcurrentGraphWalk
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
-from ..random import random_state
+from ..random import SeededPerBatch
 
 
 class BatchedLinkGenerator(abc.ABC):
@@ -218,12 +216,11 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self.head_node_types = self.schema.node_types * 2
 
         self._graph = G
-        self._batch_sampler_rs, _ = random_state(seed)
-        self._samplers = ConcurrentGraphWalk(
+        self._samplers = SeededPerBatch(
             lambda s: SampledBreadthFirstWalk(
                 self._graph, graph_schema=self.schema, seed=s
             ),
-            rs=self._batch_sampler_rs,
+            seed=seed,
         )
 
     def sample_features(self, head_links, batch_num):
