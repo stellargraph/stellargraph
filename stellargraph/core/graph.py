@@ -75,8 +75,8 @@ class StellarGraph:
     For example, suppose we're modelling a graph that's a square with a diagonal::
 
         a -- b
-        | \  |
-        |  \ |
+        | \\  |
+        |  \\ |
         d -- c
 
     The DataFrames might look like::
@@ -147,10 +147,16 @@ class StellarGraph:
             {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
         )
 
+    .. note::
+
+        The IDs of nodes must be unique across all types: for example, it is an error to have a node
+        0 of type ``a``, and a node 0 of type ``b``. IDs of edges must also be unique across all
+        types.
+
     .. seealso:: :meth:`from_networkx` for construction from a NetworkX graph.
 
     Args:
-        nodes (DataFrame or dict of hashable to Pandas DataFrame):
+        nodes (DataFrame or dict of hashable to Pandas DataFrame, optional):
             Features for every node in the graph. Any columns in the DataFrame are taken as numeric
             node features of type ``dtype``. If there is only one type of node, a DataFrame can be
             passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
@@ -159,7 +165,7 @@ class StellarGraph:
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
             IDs.
 
-        edges (DataFrame or dict of hashable to Pandas DataFrame):
+        edges (DataFrame or dict of hashable to Pandas DataFrame, optional):
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
             and (optionally) weight column (the names of each are taken from the ``source_column``,
             ``target_column`` and ``edge_weight_column`` parameters). If there is only one type of
@@ -197,10 +203,6 @@ class StellarGraph:
             Deprecated, use :meth:`from_networkx`.
         edge_type_name:
             Deprecated, use :meth:`from_networkx`.
-        feature_name:
-            Deprecated, use :meth:`from_networkx`.
-        target_name:
-            Deprecated, use :meth:`from_networkx`.
         edge_weight_label:
             Deprecated, use :meth:`from_networkx`.
         node_features:
@@ -223,8 +225,6 @@ class StellarGraph:
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
-        target_name=globalvar.TARGET_ATTR_NAME,
         edge_weight_label=None,
         node_features=None,
     ):
@@ -1127,8 +1127,6 @@ class StellarDiGraph(StellarGraph):
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
-        target_name=globalvar.TARGET_ATTR_NAME,
         edge_weight_label=None,
         node_features=None,
     ):
@@ -1146,8 +1144,6 @@ class StellarDiGraph(StellarGraph):
             graph=graph,
             node_type_name=node_type_name,
             edge_type_name=edge_type_name,
-            feature_name=feature_name,
-            target_name=target_name,
             edge_weight_label=edge_weight_label,
             node_features=node_features,
         )
