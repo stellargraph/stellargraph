@@ -23,14 +23,16 @@ def test_seeded_per_batch():
     num_iter = 10
     seed = 0
 
-    def get_batches():
+    # different permutations of batch numbers
+    batch_nums_perms = [np.random.permutation(num_batches) for _ in range(num_iter)]
+
+    def get_batches(batch_nums):
         s = SeededPerBatch(create_with_seed=lambda x: x, seed=seed)
         batches = [0] * num_batches
 
-        # get batches in random order
-        for batch_num in np.random.permutation(num_batches):
+        for batch_num in batch_nums:
             batches[batch_num] = s[batch_num]
 
         return tuple(batches)
 
-    assert len({get_batches() for _ in range(num_iter)}) == 1
+    assert len({get_batches(batch_nums) for batch_nums in batch_nums_perms}) == 1
