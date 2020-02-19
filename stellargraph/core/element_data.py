@@ -66,13 +66,25 @@ class ExternalIdIndex:
         """
         return (0 <= ilocs) & (ilocs < len(self))
 
-    def to_iloc(self, ids, smaller_type=True) -> np.ndarray:
+    def require_valid(self, query_ids, ilocs: np.ndarray) -> np.ndarray:
+        valid = self.is_valid(ilocs)
+
+        if not valid.all():
+            missing_values = np.asarray(query_ids)[~valid]
+
+            if len(missing_values) == 1:
+                raise KeyError(missing_values[0])
+
+            raise KeyError(missing_values)
+
+    def to_iloc(self, ids, smaller_type=True, strict=False) -> np.ndarray:
         """
         Convert external IDs ``ids`` to integer locations.
 
         Args:
             ids: a collection of external IDs
             smaller_type: if True, convert the ilocs to the smallest type that can hold them, to reduce storage
+            strict: if True, check that all IDs are known and throw a KeyError if not
 
         Returns:
             A numpy array of the integer locations for each id that exists, with missing IDs
@@ -80,6 +92,9 @@ class ExternalIdIndex:
             smaller_type is False)
         """
         internal_ids = self._index.get_indexer(ids)
+        if strict:
+            self.require_valid(ids, internal_ids)
+
         # reduce the storage required (especially useful if this is going to be stored rather than
         # just transient)
         if smaller_type:
