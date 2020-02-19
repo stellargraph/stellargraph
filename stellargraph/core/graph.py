@@ -320,13 +320,22 @@ class StellarGraph:
             directed) instance representing the data in ``graph`` and ``node_features``.
         """
         if node_type_name is not None:
-            warnings.warn("the 'node_type_name' parameter is has been replaced by 'node_type_attr'", DeprecationWarning)
+            warnings.warn(
+                "the 'node_type_name' parameter is has been replaced by 'node_type_attr'",
+                DeprecationWarning,
+            )
             node_type_attr = node_type_name
         if edge_type_name is not None:
-            warnings.warn("the 'edge_type_name' parameter is has been replaced by 'edge_type_attr'", DeprecationWarning)
+            warnings.warn(
+                "the 'edge_type_name' parameter is has been replaced by 'edge_type_attr'",
+                DeprecationWarning,
+            )
             edge_type_attr = edge_type_name
         if edge_weight_label is not None:
-            warnings.warn("the 'edge_weight_label' parameter is has been replaced by 'edge_weight_attr'", DeprecationWarning)
+            warnings.warn(
+                "the 'edge_weight_label' parameter is has been replaced by 'edge_weight_attr'",
+                DeprecationWarning,
+            )
             edge_weight_attr = edge_weight_label
 
         nodes, edges = convert.from_networkx(
@@ -342,7 +351,7 @@ class StellarGraph:
 
         cls = StellarDiGraph if graph.is_directed() else StellarGraph
         return cls(
-            nodes=nodes, edges=edges, edge_weight_label=edge_weight_label, dtype=dtype
+            nodes=nodes, edges=edges, edge_weight_label=edge_weight_attr, dtype=dtype
         )
 
     # customise how a missing attribute is handled to give better error messages for the NetworkX
