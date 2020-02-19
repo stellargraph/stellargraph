@@ -960,9 +960,7 @@ class EdgeSplitter(object):
                     sampled_edges.append((u, v, 0))  # the last entry is the class label
 
                     if self.g.is_directed():
-                        sampled_edges_set.update(
-                            {(u, v)}
-                        )
+                        sampled_edges_set.update({(u, v)})
                     else:
                         sampled_edges_set.update(
                             {(u, v), (v, u)}
@@ -1085,6 +1083,8 @@ class EdgeSplitter(object):
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         self.minedges_set = {(u[0], u[1]) for u in edges}
-        self.minedges_set.update({(u[1], u[0]) for u in edges})
+
+        if not self.g.is_directed():
+            self.minedges_set.update({(u[1], u[0]) for u in edges})
 
         return edges
