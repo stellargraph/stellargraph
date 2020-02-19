@@ -63,6 +63,9 @@ class StellarGraph:
 
     - it is *undirected* if the direction does not matter
 
+    - every StellarGraph can be a *multigraph*, meaning there can be multiple edges between any two
+      nodes
+
     To create a StellarGraph object, at a minimum pass the nodes and edges as Pandas
     DataFrames. Each row of the nodes DataFrame represents a node in the graph, where the index is
     the ID of the node. Each row of the edges DataFrame represents an edge, where the index is the
