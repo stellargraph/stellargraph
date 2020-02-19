@@ -321,19 +321,19 @@ class StellarGraph:
         """
         if node_type_name is not None:
             warnings.warn(
-                "the 'node_type_name' parameter is has been replaced by 'node_type_attr'",
+                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
                 DeprecationWarning,
             )
             node_type_attr = node_type_name
         if edge_type_name is not None:
             warnings.warn(
-                "the 'edge_type_name' parameter is has been replaced by 'edge_type_attr'",
+                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
                 DeprecationWarning,
             )
             edge_type_attr = edge_type_name
         if edge_weight_label is not None:
             warnings.warn(
-                "the 'edge_weight_label' parameter is has been replaced by 'edge_weight_attr'",
+                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
                 DeprecationWarning,
             )
             edge_weight_attr = edge_weight_label
