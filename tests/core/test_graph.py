@@ -926,9 +926,9 @@ def test_from_networkx_smoke():
 
     from_nx = StellarGraph.from_networkx(
         g,
-        edge_weight_label="weight_attr",
-        node_type_name="node_label",
-        edge_type_name="edge_label",
+        edge_weight_attr="weight_attr",
+        node_type_attr="node_label",
+        edge_type_attr="edge_label",
         node_type_default="b",
         edge_type_default="X",
         node_features="features",
@@ -966,3 +966,16 @@ def test_from_networkx_smoke():
     both(
         lambda g: dict(zip(*g.edges(include_edge_type=True, include_edge_weight=True)))
     )
+
+def test_from_networkx_deprecations():
+    with pytest.warns(None) as record:
+        StellarGraph.from_networkx(
+            nx.Graph(),
+            edge_weight_label="w",
+            node_type_name="n",
+            edge_type_name="e",
+        )
+
+    assert 'node_type_name' in str(record.pop(DeprecationWarning).message)
+    assert 'edge_type_name' in str(record.pop(DeprecationWarning).message)
+    assert 'edge_weight_label' in str(record.pop(DeprecationWarning).message)
