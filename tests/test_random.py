@@ -23,7 +23,7 @@ def test_seeded_per_batch():
     num_iter = 10
     seed = 0
 
-    # different permutations of batch numbers
+    # different permutations of batch numbers should always give the same seeds
     batch_nums_perms = [np.random.permutation(num_batches) for _ in range(num_iter)]
 
     def get_batches(batch_nums):
