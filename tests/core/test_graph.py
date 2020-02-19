@@ -924,15 +924,19 @@ def test_from_networkx_smoke():
     g.add_edge(1, 2, edge_label="Y")
     g.add_edge(1, 1)
 
-    from_nx = StellarGraph.from_networkx(
-        g,
-        edge_weight_label="weight_attr",
-        node_type_name="node_label",
-        edge_type_name="edge_label",
-        node_type_default="b",
-        edge_type_default="X",
-        node_features="features",
-    )
+    with pytest.warns(
+        UserWarning,
+        match=r"found the following nodes \(of type 'b'\) without features, using 4-dimensional zero vector: 2",
+    ):
+        from_nx = StellarGraph.from_networkx(
+            g,
+            edge_weight_label="weight_attr",
+            node_type_name="node_label",
+            edge_type_name="edge_label",
+            node_type_default="b",
+            edge_type_default="X",
+            node_features="features",
+        )
 
     raw = StellarGraph(
         nodes={
