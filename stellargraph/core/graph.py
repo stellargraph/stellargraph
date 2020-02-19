@@ -162,7 +162,7 @@ class StellarGraph:
         edges (DataFrame or dict of hashable to Pandas DataFrame):
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
             and (optionally) weight column (the names of each are taken from the ``source_column``,
-            ``target_column`` and ``edge_weight_label`` parameters). If there is only one type of
+            ``target_column`` and ``edge_weight_column`` parameters). If there is only one type of
             edges, a DataFrame can be passed directly, and the type defaults to the
             ``edge_type_default`` parameter. Edges have an ID taken from the index of the dataframe,
             and they have to be unique across all types.
@@ -234,7 +234,7 @@ class StellarGraph:
         if edge_weight_label is not None:
             # `edge_weight_label` -> `edge_weight_column`
             warnings.warn(
-                "the 'edge_weight_label' parameters has been replaced by 'edge_weight_column'",
+                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_column'",
                 DeprecationWarning,
             )
             edge_weight_column = edge_weight_label
@@ -254,7 +254,7 @@ class StellarGraph:
             # stopped using it
             if nodes is not None or edges is not None:
                 raise ValueError(
-                    "graph: expected no value when using new 'nodes' and 'edges' parameters, found: {graph!r}"
+                    "graph: expected no value when using 'nodes' and 'edges' parameters, found: {graph!r}"
                 )
 
             nodes, edges = convert.from_networkx(
