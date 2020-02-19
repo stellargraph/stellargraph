@@ -45,7 +45,7 @@ class GraphWaveGenerator:
     # of -1e-3 is used
     _INITIAL_EIGS_SIGMA = -1e-3
 
-    def __init__(self, G, scales=(5, 10), method="eigs", deg=20, num_eigenvecs=None, min_delta=0.1):
+    def __init__(self, G, scales=(5, 10), deg=20):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
@@ -75,113 +75,26 @@ class GraphWaveGenerator:
 
         # Function to map node IDs to indices for quicker node index lookups
         self._node_lookup = G._get_index_for_nodes
-        self.method = method
         self.deg = deg
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
         laplacian = laplacian.tocoo()
 
-        # FIXME(#853): add in option to compute wavelet transform using Chebysev polynomials
-
         self.scales = np.array(scales).astype(np.float32)
 
-        if self.method == "eigs":
-            if num_eigenvecs is None:
-                eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
-                    laplacian, self.scales.min(), min_delta=min_delta, initial_sigma=self._INITIAL_EIGS_SIGMA,
-                )
-            else:
-                eigen_vals, eigen_vecs = eigs(laplacian, k=num_eigenvecs, sigma=self._INITIAL_EIGS_SIGMA)
-                eigen_vals = np.real(eigen_vals).astype(np.float32)
+        max_eig = eigs(laplacian, k=1, return_eigenvectors=False)
+        max_eig = np.real(max_eig).astype(np.float32)[0]
+        xs = np.linspace(0, max_eig, 100)
 
-            self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
+        coeffs = [np.polynomial.chebyshev.chebfit(xs, np.exp(-scale * xs), deg=self.deg) for scale in scales]
+        self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0).astype(np.float32))
 
-            # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
-            # (each column corresponds to a node)
-            # to avoid computing a dense NxN matrix when only several eigenvalues are specified
-            # U exp(-scale * eigenvalues) is computed and stored - which is an N x num_eigenvectors matrix
-            # the columns of U exp(-scale * eigenvalues) U^T are then computed on the fly in generator.flow()
-
-            # a list of [U exp(-scale * eigenvalues) for scale in scales]
-            Ues = [self.eigen_vecs * np.exp(-s * eigen_vals) for s in scales]
-            self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
-
-        elif self.method == "cheby":
-            max_eig = eigs(laplacian, k=1, return_eigenvectors=False)
-            max_eig = np.real(max_eig).astype(np.float32)[0]
-            xs = np.linspace(0, max_eig, 100)
-
-            coeffs = [np.polynomial.chebyshev.chebfit(xs, np.exp(-scale * xs), deg=self.deg) for scale in scales]
-            self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0).astype(np.float32))
-
-            self.laplacian = tf.sparse.SparseTensor(
-                indices=np.column_stack((laplacian.row, laplacian.col)),
-                values=laplacian.data.astype(np.float32),
-                dense_shape=laplacian.shape,
-            )
-        else:
-            raise ValueError("method must be either 'cheby' or 'eigs', received {}".format(self.method))
-
-    @staticmethod
-    def _sufficiently_sampled_eigs(laplacian, min_scale, min_delta, initial_sigma):
-        """
-        This function calculates increasing numbers of eigenvalues using a binary search until a sufficient number of
-        eigenvalues have been found to ensure accurate results of the GraphWave algorithm.
-
-        Args:
-            laplacian: the un-normalized graph laplacian.
-            min_scale: the smallest wavelet scale used.
-            min_delta: the minimum relative change in the eigenvalue norm. A relative change less than this stops
-                the eigenvalue search.
-        Returns:
-            eigen_vals: the eigenvalues found.
-            eigen_vecs: the eigenvectors found.
-        """
-        max_num_eigs = laplacian.shape[0] - 2
-
-        prev_eig_norm = 0.0
-        eig_max = initial_sigma
-        k = min(16, max_num_eigs)
-        eigen_vals = np.array([], dtype=np.float32)
-        eigen_vecs = []
-
-        # use increasing k (doubling per iter) until the filtered eigenvalue l2 norm
-        # increases by less than 10% since the last iter.
-        while True:
-            # if sigma=eigenvalue eigs will throw an error
-            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max + 1e-7)
-            new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
-
-            is_valid = ~np.isnan(new_eigen_vals) * ~np.isnan(new_eigen_vecs).any(0)
-            new_eigen_vals, new_eigen_vecs = (
-                new_eigen_vals[is_valid],
-                new_eigen_vecs[:, is_valid],
-            )
-
-            is_new_eig = new_eigen_vals > eig_max
-            new_eigen_vecs, new_eigen_vals = (
-                new_eigen_vecs[:, is_new_eig],
-                new_eigen_vals[is_new_eig],
-            )
-
-            # append new eigenvalues and eigen vectors
-            eigen_vals = np.append(eigen_vals, new_eigen_vals)
-            eigen_vecs.append(new_eigen_vecs)
-            eig_norm = np.linalg.norm(np.exp(-min_scale * eigen_vals))
-
-            if len(eigen_vals) != 0:
-                eig_max = eigen_vals.max()
-
-            if eig_norm < (1 + min_delta) * prev_eig_norm:
-                break
-            elif k >= max_num_eigs:
-                break
-
-            prev_eig_norm = eig_norm
-            k = min(2 * k, max_num_eigs)
-
-        return eigen_vals, np.concatenate(eigen_vecs, axis=1)
+        self.laplacian = tf.sparse.SparseTensor(
+            indices=np.column_stack((laplacian.row, laplacian.col)),
+            values=laplacian.data.astype(np.float32),
+            dense_shape=laplacian.shape,
+        )
 
     def flow(
         self,
@@ -209,23 +122,13 @@ class GraphWaveGenerator:
         """
         ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
-        if self.method == "eigs":
-
-            # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
-            dataset = tf.data.Dataset.from_tensor_slices(
-                self.eigen_vecs[self._node_lookup(node_ids)]
-            ).map(
-                lambda x: tf.linalg.matvec(self.Ues, x),
-                num_parallel_calls=num_parallel_calls,
-            )
-        else:
-            # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
-            dataset = tf.data.Dataset.from_tensor_slices(
-                tf.sparse.eye(int(self.laplacian.shape[0]))
-            ).map(
-                lambda x: _chebyshev(x, self.laplacian, self.coeffs, self.deg),
-                num_parallel_calls=num_parallel_calls,
-            )
+        # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
+        dataset = tf.data.Dataset.from_tensor_slices(
+            tf.sparse.eye(int(self.laplacian.shape[0]))
+        ).map(
+            lambda x: _chebyshev(x, self.laplacian, self.coeffs, self.deg),
+            num_parallel_calls=num_parallel_calls,
+        )
 
         # empirically calculate the characteristic function for each column of U exp(-scale * eigenvalues) U^T
         dataset = dataset.map(
