@@ -84,10 +84,16 @@ class GraphWaveGenerator:
         self.scales = np.array(scales).astype(np.float32)
 
         max_eig = eigs(laplacian, k=1, return_eigenvectors=False)
-        max_eig = np.real(max_eig).astype(np.float32)[0]
-        xs = np.linspace(0, max_eig, 100)
+        self.max_eig = np.real(max_eig).astype(np.float32)[0]
 
-        coeffs = [np.polynomial.chebyshev.chebfit(xs, np.exp(-scale * xs), deg=self.deg) for scale in scales]
+        # numpy.polynomial.chebyshev.Chebyshev.interpolate
+        coeffs = [
+            np.polynomial.chebyshev.Chebyshev.interpolate(
+                lambda x: np.exp(-s * x), domain=[0, self.max_eig], deg=deg
+            ).coef
+            for s in scales
+        ]
+
         self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0).astype(np.float32))
 
         self.laplacian = tf.sparse.SparseTensor(
@@ -126,7 +132,9 @@ class GraphWaveGenerator:
         dataset = tf.data.Dataset.from_tensor_slices(
             tf.sparse.eye(int(self.laplacian.shape[0]))
         ).map(
-            lambda x: _chebyshev(x, self.laplacian, self.coeffs, self.deg),
+            lambda x: _chebyshev(
+                x, self.laplacian, self.coeffs, self.deg, self.max_eig
+            ),
             num_parallel_calls=num_parallel_calls,
         )
 
@@ -179,28 +187,34 @@ def _empirical_characteristic_function(samples, ts):
     return embedding
 
 
-def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg):
+def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg, max_eig):
     """
     This function calculates one column of the Chebyshev approximation of exp(-scale * laplacian) for
     all scales.
 
     Args:
-        one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column to calculate.
+        one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column (node) to calculate.
         laplacian (SparseTensor): the unormalized graph laplacian
         coeffs: the Chebyshev coefficients for exp(-scale * x) for each scale in the shape (num_scales, deg)
         deg: the degree of the Chebyshev polynomial
     Returns:
-        Tensor
+        (num_scales, num_nodes) tensor of the wavelets for each scale for the specified node.
     """
+
+    a = max_eig / 2
+
     T_0 = tf.reshape(
         tf.sparse.to_dense(one_hot_encoded_row), shape=(laplacian.shape[0], 1)
     )
-    T_1 = K.dot(laplacian, T_0)
+
+    T_1 = (K.dot(laplacian, T_0) - a * T_0) / a
+
     cheby_polys = [T_0, T_1]
     for i in range(deg - 1):
-        cheby_poly = 2 * K.dot(laplacian, cheby_polys[-1]) - cheby_polys[-2]
+        cheby_poly = (2 / a) * (
+            K.dot(laplacian, cheby_polys[-1]) - a * cheby_polys[-1]
+        ) - cheby_polys[-2]
         cheby_polys.append(cheby_poly)
 
     cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=0), axis=-1)
     return tf.matmul(coeffs, cheby_polys)
-
