@@ -33,10 +33,14 @@ def example_graph_schema():
         for ii in range(bb):
             schema["B"].append(EdgeType("B", "b%d" % ii, "B"))
 
+        edge_types = {}
+        for et in it.chain(*schema.values()):
+            edge_types[et] = hash(et) # "random" count for each one
+
         return GraphSchema(
             is_directed=False,
             node_types=sorted(schema.keys()),
-            edge_types=sorted(set(it.chain(*schema.values()))),
+            edge_types=edge_types,
             schema=schema,
         )
 
@@ -50,18 +54,20 @@ def test_homogeneous_graph_schema(example_graph_schema):
     assert gs.node_index("A") == 0
     assert gs.node_index("B") == 1
 
-    assert gs.edge_index(EdgeType("A", "a0", "A")) == 0
-    assert gs.edge_index(EdgeType("A", "ab0", "B")) == 1
-    assert gs.edge_index(EdgeType("B", "ab0", "A")) == 2
+    with pytest.warns(DeprecationWarning, match="edge_index is deprecated"):
+        assert gs.edge_index(EdgeType("A", "a0", "A")) == 0
+        assert gs.edge_index(EdgeType("A", "ab0", "B")) == 1
+        assert gs.edge_index(EdgeType("B", "ab0", "A")) == 2
 
     # Directed schema
     gs = example_graph_schema(ba=0, bb=0)
 
-    assert gs.edge_index(EdgeType("A", "a0", "A")) == 0
-    assert gs.edge_index(EdgeType("A", "ab0", "B")) == 1
+    with pytest.warns(DeprecationWarning, match="edge_index is deprecated"):
+        assert gs.edge_index(EdgeType("A", "a0", "A")) == 0
+        assert gs.edge_index(EdgeType("A", "ab0", "B")) == 1
 
-    with pytest.raises(ValueError):
-        gs.edge_index(EdgeType("B", "ab0", "A"))
+        with pytest.raises(ValueError):
+            gs.edge_index(EdgeType("B", "ab0", "A"))
 
 
 def test_graph_schema_sampling(example_graph_schema):

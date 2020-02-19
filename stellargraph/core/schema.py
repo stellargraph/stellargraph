@@ -74,9 +74,13 @@ class GraphSchema:
         Returns:
             Numerical edge type index
         """
+        warnings.warn(
+            "edge_index is deprecated; manipulate `edge_types` directly manually instead (e.g. `lookup = {et: index for index, et in enumerate(sorted(schema.edge_types))}`)",
+            DeprecationWarning
+        )
         if edge_type in self.edge_types:
-            index = self.edge_types.index(edge_type)
-
+            # this is a O(n) implementation of finding the position in the ordered list
+            index = sum(other < edge_type for other in self.edge_types.keys())
         else:
             raise ValueError("Edge key '{}' not found.".format(edge_type))
 

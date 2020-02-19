@@ -699,33 +699,6 @@ class StellarGraph:
             self._nodes.types.from_iloc(tgt_ilocs),
         )
 
-    def _unique_type_triples(self, *, return_counts, selector=slice(None)):
-        all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
-
-        if len(all_type_ilocs) == 0:
-            # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
-            # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
-            # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
-            if return_counts:
-                ret = None, [], []
-            else:
-                ret = None, []
-        else:
-            ret = np.unique(
-                all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
-            )
-
-        edge_ilocs = ret[1]
-        # we've now got the indices for an edge with each triple, along with the counts of them, so
-        # we can query to get the actual edge types (this is, at the time of writing, easier than
-        # getting the actual type for each type iloc in the triples)
-        unique_ets = self._edge_type_triples(edge_ilocs)
-
-        if return_counts:
-            return zip(*unique_ets, ret[2])
-
-        return zip(*unique_ets)
-
     def info(self, show_attributes=True, sample=None):
         """
         Return an information string summarizing information on the current graph.
@@ -767,10 +740,7 @@ class StellarGraph:
         lines.append("")
         lines.append(" Edge types:")
 
-        # FIXME: it would be better for the schema to just include the counts directly
-        for src_ty, rel_ty, tgt_ty, count in self._unique_type_triples(
-            return_counts=True
-        ):
+        for (src_ty, rel_ty, tgt_ty), count in gs.edge_types.items():
             et = EdgeType(src_ty, rel_ty, tgt_ty)
             lines.append(f"    {str_edge_type(et)}: [{count}]")
 
@@ -795,9 +765,6 @@ class StellarGraph:
             GraphSchema object.
         """
 
-        graph_schema = {nt: set() for nt in self.node_types}
-        edge_types = set()
-
         if nodes is None:
             selector = slice(None)
         else:
@@ -805,20 +772,34 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        for n1, rel, n2 in self._unique_type_triples(
-            selector=selector, return_counts=False
-        ):
+        all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
+
+        if len(all_type_ilocs) == 0:
+            # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
+            # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
+            # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
+            edge_ilocs = counts = []
+        else:
+            _, edge_ilocs, counts = np.unique(all_type_ilocs, axis=0, return_index=True, return_counts=True)
+
+        # we've now got the indices for an edge with each triple, along with the counts of them, so
+        # we can query to get the actual edge types (this is, at the time of writing, easier than
+        # getting the actual type for each type iloc in the triples)
+        unique_ets = self._edge_type_triples(edge_ilocs)
+
+        graph_schema = {nt: set() for nt in self.node_types}
+        edge_types = defaultdict(int)
+
+        for n1, rel, n2, count in zip(*unique_ets, counts):
             edge_type_tri = EdgeType(n1, rel, n2)
-            edge_types.add(edge_type_tri)
+            edge_types[edge_type_tri] += count
+
             graph_schema[n1].add(edge_type_tri)
 
             if not self.is_directed():
                 edge_type_tri = EdgeType(n2, rel, n1)
-                edge_types.add(edge_type_tri)
+                edge_types[edge_type_tri] += count
                 graph_schema[n2].add(edge_type_tri)
-
-        # Create ordered list of edge_types
-        edge_types = sorted(edge_types)
 
         # Create keys for node and edge types
         schema = {
@@ -827,7 +808,7 @@ class StellarGraph:
         }
 
         return GraphSchema(
-            self.is_directed(), sorted(self.node_types), edge_types, schema
+            self.is_directed(), sorted(self.node_types), dict(edge_types), schema
         )
 
     def node_degrees(self) -> Mapping[Any, int]:
