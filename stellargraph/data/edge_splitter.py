@@ -708,7 +708,9 @@ class EdgeSplitter(object):
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         edges_set = set(edges)
-        edges_set.update({(e[1], e[0]) for e in edges})
+
+        if not self.g.is_directed():
+            edges_set.update({(e[1], e[0]) for e in edges})
         sampled_edges_set = set()
 
         start_nodes = list(self.g.nodes(data=True))
@@ -761,7 +763,9 @@ class EdgeSplitter(object):
                                     (u[0], v, 0)
                                 )  # the last entry is the class label
                                 sampled_edges_set.add((u[0], v))
-                                sampled_edges_set.add((v, u[0]))
+
+                                if not self.g.is_directed():
+                                    sampled_edges_set.add((v, u[0]))
                                 count += 1
                                 if count % 1000 == 0:
                                     print("Sampled {} negatives".format(count))
@@ -833,7 +837,10 @@ class EdgeSplitter(object):
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         edges_set = set(edges)
-        edges_set.update({(e[1], e[0]) for e in edges})
+
+        if not self.g.is_directed():
+            edges_set.update({(e[1], e[0]) for e in edges})
+
         sampled_edges_set = set()
 
         start_nodes = list(self.g.nodes(data=False))
@@ -876,7 +883,9 @@ class EdgeSplitter(object):
                                     (u, v, 0)
                                 )  # the last entry is the class label
                                 sampled_edges_set.add((u, v))
-                                sampled_edges_set.add((v, u))
+
+                                if not self.g.is_directed():
+                                    sampled_edges_set.add((v, u))
                                 count += 1
                                 self.negative_edge_node_distances.append(d)
                                 if count % 1000 == 0:
@@ -926,7 +935,10 @@ class EdgeSplitter(object):
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         edges_set = set(edges)
-        edges_set.update({(u[1], u[0]) for u in edges})
+
+        if not self.g.is_directed():
+            edges_set.update({(u[1], u[0]) for u in edges})
+
         sampled_edges_set = set()
 
         start_nodes = list(self.g.nodes(data=False))
@@ -946,9 +958,15 @@ class EdgeSplitter(object):
                     and ((u, v) not in sampled_edges_set)
                 ):
                     sampled_edges.append((u, v, 0))  # the last entry is the class label
-                    sampled_edges_set.update(
-                        {(u, v), (v, u)}
-                    )  # test for bi-directional edges
+
+                    if self.g.is_directed():
+                        sampled_edges_set.update(
+                            {(u, v)}
+                        )
+                    else:
+                        sampled_edges_set.update(
+                            {(u, v), (v, u)}
+                        )  # test for bi-directional edges
                     count += 1
                 if count == num_edges_to_sample:
                     return sampled_edges
@@ -1004,7 +1022,9 @@ class EdgeSplitter(object):
         # to speed up lookup of edges in edges list, create a set the values stored are the concatenation of
         # the source and target node ids.
         edges_set = set(edges)
-        edges_set.update({(u[1], u[0]) for u in edges})
+
+        if not self.g.is_directed():
+            edges_set.update({(u[1], u[0]) for u in edges})
         sampled_edges_set = set()
 
         start_nodes = list(self.g.nodes(data=True))
@@ -1029,7 +1049,11 @@ class EdgeSplitter(object):
                     sampled_edges.append(
                         (u[0], v[0], 0)
                     )  # the last entry is the class label
-                    sampled_edges_set.update({(u[0], v[0]), (v[0], u[0])})
+
+                    if self.g.is_directed():
+                        sampled_edges_set.update({(v[0], u[0])})
+                    else:
+                        sampled_edges_set.update({(u[0], v[0]), (v[0], u[0])})
                     count += 1
                     if count % 1000 == 0:
                         print("Sampled", count, "negative edges")
