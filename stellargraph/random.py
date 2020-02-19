@@ -98,9 +98,10 @@ class SeededPerBatch:
         except IndexError:
             # always create a new seeded sampler in ascending order of batch number
             # this ensures seeds are deterministic even when batches are run in parallel
-            for n in range(len(self._walkers), batch_num + 1):
-                seed = self._rs.randrange(2 ** 32)
-                self._walkers.append(self._create_with_seed(seed))
+            self._walkers.extend(
+                self._create_with_seed(self._rs.randrange(2 ** 32))
+                for _ in range(len(self._walkers), batch_num + 1)
+            )
             return self._walkers[batch_num]
         finally:
             self._lock.release()
