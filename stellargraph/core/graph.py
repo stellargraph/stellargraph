@@ -390,7 +390,7 @@ class StellarGraph:
 
         cls = StellarDiGraph if graph.is_directed() else StellarGraph
         return cls(
-            nodes=nodes, edges=edges, edge_weight_label=edge_weight_label, dtype=dtype
+            nodes=nodes, edges=edges, edge_weight_column=edge_weight_label, dtype=dtype
         )
 
     # customise how a missing attribute is handled to give better error messages for the NetworkX
