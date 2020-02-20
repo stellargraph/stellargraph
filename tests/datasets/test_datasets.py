@@ -27,11 +27,16 @@ from unittest.mock import patch
 # use parametrize to automatically test each of the datasets that (directly) derive from DatasetLoader
 def _marks(cls):
     if cls == BlogCatalog3:
-        return pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
+        return pytest.mark.xfail(
+            reason="https://github.com/stellargraph/stellargraph/issues/907"
+        )
     return []
 
 
-@pytest.mark.parametrize("dataset_class", [pytest.param(cls, marks=_marks(cls)) for cls in DatasetLoader.__subclasses__()])
+@pytest.mark.parametrize(
+    "dataset_class",
+    [pytest.param(cls, marks=_marks(cls)) for cls in DatasetLoader.__subclasses__()],
+)
 def test_dataset_download(dataset_class):
     dataset_class().download(ignore_cache=True)
 
