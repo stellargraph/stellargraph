@@ -12,7 +12,7 @@ Data
 ----------------
 
 .. automodule:: stellargraph.data
-  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, TemporalRandomWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
+  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, TemporalRandomWalk, UnsupervisedSampler, EdgeSplitter, from_epgm
 
 
 Generators
@@ -90,6 +90,15 @@ Watch Your Step model
 .. automodule:: stellargraph.layer.watch_your_step
   :members: WatchYourStep
 
+
+Knowledge Graph models
+----------------------
+
+.. automodule:: stellargraph.mapper.knowledge_graph
+  :members: KGTripleGenerator
+
+.. automodule:: stellargraph.layer.knowledge_graph
+  :members: ComplEx, ComplExScore
 
 Link prediction layers
 ------------------------

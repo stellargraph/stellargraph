@@ -132,14 +132,7 @@ DEFAULT_WEIGHT = np.float32(1)
 
 
 def convert_edges(
-    data,
-    node_data: NodeData,
-    *,
-    name,
-    default_type,
-    source_column,
-    target_column,
-    weight_column,
+    data, *, name, default_type, source_column, target_column, weight_column,
 ):
     converter = ColumnarConverter(
         name,
@@ -155,7 +148,7 @@ def convert_edges(
     edges, edge_features = converter.convert(data)
     assert all(features is None for features in edge_features.values())
 
-    return EdgeData(edges, node_data)
+    return EdgeData(edges)
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(

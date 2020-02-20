@@ -66,13 +66,25 @@ class ExternalIdIndex:
         """
         return (0 <= ilocs) & (ilocs < len(self))
 
-    def to_iloc(self, ids, smaller_type=True) -> np.ndarray:
+    def require_valid(self, query_ids, ilocs: np.ndarray) -> np.ndarray:
+        valid = self.is_valid(ilocs)
+
+        if not valid.all():
+            missing_values = np.asarray(query_ids)[~valid]
+
+            if len(missing_values) == 1:
+                raise KeyError(missing_values[0])
+
+            raise KeyError(missing_values)
+
+    def to_iloc(self, ids, smaller_type=True, strict=False) -> np.ndarray:
         """
         Convert external IDs ``ids`` to integer locations.
 
         Args:
             ids: a collection of external IDs
             smaller_type: if True, convert the ilocs to the smallest type that can hold them, to reduce storage
+            strict: if True, check that all IDs are known and throw a KeyError if not
 
         Returns:
             A numpy array of the integer locations for each id that exists, with missing IDs
@@ -80,6 +92,9 @@ class ExternalIdIndex:
             smaller_type is False)
         """
         internal_ids = self._index.get_indexer(ids)
+        if strict:
+            self.require_valid(ids, internal_ids)
+
         # reduce the storage required (especially useful if this is going to be stored rather than
         # just transient)
         if smaller_type:
@@ -289,15 +304,17 @@ class EdgeData(ElementData):
     """
     Args:
         shared (dict of type name to pandas DataFrame): information for the edges of each type
-        node_data (NodeData): the nodes that these edges correspond to
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, node_data: NodeData):
+    def __init__(self, shared):
         super().__init__(shared)
 
-        self._nodes = node_data
+        # cache these columns to avoid having to do more method and dict look-ups
+        self.sources = self._column(SOURCE)
+        self.targets = self._column(TARGET)
+        self.weights = self._column(WEIGHT)
 
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
@@ -347,30 +364,6 @@ class EdgeData(ElementData):
         """
         adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
-
-    @property
-    def sources(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the source node ID for each edge.
-        """
-        return self._column(SOURCE)
-
-    @property
-    def targets(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the target node ID for each edge.
-        """
-        return self._column(TARGET)
-
-    @property
-    def weights(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the weight for each edge.
-        """
-        return self._column(WEIGHT)
 
     def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
         """

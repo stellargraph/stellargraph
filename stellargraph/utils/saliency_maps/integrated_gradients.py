@@ -28,148 +28,209 @@ actual input. Therefore, it could solve the problem we described above and give 
 """
 
 import numpy as np
-from .saliency import GradientSaliency
+from tensorflow.keras import backend as K
 from scipy.sparse import csr_matrix
+import tensorflow as tf
+from stellargraph.mapper import SparseFullBatchSequence, FullBatchSequence
 
 
-class IntegratedGradients(GradientSaliency):
+class IntegratedGradients:
     """
     A SaliencyMask class that implements the integrated gradients method.
     """
 
     def __init__(self, model, generator):
-        super().__init__(model, generator)
+        """
+        Args:
+            model (Keras model object): The differentiable graph model object.
+                For a dense model, the model.input should contain two tensors:
+                    - features: The placeholder of the feature matrix.
+                    - adj: The placeholder of the adjacency matrix.
+                For a sparse model, the model.input should contain three tensors:
+                    - features: The placeholder of the feature matrix.
+                    - adj_index: The placeholder of the adjacency matrix.
+                    - adj_values: The placeholder of the adjacency matrix.
+                The model.output (Keras tensor) is the tensor of model prediction output.
+                    This is typically the logit or softmax output.
+
+        """
+        # Set sparse flag from the generator
+        self._is_sparse = generator.use_sparse
+
+        if self._is_sparse:
+            if not isinstance(generator, SparseFullBatchSequence):
+                raise TypeError(
+                    "The generator supplied has to be an object of SparseFullBatchSequence for sparse adjacency matrix."
+                )
+            if len(model.input) != 4:
+                raise RuntimeError(
+                    "Keras model for sparse adjacency is expected to have four inputs"
+                )
+            self._adj = generator.A_values
+            self._adj_inds = generator.A_indices
+        else:
+            if not isinstance(generator, FullBatchSequence):
+                raise TypeError(
+                    "The generator supplied has to be an object of FullBatchSequence for dense adjacency matrix."
+                )
+            if len(model.input) != 3:
+                raise RuntimeError(
+                    "Keras model for dense adjacency is expected to have three inputs"
+                )
+
+            self._adj = generator.A_dense
+
+        # Extract features from generator
+        self._features = generator.features
+        self._model = model
 
     def get_integrated_node_masks(
-        self,
-        node_idx,
-        class_of_interest,
-        X_val=None,
-        A_index=None,
-        A_val=None,
-        X_baseline=None,
-        steps=20,
+        self, node_idx, class_of_interest, features_baseline=None, steps=20,
     ):
         """
         Args:
-        X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
-                                                   which are used to compute the vanilla gradients.
-        X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
-                                              matrix with the size of the original feature matrix.
-        steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
+            node_idx: the index of the node to calculate gradients for.
+            class_of_interest: the index for the class probability that the gradients will be calculated for.
+            features_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set
+                X_baseline to a all-zero matrix with the size of the original feature matrix.
+            steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
-        return (Numpy array): Integrated gradients for the node features.
+        Returns
+            (Numpy array): Integrated gradients for the node features.
         """
-        if X_val is None:
-            X_val = self.X
-        if A_index is None and self.is_sparse:
-            A_index = self.A_indices
-        if A_val is None:
-            A_val = self.A
-        if X_baseline is None:
-            X_baseline = np.zeros(X_val.shape)
-        X_diff = X_val - X_baseline
+        if features_baseline is None:
+            features_baseline = np.zeros(self._features.shape)
 
-        total_gradients = np.zeros(X_val.shape)
+        features_diff = self._features - features_baseline
+        total_gradients = np.zeros(self._features.shape)
+
         for alpha in np.linspace(0, 1, steps):
-            X_step = X_baseline + alpha * X_diff
-            total_gradients += self.get_node_masks(
-                node_idx, class_of_interest, X_step, A_index, A_val
+            features_step = features_baseline + alpha * features_diff
+
+            if self._is_sparse:
+                model_input = [
+                    features_step,
+                    np.array([[node_idx]]),
+                    self._adj_inds,
+                    self._adj,
+                ]
+            else:
+                model_input = [features_step, np.array([[node_idx]]), self._adj]
+
+            model_input = [tf.convert_to_tensor(x) for x in model_input]
+            grads = self._compute_gradients(
+                model_input, class_of_interest, wrt=model_input[0]
             )
-        return np.squeeze(total_gradients * X_diff, 0)
+
+            total_gradients += grads
+
+        return np.squeeze(total_gradients * features_diff, 0)
 
     def get_integrated_link_masks(
         self,
         node_idx,
         class_of_interest,
         non_exist_edge=False,
-        X_val=None,
-        A_index=None,
-        A_val=None,
+        adj_baseline=None,
         steps=20,
-        A_baseline=None,
     ):
         """
         Args:
-        X_val, A_val, node_idx, class_of_interest: The feature matrix, adjacency matrix, target node index and class of interest
-                                                   which are used to compute the vanilla gradients.
-        X_baseline: For integrated gradients, X_baseline is the reference X to start with. Generally we should set X_baseline to a all-zero
-                                              matrix with the size of the original adjacency matrix.
-        steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.\
+            node_idx: the index of the node to calculate gradients for.
+            class_of_interest: the index for the class probability that the gradients will be calculated for.
+            non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges.
+                This is useful when we want to understand adding which edges could change the current predictions.
+                But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
+                could only accurately measure the importance of existing edges.
+            adj_baseline: For integrated gradients, adj_baseline is the reference adjacency matrix to start with. Generally
+                we should set A_baseline to an all-zero matrix or all-one matrix with the size of the original
+                A_baseline matrix.
+            steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
-        non_exist_edge (bool): Setting to True allows the function to get the importance for non-exist edges. This is useful when we want to understand
-            adding which edges could change the current predictions. But the results for existing edges are not reliable. Simiarly, setting to False ((A_baseline = all zero matrix))
-            could only accurately measure the importance of existing edges.
-
-        return (Numpy array): shape the same with A_val. Integrated gradients for the links.
+        Returns
+            (Numpy array): Integrated gradients for the links.
         """
-        if X_val is None:
-            X_val = self.X
-        if A_index is None and self.is_sparse:
-            A_index = self.A_indices
-        if A_val is None:
-            A_val = self.A
-        if A_baseline is None:
+        if adj_baseline is None:
             if non_exist_edge:
-                A_baseline = A_val
-                A_val = np.ones(A_baseline.shape)
+                adj_baseline = np.ones(self._adj.shape)
             else:
-                A_baseline = np.zeros(A_val.shape)
-        A_diff = A_val - A_baseline
-        total_gradients = np.zeros_like(A_val)
-        if self.is_sparse:
-            A_dense_shape = csr_matrix(
-                (A_val[0], (A_index[0, :, 0], A_index[0, :, 1]))
-            ).shape
-            total_gradients = csr_matrix(A_dense_shape)
-        for alpha in np.linspace(1.0 / steps, 1.0, steps):
-            A_step = A_baseline + alpha * A_diff
-            tmp = self.get_link_masks(
-                node_idx, class_of_interest, X_val, A_index, A_step
-            )
-            total_gradients += tmp
+                adj_baseline = np.zeros(self._adj.shape)
 
-        if self.is_sparse:
-            A_diff = csr_matrix((A_diff[0], (A_index[0, :, 0], A_index[0, :, 1])))
-            total_gradients = total_gradients.multiply(A_diff) / steps
+        adj_diff = self._adj - adj_baseline
+
+        total_gradients = np.zeros_like(self._adj)
+
+        for alpha in np.linspace(1.0 / steps, 1.0, steps):
+            adj_step = adj_baseline + alpha * adj_diff
+
+            if self._is_sparse:
+                model_input = [
+                    self._features,
+                    np.array([[node_idx]]),
+                    self._adj_inds,
+                    adj_step,
+                ]
+            else:
+                model_input = [
+                    self._features,
+                    np.array([[node_idx]]),
+                    adj_step,
+                ]
+
+            model_input = [tf.convert_to_tensor(x) for x in model_input]
+            grads = self._compute_gradients(
+                model_input, class_of_interest, wrt=model_input[-1]
+            )
+
+            total_gradients += grads.numpy()
+
+        if self._is_sparse:
+            total_gradients = csr_matrix(
+                (total_gradients[0], (self._adj_inds[0, :, 0], self._adj_inds[0, :, 1]))
+            )
+            adj_diff = csr_matrix(
+                (adj_diff[0], (self._adj_inds[0, :, 0], self._adj_inds[0, :, 1]))
+            )
+            total_gradients = total_gradients.multiply(adj_diff) / steps
         else:
             total_gradients = np.squeeze(
-                np.multiply(total_gradients, A_diff) / steps, 0
+                np.multiply(total_gradients, adj_diff) / steps, 0
             )
 
         return total_gradients
 
     def get_node_importance(
-        self,
-        node_idx,
-        class_of_interest,
-        X_val=None,
-        A_index=None,
-        A_val=None,
-        steps=20,
+        self, node_idx, class_of_interest, steps=20,
     ):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
         Args:
-            Refer to the parameters in get_integrated_node_masks.
+            node_idx: the index of the node to calculate gradients for.
+            class_of_interest: the index for the class probability that the gradients will be calculated for.
+            steps (int): The number of values we need to interpolate. Generally steps = 20 should give good enough results.
 
         return (float): Importance score for the node.
         """
-        if X_val is None:
-            X_val = self.X
-        if A_index is None and self.is_sparse:
-            A_index = self.A_indices
-        if A_val is None:
-            A_val = self.A
 
         gradients = self.get_integrated_node_masks(
-            node_idx,
-            class_of_interest,
-            steps=steps,
-            X_val=X_val,
-            A_index=A_index,
-            A_val=A_val,
+            node_idx, class_of_interest, steps=steps,
         )
 
         return np.sum(gradients, axis=-1)
+
+    def _compute_gradients(self, model_input, class_of_interest, wrt):
+
+        class_of_interest = tf.convert_to_tensor(class_of_interest)
+
+        with tf.GradientTape() as tape:
+
+            tape.watch(wrt)
+
+            output = self._model(model_input)
+
+            cost_value = K.gather(output[0, 0], class_of_interest)
+
+        gradients = tape.gradient(cost_value, wrt)
+
+        return gradients

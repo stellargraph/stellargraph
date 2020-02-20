@@ -11,20 +11,6 @@ Additional requirements are Pandas, Numpy and Scikit-Learn which are installed a
 of the StellarGraph library. In addition Juptyer is required to run the notebook version of
 the example.
 
-## Running the script
-
-The example script can be run on supplying the location of the downloaded CORA dataset
-with the following command:
-```
-python gat-cora-example.py -l <path_to_cora_dataset>
-```
-
-Additional arguments can be specified that change the GAT model architecture and training parameters, a
-description of these arguments is displayed using the help option to the script:
-```
-python gat-cora-example.py --help
-```
-
 ## Running the notebook
 
 The same example is also available as a Juptyer notebook. To use this install Jupyter to the

@@ -26,7 +26,6 @@ __all__ = [
 
 
 import numpy as np
-import random
 import warnings
 from collections import defaultdict, deque
 from scipy import stats
