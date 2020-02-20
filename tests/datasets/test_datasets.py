@@ -25,7 +25,13 @@ from unittest.mock import patch
 
 
 # use parametrize to automatically test each of the datasets that (directly) derive from DatasetLoader
-@pytest.mark.parametrize("dataset_class", list(DatasetLoader.__subclasses__()))
+def _marks(cls):
+    if cls == BlogCatalog3:
+        return pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
+    return []
+
+
+@pytest.mark.parametrize("dataset_class", [pytest.param(cls, marks=_marks(cls)) for cls in DatasetLoader.__subclasses__()])
 def test_dataset_download(dataset_class):
     dataset_class().download(ignore_cache=True)
 
@@ -72,6 +78,7 @@ def test_download_cache(mock_urlretrieve) -> None:
     assert not mock_urlretrieve.called
 
 
+@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
 def test_blogcatalog3_load() -> None:
     g = BlogCatalog3().load()
 
@@ -87,6 +94,7 @@ def test_blogcatalog3_load() -> None:
     assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
 
 
+@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
 def test_blogcatalog3_deprecated_load() -> None:
     from stellargraph.data import load_dataset_BlogCatalog3
 
