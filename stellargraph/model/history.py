@@ -19,7 +19,14 @@ import matplotlib.pyplot as plt
 
 __all__ = ["plot_history"]
 
-def plot_history(history, individual_figsize=(7, 4), color_train=None, color_validation=None, **kwargs):
+
+def plot_history(
+    history,
+    individual_figsize=(7, 4),
+    color_train=None,
+    color_validation=None,
+    **kwargs
+):
     """
     Plot the training history of one or more models.
 
@@ -40,7 +47,7 @@ def plot_history(history, individual_figsize=(7, 4), color_train=None, color_val
     # explicit colours are needed if there's multiple train or multiple validation series, because
     # each train series should have the same color. This uses the global matplotlib defaults that
     # would be used for a single train and validation series.
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     if color_train is None:
         color_train = colors[0]
     if color_validation is None:
@@ -59,7 +66,9 @@ def plot_history(history, individual_figsize=(7, 4), color_train=None, color_val
 
     # plot each metric in a column, so that epochs are aligned (squeeze=False, so we don't have to
     # special case len(metrics) == 1 in the zip)
-    fig, all_axes = plt.subplots(len(metrics), 1, squeeze=False, sharex="col", figsize=overall_figsize, **kwargs)
+    fig, all_axes = plt.subplots(
+        len(metrics), 1, squeeze=False, sharex="col", figsize=overall_figsize, **kwargs
+    )
 
     has_validation = False
     for ax, m in zip(all_axes[:, 0], metrics):
