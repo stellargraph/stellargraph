@@ -23,8 +23,7 @@ from ..core.experimental import experimental
 
 
 @experimental(
-    reason="lacks unit tests.",
-    issues=[815,],
+    reason="lacks unit tests.", issues=[815,],
 )
 class GraphWaveGenerator:
     """
@@ -62,14 +61,10 @@ class GraphWaveGenerator:
             )
 
         if not isinstance(deg, int):
-            raise TypeError(
-                f"deg: expected int, found {type(deg).__name__}"
-            )
+            raise TypeError(f"deg: expected int, found {type(deg).__name__}")
 
         if deg < 1:
-            raise ValueError(
-                f"deg: expected positive integer, found {deg}"
-            )
+            raise ValueError(f"deg: expected positive integer, found {deg}")
 
         # Create sparse adjacency matrix:
         adj = G.to_adjacency_matrix().tocoo()
@@ -151,21 +146,16 @@ class GraphWaveGenerator:
             )
 
         if not isinstance(shuffle, bool):
-            raise TypeError(
-                f"shuffle: expected bool, found {type(shuffle).__name__}"
-            )
+            raise TypeError(f"shuffle: expected bool, found {type(shuffle).__name__}")
 
         if not isinstance(repeat, bool):
-            raise TypeError(
-                f"repeat: expected bool, found {type(repeat).__name__}"
-            )
+            raise TypeError(f"repeat: expected bool, found {type(repeat).__name__}")
 
         ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
         def _map_func(x):
             return _empirical_characteristic_function(
-                _chebyshev(x, self.laplacian, self.coeffs, self.deg, self.max_eig),
-                ts,
+                _chebyshev(x, self.laplacian, self.coeffs, self.deg, self.max_eig), ts,
             )
 
         node_idxs = self._node_lookup(node_ids)
@@ -177,7 +167,7 @@ class GraphWaveGenerator:
             tf.sparse.SparseTensor(
                 indices=np.stack([np.arange(len(node_ids)), node_idxs], axis=1),
                 dense_shape=(len(node_ids), self.laplacian.shape[0]),
-                values=np.ones(len(node_ids), dtype=np.float32)
+                values=np.ones(len(node_ids), dtype=np.float32),
             )
         ).map(_map_func, num_parallel_calls=num_parallel_calls)
 

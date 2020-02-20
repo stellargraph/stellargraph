@@ -24,7 +24,7 @@ class TestGraphWave:
 
         assert np.isclose(generator.scales, (0.1, 2, 3, 4)).all()
         assert generator.deg == 10
-        assert generator.coeffs.shape == (4, 10+1)
+        assert generator.coeffs.shape == (4, 10 + 1)
         assert generator.laplacian.shape == (len(self.gnx.nodes), len(self.gnx.nodes))
 
     def test_bad_init(self):
@@ -53,11 +53,17 @@ class TestGraphWave:
         with pytest.raises(TypeError, match="repeat: expected.*found int"):
             generator.flow(self.G.nodes(), self.sample_points, batch_size=1, repeat=1)
 
-        with pytest.raises(TypeError, match="num_parallel_calls: expected.*found float"):
-            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=2.2)
+        with pytest.raises(
+            TypeError, match="num_parallel_calls: expected.*found float"
+        ):
+            generator.flow(
+                self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=2.2
+            )
 
         with pytest.raises(ValueError, match="num_parallel_calls: expected.*found 0"):
-            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=0)
+            generator.flow(
+                self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=0
+            )
 
     @pytest.mark.parametrize("shuffle", [False, True])
     def test_flow_shuffle(self, shuffle):
@@ -65,11 +71,16 @@ class TestGraphWave:
         generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
 
         embeddings_dataset = generator.flow(
-            node_ids=self.G.nodes(), sample_points=self.sample_points,
-            batch_size=1, repeat=False, shuffle=shuffle,
+            node_ids=self.G.nodes(),
+            sample_points=self.sample_points,
+            batch_size=1,
+            repeat=False,
+            shuffle=shuffle,
         )
 
-        first, *rest = [np.vstack([x.numpy() for x in embeddings_dataset]) for _ in range(20)]
+        first, *rest = [
+            np.vstack([x.numpy() for x in embeddings_dataset]) for _ in range(20)
+        ]
 
         if shuffle:
             assert any((first == r).all() for r in rest) is False
@@ -81,15 +92,23 @@ class TestGraphWave:
         generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
 
         embeddings_dataset = generator.flow(
-            node_ids=self.G.nodes(), sample_points=self.sample_points,
-            batch_size=1, repeat=False, shuffle=True, seed=1234,
+            node_ids=self.G.nodes(),
+            sample_points=self.sample_points,
+            batch_size=1,
+            repeat=False,
+            shuffle=True,
+            seed=1234,
         )
 
         first = np.vstack([x.numpy() for x in embeddings_dataset])
 
         embeddings_dataset = generator.flow(
-            node_ids=self.G.nodes(), sample_points=self.sample_points,
-            batch_size=1, repeat=False, shuffle=True, seed=1234,
+            node_ids=self.G.nodes(),
+            sample_points=self.sample_points,
+            batch_size=1,
+            repeat=False,
+            shuffle=True,
+            seed=1234,
         )
 
         second = np.vstack([x.numpy() for x in embeddings_dataset])
@@ -101,10 +120,12 @@ class TestGraphWave:
         generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
 
         for i, x in enumerate(
-                generator.flow(
-                    self.G.nodes(), sample_points=self.sample_points,
-                    batch_size=1, repeat=repeat
-                )
+            generator.flow(
+                self.G.nodes(),
+                sample_points=self.sample_points,
+                batch_size=1,
+                repeat=repeat,
+            )
         ):
 
             if i > self.num_nodes:
@@ -121,7 +142,12 @@ class TestGraphWave:
         expected_embed_dim = len(self.sample_points) * len(scales) * 2
 
         for i, x in enumerate(
-                generator.flow(self.G.nodes(), sample_points=self.sample_points, batch_size=batch_size, repeat=False)
+            generator.flow(
+                self.G.nodes(),
+                sample_points=self.sample_points,
+                batch_size=batch_size,
+                repeat=False,
+            )
         ):
             # all batches except maybe last will have a batch size of batch_size
             if i < self.num_nodes // batch_size:
@@ -138,7 +164,9 @@ class TestGraphWave:
 
         expected_embed_dim = len(sample_points) * len(scales) * 2
 
-        for x in generator.flow(self.G.nodes(), sample_points=sample_points, batch_size=4, repeat=False):
+        for x in generator.flow(
+            self.G.nodes(), sample_points=sample_points, batch_size=4, repeat=False
+        ):
 
             assert x.shape[1] == expected_embed_dim
 
@@ -147,8 +175,11 @@ class TestGraphWave:
         generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
 
         for i, x in enumerate(
-                generator.flow(
-                    self.G.nodes(), sample_points=self.sample_points, batch_size=1, targets=np.arange(self.num_nodes)
+            generator.flow(
+                self.G.nodes(),
+                sample_points=self.sample_points,
+                batch_size=1,
+                targets=np.arange(self.num_nodes),
             )
         ):
             assert len(x) == 2
@@ -162,7 +193,12 @@ class TestGraphWave:
 
         expected_targets = generator._node_lookup(node_ids)
         actual_targets = []
-        for x in generator.flow(node_ids, sample_points=self.sample_points, batch_size=1, targets=expected_targets):
+        for x in generator.flow(
+            node_ids,
+            sample_points=self.sample_points,
+            batch_size=1,
+            targets=expected_targets,
+        ):
 
             actual_targets.append(x[1].numpy())
 
