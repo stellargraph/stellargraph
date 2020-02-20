@@ -3,7 +3,7 @@ timeout: &timeout
   # steps can run for half an hour, maximum: if they haven't finished by then, there's probably some
   # deeper problem. A global timeout would be better
   # (https://github.com/buildkite/feedback/issues/170).
-  timeout_in_minutes: 30
+  timeout_in_minutes: 2
 
 compose-config: &compose-config
   config:
