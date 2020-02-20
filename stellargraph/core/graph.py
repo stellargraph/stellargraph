@@ -213,7 +213,6 @@ class StellarGraph:
         )
         self._edges = convert.convert_edges(
             edges,
-            self._nodes,
             name="edges",
             default_type=edge_type_default,
             source_column=source_column,
@@ -715,9 +714,20 @@ class StellarGraph:
 
     def _unique_type_triples(self, *, return_counts, selector=slice(None)):
         all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
-        ret = np.unique(
-            all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
-        )
+
+        if len(all_type_ilocs) == 0:
+            # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
+            # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
+            # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
+            if return_counts:
+                ret = None, [], []
+            else:
+                ret = None, []
+        else:
+            ret = np.unique(
+                all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
+            )
+
         edge_ilocs = ret[1]
         # we've now got the indices for an edge with each triple, along with the counts of them, so
         # we can query to get the actual edge types (this is, at the time of writing, easier than
@@ -842,15 +852,20 @@ class StellarGraph:
         """
         return self._edges.degrees()
 
-    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None):
+    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
+
+        By default (``weighted=False``), each element of the matrix contains the number
+        of edges between the two vertices (only 0 or 1 in a graph without multi-edges).
 
         Args:
             nodes (iterable): The optional collection of nodes
                 comprising the subgraph. If specified, then the
                 adjacency matrix is computed for the subgraph;
                 otherwise, it is computed for the full graph.
+            weighted (bool): If true, use the edge weight column from the graph instead
+                of edge counts (weights from multi-edges are summed).
 
         Returns:
              The weighted adjacency matrix.
@@ -865,12 +880,16 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        weights = self._edges.weights[selector]
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
         src_idx = index.to_iloc(self._edges.sources[selector])
         tgt_idx = index.to_iloc(self._edges.targets[selector])
+        if weighted:
+            weights = self._edges.weights[selector]
+        else:
+            weights = np.ones(src_idx.shape, dtype=self._edges.weights.dtype)
+
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))

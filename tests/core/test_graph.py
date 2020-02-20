@@ -189,6 +189,14 @@ def test_digraph_schema():
     assert len(schema.schema["movie"]) == 0
 
 
+def test_graph_schema_no_edges():
+    nodes = pd.DataFrame(index=[0])
+    g = StellarGraph(nodes=nodes, edges={})
+    schema = g.create_graph_schema()
+    assert len(schema.node_types) == 1
+    assert len(schema.edge_types) == 0
+
+
 @pytest.mark.benchmark(group="StellarGraph create_graph_schema")
 @pytest.mark.parametrize("num_types", [1, 4])
 def test_benchmark_graph_schema(benchmark, num_types):
@@ -795,10 +803,10 @@ def test_adjacency_types_directed():
     }
 
 
-def test_to_adjacency_matrix_undirected():
+def test_to_adjacency_matrix_weighted_undirected():
     g = example_hin_1(is_directed=False, self_loop=True)
 
-    matrix = g.to_adjacency_matrix().todense()
+    matrix = g.to_adjacency_matrix(weighted=True).todense()
     actual = np.zeros((7, 7), dtype=matrix.dtype)
     actual[0, 4] = actual[4, 0] = 1
     actual[1, 5] = actual[5, 1] = 1
@@ -813,7 +821,7 @@ def test_to_adjacency_matrix_undirected():
     assert np.array_equal(matrix, matrix.T)
 
     # use a funny order to verify order
-    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    subgraph = g.to_adjacency_matrix([1, 6, 5], weighted=True).todense()
     # indices are relative to the specified list
     one, six, five = 0, 1, 2
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
@@ -822,10 +830,10 @@ def test_to_adjacency_matrix_undirected():
     assert np.array_equal(subgraph, actual)
 
 
-def test_to_adjacency_matrix_directed():
+def test_to_adjacency_matrix_weighted_directed():
     g = example_hin_1(is_directed=True, self_loop=True)
 
-    matrix = g.to_adjacency_matrix().todense()
+    matrix = g.to_adjacency_matrix(weighted=True).todense()
     actual = np.zeros((7, 7))
     actual[4, 0] = 1
     actual[1, 5] = 1
@@ -838,13 +846,28 @@ def test_to_adjacency_matrix_directed():
     assert np.array_equal(matrix, actual)
 
     # use a funny order to verify order
-    subgraph = g.to_adjacency_matrix([1, 6, 5]).todense()
+    subgraph = g.to_adjacency_matrix([1, 6, 5], weighted=True).todense()
     # indices are relative to the specified list
     one, six, five = 0, 1, 2
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = 1
     actual[five, five] = 11 + 12
     assert np.array_equal(subgraph, actual)
+
+
+def test_to_adjacency_matrix():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    matrix = g.to_adjacency_matrix().todense()
+    actual = np.zeros((7, 7), dtype=matrix.dtype)
+    actual[0, 4] = actual[4, 0] = 1
+    actual[1, 5] = actual[5, 1] = 1
+    actual[1, 4] = actual[4, 1] = 1
+    actual[2, 4] = actual[4, 2] = 1
+    actual[3, 5] = actual[5, 3] = 1
+    actual[4, 5] = actual[5, 4] = 1
+    actual[5, 5] = 2
+    assert np.array_equal(matrix, actual)
 
 
 def test_edge_weights_undirected():
