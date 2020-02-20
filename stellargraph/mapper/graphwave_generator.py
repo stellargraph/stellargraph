@@ -77,7 +77,7 @@ class GraphWaveGenerator:
         is_valid = ~np.isnan(eigen_vals) & ~np.isnan(eigen_vecs).any(axis=0)
 
         eigen_vals = np.real(eigen_vals[is_valid]).astype(np.float32)
-        self.eigen_vecs = np.real(eigen_vecs[is_valid]).astype(np.float32)
+        self.eigen_vecs = np.real(eigen_vecs[:, is_valid]).astype(np.float32)
 
         # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
         # (each column corresponds to a node)
