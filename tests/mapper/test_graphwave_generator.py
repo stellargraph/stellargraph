@@ -1,15 +1,12 @@
 from stellargraph.core.graph import *
 from stellargraph.mapper.graphwave_generator import (
     GraphWaveGenerator,
-    _chebyshev,
     _empirical_characteristic_function,
 )
 
 import networkx as nx
 import numpy as np
-import random
 import pytest
-import pandas as pd
 import scipy.sparse as sps
 import tensorflow as tf
 
@@ -20,6 +17,156 @@ class TestGraphWave:
 
     G = StellarGraph(gnx)
     sample_points = np.linspace(0, 100, 50).astype(np.float32)
+    num_nodes = len(G.nodes())
+
+    def test_init(self):
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        assert np.isclose(generator.scales, (0.1, 2, 3, 4)).all()
+        assert generator.deg == 10
+        assert generator.coeffs.shape == (4, 10+1)
+        assert generator.laplacian.shape == (len(self.gnx.nodes), len(self.gnx.nodes))
+
+    def test_bad_init(self):
+
+        with pytest.raises(TypeError):
+            generator = GraphWaveGenerator(None, scales=(0.1, 2, 3, 4), deg=10)
+
+        with pytest.raises(TypeError, match="deg: expected.*found float"):
+            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=1.1)
+
+        with pytest.raises(ValueError, match="deg: expected.*found 0"):
+            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=0)
+
+    def test_bad_flow(self):
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        with pytest.raises(TypeError, match="batch_size: expected.*found float"):
+            generator.flow(self.G.nodes(), self.sample_points, batch_size=4.5)
+
+        with pytest.raises(ValueError, match="batch_size: expected.*found 0"):
+            generator.flow(self.G.nodes(), self.sample_points, batch_size=0)
+
+        with pytest.raises(TypeError, match="shuffle: expected.*found int"):
+            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, shuffle=1)
+
+        with pytest.raises(TypeError, match="repeat: expected.*found int"):
+            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, repeat=1)
+
+        with pytest.raises(TypeError, match="num_parallel_calls: expected.*found float"):
+            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=2.2)
+
+        with pytest.raises(ValueError, match="num_parallel_calls: expected.*found 0"):
+            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=0)
+
+    @pytest.mark.parametrize("shuffle", [False, True])
+    def test_flow_shuffle(self, shuffle):
+
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        embeddings_dataset = generator.flow(
+            node_ids=self.G.nodes(), sample_points=self.sample_points,
+            batch_size=1, repeat=False, shuffle=shuffle,
+        )
+
+        first, *rest = [np.vstack([x.numpy() for x in embeddings_dataset]) for _ in range(20)]
+
+        if shuffle:
+            assert any((first == r).all() for r in rest) is False
+        else:
+            assert all((first == r).all() for r in rest) is True
+
+    def test_determinism(self):
+
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        embeddings_dataset = generator.flow(
+            node_ids=self.G.nodes(), sample_points=self.sample_points,
+            batch_size=1, repeat=False, shuffle=True, seed=1234,
+        )
+
+        first = np.vstack([x.numpy() for x in embeddings_dataset])
+
+        embeddings_dataset = generator.flow(
+            node_ids=self.G.nodes(), sample_points=self.sample_points,
+            batch_size=1, repeat=False, shuffle=True, seed=1234,
+        )
+
+        second = np.vstack([x.numpy() for x in embeddings_dataset])
+
+        assert (first == second).all()
+
+    @pytest.mark.parametrize("repeat", [False, True])
+    def test_flow_repeat(self, repeat):
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        for i, x in enumerate(
+                generator.flow(
+                    self.G.nodes(), sample_points=self.sample_points,
+                    batch_size=1, repeat=repeat
+                )
+        ):
+
+            if i > self.num_nodes:
+                break
+
+        assert (i > self.num_nodes) == repeat
+
+    @pytest.mark.parametrize("batch_size", [1, 5, 10])
+    def test_flow_batch_size(self, batch_size):
+
+        scales = (0.1, 2, 3, 4)
+        generator = GraphWaveGenerator(self.G, scales=scales, deg=10)
+
+        expected_embed_dim = len(self.sample_points) * len(scales) * 2
+
+        for i, x in enumerate(
+                generator.flow(self.G.nodes(), sample_points=self.sample_points, batch_size=batch_size, repeat=False)
+        ):
+            # all batches except maybe last will have a batch size of batch_size
+            if i < self.num_nodes // batch_size:
+                assert x.shape == (batch_size, expected_embed_dim)
+            else:
+                assert x.shape == (self.num_nodes % batch_size, expected_embed_dim)
+
+    @pytest.mark.parametrize("num_samples", [1, 25, 50])
+    def test_embedding_dim(self, num_samples):
+        scales = (0.1, 2, 3, 4)
+        generator = GraphWaveGenerator(self.G, scales=scales, deg=10)
+
+        sample_points = np.linspace(0, 1, num_samples)
+
+        expected_embed_dim = len(sample_points) * len(scales) * 2
+
+        for x in generator.flow(self.G.nodes(), sample_points=sample_points, batch_size=4, repeat=False):
+
+            assert x.shape[1] == expected_embed_dim
+
+    def test_flow_targets(self):
+
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        for i, x in enumerate(
+                generator.flow(
+                    self.G.nodes(), sample_points=self.sample_points, batch_size=1, targets=np.arange(self.num_nodes)
+            )
+        ):
+            assert len(x) == 2
+            assert x[1].numpy() == i
+
+    def test_flow_node_ids(self):
+
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+
+        node_ids = list(self.G.nodes())[:4]
+
+        expected_targets = generator._node_lookup(node_ids)
+        actual_targets = []
+        for x in generator.flow(node_ids, sample_points=self.sample_points, batch_size=1, targets=expected_targets):
+
+            actual_targets.append(x[1].numpy())
+
+        assert all(a == b for a, b in zip(expected_targets, actual_targets))
 
     def test_chebyshev(self):
         """

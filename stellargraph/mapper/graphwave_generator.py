@@ -23,8 +23,8 @@ from ..core.experimental import experimental
 
 
 @experimental(
-    reason="lacks unit tests, and the time complexity could be reduced using Chebyshev polynomials.",
-    issues=[815, 853],
+    reason="lacks unit tests.",
+    issues=[815,],
 )
 class GraphWaveGenerator:
     """
@@ -35,15 +35,9 @@ class GraphWaveGenerator:
     DataSet that contains the GraphWave embeddings.
 
     This implementation differs from the paper by removing the automatic method of calculating scales. This method was
-    found to not work well in practice, and replicating the results of the paper requires manually specifying much larger
-    scales than those automatically calculated.
+    found to not work well in practice, and replicating the results of the paper requires manually specifying much
+    larger scales than those automatically calculated.
     """
-
-    # This code looks for small eigenvalues of the graph Laplacian. The minimum eigenvalue of the graph Laplacian
-    # is always 0, however numerical errors can cause small negative number as large as -1e-5.
-    # To initialize a search that will reliably include the smallest eigenvalue an initial value
-    # of -1e-3 is used
-    _INITIAL_EIGS_SIGMA = -1e-3
 
     def __init__(self, G, scales=(5, 10), deg=20):
         """
@@ -51,11 +45,8 @@ class GraphWaveGenerator:
             G (StellarGraph): the StellarGraph object.
             scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
                 features, and larger values embed larger structural features.
-            num_eigenvecs (int): the number of eigenvectors to use. When set to `None` the number of eigenvectors
-                is automatically determined.
-            min_delta (float): when `num_eigenvecs=None` this controls the error of the GraphWave approximation.
-                A small `min_delta` will result in a better approximation but is more computationally expensive and
-                vice verse.
+            deg: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
+                higher computational cost. The default value of `20` is accurate enough for most applications.
         """
 
         if not isinstance(G, StellarGraph):
@@ -68,6 +59,16 @@ class GraphWaveGenerator:
                 "a graph with multiple node types is passed. Stopping.".format(
                     type(self).__name__
                 )
+            )
+
+        if not isinstance(deg, int):
+            raise TypeError(
+                f"deg: expected int, found {type(deg).__name__}"
+            )
+
+        if deg < 1:
+            raise ValueError(
+                f"deg: expected positive integer, found {deg}"
             )
 
         # Create sparse adjacency matrix:
@@ -86,7 +87,6 @@ class GraphWaveGenerator:
         max_eig = eigs(laplacian, k=1, return_eigenvectors=False)
         self.max_eig = np.real(max_eig).astype(np.float32)[0]
 
-        # numpy.polynomial.chebyshev.Chebyshev.interpolate
         coeffs = [
             np.polynomial.chebyshev.Chebyshev.interpolate(
                 lambda x: np.exp(-s * x), domain=[0, self.max_eig], deg=deg
@@ -108,7 +108,9 @@ class GraphWaveGenerator:
         sample_points,
         batch_size,
         targets=None,
-        repeat=True,
+        shuffle=False,
+        seed=None,
+        repeat=False,
         num_parallel_calls=1,
     ):
         """
@@ -122,39 +124,78 @@ class GraphWaveGenerator:
             batch_size: the number of node embeddings to include in a batch.
             targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
+            shuffle (bool): indicates whether to shuffle the dataset
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one
                 full pass.
             num_parallel_calls (int): number of threads to use.
         """
+
+        if not isinstance(batch_size, int):
+            raise TypeError(
+                f"batch_size: expected int, found {type(batch_size).__name__}"
+            )
+
+        if batch_size < 1:
+            raise ValueError(
+                f"batch_size: expected positive integer, found {batch_size}"
+            )
+
+        if not isinstance(num_parallel_calls, int):
+            raise TypeError(
+                f"num_parallel_calls: expected int, found {type(num_parallel_calls).__name__}"
+            )
+
+        if num_parallel_calls < 1:
+            raise ValueError(
+                f"num_parallel_calls: expected positive integer, found {num_parallel_calls}"
+            )
+
+        if not isinstance(shuffle, bool):
+            raise TypeError(
+                f"shuffle: expected bool, found {type(shuffle).__name__}"
+            )
+
+        if not isinstance(repeat, bool):
+            raise TypeError(
+                f"repeat: expected bool, found {type(repeat).__name__}"
+            )
+
         ts = tf.convert_to_tensor(sample_points.astype(np.float32))
 
+        def _map_func(x):
+            return _empirical_characteristic_function(
+                _chebyshev(x, self.laplacian, self.coeffs, self.deg, self.max_eig),
+                ts,
+            )
+
+        node_idxs = self._node_lookup(node_ids)
+
         # calculates the columns of U exp(-scale * eigenvalues) U^T on the fly
-        dataset = tf.data.Dataset.from_tensor_slices(
-            tf.sparse.eye(int(self.laplacian.shape[0]))
-        ).map(
-            lambda x: _chebyshev(
-                x, self.laplacian, self.coeffs, self.deg, self.max_eig
-            ),
-            num_parallel_calls=num_parallel_calls,
-        )
-
         # empirically calculate the characteristic function for each column of U exp(-scale * eigenvalues) U^T
-        dataset = dataset.map(
-            lambda x: _empirical_characteristic_function(x, ts),
-            num_parallel_calls=num_parallel_calls,
-        )
 
-        if not targets is None:
+        dataset = tf.data.Dataset.from_tensor_slices(
+            tf.sparse.SparseTensor(
+                indices=np.stack([np.arange(len(node_ids)), node_idxs], axis=1),
+                dense_shape=(len(node_ids), self.laplacian.shape[0]),
+                values=np.ones(len(node_ids), dtype=np.float32)
+            )
+        ).map(_map_func, num_parallel_calls=num_parallel_calls)
+
+        if targets is not None:
 
             target_dataset = tf.data.Dataset.from_tensor_slices(targets)
-
             dataset = tf.data.Dataset.zip((dataset, target_dataset))
+
+        dataset = dataset.cache()
+
+        if shuffle:
+            dataset = dataset.shuffle(buffer_size=len(node_ids), seed=seed)
 
         # cache embeddings in memory for performance
         if repeat:
-            return dataset.cache().batch(batch_size).repeat()
+            return dataset.batch(batch_size).repeat()
         else:
-            return dataset.cache().batch(batch_size)
+            return dataset.batch(batch_size)
 
 
 def _empirical_characteristic_function(samples, ts):
