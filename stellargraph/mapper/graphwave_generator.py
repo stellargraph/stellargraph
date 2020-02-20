@@ -72,7 +72,7 @@ class GraphWaveGenerator:
 
         self.scales = np.array(scales).astype(np.float32)
 
-        eigen_vals, eigen_vecs = eigs(laplacian, k=laplacian.shape[0]-2)
+        eigen_vals, eigen_vecs = eigs(laplacian, k=laplacian.shape[0] - 2)
 
         is_valid = ~np.isnan(eigen_vals) & ~np.isnan(eigen_vecs).any(axis=0)
 
