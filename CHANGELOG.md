@@ -8,6 +8,8 @@
 
 - New algorithms:
 
+- GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian.
+
 ### Breaking changes
 
 - Some layers and models had many parameters move from `**kwargs` to real arguments: `GraphConvolution`, `GCN`. [\#801](https://github.com/stellargraph/stellargraph/issues/801) Invalid (e.g. incorrectly spelled) arguments would have been ignored previously, but now may fail with a `TypeError`; to fix, remove or correct the arguments.

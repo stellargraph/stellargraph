@@ -19,12 +19,8 @@ import numpy as np
 from ..core import StellarGraph
 from scipy.sparse.linalg import eigs
 from scipy.sparse import diags
-from ..core.experimental import experimental
 
 
-@experimental(
-    reason="lacks unit tests.", issues=[815,],
-)
 class GraphWaveGenerator:
     """
     Implementation of the GraphWave structural embedding algorithm from the paper:
