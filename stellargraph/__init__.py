@@ -33,7 +33,7 @@ __all__ = [
 from .version import __version__
 
 # Import modules
-from stellargraph import mapper, layer, utils
+from stellargraph import mapper, layer, utils, model
 
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
