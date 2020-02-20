@@ -294,6 +294,8 @@ class EdgeData(ElementData):
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
+    #__slots__
+
     def __init__(self, shared, node_data: NodeData):
         super().__init__(shared)
 
@@ -303,6 +305,9 @@ class EdgeData(ElementData):
         in_dict = {}
         out_dict = {}
         undirected = {}
+
+        self.sources = self._column(SOURCE)
+        self.targets = self._column(TARGET)
 
         for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
             in_dict.setdefault(tgt, []).append(i)
@@ -320,6 +325,7 @@ class EdgeData(ElementData):
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
+
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
@@ -348,21 +354,21 @@ class EdgeData(ElementData):
         adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
-    @property
-    def sources(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the source node ID for each edge.
-        """
-        return self._column(SOURCE)
+    # @property
+    # def sources(self) -> np.ndarray:
+    #     """
+    #     Returns:
+    #         An numpy array containing the source node ID for each edge.
+    #     """
+    #     return self._column(SOURCE)
 
-    @property
-    def targets(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the target node ID for each edge.
-        """
-        return self._column(TARGET)
+    # @property
+    # def targets(self) -> np.ndarray:
+    #     """
+    #     Returns:
+    #         An numpy array containing the target node ID for each edge.
+    #     """
+    #     return self._column(TARGET)
 
     @property
     def weights(self) -> np.ndarray:

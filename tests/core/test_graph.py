@@ -524,7 +524,8 @@ def test_networkx_attribute_message():
 
 
 @pytest.mark.benchmark(group="StellarGraph neighbours")
-def test_benchmark_get_neighbours(benchmark):
+@pytest.mark.parametrize("ndarrays", [False, True])
+def test_benchmark_get_neighbours(benchmark, ndarrays):
     nodes, edges = example_benchmark_graph()
     sg = StellarGraph(nodes=nodes, edges=edges)
     num_nodes = sg.number_of_nodes()
@@ -532,7 +533,7 @@ def test_benchmark_get_neighbours(benchmark):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i)
+            sg.neighbors(i, return_ndarrays=ndarrays)
 
     benchmark(f)
 
