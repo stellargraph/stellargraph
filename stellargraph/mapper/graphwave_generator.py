@@ -39,23 +39,12 @@ class GraphWaveGenerator:
     scales than those automatically calculated.
     """
 
-    # This code looks for small eigenvalues of the graph Laplacian. The minimum eigenvalue of the graph Laplacian
-    # is always 0, however numerical errors can cause small negative number as large as -1e-5.
-    # To initialize a search that will reliably include the smallest eigenvalue an initial value
-    # of -1e-3 is used
-    _INITIAL_EIGS_SIGMA = -1e-3
-
-    def __init__(self, G, scales=(5, 10), num_eigenvecs=None, min_delta=0.1):
+    def __init__(self, G, scales=(5, 10)):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
             scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
                 features, and larger values embed larger structural features.
-            num_eigenvecs (int): the number of eigenvectors to use. When set to `None` the number of eigenvectors
-                is automatically determined.
-            min_delta (float): when `num_eigenvecs=None` this controls the error of the GraphWave approximation.
-                A small `min_delta` will result in a better approximation but is more computationally expensive and
-                vice verse.
         """
 
         if not isinstance(G, StellarGraph):
@@ -83,20 +72,12 @@ class GraphWaveGenerator:
 
         self.scales = np.array(scales).astype(np.float32)
 
-        if num_eigenvecs is None:
-            eigen_vals, eigen_vecs = self._sufficiently_sampled_eigs(
-                laplacian,
-                self.scales.min(),
-                min_delta=min_delta,
-                initial_sigma=self._INITIAL_EIGS_SIGMA,
-            )
-        else:
-            eigen_vals, eigen_vecs = eigs(
-                laplacian, k=num_eigenvecs, sigma=self._INITIAL_EIGS_SIGMA
-            )
-            eigen_vals = np.real(eigen_vals).astype(np.float32)
+        eigen_vals, eigen_vecs = eigs(laplacian, k=laplacian.shape[0]-2)
 
-        self.eigen_vecs = np.real(eigen_vecs).astype(np.float32)
+        is_valid = ~np.isnan(eigen_vals) & ~np.isnan(eigen_vecs).any(axis=0)
+
+        eigen_vals = np.real(eigen_vals[is_valid]).astype(np.float32)
+        self.eigen_vecs = np.real(eigen_vecs[is_valid]).astype(np.float32)
 
         # the columns of U exp(-scale * eigenvalues) U^T (U = eigenvectors) are used to calculate the node embeddings
         # (each column corresponds to a node)
@@ -107,66 +88,6 @@ class GraphWaveGenerator:
         # a list of [U exp(-scale * eigenvalues) for scale in scales]
         Ues = [self.eigen_vecs * np.exp(-s * eigen_vals) for s in scales]
         self.Ues = tf.convert_to_tensor(np.stack(Ues, axis=0))
-
-    @staticmethod
-    def _sufficiently_sampled_eigs(laplacian, min_scale, min_delta, initial_sigma):
-        """
-        This function calculates increasing numbers of eigenvalues using a binary search until a sufficient number of
-        eigenvalues have been found to ensure accurate results of the GraphWave algorithm.
-
-        Args:
-            laplacian: the un-normalized graph laplacian.
-            min_scale: the smallest wavelet scale used.
-            min_delta: the minimum relative change in the eigenvalue norm. A relative change less than this stops
-                the eigenvalue search.
-        Returns:
-            eigen_vals: the eigenvalues found.
-            eigen_vecs: the eigenvectors found.
-        """
-        max_num_eigs = laplacian.shape[0] - 2
-
-        prev_eig_norm = 0.0
-        eig_max = initial_sigma
-        k = min(16, max_num_eigs)
-        eigen_vals = np.array([], dtype=np.float32)
-        eigen_vecs = []
-
-        # use increasing k (doubling per iter) until the filtered eigenvalue l2 norm
-        # increases by less than 10% since the last iter.
-        while True:
-            # if sigma=eigenvalue eigs will throw an error
-            new_eigen_vals, new_eigen_vecs = eigs(laplacian, k=k, sigma=eig_max + 1e-7)
-            new_eigen_vals = np.real(new_eigen_vals).astype(np.float32)
-
-            is_valid = ~np.isnan(new_eigen_vals) * ~np.isnan(new_eigen_vecs).any(0)
-            new_eigen_vals, new_eigen_vecs = (
-                new_eigen_vals[is_valid],
-                new_eigen_vecs[:, is_valid],
-            )
-
-            is_new_eig = new_eigen_vals > eig_max
-            new_eigen_vecs, new_eigen_vals = (
-                new_eigen_vecs[:, is_new_eig],
-                new_eigen_vals[is_new_eig],
-            )
-
-            # append new eigenvalues and eigen vectors
-            eigen_vals = np.append(eigen_vals, new_eigen_vals)
-            eigen_vecs.append(new_eigen_vecs)
-            eig_norm = np.linalg.norm(np.exp(-min_scale * eigen_vals))
-
-            if len(eigen_vals) != 0:
-                eig_max = eigen_vals.max()
-
-            if eig_norm < (1 + min_delta) * prev_eig_norm:
-                break
-            elif k >= max_num_eigs:
-                break
-
-            prev_eig_norm = eig_norm
-            k = min(2 * k, max_num_eigs)
-
-        return eigen_vals, np.concatenate(eigen_vecs, axis=1)
 
     def flow(
         self,
