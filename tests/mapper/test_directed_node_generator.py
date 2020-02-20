@@ -56,7 +56,7 @@ class TestDirectedNodeGenerator(object):
         flow = gen.flow(node_ids=nodes, shuffle=False)
 
         # Obtain tree of sampled features
-        features = gen.sample_features(nodes)
+        features = gen.sample_features(nodes, 0)
         num_hops = len(in_samples)
         tree_len = 2 ** (num_hops + 1) - 1
         assert len(features) == tree_len
@@ -123,7 +123,7 @@ class TestDirectedNodeGenerator(object):
         )
         flow = gen.flow(node_ids=nodes, shuffle=False)
 
-        features = gen.sample_features(nodes)
+        features = gen.sample_features(nodes, 0)
         num_hops = 2
         tree_len = 2 ** (num_hops + 1) - 1
         assert len(features) == tree_len
