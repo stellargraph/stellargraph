@@ -22,7 +22,7 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 """
 
 from .dataset_loader import DatasetLoader
-from ..core.graph import StellarGraph
+from ..core.graph import StellarGraph, StellarDiGraph
 import logging
 import os
 import pandas as pd
@@ -43,7 +43,16 @@ class Cora(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    pass
+    def load(self):
+        self.download()
+        edgelist = pd.read_csv(self._resolve_path("cora.cites"), sep="\t", header=None, names=["target", "source"])
+
+        feature_names = ["w_{}".format(ii) for ii in range(1433)]
+        subject = "subject"
+        column_names = feature_names + [subject]
+        node_data = pd.read_csv(self._resolve_path("cora.content"), sep="\t", header=None, names=column_names)
+
+        return StellarDiGraph({"paper": node_data[feature_names]}, {"cites": edgelist}), node_data[subject]
 
 
 class CiteSeer(
