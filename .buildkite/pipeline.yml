@@ -72,7 +72,7 @@ steps:
   - label: ":python::book: test notebooks %n"
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 30
+    parallelism: 35
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
