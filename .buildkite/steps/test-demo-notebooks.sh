@@ -65,7 +65,7 @@ buildkite-agent artifact upload "$filename" 2>&1 | tee agent-output.txt
 # and is matched with a relaxed regex (any hex digits and -). The filename needs to be a literal
 # match, and so needs to have any special characters escaped.
 re_safe_filename="$(printf '%s' "$filename" | sed 's/[.[\*^$]/\\&/g')"
-artifact_id="$(grep --only-matching "[0-9a-f-]* $re_safe_filename" agent-output.txt | cut -f1 -d' ' )"
+artifact_id="$(grep --only-matching "[0-9a-f-]* $re_safe_filename" agent-output.txt | cut -f1 -d' ')"
 
 if [ -z "$artifact_id" ]; then
   echo "failed to find artifact ID; this may be an error in the script ($0)"
