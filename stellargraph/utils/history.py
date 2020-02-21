@@ -23,8 +23,6 @@ __all__ = ["plot_history"]
 def plot_history(
     history,
     individual_figsize=(7, 4),
-    color_train=None,
-    color_validation=None,
     **kwargs
 ):
     """
@@ -39,8 +37,6 @@ def plot_history(
     Args:
         history: the training history, as returned by :meth:`tf.keras.Model.fit`
         individual_figsize (tuple of numbers): the size of the plot for each metric
-        color_train: a matplotlib color to use for the train series for each metric
-        color_validation: a matplotlib color to use for the validation series for each metric
         kwargs: additional arguments to pass to :meth:`matplotlib.pyplot.subplots`
     """
 
@@ -48,10 +44,8 @@ def plot_history(
     # each train series should have the same color. This uses the global matplotlib defaults that
     # would be used for a single train and validation series.
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    if color_train is None:
-        color_train = colors[0]
-    if color_validation is None:
-        color_validation = colors[1]
+    color_train = colors[0]
+    color_validation = colors[1]
 
     if not isinstance(history, list):
         history = [history]
