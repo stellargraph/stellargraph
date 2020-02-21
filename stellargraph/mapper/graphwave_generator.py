@@ -107,15 +107,18 @@ class GraphWaveGenerator:
         """
         Creates a tensorflow DataSet object of GraphWave embeddings.
 
+        The dimension of the embeddings are `2 * len(scales) * len(sample_points)`.
+
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
             sample_points: a 1D array of points at which to sample the characteristic function. This should be of the
                 form: `sample_points=np.linspace(0, max_val, number_of_samples)` and is graph dependant.
-            batch_size: the number of node embeddings to include in a batch.
+            batch_size (int): the number of node embeddings to include in a batch.
             targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
             shuffle (bool): indicates whether to shuffle the dataset
+            seed (None or int): the random seed to use for shuffling the dataset
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one
                 full pass.
             num_parallel_calls (int): number of threads to use.
@@ -172,12 +175,12 @@ class GraphWaveGenerator:
             target_dataset = tf.data.Dataset.from_tensor_slices(targets)
             dataset = tf.data.Dataset.zip((dataset, target_dataset))
 
+        # cache embeddings in memory for performance
         dataset = dataset.cache()
 
         if shuffle:
             dataset = dataset.shuffle(buffer_size=len(node_ids), seed=seed)
 
-        # cache embeddings in memory for performance
         if repeat:
             return dataset.batch(batch_size).repeat()
         else:
