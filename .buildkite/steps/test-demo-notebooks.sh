@@ -23,7 +23,7 @@ if [ "$NUM_NOTEBOOKS_TOTAL" -ne "$SPLIT" ]; then
   # Every step will do this annotation, but they all use the same context and there's no --append
   # flag here, and so they replace each other. Thus, there should only ever be a single instance of
   # it.
-  buildkite annotate --context "incorrect-notebook-parallelism" --style error "$msg"
+  buildkite-agent annotate --context "incorrect-notebook-parallelism" --style error "$msg"
   exit 1
 fi
 
