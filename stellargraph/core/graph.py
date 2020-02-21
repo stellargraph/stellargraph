@@ -259,11 +259,11 @@ class StellarGraph:
 
             nodes, edges = convert.from_networkx(
                 graph,
-                node_type_name=node_type_name,
-                edge_type_name=edge_type_name,
+                node_type_attr=node_type_name,
+                edge_type_attr=edge_type_name,
                 node_type_default=node_type_default,
                 edge_type_default=edge_type_default,
-                edge_weight_label=edge_weight_column,
+                edge_weight_attr=edge_weight_column,
                 node_features=node_features,
                 dtype=dtype,
             )
@@ -289,13 +289,17 @@ class StellarGraph:
     @staticmethod
     def from_networkx(
         graph,
-        edge_weight_label="weight",
-        node_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_type_name=globalvar.TYPE_ATTR_NAME,
+        *,
+        edge_weight_attr="weight",
+        node_type_attr=globalvar.TYPE_ATTR_NAME,
+        edge_type_attr=globalvar.TYPE_ATTR_NAME,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         node_features=None,
         dtype="float32",
+        node_type_name=None,
+        edge_type_name=None,
+        edge_weight_label=None,
     ):
         """
         Construct a ``StellarGraph`` object from a NetworkX graph::
@@ -345,52 +349,75 @@ class StellarGraph:
 
         Args:
             graph: The NetworkX graph instance.
-            node_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            node_type_attr (str, optional):
                 This is the name for the node types that StellarGraph uses
                 when processing heterogeneous graphs. StellarGraph will
                 look for this attribute in the nodes of the graph to determine
                 their type.
 
-            node_type_default: str, optional (default=globals.NODE_TYPE_DEFAULT)
+            node_type_default (str, optional):
                 This is the default node type to use for nodes that do not have
                 an explicit type.
 
-            edge_type_name: str, optional (default=globals.TYPE_ATTR_NAME)
+            edge_type_attr (str, optional):
                 This is the name for the edge types that StellarGraph uses
                 when processing heterogeneous graphs. StellarGraph will
                 look for this attribute in the edges of the graph to determine
                 their type.
 
-            edge_type_default: str, optional (default=globals.EDGE_TYPE_DEFAULT)
+            edge_type_default (str, optional):
                 This is the default edge type to use for edges that do not have
                 an explicit type.
 
-            node_features: str, dict, list or DataFrame optional (default=None)
+            node_features (str, dict, list or DataFrame optional):
                 This tells StellarGraph where to find the node feature information
                 required by some graph models. These are expected to be
                 a numeric feature vector for each node in the graph.
 
-            edge_weight_label: str, optional
+            edge_weight_attr (str, optional):
                 The name of the attribute to use as the weight of edges.
+
+            node_type_name: Deprecated, use ``node_type_attr``.
+            edge_type_name: Deprecated, use ``edge_type_attr``.
+            edge_weight_label: Deprecated, use ``edge_weight_attr``.
 
         Returns:
             A ``StellarGraph`` (if ``graph`` is undirected) or ``StellarDiGraph`` (if ``graph`` is
             directed) instance representing the data in ``graph`` and ``node_features``.
         """
+        if node_type_name is not None:
+            warnings.warn(
+                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
+                DeprecationWarning,
+            )
+            node_type_attr = node_type_name
+        if edge_type_name is not None:
+            warnings.warn(
+                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
+                DeprecationWarning,
+            )
+            edge_type_attr = edge_type_name
+        if edge_weight_label is not None:
+            warnings.warn(
+                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
+                DeprecationWarning,
+            )
+            edge_weight_attr = edge_weight_label
+
         nodes, edges = convert.from_networkx(
             graph,
-            node_type_name=node_type_name,
-            edge_type_name=edge_type_name,
+            node_type_attr=node_type_attr,
+            edge_type_attr=edge_type_attr,
             node_type_default=node_type_default,
             edge_type_default=edge_type_default,
-            edge_weight_label=edge_weight_label,
+            edge_weight_attr=edge_weight_attr,
             node_features=node_features,
             dtype=dtype,
         )
 
         cls = StellarDiGraph if graph.is_directed() else StellarGraph
         return cls(
-            nodes=nodes, edges=edges, edge_weight_column=edge_weight_label, dtype=dtype
+            nodes=nodes, edges=edges, edge_weight_column=edge_weight_attr, dtype=dtype
         )
 
     # customise how a missing attribute is handled to give better error messages for the NetworkX
