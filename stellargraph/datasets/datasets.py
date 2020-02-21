@@ -45,14 +45,27 @@ class Cora(
 ):
     def load(self):
         self.download()
-        edgelist = pd.read_csv(self._resolve_path("cora.cites"), sep="\t", header=None, names=["target", "source"])
+        edgelist = pd.read_csv(
+            self._resolve_path("cora.cites"),
+            sep="\t",
+            header=None,
+            names=["target", "source"],
+        )
 
         feature_names = ["w_{}".format(ii) for ii in range(1433)]
         subject = "subject"
         column_names = feature_names + [subject]
-        node_data = pd.read_csv(self._resolve_path("cora.content"), sep="\t", header=None, names=column_names)
+        node_data = pd.read_csv(
+            self._resolve_path("cora.content"),
+            sep="\t",
+            header=None,
+            names=column_names,
+        )
 
-        return StellarDiGraph({"paper": node_data[feature_names]}, {"cites": edgelist}), node_data[subject]
+        return (
+            StellarDiGraph({"paper": node_data[feature_names]}, {"cites": edgelist}),
+            node_data[subject],
+        )
 
 
 class CiteSeer(
