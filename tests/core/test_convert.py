@@ -124,11 +124,11 @@ def test_columnar_convert_invalid_input():
 def from_networkx_for_testing(g, node_features=None, dtype="float32"):
     return from_networkx(
         g,
-        node_type_name="n",
-        edge_type_name="e",
+        node_type_attr="n",
+        edge_type_attr="e",
         node_type_default="a",
         edge_type_default="x",
-        edge_weight_label="w",
+        edge_weight_attr="w",
         node_features=node_features,
         dtype=dtype,
     )
