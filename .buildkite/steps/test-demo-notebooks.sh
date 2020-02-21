@@ -59,7 +59,7 @@ filename="$(basename "$f")"
 # can include a link to the latter automatically
 buildkite-agent artifact upload "$filename" 2>&1 | tee agent-output.txt
 
-artifact_id="$(sed -n "s/.*Uploading artifact \\(.*\\) $filename/\\1/p" agent-output.txt)"
+artifact_id="$(sed -n "s/.*Uploading artifact \\(.*\\) $filename.*/\\1/p" agent-output.txt)"
 if [ -z "$artifact_id" ]; then
   echo "failed to find artifact ID; this may be an error in the script ($0)"
   exit 1
