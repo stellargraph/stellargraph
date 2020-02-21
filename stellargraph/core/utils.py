@@ -17,6 +17,8 @@ import collections
 import scipy.sparse as sp
 from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras import backend as K
 
 
 def is_real_iterable(x):
