@@ -8,12 +8,12 @@ SPLIT="${BUILDKITE_PARALLEL_JOB_COUNT:-1}"
 INDEX="${BUILDKITE_PARALLEL_JOB:-0}"
 
 echo "--- :books: collecting notebooks"
-# Create array with all notebooks in demo directories.
+# Create array with all notebooks in demo directories, with explicit sorting so every parallel step
+# sees the same ordering
 cd "${stellargraph_dir}"
-NOTEBOOKS=()
-while IFS= read -r -d $'\0'; do
-  NOTEBOOKS+=("$REPLY")
-done < <(find "${stellargraph_dir}/demos" -name "*.ipynb" -print0)
+IFS=$'\n' read -rd '' -a NOTEBOOKS < <(
+  find "${stellargraph_dir}/demos" -name "*.ipynb" | sort
+)
 
 NUM_NOTEBOOKS_TOTAL=${#NOTEBOOKS[@]}
 
