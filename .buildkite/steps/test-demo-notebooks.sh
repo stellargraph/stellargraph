@@ -53,6 +53,26 @@ exitCode=0
 # papermill will replace parameters on some notebooks to make them run faster in CI
 papermill --execution-timeout=600 --parameters_file "${stellargraph_dir}/.buildkite/notebook-parameters.yml" --log-output "$f" "$f" || exitCode=$?
 
-# and also upload the notebook with outputs, for someone to download and look at
-buildkite-agent artifact upload "$(basename "$f")"
+echo "+++ :jupyter: making result viewable"
+filename="$(basename "$f")"
+# and also upload the notebook with outputs, for someone to view by downloading or via nbviewer; we
+# can include a link to the latter automatically
+buildkite-agent artifact upload "$filename" 2>&1 | tee agent-output.txt
+
+artifact_id="$(sed -n "s/.*Uploading artifact \\(.*\\) $filename/\\1/p" agent-output.txt)"
+if [ -z "$artifact_id" ]; then
+  echo "failed to find artifact ID; this may be an error in the script ($0)"
+  exit 1
+fi
+
+url="https://nbviewer.jupyter.org/urls/buildkite.com/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds/${BUILDKITE_BUILD_NUMBER}/jobs/${BUILDKITE_JOB_ID}/artifacts/${artifact_id}"
+echo "This notebook can be viewed at <$url>"
+
+if [ "$exitCode" -ne 0 ]; then
+  # the notebook failed, so let's flag that more obviously, with helpful links
+  buildkite-agent annotate --style "error" --context "$filename" << EOF
+Notebook \`$filename\` had an error: [failed job](#${BUILDKITE_JOB_ID}), [rendered notebook]($url)
+EOF
+fi
+
 exit $exitCode

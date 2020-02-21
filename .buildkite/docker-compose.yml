@@ -22,6 +22,8 @@ services:
       - AWS_LOGS_BUCKET
       - BUILDKITE_PARALLEL_JOB_COUNT
       - BUILDKITE_PARALLEL_JOB
+      - BUILDKITE_ORGANIZATION_SLUG
+      - BUILDKITE_PIPELINE_SLUG
       # codecov needs extra info from Buildkite environment:
       - CI
       - BUILDKITE
