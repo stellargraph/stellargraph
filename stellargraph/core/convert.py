@@ -266,11 +266,11 @@ def _fill_or_assign(df, column, default):
 def from_networkx(
     graph,
     *,
-    node_type_name,
-    edge_type_name,
+    node_type_attr,
+    edge_type_attr,
     node_type_default,
     edge_type_default,
-    edge_weight_label,
+    edge_weight_attr,
     node_features,
     dtype,
 ):
@@ -281,7 +281,7 @@ def from_networkx(
     features_in_node = isinstance(node_features, str)
 
     for node_id, node_data in graph.nodes(data=True):
-        node_type = node_data.get(node_type_name, node_type_default)
+        node_type = node_data.get(node_type_attr, node_type_default)
         node_info = nodes[node_type]
         node_info.ids.append(node_id)
         if features_in_node:
@@ -301,12 +301,12 @@ def from_networkx(
         node_frames = _features_from_node_data(nodes, node_features, dtype)
 
     edges = nx.to_pandas_edgelist(graph, source=SOURCE, target=TARGET)
-    _fill_or_assign(edges, edge_type_name, edge_type_default)
-    _fill_or_assign(edges, edge_weight_label, DEFAULT_WEIGHT)
-    edges_limited_columns = edges[[SOURCE, TARGET, edge_type_name, edge_weight_label]]
+    _fill_or_assign(edges, edge_type_attr, edge_type_default)
+    _fill_or_assign(edges, edge_weight_attr, DEFAULT_WEIGHT)
+    edges_limited_columns = edges[[SOURCE, TARGET, edge_type_attr, edge_weight_attr]]
     edge_frames = {
-        edge_type: data.drop(columns=edge_type_name)
-        for edge_type, data in edges_limited_columns.groupby(edge_type_name)
+        edge_type: data.drop(columns=edge_type_attr)
+        for edge_type, data in edges_limited_columns.groupby(edge_type_attr)
     }
 
     return node_frames, edge_frames
