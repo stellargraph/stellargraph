@@ -258,3 +258,26 @@ def line_graph() -> StellarGraph:
     nxg.add_nodes_from(range(10))
     nxg.add_edges_from([(i, i + 1) for i in range(9)])
     return StellarGraph(nxg, node_features=node_features())
+
+
+@pytest.fixture
+def knowledge_graph():
+    nodes = ["a", "b", "c", "d"]
+
+    edge_counter = 0
+
+    def edge_df(*elements):
+        nonlocal edge_counter
+        end = edge_counter + len(elements)
+        index = range(edge_counter, end)
+        edge_counter = end
+        return pd.DataFrame(elements, columns=["source", "target"], index=index)
+
+    edges = {
+        "W": edge_df(("a", "b")),
+        "X": edge_df(("a", "b"), ("b", "c")),
+        "Y": edge_df(("b", "a")),
+        "Z": edge_df(("d", "b")),
+    }
+
+    return StellarDiGraph(nodes=pd.DataFrame(index=nodes), edges=edges)

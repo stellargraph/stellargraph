@@ -15,10 +15,12 @@
 # limitations under the License.
 
 
+import numpy as np
 import pytest
 import random
 import tensorflow as tf
 from stellargraph.data.unsupervised_sampler import UnsupervisedSampler
+from stellargraph.mapper.sampled_node_generators import GraphSAGENodeGenerator
 from stellargraph.mapper.sampled_link_generators import GraphSAGELinkGenerator
 from stellargraph.layer.graphsage import GraphSAGE
 from stellargraph.layer.link_inference import link_classification
@@ -87,16 +89,83 @@ def unsup_gs(
     return model
 
 
+def gs_nai_model(num_samples, generator, targets, optimizer, bias, dropout, normalize):
+    layer_sizes = [50] * len(num_samples)
+    graphsage = GraphSAGE(
+        layer_sizes=layer_sizes,
+        generator=generator,
+        bias=bias,
+        dropout=dropout,
+        normalize=normalize,
+    )
+    # Build the model and expose input and output sockets of graphsage, for node pair inputs:
+    x_inp, x_out = graphsage.build()
+    pred = tf.keras.layers.Dense(units=targets.shape[1], activation="softmax")(x_out)
+    model = tf.keras.Model(inputs=x_inp, outputs=pred)
+
+    model.compile(optimizer=optimizer, loss=tf.keras.losses.categorical_crossentropy)
+
+    return model
+
+
+def gs_nai(
+    g,
+    targets,
+    num_samples,
+    optimizer,
+    batch_size=4,
+    epochs=4,
+    bias=True,
+    dropout=0.0,
+    normalize="l2",
+    seed=0,
+    shuffle=True,
+):
+    set_seed(seed)
+    tf.random.set_seed(seed)
+    if shuffle:
+        random.seed(seed)
+
+    nodes = list(g.nodes())
+    generator = GraphSAGENodeGenerator(g, batch_size, num_samples)
+    train_gen = generator.flow(nodes, targets, shuffle=True)
+
+    model = gs_nai_model(
+        num_samples, generator, targets, optimizer, bias, dropout, normalize
+    )
+
+    model.fit_generator(
+        train_gen,
+        epochs=epochs,
+        verbose=1,
+        use_multiprocessing=False,
+        workers=4,
+        shuffle=shuffle,
+    )
+    return model
+
+
 @pytest.mark.parametrize("shuffle", [True, False])
-def test_reproducibility(petersen_graph, shuffle):
+def test_unsupervised(petersen_graph, shuffle):
     assert_reproducible(
         lambda: unsup_gs(
             petersen_graph,
-            [2],
+            [2, 2],
             tf.optimizers.Adam(1e-3),
             epochs=4,
             walk_length=2,
             batch_size=4,
             shuffle=shuffle,
+        )
+    )
+
+
+@pytest.mark.parametrize("shuffle", [True, False])
+def test_nai(petersen_graph, shuffle):
+    target_size = 10
+    targets = np.random.rand(len(petersen_graph.nodes()), target_size)
+    assert_reproducible(
+        lambda: gs_nai(
+            petersen_graph, targets, [2, 2], tf.optimizers.Adam(1e-3), shuffle=shuffle
         )
     )
