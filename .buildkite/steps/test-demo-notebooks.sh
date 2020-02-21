@@ -18,7 +18,9 @@ done < <(find "${stellargraph_dir}/demos" -name "*.ipynb" -print0)
 NUM_NOTEBOOKS_TOTAL=${#NOTEBOOKS[@]}
 
 if [ "$NUM_NOTEBOOKS_TOTAL" -ne "$SPLIT" ]; then
-  msg="Buildkite step parallelism is set to $SPLIT but found $NUM_NOTEBOOKS_TOTAL notebooks. Please update the notebook testing \`parallelism\` setting in \`.buildkite/pipeline.yml\`  to match the number of notebooks!"
+  msg="Buildkite step parallelism is set to $SPLIT but found $NUM_NOTEBOOKS_TOTAL notebooks. Please update the notebook testing \`parallelism\` setting in \`.buildkite/pipeline.yml\`  to match the number of notebooks!
+
+If a pull request adding or removing notebooks was merged recently, this may be fixed by doing a merge with \`develop\`; for example: \`git fetch origin && git merge origin/develop\`."
   echo "$msg"
   # Every step will do this annotation, but they all use the same context and there's no --append
   # flag here, and so they replace each other. Thus, there should only ever be a single instance of
