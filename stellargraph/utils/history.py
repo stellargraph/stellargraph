@@ -20,11 +20,7 @@ import matplotlib.pyplot as plt
 __all__ = ["plot_history"]
 
 
-def plot_history(
-    history,
-    individual_figsize=(7, 4),
-    **kwargs
-):
+def plot_history(history, individual_figsize=(7, 4), **kwargs):
     """
     Plot the training history of one or more models.
 
