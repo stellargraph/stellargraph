@@ -103,7 +103,7 @@ class GraphWaveGenerator:
         seed=None,
         repeat=False,
         num_parallel_calls=1,
-        cache_filename='',
+        cache_filename="",
     ):
         """
         Creates a tensorflow DataSet object of GraphWave embeddings.
