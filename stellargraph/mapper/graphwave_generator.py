@@ -103,6 +103,7 @@ class GraphWaveGenerator:
         seed=None,
         repeat=False,
         num_parallel_calls=1,
+        cache_filename='',
     ):
         """
         Creates a tensorflow DataSet object of GraphWave embeddings.
@@ -122,6 +123,7 @@ class GraphWaveGenerator:
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one
                 full pass.
             num_parallel_calls (int): number of threads to use.
+            cache_filename (str): filename to store cached dataset.
         """
 
         if not isinstance(batch_size, int):
@@ -176,7 +178,7 @@ class GraphWaveGenerator:
             dataset = tf.data.Dataset.zip((dataset, target_dataset))
 
         # cache embeddings in memory for performance
-        dataset = dataset.cache()
+        dataset = dataset.cache(filename=cache_filename)
 
         if shuffle:
             dataset = dataset.shuffle(buffer_size=len(node_ids), seed=seed)
