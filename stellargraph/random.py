@@ -23,6 +23,7 @@ __all__ = ["set_seed"]
 
 import random as rn
 import numpy.random as np_rn
+import threading
 from collections import namedtuple
 
 
@@ -75,3 +76,32 @@ def set_seed(seed):
         _rs = _global_state()
     else:
         _rs = _seeded_state(seed)
+
+
+class SeededPerBatch:
+    """
+    Internal utility class for managing a random state per batch number in a multi-threaded
+    environment.
+
+    """
+
+    def __init__(self, create_with_seed, seed):
+        self._create_with_seed = create_with_seed
+        self._walkers = []
+        self._lock = threading.Lock()
+        self._rs, _ = random_state(seed)
+
+    def __getitem__(self, batch_num):
+        self._lock.acquire()
+        try:
+            return self._walkers[batch_num]
+        except IndexError:
+            # always create a new seeded sampler in ascending order of batch number
+            # this ensures seeds are deterministic even when batches are run in parallel
+            self._walkers.extend(
+                self._create_with_seed(self._rs.randrange(2 ** 32))
+                for _ in range(len(self._walkers), batch_num + 1)
+            )
+            return self._walkers[batch_num]
+        finally:
+            self._lock.release()

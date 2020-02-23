@@ -40,6 +40,7 @@ from functools import reduce
 from tensorflow.keras.utils import Sequence
 from ..data.unsupervised_sampler import UnsupervisedSampler
 from ..core.utils import is_real_iterable
+from ..random import random_state
 
 
 class NodeSequence(Sequence):
@@ -62,7 +63,9 @@ class NodeSequence(Sequence):
         shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
     """
 
-    def __init__(self, sample_function, batch_size, ids, targets=None, shuffle=True):
+    def __init__(
+        self, sample_function, batch_size, ids, targets=None, shuffle=True, seed=None
+    ):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -93,6 +96,7 @@ class NodeSequence(Sequence):
         self.data_size = len(self.ids)
         self.shuffle = shuffle
         self.batch_size = batch_size
+        self._rs, _ = random_state(seed)
 
         # Shuffle IDs to start
         self.on_epoch_end()
@@ -130,7 +134,7 @@ class NodeSequence(Sequence):
         batch_targets = None if self.targets is None else self.targets[batch_indices]
 
         # Get features for nodes
-        batch_feats = self._sample_function(head_ids)
+        batch_feats = self._sample_function(head_ids, batch_num)
 
         return batch_feats, batch_targets
 
@@ -140,7 +144,7 @@ class NodeSequence(Sequence):
         """
         self.indices = list(range(self.data_size))
         if self.shuffle:
-            random.shuffle(self.indices)
+            self._rs.shuffle(self.indices)
 
 
 class LinkSequence(Sequence):
