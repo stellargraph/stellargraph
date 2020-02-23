@@ -13,7 +13,7 @@ echo "--- :books: collecting notebooks"
 cd "${stellargraph_dir}"
 IFS=$'\n' read -rd '' -a NOTEBOOKS < <(
   find "${stellargraph_dir}/demos" -name "*.ipynb" | sort
-)
+) || true # (the read always exits with 1, because it hits EOF)
 
 NUM_NOTEBOOKS_TOTAL=${#NOTEBOOKS[@]}
 
