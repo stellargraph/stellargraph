@@ -252,7 +252,7 @@ def test_chebyshev(barbell):
     eigenvecs = np.asarray(eigenvecs)
 
     psis = [
-        (eigenvecs * np.exp(-s * eigenvals)).dot(eigenvecs.transpose()) for s in scales
+        eigenvecs.dot(np.diag(np.exp(-s * eigenvals))).dot(eigenvecs.transpose()) for s in scales
     ]
     psis = np.stack(psis, axis=1).astype(np.float32)
     ts = tf.convert_to_tensor(sample_points)
