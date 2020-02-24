@@ -234,7 +234,7 @@ class TestGraphWave:
 
         degree_mat = sps.diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
-        laplacian = np.asarray(laplacian.todense()).astype(np.float64)
+        laplacian = np.asarray(laplacian.todense()).astype(np.float32)
 
         eigenvals, eigenvecs = np.linalg.eig(laplacian)
         eigenvecs = np.asarray(eigenvecs)
