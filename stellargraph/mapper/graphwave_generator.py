@@ -114,7 +114,7 @@ class GraphWaveGenerator:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
             sample_points: a 1D array of points at which to sample the characteristic function. This should be of the
-                form: `sample_points=np.linspace(0, max_val, number_of_samples)` and is graph dependant.
+                form: `sample_points=np.linspace(0, max_val, number_of_samples)` and is graph dependent.
             batch_size (int): the number of node embeddings to include in a batch.
             targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
