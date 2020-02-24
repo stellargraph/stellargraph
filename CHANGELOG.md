@@ -8,7 +8,7 @@
 
 - New algorithms:
 
-- GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian.
+    - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian.
 
 ### Breaking changes
 
