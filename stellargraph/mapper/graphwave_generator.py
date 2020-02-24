@@ -34,13 +34,13 @@ class GraphWaveGenerator:
     larger scales than those automatically calculated.
     """
 
-    def __init__(self, G, scales=(5, 10), deg=20):
+    def __init__(self, G, scales=(5, 10), degree=20):
         """
         Args:
             G (StellarGraph): the StellarGraph object.
             scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
                 features, and larger values embed larger structural features.
-            deg: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
+            degree: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
                 higher computational cost. The default value of `20` is accurate enough for most applications.
         """
 
@@ -56,18 +56,18 @@ class GraphWaveGenerator:
                 )
             )
 
-        if not isinstance(deg, int):
-            raise TypeError(f"deg: expected int, found {type(deg).__name__}")
+        if not isinstance(degree, int):
+            raise TypeError(f"deg: expected int, found {type(degree).__name__}")
 
-        if deg < 1:
-            raise ValueError(f"deg: expected positive integer, found {deg}")
+        if degree < 1:
+            raise ValueError(f"deg: expected positive integer, found {degree}")
 
         # Create sparse adjacency matrix:
         adj = G.to_adjacency_matrix().tocoo()
 
         # Function to map node IDs to indices for quicker node index lookups
         self._node_lookup = G._get_index_for_nodes
-        self.deg = deg
+        self.degree = degree
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
@@ -80,7 +80,7 @@ class GraphWaveGenerator:
 
         coeffs = [
             np.polynomial.chebyshev.Chebyshev.interpolate(
-                lambda x: np.exp(-s * x), domain=[0, self.max_eig], deg=deg
+                lambda x: np.exp(-s * x), domain=[0, self.max_eig], deg=degree
             ).coef
             for s in scales
         ]
@@ -156,7 +156,7 @@ class GraphWaveGenerator:
 
         def _map_func(x):
             return _empirical_characteristic_function(
-                _chebyshev(x, self.laplacian, self.coeffs, self.deg, self.max_eig), ts,
+                _chebyshev(x, self.laplacian, self.coeffs, self.degree, self.max_eig), ts,
             )
 
         node_idxs = self._node_lookup(node_ids)
@@ -219,7 +219,7 @@ def _empirical_characteristic_function(samples, ts):
     return embedding
 
 
-def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg, max_eig):
+def _chebyshev(one_hot_encoded_row, laplacian, coeffs, degree, max_eig):
     """
     This function calculates one column of the Chebyshev approximation of exp(-scale * laplacian) for
     all scales.
@@ -228,7 +228,7 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg, max_eig):
         one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column (node) to calculate.
         laplacian (SparseTensor): the unormalized graph laplacian
         coeffs: the Chebyshev coefficients for exp(-scale * x) for each scale in the shape (num_scales, deg)
-        deg: the degree of the Chebyshev polynomial
+        degree: the degree of the Chebyshev polynomial
     Returns:
         (num_scales, num_nodes) tensor of the wavelets for each scale for the specified node.
     """
@@ -242,7 +242,7 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg, max_eig):
     T_1 = (K.dot(laplacian, T_0) - a * T_0) / a
 
     cheby_polys = [T_0, T_1]
-    for i in range(deg - 1):
+    for i in range(degree - 1):
         cheby_poly = (2 / a) * (
             K.dot(laplacian, cheby_polys[-1]) - a * cheby_polys[-1]
         ) - cheby_polys[-2]

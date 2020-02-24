@@ -36,26 +36,26 @@ class TestGraphWave:
     num_nodes = len(G.nodes())
 
     def test_init(self):
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         assert np.isclose(generator.scales, (0.1, 2, 3, 4)).all()
-        assert generator.deg == 10
+        assert generator.degree == 10
         assert generator.coeffs.shape == (4, 10 + 1)
         assert generator.laplacian.shape == (len(self.gnx.nodes), len(self.gnx.nodes))
 
     def test_bad_init(self):
 
         with pytest.raises(TypeError):
-            generator = GraphWaveGenerator(None, scales=(0.1, 2, 3, 4), deg=10)
+            generator = GraphWaveGenerator(None, scales=(0.1, 2, 3, 4), degree=10)
 
         with pytest.raises(TypeError, match="deg: expected.*found float"):
-            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=1.1)
+            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=1.1)
 
         with pytest.raises(ValueError, match="deg: expected.*found 0"):
-            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=0)
+            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=0)
 
     def test_bad_flow(self):
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         with pytest.raises(TypeError, match="batch_size: expected.*found float"):
             generator.flow(self.G.nodes(), self.sample_points, batch_size=4.5)
@@ -84,7 +84,7 @@ class TestGraphWave:
     @pytest.mark.parametrize("shuffle", [False, True])
     def test_flow_shuffle(self, shuffle):
 
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         embeddings_dataset = generator.flow(
             node_ids=self.G.nodes(),
@@ -105,7 +105,7 @@ class TestGraphWave:
 
     def test_determinism(self):
 
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         embeddings_dataset = generator.flow(
             node_ids=self.G.nodes(),
@@ -133,7 +133,7 @@ class TestGraphWave:
 
     @pytest.mark.parametrize("repeat", [False, True])
     def test_flow_repeat(self, repeat):
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         for i, x in enumerate(
             generator.flow(
@@ -153,7 +153,7 @@ class TestGraphWave:
     def test_flow_batch_size(self, batch_size):
 
         scales = (0.1, 2, 3, 4)
-        generator = GraphWaveGenerator(self.G, scales=scales, deg=10)
+        generator = GraphWaveGenerator(self.G, scales=scales, degree=10)
 
         expected_embed_dim = len(self.sample_points) * len(scales) * 2
 
@@ -174,7 +174,7 @@ class TestGraphWave:
     @pytest.mark.parametrize("num_samples", [1, 25, 50])
     def test_embedding_dim(self, num_samples):
         scales = (0.1, 2, 3, 4)
-        generator = GraphWaveGenerator(self.G, scales=scales, deg=10)
+        generator = GraphWaveGenerator(self.G, scales=scales, degree=10)
 
         sample_points = np.linspace(0, 1, num_samples)
 
@@ -188,7 +188,7 @@ class TestGraphWave:
 
     def test_flow_targets(self):
 
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         for i, x in enumerate(
             generator.flow(
@@ -203,7 +203,7 @@ class TestGraphWave:
 
     def test_flow_node_ids(self):
 
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), deg=10)
+        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         node_ids = list(self.G.nodes())[:4]
 
@@ -227,7 +227,7 @@ class TestGraphWave:
         """
         scales = (1, 5, 10)
 
-        generator = GraphWaveGenerator(self.G, scales=scales, deg=50,)
+        generator = GraphWaveGenerator(self.G, scales=scales, degree=50,)
 
         # calculate wavelets exactly using eigenvalues
         adj = self.G.to_adjacency_matrix().tocoo()
