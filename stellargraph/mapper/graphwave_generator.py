@@ -226,7 +226,7 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, deg, max_eig):
 
     Args:
         one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column (node) to calculate.
-        laplacian (SparseTensor): the unormalized graph laplacian
+        laplacian (SparseTensor): the unnormalized graph laplacian
         coeffs: the Chebyshev coefficients for exp(-scale * x) for each scale in the shape (num_scales, deg)
         deg: the degree of the Chebyshev polynomial
     Returns:
