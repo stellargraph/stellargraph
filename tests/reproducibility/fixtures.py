@@ -29,7 +29,7 @@ def assert_reproducible(func, num_iter=10):
 
     Args:
         func (callable): Function to check for reproducible model
-        num_iter (int, default 20): Number of iterations to run through to validate reproducibility.
+        num_iter (int, default 10): Number of iterations to run through to validate reproducibility.
 
     """
     model = func()
