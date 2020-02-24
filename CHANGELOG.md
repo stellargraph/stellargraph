@@ -8,7 +8,7 @@
 
 - New algorithms:
 
-    - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian.
+    - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#822](https://github.com/stellargraph/stellargraph/issues/822)
 
 ### Breaking changes
 
