@@ -240,7 +240,7 @@ class TestGraphWave:
         eigenvecs = np.asarray(eigenvecs)
 
         psis = [
-            (eigenvecs * np.exp(-s * eigenvals)).dot(eigenvecs.transpose())
+            eigenvecs @ np.diag(np.exp(-s * eigenvals))) @ eigenvecs.T
             for s in scales
         ]
         psis = np.stack(psis, axis=1).astype(np.float32)
