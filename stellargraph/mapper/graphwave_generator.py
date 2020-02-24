@@ -118,7 +118,7 @@ class GraphWaveGenerator:
             targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
             shuffle (bool): indicates whether to shuffle the dataset
-            seed (None or int): the random seed to use for shuffling the dataset
+            seed (int,optional): the random seed to use for shuffling the dataset
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one
                 full pass.
             num_parallel_calls (int): number of threads to use.
