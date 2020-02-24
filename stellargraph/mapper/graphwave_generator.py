@@ -237,12 +237,12 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, max_eig):
         tf.sparse.to_dense(one_hot_encoded_row), shape=(laplacian.shape[0], 1)
     )
 
-    T_1 = (K.dot(laplacian, T_0) - a * T_0) / a
+    T_1 = K.dot(laplacian, T_0) / a - T_0
 
     cheby_polys = [T_0, T_1]
     for i in range(coeffs.shape[1] - 2):
-        cheby_poly = (2 / a) * (
-            K.dot(laplacian, cheby_polys[-1]) - a * cheby_polys[-1]
+        cheby_poly = 2 * (
+            K.dot(laplacian, cheby_polys[-1]) / a - cheby_polys[-1]
         ) - cheby_polys[-2]
         cheby_polys.append(cheby_poly)
 
