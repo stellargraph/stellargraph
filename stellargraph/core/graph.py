@@ -791,15 +791,18 @@ class StellarGraph:
         edge_types = defaultdict(int)
 
         for n1, rel, n2, count in zip(*unique_ets, counts):
-            edge_type_tri = EdgeType(n1, rel, n2)
-            edge_types[edge_type_tri] += count
+            if self.is_directed():
+                ett = EdgeType(n1, rel, n2)
+            else:
+                ett = EdgeType(min(n1, n2), rel, max(n1, n2))
 
-            graph_schema[n1].add(edge_type_tri)
+            edge_types[ett] += count
+
+            graph_schema[ett.n1].add(ett)
 
             if not self.is_directed():
-                edge_type_tri = EdgeType(n2, rel, n1)
-                edge_types[edge_type_tri] += count
-                graph_schema[n2].add(edge_type_tri)
+                other_ett = EdgeType(ett.n2, rel, ett.n1)
+                graph_schema[other_ett.n1].add(other_ett)
 
         # Create keys for node and edge types
         schema = {

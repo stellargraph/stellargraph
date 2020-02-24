@@ -753,10 +753,14 @@ def test_info_homogeneous(is_directed):
     assert " ABC-xyz->ABC: [4]" in info
 
 
-def test_info_heterogeneous():
-    g = example_hin_1()
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_info_heterogeneous(is_directed):
+    g = example_hin_1(is_directed=is_directed)
     info = g.info()
-    assert "StellarGraph: Undirected multigraph" in info
+    if is_directed:
+        assert "StellarDiGraph: Directed multigraph" in info
+    else:
+        assert "StellarGraph: Undirected multigraph" in info
     assert "Nodes: 7, Edges: 6" in info
 
     assert " A: [4]" in info
@@ -764,8 +768,13 @@ def test_info_heterogeneous():
     assert " B: [3]" in info
     assert " Edge types: B-F->B, B-R->A" in info
 
-    assert " A-R->B: [5]"
-    assert " B-F->B: [1]"
+    if is_directed:
+        assert " A-R->B: [3]" in info
+        assert " B-R->A: [2]" in info
+    else:
+        assert " A-R->B: [5]" in info
+
+    assert " B-F->B: [1]" in info
 
 
 def test_edges_include_weights():
