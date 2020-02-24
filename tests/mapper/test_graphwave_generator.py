@@ -27,243 +27,248 @@ import scipy.sparse as sps
 import tensorflow as tf
 
 
-class TestGraphWave:
+def _epoch_as_matrix(dataset):
+    return np.vstack([x.numpy() for x in dataset])
 
-    gnx = nx.barbell_graph(m1=10, m2=11)
 
-    G = StellarGraph(gnx)
-    sample_points = np.linspace(0, 100, 50).astype(np.float32)
-    num_nodes = len(G.nodes())
+@pytest.fixture
+def barbell():
+    return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
 
-    def test_init(self):
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
-        assert np.array_equal(generator.scales, np.array((0.1, 2, 3, 4)).astype(np.float32))
-        assert generator.coeffs.shape == (4, 10 + 1)
-        assert generator.laplacian.shape == (len(self.gnx.nodes), len(self.gnx.nodes))
+def test_init(barbell):
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
 
-    def test_bad_init(self):
+    assert np.array_equal(generator.scales, np.array((0.1, 2, 3, 4)).astype(np.float32))
+    assert generator.coeffs.shape == (4, 10 + 1)
+    assert generator.laplacian.shape == (
+        barbell.number_of_nodes(),
+        barbell.number_of_nodes(),
+    )
 
-        with pytest.raises(TypeError):
-            generator = GraphWaveGenerator(None, scales=(0.1, 2, 3, 4), degree=10)
 
-        with pytest.raises(TypeError, match="deg: expected.*found float"):
-            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=1.1)
+def test_bad_init(barbell):
 
-        with pytest.raises(ValueError, match="deg: expected.*found 0"):
-            generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=0)
+    with pytest.raises(TypeError):
+        generator = GraphWaveGenerator(None, scales=(0.1, 2, 3, 4), degree=10)
 
-    def test_bad_flow(self):
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
+    with pytest.raises(TypeError, match="degree: expected.*found float"):
+        generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=1.1)
 
-        with pytest.raises(TypeError, match="batch_size: expected.*found float"):
-            generator.flow(self.G.nodes(), self.sample_points, batch_size=4.5)
+    with pytest.raises(ValueError, match="degree: expected.*found 0"):
+        generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=0)
 
-        with pytest.raises(ValueError, match="batch_size: expected.*found 0"):
-            generator.flow(self.G.nodes(), self.sample_points, batch_size=0)
 
-        with pytest.raises(TypeError, match="shuffle: expected.*found int"):
-            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, shuffle=1)
+def test_bad_flow(barbell):
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
+    sample_points = np.linspace(0, 100, 25)
 
-        with pytest.raises(TypeError, match="repeat: expected.*found int"):
-            generator.flow(self.G.nodes(), self.sample_points, batch_size=1, repeat=1)
+    with pytest.raises(TypeError, match="batch_size: expected.*found float"):
+        generator.flow(barbell.nodes(), sample_points, batch_size=4.5)
 
-        with pytest.raises(
-            TypeError, match="num_parallel_calls: expected.*found float"
-        ):
-            generator.flow(
-                self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=2.2
-            )
+    with pytest.raises(ValueError, match="batch_size: expected.*found 0"):
+        generator.flow(barbell.nodes(), sample_points, batch_size=0)
 
-        with pytest.raises(ValueError, match="num_parallel_calls: expected.*found 0"):
-            generator.flow(
-                self.G.nodes(), self.sample_points, batch_size=1, num_parallel_calls=0
-            )
+    with pytest.raises(TypeError, match="shuffle: expected.*found int"):
+        generator.flow(barbell.nodes(), sample_points, batch_size=1, shuffle=1)
 
-    @pytest.mark.parametrize("shuffle", [False, True])
-    def test_flow_shuffle(self, shuffle):
+    with pytest.raises(TypeError, match="repeat: expected.*found int"):
+        generator.flow(barbell.nodes(), sample_points, batch_size=1, repeat=1)
 
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
-
-        embeddings_dataset = generator.flow(
-            node_ids=self.G.nodes(),
-            sample_points=self.sample_points,
-            batch_size=1,
-            repeat=False,
-            shuffle=shuffle,
+    with pytest.raises(TypeError, match="num_parallel_calls: expected.*found float"):
+        generator.flow(
+            barbell.nodes(), sample_points, batch_size=1, num_parallel_calls=2.2
         )
 
-        first, *rest = [
-            np.vstack([x.numpy() for x in embeddings_dataset]) for _ in range(20)
-        ]
+    with pytest.raises(ValueError, match="num_parallel_calls: expected.*found 0"):
+        generator.flow(
+            barbell.nodes(), sample_points, batch_size=1, num_parallel_calls=0
+        )
 
-        if shuffle:
-            assert not any((first == r).all() for r in rest)
+
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_flow_shuffle(barbell, shuffle):
+
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
+    sample_points = np.linspace(0, 100, 25)
+
+    embeddings_dataset = generator.flow(
+        node_ids=barbell.nodes(),
+        sample_points=sample_points,
+        batch_size=1,
+        repeat=False,
+        shuffle=shuffle,
+    )
+
+    first, *rest = [_epoch_as_matrix(embeddings_dataset) for _ in range(20)]
+
+    if shuffle:
+        assert not any(np.array_equal(first, r) for r in rest)
+    else:
+        assert all(np.array_equal(first, r) for r in rest)
+
+
+def test_determinism(barbell):
+
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
+    sample_points = np.linspace(0, 100, 25)
+
+    embeddings_dataset = generator.flow(
+        node_ids=barbell.nodes(),
+        sample_points=sample_points,
+        batch_size=1,
+        repeat=False,
+        shuffle=True,
+        seed=1234,
+    )
+
+    first_epoch = _epoch_as_matrix(embeddings_dataset)
+
+    embeddings_dataset = generator.flow(
+        node_ids=barbell.nodes(),
+        sample_points=sample_points,
+        batch_size=1,
+        repeat=False,
+        shuffle=True,
+        seed=1234,
+    )
+
+    second_epcoh = _epoch_as_matrix(embeddings_dataset)
+
+    assert np.array_equal(first_epoch, second_epcoh)
+
+
+@pytest.mark.parametrize("repeat", [False, True])
+def test_flow_repeat(barbell, repeat):
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
+    sample_points = np.linspace(0, 100, 25)
+
+    for i, x in enumerate(
+        generator.flow(
+            barbell.nodes(), sample_points=sample_points, batch_size=1, repeat=repeat,
+        )
+    ):
+
+        if i > barbell.number_of_nodes():
+            break
+
+    assert (i > barbell.number_of_nodes()) == repeat
+
+
+@pytest.mark.parametrize("batch_size", [1, 5, 10])
+def test_flow_batch_size(barbell, batch_size):
+
+    scales = (0.1, 2, 3, 4)
+    generator = GraphWaveGenerator(barbell, scales=scales, degree=10)
+    sample_points = np.linspace(0, 100, 25)
+
+    expected_embed_dim = len(sample_points) * len(scales) * 2
+
+    for i, x in enumerate(
+        generator.flow(
+            barbell.nodes(),
+            sample_points=sample_points,
+            batch_size=batch_size,
+            repeat=False,
+        )
+    ):
+        # all batches except maybe last will have a batch size of batch_size
+        if i < barbell.number_of_nodes() // batch_size:
+            assert x.shape == (batch_size, expected_embed_dim)
         else:
-            assert all((first == r).all() for r in rest)
+            assert x.shape == (
+                barbell.number_of_nodes() % batch_size,
+                expected_embed_dim,
+            )
 
-    def test_determinism(self):
 
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
+@pytest.mark.parametrize("num_samples", [1, 25, 50])
+def test_embedding_dim(barbell, num_samples):
+    scales = (0.1, 2, 3, 4)
+    generator = GraphWaveGenerator(barbell, scales=scales, degree=10)
 
-        embeddings_dataset = generator.flow(
-            node_ids=self.G.nodes(),
-            sample_points=self.sample_points,
+    sample_points = np.linspace(0, 1, num_samples)
+
+    expected_embed_dim = len(sample_points) * len(scales) * 2
+
+    for x in generator.flow(
+        barbell.nodes(), sample_points=sample_points, batch_size=4, repeat=False
+    ):
+
+        assert x.shape[1] == expected_embed_dim
+
+
+def test_flow_targets(barbell):
+
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
+    sample_points = np.linspace(0, 100, 25)
+
+    for i, x in enumerate(
+        generator.flow(
+            barbell.nodes(),
+            sample_points=sample_points,
             batch_size=1,
-            repeat=False,
-            shuffle=True,
-            seed=1234,
+            targets=np.arange(barbell.number_of_nodes()),
         )
+    ):
+        assert len(x) == 2
+        assert x[1].numpy() == i
 
-        first = np.vstack([x.numpy() for x in embeddings_dataset])
 
-        embeddings_dataset = generator.flow(
-            node_ids=self.G.nodes(),
-            sample_points=self.sample_points,
-            batch_size=1,
-            repeat=False,
-            shuffle=True,
-            seed=1234,
-        )
+def test_flow_node_ids(barbell):
+    sample_points = np.linspace(0, 100, 25)
+    generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
 
-        second = np.vstack([x.numpy() for x in embeddings_dataset])
+    node_ids = list(barbell.nodes())[:4]
 
-        assert (first == second).all()
+    expected_targets = generator._node_lookup(node_ids)
+    actual_targets = []
+    for x in generator.flow(
+        node_ids, sample_points=sample_points, batch_size=1, targets=expected_targets,
+    ):
 
-    @pytest.mark.parametrize("repeat", [False, True])
-    def test_flow_repeat(self, repeat):
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
+        actual_targets.append(x[1].numpy())
 
-        for i, x in enumerate(
-            generator.flow(
-                self.G.nodes(),
-                sample_points=self.sample_points,
-                batch_size=1,
-                repeat=repeat,
-            )
-        ):
+    assert all(a == b for a, b in zip(expected_targets, actual_targets))
 
-            if i > self.num_nodes:
-                break
 
-        assert (i > self.num_nodes) == repeat
+def test_chebyshev(barbell):
+    """
+    This test checks that the Chebyshev approximation accurately calculates the wavelets. It calculates
+    the wavelets exactly using eigenvalues and compares this to the Chebyshev approximation.
+    """
+    scales = (1, 5, 10)
+    sample_points = np.linspace(0, 100, 50).astype(np.float32)
+    generator = GraphWaveGenerator(barbell, scales=scales, degree=50,)
 
-    @pytest.mark.parametrize("batch_size", [1, 5, 10])
-    def test_flow_batch_size(self, batch_size):
+    # calculate wavelets exactly using eigenvalues
+    adj = barbell.to_adjacency_matrix().tocoo()
 
-        scales = (0.1, 2, 3, 4)
-        generator = GraphWaveGenerator(self.G, scales=scales, degree=10)
+    degree_mat = sps.diags(np.asarray(adj.sum(1)).ravel())
+    laplacian = degree_mat - adj
+    laplacian = np.asarray(laplacian.todense()).astype(np.float32)
 
-        expected_embed_dim = len(self.sample_points) * len(scales) * 2
+    eigenvals, eigenvecs = np.linalg.eig(laplacian)
+    eigenvecs = np.asarray(eigenvecs)
 
-        for i, x in enumerate(
-            generator.flow(
-                self.G.nodes(),
-                sample_points=self.sample_points,
-                batch_size=batch_size,
-                repeat=False,
-            )
-        ):
-            # all batches except maybe last will have a batch size of batch_size
-            if i < self.num_nodes // batch_size:
-                assert x.shape == (batch_size, expected_embed_dim)
-            else:
-                assert x.shape == (self.num_nodes % batch_size, expected_embed_dim)
+    psis = [
+        (eigenvecs * np.exp(-s * eigenvals)).dot(eigenvecs.transpose()) for s in scales
+    ]
+    psis = np.stack(psis, axis=1).astype(np.float32)
+    ts = tf.convert_to_tensor(sample_points)
 
-    @pytest.mark.parametrize("num_samples", [1, 25, 50])
-    def test_embedding_dim(self, num_samples):
-        scales = (0.1, 2, 3, 4)
-        generator = GraphWaveGenerator(self.G, scales=scales, degree=10)
+    expected_dataset = tf.data.Dataset.from_tensor_slices(psis).map(
+        lambda x: _empirical_characteristic_function(x, ts),
+    )
+    expected_embeddings = _epoch_as_matrix(expected_dataset)
 
-        sample_points = np.linspace(0, 1, num_samples)
+    actual_dataset = generator.flow(
+        node_ids=barbell.nodes(),
+        sample_points=sample_points,
+        batch_size=1,
+        repeat=False,
+    )
+    actual_embeddings = _epoch_as_matrix(actual_dataset)
 
-        expected_embed_dim = len(sample_points) * len(scales) * 2
-
-        for x in generator.flow(
-            self.G.nodes(), sample_points=sample_points, batch_size=4, repeat=False
-        ):
-
-            assert x.shape[1] == expected_embed_dim
-
-    def test_flow_targets(self):
-
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
-
-        for i, x in enumerate(
-            generator.flow(
-                self.G.nodes(),
-                sample_points=self.sample_points,
-                batch_size=1,
-                targets=np.arange(self.num_nodes),
-            )
-        ):
-            assert len(x) == 2
-            assert x[1].numpy() == i
-
-    def test_flow_node_ids(self):
-
-        generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
-
-        node_ids = list(self.G.nodes())[:4]
-
-        expected_targets = generator._node_lookup(node_ids)
-        actual_targets = []
-        for x in generator.flow(
-            node_ids,
-            sample_points=self.sample_points,
-            batch_size=1,
-            targets=expected_targets,
-        ):
-
-            actual_targets.append(x[1].numpy())
-
-        assert all(a == b for a, b in zip(expected_targets, actual_targets))
-
-    def test_chebyshev(self):
-        """
-        This test checks that the Chebyshev approximation accurately calculates the wavelets. It calculates
-        the wavelets exactly using eigenvalues and compares this to the Chebyshev approximation.
-        """
-        scales = (1, 5, 10)
-
-        generator = GraphWaveGenerator(self.G, scales=scales, degree=50,)
-
-        # calculate wavelets exactly using eigenvalues
-        adj = self.G.to_adjacency_matrix().tocoo()
-
-        degree_mat = sps.diags(np.asarray(adj.sum(1)).ravel())
-        laplacian = degree_mat - adj
-        laplacian = np.asarray(laplacian.todense()).astype(np.float32)
-
-        eigenvals, eigenvecs = np.linalg.eig(laplacian)
-        eigenvecs = np.asarray(eigenvecs)
-
-        psis = [
-            (eigenvecs * np.exp(-s * eigenvals)).dot(eigenvecs.transpose())
-            for s in scales
-        ]
-        psis = np.stack(psis, axis=1).astype(np.float32)
-        expected_embeddings = []
-        ts = tf.convert_to_tensor(self.sample_points)
-
-        for x in tf.data.Dataset.from_tensor_slices(psis).map(
-            lambda x: _empirical_characteristic_function(x, ts),
-        ):
-            expected_embeddings.append(x.numpy())
-
-        expected_embeddings = np.vstack(expected_embeddings)
-
-        actual_embeddings = [
-            x.numpy()
-            for x in generator.flow(
-                node_ids=self.G.nodes(),
-                sample_points=self.sample_points,
-                batch_size=1,
-                repeat=False,
-            )
-        ]
-
-        actual_embeddings = np.vstack(actual_embeddings)
-
-        # compare exactly calculated wavelets to chebyshev
-        assert np.allclose(np.vstack(actual_embeddings), np.vstack(expected_embeddings), rtol=1e-2)
+    # compare exactly calculated wavelets to chebyshev
+    assert np.allclose(actual_embeddings, expected_embeddings, rtol=1e-2)

@@ -17,6 +17,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 import numpy as np
 from ..core import StellarGraph
+from ..core.validation import require_integer_in_range
 from scipy.sparse.linalg import eigs
 from scipy.sparse import diags
 
@@ -56,11 +57,7 @@ class GraphWaveGenerator:
                 )
             )
 
-        if not isinstance(degree, int):
-            raise TypeError(f"deg: expected int, found {type(degree).__name__}")
-
-        if degree < 1:
-            raise ValueError(f"deg: expected positive integer, found {degree}")
+        require_integer_in_range(degree, "degree", min_val=1)
 
         # Create sparse adjacency matrix:
         adj = G.to_adjacency_matrix().tocoo()
@@ -125,25 +122,9 @@ class GraphWaveGenerator:
             cache_filename (str): filename to store cached dataset.
         """
 
-        if not isinstance(batch_size, int):
-            raise TypeError(
-                f"batch_size: expected int, found {type(batch_size).__name__}"
-            )
+        require_integer_in_range(batch_size, "batch_size", min_val=1)
 
-        if batch_size < 1:
-            raise ValueError(
-                f"batch_size: expected positive integer, found {batch_size}"
-            )
-
-        if not isinstance(num_parallel_calls, int):
-            raise TypeError(
-                f"num_parallel_calls: expected int, found {type(num_parallel_calls).__name__}"
-            )
-
-        if num_parallel_calls < 1:
-            raise ValueError(
-                f"num_parallel_calls: expected positive integer, found {num_parallel_calls}"
-            )
+        require_integer_in_range(num_parallel_calls, "num_parallel_calls", min_val=1)
 
         if not isinstance(shuffle, bool):
             raise TypeError(f"shuffle: expected bool, found {type(shuffle).__name__}")
@@ -241,9 +222,10 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, max_eig):
 
     cheby_polys = [T_0, T_1]
     for i in range(coeffs.shape[1] - 2):
-        cheby_poly = 2 * (
-            K.dot(laplacian, cheby_polys[-1]) / a - cheby_polys[-1]
-        ) - cheby_polys[-2]
+        cheby_poly = (
+            2 * (K.dot(laplacian, cheby_polys[-1]) / a - cheby_polys[-1])
+            - cheby_polys[-2]
+        )
         cheby_polys.append(cheby_poly)
 
     cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=0), axis=-1)
