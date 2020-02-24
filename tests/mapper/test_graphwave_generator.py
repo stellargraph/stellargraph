@@ -38,7 +38,7 @@ class TestGraphWave:
     def test_init(self):
         generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
-        assert np.isclose(generator.scales, (0.1, 2, 3, 4)).all()
+        assert np.array_equal(generator.scales, np.array((0.1, 2, 3, 4)).astype(np.float32))
         assert generator.coeffs.shape == (4, 10 + 1)
         assert generator.laplacian.shape == (len(self.gnx.nodes), len(self.gnx.nodes))
 
@@ -266,6 +266,4 @@ class TestGraphWave:
         actual_embeddings = np.vstack(actual_embeddings)
 
         # compare exactly calculated wavelets to chebyshev
-        assert np.isclose(
-            np.vstack(actual_embeddings), np.vstack(expected_embeddings), rtol=1e-2
-        ).all()
+        assert np.allclose(np.vstack(actual_embeddings), np.vstack(expected_embeddings), rtol=1e-2)
