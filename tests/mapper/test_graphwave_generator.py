@@ -242,11 +242,10 @@ def test_chebyshev(barbell):
     generator = GraphWaveGenerator(barbell, scales=scales, degree=50,)
 
     # calculate wavelets exactly using eigenvalues
-    adj = barbell.to_adjacency_matrix().tocoo()
+    adj = np.asarray(barbell.to_adjacency_matrix().todense()).astype(np.float32)
 
     degree_mat = sps.diags(np.asarray(adj.sum(1)).ravel())
     laplacian = degree_mat - adj
-    laplacian = np.asarray(laplacian.todense()).astype(np.float32)
 
     eigenvals, eigenvecs = np.linalg.eig(laplacian)
     eigenvecs = np.asarray(eigenvecs)
