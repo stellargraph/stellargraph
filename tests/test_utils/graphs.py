@@ -50,19 +50,18 @@ def relational_create_graph_features(is_directed=False):
     return SG(graph, node_features=node_features), features
 
 
-def example_graph_1_nx(
+def example_graph_nx(
     feature_size=None, label="default", feature_name="feature", is_directed=False
 ):
-    # stellargraph
     graph = nx.DiGraph() if is_directed else nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
+    elist = [(1, 2), (2, 3), (1, 4), (4, 2)]
     graph.add_nodes_from([1, 2, 3, 4], label=label)
     graph.add_edges_from(elist, label=label)
 
     # Add example features
     if feature_size is not None:
         for v in graph.nodes():
-            graph.nodes[v][feature_name] = np.ones(feature_size)
+            graph.nodes[v][feature_name] = int(v) * np.ones(feature_size)
 
     return graph
 
@@ -72,24 +71,13 @@ def _repeated_features(values_to_repeat, width):
     return column.repeat(width, axis=1)
 
 
-def example_graph_1(
-    feature_size=None, label="default", feature_name="feature", is_directed=False
+def example_graph(
+    feature_size=None,
+    node_label="default",
+    edge_label="default",
+    feature_name="feature",
+    is_directed=False,
 ):
-    # attr2vec, graphattention, graphsage, node mappers (2), link mappers, types, stellargraph, unsupervised sampler
-    elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (3, 2)], columns=["source", "target"])
-    if feature_size is not None:
-        features = _repeated_features(np.ones(4), feature_size)
-    else:
-        features = []
-
-    nodes = pd.DataFrame(features, index=[1, 2, 3, 4])
-
-    cls = StellarDiGraph if is_directed else StellarGraph
-    return cls(nodes={label: nodes}, edges={label: elist})
-
-
-def example_graph_2(feature_size=None, label="default") -> StellarGraph:
-    # unsupervised sampler, link mapper
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
     nodes = [1, 2, 3, 4]
     if feature_size is not None:
@@ -98,7 +86,9 @@ def example_graph_2(feature_size=None, label="default") -> StellarGraph:
         features = []
 
     nodes = pd.DataFrame(features, index=nodes)
-    return StellarGraph(nodes={label: nodes}, edges={label: elist})
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={node_label: nodes}, edges={edge_label: elist})
 
 
 def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
@@ -123,7 +113,9 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
     return graph
 
 
-def example_hin_1(feature_sizes=None) -> StellarGraph:
+def example_hin_1(
+    feature_sizes=None, is_directed=False, self_loop=False
+) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
             return []
@@ -138,11 +130,23 @@ def example_hin_1(feature_sizes=None) -> StellarGraph:
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
     r = pd.DataFrame(
-        [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"]
+        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
     )
-    f = pd.DataFrame([(4, 5)], columns=["source", "target"], index=[6])
+    f_edges, f_index = [(4, 5)], [6]
+    if self_loop:
+        # make it a multigraph
+        f_edges.extend([(5, 5), (5, 5)])
+        f_index.extend([7, 8])
 
-    return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
+    # add some weights for the f edges, but not others
+    f_columns = ["source", "target", "weight"]
+    for i, src_tgt in enumerate(f_edges):
+        f_edges[i] = src_tgt + (10 + i,)
+
+    f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
+
+    cls = StellarDiGraph if is_directed else StellarGraph
+    return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
 
 
 def create_test_graph_nx(is_directed=False):
@@ -254,3 +258,26 @@ def line_graph() -> StellarGraph:
     nxg.add_nodes_from(range(10))
     nxg.add_edges_from([(i, i + 1) for i in range(9)])
     return StellarGraph(nxg, node_features=node_features())
+
+
+@pytest.fixture
+def knowledge_graph():
+    nodes = ["a", "b", "c", "d"]
+
+    edge_counter = 0
+
+    def edge_df(*elements):
+        nonlocal edge_counter
+        end = edge_counter + len(elements)
+        index = range(edge_counter, end)
+        edge_counter = end
+        return pd.DataFrame(elements, columns=["source", "target"], index=index)
+
+    edges = {
+        "W": edge_df(("a", "b")),
+        "X": edge_df(("a", "b"), ("b", "c")),
+        "Y": edge_df(("b", "a")),
+        "Z": edge_df(("d", "b")),
+    }
+
+    return StellarDiGraph(nodes=pd.DataFrame(index=nodes), edges=edges)

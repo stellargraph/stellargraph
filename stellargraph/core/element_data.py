@@ -66,13 +66,25 @@ class ExternalIdIndex:
         """
         return (0 <= ilocs) & (ilocs < len(self))
 
-    def to_iloc(self, ids, smaller_type=True) -> np.ndarray:
+    def require_valid(self, query_ids, ilocs: np.ndarray) -> np.ndarray:
+        valid = self.is_valid(ilocs)
+
+        if not valid.all():
+            missing_values = np.asarray(query_ids)[~valid]
+
+            if len(missing_values) == 1:
+                raise KeyError(missing_values[0])
+
+            raise KeyError(missing_values)
+
+    def to_iloc(self, ids, smaller_type=True, strict=False) -> np.ndarray:
         """
         Convert external IDs ``ids`` to integer locations.
 
         Args:
             ids: a collection of external IDs
             smaller_type: if True, convert the ilocs to the smallest type that can hold them, to reduce storage
+            strict: if True, check that all IDs are known and throw a KeyError if not
 
         Returns:
             A numpy array of the integer locations for each id that exists, with missing IDs
@@ -80,6 +92,9 @@ class ExternalIdIndex:
             smaller_type is False)
         """
         internal_ids = self._index.get_indexer(ids)
+        if strict:
+            self.require_valid(ids, internal_ids)
+
         # reduce the storage required (especially useful if this is going to be stored rather than
         # just transient)
         if smaller_type:
@@ -107,6 +122,10 @@ class ElementData:
         shared (dict of type name to pandas DataFrame): information for the elements of each type
     """
 
+    # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
+    # overridden by subclasses as appropriate)
+    _SHARED_REQUIRED_COLUMNS = []
+
     def __init__(self, shared):
         if not isinstance(shared, dict):
             raise TypeError(f"shared: expected dict, found {type(shared)}")
@@ -116,6 +135,10 @@ class ElementData:
                 raise TypeError(
                     f"shared[{key!r}]: expected pandas DataFrame', found {type(value)}"
                 )
+
+            require_dataframe_has_columns(
+                f"features[{key!r}]", value, self._SHARED_REQUIRED_COLUMNS
+            )
 
         type_element_ilocs = {}
         rows_so_far = 0
@@ -134,7 +157,11 @@ class ElementData:
             type_sizes.append(size)
             type_dfs.append(type_data)
 
-        all_columns = pd.concat(type_dfs)
+        if type_dfs:
+            all_columns = pd.concat(type_dfs)
+        else:
+            all_columns = pd.DataFrame(columns=self._SHARED_REQUIRED_COLUMNS)
+
         self._id_index = ExternalIdIndex(all_columns.index)
         self._columns = {
             name: data.to_numpy() for name, data in all_columns.iteritems()
@@ -277,18 +304,17 @@ class EdgeData(ElementData):
     """
     Args:
         shared (dict of type name to pandas DataFrame): information for the edges of each type
-        node_data (NodeData): the nodes that these edges correspond to
     """
 
-    def __init__(self, shared, node_data: NodeData):
+    _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
+
+    def __init__(self, shared):
         super().__init__(shared)
 
-        for key, value in shared.items():
-            require_dataframe_has_columns(
-                f"features[{key!r}]", value, [SOURCE, TARGET, WEIGHT]
-            )
-
-        self._nodes = node_data
+        # cache these columns to avoid having to do more method and dict look-ups
+        self.sources = self._column(SOURCE)
+        self.targets = self._column(TARGET)
+        self.weights = self._column(WEIGHT)
 
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
@@ -306,7 +332,11 @@ class EdgeData(ElementData):
         self._edges_in_dict = _numpyise(in_dict)
         self._edges_out_dict = _numpyise(out_dict)
         self._edges_dict = _numpyise(undirected)
-        self._empty_ids = self.sources[0:0]
+
+        # when there's no neighbors for something, an empty array should be returned; this uses a
+        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
+        # array, the result will still be int32).
+        self._empty_ilocs = np.array([], dtype=np.uint8)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
@@ -335,30 +365,6 @@ class EdgeData(ElementData):
         adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
-    @property
-    def sources(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the source node ID for each edge.
-        """
-        return self._column(SOURCE)
-
-    @property
-    def targets(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the target node ID for each edge.
-        """
-        return self._column(TARGET)
-
-    @property
-    def weights(self) -> np.ndarray:
-        """
-        Returns:
-            An numpy array containing the weight for each edge.
-        """
-        return self._column(WEIGHT)
-
     def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
         """
         Return the integer locations of the edges for the given node_id
@@ -371,4 +377,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ids)
+        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)

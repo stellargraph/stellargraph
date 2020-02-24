@@ -12,6 +12,7 @@ Welcome to StellarGraph's documentation!
 
    quickstart
    api
+   hinsage
 
 
 Indices and tables

@@ -30,19 +30,6 @@ To run the notebook:
  - Navigate to the notebook (`/demos/link-prediction/graphsage/cora-links-example.ipynb`), and click on
  it to launch the notebook.
 
-## Running the script
-
-You can run the script using the following command:
-```
-python cora-links-example.py
-```
-The above command runs the link prediction on Cora dataset with default parameters. There is a number of other command
-line options that affect the architecture and training of the odel. For help on how to set parameters of the run, and
-on parameter meaning, run
-```
-python cora-links-example.py --help
-```
-
 ## References
 
 [1]	W. L. Hamilton, R. Ying, and J. Leskovec, “Inductive representation learning on large graphs,” presented at NIPS 2017

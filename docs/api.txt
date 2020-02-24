@@ -12,14 +12,14 @@ Data
 ----------------
 
 .. automodule:: stellargraph.data
-  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, UnsupervisedSampler, EdgeSplitter, NodeSplitter, from_epgm, load_dataset_BlogCatalog3
+  :members: UniformRandomWalk, BiasedRandomWalk, UniformRandomMetaPathWalk, SampledBreadthFirstWalk, SampledHeterogeneousBreadthFirstWalk, TemporalRandomWalk, UnsupervisedSampler, EdgeSplitter, from_epgm
 
 
 Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator
 
 
 GraphSAGE model
@@ -84,6 +84,22 @@ GAT model
   :members: GAT, GraphAttention, GraphAttentionSparse
 
 
+Watch Your Step model
+-------------------------
+
+.. automodule:: stellargraph.layer.watch_your_step
+  :members: WatchYourStep
+
+
+Knowledge Graph models
+----------------------
+
+.. automodule:: stellargraph.mapper.knowledge_graph
+  :members: KGTripleGenerator
+
+.. automodule:: stellargraph.layer.knowledge_graph
+  :members: ComplEx, ComplExScore
+
 Link prediction layers
 ------------------------
 
@@ -103,6 +119,12 @@ Calibration
 .. automodule:: stellargraph.utils.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
 
+Utilities
+------------------------
+
+.. automodule:: stellargraph.utils
+  :members: plot_history
+
 
 Datasets
 ----------------
@@ -110,3 +132,10 @@ Datasets
 .. automodule:: stellargraph.datasets.datasets
   :members:
   :inherited-members:
+
+
+Random
+------------------------
+
+.. automodule:: stellargraph.random
+  :members: set_seed
