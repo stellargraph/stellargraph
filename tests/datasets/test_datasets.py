@@ -107,3 +107,14 @@ def test_blogcatalog3_deprecated_load() -> None:
     dataset.download()
     with pytest.warns(DeprecationWarning, match=r"BlogCatalog3\(\)\.load\(\)"):
         load_dataset_BlogCatalog3(dataset.data_directory)
+
+
+def test_cora_load() -> None:
+    g, subjects = Cora().load()
+
+    assert g.number_of_nodes() == 2708
+    assert g.number_of_edges() == 5429
+
+    assert len(subjects) == g.number_of_nodes()
+    assert set(subjects.index) == set(g.nodes())
+    assert set(subjects) == {"Case_Based", "Genetic_Algorithms", "Neural_Networks", "Probabilistic_Methods", "Reinforcement_Learning", "Rule_Learning", "Theory"}
