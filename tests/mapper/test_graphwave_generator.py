@@ -230,7 +230,7 @@ class TestGraphWave:
         generator = GraphWaveGenerator(self.G, scales=scales, deg=50,)
 
         # calculate wavelets exactly using eigenvalues
-        adj = self.G.to_adjacency_matrix().tocoo()
+        adj = np.asarray(self.G.to_adjacency_matrix().todense())
 
         degree_mat = sps.diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
