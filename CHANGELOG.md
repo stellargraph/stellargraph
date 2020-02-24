@@ -39,10 +39,6 @@ Some new algorithms and features are still under active development, and are ava
 
 - StellarGraph now supports [`tensorflow` 2.1](https://github.com/tensorflow/tensorflow/releases/tag/v2.1.0), which includes GPU support by default: [\#875](https://github.com/stellargraph/stellargraph/pull/875)
 - Demos now focus on Jupyter notebooks, and demo scripts that duplicate notebooks have been removed: [\#889](https://github.com/stellargraph/stellargraph/pull/889)
-- DevOps changes:
-  - Most demo notebooks are now tested on CI using Papermill, and so won't become out of date
-  - CI: [\#698](http://github.com/stellargraph/stellargraph/pull/698), [\#760](https://github.com/stellargraph/stellargraph/pull/760), [\#788](http://github.com/stellargraph/stellargraph/pull/788), [\#817](http://github.com/stellargraph/stellargraph/pull/817), [\#860](http://github.com/stellargraph/stellargraph/pull/860), [\#874](http://github.com/stellargraph/stellargraph/pull/874), [\#877](http://github.com/stellargraph/stellargraph/pull/877), [\#878](http://github.com/stellargraph/stellargraph/pull/878), [\#906](https://github.com/stellargraph/stellargraph/pull/906), [\#908](http://github.com/stellargraph/stellargraph/pull/908), [\#915](https://github.com/stellargraph/stellargraph/pull/915), [\#916](https://github.com/stellargraph/stellargraph/pull/916), [\#918](https://github.com/stellargraph/stellargraph/pull/918)
-  - Other: [\#708](http://github.com/stellargraph/stellargraph/pull/708), [\#746](http://github.com/stellargraph/stellargraph/pull/746), [\#791](http://github.com/stellargraph/stellargraph/pull/791)
 - More detailed information about Heterogeneous GraphSAGE (HinSAGE) has been added to StellarGraph's readthedocs documentation [\#839](https://github.com/stellargraph/stellargraph/pull/839).
 - The following algorithms are now reproducible:
   - Supervised GraphSAGE Node Attribute Inference [\#844](https://github.com/stellargraph/stellargraph/pull/844)
@@ -52,6 +48,10 @@ Some new algorithms and features are still under active development, and are ava
 - `StellarGraph.to_adjacency_matrix` now ignores edge weights (that is, defaults every weight to `1`) by default, unless `weighted=True` is specified [\#857](http://github.com/stellargraph/stellargraph/pull/857)
 - `stellargraph.utils.plot_history` visualises the model training history as a plot for each metric (such as loss) [\#902](https://github.com/stellargraph/stellargraph/pull/902)
 - the saliency maps/interpretability code has been refactored to have more sharing as well as to make it cleaner and easier to extend [\#855](http://github.com/stellargraph/stellargraph/pull/855)
+- DevOps changes:
+  - Most demo notebooks are now tested on CI using Papermill, and so won't become out of date
+  - CI: [\#698](http://github.com/stellargraph/stellargraph/pull/698), [\#760](https://github.com/stellargraph/stellargraph/pull/760), [\#788](http://github.com/stellargraph/stellargraph/pull/788), [\#817](http://github.com/stellargraph/stellargraph/pull/817), [\#860](http://github.com/stellargraph/stellargraph/pull/860), [\#874](http://github.com/stellargraph/stellargraph/pull/874), [\#877](http://github.com/stellargraph/stellargraph/pull/877), [\#878](http://github.com/stellargraph/stellargraph/pull/878), [\#906](https://github.com/stellargraph/stellargraph/pull/906), [\#908](http://github.com/stellargraph/stellargraph/pull/908), [\#915](https://github.com/stellargraph/stellargraph/pull/915), [\#916](https://github.com/stellargraph/stellargraph/pull/916), [\#918](https://github.com/stellargraph/stellargraph/pull/918)
+  - Other: [\#708](http://github.com/stellargraph/stellargraph/pull/708), [\#746](http://github.com/stellargraph/stellargraph/pull/746), [\#791](http://github.com/stellargraph/stellargraph/pull/791)
 
 
 ## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
