@@ -39,7 +39,6 @@ class TestGraphWave:
         generator = GraphWaveGenerator(self.G, scales=(0.1, 2, 3, 4), degree=10)
 
         assert np.isclose(generator.scales, (0.1, 2, 3, 4)).all()
-        assert generator.degree == 10
         assert generator.coeffs.shape == (4, 10 + 1)
         assert generator.laplacian.shape == (len(self.gnx.nodes), len(self.gnx.nodes))
 

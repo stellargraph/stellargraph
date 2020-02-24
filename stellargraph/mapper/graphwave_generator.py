@@ -67,7 +67,6 @@ class GraphWaveGenerator:
 
         # Function to map node IDs to indices for quicker node index lookups
         self._node_lookup = G._get_index_for_nodes
-        self.degree = degree
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
@@ -81,11 +80,11 @@ class GraphWaveGenerator:
         coeffs = [
             np.polynomial.chebyshev.Chebyshev.interpolate(
                 lambda x: np.exp(-s * x), domain=[0, self.max_eig], deg=degree
-            ).coef
+            ).coef.astype(np.float32)
             for s in scales
         ]
 
-        self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0).astype(np.float32))
+        self.coeffs = tf.convert_to_tensor(np.stack(coeffs, axis=0))
 
         self.laplacian = tf.sparse.SparseTensor(
             indices=np.column_stack((laplacian.row, laplacian.col)),
@@ -156,7 +155,7 @@ class GraphWaveGenerator:
 
         def _map_func(x):
             return _empirical_characteristic_function(
-                _chebyshev(x, self.laplacian, self.coeffs, self.degree, self.max_eig), ts,
+                _chebyshev(x, self.laplacian, self.coeffs, self.max_eig), ts,
             )
 
         node_idxs = self._node_lookup(node_ids)
@@ -219,7 +218,7 @@ def _empirical_characteristic_function(samples, ts):
     return embedding
 
 
-def _chebyshev(one_hot_encoded_row, laplacian, coeffs, degree, max_eig):
+def _chebyshev(one_hot_encoded_row, laplacian, coeffs, max_eig):
     """
     This function calculates one column of the Chebyshev approximation of exp(-scale * laplacian) for
     all scales.
@@ -228,7 +227,6 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, degree, max_eig):
         one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column (node) to calculate.
         laplacian (SparseTensor): the unormalized graph laplacian
         coeffs: the Chebyshev coefficients for exp(-scale * x) for each scale in the shape (num_scales, deg)
-        degree: the degree of the Chebyshev polynomial
     Returns:
         (num_scales, num_nodes) tensor of the wavelets for each scale for the specified node.
     """
@@ -242,7 +240,7 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, degree, max_eig):
     T_1 = (K.dot(laplacian, T_0) - a * T_0) / a
 
     cheby_polys = [T_0, T_1]
-    for i in range(degree - 1):
+    for i in range(coeffs.shape[1] - 2):
         cheby_poly = (2 / a) * (
             K.dot(laplacian, cheby_polys[-1]) - a * cheby_polys[-1]
         ) - cheby_polys[-2]
