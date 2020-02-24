@@ -98,9 +98,9 @@ class TestGraphWave:
         ]
 
         if shuffle:
-            assert any((first == r).all() for r in rest) is False
+            assert not any((first == r).all() for r in rest)
         else:
-            assert all((first == r).all() for r in rest) is True
+            assert all((first == r).all() for r in rest)
 
     def test_determinism(self):
 
