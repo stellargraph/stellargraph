@@ -179,7 +179,7 @@ class MovieLens(
     directory_name="ml-100k",
     url="http://files.grouplens.org/datasets/movielens/ml-100k.zip",
     url_archive_format="zip",
-    expected_files=["u.data", "u.user", "u.item", "u.genre", "u.occupation",],
+    expected_files=["u.data", "u.user", "u.item", "u.genre", "u.occupation"],
     description="The MovieLens 100K dataset contains 100,000 ratings from 943 users on 1682 movies.",
     source="https://grouplens.org/datasets/movielens/100k/",
 ):
@@ -192,7 +192,7 @@ class AIFB(
     directory_name="aifb",
     url="https://ndownloader.figshare.com/files/1118822",
     url_archive_format=None,
-    expected_files=["aifbfixed_complete.n3",],
+    expected_files=["aifbfixed_complete.n3"],
     description="The AIFB dataset describes the AIFB research institute in terms of its staff, research group, and publications. "
     'First used for machine learning with RDF in Bloehdorn, Stephan and Sure, York, "Kernel Methods for Mining Instance Data in Ontologies", '
     "The Semantic Web (2008), http://dx.doi.org/10.1007/978-3-540-76298-0_5. "
@@ -200,5 +200,26 @@ class AIFB(
     "was first used to predict the affiliation (i.e., research group) for people in the dataset. The dataset contains 178 "
     "members of a research group with 5 different research groups. The goal is to predict which research group a researcher belongs to.",
     source="https://figshare.com/articles/AIFB_DataSet/745364",
+):
+    pass
+
+
+class MUTAG(
+    DatasetLoader,
+    name="MUTAG",
+    directory_name="mutag",
+    url="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/MUTAG.zip",
+    url_archive_format="zip",
+    expected_files=[
+        "MUTAG_A.txt",
+        "MUTAG_graph_indicator.txt",
+        "MUTAG_node_labels.txt",
+        "MUTAG_edge_labels.txt",
+        "MUTAG_graph_labels.txt",
+        "README.txt",
+    ],
+    description="Each graph represents a chemical compound and graph labels represent 'their mutagenic effect on a specific gram negative bacterium.'"
+    "The dataset includes 188 graphs with 18 nodes and 20 edges on average for each graph. Graph nodes have 7 labels and each graph is labelled as belonging to 1 of 2 classes.",
+    source="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/",
 ):
     pass
