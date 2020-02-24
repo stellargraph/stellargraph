@@ -117,4 +117,12 @@ def test_cora_load() -> None:
 
     assert len(subjects) == g.number_of_nodes()
     assert set(subjects.index) == set(g.nodes())
-    assert set(subjects) == {"Case_Based", "Genetic_Algorithms", "Neural_Networks", "Probabilistic_Methods", "Reinforcement_Learning", "Rule_Learning", "Theory"}
+    assert set(subjects) == {
+        "Case_Based",
+        "Genetic_Algorithms",
+        "Neural_Networks",
+        "Probabilistic_Methods",
+        "Reinforcement_Learning",
+        "Rule_Learning",
+        "Theory",
+    }
