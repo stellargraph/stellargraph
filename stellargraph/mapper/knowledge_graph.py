@@ -130,7 +130,9 @@ class KGTripleSequence(Sequence):
         self.shuffle = shuffle
 
         _, self._global_rs = random_state(seed)
-        self._batch_sampler = SeededPerBatch(np.random.RandomState, self._global_rs.randint(2**32))
+        self._batch_sampler = SeededPerBatch(
+            np.random.RandomState, self._global_rs.randint(2 ** 32)
+        )
 
     def __len__(self):
         return int(np.ceil(len(self.indices) / self.batch_size))
