@@ -6,7 +6,17 @@
 
 ### Major features and improvements
 
-- The `StellarGraph` and `StellarDiGraph` classes are now backed by NumPy and Pandas unconditionally. The `StellarGraph(...)` and `StellarDiGraph(...)` constructors now consume Pandas DataFrames representing node features and the edge list. The old backend on top of NetworkX has been removed, and conversion from a NetworkX graph should be performed via the `StellarGraph.from_networkx` function (the existing form `StellarGraph(networkx_graph)` is still supported but is deprecated). [\#752](https://github.com/stellargraph/stellargraph/issues/752)
+- The `StellarGraph` and `StellarDiGraph` classes are now backed by NumPy and Pandas [\#752](https://github.com/stellargraph/stellargraph/issues/752). The `StellarGraph(...)` and `StellarDiGraph(...)` constructors now consume Pandas DataFrames representing node features and the edge list. This significantly reduces the memory use and construction time for these `StellarGraph` objects.
+
+  The following table shows some measurements of the memory use of `g = StellarGraph(...)`, and the time required for that constructor call, for several real-world datasets of different sizes, for both the old form backed by NetworkX code and the new form backed by NumPy and Pandas (both old and new store node features similarly, using 2D NumPy arrays, so the measurements in this table include only graph structure: the edges and nodes themselves):
+
+  | dataset |  nodes |    edges | size old (MiB) | size new (MiB) | size change | time old (s) | time new (s) | time change |
+  |---------|-------:|---------:|---------------:|---------------:|------------:|-------------:|-------------:|------------:|
+  | Cora    |   2708 |     5429 |            4.1 |        **1.3** |    **-69%** |        0.069 |    **0.034** |    **-50%** |
+  | FB15k   |  14951 |   592213 |            148 |         **28** |    **-81%** |          5.5 |      **1.2** |    **-77%** |
+  | Reddit  | 231443 | 11606919 |           6611 |        **493** |    **-93%** |          154 |       **33** |    **-82%** |
+
+  The old backend has been removed, and conversion from a NetworkX graph should be performed via the `StellarGraph.from_networkx` function (the existing form `StellarGraph(networkx_graph)` is supported in this release but is deprecated, and may be removed in a future release).
 - Documentation for StellarGraph's extension of GraphSAGE to heterogeneous graphs is now published [\#839](https://github.com/stellargraph/stellargraph/pull/839)
 
 ### Breaking changes
