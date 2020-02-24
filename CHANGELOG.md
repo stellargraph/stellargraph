@@ -19,11 +19,11 @@
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
-- Temporal Random Walks: random walks that respect the time that each edge occurred (stored as edge weights) [\#787](http://github.com/stellargraph/stellargraph/pull/787)
+- Temporal Random Walks: random walks that respect the time that each edge occurred (stored as edge weights) [\#787](http://github.com/stellargraph/stellargraph/pull/787). The implementation does not have an example or thorough testing and documentation.
 - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750). The implementation is not fully tested.
 - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#814](https://github.com/stellargraph/stellargraph/pull/814), [\#822](https://github.com/stellargraph/stellargraph/issues/822). The implementation is `O(n^3)`, where `n` is the number of nodes.
 - ComplEx: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#756](https://github.com/stellargraph/stellargraph/issues/756). The implementation hasn't been validated to match the paper.
-- Neo4j connector: the GraphSAGE algorithm can execute doing neighbourhood sampling in a Neo4j database, so that the edges of a graph do not have to fit entirely into memory [\#799](http://github.com/stellargraph/stellargraph/pull/799)
+- Neo4j connector: the GraphSAGE algorithm can execute doing neighbourhood sampling in a Neo4j database, so that the edges of a graph do not have to fit entirely into memory [\#799](http://github.com/stellargraph/stellargraph/pull/799). The implementation is not automatically tested, and doesn't support functionality like loading node feature vectors from Neo4j.
 
 ### Bug fixes and other changes
 
