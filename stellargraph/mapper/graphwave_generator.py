@@ -29,7 +29,7 @@ from ..core.experimental import experimental
 class GraphWaveGenerator:
     """
     Implementation of the GraphWave structural embedding algorithm from the paper:
-        "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
+    "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
 
     This class is minimally with a StellarGraph object. Calling the flow function will return a tensorflow
     DataSet that contains the GraphWave embeddings.
