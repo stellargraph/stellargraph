@@ -26,6 +26,7 @@ from ..core.graph import StellarGraph
 import logging
 import os
 import pandas as pd
+import numpy as np
 
 
 log = logging.getLogger(__name__)
@@ -222,4 +223,78 @@ class MUTAG(
     "The dataset includes 188 graphs with 18 nodes and 20 edges on average for each graph. Graph nodes have 7 labels and each graph is labelled as belonging to 1 of 2 classes.",
     source="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/",
 ):
-    pass
+    def load(self):
+        """
+        Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
+
+        Returns:
+            A list of :class:`StellarGraph` objects and a numpy 2D vector of one-hot encoded labels one for each graph.
+        """
+        self.download()
+        return self._load_from_location(location=self.data_directory)
+
+    def _load_from_txt_file(
+        self, location, filename, names=None, dtype=None, index_increment=None
+    ):
+        df = pd.read_csv(
+            os.path.join(location, filename),
+            header=None,
+            index_col=False,
+            dtype=dtype,
+            names=names,
+        )
+        if index_increment:
+            df.index = df.index + index_increment
+        return df
+
+    def _load_from_location(self, location):
+
+        if not os.path.isdir(location):
+            raise NotADirectoryError(
+                "The location {} is not a directory.".format(location)
+            )
+
+        df_graph = self._load_from_txt_file(
+            location=location, filename="MUTAG_A.txt", names=["source", "target"]
+        )
+        df_graph_ids = self._load_from_txt_file(
+            location=location,
+            filename="MUTAG_graph_indicator.txt",
+            names=["graph_id"],
+            index_increment=1,
+        )
+        df_graph_labels = self._load_from_txt_file(
+            location=location,
+            filename="MUTAG_graph_labels.txt",
+            dtype="category",
+            names=["label"],
+            index_increment=1,
+        )  # binary labels {-1, 1}
+        df_node_labels = self._load_from_txt_file(
+            location=location,
+            filename="MUTAG_node_labels.txt",
+            dtype="category",
+            index_increment=1,
+        )
+
+        # Let us one-hot encode the graph labels and also for this dataset,
+        # we are going to one-hot encode the node_labels
+        df_graph_labels = pd.get_dummies(df_graph_labels)
+        df_node_labels = pd.get_dummies(df_node_labels)
+
+        graphs = []
+        for graph_id in np.unique(df_graph_ids):
+            # find the subgraph with nodes that correspond to graph_id
+            node_ids = list(
+                df_graph_ids.loc[df_graph_ids["graph_id"] == graph_id].index
+            )
+
+            df_subgraph = df_graph[
+                df_graph["source"].isin(node_ids) | df_graph["target"].isin(node_ids)
+            ]
+            # nodes should be DataFrame with node features; DataFrame index indicates node IDs
+            # edges should be DataFrame of edges, 2 columns "source" and "target"
+            graph = StellarGraph(nodes=df_node_labels.loc[node_ids], edges=df_subgraph)
+            graphs.append(graph)
+
+        return graphs, df_graph_labels.values
