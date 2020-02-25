@@ -33,7 +33,15 @@ __all__ = [
 from .version import __version__
 
 # Import modules
-from stellargraph import calibration, ensemble, interpretability, losses, layer, mapper, utils
+from stellargraph import (
+    calibration,
+    ensemble,
+    interpretability,
+    losses,
+    layer,
+    mapper,
+    utils,
+)
 
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph

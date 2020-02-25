@@ -73,11 +73,10 @@ class _Wrapper(types.ModuleType):
             return super().__getattribute__(attr)
         else:
             # this attribute looks like one of the deprecated ones!
-            new_module = f"stellargraph.{new_module_name}"
             if isinstance(new_value, types.ModuleType):
                 new_location = new_value.__name__
             else:
-                new_location = f"{new_module}.{new_value.__name__}"
+                new_location = f"stellargraph.{new_module_name}.{new_value.__name__}"
 
             warnings.warn(
                 f"'stellargraph.utils.{attr}' has been moved to '{new_location}'",
