@@ -99,7 +99,6 @@ class GraphWaveGenerator:
         seed=None,
         repeat=False,
         num_parallel_calls=1,
-        cache_filename="",
     ):
         """
         Creates a tensorflow DataSet object of GraphWave embeddings.
@@ -119,7 +118,6 @@ class GraphWaveGenerator:
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one
                 full pass.
             num_parallel_calls (int): number of threads to use.
-            cache_filename (str): filename to store cached dataset.
         """
 
         require_integer_in_range(batch_size, "batch_size", min_val=1)
@@ -158,7 +156,7 @@ class GraphWaveGenerator:
             dataset = tf.data.Dataset.zip((dataset, target_dataset))
 
         # cache embeddings in memory for performance
-        dataset = dataset.cache(filename=cache_filename)
+        dataset = dataset.cache()
 
         if shuffle:
             dataset = dataset.shuffle(buffer_size=len(node_ids), seed=seed)
@@ -224,12 +222,12 @@ def _chebyshev(one_hot_encoded_col, laplacian, coeffs, max_eig):
         tf.sparse.to_dense(one_hot_encoded_col), shape=(laplacian.shape[0], 1)
     )
 
-    T_0 = f # If = f
+    T_0 = f  # If = f
     T_1 = y(f)
 
     cheby_polys = [T_0, T_1]
     for i in range(coeffs.shape[1] - 2):
-        cheby_poly = (2 * y(cheby_polys[-1]) - cheby_polys[-2])
+        cheby_poly = 2 * y(cheby_polys[-1]) - cheby_polys[-2]
         cheby_polys.append(cheby_poly)
 
     cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=0), axis=-1)
