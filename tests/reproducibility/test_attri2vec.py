@@ -136,7 +136,7 @@ def attri2vec_link_prediction(
 
 
 @pytest.mark.parametrize("shuffle", [True, False])
-def test_nai(petersen_graph, shuffle):
+def test_unsup(petersen_graph, shuffle):
     assert_reproducible(
         lambda: unsup_attri2vec(
             petersen_graph, tf.optimizers.Adam(1e-3), shuffle=shuffle,
