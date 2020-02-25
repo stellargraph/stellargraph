@@ -52,17 +52,19 @@ def require_integer_in_range(x, variable_name, min_val=-np.inf, max_val=np.inf):
         min_val: the minimum value that `x` can attain
         min_val: the maximum value that `x` can attain
     """
-    if min_val == -np.inf:
-        region = f"<= {max_val}"
-    elif max_val == np.inf:
-        region = f">= {min_val}"
-    else:
-        region = f"in the range [{min_val}, {max_val}]"
 
     if not isinstance(x, int):
         raise TypeError(f"{variable_name}: expected int, found {type(x).__name__}")
 
     if x < min_val or x > max_val:
+
+        if min_val == -np.inf:
+            region = f"<= {max_val}"
+        elif max_val == np.inf:
+            region = f">= {min_val}"
+        else:
+            region = f"in the range [{min_val}, {max_val}]"
+
         raise ValueError(
             f"{variable_name}: expected integer {region}, found {x}"
         )
