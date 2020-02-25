@@ -249,7 +249,11 @@ class MovieLens(
             "western",
         ]
         movies = pd.read_csv(
-            movies, sep="|", header=None, names=movie_columns, usecols = ["movie_id"] + movie_columns[5:]
+            movies,
+            sep="|",
+            header=None,
+            names=movie_columns,
+            usecols=["movie_id"] + movie_columns[5:],
         )
 
         # manage the IDs
@@ -271,9 +275,16 @@ class MovieLens(
         feature_encoding = preprocessing.OneHotEncoder(sparse=False)
         onehot = feature_encoding.fit_transform(users[["gender", "job"]])
         scaled_age = preprocessing.scale(users["age"])
-        encoded_users = pd.DataFrame(onehot, index=users_ids).assign(scaled_age=scaled_age)
+        encoded_users = pd.DataFrame(onehot, index=users_ids).assign(
+            scaled_age=scaled_age
+        )
 
-        g = StellarGraph({"user": encoded_users, "movie": movies}, {"rating": edges[["user_id", "movie_id"]]}, source_column="user_id", target_column="movie_id")
+        g = StellarGraph(
+            {"user": encoded_users, "movie": movies},
+            {"rating": edges[["user_id", "movie_id"]]},
+            source_column="user_id",
+            target_column="movie_id",
+        )
         return g, edges
 
 
