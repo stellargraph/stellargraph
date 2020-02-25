@@ -39,7 +39,7 @@ class GraphWaveGenerator:
         scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
             features, and larger values embed larger structural features.
         degree: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
-            higher computational cost. According to [1], the default value of `20` is accurate enough for most
+            higher computational cost. According to [1], the default value of 20 is accurate enough for most
             applications.
 
     [1] D. I. Shuman, P. Vandergheynst, and P. Frossard, “Chebyshev Polynomial Approximation for Distributed Signal
