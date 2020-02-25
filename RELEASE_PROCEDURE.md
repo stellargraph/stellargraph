@@ -27,7 +27,7 @@
     git tag -a vX.X.X -m "Release X.X.X"
     ```
 
-3. **Upload new version to PyPI**
+3. **Upload to PyPI**
 
     NOTE: An account on PyPI is required to upload - create an account and ask a team member to add you to the organisation.
 
@@ -49,6 +49,7 @@
 4. **Upload to Conda Cloud**
 
    NOTE: An account on Conda Cloud is required to upload - create an account and ask a team member to add you to the organization.
+
    NOTE: These instructions are taken from https://docs.anaconda.com/anaconda-cloud/user-guide/tasks/work-with-packages/)
 
    - Turn off auto-uploading
