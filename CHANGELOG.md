@@ -7,7 +7,8 @@
 ### Major features and improvements
 
 - New algorithms:
-    - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#822](https://github.com/stellargraph/stellargraph/issues/822)
+  - Link prediction with directed GraphSAGE, via `DirectedGraphSAGELinkGenerator` [\#871](https://github.com/stellargraph/stellargraph/issues/871)
+  - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#822](https://github.com/stellargraph/stellargraph/issues/822)
 
 ### Breaking changes
 
