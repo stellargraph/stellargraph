@@ -21,4 +21,4 @@ warnings.warn(
     DeprecationWarning,
 )
 
-from ...interpretability.saliency_maps.integrated_gradients import *
+from ...interpretability.saliency_maps.integrated_gradients_gat import *

@@ -95,7 +95,8 @@ def test_moves_submodule_import():
         DeprecationWarning,
         match=f"'stellargraph.utils.calibration' has been moved to 'stellargraph.calibration'",
     ):
-        import stellargraph.utils.calibration
+        import stellargraph.utils.calibration as c
+        assert c.IsotonicCalibration is stellargraph.calibration.IsotonicCalibration
 
     with pytest.warns(
         DeprecationWarning,
@@ -103,21 +104,32 @@ def test_moves_submodule_import():
     ):
         # test a 'from ... import' import
         from stellargraph.utils import ensemble
+        assert ensemble.Ensemble is stellargraph.ensemble.Ensemble
 
     with pytest.warns(
         DeprecationWarning,
         match=f"'stellargraph.utils.saliency_maps' has been moved to 'stellargraph.interpretability.saliency_maps'",
     ):
-        import stellargraph.utils.saliency_maps
+        import stellargraph.utils.saliency_maps as sm
+        assert sm.GradientSaliencyGAT is stellargraph.interpretability.GradientSaliencyGAT
 
     with pytest.warns(
         DeprecationWarning,
         match=f"'stellargraph.utils.saliency_maps.integrated_gradients' has been moved to 'stellargraph.interpretability.saliency_maps.integrated_gradients'",
     ):
-        import stellargraph.utils.saliency_maps.integrated_gradients
+        import stellargraph.utils.saliency_maps.integrated_gradients as ig
+        assert ig.IntegratedGradients is stellargraph.interpretability.IntegratedGradients
 
     with pytest.warns(
         DeprecationWarning,
         match=f"'stellargraph.utils.saliency_maps.integrated_gradients_gat' has been moved to 'stellargraph.interpretability.saliency_maps.integrated_gradients_gat'",
     ):
-        import stellargraph.utils.saliency_maps.integrated_gradients_gat
+        import stellargraph.utils.saliency_maps.integrated_gradients_gat as ig_gat
+        assert ig_gat.IntegratedGradientsGAT is stellargraph.interpretability.IntegratedGradientsGAT
+
+    with pytest.warns(
+        DeprecationWarning,
+        match=f"'stellargraph.utils.saliency_maps.saliency_gat' has been moved to 'stellargraph.interpretability.saliency_maps.saliency_gat'",
+    ):
+        import stellargraph.utils.saliency_maps.saliency_gat as s_gat
+        assert s_gat.GradientSaliencyGAT is stellargraph.interpretability.GradientSaliencyGAT
