@@ -18,6 +18,9 @@
 
   The old backend has been removed, and conversion from a NetworkX graph should be performed via the `StellarGraph.from_networkx` function (the existing form `StellarGraph(networkx_graph)` is supported in this release but is deprecated, and may be removed in a future release).
 - More detailed information about Heterogeneous GraphSAGE (HinSAGE) has been added to StellarGraph's readthedocs documentation [\#839](https://github.com/stellargraph/stellargraph/pull/839).
+- New algorithms:
+  - Link prediction with directed GraphSAGE, via `DirectedGraphSAGELinkGenerator` [\#871](https://github.com/stellargraph/stellargraph/issues/871)
+  - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#822](https://github.com/stellargraph/stellargraph/issues/822)
 
 ### Breaking changes
 
@@ -31,7 +34,6 @@ Some new algorithms and features are still under active development, and are ava
 
 - Temporal Random Walks: random walks that respect the time that each edge occurred (stored as edge weights) [\#787](http://github.com/stellargraph/stellargraph/pull/787). The implementation does not have an example or thorough testing and documentation.
 - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750). The implementation is not fully tested.
-- GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#814](https://github.com/stellargraph/stellargraph/pull/814), [\#822](https://github.com/stellargraph/stellargraph/issues/822). The implementation is `O(n^3)`, where `n` is the number of nodes.
 - ComplEx: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#756](https://github.com/stellargraph/stellargraph/issues/756). The implementation hasn't been validated to match the paper.
 - Neo4j connector: the GraphSAGE algorithm can execute doing neighbourhood sampling in a Neo4j database, so that the edges of a graph do not have to fit entirely into memory [\#799](http://github.com/stellargraph/stellargraph/pull/799). The implementation is not automatically tested, and doesn't support functionality like loading node feature vectors from Neo4j.
 
