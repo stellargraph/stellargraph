@@ -277,9 +277,7 @@ class MUTAG(
             index_increment=1,
         )
 
-        # Let us one-hot encode the graph labels and also for this dataset,
-        # we are going to one-hot encode the node_labels
-        df_graph_labels = pd.get_dummies(df_graph_labels)
+        # Let us one-hot encode the node labels because these are used as node features.
         df_node_labels = pd.get_dummies(df_node_labels)
 
         graphs = []
@@ -297,4 +295,4 @@ class MUTAG(
             graph = StellarGraph(nodes=df_node_labels.loc[node_ids], edges=df_subgraph)
             graphs.append(graph)
 
-        return graphs, df_graph_labels.values
+        return graphs, df_graph_labels["label"]
