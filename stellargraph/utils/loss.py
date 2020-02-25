@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings as warnings
+import warnings
 
 warnings.warn(
     "'stellargraph.utils.loss' has been moved to 'stellargraph.losses'",
