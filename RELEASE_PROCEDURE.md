@@ -9,9 +9,8 @@
    - Increase the version and apply other release-related changes
      - MUST do:
        - Version bumping: In stellargraph/version.py, change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
-       - Update Changelog:
-        - Update section header to point to specific version tag instead of `HEAD`. Note: this link will be broken until the tag is pushed later.
-        - Remove "Full Changelog" link
+       - Update Changelog section header to point to specific version tag instead of `HEAD`. Note: this link will be broken until the tag is pushed later.
+       - Remove "Full Changelog" link from Changelog.
      - CAN do:
        - Minor bug fixes if necessary
      - NEVER do:
