@@ -75,7 +75,12 @@ negative edge samples is plotted.
 For the examples we use 2 different datasets. The **Cora** dataset that is a homogeneous network and the
 **BlogCatalog3** dataset that is a heterogeneous network.
 
-**Cora** can be downloaded from [here.](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz)
+**Cora** can be downloaded from [here:](https://linqs-data.soe.ucsc.edu/public/lbc/cora.tgz)
+
+```
+from stellargraph.datasets import Cora
+Cora().download()
+```
 
 **BlogCatalog3** can be downloaded from [here.]( http://socialcomputing.asu.edu/datasets/BlogCatalog3)
 
@@ -94,12 +99,12 @@ nx.write_gpickle(g.to_networkx(), os.path.expanduser('~/data/BlogCatalog3.gpickl
 
 **Example 1: Homogeneous graph with global sampling method for negative example**
 ```
-python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cora.emb --sampling_method='global'
+python main.py --input_graph=~/stellargraph-datasets/cora/cora.cites --output_node_features=~/data/cora.emb --sampling_method='global'
 ```
 
 **Example 2: Homogeneous graph with local sampling method for negative examples**
 ```
-python main.py --input_graph=~/data/cora.cites --output_node_features=~/data/cora.emb --sampling_method='local' --sampling_probs="0.0, 0.0, 0.0, 0.5, 0.5"
+python main.py --input_graph=~/stellargraph-datasets/cora/cora.cites --output_node_features=~/data/cora.emb --sampling_method='local' --sampling_probs="0.0, 0.0, 0.0, 0.5, 0.5"
 ```
 
 **Example 3: Heterogeneous graph treated as homogeneous**
