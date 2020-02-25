@@ -199,10 +199,10 @@ def _empirical_characteristic_function(samples, ts):
     return embedding
 
 
-def _chebyshev(one_hot_encoded_row, laplacian, coeffs, max_eig):
+def _chebyshev(one_hot_encoded_col, laplacian, coeffs, max_eig):
     """
     This function calculates one column of the Chebyshev approximation of exp(-scale * laplacian) for
-    all scales.
+    all scales using the approach from: https://arxiv.org/abs/1105.1891. See equations (7)-(11) for more info.
 
     Args:
         one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column (node) to calculate.
@@ -217,11 +217,14 @@ def _chebyshev(one_hot_encoded_row, laplacian, coeffs, max_eig):
 
     a = max_eig / 2
 
+    # f is a one-hot vector to select a column from the Laplacian
+    # this allows to compute the filtered laplacian (psi in the paper) one column at time
+    # using only matrix vector products
     f = tf.reshape(
-        tf.sparse.to_dense(one_hot_encoded_row), shape=(laplacian.shape[0], 1)
+        tf.sparse.to_dense(one_hot_encoded_col), shape=(laplacian.shape[0], 1)
     )
 
-    T_0 = f
+    T_0 = f # If = f
     T_1 = y(f)
 
     cheby_polys = [T_0, T_1]
