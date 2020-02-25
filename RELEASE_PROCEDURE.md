@@ -8,10 +8,10 @@
      ```
    - Increase the version and apply other release-related changes
      - MUST do:
-       - Version bumping: In stellargraph/version.py, change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
-       - Update Changelog section header to point to specific version tag instead of `HEAD`. Note: this link will be broken until the tag is pushed later.
-       - Remove "Full Changelog" link from Changelog.
-       - Update version in `meta.yaml`
+       - Version bumping: Change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
+         - `stellargraph/version.py`
+         - `meta.yaml`
+       - Update Changelog section header and "Full Changelog" link to point to specific version tag instead of `HEAD`. Note: these links will be broken until the tag is pushed later.
      - CAN do:
        - Minor bug fixes if necessary
      - NEVER do:
@@ -72,9 +72,9 @@
     After successfully publishing to PyPi and Conda, we now want to make the release on GitHub.
 
    - Push `master` branch
-    ```shell
-    git push --follow-tags origin master
-    ```
+     ```shell
+     git push --follow-tags origin master
+     ```
    - Go to the tags on the GitHub stellargraph homepage: https://github.com/stellargraph/stellargraph/tags
    - Next to the release tag, click the “...” button and select “create release”
    - Add the title and text of the metadata: a title “Release X.X.X” and text copied from the changelog is good practice
