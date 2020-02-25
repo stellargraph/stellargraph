@@ -14,11 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings as warnings
+import tensorflow as tf
 
-warnings.warn(
-    "'stellargraph.utils.loss' has been moved to 'stellargraph.losses'",
-    DeprecationWarning,
-)
+from ..core.experimental import experimental
 
-from ..losses import *
+
+@experimental(reason="lack of unit tests", issues=[804])
+def graph_log_likelihood(y_true, y_pred):
+    """
+    """
+    batch_adj = tf.gather(y_true, [0], axis=1)
+
+    expected_walks = tf.gather(y_pred, [0], axis=1)
+    sigmoids = tf.gather(y_pred, [1], axis=1)
+
+    adj_mask = tf.cast((batch_adj == 0), "float32")
+
+    loss = tf.math.reduce_sum(
+        tf.abs(
+            -(expected_walks * tf.math.log(sigmoids + 1e-9))
+            - adj_mask * tf.math.log(1 - sigmoids + 1e-9)
+        )
+    )
+
+    return tf.expand_dims(loss, 0)
