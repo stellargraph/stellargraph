@@ -43,7 +43,22 @@ class Cora(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    def load(self):
+    def load(self, directed=False):
+        """
+        Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
+        required.
+
+        The node feature vectors are included, and the edges are treated as directed or undirected
+        depending on the ``directed`` parameter.
+
+        Args:
+            directed (bool): if True, return a directed graph, otherwise return an undirected one.
+
+        Returns:
+            A tuple where the first element is the :class:`StellarGraph` object with the nodes, node
+            feature vectors and edges, and the second element is a pandas Series of the node subject
+            class labels.
+        """
         self.download()
         edgelist = pd.read_csv(
             self._resolve_path("cora.cites"),
@@ -62,8 +77,9 @@ class Cora(
             names=column_names,
         )
 
+        cls = StellarDiGraph if directed else StellarGraph
         return (
-            StellarDiGraph({"paper": node_data[feature_names]}, {"cites": edgelist}),
+            cls({"paper": node_data[feature_names]}, {"cites": edgelist}),
             node_data[subject],
         )
 

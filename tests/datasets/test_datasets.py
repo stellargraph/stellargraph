@@ -109,8 +109,11 @@ def test_blogcatalog3_deprecated_load() -> None:
         load_dataset_BlogCatalog3(dataset.data_directory)
 
 
-def test_cora_load() -> None:
-    g, subjects = Cora().load()
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_cora_load(is_directed) -> None:
+    g, subjects = Cora().load(is_directed)
+
+    assert g.is_directed() == is_directed
 
     assert g.number_of_nodes() == 2708
     assert g.number_of_edges() == 5429
