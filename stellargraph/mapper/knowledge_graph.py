@@ -22,6 +22,7 @@ import pandas as pd
 from tensorflow.keras.utils import Sequence
 
 from ..globalvar import SOURCE, TARGET, TYPE_ATTR_NAME
+from ..random import random_state, SeededPerBatch
 
 
 class KGTripleGenerator:
@@ -128,21 +129,10 @@ class KGTripleSequence(Sequence):
 
         self.shuffle = shuffle
 
-        self._global_rs = np.random.RandomState(seed)
-        self._batch_samplers = []
-        self._global_lock = threading.Lock()
-
-    def _batch_sampler(self, batch_num):
-        self._global_lock.acquire()
-        try:
-            return self._batch_samplers[batch_num]
-        except IndexError:
-            new_samplers = batch_num - len(self._batch_samplers) + 1
-            seeds = self._global_rs.randint(2 ** 32, size=new_samplers)
-            self._batch_samplers.extend(np.random.RandomState(seed) for seed in seeds)
-            return self._batch_samplers[batch_num]
-        finally:
-            self._global_lock.release()
+        _, self._global_rs = random_state(seed)
+        self._batch_sampler = SeededPerBatch(
+            np.random.RandomState, self._global_rs.randint(2 ** 32)
+        )
 
     def __len__(self):
         return int(np.ceil(len(self.indices) / self.batch_size))
@@ -167,7 +157,7 @@ class KGTripleSequence(Sequence):
             negative_count = self.negative_samples * positive_count
             assert len(s_iloc) == positive_count + negative_count
 
-            rng = self._batch_sampler(batch_num)
+            rng = self._batch_sampler[batch_num]
 
             # FIXME (#882): this sampling may be able to be optimised to a slice-write
             change_source = rng.random(size=negative_count) < 0.5
