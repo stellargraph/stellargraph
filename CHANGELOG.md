@@ -7,6 +7,7 @@
 ### Major features and improvements
 
 - New algorithms:
+  - Link prediction with directed GraphSAGE, via `DirectedGraphSAGELinkGenerator` [\#871](https://github.com/stellargraph/stellargraph/issues/871)
 
 ### Breaking changes
 
