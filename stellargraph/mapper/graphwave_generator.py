@@ -24,7 +24,8 @@ from scipy.sparse import diags
 
 class GraphWaveGenerator:
     """
-    Implementation of the GraphWave structural embedding algorithm from the paper: "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
+    Implementation of the GraphWave structural embedding algorithm from the paper: "Learning Structural Node Embeddings
+    via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
 
     This class is minimally with a StellarGraph object. Calling the flow function will return a tensorflow
     DataSet that contains the GraphWave embeddings.
@@ -33,13 +34,16 @@ class GraphWaveGenerator:
     found to not work well in practice, and replicating the results of the paper requires manually specifying much
     larger scales than those automatically calculated.
 
-
     Args:
         G (StellarGraph): the StellarGraph object.
         scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
             features, and larger values embed larger structural features.
         degree: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
-            higher computational cost. The default value of `20` is accurate enough for most applications.
+            higher computational cost. According to [1], the default value of `20` is accurate enough for most
+            applications.
+
+    [1] D. I. Shuman, P. Vandergheynst, and P. Frossard, “Chebyshev Polynomial Approximation for Distributed Signal
+    Processing,” https://arxiv.org/abs/1105.1891
     """
 
     def __init__(self, G, scales=(5, 10), degree=20):
@@ -202,13 +206,16 @@ def _chebyshev(one_hot_encoded_col, laplacian, coeffs, max_eig):
     all scales using the approach from: https://arxiv.org/abs/1105.1891. See equations (7)-(11) for more info.
 
     Args:
-        one_hot_encoded_row (SparseTensor): a sparse tensor indicating which column (node) to calculate.
+        one_hot_encoded_col (SparseTensor): a sparse tensor indicating which column (node) to calculate.
         laplacian (SparseTensor): the unnormalized graph laplacian
         coeffs: the Chebyshev coefficients for exp(-scale * x) for each scale in the shape (num_scales, deg)
     Returns:
         (num_scales, num_nodes) tensor of the wavelets for each scale for the specified node.
     """
 
+    # Chebyshev polynomials are in range [-1, 1] by default so we shift the coordinates here
+    # the laplacian in the new coordinates is y = (L / a) - I. But y is only accessed through matrix vector
+    # multiplications so we model it as a linear operator
     def y(vector):
         return K.dot(laplacian, vector) / a - vector
 
@@ -229,5 +236,7 @@ def _chebyshev(one_hot_encoded_col, laplacian, coeffs, max_eig):
         cheby_poly = 2 * y(cheby_polys[-1]) - cheby_polys[-2]
         cheby_polys.append(cheby_poly)
 
+    # note: difference to the paper. the 0th coefficient is not halved here because its
+    # automatically halved by numpy
     cheby_polys = K.squeeze(tf.stack(cheby_polys, axis=0), axis=-1)
     return tf.matmul(coeffs, cheby_polys)
