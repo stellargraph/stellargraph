@@ -65,6 +65,4 @@ def require_integer_in_range(x, variable_name, min_val=-np.inf, max_val=np.inf):
         else:
             region = f"in the range [{min_val}, {max_val}]"
 
-        raise ValueError(
-            f"{variable_name}: expected integer {region}, found {x}"
-        )
+        raise ValueError(f"{variable_name}: expected integer {region}, found {x}")
