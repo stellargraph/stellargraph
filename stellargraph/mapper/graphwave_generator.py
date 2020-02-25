@@ -37,15 +37,14 @@ class GraphWaveGenerator:
     This implementation differs from the paper by removing the automatic method of calculating scales. This method was
     found to not work well in practice, and replicating the results of the paper requires manually specifying much larger
     scales than those automatically calculated.
+
+    Args:
+        G (StellarGraph): the StellarGraph object.
+        scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
+            features, and larger values embed larger structural features.
     """
 
     def __init__(self, G, scales=(5, 10)):
-        """
-        Args:
-            G (StellarGraph): the StellarGraph object.
-            scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
-                features, and larger values embed larger structural features.
-        """
 
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
