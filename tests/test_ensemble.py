@@ -34,7 +34,7 @@ from stellargraph.mapper import (
     GraphSAGELinkGenerator,
     HinSAGELinkGenerator,
 )
-from stellargraph.utils import Ensemble, BaggingEnsemble
+from stellargraph.ensemble import Ensemble, BaggingEnsemble
 
 from tensorflow.keras import layers, Model
 from tensorflow.keras.optimizers import Adam

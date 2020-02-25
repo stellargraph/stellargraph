@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .integrated_gradients import IntegratedGradients
-from .integrated_gradients_gat import IntegratedGradientsGAT
-from .saliency_gat import GradientSaliencyGAT
+import warnings as warnings
+
+warnings.warn(
+    "'stellargraph.utils.saliency_maps' has been moved to 'stellargraph.interpretability.saliency_maps'",
+    DeprecationWarning,
+)
+
+from ...interpretability.saliency_maps import *
