@@ -24,8 +24,7 @@ from scipy.sparse import diags
 
 class GraphWaveGenerator:
     """
-    Implementation of the GraphWave structural embedding algorithm from the paper:
-        "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
+    Implementation of the GraphWave structural embedding algorithm from the paper: "Learning Structural Node Embeddings via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
 
     This class is minimally with a StellarGraph object. Calling the flow function will return a tensorflow
     DataSet that contains the GraphWave embeddings.
@@ -33,17 +32,17 @@ class GraphWaveGenerator:
     This implementation differs from the paper by removing the automatic method of calculating scales. This method was
     found to not work well in practice, and replicating the results of the paper requires manually specifying much
     larger scales than those automatically calculated.
+
+
+    Args:
+        G (StellarGraph): the StellarGraph object.
+        scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
+            features, and larger values embed larger structural features.
+        degree: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
+            higher computational cost. The default value of `20` is accurate enough for most applications.
     """
 
     def __init__(self, G, scales=(5, 10), degree=20):
-        """
-        Args:
-            G (StellarGraph): the StellarGraph object.
-            scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural
-                features, and larger values embed larger structural features.
-            degree: the degree of the Chebyshev polynomial to use. Higher degrees yield more accurate results but at a
-                higher computational cost. The default value of `20` is accurate enough for most applications.
-        """
 
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
