@@ -37,7 +37,6 @@ plugins:
       python:S1134:
         enabled: false
 
-
 exclude_patterns:
   # default exclude patterns:
   - "config/"
