@@ -99,16 +99,6 @@ def test_blogcatalog3_load() -> None:
     assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
 
 
-@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
-def test_blogcatalog3_deprecated_load() -> None:
-    from stellargraph.data import load_dataset_BlogCatalog3
-
-    dataset = BlogCatalog3()
-    dataset.download()
-    with pytest.warns(DeprecationWarning, match=r"BlogCatalog3\(\)\.load\(\)"):
-        load_dataset_BlogCatalog3(dataset.data_directory)
-
-
 def test_movielens_load() -> None:
     g, edges_with_ratings = MovieLens().load()
 
