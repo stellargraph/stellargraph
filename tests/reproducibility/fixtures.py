@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import numpy as np
+import tensorflow as tf
 
 
 def models_equals(model1, model2):
@@ -39,3 +40,6 @@ def assert_reproducible(func, num_iter=20):
             model.get_weights(),
             model_new.get_weights(),
         )
+
+    # clear the tensorflow session to free memory
+    tf.keras.backend.clear_session()
