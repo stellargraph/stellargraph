@@ -25,7 +25,8 @@ import datetime
 from datetime import datetime, timedelta
 
 
-def create_heterogeneous_graph():
+@pytest.fixture(scope="module")
+def heterogeneous_graph():
     # TODO: We test if this graph is connected but there is no guarantee of connectivity in this code
     g = nx.Graph()
 
@@ -81,7 +82,7 @@ def create_heterogeneous_graph():
         ]  # paper is published at 1 venue only
         g.add_edge(paper_id, venue_id, label="published-at")
 
-    return g
+    return g, EdgeSplitter(g)
 
 
 def read_graph(graph_file, dataset_name, directed=False, weighted=False):
@@ -152,7 +153,8 @@ def read_graph(graph_file, dataset_name, directed=False, weighted=False):
     return g
 
 
-class TestEdgeSplitterHomogeneous(object):
+@pytest.fixture(scope="module")
+def cora():
     print(os.getcwd())
     if os.getcwd().split("/")[-1] == "tests":
         input_dir = os.path.expanduser("resources/data/cora/cora.epgm")
@@ -166,14 +168,17 @@ class TestEdgeSplitterHomogeneous(object):
 
     es_obj = EdgeSplitter(g)
 
-    def test_split_data_global(self):
+    return g, es_obj
+
+
+class TestEdgeSplitterHomogeneous(object):
+    def test_split_data_global(self, cora):
+        g, es_obj = cora
         p = 0.1
 
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = self.es_obj.train_test_split(p=p, method="global", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="global", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -183,7 +188,7 @@ class TestEdgeSplitterHomogeneous(object):
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
         with pytest.raises(ValueError):
@@ -193,18 +198,15 @@ class TestEdgeSplitterHomogeneous(object):
                 g_test,
                 edge_data_ids_test,
                 edge_data_labels_test,
-            ) = self.es_obj.train_test_split(
-                p=0.8, method="global", keep_connected=True
-            )
+            ) = es_obj.train_test_split(p=0.8, method="global", keep_connected=True)
 
-    def test_split_data_local(self):
+    def test_split_data_local(self, cora):
+        g, es_obj = cora
         p = 0.1
         # using default sampling probabilities
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = self.es_obj.train_test_split(p=p, method="local", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="local", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -214,15 +216,11 @@ class TestEdgeSplitterHomogeneous(object):
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
         sampling_probs = [0.0, 0.0, 0.1, 0.2, 0.5, 0.2]
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = self.es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="local", probs=sampling_probs, keep_connected=True
         )
 
@@ -233,37 +231,33 @@ class TestEdgeSplitterHomogeneous(object):
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
         with pytest.raises(ValueError):
             # This should raise ValueError because it is asking for more positive samples that are available
             # without breaking graph connectivity
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=0.8, method="local", probs=sampling_probs, keep_connected=True
             )
 
         sampling_probs = [0.2, 0.1, 0.2, 0.5, 0.2]  # values don't sum to 1
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(p=p, method="local", probs=sampling_probs)
+            es_obj.train_test_split(p=p, method="local", probs=sampling_probs)
 
 
 class TestEdgeSplitterHeterogeneous(object):
-
-    g = create_heterogeneous_graph()
-
-    es_obj = EdgeSplitter(g)
-
-    def test_split_data_by_edge_type_and_attribute(self):
+    def test_split_data_by_edge_type_and_attribute(self, heterogeneous_graph):
+        g, es_obj = heterogeneous_graph
         # test global method for negative edge sampling
-        self._test_split_data_by_edge_type_and_attribute(method="global")
+        self._test_split_data_by_edge_type_and_attribute(g, es_obj, method="global")
 
         # test local method for positive edge sampling
-        self._test_split_data_by_edge_type_and_attribute(method="local")
+        self._test_split_data_by_edge_type_and_attribute(g, es_obj, method="local")
 
-    def _test_split_data_by_edge_type_and_attribute(self, method):
+    def _test_split_data_by_edge_type_and_attribute(self, g, es_obj, method):
         p = 0.1
-        res = self.es_obj.train_test_split(
+        res = es_obj.train_test_split(
             p=p,
             method=method,
             keep_connected=True,
@@ -282,14 +276,14 @@ class TestEdgeSplitterHeterogeneous(object):
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
         p = 0.8
         with pytest.raises(ValueError):
             # This will raise ValueError because it cannot sample enough positive edges while maintaining graph
             # connectivity
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -301,7 +295,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
         with pytest.raises(ValueError):
             # This will raise ValueError because it cannot sample enough negative edges of the given edge_label.
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=False,
@@ -314,7 +308,7 @@ class TestEdgeSplitterHeterogeneous(object):
         p = 0.1
         with pytest.raises(KeyError):
             # This call will raise an exception because the edges of type friend don't have attribute of type 'Any'
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -325,7 +319,7 @@ class TestEdgeSplitterHeterogeneous(object):
             )
         with pytest.raises(KeyError):
             # This call will raise and exception because edges of type 'towards' don't have a 'date' attribute
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -337,7 +331,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
         with pytest.raises(ValueError):
             # This call will raise an exception because the edge attribute must be specified as datetime
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -349,7 +343,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
         # Th below call will raise an exception because the threshold value does not have the correct format dd/mm/yyyy
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -359,7 +353,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 edge_attribute_threshold="01/2008",
             )
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -369,7 +363,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 edge_attribute_threshold="Jan 2005",
             )
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -380,7 +374,7 @@ class TestEdgeSplitterHeterogeneous(object):
             )
         with pytest.raises(ValueError):
             # month is out of range; no such thing as a 14th month in a year
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -391,7 +385,7 @@ class TestEdgeSplitterHeterogeneous(object):
             )
         with pytest.raises(ValueError):
             # day is out of range; no such thing as a 32nd day in October
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -404,7 +398,7 @@ class TestEdgeSplitterHeterogeneous(object):
         with pytest.raises(Exception):
             # This call to train_test_split will raise an exception because all the edges of type 'writes' are
             # on the minimum spanning tree and cannot be removed.
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p,
                 method=method,
                 keep_connected=True,
@@ -414,20 +408,17 @@ class TestEdgeSplitterHeterogeneous(object):
                 edge_attribute_threshold="01/01/2008",
             )
 
-    def test_split_data_by_edge_type(self):
+    def test_split_data_by_edge_type(self, heterogeneous_graph):
+        g, es_obj = heterogeneous_graph
         # test global method for negative edge sampling
-        self._test_split_data_by_edge_type(method="global")
+        self._test_split_data_by_edge_type(g, es_obj, method="global")
 
         # test local method for positive edge sampling
-        self._test_split_data_by_edge_type(method="local")
+        self._test_split_data_by_edge_type(g, es_obj, method="local")
 
-    def _test_split_data_by_edge_type(self, method):
+    def _test_split_data_by_edge_type(self, g, es_obj, method):
         p = 0.1
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = self.es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method=method, edge_label="friend", keep_connected=True
         )
 
@@ -437,34 +428,33 @@ class TestEdgeSplitterHeterogeneous(object):
 
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
         with pytest.raises(Exception):
             # This call will raise an exception because the graph has no edges of type 'Non Label'
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p, method=method, keep_connected=True, edge_label="No Label"
             )
 
         p = 0.8
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p, method=method, edge_label="friend", keep_connected=True
             )
 
         p = 0.8
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(
+            es_obj.train_test_split(
                 p=p, method=method, edge_label="friend", keep_connected=False
             )
 
-    def test_split_data_global(self):
+    def test_split_data_global(self, heterogeneous_graph):
+        g, es_obj = heterogeneous_graph
         p = 0.1
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = self.es_obj.train_test_split(p=p, method="global", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="global", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -474,18 +464,17 @@ class TestEdgeSplitterHeterogeneous(object):
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
-    def test_split_data_local(self):
+    def test_split_data_local(self, heterogeneous_graph):
+        g, es_obj = heterogeneous_graph
         p = 0.1
 
         # using default sampling probabilities
-        (
-            g_test,
-            edge_data_ids_test,
-            edge_data_labels_test,
-        ) = self.es_obj.train_test_split(p=p, method="local", keep_connected=True)
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
+            p=p, method="local", keep_connected=True
+        )
 
         # if all goes well, what are the expected return values?
         num_sampled_positives = np.sum(edge_data_labels_test == 1)
@@ -495,48 +484,46 @@ class TestEdgeSplitterHeterogeneous(object):
         assert num_sampled_negatives > 0
         assert len(edge_data_ids_test) == len(edge_data_labels_test)
         assert (num_sampled_positives - num_sampled_negatives) == 0
-        assert len(g_test.edges()) < len(self.g.edges())
+        assert len(g_test.edges()) < len(g.edges())
         assert nx.is_connected(g_test)
 
 
 class TestEdgeSplitterCommon(object):
-
-    g = create_heterogeneous_graph()
-
-    es_obj = EdgeSplitter(g)
-
-    def test_split_data_keep_connected_parameter(self):
+    def test_split_data_keep_connected_parameter(self, heterogeneous_graph):
+        g, es_obj = heterogeneous_graph
 
         # keep_connected must be bool type.
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(keep_connected="Yes")
+            es_obj.train_test_split(keep_connected="Yes")
 
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(keep_connected=0)
+            es_obj.train_test_split(keep_connected=0)
 
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(keep_connected=None)
+            es_obj.train_test_split(keep_connected=None)
 
-    def test_split_data_p_parameter(self):
+    def test_split_data_p_parameter(self, heterogeneous_graph):
+        g, es_obj = heterogeneous_graph
         # Test some edge cases for the value of p, e.g., < 0, = 0, > 1, =1
         p = 0
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(p=p, method="global")
+            es_obj.train_test_split(p=p, method="global")
 
         p = -0.1
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(p=p, method="global")
+            es_obj.train_test_split(p=p, method="global")
 
         p = 1.001
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(p=p, method="global")
+            es_obj.train_test_split(p=p, method="global")
 
         p = 1
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(p=p, method="global")
+            es_obj.train_test_split(p=p, method="global")
 
-    def test_split_data_method_parameter(self):
+    def test_split_data_method_parameter(self, heterogeneous_graph):
+        _, es_obj = heterogeneous_graph
         p = 0.5  # any value in the interval (0, 1) should do
         sampling_method = "other"  # correct values are global and local only
         with pytest.raises(ValueError):
-            self.es_obj.train_test_split(p=p, method=sampling_method)
+            es_obj.train_test_split(p=p, method=sampling_method)

@@ -1,22 +1,16 @@
-# yamllint disable-file
-# This file is not valid YAML because of the jinja templating
-
-{% set name = "stellargraph" %}
-{% set version = "0.9.0" %}
-
+---
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: "stellargraph"
+  version: "0.10.0"
 
 source:
-  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
-  sha256: c9e5a69bb94e4edcbde544fed1c07861b432c6b07b1d8a7d63ca8f40892a246e
+  path: .
 
 build:
   noarch: python
   number: 0
   script: "{{ PYTHON }} -m pip install . -vv"
-  skip: True # [py<36]
+  skip: true # [py<36]
 
 requirements:
   host:

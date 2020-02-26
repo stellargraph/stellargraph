@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import pytest
-from stellargraph.utils.saliency_maps import *
+from stellargraph.interpretability.saliency_maps import *
 import numpy as np
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
@@ -123,13 +123,13 @@ def test_ig_saliency_map():
     )
 
     ig_link_importance_dense = ig_dense.get_integrated_link_masks(
-        target_idx, class_of_interest, A_baseline=None, steps=50
+        target_idx, class_of_interest, adj_baseline=None, steps=50
     )
     ig_link_importance_dense_nz = ig_link_importance_dense[
         np.nonzero(ig_link_importance_dense)
     ]
     ig_link_importance_sp = ig_sparse.get_integrated_link_masks(
-        target_idx, class_of_interest, A_baseline=None, steps=50
+        target_idx, class_of_interest, adj_baseline=None, steps=50
     )
     ig_link_importance_sp_nz = ig_link_importance_sp[np.nonzero(ig_link_importance_sp)]
 

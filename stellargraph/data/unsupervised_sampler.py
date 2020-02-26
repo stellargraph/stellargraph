@@ -19,11 +19,11 @@ __all__ = ["UnsupervisedSampler"]
 
 
 import numpy as np
-import random
 
 from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
+from stellargraph.random import random_state
 
 
 class UnsupervisedSampler:
@@ -103,8 +103,7 @@ class UnsupervisedSampler:
             self.number_of_walks = number_of_walks
 
         # Setup an interal random state with the given seed
-        self.random = random.Random(seed)
-        self.np_random = np.random.RandomState(seed)
+        _, self.np_random = random_state(seed)
 
     def run(self, batch_size):
         """

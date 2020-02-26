@@ -17,7 +17,7 @@
 import pytest
 import tempfile
 import os
-from stellargraph.datasets import Cora, CiteSeer
+from stellargraph.datasets import Cora, CiteSeer, BlogCatalog3
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
 from urllib.request import urlretrieve
@@ -25,7 +25,18 @@ from unittest.mock import patch
 
 
 # use parametrize to automatically test each of the datasets that (directly) derive from DatasetLoader
-@pytest.mark.parametrize("dataset_class", list(DatasetLoader.__subclasses__()))
+def _marks(cls):
+    if cls == BlogCatalog3:
+        return pytest.mark.xfail(
+            reason="https://github.com/stellargraph/stellargraph/issues/907"
+        )
+    return []
+
+
+@pytest.mark.parametrize(
+    "dataset_class",
+    [pytest.param(cls, marks=_marks(cls)) for cls in DatasetLoader.__subclasses__()],
+)
 def test_dataset_download(dataset_class):
     dataset_class().download(ignore_cache=True)
 
@@ -70,3 +81,29 @@ def test_download_cache(mock_urlretrieve) -> None:
     # if already downloaded and in the cache, then another download should skip urlretrieve
     Cora().download()
     assert not mock_urlretrieve.called
+
+
+@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
+def test_blogcatalog3_load() -> None:
+    g = BlogCatalog3().load()
+
+    n_users = 10312
+    n_groups = 39
+    n_friendships = 333983
+    n_belongs_to = 14476
+
+    assert g.number_of_nodes() == n_users + n_groups
+    assert g.number_of_edges() == n_friendships + n_belongs_to
+
+    assert g.nodes_of_type("user") == [f"u{x}" for x in range(1, n_users + 1)]
+    assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
+
+
+@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
+def test_blogcatalog3_deprecated_load() -> None:
+    from stellargraph.data import load_dataset_BlogCatalog3
+
+    dataset = BlogCatalog3()
+    dataset.download()
+    with pytest.warns(DeprecationWarning, match=r"BlogCatalog3\(\)\.load\(\)"):
+        load_dataset_BlogCatalog3(dataset.data_directory)

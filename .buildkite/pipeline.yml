@@ -1,4 +1,10 @@
 ---
+timeout: &timeout
+  # steps can run for half an hour, maximum: if they haven't finished by then, there's probably some
+  # deeper problem. A global timeout would be better
+  # (https://github.com/buildkite/feedback/issues/170).
+  timeout_in_minutes: 30
+
 compose-config: &compose-config
   config:
     - docker-compose.yml
@@ -9,35 +15,107 @@ plugins: &plugins
     mode: checkout
 
 steps:
+  - label: ":docker::python: build 3.6 runner"
+    <<: *timeout
+    key: "runner-3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        build: runner-3_6
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-latest
+
+        push:
+          - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
+  - label: ":docker::python: build 3.7 runner"
+    <<: *timeout
+    key: "runner-3_7"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        build: runner-3_7
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
+
+        push:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
   - label: ":python: 3.6"
+    <<: *timeout
     key: "python_3_6"
+    depends_on: "runner-3_6"
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        run: runner-3.6
+        run: runner-3_6
     agents:
       queue: "t2medium"
 
   - label: ":python: 3.7"
+    <<: *timeout
     key: "python_3_7"
+    depends_on: "runner-3_7"
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
       docker-compose#v3.1.0:
         <<: *compose-config
-        run: runner-3.7
+        run: runner-3_7
     agents:
       queue: "t2medium"
 
+  - label: ":python::book: test notebooks %n"
+    <<: *timeout
+    key: "test-notebooks"
+    depends_on: "runner-3_6"
+    parallelism: 36
+    command: ".buildkite/steps/test-demo-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2large"
+    soft_fail:
+      - exit_status: 2
+
   - label: ":python-black: format"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/black:snapshot"
 
+  - label: ":python-black::jupyter: check notebook format"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    command: "python scripts/format_notebooks.py --default --ci demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.1.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
   - label: ":shell: format"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker#v3.4.0:
@@ -45,6 +123,7 @@ steps:
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
   - label: ":shell: shellcheck"
+    <<: *timeout
     command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
     plugins:
       <<: *plugins
@@ -52,18 +131,21 @@ steps:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/hadolint:snapshot"
 
   - label: ":docker: format Dockerfiles"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/dockerfile-utils:snapshot"
 
   - label: ":prettier::yaml: format YAML"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker#v3.4.0:
@@ -77,18 +159,22 @@ steps:
           ]
 
   - label: ":yaml::lint-roller: lint YAML"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker#v3.4.0:
         image: "stellargraph/yamllint:snapshot"
 
   - label: ":copyright: check copyright headers"
+    <<: *timeout
     command: ".buildkite/steps/check-copyright-headers.sh"
 
   - label: ":space_invader: check whitespace"
+    <<: *timeout
     command: "scripts/whitespace.sh --ci"
 
   - label: ":docker: build image"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker-compose#v3.1.0:
@@ -109,6 +195,7 @@ steps:
   - wait
 
   - label: ":docker: publish image"
+    <<: *timeout
     plugins:
       <<: *plugins
       docker-compose#v3.1.0:
@@ -120,6 +207,7 @@ steps:
   # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
   # it runs in parallel with them.
   - label: ":memo: annotate with junit"
+    <<: *timeout
     plugins:
       junit-annotate#v1.7.0:
         artifacts: junit-*.xml

@@ -20,7 +20,6 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
-from stellargraph.core.graph_networkx import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
@@ -30,7 +29,7 @@ import pytest
 import pandas as pd
 import scipy.sparse as sps
 from ..test_utils.graphs import (
-    example_graph_1,
+    example_graph,
     example_graph_random,
     example_hin_1,
     create_graph_features,
@@ -130,7 +129,7 @@ def test_nodemapper_constructor_no_feats():
     """
     n_feat = 4
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -138,7 +137,7 @@ def test_nodemapper_constructor_no_feats():
 def test_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -154,7 +153,7 @@ def test_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = GraphSAGENodeGenerator(G1, batch_size=n_batch, num_samples=[2, 2]).flow(
         G1.nodes()
@@ -192,45 +191,45 @@ def test_nodemapper_1():
         GraphSAGENodeGenerator(G1, batch_size=2, num_samples=[2, 2]).flow(["A", "B"])
 
 
-def test_nodemapper_shuffle():
+@pytest.mark.parametrize("shuffle", [True, False])
+def test_nodemapper_shuffle(shuffle):
     n_feat = 1
     n_batch = 2
 
     G = example_graph_2(feature_size=n_feat)
     nodes = list(G.nodes())
 
-    # With shuffle
-    random.seed(15)
-    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
-        nodes, nodes, shuffle=True
+    def flatten_features(seq):
+        # check (features == labels) and return flattened features
+        batches = [
+            (np.ravel(seq[i][0][0]), np.array(seq[i][1])) for i in range(len(seq))
+        ]
+        features, labels = zip(*batches)
+        features, labels = np.concatenate(features), np.concatenate(labels)
+        assert all(features == labels)
+        return features
+
+    def consecutive_epochs(seq):
+        features = flatten_features(seq)
+        seq.on_epoch_end()
+        features_next = flatten_features(seq)
+        return features, features_next
+
+    seq = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+        nodes, nodes, shuffle=shuffle
     )
 
-    expected_node_batches = [[5, 4], [3, 1], [2]]
-    assert len(mapper) == 3
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
-        assert all(np.array(nl) == expected_node_batches[ii])
+    max_iter = 5
+    comparison_results = set()
 
-    # This should re-shuffle the IDs
-    mapper.on_epoch_end()
-    expected_node_batches = [[4, 3], [1, 5], [2]]
-    assert len(mapper) == 3
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
-        assert all(np.array(nl) == expected_node_batches[ii])
+    for i in range(max_iter):
+        f1, f2 = consecutive_epochs(seq)
+        comparison_results.add(all(f1 == f2))
 
-    # With no shuffle
-    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
-        nodes, nodes, shuffle=False
-    )
-    expected_node_batches = [[1, 2], [3, 4], [5]]
-    assert len(mapper) == 3
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
-        assert all(np.array(nl) == expected_node_batches[ii])
+    if not shuffle:
+        assert comparison_results == {True}
+    else:
+        assert False in comparison_results
 
 
 def test_nodemapper_with_labels():
@@ -269,7 +268,7 @@ def test_nodemapper_zero_samples():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
         G.nodes()
     )
@@ -284,7 +283,7 @@ def test_nodemapper_zero_samples():
         assert nl is None
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
         G.nodes()
     )
@@ -348,7 +347,7 @@ def test_nodemapper_incorrect_targets():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     with pytest.raises(TypeError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
@@ -613,7 +612,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
     Attri2VecNodeGenerator requires the graph to have features
     """
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -621,7 +620,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
 def test_attri2vec_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -637,7 +636,7 @@ def test_attri2vec_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = Attri2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
     assert len(mapper1) == 2
