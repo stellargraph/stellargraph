@@ -142,7 +142,7 @@ def train(
     precision = sk_metrics.precision_score(test_targets.iloc[:, 1], binary_predictions)
     recall = sk_metrics.recall_score(test_targets.iloc[:, 1], binary_predictions)
     f1 = sk_metrics.f1_score(test_targets.iloc[:, 1], binary_predictions)
-    roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], binary_predictions)
+    roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], predictions[:, 1])
 
     print(
         "accuracy = {:0.3}, precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(

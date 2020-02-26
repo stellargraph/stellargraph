@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import pytest
-from stellargraph.utils.saliency_maps import *
+from stellargraph.interpretability.saliency_maps import *
 import numpy as np
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator

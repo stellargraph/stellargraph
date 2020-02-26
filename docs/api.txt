@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator
 
 
 GraphSAGE model
@@ -109,15 +109,21 @@ Link prediction layers
 Ensembles
 ------------------------
 
-.. automodule:: stellargraph.utils.ensemble
+.. automodule:: stellargraph.ensemble
   :members: Ensemble, BaggingEnsemble
 
 
 Calibration
 ------------------------
 
-.. automodule:: stellargraph.utils.calibration
+.. automodule:: stellargraph.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
+
+Utilities
+------------------------
+
+.. automodule:: stellargraph.utils
+  :members: plot_history
 
 
 Datasets
