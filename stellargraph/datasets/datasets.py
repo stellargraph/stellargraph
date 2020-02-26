@@ -118,29 +118,16 @@ class BlogCatalog3(
             A :class:`StellarGraph` object.
         """
         self.download()
-        return self._load_from_location(self.data_directory)
-
-    @staticmethod
-    def _load_from_location(location):
-        """
-        Support code for the old `load_dataset_BlogCatalog3` function.
-        """
-        if not os.path.isdir(location):
-            raise NotADirectoryError(
-                "The location {} is not a directory.".format(location)
-            )
 
         # load the raw data
-        user_node_ids = pd.read_csv(os.path.join(location, "nodes.csv"), header=None)
-        group_ids = pd.read_csv(os.path.join(location, "groups.csv"), header=None)
-        edges = pd.read_csv(
-            os.path.join(location, "edges.csv"), header=None, names=["source", "target"]
-        )
-        group_edges = pd.read_csv(
-            os.path.join(location, "group-edges.csv"),
-            header=None,
-            names=["source", "target"],
-        )
+        edges, group_edges, groups, nodes = [
+            self._resolve_path(name) for name in self.expected_files
+        ]
+
+        user_node_ids = pd.read_csv(nodes, header=None)
+        group_ids = pd.read_csv(groups, header=None)
+        edges = pd.read_csv(edges, header=None, names=["source", "target"])
+        group_edges = pd.read_csv(group_edges, header=None, names=["source", "target"])
 
         # The dataset uses integers for node ids. However, the integers from 1 to 39 are used as IDs
         # for both users and groups. This is disambiguated by converting everything to strings and
