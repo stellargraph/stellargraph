@@ -133,6 +133,7 @@ def test_mutag_load() -> None:
     # There are two labels -1 and 1
     assert len(np.unique(labels)) == 2
 
+
 def test_movielens_load() -> None:
     g, edges_with_ratings = MovieLens().load()
 
@@ -148,4 +149,3 @@ def test_movielens_load() -> None:
 
     assert len(edges_with_ratings) == n_ratings
     assert list(edges_with_ratings.columns) == ["user_id", "movie_id", "rating"]
-

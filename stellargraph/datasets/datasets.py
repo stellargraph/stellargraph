@@ -367,7 +367,7 @@ class MUTAG(
             location=location,
             filename="MUTAG_edge_labels.txt",
             names=["weight"],
-            dtype=int
+            dtype=int,
         )
         df_graph = pd.concat([df_graph, df_edge_labels], axis=1)  # add edge weights
         df_graph_ids = self._load_from_txt_file(
