@@ -1,7 +1,5 @@
 # Change Log
 
-- DistMult: both compute embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
-
 ## [0.10.0](https://github.com/stellargraph/stellargraph/tree/v0.10.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.9.0...v0.10.0)

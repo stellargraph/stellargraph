@@ -92,9 +92,9 @@ def test_dismult(knowledge_graph):
     # compares that to a direct implementation of the scoring method in the paper
     gen = KGTripleGenerator(knowledge_graph, 3)
 
-    # use a random initializer with a large positive range, so that any differences are obvious
+    # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    x_inp, x_out = DistMult(gen, 5, embedding_initializer=init).build()
+    x_inp, x_out = DistMult(gen, 5, embeddings_initializer=init).build()
 
     model = Model(x_inp, x_out)
 

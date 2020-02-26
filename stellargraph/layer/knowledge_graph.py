@@ -22,6 +22,7 @@ from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embe
 
 from ..mapper.knowledge_graph import KGTripleGenerator
 from ..core.experimental import experimental
+from ..core.validation import require_integer_in_range
 
 
 class ComplExScore(Layer):
@@ -226,28 +227,36 @@ class DistMult:
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
 
-        k (int): the dimension of the embedding (that is, a vector in R^k is learnt for each node
-            and each link type)
+        embedding_dimension (int): the dimension of the embedding (that is, a vector in
+            ``R^embedding_dimension`` is learnt for each node and each link type)
 
-        embedding_initializer (str or func, optional): The initialiser to use for the embeddings.
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
 
-        embedding_regularizer (str or func, optional): The regularizer to use for the embeddings.
+        embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
     """
 
     def __init__(
-        self, generator, k, embedding_initializer=None, embedding_regularizer=None,
+        self,
+        generator,
+        embedding_dimension,
+        embeddings_initializer="uniform",
+        embeddings_regularizer=None,
+        embeddings_constraint=constraints.UnitNorm(axis=1),
     ):
         if not isinstance(generator, KGTripleGenerator):
             raise TypeError(
                 f"generator: expected KGTripleGenerator, found {type(generator).__name__}"
             )
 
+        require_integer_in_range(embedding_dimension, "embedding_dimension", min_val=1)
+
         graph = generator.G
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
-        self.k = k
-        self.embedding_initializer = initializers.get(embedding_initializer)
-        self.embedding_regularizer = regularizers.get(embedding_regularizer)
+        self.embedding_dimension = embedding_dimension
+        self.embeddings_initializer = initializers.get(embeddings_initializer)
+        self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
+        self.embeddings_constraint = constraints.get(embeddings_constraint)
 
     # layer names
     _NODE = "DISTMULT_NODE"
@@ -274,10 +283,11 @@ class DistMult:
     def _embed(self, count, name):
         return Embedding(
             count,
-            self.k,
+            self.embedding_dimension,
             name=name,
-            embeddings_initializer=self.embedding_initializer,
-            embeddings_regularizer=self.embedding_regularizer,
+            embeddings_initializer=self.embeddings_initializer,
+            embeddings_regularizer=self.embeddings_regularizer,
+            embeddings_constraint=self.embeddings_constraint,
         )
 
     def __call__(self, x):
@@ -306,11 +316,11 @@ class DistMult:
         Returns:
             A tuple of (list of input tensors, tensor for DistMult model score outputs)
         """
-        s_iloc = Input(shape=(None,))
+        e1_iloc = Input(shape=(None,))
         r_iloc = Input(shape=(None,))
-        o_iloc = Input(shape=(None,))
+        e2_iloc = Input(shape=(None,))
 
-        x_inp = [s_iloc, r_iloc, o_iloc]
+        x_inp = [e1_iloc, r_iloc, e2_iloc]
         x_out = self(x_inp)
 
         return x_inp, x_out
