@@ -401,9 +401,7 @@ class MUTAG(
                 df_graph_ids.loc[df_graph_ids["graph_id"] == graph_id].index
             )
 
-            df_subgraph = df_graph[
-                df_graph["source"].isin(node_ids) | df_graph["target"].isin(node_ids)
-            ]
+            df_subgraph = df_graph[df_graph["source"].isin(node_ids)]
             # nodes should be DataFrame with node features; DataFrame index indicates node IDs
             # edges should be DataFrame of edges, 2 columns "source" and "target"
             graph = StellarGraph(nodes=df_node_labels.loc[node_ids], edges=df_subgraph)
