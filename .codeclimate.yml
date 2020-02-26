@@ -14,7 +14,7 @@ checks:
   method-count:
     enabled: false
 
-  method-length:
+  method-lines:
     enabled: false
 
   similar-code:
