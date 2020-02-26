@@ -25,7 +25,18 @@ plugins:
     enabled: false
 
   sonar-python:
-    enabled: false
+    enabled: true
+    checks:
+      # number of function parameters
+      python:S107:
+        enabled: false
+      # cognitive complexity
+      python:S3776:
+        enabled: false
+      # FIXME comments
+      python:S1134:
+        enabled: false
+
 
 exclude_patterns:
   # default exclude patterns:
