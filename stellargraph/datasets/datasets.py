@@ -329,6 +329,10 @@ class MUTAG(
         """
         Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
 
+        Note: Edges in MUTAG are labelled as one of 4 values: aromatic, single, double, and triple indicated by integers
+        0, 1, 2, 3 respectively. The edge labels are included in the  :class:`StellarGraph` objects as edge weights in
+        integer representation.
+
         Returns:
             A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
         """
@@ -359,6 +363,13 @@ class MUTAG(
         df_graph = self._load_from_txt_file(
             location=location, filename="MUTAG_A.txt", names=["source", "target"]
         )
+        df_edge_labels = self._load_from_txt_file(
+            location=location,
+            filename="MUTAG_edge_labels.txt",
+            names=["weight"],
+            dtype=int
+        )
+        df_graph = pd.concat([df_graph, df_edge_labels], axis=1)  # add edge weights
         df_graph_ids = self._load_from_txt_file(
             location=location,
             filename="MUTAG_graph_indicator.txt",
