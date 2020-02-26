@@ -129,7 +129,7 @@ def test_mutag_load() -> None:
     assert sum(n_nodes) == 3371
     assert sum(n_edges) == 7442
     assert max_nodes == 28
-    assert set(labels) == {'-1', '1'}
+    assert set(labels) == {"-1", "1"}
 
 
 def test_movielens_load() -> None:
