@@ -99,7 +99,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/black:snapshot"
 
   - label: ":python-black::jupyter: check notebook format"
@@ -118,7 +118,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "mvdan/shfmt:v2.6.4"
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
@@ -127,28 +127,28 @@ steps:
     command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/hadolint:snapshot"
 
   - label: ":docker: format Dockerfiles"
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/dockerfile-utils:snapshot"
 
   - label: ":prettier::yaml: format YAML"
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/prettier:snapshot"
         command: [
             "--check",
@@ -162,7 +162,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/yamllint:snapshot"
 
   - label: ":copyright: check copyright headers"
