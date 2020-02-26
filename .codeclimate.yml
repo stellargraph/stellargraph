@@ -25,7 +25,7 @@ plugins:
     enabled: false
 
   sonar-python:
-    enabled: true
+    enabled: false
 
 exclude_patterns:
   # default exclude patterns:
