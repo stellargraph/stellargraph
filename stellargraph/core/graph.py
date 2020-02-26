@@ -984,6 +984,75 @@ class StellarGraph:
         adj.sum_duplicates()
         return adj
 
+    def subgraph(self, nodes):
+        """
+        Compute the node-induced subgraph implied by ``nodes``.
+
+        Args:
+            nodes (iterable): The nodes in the subgraph.
+
+        Returns:
+            A :class:`StellarGraph` or :class:`StellarDiGraph` instance containing only the nodes in
+            ``nodes``, and any edges between them in ``self``. It contains the same node & edge
+            types, node features and edge weights as in ``self``.
+        """
+
+        node_ilocs = self._nodes.ids.to_iloc(nodes, strict=True)
+        node_types = self._nodes.type_of_iloc(node_ilocs)
+        node_type_to_ilocs = pd.Series(node_ilocs, index=node_types).groupby(level=0)
+
+        node_frames = {
+            type_name: pd.DataFrame(
+                self._nodes.features(type_name, ilocs),
+                index=self._nodes.ids.from_iloc(ilocs),
+            )
+            for type_name, ilocs in node_type_to_ilocs
+        }
+
+        # FIXME: this is O(edges in graph) but could potentially be optimised to O(edges incident in
+        # nodes in graph), which could be much fewer if `nodes` is small
+        edge_ilocs = np.where(
+            np.isin(self._edges.sources, nodes) & np.isin(self._edges.targets, nodes)
+        )
+        edge_frame = pd.DataFrame(
+            {
+                "id": self._edges.ids.from_iloc(edge_ilocs),
+                globalvar.SOURCE: self._edges.sources[edge_ilocs],
+                globalvar.TARGET: self._edges.targets[edge_ilocs],
+                globalvar.WEIGHT: self._edges.weights[edge_ilocs],
+            },
+            index=self._edges.type_of_iloc(edge_ilocs),
+        )
+        edge_frames = {
+            type_name: df.set_index("id")
+            for type_name, df in edge_frame.groupby(level=0)
+        }
+
+        cls = StellarDiGraph if self.is_directed() else StellarGraph
+        return cls(node_frames, edge_frames)
+
+    def connected_components(self):
+        """
+        Compute the connected components in this graph, ordered by size.
+
+        The nodes in the largest component can be computed with ``nodes =
+        next(graph.connected_components())``. The node IDs returned by this method can be used to
+        compute the corresponding subgraph with ``graph.subgraph(nodes)``.
+
+        Returns:
+            An iterator over sets of node IDs in each connected component, from the largest (most nodes)
+            to smallest (fewest nodes).
+        """
+
+        adj = self.to_adjacency_matrix()
+        count, cc_labels = sps.csgraph.connected_components(adj, directed=False)
+        cc_sizes = np.bincount(cc_labels, minlength=count)
+        cc_by_size = np.argsort(cc_sizes)[::-1]
+
+        return (
+            self._nodes.ids.from_iloc(cc_labels == cc_label) for cc_label in cc_by_size
+        )
+
     def to_networkx(
         self,
         node_type_name=globalvar.TYPE_ATTR_NAME,

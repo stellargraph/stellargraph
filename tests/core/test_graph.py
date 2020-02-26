@@ -451,8 +451,8 @@ def numpy_to_list(x):
 
 def normalize_edges(edges, directed):
     if directed:
-        return {(src, tgt): data for src, tgt, data in edges}
-    return {(min(src, tgt), max(src, tgt)): data for src, tgt, data in edges}
+        return {(src, tgt): data for src, tgt, *data in edges}
+    return {(min(src, tgt), max(src, tgt)): data for src, tgt, *data in edges}
 
 
 def assert_networkx(g_nx, expected_nodes, expected_edges, *, directed):
@@ -995,3 +995,73 @@ def test_from_networkx_deprecations():
     assert "node_type_name" in str(record.pop(DeprecationWarning).message)
     assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
     assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
+
+
+@pytest.mark.parametrize("is_directed", [False, True])
+@pytest.mark.parametrize(
+    "nodes",
+    [
+        # no nodes = empty subgraph
+        [],
+        # no edges
+        [0],
+        # self loop
+        [5],
+        # various nodes with various edges, in a few different common types that might be used
+        [0, 1, 4, 5],
+        np.array([0, 1, 4, 5]),
+        pd.Index([0, 1, 4, 5]),
+    ],
+)
+def test_subgraph(is_directed, nodes):
+    g = example_hin_1(feature_sizes={}, is_directed=is_directed, self_loop=True)
+    sub = g.subgraph(nodes)
+
+    # assume NetworkX's subgraph algorithm works
+    expected = StellarGraph.from_networkx(g.to_networkx().subgraph(nodes))
+
+    assert sub.is_directed() == is_directed
+
+    assert set(sub.nodes()) == set(expected.nodes())
+
+    sub_edges, sub_weights = sub.edges(include_edge_type=True, include_edge_weight=True)
+    exp_edges, exp_weights = expected.edges(
+        include_edge_type=True, include_edge_weight=True
+    )
+    assert normalize_edges(sub_edges, is_directed) == normalize_edges(
+        exp_edges, is_directed
+    )
+    np.testing.assert_array_equal(sub_weights, exp_weights)
+
+    for node in nodes:
+        assert sub.node_type(node) == g.node_type(node)
+        np.testing.assert_array_equal(
+            sub.node_features([node]), g.node_features([node])
+        )
+
+
+def test_subgraph_missing_node():
+    g = example_hin_1()
+    with pytest.raises(KeyError, match="12345"):
+        sub = g.subgraph([0, 1, 12345])
+
+
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_connected_components(is_directed):
+    nodes = pd.DataFrame(index=range(6))
+    edges = pd.DataFrame([(0, 2), (2, 5), (1, 4)], columns=["source", "target"])
+
+    if is_directed:
+        g = StellarDiGraph(nodes, edges)
+    else:
+        g = StellarGraph(nodes, edges)
+
+    a, b, c = g.connected_components()
+
+    # (weak) connected components are the same for both directed and undirected graphs
+    assert set(a) == {0, 2, 5}
+    assert set(b) == {1, 4}
+    assert set(c) == {3}
+
+    # check that `connected_components` works with `subgraph`
+    assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
