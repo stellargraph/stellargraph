@@ -986,29 +986,66 @@ class StellarGraph:
 
     def to_networkx(
         self,
-        node_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=globalvar.WEIGHT,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
+        node_type_attr=globalvar.TYPE_ATTR_NAME,
+        edge_type_attr=globalvar.TYPE_ATTR_NAME,
+        edge_weight_attr=globalvar.WEIGHT,
+        feature_attr=globalvar.FEATURE_ATTR_NAME,
+        node_type_name=None,
+        edge_type_name=None,
+        edge_weight_label=None,
+        feature_name=None,
     ):
         """
         Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
 
         Args:
-            node_type_name (str): the name of the attribute to use to store a node's type (or label).
+            node_type_attr (str): the name of the attribute to use to store a node's type (or label).
 
-            edge_type_name (str): the name of the attribute to use to store a edge's type (or label).
+            edge_type_attr (str): the name of the attribute to use to store a edge's type (or label).
 
-            edge_weight_label (str): the name of the attribute to use to store a edge's weight.
+            edge_weight_attr (str): the name of the attribute to use to store a edge's weight.
 
-            feature_name (str, optional): the name of the attribute to use to store a node's feature
+            feature_attr (str, optional): the name of the attribute to use to store a node's feature
                 vector; if ``None``, feature vectors are not stored within each node.
+
+            node_type_name (str): Deprecated, use ``node_type_attr``.
+            edge_type_name (str): Deprecated, use ``edge_type_attr``.
+            edge_weight_label (str): Deprecated, use ``edge_weight_attr``.
+            feature_name (str, optional): Deprecated, use ``feature_attr``.
 
         Returns:
              An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
              undirected) containing all the nodes & edges and their types & features in this graph.
         """
         import networkx
+
+        if node_type_name is not None:
+            warnings.warn(
+                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
+                DeprecationWarning,
+            )
+            node_type_attr = node_type_name
+
+        if edge_type_name is not None:
+            warnings.warn(
+                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
+                DeprecationWarning,
+            )
+            edge_type_attr = edge_type_name
+
+        if edge_weight_label is not None:
+            warnings.warn(
+                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
+                DeprecationWarning,
+            )
+            edge_weight_attr = edge_weight_label
+
+        if feature_name is not None:
+            warnings.warn(
+                "the 'feature_name' parameter has been replaced by 'feature_attr'",
+                DeprecationWarning,
+            )
+            feature_attr = feature_name
 
         if self.is_directed():
             graph = networkx.MultiDiGraph()
@@ -1017,14 +1054,14 @@ class StellarGraph:
 
         for ty in self.node_types:
             node_ids = self.nodes_of_type(ty)
-            ty_dict = {node_type_name: ty}
+            ty_dict = {node_type_attr: ty}
 
             if feature_name is not None:
                 features = self.node_features(node_ids, node_type=ty)
 
                 for node_id, node_features in zip(node_ids, features):
                     graph.add_node(
-                        node_id, **ty_dict, **{feature_name: node_features},
+                        node_id, **ty_dict, **{feature_attr: node_features},
                     )
             else:
                 graph.add_nodes_from(node_ids, **ty_dict)
@@ -1036,7 +1073,7 @@ class StellarGraph:
             self._edges.weights,
         )
         graph.add_edges_from(
-            (src, dst, {edge_type_name: type_, edge_weight_label: weight})
+            (src, dst, {edge_type_attr: type_, edge_weight_attr: weight})
             for src, dst, type_, weight in iterator
         )
 

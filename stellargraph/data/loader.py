@@ -97,4 +97,4 @@ def load_dataset_BlogCatalog3(location):
     from stellargraph.datasets import BlogCatalog3
 
     location = os.path.expanduser(location)
-    return BlogCatalog3._load_from_location(location).to_networkx(feature_name=None)
+    return BlogCatalog3._load_from_location(location).to_networkx(feature_attr=None)

@@ -27,6 +27,7 @@ from ..test_utils.graphs import (
     example_graph,
     example_hin_1_nx,
     example_hin_1,
+    line_graph,
 )
 
 from .. import test_utils
@@ -474,12 +475,12 @@ def test_to_networkx(has_features, include_features):
         feature_sizes = None
 
     if include_features:
-        feature_name = "feature"
+        feature_attr = "feature"
     else:
-        feature_name = None
+        feature_attr = None
 
     g = example_hin_1(feature_sizes)
-    g_nx = g.to_networkx(feature_name=feature_name)
+    g_nx = g.to_networkx(feature_attr=feature_attr)
 
     node_def = {"A": (a_size, [0, 1, 2, 3]), "B": (b_size, [4, 5, 6])}
 
@@ -520,6 +521,22 @@ def test_to_networkx_edge_attributes():
     ]
 
     assert_networkx(g_nx, expected_nodes, expected_edges, directed=False)
+
+
+def test_to_networkx_deprecation(line_graph):
+    with pytest.warns(None) as record:
+        line_graph.to_networkx(
+            node_type_name="n",
+            edge_type_name="e",
+            edge_weight_label="w",
+            feature_name="f",
+        )
+
+    assert len(record) == 4
+    assert "node_type_name" in str(record.pop(DeprecationWarning).message)
+    assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
+    assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
+    assert "feature_name" in str(record.pop(DeprecationWarning).message)
 
 
 def test_networkx_attribute_message():
