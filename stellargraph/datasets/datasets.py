@@ -56,9 +56,9 @@ class Cora(
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
 
         Returns:
-            A tuple where the first element is the :class:`StellarGraph` object with the nodes, node
-            feature vectors and edges, and the second element is a pandas Series of the node subject
-            class labels.
+            A tuple where the first element is the :class:`StellarGraph` object (or
+            :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
+            and edges, and the second element is a pandas Series of the node subject class labels.
         """
         self.download()
         edgelist = pd.read_csv(
