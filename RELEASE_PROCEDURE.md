@@ -2,11 +2,12 @@
 
 1. **Create release branch**
 
-   - Create the release branch
+   - Create and push the release branch
      ```shell
      git checkout -b release-X.X.X develop
+     git push -u origin release-X.X.X
      ```
-   - Increase the version and apply other release-related changes
+   - Release-related changes are made via Pull Requests from feature branches into the new release branch:
      - MUST do:
        - Version bumping: Change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
          - `stellargraph/version.py`
@@ -17,10 +18,19 @@
      - NEVER do:
        - Add new features
 
+   - Once the release branch is ready to be merged, create a new Pull Request from the release branch into `master`. This should only be used for the rest of the team the approve that all necessary changes have been made for release, and **not for doing the actual merge**. **The actual merge into master should be done locally in the next step.**
+
 2. **Merge release branch into `master` locally**
 
     This step gets your local `master` branch into release-ready state.
 
+    Pull any changes into your local release branch
+    ```shell
+    git checkout release-X.X.X
+    git pull
+    ```
+
+    Merge changes into `master`
     ```shell
     git checkout master
     git merge --no-ff release-X.X.X -m "Release X.X.X"
