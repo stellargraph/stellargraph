@@ -310,7 +310,7 @@ class AIFB(
 class MUTAG(
     DatasetLoader,
     name="MUTAG",
-    directory_name="mutag",
+    directory_name="MUTAG",
     url="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/MUTAG.zip",
     url_archive_format="zip",
     expected_files=[
