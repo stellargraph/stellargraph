@@ -118,20 +118,18 @@ def test_mutag_load() -> None:
     assert len(graphs) == n_graphs
     assert len(labels) == n_graphs  # one label per graph
 
-    # get a list with the number of nodes in each graph
     n_nodes = [g.number_of_nodes() for g in graphs]
+    n_edges = [g.number_of_edges() for g in graphs]
 
-    # calculate average and max number of nodes across all graphs
     n_avg_nodes = np.mean(n_nodes)
     max_nodes = np.max(n_nodes)
 
     # average number of nodes should be 17.93085... or approximately 18.
     assert round(n_avg_nodes) == 18
-    # maximum number of nodes should be 28
+    assert sum(n_nodes) == 3371
+    assert sum(n_edges) == 7442
     assert max_nodes == 28
-
-    # There are two labels -1 and 1
-    assert len(np.unique(labels)) == 2
+    assert set(labels) == {'-1', '1'}
 
 
 def test_movielens_load() -> None:
