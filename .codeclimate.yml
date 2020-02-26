@@ -14,6 +14,9 @@ checks:
   method-count:
     enabled: false
 
+  method-length:
+    enabled: false
+
   similar-code:
     enabled: false
 
