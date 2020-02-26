@@ -16,7 +16,7 @@
 
 import pytest
 import numpy as np
-from stellargraph.utils.calibration import *
+from stellargraph.calibration import *
 
 
 #
