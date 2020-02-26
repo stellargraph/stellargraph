@@ -1103,7 +1103,6 @@ class StellarDiGraph(StellarGraph):
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         super().__init__(
@@ -1120,6 +1119,5 @@ class StellarDiGraph(StellarGraph):
             graph=graph,
             node_type_name=node_type_name,
             edge_type_name=edge_type_name,
-            edge_weight_label=edge_weight_label,
             node_features=node_features,
         )
