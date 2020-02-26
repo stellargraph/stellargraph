@@ -18,7 +18,7 @@ import pytest
 import tempfile
 import os
 import numpy as np
-from stellargraph.datasets import Cora, CiteSeer, BlogCatalog3, MUTAG
+from stellargraph.datasets import *
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
 from urllib.request import urlretrieve
@@ -132,3 +132,20 @@ def test_mutag_load() -> None:
 
     # There are two labels -1 and 1
     assert len(np.unique(labels)) == 2
+
+def test_movielens_load() -> None:
+    g, edges_with_ratings = MovieLens().load()
+
+    n_users = 943
+    n_movies = 1682
+    n_ratings = 100000
+
+    assert g.number_of_nodes() == n_users + n_movies
+    assert g.number_of_edges() == n_ratings
+
+    assert len(g.nodes_of_type("user")) == n_users
+    assert len(g.nodes_of_type("movie")) == n_movies
+
+    assert len(edges_with_ratings) == n_ratings
+    assert list(edges_with_ratings.columns) == ["user_id", "movie_id", "rating"]
+
