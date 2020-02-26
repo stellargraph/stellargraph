@@ -228,7 +228,7 @@ class MUTAG(
         Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
 
         Returns:
-            A list of :class:`StellarGraph` objects and a numpy 2D vector of one-hot encoded labels one for each graph.
+            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
         """
         self.download()
         return self._load_from_location(location=self.data_directory)
@@ -277,7 +277,8 @@ class MUTAG(
             index_increment=1,
         )
 
-        # Let us one-hot encode the node labels because these are used as node features.
+        # Let us one-hot encode the node labels because these are used as node features
+        # in graph classification tasks.
         df_node_labels = pd.get_dummies(df_node_labels)
 
         graphs = []

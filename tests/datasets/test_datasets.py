@@ -17,7 +17,8 @@
 import pytest
 import tempfile
 import os
-from stellargraph.datasets import Cora, CiteSeer, BlogCatalog3
+import numpy as np
+from stellargraph.datasets import Cora, CiteSeer, BlogCatalog3, MUTAG
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
 from urllib.request import urlretrieve
@@ -107,3 +108,27 @@ def test_blogcatalog3_deprecated_load() -> None:
     dataset.download()
     with pytest.warns(DeprecationWarning, match=r"BlogCatalog3\(\)\.load\(\)"):
         load_dataset_BlogCatalog3(dataset.data_directory)
+
+
+def test_mutag_load() -> None:
+    graphs, labels = MUTAG().load()
+
+    n_graphs = 188
+
+    assert len(graphs) == n_graphs
+    assert len(labels) == n_graphs  # one label per graph
+
+    # get a list with the number of nodes in each graph
+    n_nodes = [g.number_of_nodes() for g in graphs]
+
+    # calculate average and max number of nodes across all graphs
+    n_avg_nodes = np.mean(n_nodes)
+    max_nodes = np.max(n_nodes)
+
+    # average number of nodes should be 17.93085... or approximately 18.
+    assert round(n_avg_nodes) == 18
+    # maximum number of nodes should be 28
+    assert max_nodes == 28
+
+    # There are two labels -1 and 1
+    assert len(np.unique(labels)) == 2
