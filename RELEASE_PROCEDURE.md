@@ -18,7 +18,7 @@
      - NEVER do:
        - Add new features
 
-   - Once the release branch is ready to be merged, create a new Pull Request from the release branch into `master`. This should only be used for the rest of the team the approve that all necessary changes have been made for release, and **not for doing the actual merge**. **The actual merge into master should be done locally in the next step.**
+   - Once the release branch is ready to be merged, create a new Pull Request from the release branch into `master`. This should only be used to exercise CI and for the rest of the team the approve that all necessary changes have been made for release, and **not for doing the actual merge**. **The actual merge into master should be done locally in the next step.**
 
 2. **Merge release branch into `master` locally**
 
