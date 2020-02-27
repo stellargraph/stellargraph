@@ -75,12 +75,7 @@ def hs_nai(
     )
 
     model.fit_generator(
-        train_gen,
-        epochs=epochs,
-        verbose=1,
-        use_multiprocessing=False,
-        workers=4,
-        shuffle=shuffle,
+        train_gen, epochs=epochs, use_multiprocessing=False, workers=4, shuffle=shuffle,
     )
     return model
 
@@ -139,12 +134,7 @@ def hs_link_prediction(
     )
 
     model.fit_generator(
-        train_gen,
-        epochs=epochs,
-        verbose=1,
-        use_multiprocessing=False,
-        workers=4,
-        shuffle=shuffle,
+        train_gen, epochs=epochs, use_multiprocessing=False, workers=4, shuffle=shuffle,
     )
     return model
 
