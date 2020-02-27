@@ -1056,7 +1056,7 @@ class StellarGraph:
             node_ids = self.nodes_of_type(ty)
             ty_dict = {node_type_attr: ty}
 
-            if feature_name is not None:
+            if feature_attr is not None:
                 features = self.node_features(node_ids, node_type=ty)
 
                 for node_id, node_features in zip(node_ids, features):

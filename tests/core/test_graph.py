@@ -486,8 +486,8 @@ def test_to_networkx(has_features, include_features):
 
     def node_attrs(label, x, size):
         d = {"label": label}
-        if feature_name:
-            d[feature_name] = [x] * size
+        if feature_attr:
+            d[feature_attr] = [x] * size
         return d
 
     expected_nodes = {
