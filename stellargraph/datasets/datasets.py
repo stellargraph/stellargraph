@@ -323,27 +323,13 @@ class MUTAG(
     ],
     description="Each graph represents a chemical compound and graph labels represent 'their mutagenic effect on a specific gram negative bacterium.'"
     "The dataset includes 188 graphs with 18 nodes and 20 edges on average for each graph. Graph nodes have 7 labels and each graph is labelled as belonging to 1 of 2 classes.",
-    source="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/",
+    source="https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets",
 ):
-    def load(self):
-        """
-        Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
-
-        Note: Edges in MUTAG are labelled as one of 4 values: aromatic, single, double, and triple indicated by integers
-        0, 1, 2, 3 respectively. The edge labels are included in the  :class:`StellarGraph` objects as edge weights in
-        integer representation.
-
-        Returns:
-            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
-        """
-        self.download()
-        return self._load_from_location(location=self.data_directory)
-
     def _load_from_txt_file(
-        self, location, filename, names=None, dtype=None, index_increment=None
+        self, filename, names=None, dtype=None, index_increment=None
     ):
         df = pd.read_csv(
-            os.path.join(location, filename),
+            self._resolve_path(filename=filename),
             header=None,
             index_col=False,
             dtype=dtype,
@@ -356,41 +342,37 @@ class MUTAG(
             df.index = df.index + index_increment
         return df
 
-    def _load_from_location(self, location):
+    def load(self):
+        """
+        Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
 
-        if not os.path.isdir(location):
-            raise NotADirectoryError(
-                "The location {} is not a directory.".format(location)
-            )
+        Note: Edges in MUTAG are labelled as one of 4 values: aromatic, single, double, and triple indicated by integers
+        0, 1, 2, 3 respectively. The edge labels are included in the  :class:`StellarGraph` objects as edge weights in
+        integer representation.
+
+        Returns:
+            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
+        """
+        self.download()
 
         df_graph = self._load_from_txt_file(
-            location=location, filename="MUTAG_A.txt", names=["source", "target"]
+            filename="MUTAG_A.txt", names=["source", "target"]
         )
         df_edge_labels = self._load_from_txt_file(
-            location=location,
-            filename="MUTAG_edge_labels.txt",
-            names=["weight"],
-            dtype=int,
+            filename="MUTAG_edge_labels.txt", names=["weight"], dtype=int
         )
         df_graph = pd.concat([df_graph, df_edge_labels], axis=1)  # add edge weights
         df_graph_ids = self._load_from_txt_file(
-            location=location,
-            filename="MUTAG_graph_indicator.txt",
-            names=["graph_id"],
-            index_increment=1,
+            filename="MUTAG_graph_indicator.txt", names=["graph_id"], index_increment=1
         )
         df_graph_labels = self._load_from_txt_file(
-            location=location,
             filename="MUTAG_graph_labels.txt",
             dtype="category",
             names=["label"],
             index_increment=1,
         )  # binary labels {-1, 1}
         df_node_labels = self._load_from_txt_file(
-            location=location,
-            filename="MUTAG_node_labels.txt",
-            dtype="category",
-            index_increment=1,
+            filename="MUTAG_node_labels.txt", dtype="category", index_increment=1
         )
 
         # Let us one-hot encode the node labels because these are used as node features
