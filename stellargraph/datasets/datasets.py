@@ -21,7 +21,7 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 ``STELLARGRAPH_DATASETS_PATH`` environment variable, and each dataset will be downloaded to a subdirectory within this path.
 """
 
-from .dataset_loader import DatasetLoader, SplitData
+from .dataset_loader import DatasetLoader
 from ..core.graph import StellarGraph, StellarDiGraph
 import logging
 import os
@@ -361,7 +361,7 @@ def _load_tsv_knowledge_graph(dataset):
 
     edges = {name: df.drop(columns="label") for name, df in all_data.groupby("label")}
 
-    return StellarDiGraph(nodes=nodes, edges=edges), SplitData(train, test, valid)
+    return StellarDiGraph(nodes=nodes, edges=edges), train, test, valid
 
 
 class WN18(
@@ -384,6 +384,16 @@ class WN18(
     source="https://everest.hds.utc.fr/doku.php?id=en:transe",
 ):
     def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
         return _load_tsv_knowledge_graph(self)
 
 
@@ -407,4 +417,14 @@ class FB15k(
     source="https://everest.hds.utc.fr/doku.php?id=en:transe",
 ):
     def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
         return _load_tsv_knowledge_graph(self)

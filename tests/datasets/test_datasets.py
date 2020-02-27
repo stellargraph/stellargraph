@@ -149,17 +149,28 @@ def test_cora_load(is_directed) -> None:
 
 
 def test_fb15k_load() -> None:
-    g, (train, test, valid) = FB15k().load()
+    g, train, test, valid = FB15k().load()
 
     n_train = 483142
     n_test = 59071
     n_valid = 50000
+
     assert g.number_of_nodes() == 14951
     assert g.number_of_edges() == n_train + n_test + n_valid
+    assert len({et for _, _, et in g.edges(include_edge_type=True)}) == 1345
+
+    assert len(train) == n_train
+    assert len(test) == n_test
+    assert len(valid) == n_valid
+
+    cols = {"source", "label", "target"}
+    assert set(train.columns) == cols
+    assert set(test.columns) == cols
+    assert set(valid.columns) == cols
 
 
 def test_wn18_load() -> None:
-    g, (train, test, valid) = WN18().load()
+    g, train, test, valid = WN18().load()
 
     n_train = 141442
     n_test = 5000
@@ -167,4 +178,13 @@ def test_wn18_load() -> None:
 
     assert g.number_of_nodes() == 40943
     assert g.number_of_edges() == n_train + n_test + n_valid
+    assert len({et for _, _, et in g.edges(include_edge_type=True)}) == 18
 
+    assert len(train) == n_train
+    assert len(test) == n_test
+    assert len(valid) == n_valid
+
+    cols = {"source", "label", "target"}
+    assert set(train.columns) == cols
+    assert set(test.columns) == cols
+    assert set(valid.columns) == cols
