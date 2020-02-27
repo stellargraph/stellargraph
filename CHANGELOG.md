@@ -2,7 +2,7 @@
 
 ## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.9.0...HEAD)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.10.0...HEAD)
 
 ### Major features and improvements
 
@@ -10,27 +10,71 @@
 
 ### Breaking changes
 
+### Experimental features
+
+Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
+
+### Bug fixes and other changes
+
+- `StellarGraph.to_adjacency_matrix` is at least 15× faster on undirected graphs [\#932](http://github.com/stellargraph/stellargraph/pull/932)
+- DevOps changes:
+
+## [0.10.0](https://github.com/stellargraph/stellargraph/tree/v0.10.0)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.9.0...v0.10.0)
+
+### Major features and improvements
+
+- The `StellarGraph` and `StellarDiGraph` classes are now backed by NumPy and Pandas [\#752](https://github.com/stellargraph/stellargraph/issues/752). The `StellarGraph(...)` and `StellarDiGraph(...)` constructors now consume Pandas DataFrames representing node features and the edge list. This significantly reduces the memory use and construction time for these `StellarGraph` objects.
+
+  The following table shows some measurements of the memory use of `g = StellarGraph(...)`, and the time required for that constructor call, for several real-world datasets of different sizes, for both the old form backed by NetworkX code and the new form backed by NumPy and Pandas (both old and new store node features similarly, using 2D NumPy arrays, so the measurements in this table include only graph structure: the edges and nodes themselves):
+
+  | dataset |  nodes |    edges | size old (MiB) | size new (MiB) | size change | time old (s) | time new (s) | time change |
+  |---------|-------:|---------:|---------------:|---------------:|------------:|-------------:|-------------:|------------:|
+  | Cora    |   2708 |     5429 |            4.1 |        **1.3** |    **-69%** |        0.069 |    **0.034** |    **-50%** |
+  | FB15k   |  14951 |   592213 |            148 |         **28** |    **-81%** |          5.5 |      **1.2** |    **-77%** |
+  | Reddit  | 231443 | 11606919 |           6611 |        **493** |    **-93%** |          154 |       **33** |    **-82%** |
+
+  The old backend has been removed, and conversion from a NetworkX graph should be performed via the `StellarGraph.from_networkx` function (the existing form `StellarGraph(networkx_graph)` is supported in this release but is deprecated, and may be removed in a future release).
+- More detailed information about Heterogeneous GraphSAGE (HinSAGE) has been added to StellarGraph's readthedocs documentation [\#839](https://github.com/stellargraph/stellargraph/pull/839).
+- New algorithms:
+  - Link prediction with directed GraphSAGE, via `DirectedGraphSAGELinkGenerator` [\#871](https://github.com/stellargraph/stellargraph/issues/871)
+  - GraphWave: computes structural node embeddings by using wavelet transforms on the graph Laplacian [\#822](https://github.com/stellargraph/stellargraph/issues/822)
+
+### Breaking changes
+
 - Some layers and models had many parameters move from `**kwargs` to real arguments: `GraphConvolution`, `GCN`. [\#801](https://github.com/stellargraph/stellargraph/issues/801) Invalid (e.g. incorrectly spelled) arguments would have been ignored previously, but now may fail with a `TypeError`; to fix, remove or correct the arguments.
-- The `stellargraph.data.load_dataset_BlogCatalog3` function has been replaced by the `load` method on `stellargraph.datasets.BlogCatalog3` [\#](). Migration: replace `load_dataset_BlogCatalog3(location)` with `BlogCatalog3().load()`; code required to find the location or download the dataset can be removed, as `load` now this automatically.
+- The `stellargraph.data.load_dataset_BlogCatalog3` function has been replaced by the `load` method on `stellargraph.datasets.BlogCatalog3` [\#888](https://github.com/stellargraph/stellargraph/pull/888). Migration: replace `load_dataset_BlogCatalog3(location)` with `BlogCatalog3().load()`; code required to find the location or download the dataset can be removed, as `load` now does this automatically.
 - `stellargraph.data.train_test_val_split` and `stellargraph.data.NodeSplitter` have been removed. [\#887](https://github.com/stellargraph/stellargraph/pull/887) Migration: this functionality should be replaced with `pandas` and `sklearn` (for instance, `sklearn.model_selection.train_test_split`).
+- Most of the submodules in `stellargraph.utils` have been moved to top-level modules: `stellargraph.calibration`, `stellargraph.ensemble`, `stellargraph.losses` and `stellargraph.interpretability` [\#938](http://github.com/stellargraph/stellargraph/pull/938). Imports from the old location are now deprecated, and may stop working in future releases. See the linked issue for the full list of changes.
 
 ### Experimental features
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
+- Temporal Random Walks: random walks that respect the time that each edge occurred (stored as edge weights) [\#787](https://github.com/stellargraph/stellargraph/pull/787). The implementation does not have an example or thorough testing and documentation.
 - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750). The implementation is not fully tested.
 - ComplEx: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#756](https://github.com/stellargraph/stellargraph/issues/756). The implementation hasn't been validated to match the paper.
+- Neo4j connector: the GraphSAGE algorithm can execute doing neighbourhood sampling in a Neo4j database, so that the edges of a graph do not have to fit entirely into memory [\#799](https://github.com/stellargraph/stellargraph/pull/799). The implementation is not automatically tested, and doesn't support functionality like loading node feature vectors from Neo4j.
 
 ### Bug fixes and other changes
 
-- StellarGraph now supports [`tensorflow 2.1`](https://github.com/tensorflow/tensorflow/releases/tag/v2.1.0), which includes GPU support by default: [\#875](https://github.com/stellargraph/stellargraph/pull/875)
+- StellarGraph now supports [TensorFlow 2.1](https://github.com/tensorflow/tensorflow/releases/tag/v2.1.0), which includes GPU support by default: [\#875](https://github.com/stellargraph/stellargraph/pull/875)
 - Demos now focus on Jupyter notebooks, and demo scripts that duplicate notebooks have been removed: [\#889](https://github.com/stellargraph/stellargraph/pull/889)
-- DevOps changes:
-  - CI: [\#760](https://github.com/stellargraph/stellargraph/pull/760)
-
-- More detailed information about Heterogeneous GraphSAGE (HinSAGE) has been added to StellarGraph's readthedocs documentation [\#839](https://github.com/stellargraph/stellargraph/pull/839).
 - The following algorithms are now reproducible:
   - Supervised GraphSAGE Node Attribute Inference [\#844](https://github.com/stellargraph/stellargraph/pull/844)
+  - GraphSAGE Link Prediction [\#925](https://github.com/stellargraph/stellargraph/pull/925)
+- Randomness can be more easily controlled using `stellargraph.random.set_seed` [\#806](https://github.com/stellargraph/stellargraph/pull/806)
+- `StellarGraph.edges()` can return edge weights as a separate NumPy array with `include_edge_weights=True` [\#754](https://github.com/stellargraph/stellargraph/pull/754)
+- `StellarGraph.to_networkx` supports ignoring node features (and thus being a little more efficient) with `feature_name=None` [\#841](https://github.com/stellargraph/stellargraph/pull/841)
+- `StellarGraph.to_adjacency_matrix` now ignores edge weights (that is, defaults every weight to `1`) by default, unless `weighted=True` is specified [\#857](https://github.com/stellargraph/stellargraph/pull/857)
+- `stellargraph.utils.plot_history` visualises the model training history as a plot for each metric (such as loss) [\#902](https://github.com/stellargraph/stellargraph/pull/902)
+- the saliency maps/interpretability code has been refactored to have more sharing as well as to make it cleaner and easier to extend [\#855](https://github.com/stellargraph/stellargraph/pull/855)
+- DevOps changes:
+  - Most demo notebooks are now tested on CI using Papermill, and so won't become out of date [\#575](https://github.com/stellargraph/stellargraph/issues/575)
+  - CI: [\#698](https://github.com/stellargraph/stellargraph/pull/698), [\#760](https://github.com/stellargraph/stellargraph/pull/760), [\#788](https://github.com/stellargraph/stellargraph/pull/788), [\#817](https://github.com/stellargraph/stellargraph/pull/817), [\#860](https://github.com/stellargraph/stellargraph/pull/860), [\#874](https://github.com/stellargraph/stellargraph/pull/874), [\#877](https://github.com/stellargraph/stellargraph/pull/877), [\#878](https://github.com/stellargraph/stellargraph/pull/878), [\#906](https://github.com/stellargraph/stellargraph/pull/906), [\#908](https://github.com/stellargraph/stellargraph/pull/908), [\#915](https://github.com/stellargraph/stellargraph/pull/915), [\#916](https://github.com/stellargraph/stellargraph/pull/916), [\#918](https://github.com/stellargraph/stellargraph/pull/918)
+  - Other: [\#708](https://github.com/stellargraph/stellargraph/pull/708), [\#746](https://github.com/stellargraph/stellargraph/pull/746), [\#791](https://github.com/stellargraph/stellargraph/pull/791)
+
 
 ## [0.9.0](https://github.com/stellargraph/stellargraph/tree/v0.9.0)
 

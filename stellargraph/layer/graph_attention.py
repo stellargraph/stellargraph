@@ -67,7 +67,7 @@ class GraphAttention(Layer):
                             if True it returns the subset specified by the indices passed to it.
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
-            stellargraph.utils.saliency_maps this should be True. Otherwise this should be False (default).
+            stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
         kernel_initializer (str or func): The initialiser to use for the head weights;
             defaults to 'glorot_uniform'.
         kernel_regularizer (str or func): The regulariser to use for the head weights;
@@ -439,7 +439,7 @@ class GraphAttentionSparse(GraphAttention):
                             if True it returns the subset specified by the indices passed to it.
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
-            stellargraph.utils.saliency_maps this should be True. Otherwise this should be False (default).
+            stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
         kernel_initializer (str or func): The initialiser to use for the head weights;
             defaults to 'glorot_uniform'.
         kernel_regularizer (str or func): The regulariser to use for the head weights;
@@ -630,7 +630,7 @@ class GAT:
         normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
         activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
         saliency_map_support (bool): If calculating saliency maps using the tools in
-            stellargraph.utils.saliency_maps this should be True. Otherwise this should be False (default).
+            stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
         kernel_regularizer (str or func): The regulariser to use for the head weights;
             defaults to None.
         attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
@@ -857,9 +857,9 @@ class GAT:
         Returns: Output tensor of the GAT layers stack
 
         """
-        assert isinstance(inputs, list), "input must be a list, got {} instead".format(
-            type(inputs)
-        )
+        if not isinstance(inputs, list):
+            raise TypeError(f"inputs: expected list, found {type(inputs).__name__}")
+
         x_in, out_indices, *As = inputs
 
         # Currently we require the batch dimension to be one for full-batch methods

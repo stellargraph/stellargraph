@@ -20,7 +20,7 @@ steps:
     key: "runner-3_6"
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         build: runner-3_6
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
@@ -39,7 +39,7 @@ steps:
     key: "runner-3_7"
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         build: runner-3_7
         image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
@@ -60,7 +60,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         run: runner-3_6
     agents:
@@ -73,7 +73,7 @@ steps:
     command: ".buildkite/steps/script.sh"
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         run: runner-3_7
     agents:
@@ -87,7 +87,7 @@ steps:
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         run: runner-3_6
     agents:
@@ -99,7 +99,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/black:snapshot"
 
   - label: ":python-black::jupyter: check notebook format"
@@ -108,7 +108,7 @@ steps:
     command: "python scripts/format_notebooks.py --default --ci demos/"
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         run: runner-3_6
     agents:
@@ -118,7 +118,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "mvdan/shfmt:v2.6.4"
         command: ["-d", "-i", "2", "-ci", "-sr", "."]
 
@@ -127,28 +127,28 @@ steps:
     command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "koalaman/shellcheck-alpine:stable"
 
   - label: ":docker: :hadolint: lint Dockerfiles"
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/hadolint:snapshot"
 
   - label: ":docker: format Dockerfiles"
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/dockerfile-utils:snapshot"
 
   - label: ":prettier::yaml: format YAML"
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/prettier:snapshot"
         command: [
             "--check",
@@ -162,7 +162,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker#v3.4.0:
+      docker#v3.5.0:
         image: "stellargraph/yamllint:snapshot"
 
   - label: ":copyright: check copyright headers"
@@ -177,7 +177,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         build:
           - stellargraph
@@ -198,7 +198,7 @@ steps:
     <<: *timeout
     plugins:
       <<: *plugins
-      docker-compose#v3.1.0:
+      docker-compose#v3.2.0:
         <<: *compose-config
         push:
           - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
