@@ -16,6 +16,7 @@ Some new algorithms and features are still under active development, and are ava
 
 ### Bug fixes and other changes
 
+- `StellarGraph.to_adjacency_matrix` is at least 15× faster on undirected graphs [\#932](http://github.com/stellargraph/stellargraph/pull/932)
 - DevOps changes:
 
 ## [0.10.0](https://github.com/stellargraph/stellargraph/tree/v0.10.0)

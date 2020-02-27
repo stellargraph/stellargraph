@@ -889,6 +889,16 @@ def test_to_adjacency_matrix():
     assert np.array_equal(matrix, actual)
 
 
+@pytest.mark.benchmark(group="StellarGraph to_adjacency_matrix")
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
+    nodes, edges = example_benchmark_graph(n_nodes=1000, n_edges=5000)
+    cls = StellarDiGraph if is_directed else StellarGraph
+    g = cls(nodes, edges)
+
+    benchmark(lambda: g.to_adjacency_matrix())
+
+
 def test_edge_weights_undirected():
     g = example_hin_1(is_directed=False, self_loop=True)
 
