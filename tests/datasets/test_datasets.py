@@ -146,3 +146,25 @@ def test_cora_load(is_directed) -> None:
         "Rule_Learning",
         "Theory",
     }
+
+
+def test_fb15k_load() -> None:
+    g, (train, test, valid) = FB15k().load()
+
+    n_train = 483142
+    n_test = 59071
+    n_valid = 50000
+    assert g.number_of_nodes() == 14951
+    assert g.number_of_edges() == n_train + n_test + n_valid
+
+
+def test_wn18_load() -> None:
+    g, (train, test, valid) = WN18().load()
+
+    n_train = 141442
+    n_test = 5000
+    n_valid = 5000
+
+    assert g.number_of_nodes() == 40943
+    assert g.number_of_edges() == n_train + n_test + n_valid
+

@@ -21,7 +21,7 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 ``STELLARGRAPH_DATASETS_PATH`` environment variable, and each dataset will be downloaded to a subdirectory within this path.
 """
 
-from .dataset_loader import DatasetLoader
+from .dataset_loader import DatasetLoader, SplitData
 from ..core.graph import StellarGraph, StellarDiGraph
 import logging
 import os
@@ -342,3 +342,69 @@ class AIFB(
     source="https://figshare.com/articles/AIFB_DataSet/745364",
 ):
     pass
+
+
+def _load_tsv_knowledge_graph(dataset):
+    dataset.download()
+
+    train, test, valid = [
+        pd.read_csv(
+            dataset._resolve_path(name), sep="\t", names=["source", "label", "target"]
+        )
+        for name in dataset.expected_files
+    ]
+
+    all_data = pd.concat([train, test, valid], ignore_index=True)
+
+    node_ids = pd.unique(pd.concat([all_data.source, all_data.target]))
+    nodes = pd.DataFrame(index=node_ids)
+
+    edges = {name: df.drop(columns="label") for name, df in all_data.groupby("label")}
+
+    return StellarDiGraph(nodes=nodes, edges=edges), SplitData(train, test, valid)
+
+
+class WN18(
+    DatasetLoader,
+    name="WN18",
+    directory_name="wordnet-mlj12",
+    url="https://ndownloader.figshare.com/files/21768732",
+    url_archive_format="zip",
+    expected_files=[
+        "wordnet-mlj12-train.txt",
+        "wordnet-mlj12-test.txt",
+        "wordnet-mlj12-valid.txt",
+    ],
+    description="The WN18 dataset consists of triplets from WordNet 3.0 (http://wordnet.princeton.edu). There are "
+    "40,943 synsets and 18 relation types among them. The training set contains 141,442 triplets, the "
+    "validation set 5,000 and the test set 5,000. "
+    "A Semantic Matching Energy Function for Learning with Multi-relational Data. Antoine Bordes,"
+    "Xavier Glorot, Jason Weston and Yoshua Bengio. Mach Learn 94, 233–259, 2014.\n\n"
+    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results.",
+    source="https://everest.hds.utc.fr/doku.php?id=en:transe",
+):
+    def load(self):
+        return _load_tsv_knowledge_graph(self)
+
+
+class FB15k(
+    DatasetLoader,
+    name="FB15k",
+    directory_name="FB15k",
+    url="https://ndownloader.figshare.com/files/21768729",
+    url_archive_format="zip",
+    expected_files=[
+        "freebase_mtr100_mte100-train.txt",
+        "freebase_mtr100_mte100-test.txt",
+        "freebase_mtr100_mte100-valid.txt",
+    ],
+    description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
+    "extracted from Freebase (http://www.freebase.com). There are 14,951 mids and 1,345 relation types among them. "
+    "The training set contains 483,142 triplets, the validation set 50,000 and the test set 59,071. "
+    "Translating Embeddings for Modeling Multi-relational Data. Antoine Bordes, Nicolas Usunier, Alberto Garcia-Durán, "
+    "Jason Weston and Oksana Yakhnenko\n\n"
+    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results.",
+    source="https://everest.hds.utc.fr/doku.php?id=en:transe",
+):
+    def load(self):
+        return _load_tsv_knowledge_graph(self)

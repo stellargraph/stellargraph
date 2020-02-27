@@ -20,6 +20,7 @@ Enable easy loading of sample datasets for demonstrations
 
 import os
 import logging
+from collections import namedtuple
 from shutil import unpack_archive, move
 from urllib.request import urlretrieve
 from typing import List, Optional, Any
@@ -27,6 +28,9 @@ from urllib.error import URLError
 
 
 log = logging.getLogger(__name__)
+
+
+SplitData = namedtuple("SplitData", ["train", "test", "validation"])
 
 
 class DatasetLoader:
