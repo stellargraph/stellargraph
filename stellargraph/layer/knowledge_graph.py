@@ -241,7 +241,6 @@ class DistMult:
         embedding_dimension,
         embeddings_initializer="uniform",
         embeddings_regularizer=None,
-        embeddings_constraint=constraints.UnitNorm(axis=1),
     ):
         if not isinstance(generator, KGTripleGenerator):
             raise TypeError(
@@ -256,7 +255,6 @@ class DistMult:
         self.embedding_dimension = embedding_dimension
         self.embeddings_initializer = initializers.get(embeddings_initializer)
         self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
-        self.embeddings_constraint = constraints.get(embeddings_constraint)
 
     # layer names
     _NODE = "DISTMULT_NODE"
@@ -281,13 +279,15 @@ class DistMult:
         return node, rel
 
     def _embed(self, count, name):
+        # FIXME(https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
+        # constraints to be normalized: per section 4 in the paper, the embeddings should be
+        # normalised to have unit norm.
         return Embedding(
             count,
             self.embedding_dimension,
             name=name,
             embeddings_initializer=self.embeddings_initializer,
             embeddings_regularizer=self.embeddings_regularizer,
-            embeddings_constraint=self.embeddings_constraint,
         )
 
     def __call__(self, x):

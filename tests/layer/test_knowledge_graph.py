@@ -98,12 +98,20 @@ def test_dismult(knowledge_graph):
 
     model = Model(x_inp, x_out)
 
+    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+
     every_edge = itertools.product(
         knowledge_graph.nodes(),
         knowledge_graph._edges.types.pandas_index,
         knowledge_graph.nodes(),
     )
     df = triple_df(*every_edge)
+
+    # check the model can be trained on a few (uneven) batches
+    model.fit(
+        gen.flow(df.iloc[:7], negative_samples=2),
+        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+    )
 
     # compute the exact values based on the model by extracting the embeddings for each element and
     # doing the y_(e_1)^T M_r y_(e_2) = <e_1, w_r, e_2> inner product
