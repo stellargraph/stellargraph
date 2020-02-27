@@ -871,13 +871,7 @@ class StellarGraph:
 
     def create_graph_schema(self, nodes=None):
         """
-        Create graph schema in dict of dict format from current graph.
-
-        Note the assumption we make that there is only one
-        edge of a particular edge type per node pair.
-
-        This means that specifying an edge by node0, node1 and edge type
-        is unique.
+        Create graph schema from the current graph.
 
         Arguments:
             nodes (list): A list of node IDs to use to build schema. This must
