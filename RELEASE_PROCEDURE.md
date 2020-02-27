@@ -71,10 +71,12 @@
 
     After successfully publishing to PyPi and Conda, we now want to make the release on GitHub.
 
+   - Temporarily turn off branch protection on the `master` branch. Ask a team member if you are unsure.
    - Push `master` branch
      ```shell
      git push --follow-tags origin master
      ```
+   - Turn branch protection back on.
    - Go to the tags on the GitHub stellargraph homepage: https://github.com/stellargraph/stellargraph/tags
    - Next to the release tag, click the “...” button and select “create release”
    - Add the title and text of the metadata: a title “Release X.X.X” and text copied from the changelog is good practice
@@ -97,10 +99,12 @@
      ```shell
      git merge master
      ```
+   - Temporarily turn off branch protection on the `develop` branch. Ask a team member if you are unsure.
    - Push the merge commit (and the version change):
      ```shell
      git push origin develop
      ```
+   - Turn branch protection back on.
 
 
 ## More Information
