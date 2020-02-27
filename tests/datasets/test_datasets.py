@@ -127,13 +127,21 @@ def test_movielens_load() -> None:
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
-def test_cora_load(is_directed) -> None:
-    g, subjects = Cora().load(is_directed)
+@pytest.mark.parametrize("largest_cc_only", [False, True])
+def test_cora_load(is_directed, largest_cc_only) -> None:
+    g, subjects = Cora().load(is_directed, largest_cc_only)
+
+    if largest_cc_only:
+        expected_nodes = 2485
+        expected_edges = 5209
+    else:
+        expected_nodes = 2708
+        expected_edges = 5429
 
     assert g.is_directed() == is_directed
 
-    assert g.number_of_nodes() == 2708
-    assert g.number_of_edges() == 5429
+    assert g.number_of_nodes() == expected_nodes
+    assert g.number_of_edges() == expected_edges
 
     assert len(subjects) == g.number_of_nodes()
     assert set(subjects.index) == set(g.nodes())
