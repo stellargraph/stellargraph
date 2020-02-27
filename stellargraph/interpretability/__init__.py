@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings as warnings
+"""
+This contains the code for interpreting the modules, such as the importance or saliency of a
+node or link to a prediction.
+"""
 
-warnings.warn(
-    "'stellargraph.utils.saliency_maps.integrated_gradients' has been moved to 'stellargraph.interpretability.saliency_maps.integrated_gradients'",
-    DeprecationWarning,
-)
-
-from ...interpretability.saliency_maps.integrated_gradients import *
+from .saliency_maps import *

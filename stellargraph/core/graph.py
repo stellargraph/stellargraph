@@ -976,8 +976,12 @@ class StellarGraph:
         if not self.is_directed():
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
-            backward = sps.csr_matrix((weights, (tgt_idx, src_idx)), shape=(n, n))
-            backward.setdiag(0)
+            backward = adj.transpose(copy=True)
+            # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
+            # matrix (https://github.com/scipy/scipy/issues/11600)
+            (nonzero,) = backward.diagonal().nonzero()
+            backward[nonzero, nonzero] = 0
+
             adj += backward
 
         # this is a multigraph, let's eliminate any duplicate entries

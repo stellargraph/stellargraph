@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import numpy as np
 
 
 def comma_sep(values, limit=20, stringify=repr):
@@ -40,3 +41,28 @@ def require_dataframe_has_columns(name, df, columns):
         raise ValueError(
             f"{name}: expected {comma_sep(columns)} columns, found: {comma_sep(df.columns)}"
         )
+
+
+def require_integer_in_range(x, variable_name, min_val=-np.inf, max_val=np.inf):
+    """
+    A function to verify that a variable is an integer in a specified closed range.
+    Args:
+        x: the variable to check
+        variable_name (str): the name of the variable to print out in error messages
+        min_val: the minimum value that `x` can attain
+        min_val: the maximum value that `x` can attain
+    """
+
+    if not isinstance(x, int):
+        raise TypeError(f"{variable_name}: expected int, found {type(x).__name__}")
+
+    if x < min_val or x > max_val:
+
+        if min_val == -np.inf:
+            region = f"<= {max_val}"
+        elif max_val == np.inf:
+            region = f">= {min_val}"
+        else:
+            region = f"in the range [{min_val}, {max_val}]"
+
+        raise ValueError(f"{variable_name}: expected integer {region}, found {x}")
