@@ -349,6 +349,9 @@ class MUTAG(
             dtype=dtype,
             names=names,
         )
+        # We optional increment the index by 1 because indexing, e.g. node IDs, for this dataset starts
+        # at 1 whereas the Pandas DataFrame implicit index starts at 0 potentially causing confusion selecting
+        # rows later on.
         if index_increment:
             df.index = df.index + index_increment
         return df
