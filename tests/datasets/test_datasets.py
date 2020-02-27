@@ -125,7 +125,7 @@ def test_mutag_load() -> None:
     max_nodes = np.max(n_nodes)
 
     # average number of nodes should be 17.93085... or approximately 18.
-    assert round(n_avg_nodes) == 18
+    assert n_avg_nodes == pytest.approx(17.9, 0.05)
     assert sum(n_nodes) == 3371
     assert sum(n_edges) == 7442
     assert max_nodes == 28
