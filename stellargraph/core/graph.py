@@ -979,7 +979,7 @@ class StellarGraph:
             backward = adj.transpose(copy=True)
             # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
             # matrix (https://github.com/scipy/scipy/issues/11600)
-            nonzero, = backward.diagonal().nonzero()
+            (nonzero,) = backward.diagonal().nonzero()
             backward[nonzero, nonzero] = 0
 
             adj += backward
