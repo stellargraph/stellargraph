@@ -17,6 +17,7 @@
 import pytest
 import tempfile
 import os
+import numpy as np
 from stellargraph.datasets import *
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
@@ -97,6 +98,28 @@ def test_blogcatalog3_load() -> None:
 
     assert g.nodes_of_type("user") == [f"u{x}" for x in range(1, n_users + 1)]
     assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
+
+
+def test_mutag_load() -> None:
+    graphs, labels = MUTAG().load()
+
+    n_graphs = 188
+
+    assert len(graphs) == n_graphs
+    assert len(labels) == n_graphs  # one label per graph
+
+    n_nodes = [g.number_of_nodes() for g in graphs]
+    n_edges = [g.number_of_edges() for g in graphs]
+
+    n_avg_nodes = np.mean(n_nodes)
+    max_nodes = np.max(n_nodes)
+
+    # average number of nodes should be 17.93085... or approximately 18.
+    assert n_avg_nodes == pytest.approx(17.9, 0.05)
+    assert sum(n_nodes) == 3371
+    assert sum(n_edges) == 7442
+    assert max_nodes == 28
+    assert set(labels) == {"-1", "1"}
 
 
 def test_movielens_load() -> None:
