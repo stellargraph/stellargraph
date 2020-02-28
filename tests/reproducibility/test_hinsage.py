@@ -47,20 +47,14 @@ def hs_nai_model(num_samples, generator, targets, optimizer, bias, dropout, norm
     return model
 
 
-def hs_nai(
-    g,
-    head_node_type,
-    targets,
-    num_samples,
-    optimizer,
-    batch_size=4,
-    epochs=4,
-    bias=True,
-    dropout=0.0,
-    normalize="l2",
-    seed=0,
-    shuffle=True,
-):
+def hs_nai(g, head_node_type, targets, num_samples, batch_size, shuffle):
+    epochs = 4
+    bias = True
+    dropout = 0.0
+    normalize = "l2"
+    optimizer = tf.optimizers.Adam(1e-3)
+    seed = 0
+
     set_seed(seed)
     tf.random.set_seed(seed)
     if shuffle:
@@ -105,20 +99,15 @@ def hs_link_pred_model(num_samples, generator, optimizer, bias, dropout, normali
 
 
 def hs_link_prediction(
-    g,
-    head_node_types,
-    edge_ids,
-    edge_labels,
-    num_samples,
-    optimizer,
-    batch_size=4,
-    epochs=4,
-    bias=True,
-    dropout=0.0,
-    normalize="l2",
-    seed=0,
-    shuffle=True,
+    g, head_node_types, edge_ids, edge_labels, num_samples, batch_size, shuffle
 ):
+    epochs = 4
+    bias = True
+    dropout = 0.0
+    normalize = "l2"
+    optimizer = tf.optimizers.Adam(1e-3)
+    seed = 0
+
     set_seed(seed)
     tf.random.set_seed(seed)
     if shuffle:
@@ -149,12 +138,7 @@ def test_nai(shuffle):
     targets = np.random.rand(len(head_nodes), target_size)
     assert_reproducible(
         lambda: hs_nai(
-            graph,
-            head_node_type,
-            targets,
-            [2, 2],
-            tf.optimizers.Adam(1e-3),
-            shuffle=shuffle,
+            graph, head_node_type, targets, [2, 2], batch_size=4, shuffle=shuffle
         )
     )
 
@@ -180,7 +164,7 @@ def test_link_prediction(shuffle):
             edge_ids,
             edge_labels,
             [2, 2],
-            tf.optimizers.Adam(1e-3),
+            batch_size=4,
             shuffle=shuffle,
         )
     )
