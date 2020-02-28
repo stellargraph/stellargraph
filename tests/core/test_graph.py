@@ -118,9 +118,6 @@ def test_graph_constructor_positional():
 
 
 def test_graph_constructor_legacy():
-    with pytest.warns(DeprecationWarning, match="edge_weight_label"):
-        StellarGraph(edge_weight_label="x")
-
     # can't pass edges when using the legacy NetworkX form
     with pytest.raises(
         ValueError, match="edges: expected no value when using legacy NetworkX"
@@ -889,6 +886,16 @@ def test_to_adjacency_matrix():
     assert np.array_equal(matrix, actual)
 
 
+@pytest.mark.benchmark(group="StellarGraph to_adjacency_matrix")
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
+    nodes, edges = example_benchmark_graph(n_nodes=1000, n_edges=5000)
+    cls = StellarDiGraph if is_directed else StellarGraph
+    g = cls(nodes, edges)
+
+    benchmark(lambda: g.to_adjacency_matrix())
+
+
 def test_edge_weights_undirected():
     g = example_hin_1(is_directed=False, self_loop=True)
 
@@ -984,17 +991,6 @@ def test_from_networkx_smoke():
     both(
         lambda g: dict(zip(*g.edges(include_edge_type=True, include_edge_weight=True)))
     )
-
-
-def test_from_networkx_deprecations():
-    with pytest.warns(None) as record:
-        StellarGraph.from_networkx(
-            nx.Graph(), edge_weight_label="w", node_type_name="n", edge_type_name="e",
-        )
-
-    assert "node_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
 
 
 @pytest.mark.parametrize("is_directed", [False, True])

@@ -160,9 +160,12 @@ class LinkSequence(Sequence):
         ids (iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
         targets (list, optional): A list of targets or labels to be used in the downstream task.
         shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
+        seed (int, optional): Random seed
     """
 
-    def __init__(self, sample_function, batch_size, ids, targets=None, shuffle=True):
+    def __init__(
+        self, sample_function, batch_size, ids, targets=None, shuffle=True, seed=None
+    ):
         # Check that ids is an iterable
         if not is_real_iterable(ids):
             raise TypeError("IDs must be an iterable or numpy array of graph node IDs")
@@ -197,6 +200,7 @@ class LinkSequence(Sequence):
         self.ids = list(ids)
         self.data_size = len(self.ids)
         self.shuffle = shuffle
+        self._rs, _ = random_state(seed)
 
         # Shuffle the IDs to begin
         self.on_epoch_end()
@@ -242,7 +246,7 @@ class LinkSequence(Sequence):
         """
         self.indices = list(range(self.data_size))
         if self.shuffle:
-            random.shuffle(self.indices)
+            self._rs.shuffle(self.indices)
 
 
 class OnDemandLinkSequence(Sequence):
