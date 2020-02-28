@@ -999,6 +999,9 @@ class StellarGraph:
         next(graph.connected_components())``. The node IDs returned by this method can be used to
         compute the corresponding subgraph with ``graph.subgraph(nodes)``.
 
+        For directed graphs, this computes the weakly connected components. This effectively
+        treating each edge as undirected.
+
         Returns:
             An iterator over sets of node IDs in each connected component, from the largest (most nodes)
             to smallest (fewest nodes).
