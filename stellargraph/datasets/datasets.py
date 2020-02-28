@@ -376,12 +376,40 @@ class WN18(
         "wordnet-mlj12-valid.txt",
     ],
     description="The WN18 dataset consists of triplets from WordNet 3.0 (http://wordnet.princeton.edu). There are "
-    "40,943 synsets and 18 relation types among them. The training set contains 141,442 triplets, the "
-    "validation set 5,000 and the test set 5,000. "
-    "A Semantic Matching Energy Function for Learning with Multi-relational Data. Antoine Bordes,"
-    "Xavier Glorot, Jason Weston and Yoshua Bengio. Mach Learn 94, 233–259, 2014.\n\n"
-    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results.",
+    "40,943 synsets and 18 relation types among them. The training set contains 141442 triplets, the "
+    "validation set 5000 and the test set 5000. "
+    "Antoine Bordes, Xavier Glorot, Jason Weston and Yoshua Bengio “A Semantic Matching Energy Function for Learning with Multi-relational Data” (2014).\n\n"
+    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results. Prefer WN18RR. See: "
+    "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015), and "
+    "Dettmers, Tim, Pasquale Minervini, Pontus Stenetorp and Sebastian Riedel “Convolutional 2D Knowledge Graph Embeddings” (2017).",
     source="https://everest.hds.utc.fr/doku.php?id=en:transe",
+):
+    def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
+        return _load_tsv_knowledge_graph(self)
+
+
+class WN18RR(
+    DatasetLoader,
+    name="WN18RR",
+    directory_name="WN18RR",
+    url="https://ndownloader.figshare.com/files/21844185",
+    url_archive_format="zip",
+    expected_files=["train.txt", "test.txt", "valid.txt"],
+    description="The WN18RR dataset consists of triplets from WordNet 3.0 (http://wordnet.princeton.edu). There are "
+    "40,943 synsets and 11 relation types among them. The training set contains 86835 triplets, the validation set 3034 and the test set 3134. "
+    "It is a reduced version of WN18 where inverse relations have been removed."
+    "Tim Dettmers, Pasquale Minervini, Pontus Stenetorp and Sebastian Riedel “Convolutional 2D Knowledge Graph Embeddings” (2017).",
+    source="https://github.com/TimDettmers/ConvE",
 ):
     def load(self):
         """
@@ -410,11 +438,40 @@ class FB15k(
     ],
     description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
     "extracted from Freebase (http://www.freebase.com). There are 14,951 mids and 1,345 relation types among them. "
-    "The training set contains 483,142 triplets, the validation set 50,000 and the test set 59,071. "
-    "Translating Embeddings for Modeling Multi-relational Data. Antoine Bordes, Nicolas Usunier, Alberto Garcia-Durán, "
-    "Jason Weston and Oksana Yakhnenko\n\n"
-    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results.",
+    "The training set contains 483142 triplets, the validation set 50000 and the test set 59071. "
+    "Antoine Bordes, Nicolas Usunier, Alberto Garcia-Durán, Jason Weston and Oksana Yakhnenko “Translating Embeddings for Modeling Multi-relational Data” (2013).\n\n"
+    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results. Prefer FB15k_237. See: "
+    "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015), and "
+    "Dettmers, Tim, Pasquale Minervini, Pontus Stenetorp and Sebastian Riedel “Convolutional 2D Knowledge Graph Embeddings” (2017).",
     source="https://everest.hds.utc.fr/doku.php?id=en:transe",
+):
+    def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
+        return _load_tsv_knowledge_graph(self)
+
+
+class FB15k_237(
+    DatasetLoader,
+    name="FB15k-237",
+    directory_name="FB15k-237",
+    url="https://ndownloader.figshare.com/files/21844209",
+    url_archive_format="zip",
+    expected_files=["train.txt", "test.txt", "valid.txt"],
+    description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
+    "extracted from Freebase (http://www.freebase.com). There are 14541 mids and 237 relation types among them. "
+    "The training set contains 272115 triplets, the validation set 17535 and the test set 20466."
+    "It is a reduced version of FB15k where inverse relations have been removed."
+    "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015).",
+    source="https://github.com/TimDettmers/ConvE",
 ):
     def load(self):
         """
