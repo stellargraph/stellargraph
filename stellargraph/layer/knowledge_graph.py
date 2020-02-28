@@ -228,7 +228,9 @@ class DistMultScore(Layer):
         return score
 
 
-@experimental(reason="results from the reference paper have not been reproduced yet")
+@experimental(
+    reason="results from the reference paper have not been reproduced yet", issues=[981]
+)
 class DistMult:
     """
     Embedding layers and a DistMult scoring layers that implement the DistMult knowledge graph
@@ -289,7 +291,7 @@ class DistMult:
         return node, rel
 
     def _embed(self, count, name):
-        # FIXME(https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
+        # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
         # constraints to be normalized: per section 4 in the paper, the embeddings should be
         # normalised to have unit norm.
         return Embedding(
