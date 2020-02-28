@@ -65,36 +65,3 @@ def from_epgm(epgm_location, dataset_name=None, directed=False):
         )
     )
     return Gnx
-
-
-def load_dataset_BlogCatalog3(location):
-    """
-    This method loads the BlogCatalog3 network dataset (http://socialcomputing.asu.edu/datasets/BlogCatalog3)
-    into a networkx undirected heterogeneous graph.
-
-    The graph has two types of nodes, 'user' and 'group', and two types of edges, 'friend' and 'belongs'.
-    The 'friend' edges connect two 'user' nodes and the 'belongs' edges connects 'user' and 'group' nodes.
-
-    The node and edge types are not included in the dataset that is a collection of node and group ids along with
-    the list of edges in the graph.
-
-    Important note about the node IDs: The dataset uses integers for node ids. However, the integers from 1 to 39 are
-    used as IDs for both users and groups. This would cause a confusion when constructing the networkx graph object.
-    As a result, we convert all IDs to string and append the character 'u' to the integer ID for user nodes and the
-    character 'g' to the integer ID for group nodes.
-
-    Args:
-        location: <str> The directory where the dataset is located
-
-    Returns:
-        A networkx Graph object.
-
-    """
-    warnings.warn(
-        "load_dataset_BlogCatalog3 has been replaced by `BlogCatalog3().load()`",
-        DeprecationWarning,
-    )
-    from stellargraph.datasets import BlogCatalog3
-
-    location = os.path.expanduser(location)
-    return BlogCatalog3._load_from_location(location).to_networkx(feature_attr=None)
