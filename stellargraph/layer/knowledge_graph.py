@@ -49,10 +49,10 @@ class ComplExScore(Layer):
 
         Args:
 
-            inputs: a list of 6 tensors (each batch size x embedding dimension k), where the three
-                consecutive pairs represent real and imaginary parts of the subject, relation and
-                object embeddings, respectively, that is, ``inputs == [Re(subject), Im(subject),
-                Re(relation), ...]``
+            inputs: a list of 6 tensors (``shape = batch size × 1 × embedding dimension k``), where
+                the three consecutive pairs represent real and imaginary parts of the subject,
+                relation and object embeddings, respectively, that is, ``inputs == [Re(subject),
+                Im(subject), Re(relation), ...]``
         """
         s_re, s_im, r_re, r_im, o_re, o_im = inputs
 
@@ -212,9 +212,19 @@ class DistMultScore(Layer):
         self.built = True
 
     def call(self, inputs):
-        e1, r, e2 = inputs
-        # y_(e_1)^T M_r y_(e_2), where M_r = diag(w_r) is a diagonal matrix
-        score = tf.reduce_sum(e1 * r * e2, axis=2)
+        """
+        Applies the layer.
+
+        Args:
+
+            inputs: a list of 3 tensors (``shape = batch size × 1 × embedding dimension``),
+                representing the subject, relation and object embeddings, respectively, that is,
+                ``inputs == [subject, relation, object]``
+        """
+
+        y_e1, m_r, y_e2 = inputs
+        # y_e1^T M_r y_e2, where M_r = diag(m_r) is a diagonal matrix
+        score = tf.reduce_sum(y_e1 * m_r * y_e2, axis=2)
         return score
 
 
@@ -294,6 +304,10 @@ class DistMult:
         """
         Apply embedding layers to the source, relation and object input "ilocs" (sequential integer
         labels for the nodes and edge types).
+
+        Args:
+            x (list): list of 3 tensors (``shape = batch size × 1``) storing the ilocs of the
+                subject, relation and object elements for each edge in the batch.
         """
         e1_iloc, r_iloc, e2_iloc = x
 
@@ -301,13 +315,13 @@ class DistMult:
         node_embeddings = self._embed(self.num_nodes, self._NODE)
         edge_type_embeddings = self._embed(self.num_edge_types, self._REL)
 
-        e1 = node_embeddings(e1_iloc)
-        r = edge_type_embeddings(r_iloc)
-        e2 = node_embeddings(e2_iloc)
+        y_e1 = node_embeddings(e1_iloc)
+        m_r = edge_type_embeddings(r_iloc)
+        y_e2 = node_embeddings(e2_iloc)
 
         scoring = DistMultScore()
 
-        return scoring([e1, r, e2])
+        return scoring([y_e1, m_r, y_e2])
 
     def build(self):
         """
