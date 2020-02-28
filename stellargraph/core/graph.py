@@ -969,8 +969,8 @@ class StellarGraph:
             for type_name, ilocs in node_type_to_ilocs
         }
 
-        # FIXME: this is O(edges in graph) but could potentially be optimised to O(edges incident in
-        # nodes in graph), which could be much fewer if `nodes` is small
+        # FIXME(#985): this is O(edges in graph) but could potentially be optimised to O(edges in
+        # graph incident to `nodes`), which could be much fewer if `nodes` is small
         edge_ilocs = np.where(
             np.isin(self._edges.sources, nodes) & np.isin(self._edges.targets, nodes)
         )
