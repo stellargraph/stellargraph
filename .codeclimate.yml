@@ -14,6 +14,9 @@ checks:
   method-count:
     enabled: false
 
+  method-lines:
+    enabled: false
+
   similar-code:
     enabled: false
 
@@ -26,6 +29,16 @@ plugins:
 
   sonar-python:
     enabled: true
+    checks:
+      # number of function parameters
+      python:S107:
+        enabled: false
+      # cognitive complexity
+      python:S3776:
+        enabled: false
+      # FIXME comments
+      python:S1134:
+        enabled: false
 
 exclude_patterns:
   # default exclude patterns:

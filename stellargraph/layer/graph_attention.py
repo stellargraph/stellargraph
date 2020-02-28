@@ -857,9 +857,9 @@ class GAT:
         Returns: Output tensor of the GAT layers stack
 
         """
-        assert isinstance(inputs, list), "input must be a list, got {} instead".format(
-            type(inputs)
-        )
+        if not isinstance(inputs, list):
+            raise TypeError(f"inputs: expected list, found {type(inputs).__name__}")
+
         x_in, out_indices, *As = inputs
 
         # Currently we require the batch dimension to be one for full-batch methods

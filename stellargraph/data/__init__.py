@@ -23,5 +23,5 @@ The data package contains classes and functions to read, process, and query grap
 from .explorer import *
 from .edge_splitter import *
 from .node_splitter import *
-from .loader import from_epgm, load_dataset_BlogCatalog3
+from .loader import from_epgm
 from .unsupervised_sampler import *

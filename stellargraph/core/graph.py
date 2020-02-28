@@ -203,8 +203,6 @@ class StellarGraph:
             Deprecated, use :meth:`from_networkx`.
         edge_type_name:
             Deprecated, use :meth:`from_networkx`.
-        edge_weight_label:
-            Deprecated, use :meth:`from_networkx`.
         node_features:
             Deprecated, use :meth:`from_networkx`.
     """
@@ -225,19 +223,9 @@ class StellarGraph:
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         import networkx
-
-        # support for legacy arguments, translate to the new form
-        if edge_weight_label is not None:
-            # `edge_weight_label` -> `edge_weight_column`
-            warnings.warn(
-                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_column'",
-                DeprecationWarning,
-            )
-            edge_weight_column = edge_weight_label
 
         if isinstance(nodes, networkx.Graph):
             # `StellarGraph(nx_graph)` -> `graph`
@@ -297,9 +285,6 @@ class StellarGraph:
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         node_features=None,
         dtype="float32",
-        node_type_name=None,
-        edge_type_name=None,
-        edge_weight_label=None,
     ):
         """
         Construct a ``StellarGraph`` object from a NetworkX graph::
@@ -377,33 +362,10 @@ class StellarGraph:
             edge_weight_attr (str, optional):
                 The name of the attribute to use as the weight of edges.
 
-            node_type_name: Deprecated, use ``node_type_attr``.
-            edge_type_name: Deprecated, use ``edge_type_attr``.
-            edge_weight_label: Deprecated, use ``edge_weight_attr``.
-
         Returns:
             A ``StellarGraph`` (if ``graph`` is undirected) or ``StellarDiGraph`` (if ``graph`` is
             directed) instance representing the data in ``graph`` and ``node_features``.
         """
-        if node_type_name is not None:
-            warnings.warn(
-                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
-                DeprecationWarning,
-            )
-            node_type_attr = node_type_name
-        if edge_type_name is not None:
-            warnings.warn(
-                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
-                DeprecationWarning,
-            )
-            edge_type_attr = edge_type_name
-        if edge_weight_label is not None:
-            warnings.warn(
-                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
-                DeprecationWarning,
-            )
-            edge_weight_attr = edge_weight_label
-
         nodes, edges = convert.from_networkx(
             graph,
             node_type_attr=node_type_attr,
@@ -871,13 +833,7 @@ class StellarGraph:
 
     def create_graph_schema(self, nodes=None):
         """
-        Create graph schema in dict of dict format from current graph.
-
-        Note the assumption we make that there is only one
-        edge of a particular edge type per node pair.
-
-        This means that specifying an edge by node0, node1 and edge type
-        is unique.
+        Create graph schema from the current graph.
 
         Arguments:
             nodes (list): A list of node IDs to use to build schema. This must
@@ -976,8 +932,12 @@ class StellarGraph:
         if not self.is_directed():
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
-            backward = sps.csr_matrix((weights, (tgt_idx, src_idx)), shape=(n, n))
-            backward.setdiag(0)
+            backward = adj.transpose(copy=True)
+            # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
+            # matrix (https://github.com/scipy/scipy/issues/11600)
+            (nonzero,) = backward.diagonal().nonzero()
+            backward[nonzero, nonzero] = 0
+
             adj += backward
 
         # this is a multigraph, let's eliminate any duplicate entries
@@ -1141,7 +1101,6 @@ class StellarDiGraph(StellarGraph):
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         super().__init__(
@@ -1158,6 +1117,5 @@ class StellarDiGraph(StellarGraph):
             graph=graph,
             node_type_name=node_type_name,
             edge_type_name=edge_type_name,
-            edge_weight_label=edge_weight_label,
             node_features=node_features,
         )

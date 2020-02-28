@@ -100,6 +100,7 @@ def test_blogcatalog3_load() -> None:
     assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
 
 
+<<<<<<< HEAD
 @pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
 def test_blogcatalog3_deprecated_load() -> None:
     from stellargraph.data import load_dataset_BlogCatalog3
@@ -132,6 +133,8 @@ def test_mutag_load() -> None:
     assert set(labels) == {"-1", "1"}
 
 
+=======
+>>>>>>> develop
 def test_movielens_load() -> None:
     g, edges_with_ratings = MovieLens().load()
 
@@ -147,3 +150,25 @@ def test_movielens_load() -> None:
 
     assert len(edges_with_ratings) == n_ratings
     assert list(edges_with_ratings.columns) == ["user_id", "movie_id", "rating"]
+
+
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_cora_load(is_directed) -> None:
+    g, subjects = Cora().load(is_directed)
+
+    assert g.is_directed() == is_directed
+
+    assert g.number_of_nodes() == 2708
+    assert g.number_of_edges() == 5429
+
+    assert len(subjects) == g.number_of_nodes()
+    assert set(subjects.index) == set(g.nodes())
+    assert set(subjects) == {
+        "Case_Based",
+        "Genetic_Algorithms",
+        "Neural_Networks",
+        "Probabilistic_Methods",
+        "Reinforcement_Learning",
+        "Rule_Learning",
+        "Theory",
+    }
