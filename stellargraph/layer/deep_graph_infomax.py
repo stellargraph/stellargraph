@@ -86,3 +86,10 @@ class GraphSAGEInfoMax(GraphSAGE):
         x_out = tf.stack([scores, scores_corrupted], axis=1)
         # Returns inputs and outputs
         return x_inp + x_inp_corrupted, x_out
+
+    def embedding_model(self, model):
+
+        pass
+
+
+
