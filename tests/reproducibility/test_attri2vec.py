@@ -45,18 +45,16 @@ def unsup_attri2vec_model(generator, optimizer, bias, normalize):
     return model
 
 
-def unsup_attri2vec(
-    g,
-    optimizer,
-    batch_size=4,
-    epochs=4,
-    bias=True,
-    normalize="l2",
-    number_of_walks=1,
-    walk_length=5,
-    seed=0,
-    shuffle=True,
-):
+def unsup_attri2vec(g, batch_size, shuffle):
+
+    epochs = 4
+    bias = True
+    normalize = "l2"
+    seed = 0
+    optimizer = tf.optimizers.Adam(1e-3)
+    number_of_walks = 1
+    walk_length = 5
+
     set_seed(seed)
     tf.random.set_seed(seed)
     if shuffle:
@@ -97,18 +95,13 @@ def attri2vec_link_pred_model(generator, optimizer, bias, normalize):
     return model
 
 
-def attri2vec_link_prediction(
-    g,
-    edge_ids,
-    edge_labels,
-    optimizer,
-    batch_size=4,
-    epochs=4,
-    bias=True,
-    normalize="l2",
-    seed=0,
-    shuffle=True,
-):
+def attri2vec_link_prediction(g, edge_ids, edge_labels, batch_size, shuffle):
+    epochs = 4
+    bias = True
+    normalize = "l2"
+    seed = 0
+    optimizer = tf.optimizers.Adam(1e-3)
+
     set_seed(seed)
     tf.random.set_seed(seed)
     if shuffle:
@@ -128,9 +121,7 @@ def attri2vec_link_prediction(
 @pytest.mark.parametrize("shuffle", [True, False])
 def test_unsup(petersen_graph, shuffle):
     assert_reproducible(
-        lambda: unsup_attri2vec(
-            petersen_graph, tf.optimizers.Adam(1e-3), shuffle=shuffle,
-        )
+        lambda: unsup_attri2vec(petersen_graph, batch_size=4, shuffle=shuffle)
     )
 
 
@@ -142,10 +133,6 @@ def test_link_prediction(petersen_graph, shuffle):
     edge_labels = np.random.choice([0, 1], size=num_examples)
     assert_reproducible(
         lambda: attri2vec_link_prediction(
-            petersen_graph,
-            edge_ids,
-            edge_labels,
-            tf.optimizers.Adam(1e-3),
-            shuffle=shuffle,
+            petersen_graph, edge_ids, edge_labels, batch_size=4, shuffle=shuffle
         )
     )
