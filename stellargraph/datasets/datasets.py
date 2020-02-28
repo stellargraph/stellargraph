@@ -45,7 +45,7 @@ class Cora(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    def load(self, directed=False):
+    def load(self, directed=False, largest_connected_component_only=False):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
         required.
@@ -55,6 +55,8 @@ class Cora(
 
         Args:
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
+            largest_connected_component_only (bool): if True, returns only the largest connected
+                component, not the whole graph.
 
         Returns:
             A tuple where the first element is the :class:`StellarGraph` object (or
@@ -80,10 +82,13 @@ class Cora(
         )
 
         cls = StellarDiGraph if directed else StellarGraph
-        return (
-            cls({"paper": node_data[feature_names]}, {"cites": edgelist}),
-            node_data[subject],
-        )
+        graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+        if largest_connected_component_only:
+            cc_ids = next(graph.connected_components())
+            return graph.subgraph(cc_ids), node_data[subject][cc_ids]
+
+        return graph, node_data[subject]
 
 
 class CiteSeer(
