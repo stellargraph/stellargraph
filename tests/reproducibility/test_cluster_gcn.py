@@ -40,17 +40,12 @@ def cluster_gcn_nai_model(generator, targets, optimizer, dropout):
     return model
 
 
-def cluster_gcn_nai(
-    graph,
-    targets,
-    num_clusters,
-    clusters_per_batch,
-    optimizer,
-    epochs=4,
-    dropout=0.0,
-    seed=0,
-    shuffle=True,
-):
+def cluster_gcn_nai(graph, targets, num_clusters, clusters_per_batch, shuffle):
+    epochs = 4
+    dropout = 0.0
+    optimizer = tf.optimizers.Adam(1e-3)
+    seed = 0
+
     set_seed(seed)
     tf.random.set_seed(seed)
     if shuffle:
@@ -73,7 +68,5 @@ def test_nai(petersen_graph, shuffle):
     target_size = 10
     targets = np.random.rand(petersen_graph.number_of_nodes(), target_size)
     assert_reproducible(
-        lambda: cluster_gcn_nai(
-            petersen_graph, targets, 4, 2, tf.optimizers.Adam(1e-3), shuffle=shuffle
-        )
+        lambda: cluster_gcn_nai(petersen_graph, targets, 4, 2, shuffle=shuffle)
     )
