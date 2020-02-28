@@ -23,6 +23,7 @@ __all__ = [
     "HinSAGENodeGenerator",
     "Attri2VecNodeGenerator",
     "DirectedGraphSAGENodeGenerator",
+    "CorruptedGraphSAGENodeGenerator",
 ]
 
 import warnings
@@ -561,3 +562,27 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
         """
         return NodeSequence(self.sample_features, self.batch_size, node_ids.index)
+
+
+class CorruptedGraphSAGENodeGenerator(GraphSAGENodeGenerator):
+
+    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+        super().__init__(G, batch_size, num_samples, seed=seed, name=name)
+
+    def sample_features(self, head_nodes, batch_num):
+        """
+        """
+        batch_feats = super().sample_features(head_nodes, batch_num)
+
+        # shuffle the features along axis=1
+        shuffled_feats = np.swapaxes(np.concatenate(batch_feats, axis=1), 0, 1)
+        np.random.shuffle(shuffled_feats)
+        shuffled_feats = np.swapaxes(shuffled_feats, 0, 1)
+
+        shuffled_feats = np.split(
+            shuffled_feats,
+            np.cumsum([y.shape[1] for y in batch_feats]),
+            axis=1
+        )
+
+        return batch_feats + shuffled_feats

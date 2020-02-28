@@ -38,3 +38,7 @@ def graph_log_likelihood(y_true, y_pred):
     )
 
     return tf.expand_dims(loss, 0)
+
+
+def info_loss(y_true, y_pred):
+    return tf.math.reduce_mean(y_pred)
