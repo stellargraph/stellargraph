@@ -203,8 +203,6 @@ class StellarGraph:
             Deprecated, use :meth:`from_networkx`.
         edge_type_name:
             Deprecated, use :meth:`from_networkx`.
-        edge_weight_label:
-            Deprecated, use :meth:`from_networkx`.
         node_features:
             Deprecated, use :meth:`from_networkx`.
     """
@@ -225,19 +223,9 @@ class StellarGraph:
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         import networkx
-
-        # support for legacy arguments, translate to the new form
-        if edge_weight_label is not None:
-            # `edge_weight_label` -> `edge_weight_column`
-            warnings.warn(
-                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_column'",
-                DeprecationWarning,
-            )
-            edge_weight_column = edge_weight_label
 
         if isinstance(nodes, networkx.Graph):
             # `StellarGraph(nx_graph)` -> `graph`
@@ -297,9 +285,6 @@ class StellarGraph:
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         node_features=None,
         dtype="float32",
-        node_type_name=None,
-        edge_type_name=None,
-        edge_weight_label=None,
     ):
         """
         Construct a ``StellarGraph`` object from a NetworkX graph::
@@ -377,33 +362,10 @@ class StellarGraph:
             edge_weight_attr (str, optional):
                 The name of the attribute to use as the weight of edges.
 
-            node_type_name: Deprecated, use ``node_type_attr``.
-            edge_type_name: Deprecated, use ``edge_type_attr``.
-            edge_weight_label: Deprecated, use ``edge_weight_attr``.
-
         Returns:
             A ``StellarGraph`` (if ``graph`` is undirected) or ``StellarDiGraph`` (if ``graph`` is
             directed) instance representing the data in ``graph`` and ``node_features``.
         """
-        if node_type_name is not None:
-            warnings.warn(
-                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
-                DeprecationWarning,
-            )
-            node_type_attr = node_type_name
-        if edge_type_name is not None:
-            warnings.warn(
-                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
-                DeprecationWarning,
-            )
-            edge_type_attr = edge_type_name
-        if edge_weight_label is not None:
-            warnings.warn(
-                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
-                DeprecationWarning,
-            )
-            edge_weight_attr = edge_weight_label
-
         nodes, edges = convert.from_networkx(
             graph,
             node_type_attr=node_type_attr,
@@ -1139,7 +1101,6 @@ class StellarDiGraph(StellarGraph):
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         super().__init__(
@@ -1156,6 +1117,5 @@ class StellarDiGraph(StellarGraph):
             graph=graph,
             node_type_name=node_type_name,
             edge_type_name=edge_type_name,
-            edge_weight_label=edge_weight_label,
             node_features=node_features,
         )

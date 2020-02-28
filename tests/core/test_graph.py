@@ -118,9 +118,6 @@ def test_graph_constructor_positional():
 
 
 def test_graph_constructor_legacy():
-    with pytest.warns(DeprecationWarning, match="edge_weight_label"):
-        StellarGraph(edge_weight_label="x")
-
     # can't pass edges when using the legacy NetworkX form
     with pytest.raises(
         ValueError, match="edges: expected no value when using legacy NetworkX"
@@ -994,14 +991,3 @@ def test_from_networkx_smoke():
     both(
         lambda g: dict(zip(*g.edges(include_edge_type=True, include_edge_weight=True)))
     )
-
-
-def test_from_networkx_deprecations():
-    with pytest.warns(None) as record:
-        StellarGraph.from_networkx(
-            nx.Graph(), edge_weight_label="w", node_type_name="n", edge_type_name="e",
-        )
-
-    assert "node_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
