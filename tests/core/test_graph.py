@@ -750,7 +750,9 @@ def test_isolated_node_neighbor_methods(is_directed):
 @pytest.mark.parametrize("is_directed", [False, True])
 def test_info_homogeneous(is_directed):
 
-    g = example_graph(feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed)
+    g = example_graph(
+        feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed
+    )
     info = g.info()
     if is_directed:
         assert "StellarDiGraph: Directed multigraph" in info
