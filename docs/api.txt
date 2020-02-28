@@ -98,7 +98,7 @@ Knowledge Graph models
   :members: KGTripleGenerator
 
 .. automodule:: stellargraph.layer.knowledge_graph
-  :members: ComplEx, ComplExScore
+  :members: ComplEx, ComplExScore, DistMult, DistMultScore
 
 Link prediction layers
 ------------------------
