@@ -31,3 +31,4 @@ from .mini_batch_node_generators import *
 from .graphwave_generator import *
 from .adjacency_generators import *
 from .knowledge_graph import *
+from .graph_generator import *

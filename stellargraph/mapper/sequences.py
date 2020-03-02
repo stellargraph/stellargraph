@@ -25,6 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
+    "GraphSequence",
 ]
 
 import warnings
@@ -41,6 +42,7 @@ from tensorflow.keras.utils import Sequence
 from ..data.unsupervised_sampler import UnsupervisedSampler
 from ..core.utils import is_real_iterable
 from ..random import random_state
+from scipy import sparse
 
 
 class NodeSequence(Sequence):
@@ -527,3 +529,99 @@ class RelationalFullBatchNodeSequence(Sequence):
 
     def __getitem__(self, index):
         return self.inputs, self.targets
+
+
+#
+# GraphSequence for graph classification tasks
+#
+class GraphSequence(Sequence):
+    """
+    A Keras-compatible data generator for graph inference graph classification models.
+    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
+        :meth:`keras.Model.evaluate_generator`, and
+        :meth:`keras.Model.predict_generator`,
+
+    This class should be created using the `.flow(...)` method of
+    :class:`GraphGenerator`.
+
+    Args:
+        graphs (list)): The graphs as StellarGraph objects
+        targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
+            where N is the number of graphs and C is the target size (e.g., number of classes for one-hot class targets)
+        normalize_adj (bool, optional): Specifies whether the adjacency matrix for each graph should
+            be normalized or not. The default is True.
+        batch_size (int, optional): The batch size. It defaults to 1 that is full batch.
+        name (str, optional): An optional name for this generator object.
+    """
+
+    def __init__(
+        self, graphs, targets=None, normalize_adj=True, batch_size=1, name=None
+    ):
+
+        self.name = name
+        self.graphs = graphs
+        self.normalize_adj = normalize_adj
+        self.targets = targets
+        self.batch_size = batch_size
+
+        if targets is not None:
+            if len(graphs) != len(targets):
+                raise ValueError(
+                    "When passed together targets and the number of graphs should be the same length."
+                )
+
+            self.targets = np.asanyarray(targets)
+
+        self.on_epoch_end()
+
+    def __len__(self):
+        num_batches = len(self.graphs) // self.batch_size
+        return num_batches
+
+    def __normalize_adj(self, adj):
+        # add self loops
+        adj.setdiag(1)  # add self loops
+        degree_matrix_diag = 1.0 / (adj.sum(axis=1) + 1)
+        degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
+        degree_matrix = sparse.lil_matrix(adj.shape)
+        degree_matrix.setdiag(degree_matrix_diag)
+        adj = degree_matrix.tocsr() @ adj
+        adj.setdiag((1.0 + self.lam) * adj.diagonal())
+        return adj
+
+    def __getitem__(self, index):
+        # The next batch should be the adjacency matrix for the graph and the corresponding feature vectors
+        # and target if available.
+        graphs = self.graphs[index * self.batch_size : (index * self.batch_size) + 1]
+        adj_graphs = [graph.to_adjacency_matrix() for graph in graphs]
+
+        # The operations to normalize the adjacency matrix are too slow.
+        # Either optimize this or implement as a layer(?)
+        if self.normalize_adj:
+            adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
+
+        graph_targets = None
+        #
+        if self.targets is not None:
+            graph_targets = self.targets[
+                index * self.batch_size : (index * self.batch_size) + 1
+            ]
+
+        features = [graph.node_features() for graph in graphs]
+
+        # FIXME: Adding the batch dimension is legacy from out other custom sequence objects. Do we need it still?
+        features = [np.reshape(feature, (1,) + feature.shape) for feature in features]
+        adj_graphs = [
+            adj_graph.reshape((1,) + adj_graph.shape) for adj_graph in adj_graphs
+        ]
+
+        return [features, adj_graphs], graph_targets
+
+    def on_epoch_end(self):
+        """
+         Shuffle all graphs at the end of each epoch
+        """
+        indexes = list(range(len(self.graphs)))
+        random.shuffle(indexes)
+        self.graphs = self.graphs[indexes]
+        self.targets = self.target[indexes]
