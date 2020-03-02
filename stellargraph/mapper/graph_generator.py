@@ -101,9 +101,8 @@ class GraphGenerator:
                     )
                 )
 
-        # FIXME: This is missing information
         return GraphSequence(
-            graphs=self.graphs[graph_ilocs],
+            graphs=[self.graphs[i] for i in graph_ilocs],
             targets=targets,
             batch_size=batch_size,
             name=name,

@@ -579,14 +579,13 @@ class GraphSequence(Sequence):
         return num_batches
 
     def __normalize_adj(self, adj):
-        # add self loops
+        # FIXME: This is not the correct adjacency matrix normalization for GCN
         adj.setdiag(1)  # add self loops
         degree_matrix_diag = 1.0 / (adj.sum(axis=1) + 1)
         degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
         degree_matrix = sparse.lil_matrix(adj.shape)
         degree_matrix.setdiag(degree_matrix_diag)
         adj = degree_matrix.tocsr() @ adj
-        adj.setdiag((1.0 + self.lam) * adj.diagonal())
         return adj
 
     def __getitem__(self, index):
@@ -607,9 +606,9 @@ class GraphSequence(Sequence):
                 index * self.batch_size : (index * self.batch_size) + 1
             ]
 
-        features = [graph.node_features() for graph in graphs]
+        features = [graph.node_features(graph.nodes()) for graph in graphs]
 
-        # FIXME: Adding the batch dimension is legacy from out other custom sequence objects. Do we need it still?
+        # FIXME: Adding the batch dimension is legacy from our other custom sequence objects. Do we need it still?
         features = [np.reshape(feature, (1,) + feature.shape) for feature in features]
         adj_graphs = [
             adj_graph.reshape((1,) + adj_graph.shape) for adj_graph in adj_graphs
@@ -621,7 +620,8 @@ class GraphSequence(Sequence):
         """
          Shuffle all graphs at the end of each epoch
         """
+        # FIXME: We should probably change it so that indexes are stored in the self.
         indexes = list(range(len(self.graphs)))
         random.shuffle(indexes)
-        self.graphs = self.graphs[indexes]
-        self.targets = self.target[indexes]
+        self.graphs = [self.graphs[i] for i in indexes]
+        self.targets = self.targets[indexes]
