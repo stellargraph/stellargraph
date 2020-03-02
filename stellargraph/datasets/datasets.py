@@ -123,6 +123,9 @@ class CiteSeer(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
+    # some node IDs are integers like 100157 and some are strings like
+    # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all to
+    # be treated as strings.
     _NODES_DTYPE = str
     _NUM_FEATURES = 3703
 
