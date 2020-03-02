@@ -167,7 +167,7 @@ class TestBiasedWeightedRandomWalk(object):
         g[3][4]["w"] = 3
         g[4][1]["w"] = 4
 
-        g = StellarGraph(g, edge_weight_label="w")
+        g = StellarGraph.from_networkx(g, edge_weight_attr="w")
 
         nodes = list(g.nodes())
         n = 1

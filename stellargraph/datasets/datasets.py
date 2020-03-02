@@ -26,6 +26,7 @@ from ..core.graph import StellarGraph, StellarDiGraph
 import logging
 import os
 import pandas as pd
+import numpy as np
 from sklearn import preprocessing
 
 
@@ -44,7 +45,7 @@ class Cora(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    def load(self, directed=False):
+    def load(self, directed=False, largest_connected_component_only=False):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
         required.
@@ -54,6 +55,8 @@ class Cora(
 
         Args:
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
+            largest_connected_component_only (bool): if True, returns only the largest connected
+                component, not the whole graph.
 
         Returns:
             A tuple where the first element is the :class:`StellarGraph` object (or
@@ -79,10 +82,13 @@ class Cora(
         )
 
         cls = StellarDiGraph if directed else StellarGraph
-        return (
-            cls({"paper": node_data[feature_names]}, {"cites": edgelist}),
-            node_data[subject],
-        )
+        graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+        if largest_connected_component_only:
+            cc_ids = next(graph.connected_components())
+            return graph.subgraph(cc_ids), node_data[subject][cc_ids]
+
+        return graph, node_data[subject]
 
 
 class CiteSeer(
@@ -156,29 +162,16 @@ class BlogCatalog3(
             A :class:`StellarGraph` object.
         """
         self.download()
-        return self._load_from_location(self.data_directory)
-
-    @staticmethod
-    def _load_from_location(location):
-        """
-        Support code for the old `load_dataset_BlogCatalog3` function.
-        """
-        if not os.path.isdir(location):
-            raise NotADirectoryError(
-                "The location {} is not a directory.".format(location)
-            )
 
         # load the raw data
-        user_node_ids = pd.read_csv(os.path.join(location, "nodes.csv"), header=None)
-        group_ids = pd.read_csv(os.path.join(location, "groups.csv"), header=None)
-        edges = pd.read_csv(
-            os.path.join(location, "edges.csv"), header=None, names=["source", "target"]
-        )
-        group_edges = pd.read_csv(
-            os.path.join(location, "group-edges.csv"),
-            header=None,
-            names=["source", "target"],
-        )
+        edges, group_edges, groups, nodes = [
+            self._resolve_path(name) for name in self.expected_files
+        ]
+
+        user_node_ids = pd.read_csv(nodes, header=None)
+        group_ids = pd.read_csv(groups, header=None)
+        edges = pd.read_csv(edges, header=None, names=["source", "target"])
+        group_edges = pd.read_csv(group_edges, header=None, names=["source", "target"])
 
         # The dataset uses integers for node ids. However, the integers from 1 to 39 are used as IDs
         # for both users and groups. This is disambiguated by converting everything to strings and
@@ -218,7 +211,7 @@ class MovieLens(
     directory_name="ml-100k",
     url="http://files.grouplens.org/datasets/movielens/ml-100k.zip",
     url_archive_format="zip",
-    expected_files=["u.data", "u.user", "u.item", "u.genre", "u.occupation",],
+    expected_files=["u.data", "u.user", "u.item", "u.genre", "u.occupation"],
     description="The MovieLens 100K dataset contains 100,000 ratings from 943 users on 1682 movies.",
     source="https://grouplens.org/datasets/movielens/100k/",
 ):
@@ -332,7 +325,7 @@ class AIFB(
     directory_name="aifb",
     url="https://ndownloader.figshare.com/files/1118822",
     url_archive_format=None,
-    expected_files=["aifbfixed_complete.n3",],
+    expected_files=["aifbfixed_complete.n3"],
     description="The AIFB dataset describes the AIFB research institute in terms of its staff, research group, and publications. "
     'First used for machine learning with RDF in Bloehdorn, Stephan and Sure, York, "Kernel Methods for Mining Instance Data in Ontologies", '
     "The Semantic Web (2008), http://dx.doi.org/10.1007/978-3-540-76298-0_5. "
@@ -342,6 +335,94 @@ class AIFB(
     source="https://figshare.com/articles/AIFB_DataSet/745364",
 ):
     pass
+
+
+class MUTAG(
+    DatasetLoader,
+    name="MUTAG",
+    directory_name="MUTAG",
+    url="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/MUTAG.zip",
+    url_archive_format="zip",
+    expected_files=[
+        "MUTAG_A.txt",
+        "MUTAG_graph_indicator.txt",
+        "MUTAG_node_labels.txt",
+        "MUTAG_edge_labels.txt",
+        "MUTAG_graph_labels.txt",
+        "README.txt",
+    ],
+    description="Each graph represents a chemical compound and graph labels represent 'their mutagenic effect on a specific gram negative bacterium.'"
+    "The dataset includes 188 graphs with 18 nodes and 20 edges on average for each graph. Graph nodes have 7 labels and each graph is labelled as belonging to 1 of 2 classes.",
+    source="https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets",
+):
+    def _load_from_txt_file(
+        self, filename, names=None, dtype=None, index_increment=None
+    ):
+        df = pd.read_csv(
+            self._resolve_path(filename=filename),
+            header=None,
+            index_col=False,
+            dtype=dtype,
+            names=names,
+        )
+        # We optional increment the index by 1 because indexing, e.g. node IDs, for this dataset starts
+        # at 1 whereas the Pandas DataFrame implicit index starts at 0 potentially causing confusion selecting
+        # rows later on.
+        if index_increment:
+            df.index = df.index + index_increment
+        return df
+
+    def load(self):
+        """
+        Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
+
+        Note: Edges in MUTAG are labelled as one of 4 values: aromatic, single, double, and triple indicated by integers
+        0, 1, 2, 3 respectively. The edge labels are included in the  :class:`StellarGraph` objects as edge weights in
+        integer representation.
+
+        Returns:
+            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
+        """
+        self.download()
+
+        df_graph = self._load_from_txt_file(
+            filename="MUTAG_A.txt", names=["source", "target"]
+        )
+        df_edge_labels = self._load_from_txt_file(
+            filename="MUTAG_edge_labels.txt", names=["weight"], dtype=int
+        )
+        df_graph = pd.concat([df_graph, df_edge_labels], axis=1)  # add edge weights
+        df_graph_ids = self._load_from_txt_file(
+            filename="MUTAG_graph_indicator.txt", names=["graph_id"], index_increment=1
+        )
+        df_graph_labels = self._load_from_txt_file(
+            filename="MUTAG_graph_labels.txt",
+            dtype="category",
+            names=["label"],
+            index_increment=1,
+        )  # binary labels {-1, 1}
+        df_node_labels = self._load_from_txt_file(
+            filename="MUTAG_node_labels.txt", dtype="category", index_increment=1
+        )
+
+        # Let us one-hot encode the node labels because these are used as node features
+        # in graph classification tasks.
+        df_node_labels = pd.get_dummies(df_node_labels)
+
+        graphs = []
+        for graph_id in np.unique(df_graph_ids):
+            # find the subgraph with nodes that correspond to graph_id
+            node_ids = list(
+                df_graph_ids.loc[df_graph_ids["graph_id"] == graph_id].index
+            )
+
+            df_subgraph = df_graph[df_graph["source"].isin(node_ids)]
+            # nodes should be DataFrame with node features; DataFrame index indicates node IDs
+            # edges should be DataFrame of edges, 2 columns "source" and "target"
+            graph = StellarGraph(nodes=df_node_labels.loc[node_ids], edges=df_subgraph)
+            graphs.append(graph)
+
+        return graphs, df_graph_labels["label"]
 
 
 def _load_tsv_knowledge_graph(dataset):

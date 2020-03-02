@@ -17,6 +17,7 @@
 import pytest
 import tempfile
 import os
+import numpy as np
 from stellargraph.datasets import *
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
@@ -99,14 +100,26 @@ def test_blogcatalog3_load() -> None:
     assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
 
 
-@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
-def test_blogcatalog3_deprecated_load() -> None:
-    from stellargraph.data import load_dataset_BlogCatalog3
+def test_mutag_load() -> None:
+    graphs, labels = MUTAG().load()
 
-    dataset = BlogCatalog3()
-    dataset.download()
-    with pytest.warns(DeprecationWarning, match=r"BlogCatalog3\(\)\.load\(\)"):
-        load_dataset_BlogCatalog3(dataset.data_directory)
+    n_graphs = 188
+
+    assert len(graphs) == n_graphs
+    assert len(labels) == n_graphs  # one label per graph
+
+    n_nodes = [g.number_of_nodes() for g in graphs]
+    n_edges = [g.number_of_edges() for g in graphs]
+
+    n_avg_nodes = np.mean(n_nodes)
+    max_nodes = np.max(n_nodes)
+
+    # average number of nodes should be 17.93085... or approximately 18.
+    assert n_avg_nodes == pytest.approx(17.9, 0.05)
+    assert sum(n_nodes) == 3371
+    assert sum(n_edges) == 7442
+    assert max_nodes == 28
+    assert set(labels) == {"-1", "1"}
 
 
 def test_movielens_load() -> None:
@@ -127,13 +140,21 @@ def test_movielens_load() -> None:
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
-def test_cora_load(is_directed) -> None:
-    g, subjects = Cora().load(is_directed)
+@pytest.mark.parametrize("largest_cc_only", [False, True])
+def test_cora_load(is_directed, largest_cc_only) -> None:
+    g, subjects = Cora().load(is_directed, largest_cc_only)
+
+    if largest_cc_only:
+        expected_nodes = 2485
+        expected_edges = 5209
+    else:
+        expected_nodes = 2708
+        expected_edges = 5429
 
     assert g.is_directed() == is_directed
 
-    assert g.number_of_nodes() == 2708
-    assert g.number_of_edges() == 5429
+    assert g.number_of_nodes() == expected_nodes
+    assert g.number_of_edges() == expected_edges
 
     assert len(subjects) == g.number_of_nodes()
     assert set(subjects.index) == set(g.nodes())

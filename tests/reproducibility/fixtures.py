@@ -24,13 +24,13 @@ def models_equals(model1, model2):
     return all(np.array_equal(w, w_new) for w, w_new in zip(w1, w2))
 
 
-def assert_reproducible(func, num_iter=20):
+def assert_reproducible(func, num_iter=10):
     """
     Assert Keras models produced from calling ``func`` are reproducible.
 
     Args:
         func (callable): Function to check for reproducible model
-        num_iter (int, default 20): Number of iterations to run through to validate reproducibility.
+        num_iter (int): Number of iterations to run through to validate reproducibility.
 
     """
     model = func()

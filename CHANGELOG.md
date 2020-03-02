@@ -10,9 +10,13 @@
 
 ### Breaking changes
 
+- `StellarGraph.to_networkx` parameters now use `attr` to refer to NetworkX attributes, not `name` or `label` [\#973](http://github.com/stellargraph/stellargraph/pull/973). Migration: for any named parameters in `graph.to_networkx(...)`, change `node_type_name=...` to `node_type_attr=...` and similarly `edge_type_name` to `edge_type_attr`, `edge_weight_label` to `edge_weight_attr`, `feature_name` to `feature_attr`.
+
 ### Experimental features
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
+
+- DistMult: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
 
 ### Bug fixes and other changes
 
@@ -63,6 +67,7 @@ Some new algorithms and features are still under active development, and are ava
 - Demos now focus on Jupyter notebooks, and demo scripts that duplicate notebooks have been removed: [\#889](https://github.com/stellargraph/stellargraph/pull/889)
 - The following algorithms are now reproducible:
   - Supervised GraphSAGE Node Attribute Inference [\#844](https://github.com/stellargraph/stellargraph/pull/844)
+  - GraphSAGE Link Prediction [\#925](https://github.com/stellargraph/stellargraph/pull/925)
 - Randomness can be more easily controlled using `stellargraph.random.set_seed` [\#806](https://github.com/stellargraph/stellargraph/pull/806)
 - `StellarGraph.edges()` can return edge weights as a separate NumPy array with `include_edge_weights=True` [\#754](https://github.com/stellargraph/stellargraph/pull/754)
 - `StellarGraph.to_networkx` supports ignoring node features (and thus being a little more efficient) with `feature_name=None` [\#841](https://github.com/stellargraph/stellargraph/pull/841)

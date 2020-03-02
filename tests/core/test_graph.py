@@ -27,6 +27,7 @@ from ..test_utils.graphs import (
     example_graph,
     example_hin_1_nx,
     example_hin_1,
+    line_graph,
 )
 
 from .. import test_utils
@@ -118,9 +119,6 @@ def test_graph_constructor_positional():
 
 
 def test_graph_constructor_legacy():
-    with pytest.warns(DeprecationWarning, match="edge_weight_label"):
-        StellarGraph(edge_weight_label="x")
-
     # can't pass edges when using the legacy NetworkX form
     with pytest.raises(
         ValueError, match="edges: expected no value when using legacy NetworkX"
@@ -451,8 +449,8 @@ def numpy_to_list(x):
 
 def normalize_edges(edges, directed):
     if directed:
-        return {(src, tgt): data for src, tgt, data in edges}
-    return {(min(src, tgt), max(src, tgt)): data for src, tgt, data in edges}
+        return {(src, tgt): data for src, tgt, *data in edges}
+    return {(min(src, tgt), max(src, tgt)): data for src, tgt, *data in edges}
 
 
 def assert_networkx(g_nx, expected_nodes, expected_edges, *, directed):
@@ -474,19 +472,19 @@ def test_to_networkx(has_features, include_features):
         feature_sizes = None
 
     if include_features:
-        feature_name = "feature"
+        feature_attr = "feature"
     else:
-        feature_name = None
+        feature_attr = None
 
     g = example_hin_1(feature_sizes)
-    g_nx = g.to_networkx(feature_name=feature_name)
+    g_nx = g.to_networkx(feature_attr=feature_attr)
 
     node_def = {"A": (a_size, [0, 1, 2, 3]), "B": (b_size, [4, 5, 6])}
 
     def node_attrs(label, x, size):
         d = {"label": label}
-        if feature_name:
-            d[feature_name] = [x] * size
+        if feature_attr:
+            d[feature_attr] = [x] * size
         return d
 
     expected_nodes = {
@@ -520,6 +518,22 @@ def test_to_networkx_edge_attributes():
     ]
 
     assert_networkx(g_nx, expected_nodes, expected_edges, directed=False)
+
+
+def test_to_networkx_deprecation(line_graph):
+    with pytest.warns(None) as record:
+        line_graph.to_networkx(
+            node_type_name="n",
+            edge_type_name="e",
+            edge_weight_label="w",
+            feature_name="f",
+        )
+
+    assert len(record) == 4
+    assert "node_type_name" in str(record.pop(DeprecationWarning).message)
+    assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
+    assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
+    assert "feature_name" in str(record.pop(DeprecationWarning).message)
 
 
 def test_networkx_attribute_message():
@@ -753,7 +767,9 @@ def test_isolated_node_neighbor_methods(is_directed):
 @pytest.mark.parametrize("is_directed", [False, True])
 def test_info_homogeneous(is_directed):
 
-    g = example_graph(node_label="ABC", edge_label="xyz", is_directed=is_directed)
+    g = example_graph(
+        feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed
+    )
     info = g.info()
     if is_directed:
         assert "StellarDiGraph: Directed multigraph" in info
@@ -762,20 +778,23 @@ def test_info_homogeneous(is_directed):
     assert "Nodes: 4, Edges: 4" in info
 
     assert " ABC: [4]" in info
+    assert " Features: float32 vector, length 12"
     assert " Edge types: ABC-xyz->ABC" in info
 
     assert " ABC-xyz->ABC: [4]" in info
 
 
 def test_info_heterogeneous():
-    g = example_hin_1()
+    g = example_hin_1({"A": 0, "B": 34})
     info = g.info()
     assert "StellarGraph: Undirected multigraph" in info
     assert "Nodes: 7, Edges: 6" in info
 
     assert " A: [4]" in info
+    assert " Features: none"
     assert " Edge types: A-R->B" in info
     assert " B: [3]" in info
+    assert " Features: float32 vector, length 34"
     assert " Edge types: B-F->B, B-R->A" in info
 
     assert " A-R->B: [5]"
@@ -996,12 +1015,71 @@ def test_from_networkx_smoke():
     )
 
 
-def test_from_networkx_deprecations():
-    with pytest.warns(None) as record:
-        StellarGraph.from_networkx(
-            nx.Graph(), edge_weight_label="w", node_type_name="n", edge_type_name="e",
+@pytest.mark.parametrize("is_directed", [False, True])
+@pytest.mark.parametrize(
+    "nodes",
+    [
+        # no nodes = empty subgraph
+        [],
+        # no edges
+        [0],
+        # self loop
+        [5],
+        # various nodes with various edges, in a few different common types that might be used
+        [0, 1, 4, 5],
+        np.array([0, 1, 4, 5]),
+        pd.Index([0, 1, 4, 5]),
+    ],
+)
+def test_subgraph(is_directed, nodes):
+    g = example_hin_1(feature_sizes={}, is_directed=is_directed, self_loop=True)
+    sub = g.subgraph(nodes)
+
+    # assume NetworkX's subgraph algorithm works
+    expected = StellarGraph.from_networkx(g.to_networkx().subgraph(nodes))
+
+    assert sub.is_directed() == is_directed
+
+    assert set(sub.nodes()) == set(expected.nodes())
+
+    sub_edges, sub_weights = sub.edges(include_edge_type=True, include_edge_weight=True)
+    exp_edges, exp_weights = expected.edges(
+        include_edge_type=True, include_edge_weight=True
+    )
+    assert normalize_edges(sub_edges, is_directed) == normalize_edges(
+        exp_edges, is_directed
+    )
+    np.testing.assert_array_equal(sub_weights, exp_weights)
+
+    for node in nodes:
+        assert sub.node_type(node) == g.node_type(node)
+        np.testing.assert_array_equal(
+            sub.node_features([node]), g.node_features([node])
         )
 
-    assert "node_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
+
+def test_subgraph_missing_node():
+    g = example_hin_1()
+    with pytest.raises(KeyError, match="12345"):
+        sub = g.subgraph([0, 1, 12345])
+
+
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_connected_components(is_directed):
+    nodes = pd.DataFrame(index=range(6))
+    edges = pd.DataFrame([(0, 2), (2, 5), (1, 4)], columns=["source", "target"])
+
+    if is_directed:
+        g = StellarDiGraph(nodes, edges)
+    else:
+        g = StellarGraph(nodes, edges)
+
+    a, b, c = g.connected_components()
+
+    # (weak) connected components are the same for both directed and undirected graphs
+    assert set(a) == {0, 2, 5}
+    assert set(b) == {1, 4}
+    assert set(c) == {3}
+
+    # check that `connected_components` works with `subgraph`
+    assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
