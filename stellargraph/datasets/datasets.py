@@ -43,9 +43,21 @@ def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
     feature_names = ["w_{}".format(ii) for ii in range(dataset._NUM_FEATURES)]
     subject = "subject"
     column_names = feature_names + [subject]
-    node_data = pd.read_csv(content, sep="\t", header=None, names=column_names, dtype={0: dataset._NODES_DTYPE})
+    node_data = pd.read_csv(
+        content,
+        sep="\t",
+        header=None,
+        names=column_names,
+        dtype={0: dataset._NODES_DTYPE},
+    )
 
-    edgelist = pd.read_csv(cites, sep="\t", header=None, names=["target", "source"], dtype=dataset._NODES_DTYPE)
+    edgelist = pd.read_csv(
+        cites,
+        sep="\t",
+        header=None,
+        names=["target", "source"],
+        dtype=dataset._NODES_DTYPE,
+    )
 
     valid_source = node_data.index.get_indexer(edgelist.source) >= 0
     valid_target = node_data.index.get_indexer(edgelist.target) >= 0
@@ -59,7 +71,6 @@ def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
         return graph.subgraph(cc_ids), node_data[subject][cc_ids]
 
     return graph, node_data[subject]
-
 
 
 class Cora(
