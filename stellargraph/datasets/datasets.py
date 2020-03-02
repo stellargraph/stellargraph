@@ -127,6 +127,20 @@ class CiteSeer(
     _NUM_FEATURES = 3703
 
     def load(self, largest_connected_component_only=False):
+        """
+        Load this dataset into an undirected homogeneous graph, downloading it if required.
+
+        The node feature vectors are included.
+
+        Args:
+            largest_connected_component_only (bool): if True, returns only the largest connected
+                component, not the whole graph.
+
+        Returns:
+            A tuple where the first element is the :class:`StellarGraph` object with the nodes, node
+            feature vectors and edges, and the second element is a pandas Series of the node subject
+            class labels.
+        """
         return _load_cora_or_citeseer(self, False, largest_connected_component_only)
 
 
