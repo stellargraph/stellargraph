@@ -799,10 +799,10 @@ class GraphSAGE:
 
         # Set the normalization layer used in the model
         if normalize == "l2":
-            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1))
+            self._normalization = Lambda(lambda x: K.l2_normalize(x, axis=-1), name="GRAPH_SAGE_NORM")
 
-        elif normalize is None or normalize == "none" or normalize == "None":
-            self._normalization = Lambda(lambda x: x)
+        elif normalize is None or normalize == "none":
+            self._normalization = Lambda(lambda x: x, name="GRAPH_SAGE_NORM")
 
         else:
             raise ValueError(

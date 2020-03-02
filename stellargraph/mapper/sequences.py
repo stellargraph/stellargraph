@@ -25,6 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
+    "CorruptedSparseFullBatchSequence",
 ]
 
 import warnings
@@ -527,3 +528,22 @@ class RelationalFullBatchNodeSequence(Sequence):
 
     def __getitem__(self, index):
         return self.inputs, self.targets
+
+
+class CorruptedSparseFullBatchSequence(SparseFullBatchSequence):
+    """
+    """
+
+    use_sparse = True
+
+    def __init__(self, features, A, targets=None, indices=None):
+
+        super().__init__(features, A, targets=targets, indices=indices)
+
+    def __getitem__(self, item):
+
+        shuffled_feats = self.features.copy()
+        np.random.shuffle(shuffled_feats)
+
+        return [self.features, shuffled_feats, self.target_indices,
+                self.A_indices, self.A_values,], self.targets

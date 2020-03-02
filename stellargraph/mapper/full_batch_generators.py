@@ -23,6 +23,7 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
+    "CorruptedFullBatchNodeGenerator",
 ]
 
 import warnings
@@ -40,6 +41,7 @@ from . import (
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
+    CorruptedSparseFullBatchSequence,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
@@ -503,3 +505,25 @@ class RelationalFullBatchNodeGenerator:
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
+
+
+class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
+
+    def __init__(self, G, **kwargs):
+        super().__init__(G, **kwargs)
+
+    def flow(self, node_ids,):
+
+        targets = np.zeros((len(node_ids), 2))
+        targets[:, 0] = 1.0
+        
+        # The list of indices of the target nodes in self.node_list
+        node_indices = self._node_lookup(node_ids)
+
+        if self.use_sparse:
+            return CorruptedSparseFullBatchSequence(
+                self.features, self.Aadj, targets, node_indices
+            )
+        else:
+            raise NotImplementedError
+
