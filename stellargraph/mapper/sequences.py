@@ -560,6 +560,8 @@ class GraphSequence(Sequence):
         self.normalize_adj = normalize_adj
         self.targets = targets
         self.batch_size = batch_size
+        # we assume that all graphs have node features of the same dimensionality
+        self.node_features_size = graphs[0].node_features(graphs[0].nodes()).shape[1]
 
         if targets is not None:
             if len(graphs) != len(targets):
@@ -610,15 +612,13 @@ class GraphSequence(Sequence):
             ]
 
         # pad adjacency and feature matrices to equal the size of those from the largest graph
-        # we assume that all graphs have node features of equal dimensionality.
-        number_of_features = graphs[0].node_features(graphs[0].nodes()).shape[1]
         features = [
             np.pad(
                 graph.node_features(graph.nodes()),
                 pad_width=(0, max_nodes - graph.number_of_nodes()),
                 mode="constant",
                 constant_values=0.0,
-            )[:, :number_of_features]
+            )[:, :self.node_features_size]
             for graph in graphs
         ]
         features = np.stack(features)

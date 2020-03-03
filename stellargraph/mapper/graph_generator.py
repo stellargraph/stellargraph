@@ -50,7 +50,10 @@ class GraphGenerator:
                 raise TypeError("All graphs must be a StellarGraph or StellarDiGraph object.")
 
         self.graphs = graphs
+        # we assume that all graphs have node features of the same dimensionality
+        self.node_features_size = graphs[0].node_features(graphs[0].nodes()).shape[1]
         self.name = name
+
 
         # Check if the graph has features
         for graph in self.graphs:
