@@ -179,3 +179,23 @@ def test_aifb_load() -> None:
     assert g.node_feature_sizes() == {"default": 8285}
 
     assert len(affiliation) == 178
+
+
+@pytest.mark.parametrize("largest_cc_only", [False, True])
+def test_citeseer_load(largest_cc_only) -> None:
+    g, subjects = CiteSeer().load(largest_cc_only)
+
+    if largest_cc_only:
+        expected_nodes = 2110
+        expected_edges = 3757
+    else:
+        expected_nodes = 3312
+        expected_edges = 4715
+
+    assert g.number_of_nodes() == expected_nodes
+    assert g.number_of_edges() == expected_edges
+
+    assert len(subjects) == g.number_of_nodes()
+    assert set(subjects.index) == set(g.nodes())
+
+    assert set(subjects) == {"AI", "Agents", "DB", "HCI", "IR", "ML"}

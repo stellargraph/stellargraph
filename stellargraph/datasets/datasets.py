@@ -33,6 +33,46 @@ from sklearn import preprocessing
 log = logging.getLogger(__name__)
 
 
+def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
+    assert isinstance(dataset, (Cora, CiteSeer))
+    dataset.download()
+
+    # expected_files should be in this order
+    cites, content = [dataset._resolve_path(name) for name in dataset.expected_files]
+
+    feature_names = ["w_{}".format(ii) for ii in range(dataset._NUM_FEATURES)]
+    subject = "subject"
+    column_names = feature_names + [subject]
+    node_data = pd.read_csv(
+        content,
+        sep="\t",
+        header=None,
+        names=column_names,
+        dtype={0: dataset._NODES_DTYPE},
+    )
+
+    edgelist = pd.read_csv(
+        cites,
+        sep="\t",
+        header=None,
+        names=["target", "source"],
+        dtype=dataset._NODES_DTYPE,
+    )
+
+    valid_source = node_data.index.get_indexer(edgelist.source) >= 0
+    valid_target = node_data.index.get_indexer(edgelist.target) >= 0
+    edgelist = edgelist[valid_source & valid_target]
+
+    cls = StellarDiGraph if directed else StellarGraph
+    graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+    if largest_connected_component_only:
+        cc_ids = next(graph.connected_components())
+        return graph.subgraph(cc_ids), node_data[subject][cc_ids]
+
+    return graph, node_data[subject]
+
+
 class Cora(
     DatasetLoader,
     name="Cora",
@@ -45,6 +85,10 @@ class Cora(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
+
+    _NODES_DTYPE = int
+    _NUM_FEATURES = 1433
+
     def load(self, directed=False, largest_connected_component_only=False):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
@@ -63,32 +107,7 @@ class Cora(
             :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
             and edges, and the second element is a pandas Series of the node subject class labels.
         """
-        self.download()
-        edgelist = pd.read_csv(
-            self._resolve_path("cora.cites"),
-            sep="\t",
-            header=None,
-            names=["target", "source"],
-        )
-
-        feature_names = ["w_{}".format(ii) for ii in range(1433)]
-        subject = "subject"
-        column_names = feature_names + [subject]
-        node_data = pd.read_csv(
-            self._resolve_path("cora.content"),
-            sep="\t",
-            header=None,
-            names=column_names,
-        )
-
-        cls = StellarDiGraph if directed else StellarGraph
-        graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
-
-        if largest_connected_component_only:
-            cc_ids = next(graph.connected_components())
-            return graph.subgraph(cc_ids), node_data[subject][cc_ids]
-
-        return graph, node_data[subject]
+        return _load_cora_or_citeseer(self, directed, largest_connected_component_only)
 
 
 class CiteSeer(
@@ -99,11 +118,33 @@ class CiteSeer(
     url_archive_format="gztar",
     expected_files=["citeseer.cites", "citeseer.content"],
     description="The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. "
-    "The citation network consists of 4732 links. Each publication in the dataset is described by a 0/1-valued word vector "
+    "The citation network consists of 4732 links, although 17 of these have a source or target publication that isn't in the dataset and only 4715 are included in the graph. "
+    "Each publication in the dataset is described by a 0/1-valued word vector "
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    pass
+    # some node IDs are integers like 100157 and some are strings like
+    # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all to
+    # be treated as strings.
+    _NODES_DTYPE = str
+    _NUM_FEATURES = 3703
+
+    def load(self, largest_connected_component_only=False):
+        """
+        Load this dataset into an undirected homogeneous graph, downloading it if required.
+
+        The node feature vectors are included.
+
+        Args:
+            largest_connected_component_only (bool): if True, returns only the largest connected
+                component, not the whole graph.
+
+        Returns:
+            A tuple where the first element is the :class:`StellarGraph` object with the nodes, node
+            feature vectors and edges, and the second element is a pandas Series of the node subject
+            class labels.
+        """
+        return _load_cora_or_citeseer(self, False, largest_connected_component_only)
 
 
 class PubMedDiabetes(
