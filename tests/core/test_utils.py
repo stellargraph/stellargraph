@@ -34,9 +34,10 @@ def example_graph():
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
-    csr = normalize_adj(Aadj)
+    csr = normalize_adj(Aadj, symmetric=True)
     dense = csr.todense()
-    assert 5 == pytest.approx(dense.sum(), 0.1)
+    eigen_vals, _ = np.linalg.eig(dense)
+    assert eigen_vals.max() == pytest.approx(1, abs=1e-7)
     assert csr.get_shape() == Aadj.get_shape()
 
     csr = normalize_adj(Aadj, symmetric=False)
