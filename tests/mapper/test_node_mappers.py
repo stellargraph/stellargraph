@@ -808,7 +808,7 @@ class Test_FullBatchNodeGenerator:
             generator.flow(node_ids, node_targets)
 
     def test_fullbatch_generator_init_1(self):
-        G, _ = create_graph_features()
+        G, feats = create_graph_features()
         generator = FullBatchNodeGenerator(G, method=None)
         assert np.array_equal(feats, generator.features)
 
