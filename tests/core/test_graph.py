@@ -37,14 +37,17 @@ pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
 # FIXME (#535): Consider using graph fixtures
-def create_graph_1(is_directed=False, return_nx=False):
-    g = nx.DiGraph() if is_directed else nx.Graph()
-    g.add_nodes_from([0, 1, 2, 3], label="movie")
-    g.add_nodes_from([4, 5], label="user")
-    g.add_edges_from([(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], label="rating")
-    if return_nx:
-        return nx.MultiDiGraph(g) if is_directed else nx.MultiGraph(g)
-    return StellarDiGraph(g) if is_directed else StellarGraph(g)
+def create_graph_1(is_directed=False):
+    nodes = {
+        "movie": pd.DataFrame(index=[0, 1, 2, 3]),
+        "user": pd.DataFrame(index=[4, 5]),
+    }
+    edges = {
+        "rating": pd.DataFrame(
+            [(4, 0), (4, 1), (5, 1), (4, 2), (5, 3)], columns=["source", "target"]
+        )
+    }
+    return StellarDiGraph(nodes, edges) if is_directed else StellarGraph(nodes, edges)
 
 
 def example_benchmark_graph(
@@ -64,40 +67,6 @@ def example_benchmark_graph(
     nodes = {ty: all_nodes[node_ids % n_types == ty] for ty in range(n_types)}
 
     return nodes, edges
-
-
-def example_benchmark_graph_nx(
-    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
-):
-    G = nx.Graph()
-
-    G.add_nodes_from(range(n_nodes))
-    edges = [
-        (random.randint(0, n_nodes - 1), random.randint(0, n_nodes - 1))
-        for _ in range(n_edges)
-    ]
-    G.add_edges_from(edges)
-
-    for v in G.nodes():
-        G.nodes[v]["label"] = v % n_types
-
-    # Add example features
-    if feature_size is None:
-        node_features = None
-    elif features_in_nodes:
-        node_features = "feature"
-        for v in G.nodes():
-            G.nodes[v][node_features] = np.ones(feature_size)
-    else:
-        node_features = {}
-        for ty in range(n_types):
-            type_nodes = range(ty, n_nodes, n_types)
-            if len(type_nodes) > 0:
-                node_features[ty] = pd.DataFrame(
-                    [np.ones(feature_size)] * len(type_nodes), index=type_nodes
-                )
-
-    return G, node_features
 
 
 def test_graph_constructor():
@@ -152,24 +121,12 @@ def test_info():
     # How can we check this?
 
 
-def test_graph_from_nx():
-    Gnx = nx.karate_club_graph()
-    sg = StellarGraph(Gnx)
-
-    nodes_1 = sorted(Gnx.nodes(data=False))
-    nodes_2 = sorted(sg.nodes())
-    assert nodes_1 == nodes_2
-
-    edges_1 = sorted(Gnx.edges(data=False))
-    edges_2 = sorted(sg.edges())
-    assert edges_1 == edges_2
-
-
 def test_homogeneous_graph_schema():
-    Gnx = nx.karate_club_graph()
+    nodes = pd.DataFrame(index=[0, 1])
+    edges = pd.DataFrame({"source": 0, "target": 1}, index=[0])
     for sg in [
-        StellarGraph(Gnx),
-        StellarGraph(Gnx, node_type_name="type", edge_type_name="type"),
+        StellarGraph(nodes, edges),
+        StellarGraph(nodes, edges, node_type_name="type", edge_type_name="type"),
     ]:
         schema = sg.create_graph_schema()
 
@@ -179,8 +136,7 @@ def test_homogeneous_graph_schema():
 
 
 def test_graph_schema():
-    g = create_graph_1(return_nx=True)
-    sg = StellarGraph(g)
+    sg = create_graph_1()
     schema = sg.create_graph_schema()
 
     assert "movie" in schema.schema
@@ -201,8 +157,7 @@ def test_graph_schema_sampled():
 
 
 def test_digraph_schema():
-    g = create_graph_1(is_directed=True, return_nx=True)
-    sg = StellarDiGraph(g)
+    sg = create_graph_1(is_directed=True)
     schema = sg.create_graph_schema()
 
     assert "movie" in schema.schema
@@ -306,7 +261,7 @@ def test_feature_conversion_from_dataframe():
 
     # Create features for nodes
     df = pd.DataFrame({v: np.ones(10) * float(v) for v in list(g)}).T
-    gs = StellarGraph(g, node_features=df)
+    gs = StellarGraph.from_networkx(g, node_features=df)
 
     aa = gs.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
@@ -327,7 +282,7 @@ def test_feature_conversion_from_dataframe():
         ).T
         for t in ["A", "B"]
     }
-    gs = StellarGraph(g, node_features=df)
+    gs = StellarGraph.from_networkx(g, node_features=df)
 
     aa = gs.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
@@ -356,7 +311,7 @@ def test_feature_conversion_from_iterator():
 
     # Create features for nodes
     node_features = [(v, np.ones(10) * float(v)) for v in list(g)]
-    gs = StellarGraph(g, node_features=node_features)
+    gs = StellarGraph.from_networkx(g, node_features=node_features)
 
     aa = gs.node_features([1, 2, 3, 4])
     assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
@@ -386,7 +341,7 @@ def test_feature_conversion_from_iterator():
         ]
         for t in ["A", "B"]
     }
-    gs = StellarGraph(g, node_features=nf)
+    gs = StellarGraph.from_networkx(g, node_features=nf)
 
     aa = gs.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
@@ -415,7 +370,7 @@ def test_feature_conversion_from_iterator():
         (v, np.ones(5 if vdata["label"] == "A" else 10) * float(v))
         for v, vdata in g.nodes(data=True)
     ]
-    gs = StellarGraph(g, node_features=nf)
+    gs = StellarGraph.from_networkx(g, node_features=nf)
 
     aa = gs.node_features([0, 1, 2, 3], "A")
     assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
@@ -671,10 +626,10 @@ def example_weighted_hin(is_directed=True):
 
 
 def example_unweighted_hom(is_directed=True):
-    graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
-    graph.add_nodes_from([0, 1, 2, 3])
-    graph.add_edges_from([(0, 1), (0, 1), (1, 2), (1, 3)])
-    return StellarDiGraph(graph) if is_directed else StellarGraph(graph)
+    nodes = pd.DataFrame(index=[0, 1, 2, 3])
+    edges = pd.DataFrame([(0, 1), (0, 1), (1, 2), (1, 3)], columns=["source", "target"])
+
+    return StellarDiGraph(nodes, edges) if is_directed else StellarGraph(nodes, edges)
 
 
 @pytest.mark.parametrize("is_directed", [True, False])
