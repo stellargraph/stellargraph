@@ -2,6 +2,8 @@ from . import GCN
 from tensorflow.keras.layers import Input, Dense, Lambda, Layer
 import tensorflow as tf
 from tensorflow.keras import backend as K
+from ..core.experimental import experimental
+
 
 __all__ = [
     "GCNInfoMax",
@@ -42,6 +44,7 @@ class Discriminator(Layer):
         return score
 
 
+@experimental(reason="lack of unit tests", issues=[1003])
 class GCNInfoMax(GCN):
     """
     A stack of Graph Convolutional layers that implement a Deep Graph Infomax model
