@@ -778,35 +778,43 @@ def test_info_homogeneous(is_directed):
     g = example_graph(
         feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed
     )
-    info = g.info()
+
     if is_directed:
-        assert "StellarDiGraph: Directed multigraph" in info
+        title = "StellarDiGraph: Directed multigraph"
     else:
-        assert "StellarGraph: Undirected multigraph" in info
-    assert "Nodes: 4, Edges: 4" in info
+        title = "StellarGraph: Undirected multigraph"
 
-    assert " ABC: [4]" in info
-    assert " Features: float32 vector, length 12"
-    assert " Edge types: ABC-xyz->ABC" in info
-
-    assert " ABC-xyz->ABC: [4]" in info
+    in_sequence(
+        g.info(),
+        title,
+        "Nodes: 4, Edges: 4",
+        "\n Node types:",
+        " ABC: [4]",
+        " Features: float32 vector, length 12",
+        " Edge types: ABC-xyz->ABC",
+        "\n Edge types:",
+        " ABC-xyz->ABC: [4]",
+    )
 
 
 def test_info_heterogeneous():
     g = example_hin_1({"A": 0, "B": 34})
-    info = g.info()
-    assert "StellarGraph: Undirected multigraph" in info
-    assert "Nodes: 7, Edges: 6" in info
-
-    assert " A: [4]" in info
-    assert " Features: none"
-    assert " Edge types: A-R->B" in info
-    assert " B: [3]" in info
-    assert " Features: float32 vector, length 34"
-    assert " Edge types: B-F->B, B-R->A" in info
-
-    assert " A-R->B: [5]"
-    assert " B-F->B: [1]"
+    in_sequence(
+        g.info(),
+        "StellarGraph: Undirected multigraph",
+        "Nodes: 7, Edges: 6",
+        "\n Node types:",
+        " A: [4]",
+        " Features: none",
+        " Edge types: A-R->B",
+        " B: [3]",
+        " Features: float32 vector, length 34",
+        " Edge types: B-F->B, B-R->A",
+        "\n Edge types:",
+        " A-R->B: [3]",
+        " B-R->A: [2]",
+        " B-F->B: [1]",
+    )
 
 
 def test_info_truncate():
