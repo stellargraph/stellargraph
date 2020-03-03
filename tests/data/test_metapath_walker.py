@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import UniformRandomMetaPathWalk
 from stellargraph.core.graph import StellarGraph
 
@@ -32,8 +32,12 @@ def create_test_graph():
         networkx format.
 
     """
-    g = nx.Graph()
-    edges = [
+    nodes = {
+        "s": pd.DataFrame(index=["0", "5", "7", "self loner", "loner"]),
+        "n": pd.DataFrame(index=[1, 2, 3, 4, 6, 8, 9, 10])
+    }
+    edges = pd.DataFrame(
+        [
         ("0", 1),
         ("0", 2),
         (1, 3),
@@ -58,21 +62,11 @@ def create_test_graph():
             "self loner",
             "self loner",
         ),  # node that is not connected with any other nodes but has self loop
-    ]
+        ],
+        columns=["source", "target"]
+    )
 
-    g.add_edges_from(edges)
-    g.add_node(
-        "loner"
-    )  # node that is not connected to any other nodes and not having a self loop
-
-    for node in g.nodes():
-        if type(node) == str:  # make these type s for string
-            g.nodes[node]["label"] = "s"
-        else:  # make these type n for number
-            g.nodes[node]["label"] = "n"
-
-    g = StellarGraph(g)
-    return g
+    return StellarGraph(nodes, edges)
 
 
 class TestMetaPathWalk(object):

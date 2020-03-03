@@ -16,30 +16,9 @@
 
 import random
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph
-
-
-def create_simple_graph():
-    """
-    Creates a simple directed graph for testing. The node ids are string or integers.
-
-    :return: A small, directed graph with 4 nodes and 6 edges in StellarDiGraph format.
-    """
-
-    g = nx.DiGraph()
-    edges = [
-        ("root", 2),
-        ("root", 1),
-        ("root", "0"),
-        (2, "c2.1"),
-        (2, "c2.2"),
-        (1, "c1.1"),
-    ]
-    g.add_edges_from(edges)
-    return StellarDiGraph(g)
+from ..test_utils.graphs import create_test_graph, tree_graph
 
 
 class TestDirectedBreadthFirstNeighbours(object):
@@ -122,9 +101,8 @@ class TestDirectedBreadthFirstNeighbours(object):
         subgraph = bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size)
         assert len(subgraph) == 0
 
-    def test_zero_hops(self):
-        g = create_simple_graph()
-        bfw = DirectedBreadthFirstNeighbours(g)
+    def test_zero_hops(self, tree_graph):
+        bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # By consensus, a zero-length walk raises an error.
         with pytest.raises(ValueError):
             subgraph = bfw.run(nodes=["root"], n=1, in_size=[], out_size=[])
@@ -132,9 +110,8 @@ class TestDirectedBreadthFirstNeighbours(object):
         # assert len(subgraph) == 1
         # assert len(subgraph[0]) == 1
 
-    def test_one_hop(self):
-        g = create_simple_graph()
-        bfw = DirectedBreadthFirstNeighbours(g)
+    def test_one_hop(self, tree_graph):
+        bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # - The following case should be [[["root"], [None], [child]]]
         subgraph = bfw.run(nodes=["root"], n=1, in_size=[1], out_size=[1])
         assert len(subgraph) == 1
@@ -166,9 +143,8 @@ class TestDirectedBreadthFirstNeighbours(object):
         for child in subgraph[0][2]:
             assert child in ["0", 1, 2]
 
-    def test_two_hops(self):
-        g = create_simple_graph()
-        bfw = DirectedBreadthFirstNeighbours(g)
+    def test_two_hops(self, tree_graph):
+        bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # - The following case should be [[["root"], [None], [child*2], [None], [None*2], ["root"*2], [grandchild*4]]]
         in_size = [1, 1]
         out_size = [2, 2]
@@ -204,7 +180,7 @@ class TestDirectedBreadthFirstNeighbours(object):
                     assert grandchild in ["c2.1", "c2.2"]
         # - Check structure size for multiple start nodes
         # - For each start node, should be [[[node], [in], [out], [in.in], [in.out], [out.in], [out.out]]]
-        nodes = list(g.nodes())
+        nodes = list(tree_graph.nodes())
         in_size = [2, 3]
         out_size = [4, 5]
         subgraph = bfw.run(nodes=nodes, n=1, in_size=in_size, out_size=out_size)

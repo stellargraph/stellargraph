@@ -263,3 +263,19 @@ def knowledge_graph():
     }
 
     return StellarDiGraph(nodes=pd.DataFrame(index=nodes), edges=edges)
+
+
+@pytest.fixture
+def tree_graph() -> StellarGraph:
+    nodes = pd.DataFrame(index=["root", "0", 1, 2, "c1.1", "c2.1", "c2.2"])
+    edges = pd.DataFrame([
+        ("root", 2),
+        ("root", 1),
+        ("root", "0"),
+        (2, "c2.1"),
+        (2, "c2.2"),
+        (1, "c1.1"),
+    ], columns=["source", "target"])
+
+    return StellarDiGraph(nodes, edges)
+    
