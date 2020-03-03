@@ -33,6 +33,7 @@ from ..test_utils.graphs import (
     example_graph_random,
     example_hin_1,
     create_graph_features,
+    repeated_features,
 )
 from .. import test_utils
 
@@ -42,19 +43,13 @@ pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 # FIXME (#535): Consider using graph fixtures
 def example_graph_2(feature_size=None):
-    G = nx.Graph()
+    nlist = [1, 2, 3, 4, 5]
+    nodes = pd.DataFrame(repeated_features(nlist, feature_size), index=nlist)
+
     elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
-    G.add_nodes_from([1, 2, 3, 4, 5], label="default")
-    G.add_edges_from(elist, label="default")
+    edges = pd.DataFrame(elist, columns=["source", "target"])
 
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+    return StellarGraph(nodes, edges)
 
 
 def example_hin_2(feature_size_by_type=None):

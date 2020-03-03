@@ -36,7 +36,12 @@ import random
 from stellargraph.mapper import *
 from stellargraph.core.graph import *
 from stellargraph.data.unsupervised_sampler import *
-from ..test_utils.graphs import example_graph, example_graph_random
+from ..test_utils.graphs import (
+    example_graph,
+    example_graph_random,
+    example_hin_1,
+    repeated_features,
+)
 from .. import test_utils
 
 
@@ -45,35 +50,26 @@ pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 # FIXME (#535): Consider using graph fixtures
 def example_HIN_1(feature_size_by_type=None):
-    G = nx.Graph()
-    G.add_nodes_from([0, 1, 2, 3], label="movie")
-    G.add_nodes_from([4, 5], label="user")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="rating")
-    G.add_edges_from([(4, 5)], label="friend")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-
-    G = StellarGraph(G, node_features="feature")
-    return G
+    return example_hin_1(
+        feature_size_by_type,
+        node_types=("movie", "user"),
+        edge_types=("rating", "friend"),
+    )
 
 
 def example_HIN_homo(feature_size_by_type=None):
-    G = nx.Graph()
-    G.add_nodes_from([0, 1, 2, 3, 4, 5], label="user")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="friend")
-
-    # Add example features
+    nlist = [0, 1, 2, 3, 4, 5]
     if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
+        features = repeated_features(nlist, feature_size_by_type["user"])
+    else:
+        features = []
 
-    G = StellarGraph(G, node_features="feature")
-    return G
+    nodes = pd.DataFrame(features, index=nlist)
+    edges = pd.DataFrame(
+        [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"]
+    )
+
+    return StellarGraph({"user": nodes}, {"friend": edges})
 
 
 def example_hin_random(
@@ -131,10 +127,10 @@ def example_hin_random(
                 )
             nt_jj += 1
 
-        G = StellarGraph(G, node_features="feature")
+        G = StellarGraph.from_networkx(G, node_features="feature")
 
     else:
-        G = StellarGraph(G)
+        G = StellarGraph.from_networkx(G)
 
     return G, node_dict
 
