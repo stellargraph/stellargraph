@@ -126,6 +126,11 @@ class PubMedDiabetes(
 ):
     def load(self):
         """
+        Load this graph into an undirected homogeneous graph, downloading it if required.
+
+        Returns:
+            A tuple where the first element is a :class:`StellarGraph` instance containing the graph
+            data and features, and the second element is a pandas Series of node class labels.
         """
         self.download()
 
