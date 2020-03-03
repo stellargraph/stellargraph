@@ -169,6 +169,18 @@ def test_cora_load(is_directed, largest_cc_only) -> None:
     }
 
 
+def test_aifb_load() -> None:
+    g, affiliation = AIFB().load()
+
+    assert g.number_of_nodes() == 8285
+    assert g.number_of_edges() == 29043
+    # 'affiliation' and 'employs' are excluded
+    assert len(set(et for _, _, et in g.edges(include_edge_type=True))) == 47 - 2
+    assert g.node_feature_sizes() == {"default": 8285}
+
+    assert len(affiliation) == 178
+
+
 @pytest.mark.parametrize("largest_cc_only", [False, True])
 def test_citeseer_load(largest_cc_only) -> None:
     g, subjects = CiteSeer().load(largest_cc_only)

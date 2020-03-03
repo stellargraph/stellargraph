@@ -647,14 +647,12 @@ class StellarGraph:
         Returns:
             A dictionary of node type and integer feature size.
         """
-        all_sizes = self._nodes.feature_sizes()
-        if node_types is None:
-            return all_sizes
+        all_sizes = self._nodes.feature_info()
 
-        node_types = set(node_types)
-        return {
-            type_name: size for type_name, size in all_sizes if type_name in node_types
-        }
+        if node_types is None:
+            node_types = all_sizes.keys()
+
+        return {type_name: all_sizes[type_name][0] for type_name in node_types}
 
     def check_graph_for_ml(self, features=True):
         """
@@ -813,9 +811,18 @@ class StellarGraph:
         lines.append("")
         lines.append(" Node types:")
 
+        feature_info = self._nodes.feature_info()
         for nt in gs.node_types:
             nodes = self.nodes_of_type(nt)
             lines.append(f"  {nt}: [{len(nodes)}]")
+
+            feature_size, feature_dtype = feature_info[nt]
+            if feature_size > 0:
+                feature_text = f"{feature_dtype.name} vector, length {feature_size}"
+            else:
+                feature_text = "none"
+            lines.append(f"    Features: {feature_text}")
+
             edge_types = ", ".join(str_edge_type(et) for et in gs.schema[nt])
             lines.append(f"    Edge types: {edge_types}")
 

@@ -375,7 +375,61 @@ class AIFB(
     "members of a research group with 5 different research groups. The goal is to predict which research group a researcher belongs to.",
     source="https://figshare.com/articles/AIFB_DataSet/745364",
 ):
-    pass
+    _AFFILIATION_TYPE = "http://swrc.ontoware.org/ontology#affiliation"
+    _EMPLOYS_TYPE = "http://swrc.ontoware.org/ontology#employs"
+
+    def load(self):
+        """
+        Loads the dataset into a directed heterogeneous graph.
+
+        The nodes features are the node's position after being one-hot encoded; for example, the
+        first node has features ``[1, 0, 0, ...]``, the second has ``[0, 1, 0, ...]``.
+
+        This requires the ``rdflib`` library to be installed.
+
+        Returns:
+            A tuple where the first element is a graph containing all edges except for those with
+            type ``affiliation`` and ``employs`` (the inverse of ``affiliation``), and the second
+            element is a DataFrame containing the one-hot encoded affiliation of the 178 nodes that
+            have an affiliation.
+        """
+        try:
+            import rdflib
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                f"{e.msg}. Loading the AIFB dataset requires the 'rdflib' module; please install it",
+                name=e.name,
+                path=e.path,
+            ) from None
+
+        self.download()
+
+        graph = rdflib.Graph()
+        graph.parse(self._resolve_path(self.expected_files[0]), format="n3")
+
+        triples = pd.DataFrame(
+            ((s.n3(), str(p), o.n3()) for s, p, o in graph),
+            columns=["source", "label", "target"],
+        )
+
+        all_nodes = pd.concat([triples.source, triples.target])
+        nodes = pd.DataFrame(index=pd.unique(all_nodes))
+        nodes_onehot_features = pd.get_dummies(nodes.index).set_index(nodes.index)
+
+        edges = {
+            edge_type: df.drop(columns="label")
+            for edge_type, df in triples.groupby("label")
+        }
+
+        affiliation = edges.pop(self._AFFILIATION_TYPE)
+        # 'employs' is the inverse relation, so it should be removed
+        del edges[self._EMPLOYS_TYPE]
+
+        onehot_affiliation = pd.get_dummies(affiliation.set_index("source")["target"])
+
+        graph = StellarDiGraph(nodes_onehot_features, edges)
+
+        return graph, onehot_affiliation
 
 
 class MUTAG(
