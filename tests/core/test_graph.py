@@ -719,6 +719,14 @@ def test_isolated_node_neighbor_methods(is_directed):
     assert graph.out_nodes(1) == []
 
 
+def in_sequence(s, *others):
+    for x in others:
+        assert x in s
+
+    for a, b in zip(others, others[1:]):
+        assert s.index(a) < s.index(b), s
+
+
 @pytest.mark.parametrize("is_directed", [False, True])
 def test_info_homogeneous(is_directed):
 
@@ -754,6 +762,74 @@ def test_info_heterogeneous():
 
     assert " A-R->B: [5]"
     assert " B-F->B: [1]"
+
+
+def test_info_truncate():
+    max_node_type = 22
+    max_node = (max_node_type + 1) * (max_node_type + 1) - 1
+
+    def edges(i):
+        ids = range(i * i, (i + 1) * (i + 1))
+        return pd.DataFrame(
+            {"source": max_node - i, "target": max_node - i - 1}, index=ids
+        )
+
+    graph = StellarGraph(
+        {
+            f"n_{i}": pd.DataFrame(index=range(i * i, (i + 1) * (i + 1)))
+            for i in range(max_node_type + 1)
+        },
+        {f"e_{i}": edges(i) for i in range(45)},
+    )
+
+    in_sequence(
+        graph.info(),
+        "\n Node types:",
+        "\n  n_22: [45]",
+        "\n    Edge types: n_22-e_0->n_22, n_22-e_1->n_22, n_22-e_10->n_22, n_22-e_11->n_22, n_22-e_12->n_22, ... (40 more)",
+        "\n  n_21: [43]",
+        "\n    Edge types: n_21-e_44->n_22\n",
+        "\n  n_20: [41]",
+        "\n  n_3: [7]",
+        "\n  ... (3 more)",
+        "\n Edge types:",
+        "\n    n_22-e_44->n_21: [89]",
+        "\n    n_22-e_43->n_22: [87]",
+        "\n    n_22-e_42->n_22: [85]",
+        "\n    n_22-e_25->n_22: [51]",
+        "\n    ... (25 more)",
+    )
+
+    in_sequence(
+        graph.info(truncate=2),
+        "\n Node types:",
+        "\n  n_22: [45]",
+        "\n    Edge types: n_22-e_0->n_22, n_22-e_1->n_22, ... (43 more)",
+        "\n  n_21: [43]",
+        "\n    Edge types: n_21-e_44->n_22\n",
+        "\n  ... (21 more)",
+        "\n Edge types:",
+        "\n    n_22-e_44->n_21: [89]",
+        "\n    n_22-e_43->n_22: [87]",
+        "\n    ... (43 more)",
+    )
+
+    in_sequence(
+        graph.info(truncate=None),
+        "\n Node types:",
+        "\n  n_22: [45]",
+        # individual listing is still truncated
+        "\n    Edge types: n_22-e_0->n_22, n_22-e_1->n_22, n_22-e_10->n_22, n_22-e_11->n_22, n_22-e_12->n_22, ... (40 more)",
+        "\n  n_21: [43]",
+        "\n  n_20: [41]",
+        "\n  n_1: [3]",
+        "\n  n_0: [1]",
+        "\n Edge types:",
+        "\n    n_22-e_44->n_21: [89]",
+        "\n    n_22-e_43->n_22: [87]",
+        "\n    n_22-e_1->n_22: [3]",
+        "\n    n_22-e_0->n_22: [1]",
+    )
 
 
 def test_edges_include_weights():
