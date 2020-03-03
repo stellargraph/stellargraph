@@ -31,7 +31,7 @@ def is_real_iterable(x):
     Returns:
         True if x is an iterable (but not a string) and False otherwise
     """
-    return isinstance(x, collections.Iterable) and not isinstance(x, (str, bytes))
+    return isinstance(x, collections.abc.Iterable) and not isinstance(x, (str, bytes))
 
 
 def normalize_adj(adj, symmetric=True):
