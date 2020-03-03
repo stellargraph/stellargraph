@@ -927,7 +927,7 @@ class Test_FullBatchNodeGenerator:
 
         assert ppnp_sparse_failed
 
-def test_corrupted_full_batch_sequence():
+def test_corrupted_full_batch_generator():
 
     G, feats = create_graph_features()
     nodes = G.nodes()
