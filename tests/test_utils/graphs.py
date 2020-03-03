@@ -27,7 +27,9 @@ def create_graph_features():
     # APPNP, ClusterGCN, GCN, PPNP, node_mappers
     features = np.array([[1, 1], [1, 0], [0, 1]])
     nodes = pd.DataFrame(features, index=["a", "b", "c"])
-    edges = pd.DataFrame([("a", "b"), ("b", "c"), ("a", "c")], columns=["source", "target"])
+    edges = pd.DataFrame(
+        [("a", "b"), ("b", "c"), ("a", "c")], columns=["source", "target"]
+    )
     return StellarGraph(nodes, edges), features
 
 
@@ -39,7 +41,7 @@ def relational_create_graph_features(is_directed=False):
     nodes = pd.DataFrame(features, index=["a", "b", "c"])
     edges = {
         "r1": pd.DataFrame([("a", "b"), ("b", "c")], columns=["source", "target"]),
-        "r2": pd.DataFrame([("a", "c")], columns=["source", "target"], index=[2])
+        "r2": pd.DataFrame([("a", "c")], columns=["source", "target"], index=[2]),
     }
     SG = StellarDiGraph if is_directed else StellarGraph
     return SG(nodes, edges), features
@@ -147,34 +149,36 @@ def example_hin_1(
 def create_test_graph(is_directed=False):
     # biased random walker, breadth first walker, directed breadth first walker, uniform random walker
 
-    nodes = pd.DataFrame(index=["0", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "self loner", "loner"])
+    nodes = pd.DataFrame(
+        index=["0", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "self loner", "loner"]
+    )
     edges = pd.DataFrame(
         [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, 7),
-        (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        (7, 7),
-        (8, 8),
-        (2, 2),
-        (5, 5),
-        (9, 9),
-        ("self loner", "self loner"),  # an isolated node with a self link
+            ("0", 1),
+            ("0", 2),
+            (1, 3),
+            (1, 4),
+            (3, 6),
+            (4, 7),
+            (4, 8),
+            (2, 5),
+            (5, 9),
+            (5, 10),
+            ("0", "0"),
+            (1, 1),
+            (3, 3),
+            (6, 6),
+            (4, 4),
+            (7, 7),
+            (8, 8),
+            (2, 2),
+            (5, 5),
+            (9, 9),
+            ("self loner", "self loner"),  # an isolated node with a self link
         ],
-        columns=["source", "target"]
+        columns=["source", "target"],
     )
-    cls = StellarDiGraph  if is_directed else StellarGraph
+    cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes, edges)
 
 
