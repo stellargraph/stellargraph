@@ -24,7 +24,7 @@ import pytest
 
 
 def create_graph_features():
-    # APPNP, ClusterGCN, GCN, PPNP, node_mappers
+    # APPNP, ClusterGCN, GCN, PPNP, node_mappers, full_batch_generators
     features = np.array([[1, 1], [1, 0], [0, 1]])
     nodes = pd.DataFrame(features, index=["a", "b", "c"])
     edges = pd.DataFrame(
