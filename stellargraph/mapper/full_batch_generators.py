@@ -41,7 +41,6 @@ from . import (
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
-    CorruptedSparseFullBatchSequence,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
@@ -508,11 +507,64 @@ class RelationalFullBatchNodeGenerator:
 
 
 class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
+    """
+    A data generator for use with GCNInfoMax.
 
-    def __init__(self, G, **kwargs):
-        super().__init__(G, **kwargs)
+    Args:
+        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        name (str): an optional name of the generator
+        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
+            'chebyshev','sgc', 'self_loops', or 'none'.
+        k (None or int): This is the smoothing order for the 'sgc' method or the
+            Chebyshev series order for the 'chebyshev' method. In both cases this
+            should be positive integer.
+        transform (callable): an optional function to apply on features and adjacency matrix
+            the function takes (features, Aadj) as arguments.
+        sparse (bool): If True (default) a sparse adjacency matrix is used,
+            if False a dense adjacency matrix is used.
+        teleport_probability (float): teleport probability between 0.0 and 1.0.
+            "probability" of returning to the starting node in the propagation step as in [4].
+    """
+
+    def __init__(
+        self,
+        G,
+        name=None,
+        method="gcn",
+        k=1,
+        sparse=True,
+        transform=None,
+        teleport_probability=0.1,
+    ):
+        super().__init__(
+            G,
+            name=name,
+            method=method,
+            k=k,
+            sparse=sparse,
+            transform=transform,
+            teleport_probability=teleport_probability,
+        )
 
     def flow(self, node_ids,):
+        """
+        Creates a generator/sequence object for training or evaluation
+        with the supplied node ids and numeric targets.
+
+        Args:
+            node_ids: and iterable of node ids for the nodes of interest. Typically all nodes in the graph for
+                unsupervised Deep Graph Infomax training
+
+        Returns:
+            A NodeSequence object to use with GCNInfoMax models
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
+        """
+
+        # create targets
+        # model output is shape (N, 2) where N is the number of nodes. The first column corresponds to
+        # embeddings of true nodes with label 1.0, and the second column corresponds to corrupted nodes
+        # with label 0.0
 
         targets = np.zeros((len(node_ids), 2))
         targets[:, 0] = 1.0

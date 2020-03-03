@@ -927,7 +927,9 @@ class Test_FullBatchNodeGenerator:
 
         assert ppnp_sparse_failed
 
-def test_corrupted_full_batch_generator():
+
+@pytest.mark.parametrize("sparse", [True, False])
+def test_corrupted_full_batch_generator(sparse):
 
     G, feats = create_graph_features()
     nodes = G.nodes()
@@ -936,11 +938,11 @@ def test_corrupted_full_batch_generator():
     )
     G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
-    generator = CorruptedFullBatchNodeGenerator(G)
+    generator = CorruptedFullBatchNodeGenerator(G, sparse=sparse)
 
     gen = generator.flow(G.nodes())
 
-    [features, shuffled_feats, target_indices, A_indices, A_values, ], targets = gen.__getitem__(0)
+    [features, shuffled_feats, *_], targets = gen.__getitem__(0)
 
     assert features.shape == shuffled_feats.shape
 

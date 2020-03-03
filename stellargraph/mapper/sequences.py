@@ -25,7 +25,6 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
-    "CorruptedSparseFullBatchSequence",
 ]
 
 import warnings
@@ -458,6 +457,8 @@ class SparseFullBatchSequence(Sequence):
 
         else:
             raise ValueError("Adjacency matrix not in expected sparse format")
+
+        self.corruption = corruption
 
         # Convert matrices to list of indices & values
         self.A_indices = np.expand_dims(
