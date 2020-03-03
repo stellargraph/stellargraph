@@ -36,3 +36,4 @@ from .preprocessing_layer import GraphPreProcessingLayer
 from .rgcn import *
 from .watch_your_step import *
 from .knowledge_graph import *
+from .graph_classification import *

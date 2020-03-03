@@ -616,14 +616,16 @@ class GraphSequence(Sequence):
 
         # FIXME: Adding the batch dimension is legacy from our other custom sequence objects. Do we need it still?
         adj_graphs = [np.expand_dims(adj_graph, axis=0) for adj_graph in adj_graphs]
-
+        node_indices = np.arange(len(features))
+        node_indices = node_indices[np.newaxis, np.newaxis, :]
         # features is list of length number of graphs arrays of dimensionality
         #      1 x number of graphs x feature dimensionality
+        # node_indices is array of dimensionality of 1 x 1 x number of nodes
         # adj_graphs is list of number of graphs arrays of dimensionality
         #      1 x number of nodes x number of nodes
         # graph_targets is list of arrays
         #      1 x number of graphs x number of classes
-        return [features, adj_graphs], graph_targets
+        return [features, node_indices, adj_graphs], graph_targets
 
     def on_epoch_end(self):
         """
