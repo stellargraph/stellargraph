@@ -29,7 +29,7 @@ import pandas as pd
 import numpy as np
 from tensorflow import keras
 import pytest
-from ..test_utils.graphs import create_graph_features, create_stellargraph
+from ..test_utils.graphs import create_graph_features
 
 
 def test_ClusterGraphConvolution_config():
@@ -117,7 +117,7 @@ def test_ClusterGCN_init():
 
 def test_ClusterGCN_apply():
 
-    G = create_stellargraph()
+    G, _ = create_graph_features()
 
     generator = ClusterNodeGenerator(G)
 
@@ -135,7 +135,7 @@ def test_ClusterGCN_apply():
 
 def test_ClusterGCN_activations():
 
-    G = create_stellargraph()
+    G, _ = create_graph_features()
     generator = ClusterNodeGenerator(G)
 
     # Test activations are set correctly
@@ -170,7 +170,7 @@ def test_ClusterGCN_activations():
 
 
 def test_ClusterGCN_regularisers():
-    G = create_stellargraph()
+    G, _ = create_graph_features()
 
     generator = ClusterNodeGenerator(G)
 

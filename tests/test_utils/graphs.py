@@ -25,29 +25,24 @@ import pytest
 
 def create_graph_features():
     # APPNP, ClusterGCN, GCN, PPNP, node_mappers
-    graph = nx.Graph()
-    graph.add_nodes_from(["a", "b", "c"])
-    graph.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
-    graph = graph.to_undirected()
-    return graph, np.array([[1, 1], [1, 0], [0, 1]])
+    features = np.array([[1, 1], [1, 0], [0, 1]])
+    nodes = pd.DataFrame(features, index=["a", "b", "c"])
+    edges = pd.DataFrame([("a", "b"), ("b", "c"), ("a", "c")], columns=["source", "target"])
+    return StellarGraph(nodes, edges), features
 
 
 def relational_create_graph_features(is_directed=False):
     # RGCN, relational node mappers
     r1 = {"label": "r1"}
     r2 = {"label": "r2"}
-    nodes = ["a", "b", "c"]
     features = np.array([[1, 1], [1, 0], [0, 1]])
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-
-    graph = nx.MultiDiGraph() if is_directed else nx.MultiGraph()
-    graph.add_nodes_from(nodes)
-    graph.add_edges_from([("a", "b", r1), ("b", "c", r1), ("a", "c", r2)])
-
+    nodes = pd.DataFrame(features, index=["a", "b", "c"])
+    edges = {
+        "r1": pd.DataFrame([("a", "b"), ("b", "c")], columns=["source", "target"]),
+        "r2": pd.DataFrame([("a", "c")], columns=["source", "target"], index=[2])
+    }
     SG = StellarDiGraph if is_directed else StellarGraph
-    return SG(graph, node_features=node_features), features
+    return SG(nodes, edges), features
 
 
 def example_graph_nx(
@@ -149,10 +144,12 @@ def example_hin_1(
     return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
 
 
-def create_test_graph_nx(is_directed=False):
-    # unsupervised sampler
-    graph = nx.DiGraph() if is_directed else nx.Graph()
-    edges = [
+def create_test_graph(is_directed=False):
+    # biased random walker, breadth first walker, directed breadth first walker, uniform random walker
+
+    nodes = pd.DataFrame(index=["0", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "self loner", "loner"])
+    edges = pd.DataFrame(
+        [
         ("0", 1),
         ("0", 2),
         (1, 3),
@@ -174,49 +171,26 @@ def create_test_graph_nx(is_directed=False):
         (5, 5),
         (9, 9),
         ("self loner", "self loner"),  # an isolated node with a self link
-    ]
-
-    graph.add_edges_from(edges)
-
-    graph.add_node("loner")  # an isolated node without self link
-    return graph
-
-
-def create_test_graph(is_directed=False):
-    # biased random walker, breadth first walker, directed breadth first walker, uniform random walker
-    if is_directed:
-        return StellarDiGraph(create_test_graph_nx(is_directed))
-    else:
-        return StellarGraph(create_test_graph_nx(is_directed))
-
-
-def create_stellargraph():
-    # cluster gcn, cluster gcn node mapper
-    Gnx, features = create_graph_features()
-    nodes = Gnx.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
+        ],
+        columns=["source", "target"]
     )
-    graph = StellarGraph(Gnx, node_features=node_features)
-
-    return graph
+    cls = StellarDiGraph  if is_directed else StellarGraph
+    return cls(nodes, edges)
 
 
 def example_graph_1_saliency_maps(feature_size=None):
     # saliency gcn, saliency gat
-    graph = nx.Graph()
-    elist = [(0, 1), (0, 2), (2, 3), (3, 4), (0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
-    graph.add_nodes_from([0, 1, 2, 3, 4], label="default")
-    graph.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in graph.nodes():
-            graph.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(graph, node_features="feature")
-
+    nlist = [0, 1, 2, 3, 4]
+    if feature_size is None:
+        nodes = pd.DataFrame(index=nlist)
     else:
-        return StellarGraph(graph)
+        # Example features
+        nodes = pd.DataFrame(np.ones((len(nlist), feature_size)), index=nlist)
+
+    elist = [(0, 1), (0, 2), (2, 3), (3, 4), (0, 0), (1, 1), (2, 2), (3, 3), (4, 4)]
+    edges = pd.DataFrame(elist, columns=["source", "target"])
+
+    return StellarGraph(nodes, edges)
 
 
 def example_graph_random(
@@ -225,27 +199,24 @@ def example_graph_random(
     # core/utils, link mapper, node mapper graph 3
 
     if is_directed:
-        graph = nx.DiGraph()
         cls = StellarDiGraph
     else:
-        graph = nx.Graph()
         cls = StellarGraph
 
+    node_ids = range(n_nodes)
+    if feature_size is None:
+        nodes = pd.DataFrame(index=node_ids)
+    else:
+        # Example features
+        nodes = pd.DataFrame(np.ones((len(node_ids), feature_size)), index=node_ids)
+
     n_noniso = n_nodes - n_isolates
-    edges = [
+    elist = [
         (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
         for _ in range(n_edges)
     ]
-    graph.add_nodes_from(range(n_nodes))
-    graph.add_edges_from(edges, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in graph.nodes():
-            graph.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return cls(graph, node_features="feature")
-    else:
-        return cls(graph)
+    edges = pd.DataFrame(elist, columns=["source", "target"])
+    return cls(nodes, edges)
 
 
 def node_features(seed=0) -> pd.DataFrame:
@@ -257,15 +228,14 @@ def node_features(seed=0) -> pd.DataFrame:
 @pytest.fixture
 def petersen_graph() -> StellarGraph:
     nxg = nx.petersen_graph()
-    return StellarGraph(nxg, node_features=node_features())
+    return StellarGraph.from_networkx(nxg, node_features=node_features())
 
 
 @pytest.fixture
 def line_graph() -> StellarGraph:
-    nxg = nx.MultiGraph()
-    nxg.add_nodes_from(range(10))
-    nxg.add_edges_from([(i, i + 1) for i in range(9)])
-    return StellarGraph(nxg, node_features=node_features())
+    nodes = node_features()
+    edges = pd.DataFrame([(i, i + 1) for i in range(9)], columns=["source", "target"])
+    return StellarGraph(nodes, edges)
 
 
 @pytest.fixture
