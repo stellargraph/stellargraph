@@ -521,9 +521,11 @@ class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
         node_indices = self._node_lookup(node_ids)
 
         if self.use_sparse:
-            return CorruptedSparseFullBatchSequence(
-                self.features, self.Aadj, targets, node_indices,
+            return SparseFullBatchSequence(
+                self.features, self.Aadj, targets, node_indices, corruption=True,
             )
         else:
-            raise NotImplementedError
+            return FullBatchSequence(
+                self.features, self.Aadj, targets, node_indices, corruption=True,
+            )
 

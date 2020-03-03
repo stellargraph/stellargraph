@@ -1,21 +1,22 @@
-from . import GraphSAGE, GCN
+from . import GCN
 from tensorflow.keras.layers import Input, Dense, Lambda, Layer
 import tensorflow as tf
-from ..mapper import CorruptedGraphSAGENodeGenerator
 from tensorflow.keras import backend as K
 
 __all__ = [
-    "GraphSAGEInfoMax",
     "GCNInfoMax",
 ]
 
 
 class Discriminator(Layer):
-
+    """
+    This Layer computes the Discriminator function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def build(self, input_shapes):
+
         self.kernel = self.add_weight(
             shape=(input_shapes[0][1], input_shapes[0][1]),
             initializer="glorot_uniform",
@@ -27,6 +28,11 @@ class Discriminator(Layer):
 
     def call(self, inputs):
         """
+        Applies the layer to the inputs.
+
+        Args:
+            inputs: a list of tensors with shapes [(N, F), (F,)] containing the node features and summary feature
+                vector.
         """
         features, summary = inputs
 
@@ -38,93 +44,33 @@ class Discriminator(Layer):
         return score
 
 
-class GraphSAGEInfoMax(GraphSAGE):
-
-    def __init__(
-            self,
-            layer_sizes,
-            generator=None,
-            aggregator=None,
-            bias=True,
-            dropout=0.0,
-            normalize="l2",
-            activations=None,
-            **kwargs,
-    ):
-        super().__init__(
-            layer_sizes,
-            generator=generator,
-            aggregator=aggregator,
-            bias=bias,
-            dropout=dropout,
-            normalize=normalize,
-            activations=activations,
-            **kwargs,
-        )
-
-    def _get_sizes_from_generator(self, generator):
-        """
-        Sets n_samples and input_feature_size from the generator.
-        Args:
-             generator: The supplied generator.
-        """
-        if not isinstance(generator, CorruptedGraphSAGENodeGenerator):
-            errmsg = "Generator should be an instance of CorruptedGraphSAGENodeGenerator"
-
-            raise TypeError(errmsg)
-
-        self.n_samples = generator.num_samples
-        # Check the number of samples and the layer sizes are consistent
-        if len(self.n_samples) != self.max_hops:
-            raise ValueError(
-                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
-                    self.n_samples, self.layer_sizes
-                )
-            )
-
-        self.multiplicity = generator.multiplicity
-        feature_sizes = generator.graph.node_feature_sizes()
-        if len(feature_sizes) > 1:
-            raise RuntimeError(
-                "GraphSAGE called on graph with more than one node type."
-            )
-        self.input_feature_size = feature_sizes.popitem()[1]
-
-    def unsupervised_node_model(self):
-        """
-        """
-        # Create tensor inputs for neighbourhood sampling
-        x_inp = [
-            Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
-        ]
-
-        x_inp_corrupted = [
-            Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
-        ]
-
-        # Output from GraphSAGE model
-        node_feats = self(x_inp)
-        node_feats_corrupted = self(x_inp_corrupted)
-
-        summary = Lambda(
-            lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0))
-        )(node_feats)
-
-        discriminator = Discriminator()
-        scores = discriminator([node_feats, summary])
-        scores_corrupted = discriminator([node_feats_corrupted, summary])
-
-        x_out = tf.stack([scores, scores_corrupted], axis=1)
-        # Returns inputs and outputs
-        return x_inp + x_inp_corrupted, x_out
-
-    def embedding_model(self, model):
-
-        pass
-
-
 class GCNInfoMax(GCN):
+    """
+    A stack of Graph Convolutional layers that implement a Deep Graph Infomax model
+    as in https://arxiv.org/pdf/1809.10341.pdf
 
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer,
+    activation functions for each hidden layers, and a CorruptedFullBatchNodeGenerator object.
+
+    To use this class as a Keras model, the features, shuffled features, and a pre-processed adjacency matrix
+    should be supplied using the :class:`CorruptedFullBatchNodeGenerator` class for unsupervised training. After
+    training, a model that returns the node embeddings can be obtained using the `GCNInfoMax.embedding_model` function.
+
+    Args:
+        layer_sizes (list of int): Output sizes of GCN layers in the stack.
+        generator (FullBatchNodeGenerator): The generator instance.
+        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
+        dropout (float): Dropout rate applied to input features of each GCN layer.
+        activations (list of str or func): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu'].
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+    """
     def __init__(
             self,
             layer_sizes,
@@ -156,6 +102,10 @@ class GCNInfoMax(GCN):
 
     def unsupervised_node_model(self):
         """
+        A function to create the the inputs and outputs for a Deep Graph Infomax model for unsupervised training.
+
+        Returns:
+            input and output layers for use with a keras model
         """
         # Inputs for features
         x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
@@ -176,7 +126,7 @@ class GCNInfoMax(GCN):
             A_m = Input(batch_shape=(1, self.n_nodes, self.n_nodes))
             A_placeholders = [A_m]
 
-        x_inp = [x_t, x_corr, out_indices_t] + A_placeholders
+        x_inp = [x_corr, x_t, out_indices_t] + A_placeholders
 
         node_feats = self([x_t, out_indices_t] + A_placeholders)
         node_feats = Lambda(
@@ -203,7 +153,14 @@ class GCNInfoMax(GCN):
         return x_inp, x_out
 
     def embedding_model(self, model):
+        """
+        A function to create the the inputs and outputs for an embedding model.
 
+        Args:
+            model (keras.Model): the base Deep Graph Infomax model
+        Returns:
+            input and output layers for use with a keras model
+        """
         x_emb_in = model.inputs
         x_emb_out = model.get_layer("NODE_FEATURES").output
 
