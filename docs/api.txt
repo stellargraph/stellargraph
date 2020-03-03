@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedFullBatchGenerator
 
 
 GraphSAGE model
@@ -99,6 +99,13 @@ Knowledge Graph models
 
 .. automodule:: stellargraph.layer.knowledge_graph
   :members: ComplEx, ComplExScore
+
+
+Deep Graph Infomax Models
+-------------------------
+
+.. automodule:: stellargraph.layer.deep_graph_infomax
+  :members: GCNInfoMax, Discriminator
 
 Link prediction layers
 ------------------------

@@ -198,6 +198,8 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Relational Graph Convolutional Network [11] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
 | ComplEx[12] | The ComplEx algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | GraphWave [13] | GraphWave calculates unsupervised structural embeddings via wavelet diffusion through the graph. |
+| Deep Graph Infomax [14] | Deep Graph Infomax trains GCN unsupervised to maximize the information in the final node features. |
+
 
 ## Getting Help
 
@@ -263,3 +265,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 12. Complex Embeddings for Simple Link Prediction. T. Trouillon, J. Welbl, S. Riedel, É. Gaussier and G. Bouchard, ICML 2016. ([link](http://jmlr.org/proceedings/papers/v48/trouillon16.pdf))
 
 13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 1028, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf)).
+
+14. Deep Graph Infomax. P. Velickovic, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arxiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).

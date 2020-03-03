@@ -951,8 +951,9 @@ def test_corrupted_full_batch_generator(sparse):
 
     # check that all feature vecs in shuffled_feats correspond to a feature vec in features
     assert all(
-        any(np.array_equal(shuffled_feats[:, i, :], features[:, j, :]) for j in range(features.shape[1]))
+        any(
+            np.array_equal(shuffled_feats[:, i, :], features[:, j, :])
+            for j in range(features.shape[1])
+        )
         for i in range(shuffled_feats.shape[1])
     )
-
-

@@ -546,7 +546,9 @@ class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
             teleport_probability=teleport_probability,
         )
 
-    def flow(self, node_ids,):
+    def flow(
+        self, node_ids,
+    ):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -568,7 +570,7 @@ class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
 
         targets = np.zeros((len(node_ids), 2))
         targets[:, 0] = 1.0
-        
+
         # The list of indices of the target nodes in self.node_list
         node_indices = self._node_lookup(node_ids)
 
@@ -580,4 +582,3 @@ class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
             return FullBatchSequence(
                 self.features, self.Aadj, targets, node_indices, corruption=True,
             )
-

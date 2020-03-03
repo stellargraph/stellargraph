@@ -12,6 +12,7 @@ class Discriminator(Layer):
     """
     This Layer computes the Discriminator function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -36,10 +37,7 @@ class Discriminator(Layer):
         """
         features, summary = inputs
 
-        score = tf.linalg.matvec(
-            tf.linalg.matmul(features, self.kernel),
-            summary,
-        )
+        score = tf.linalg.matvec(tf.linalg.matmul(features, self.kernel), summary,)
 
         return score
 
@@ -71,19 +69,20 @@ class GCNInfoMax(GCN):
         bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
+
     def __init__(
-            self,
-            layer_sizes,
-            generator,
-            bias=True,
-            dropout=0.0,
-            activations=None,
-            kernel_initializer=None,
-            kernel_regularizer=None,
-            kernel_constraint=None,
-            bias_initializer=None,
-            bias_regularizer=None,
-            bias_constraint=None,
+        self,
+        layer_sizes,
+        generator,
+        bias=True,
+        dropout=0.0,
+        activations=None,
+        kernel_initializer=None,
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer=None,
+        bias_regularizer=None,
+        bias_constraint=None,
     ):
 
         super().__init__(
@@ -129,19 +128,18 @@ class GCNInfoMax(GCN):
         x_inp = [x_corr, x_t, out_indices_t] + A_placeholders
 
         node_feats = self([x_t, out_indices_t] + A_placeholders)
-        node_feats = Lambda(
-            lambda x: K.squeeze(x, axis=0,),
-            name="NODE_FEATURES",
-        )(node_feats)
+        node_feats = Lambda(lambda x: K.squeeze(x, axis=0,), name="NODE_FEATURES",)(
+            node_feats
+        )
 
         node_feats_corrupted = self([x_corr, out_indices_t] + A_placeholders)
-        node_feats_corrupted = Lambda(
-            lambda x: K.squeeze(x, axis=0,),
-        )(node_feats_corrupted)
+        node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0,),)(
+            node_feats_corrupted
+        )
 
-        summary = Lambda(
-            lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0))
-        )(node_feats)
+        summary = Lambda(lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0)))(
+            node_feats
+        )
 
         discriminator = Discriminator()
         scores = discriminator([node_feats, summary])
@@ -165,5 +163,3 @@ class GCNInfoMax(GCN):
         x_emb_out = model.get_layer("NODE_FEATURES").output
 
         return x_emb_in, x_emb_out
-
-

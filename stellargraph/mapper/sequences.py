@@ -411,7 +411,7 @@ class FullBatchSequence(Sequence):
             shuffled_feats = np.squeeze(self.features.copy(), axis=0)
             np.random.shuffle(shuffled_feats)
             shuffled_feats = np.expand_dims(shuffled_feats, axis=0)
-            return [shuffled_feats, ] + self.inputs, self.targets
+            return [shuffled_feats,] + self.inputs, self.targets
         else:
             return self.inputs, self.targets
 

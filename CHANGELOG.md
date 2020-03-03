@@ -14,6 +14,8 @@
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
+- GCN Deep Graph Infomax has been implemented to perform unsupervised GCN training
+
 ### Bug fixes and other changes
 
 - `StellarGraph.to_adjacency_matrix` is at least 15× faster on undirected graphs [\#932](http://github.com/stellargraph/stellargraph/pull/932)
