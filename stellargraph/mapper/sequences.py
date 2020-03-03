@@ -575,7 +575,7 @@ class GraphSequence(Sequence):
         self.on_epoch_end()
 
     def __len__(self):
-        num_batches = len(self.graphs) // self.batch_size
+        num_batches = len(self.graphs) // self.batch_size + 1
         return num_batches
 
     def __normalize_adj(self, adj):
@@ -591,7 +591,9 @@ class GraphSequence(Sequence):
     def __getitem__(self, index):
         # The next batch should be the adjacency matrix for the graph and the corresponding feature vectors
         # and target if available.
-        graphs = self.graphs[index * self.batch_size : (index * self.batch_size) + 1]
+        graphs = self.graphs[
+            index * self.batch_size : (index * self.batch_size) + self.batch_size
+        ]
         adj_graphs = [graph.to_adjacency_matrix() for graph in graphs]
 
         # The operations to normalize the adjacency matrix are too slow.
@@ -603,17 +605,24 @@ class GraphSequence(Sequence):
         #
         if self.targets is not None:
             graph_targets = self.targets[
-                index * self.batch_size : (index * self.batch_size) + 1
+                index * self.batch_size : (index * self.batch_size) + self.batch_size
             ]
+            graph_targets = np.expand_dims(graph_targets, axis=0)
 
-        features = [graph.node_features(graph.nodes()) for graph in graphs]
-
-        # FIXME: Adding the batch dimension is legacy from our other custom sequence objects. Do we need it still?
-        features = [np.reshape(feature, (1,) + feature.shape) for feature in features]
-        adj_graphs = [
-            adj_graph.reshape((1,) + adj_graph.shape) for adj_graph in adj_graphs
+        features = [
+            np.expand_dims(graph.node_features(graph.nodes()), axis=0)
+            for graph in graphs
         ]
 
+        # FIXME: Adding the batch dimension is legacy from our other custom sequence objects. Do we need it still?
+        adj_graphs = [np.expand_dims(adj_graph, axis=0) for adj_graph in adj_graphs]
+
+        # features is list of length number of graphs arrays of dimensionality
+        #      1 x number of graphs x feature dimensionality
+        # adj_graphs is list of number of graphs arrays of dimensionality
+        #      1 x number of nodes x number of nodes
+        # graph_targets is list of arrays
+        #      1 x number of graphs x number of classes
         return [features, adj_graphs], graph_targets
 
     def on_epoch_end(self):
