@@ -33,7 +33,11 @@ import pytest
 import pandas as pd
 import scipy.sparse as sps
 
-from ..test_utils.graphs import create_graph_features, example_graph_random, example_hin_1
+from ..test_utils.graphs import (
+    create_graph_features,
+    example_graph_random,
+    example_hin_1,
+)
 
 
 class Test_FullBatchGenerator:

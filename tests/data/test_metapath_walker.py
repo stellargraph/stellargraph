@@ -34,36 +34,36 @@ def create_test_graph():
     """
     nodes = {
         "s": pd.DataFrame(index=["0", "5", "7", "self loner", "loner"]),
-        "n": pd.DataFrame(index=[1, 2, 3, 4, 6, 8, 9, 10])
+        "n": pd.DataFrame(index=[1, 2, 3, 4, 6, 8, 9, 10]),
     }
     edges = pd.DataFrame(
         [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, "7"),
-        (4, 8),
-        (2, "5"),
-        ("5", 9),
-        ("5", 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        ("7", "7"),
-        (8, 8),
-        (2, 2),
-        ("5", "5"),
-        (9, 9),
-        (
-            "self loner",
-            "self loner",
-        ),  # node that is not connected with any other nodes but has self loop
+            ("0", 1),
+            ("0", 2),
+            (1, 3),
+            (1, 4),
+            (3, 6),
+            (4, "7"),
+            (4, 8),
+            (2, "5"),
+            ("5", 9),
+            ("5", 10),
+            ("0", "0"),
+            (1, 1),
+            (3, 3),
+            (6, 6),
+            (4, 4),
+            ("7", "7"),
+            (8, 8),
+            (2, 2),
+            ("5", "5"),
+            (9, 9),
+            (
+                "self loner",
+                "self loner",
+            ),  # node that is not connected with any other nodes but has self loop
         ],
-        columns=["source", "target"]
+        columns=["source", "target"],
     )
 
     return StellarGraph(nodes, edges)

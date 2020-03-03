@@ -31,7 +31,7 @@ def create_test_graph(self_loop=False, multi=False):
 
     nodes = {
         "user": pd.DataFrame(index=[0, 1, "5", 4, 7]),
-        "movie": pd.DataFrame(index=[2, 3, 6])
+        "movie": pd.DataFrame(index=[2, 3, 6]),
     }
     friends = [("5", 4), (1, 4), (1, "5")]
     friend_idx = [5, 6, 7]
@@ -40,13 +40,17 @@ def create_test_graph(self_loop=False, multi=False):
         friend_idx.append(8)
 
     edges = {
-        "rating": pd.DataFrame([(1, 2), (1, 3), ("5", 6), ("5", 3), (4, 2)], columns=["source", "target"]),
+        "rating": pd.DataFrame(
+            [(1, 2), (1, 3), ("5", 6), ("5", 3), (4, 2)], columns=["source", "target"]
+        ),
         # 7 is an isolated node with a link back to itself
-        "friend": pd.DataFrame(friends, columns=["source", "target"], index=friend_idx)
+        "friend": pd.DataFrame(friends, columns=["source", "target"], index=friend_idx),
     }
 
     if multi:
-        edges["colleague"] = pd.DataFrame([(1, 4)], columns=["source", "target"], index=[123])
+        edges["colleague"] = pd.DataFrame(
+            [(1, 4)], columns=["source", "target"], index=[123]
+        )
 
     return StellarGraph(nodes, edges)
 
