@@ -531,9 +531,6 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-#
-# GraphSequence for graph classification tasks
-#
 class GraphSequence(Sequence):
     """
     A Keras-compatible data generator for graph inference graph classification models.
@@ -596,6 +593,10 @@ class GraphSequence(Sequence):
         ]
         adj_graphs = [graph.to_adjacency_matrix() for graph in graphs]
 
+        # The number of nodes for the largest graph in the batch. We are going to pad with 0s the adjacency and node
+        # feature matrices to equal in size the adjacency and feature matrices of the largest graph.
+        max_nodes = max([graph.number_of_nodes() for graph in graphs])
+
         # The operations to normalize the adjacency matrix are too slow.
         # Either optimize this or implement as a layer(?)
         if self.normalize_adj:
@@ -607,23 +608,43 @@ class GraphSequence(Sequence):
             graph_targets = self.targets[
                 index * self.batch_size : (index * self.batch_size) + self.batch_size
             ]
-            graph_targets = np.expand_dims(graph_targets, axis=0)
 
+        # pad adjacency and feature matrices to equal the size of those from the largest graph
+        # we assume that all graphs have node features of equal dimensionality.
+        number_of_features = graphs[0].node_features(graphs[0].nodes()).shape[1]
         features = [
-            np.expand_dims(graph.node_features(graph.nodes()), axis=0)
+            np.pad(
+                graph.node_features(graph.nodes()),
+                pad_width=(0, max_nodes - graph.number_of_nodes()),
+                mode="constant",
+                constant_values=0.0,
+            )[:, :number_of_features]
             for graph in graphs
         ]
-
-        # FIXME: Adding the batch dimension is legacy from our other custom sequence objects. Do we need it still?
-        adj_graphs = [np.expand_dims(adj_graph, axis=0) for adj_graph in adj_graphs]
-
-        # features is list of length number of graphs arrays of dimensionality
-        #      1 x number of graphs x feature dimensionality
-        # adj_graphs is list of number of graphs arrays of dimensionality
-        #      1 x number of nodes x number of nodes
+        features = np.stack(features)
+        adj_graphs = [
+            np.pad(
+                adj_graph,
+                pad_width=(0, max_nodes - len(adj_graph)),
+                mode="constant",
+                constant_values=0.0,
+            )
+            for adj_graph in adj_graphs
+        ]
+        adj_graphs = np.stack(adj_graphs)
+        out_indices = np.array([-graph.number_of_nodes() for graph in graphs])[:, np.newaxis]
+        # features is array of dimensionality
+        #      number of graphs x max number of nodes in graph x feature dimensionality
+        # out_indices is array of dimensionality
+        #      number of graphs x 1
+        # adj_graphs is array of dimensionality
+        #      number of graphs x max number of nodes x max number of nodes
         # graph_targets is list of arrays
-        #      1 x number of graphs x number of classes
-        return [features, adj_graphs], graph_targets
+        #      number of graphs x number of classes
+        return [features, out_indices, adj_graphs], graph_targets
+
+    def __pad_array(self, data, pad_width):
+        return
 
     def on_epoch_end(self):
         """
