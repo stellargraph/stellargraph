@@ -542,8 +542,9 @@ class CorruptedSparseFullBatchSequence(SparseFullBatchSequence):
 
     def __getitem__(self, item):
 
-        shuffled_feats = self.features.copy()
+        shuffled_feats = np.squeeze(self.features.copy(), axis=0)
         np.random.shuffle(shuffled_feats)
+        shuffled_feats = np.expand_dims(shuffled_feats, axis=0)
 
         return [self.features, shuffled_feats, self.target_indices,
                 self.A_indices, self.A_values,], self.targets

@@ -926,3 +926,31 @@ class Test_FullBatchNodeGenerator:
             ppnp_sparse_failed = True
 
         assert ppnp_sparse_failed
+
+def test_corrupted_full_batch_sequence():
+
+    G, feats = create_graph_features()
+    nodes = G.nodes()
+    node_features = pd.DataFrame.from_dict(
+        {n: f for n, f in zip(nodes, feats)}, orient="index"
+    )
+    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+
+    generator = CorruptedFullBatchNodeGenerator(G)
+
+    gen = generator.flow(G.nodes())
+
+    [features, shuffled_feats, target_indices, A_indices, A_values, ], targets = gen.__getitem__(0)
+
+    assert features.shape == shuffled_feats.shape
+
+    # check shuffled_feats are feats
+    assert not np.array_equal(features, shuffled_feats,)
+
+    # check that all feature vecs in shuffled_feats correspond to a feature vec in features
+    assert all(
+        any(np.array_equal(shuffled_feats[:, i, :], features[:, j, :]) for j in range(features.shape[1]))
+        for i in range(shuffled_feats.shape[1])
+    )
+
+

@@ -522,7 +522,7 @@ class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
 
         if self.use_sparse:
             return CorruptedSparseFullBatchSequence(
-                self.features, self.Aadj, targets, node_indices
+                self.features, self.Aadj, targets, node_indices,
             )
         else:
             raise NotImplementedError
