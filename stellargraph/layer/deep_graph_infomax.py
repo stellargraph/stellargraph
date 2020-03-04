@@ -135,7 +135,8 @@ class InfoMax:
         A function to create the the inputs and outputs for an embedding model.
 
         Args:
-            model (keras.Model): the base Deep Graph Infomax model
+            model (keras.Model): the base Deep Graph Infomax model with inputs and outputs created from
+                InfoMax.unsupervised_node_model
         Returns:
             input and output layers for use with a keras model
         """
