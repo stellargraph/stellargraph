@@ -84,7 +84,17 @@ class InfoMax:
 
     def unsupervised_node_model(self):
         """
-        A function to create the the inputs and outputs for a Deep Graph Infomax model for unsupervised training.
+        A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
+
+        Note that the tf.nn.sigmoid_cross_entropy_with_logits loss must be used with this model.
+
+        Example:
+
+            ```
+            x_in, x_out = infomax.unsupervised_node_model()
+            model = Model(inputs=x_in, outputs=x_out)
+            model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, ...)
+            ```
 
         Returns:
             input and output layers for use with a keras model
