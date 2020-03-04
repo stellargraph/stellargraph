@@ -578,13 +578,15 @@ class GraphSequence(Sequence):
         return num_batches
 
     def __normalize_adj(self, adj):
-        # FIXME: This is not the correct adjacency matrix normalization for GCN
+        # FIXME: This is not the corr
+        adj = adj.tolil()
         adj.setdiag(1)  # add self loops
-        degree_matrix_diag = 1.0 / (adj.sum(axis=1) + 1)
+        degree_matrix_diag = 1.0 / np.sqrt(adj.sum(axis=1))
         degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
         degree_matrix = sparse.lil_matrix(adj.shape)
         degree_matrix.setdiag(degree_matrix_diag)
-        adj = degree_matrix.tocsr() @ adj
+        degree_matrix = degree_matrix.tocsr()
+        adj = degree_matrix @ adj @ degree_matrix
         return adj
 
     def __getitem__(self, index):
