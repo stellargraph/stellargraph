@@ -29,7 +29,6 @@ import numpy as np
 import warnings
 from collections import defaultdict, deque
 from scipy import stats
-from scipy.special import softmax
 
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
@@ -901,7 +900,11 @@ class TemporalRandomWalk(GraphWalk):
 
     def _exp_biases(self, times, t_0, decay):
         # t_0 assumed to be smaller than all time values
-        return softmax(t_0 - np.array(times) if decay else np.array(times) - t_0)
+        relative_times = t_0 - np.array(times) if decay else np.array(times) - t_0
+        dist = np.exp(relative_times - max(relative_times))
+        sum_dist = sum(dist)
+
+        return dist / sum_dist
 
     def _temporal_biases(self, times, time, bias_type, is_forward):
         if bias_type is None:
