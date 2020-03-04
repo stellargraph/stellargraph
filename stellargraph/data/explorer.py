@@ -901,8 +901,8 @@ class TemporalRandomWalk(GraphWalk):
     def _exp_biases(self, times, t_0, decay):
         # t_0 assumed to be smaller than all time values
         relative_times = t_0 - np.array(times) if decay else np.array(times) - t_0
-        dist = np.exp(relative_times - max(relative_times))
-        sum_dist = sum(dist)
+        dist = np.exp(relative_times - relative_times.max())
+        sum_dist = dist.sum()
 
         return dist / sum_dist
 
