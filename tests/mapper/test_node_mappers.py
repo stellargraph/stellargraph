@@ -909,12 +909,7 @@ class Test_FullBatchNodeGenerator:
 @pytest.mark.parametrize("sparse", [True, False])
 def test_corrupt_full_batch_generator(sparse):
 
-    G, feats = create_graph_features()
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, feats)}, orient="index"
-    )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
+    G, _ = create_graph_features()
 
     generator = FullBatchNodeGenerator(G, sparse=sparse)
 
