@@ -245,6 +245,8 @@ class StellarGraph:
                     "graph: expected no value when using 'nodes' and 'edges' parameters, found: {graph!r}"
                 )
 
+            raise ValueError("legacy constructor not allowed")
+
             nodes, edges = convert.from_networkx(
                 graph,
                 node_type_attr=node_type_name,
