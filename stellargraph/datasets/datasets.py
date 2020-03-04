@@ -23,6 +23,7 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 
 from .dataset_loader import DatasetLoader
 from ..core.graph import StellarGraph, StellarDiGraph
+import itertools
 import logging
 import os
 import pandas as pd
@@ -164,7 +165,52 @@ class PubMedDiabetes(
     source="https://linqs.soe.ucsc.edu/data",
     data_subdirectory_name="data",
 ):
-    pass
+    def load(self):
+        """
+        Load this graph into an undirected homogeneous graph, downloading it if required.
+
+        Returns:
+            A tuple where the first element is a :class:`StellarGraph` instance containing the graph
+            data and features, and the second element is a pandas Series of node class labels.
+        """
+        self.download()
+
+        directed, _graph, node = [self._resolve_path(f) for f in self.expected_files]
+        edgelist = pd.read_csv(
+            directed,
+            sep="\t",
+            skiprows=2,
+            header=None,
+            names=["id", "source", "pipe", "target"],
+            usecols=["source", "target"],
+        )
+        edgelist.source = edgelist.source.str.lstrip("paper:").astype(int)
+        edgelist.target = edgelist.target.str.lstrip("paper:").astype(int)
+
+        def parse_feature(feat):
+            name, value = feat.split("=")
+            return name, float(value)
+
+        def parse_line(line):
+            pid, raw_label, *raw_features, _summary = line.split("\t")
+            features = dict(parse_feature(feat) for feat in raw_features)
+            features["pid"] = int(pid)
+            features["label"] = int(parse_feature(raw_label)[1])
+            return features
+
+        with open(node) as fp:
+            node_data = pd.DataFrame(
+                parse_line(line) for line in itertools.islice(fp, 2, None)
+            )
+
+        node_data.fillna(0, inplace=True)
+        node_data.set_index("pid", inplace=True)
+
+        labels = node_data["label"]
+
+        nodes = node_data.drop(columns="label")
+
+        return StellarGraph({"paper": nodes}, {"cites": edgelist}), labels
 
 
 class BlogCatalog3(
