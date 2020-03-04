@@ -17,6 +17,7 @@
 import pytest
 import tempfile
 import os
+import numpy as np
 from stellargraph.datasets import *
 from urllib.error import URLError
 from stellargraph.datasets.dataset_loader import DatasetLoader
@@ -99,6 +100,28 @@ def test_blogcatalog3_load() -> None:
     assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
 
 
+def test_mutag_load() -> None:
+    graphs, labels = MUTAG().load()
+
+    n_graphs = 188
+
+    assert len(graphs) == n_graphs
+    assert len(labels) == n_graphs  # one label per graph
+
+    n_nodes = [g.number_of_nodes() for g in graphs]
+    n_edges = [g.number_of_edges() for g in graphs]
+
+    n_avg_nodes = np.mean(n_nodes)
+    max_nodes = np.max(n_nodes)
+
+    # average number of nodes should be 17.93085... or approximately 18.
+    assert n_avg_nodes == pytest.approx(17.9, 0.05)
+    assert sum(n_nodes) == 3371
+    assert sum(n_edges) == 7442
+    assert max_nodes == 28
+    assert set(labels) == {"-1", "1"}
+
+
 def test_movielens_load() -> None:
     g, edges_with_ratings = MovieLens().load()
 
@@ -117,13 +140,21 @@ def test_movielens_load() -> None:
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
-def test_cora_load(is_directed) -> None:
-    g, subjects = Cora().load(is_directed)
+@pytest.mark.parametrize("largest_cc_only", [False, True])
+def test_cora_load(is_directed, largest_cc_only) -> None:
+    g, subjects = Cora().load(is_directed, largest_cc_only)
+
+    if largest_cc_only:
+        expected_nodes = 2485
+        expected_edges = 5209
+    else:
+        expected_nodes = 2708
+        expected_edges = 5429
 
     assert g.is_directed() == is_directed
 
-    assert g.number_of_nodes() == 2708
-    assert g.number_of_edges() == 5429
+    assert g.number_of_nodes() == expected_nodes
+    assert g.number_of_edges() == expected_edges
 
     assert len(subjects) == g.number_of_nodes()
     assert set(subjects.index) == set(g.nodes())
@@ -136,3 +167,76 @@ def test_cora_load(is_directed) -> None:
         "Rule_Learning",
         "Theory",
     }
+
+
+def test_aifb_load() -> None:
+    g, affiliation = AIFB().load()
+
+    assert g.number_of_nodes() == 8285
+    assert g.number_of_edges() == 29043
+    # 'affiliation' and 'employs' are excluded
+    assert len(set(et for _, _, et in g.edges(include_edge_type=True))) == 47 - 2
+    assert g.node_feature_sizes() == {"default": 8285}
+
+    assert len(affiliation) == 178
+
+
+@pytest.mark.parametrize("largest_cc_only", [False, True])
+def test_citeseer_load(largest_cc_only) -> None:
+    g, subjects = CiteSeer().load(largest_cc_only)
+
+    if largest_cc_only:
+        expected_nodes = 2110
+        expected_edges = 3757
+    else:
+        expected_nodes = 3312
+        expected_edges = 4715
+
+    assert g.number_of_nodes() == expected_nodes
+    assert g.number_of_edges() == expected_edges
+
+    assert len(subjects) == g.number_of_nodes()
+    assert set(subjects.index) == set(g.nodes())
+
+    assert set(subjects) == {"AI", "Agents", "DB", "HCI", "IR", "ML"}
+
+
+def _knowledge_graph_load(dataset, nodes, rels, train, test, valid):
+    g, train_df, test_df, valid_df = dataset.load()
+
+    assert g.number_of_nodes() == nodes
+    assert g.number_of_edges() == train + test + valid
+    assert len({et for _, _, et in g.edges(include_edge_type=True)}) == rels
+
+    assert len(train_df) == train
+    assert len(test_df) == test
+    assert len(valid_df) == valid
+
+    cols = {"source", "label", "target"}
+    assert set(train_df.columns) == cols
+    assert set(test_df.columns) == cols
+    assert set(valid_df.columns) == cols
+
+
+def test_wn18_load() -> None:
+    _knowledge_graph_load(
+        WN18(), nodes=40943, rels=18, train=141442, test=5000, valid=5000,
+    )
+
+
+def test_wn18rr_load() -> None:
+    _knowledge_graph_load(
+        WN18RR(), nodes=40943, rels=11, train=86835, test=3134, valid=3034,
+    )
+
+
+def test_fb15k_load() -> None:
+    _knowledge_graph_load(
+        FB15k(), nodes=14951, rels=1345, train=483142, test=59071, valid=50000,
+    )
+
+
+def test_fb15k_237_load() -> None:
+    _knowledge_graph_load(
+        FB15k_237(), nodes=14541, rels=237, train=272115, test=20466, valid=17535,
+    )

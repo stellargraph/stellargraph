@@ -16,29 +16,18 @@
 from stellargraph.mapper import ClusterNodeGenerator, ClusterNodeSequence
 from stellargraph.core.graph import StellarGraph
 
-import networkx as nx
 import pandas as pd
 import numpy as np
 import pytest
 
 
 # FIXME (#535): Consider using graph fixtures
-def create_graph_features():
-    G = nx.Graph()
-    G.add_nodes_from(["a", "b", "c", "d"])
-    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c"), ("b", "d")])
-    return G, np.array([[1, 1], [1, 0], [0, 1], [0.5, 1]])
-
-
 def create_stellargraph():
-    Gnx, features = create_graph_features()
-    nodes = Gnx.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
+    nodes = pd.DataFrame([[1, 1], [1, 0], [0, 1], [0.5, 1]], index=["a", "b", "c", "d"])
+    edges = pd.DataFrame(
+        [("a", "b"), ("b", "c"), ("a", "c"), ("b", "d")], columns=["source", "target"]
     )
-    G = StellarGraph(Gnx, node_type_name="node", node_features=node_features)
-
-    return G
+    return StellarGraph(nodes, edges)
 
 
 def test_ClusterNodeSequence_init():
