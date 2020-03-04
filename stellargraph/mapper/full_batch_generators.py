@@ -23,7 +23,6 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
-    "corrupt_full_batch_node_generator",
 ]
 
 import warnings
@@ -504,30 +503,3 @@ class RelationalFullBatchNodeGenerator:
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
-
-
-def corrupt_full_batch_node_generator(generator):
-    """
-    This functions takes FullBatchNodeGenerator object and returns a Sequence object for training a full batch
-    Deep Graph Infomax model.
-
-    Args:
-        generator (FullBatchNodeGenerator): the node generator object
-    Returns:
-        a Sequence object for Deep Graph Infomax training
-    """
-
-    if not isinstance(generator, FullBatchNodeGenerator):
-        raise TypeError(
-            f"generator: expected FullBatchNodeGenerator, found {type(generator).__name__}"
-        )
-
-    num_nodes = generator.features.shape[0]
-    node_indices = np.arange(num_nodes)
-    targets = np.zeros((num_nodes, 2))
-    targets[:, 0] = 1.0
-
-    cls = SparseFullBatchSequence if generator.use_sparse else FullBatchSequence
-    return cls(
-        generator.features, generator.Aadj, targets, node_indices, corruption=True
-    )

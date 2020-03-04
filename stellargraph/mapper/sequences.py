@@ -25,6 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
+    "CorruptedNodeSequence",
 ]
 
 import warnings
@@ -83,7 +84,7 @@ class NodeSequence(Sequence):
             self.targets = None
 
         # Store the generator to draw samples from graph
-        if isinstance(sample_function, collections.Callable):
+        if isinstance(sample_function, collections.abc.Callable):
             self._sample_function = sample_function
         else:
             raise TypeError(
@@ -187,7 +188,7 @@ class LinkSequence(Sequence):
             raise ValueError("Length of link ids must match length of link targets")
 
         # Store the generator to draw samples from graph
-        if isinstance(sample_function, collections.Callable):
+        if isinstance(sample_function, collections.abc.Callable):
             self._sample_features = sample_function
         else:
             raise TypeError(
@@ -266,7 +267,7 @@ class OnDemandLinkSequence(Sequence):
 
     def __init__(self, sample_function, batch_size, walker, shuffle=True):
         # Store the generator to draw samples from graph
-        if isinstance(sample_function, collections.Callable):
+        if isinstance(sample_function, collections.abc.Callable):
             self._sample_features = sample_function
         else:
             raise TypeError(
@@ -366,13 +367,11 @@ class FullBatchSequence(Sequence):
             where C is the target size (e.g., number of classes for one-hot class targets)
         indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
             of the targets. Required if targets is not None.
-        corruption (bool): If True return shuffled features along with the regular features for Deep Graph
-            Infomax.
     """
 
     use_sparse = False
 
-    def __init__(self, features, A, targets=None, indices=None, corruption=False):
+    def __init__(self, features, A, targets=None, indices=None):
 
         if (targets is not None) and (len(indices) != len(targets)):
             raise ValueError(
@@ -382,8 +381,6 @@ class FullBatchSequence(Sequence):
         # Store features and targets as np.ndarray
         self.features = np.asanyarray(features)
         self.target_indices = np.asanyarray(indices)
-
-        self.corruption = corruption
 
         # Convert sparse matrix to dense:
         if sps.issparse(A) and hasattr(A, "toarray"):
@@ -406,14 +403,7 @@ class FullBatchSequence(Sequence):
         return 1
 
     def __getitem__(self, index):
-
-        if self.corruption:
-            shuffled_feats = np.squeeze(self.features.copy(), axis=0)
-            np.random.shuffle(shuffled_feats)
-            shuffled_feats = np.expand_dims(shuffled_feats, axis=0)
-            return [shuffled_feats,] + self.inputs, self.targets
-        else:
-            return self.inputs, self.targets
+        return self.inputs, self.targets
 
 
 class SparseFullBatchSequence(Sequence):
@@ -439,12 +429,11 @@ class SparseFullBatchSequence(Sequence):
             where C is the target size (e.g., number of classes for one-hot class targets)
         indices (np.ndarray, optional): Array of indices to the feature and adjacency matrix
             of the targets. Required if targets is not None.
-        corruption (bool, optional): Specifies whether to return shuffled features along with the regular features.
     """
 
     use_sparse = True
 
-    def __init__(self, features, A, targets=None, indices=None, corruption=False):
+    def __init__(self, features, A, targets=None, indices=None):
 
         if (targets is not None) and (len(indices) != len(targets)):
             raise ValueError(
@@ -457,8 +446,6 @@ class SparseFullBatchSequence(Sequence):
 
         else:
             raise ValueError("Adjacency matrix not in expected sparse format")
-
-        self.corruption = corruption
 
         # Convert matrices to list of indices & values
         self.A_indices = np.expand_dims(
@@ -482,14 +469,7 @@ class SparseFullBatchSequence(Sequence):
         return 1
 
     def __getitem__(self, index):
-
-        if self.corruption:
-            shuffled_feats = np.squeeze(self.features.copy(), axis=0)
-            np.random.shuffle(shuffled_feats)
-            shuffled_feats = np.expand_dims(shuffled_feats, axis=0)
-            return [shuffled_feats,] + self.inputs, self.targets
-        else:
-            return self.inputs, self.targets
+        return self.inputs, self.targets
 
 
 class RelationalFullBatchNodeSequence(Sequence):
@@ -548,3 +528,45 @@ class RelationalFullBatchNodeSequence(Sequence):
 
     def __getitem__(self, index):
         return self.inputs, self.targets
+
+
+class CorruptedNodeSequence(Sequence):
+    """
+    Keras compatible data generator that wraps a FullBatchSequence, SparseFullBatchSequence, or
+    RelationalFullBatchNodeSequence and provides corrupted data for training Deep Graph Infomax.
+
+    Args:
+        base_generator: the uncorrupted Sequence object.
+    """
+
+    def __init__(self, base_generator):
+
+        if not isinstance(
+            base_generator,
+            (
+                FullBatchSequence,
+                SparseFullBatchSequence,
+                RelationalFullBatchNodeSequence,
+            ),
+        ):
+            raise TypeError(
+                f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
+                f"or RelationalFullBatchNodeSequence, found {type(base_generator).__name__}"
+            )
+
+        self.base_generator = base_generator
+        self.targets = np.zeros((1, len(base_generator.target_indices), 2))
+        self.targets[0, :, 0] = 1.0
+
+    def __len__(self):
+        return self.base_generator.__len__()
+
+    def __getitem__(self, index):
+
+        inputs, _ = self.base_generator.__getitem__(index)
+        features = inputs[0]
+
+        shuffled_idxs = np.random.permutation(features.shape[1])
+        shuffled_feats = features[:, shuffled_idxs, :]
+
+        return [shuffled_feats] + inputs, self.targets

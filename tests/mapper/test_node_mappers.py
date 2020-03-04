@@ -940,7 +940,8 @@ def test_corrupt_full_batch_generator(sparse):
 
     generator = FullBatchNodeGenerator(G, sparse=sparse)
 
-    gen = corrupt_full_batch_node_generator(generator)
+    base_gen = generator.flow(G.nodes())
+    gen = CorruptedNodeSequence(base_gen)
 
     [shuffled_feats, features, *_], targets = gen.__getitem__(0)
 

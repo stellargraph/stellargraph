@@ -21,12 +21,7 @@ from tensorflow.keras import backend as K
 from ..core.experimental import experimental
 
 
-__all__ = [
-    "fullbatch_infomax_node_model",
-    "fullbatch_infomax_embedding_model",
-]
-
-_NODE_FEATS = "GCN_INFO_MAX_NODE_FEATURES"
+__all__ = ["InfoMax"]
 
 
 class Discriminator(Layer):
@@ -64,74 +59,77 @@ class Discriminator(Layer):
 
 
 @experimental(reason="lack of unit tests", issues=[1003])
-def fullbatch_infomax_node_model(base_model):
+class InfoMax:
     """
-    A function to create the the inputs and outputs for a Deep Graph Infomax model for unsupervised training.
+    A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
+    (https://arxiv.org/pdf/1809.10341.pdf).
 
     Args:
         base_model: the base stellargraph model class
-
-    Returns:
-        input and output layers for use with a keras model
     """
 
-    if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
-        raise TypeError(
-            f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+    _NODE_FEATS = "INFO_MAX_NODE_FEATURES"
+
+    def __init__(self, base_model):
+
+        if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+            raise TypeError(
+                f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+            )
+
+        self.base_model = base_model
+
+        # specific to full batch models
+        self.corruptible_inputs_idxs = [0]
+
+    def unsupervised_node_model(self):
+        """
+        A function to create the the inputs and outputs for a Deep Graph Infomax model for unsupervised training.
+
+        Returns:
+            input and output layers for use with a keras model
+        """
+        x_inp, node_feats = self.base_model.build(multiplicity=1)
+        x_corr = [
+            Input(batch_shape=x_inp[i].shape) for i in self.corruptible_inputs_idxs
+        ]
+
+        # shallow copy normal inputs and replace corruptible inputs with new inputs
+        x_in_corr = [x for x in x_inp]
+        for i, x in zip(self.corruptible_inputs_idxs, x_corr):
+            x_in_corr[i] = x
+
+        node_feats_corr = self.base_model(x_in_corr)
+
+        # squeezing is specific to full batch models
+        node_feats = Lambda(lambda x: K.squeeze(x, axis=0), name=self._NODE_FEATS)(
+            node_feats
+        )
+        node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(node_feats_corr)
+
+        summary = Lambda(lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0)))(
+            node_feats
         )
 
-    # Inputs for features
-    x_t = Input(batch_shape=(1, base_model.n_nodes, base_model.n_features))
-    # Inputs for shuffled features
-    x_corr = Input(batch_shape=(1, base_model.n_nodes, base_model.n_features))
+        discriminator = Discriminator()
+        scores = discriminator([node_feats, summary])
+        scores_corrupted = discriminator([node_feats_corrupted, summary])
 
-    out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        x_out = tf.stack([scores, scores_corrupted], axis=1)
 
-    # Create inputs for sparse or dense matrices
-    if base_model.use_sparse:
-        # Placeholders for the sparse adjacency matrix
-        A_indices_t = Input(batch_shape=(1, None, 2), dtype="int64")
-        A_values_t = Input(batch_shape=(1, None))
-        A_placeholders = [A_indices_t, A_values_t]
+        x_out = K.expand_dims(x_out, axis=0)
+        return x_corr + x_inp, x_out
 
-    else:
-        # Placeholders for the dense adjacency matrix
-        A_m = Input(batch_shape=(1, base_model.n_nodes, base_model.n_nodes))
-        A_placeholders = [A_m]
+    def embedding_model(self, model):
+        """
+        A function to create the the inputs and outputs for an embedding model.
 
-    x_inp = [x_corr, x_t, out_indices_t] + A_placeholders
+        Args:
+            model (keras.Model): the base Deep Graph Infomax model
+        Returns:
+            input and output layers for use with a keras model
+        """
+        x_emb_in = model.inputs[len(self.corruptible_inputs_idxs) :]
+        x_emb_out = model.get_layer(self._NODE_FEATS).output
 
-    node_feats = base_model([x_t, out_indices_t] + A_placeholders)
-    node_feats = Lambda(lambda x: K.squeeze(x, axis=0), name=_NODE_FEATS,)(node_feats)
-
-    node_feats_corrupted = base_model([x_corr, out_indices_t] + A_placeholders)
-    node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(node_feats_corrupted)
-
-    summary = Lambda(lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0)))(
-        node_feats
-    )
-
-    discriminator = Discriminator()
-    scores = discriminator([node_feats, summary])
-    scores_corrupted = discriminator([node_feats_corrupted, summary])
-
-    x_out = tf.stack([scores, scores_corrupted], axis=1)
-
-    x_out = K.expand_dims(x_out, axis=0)
-    return x_inp, x_out
-
-
-@experimental(reason="lack of unit tests", issues=[1003])
-def fullbatch_infomax_embedding_model(info_max_model):
-    """
-    A function to create the the inputs and outputs for an embedding model.
-
-    Args:
-        info_max_model (keras.Model): the base Deep Graph Infomax model
-    Returns:
-        input and output layers for use with a keras model
-    """
-    x_emb_in = info_max_model.inputs[1:]
-    x_emb_out = info_max_model.get_layer(_NODE_FEATS).output
-
-    return x_emb_in, x_emb_out
+        return x_emb_in, x_emb_out
