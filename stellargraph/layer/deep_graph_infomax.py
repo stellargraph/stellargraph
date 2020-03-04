@@ -88,6 +88,7 @@ class GCNInfoMax(GCN):
         bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
+    _NODE_FEATS = "GCN_INFO_MAX_NODE_FEATURES"
 
     def __init__(
         self,
@@ -147,7 +148,7 @@ class GCNInfoMax(GCN):
         x_inp = [x_corr, x_t, out_indices_t] + A_placeholders
 
         node_feats = self([x_t, out_indices_t] + A_placeholders)
-        node_feats = Lambda(lambda x: K.squeeze(x, axis=0,), name="NODE_FEATURES",)(
+        node_feats = Lambda(lambda x: K.squeeze(x, axis=0,), name=self._NODE_FEATS,)(
             node_feats
         )
 
@@ -179,6 +180,6 @@ class GCNInfoMax(GCN):
             input and output layers for use with a keras model
         """
         x_emb_in = model.inputs
-        x_emb_out = model.get_layer("NODE_FEATURES").output
+        x_emb_out = model.get_layer(self._NODE_FEATS).output
 
         return x_emb_in, x_emb_out
