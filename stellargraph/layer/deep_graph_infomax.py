@@ -19,11 +19,10 @@ from ..core.experimental import experimental
 
 from tensorflow.keras.layers import Input, Dense, Lambda, Layer
 import tensorflow as tf
-from tensorflow.linalg import matmul
-from tensorflow.math import reduce_mean, sigmoid
 from tensorflow.keras import backend as K
 
 __all__ = ["InfoMax"]
+
 
 class Discriminator(Layer):
     """
@@ -54,7 +53,7 @@ class Discriminator(Layer):
         """
         features, summary = inputs
 
-        score = matmul(features, matmul(self.kernel, summary))
+        score = tf.linalg.matvec(features, tf.linalg.matvec(self.kernel, summary))
 
         return score
 
@@ -108,7 +107,7 @@ class InfoMax:
         )
         node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(node_feats_corr)
 
-        summary = Lambda(lambda x: sigmoid(reduce_mean(x, axis=0)))(
+        summary = Lambda(lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0)))(
             node_feats
         )
 
