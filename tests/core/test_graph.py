@@ -803,61 +803,61 @@ StellarGraph: Undirected multigraph
     Edge types: n_21-e_0->n_21, n_21-e_1->n_21, n_21-e_10->n_21, n_21-e_11->n_21, n_21-e_12->n_21, ... (18 more)
   n_20: [41]
     Features: none
-    Edge types: 
+    Edge types: none
   n_19: [39]
     Features: none
-    Edge types: 
+    Edge types: none
   n_18: [37]
     Features: none
-    Edge types: 
+    Edge types: none
   n_17: [35]
     Features: none
-    Edge types: 
+    Edge types: none
   n_16: [33]
     Features: none
-    Edge types: 
+    Edge types: none
   n_15: [31]
     Features: none
-    Edge types: 
+    Edge types: none
   n_14: [29]
     Features: none
-    Edge types: 
+    Edge types: none
   n_13: [27]
     Features: none
-    Edge types: 
+    Edge types: none
   n_12: [25]
     Features: none
-    Edge types: 
+    Edge types: none
   n_11: [23]
     Features: none
-    Edge types: 
+    Edge types: none
   n_10: [21]
     Features: none
-    Edge types: 
+    Edge types: none
   n_9: [19]
     Features: none
-    Edge types: 
+    Edge types: none
   n_8: [17]
     Features: none
-    Edge types: 
+    Edge types: none
   n_7: [15]
     Features: none
-    Edge types: 
+    Edge types: none
   n_6: [13]
     Features: none
-    Edge types: 
+    Edge types: none
   n_5: [11]
     Features: none
-    Edge types: 
+    Edge types: none
   n_4: [9]
     Features: none
-    Edge types: 
+    Edge types: none
   n_3: [7]
     Features: none
-    Edge types: 
+    Edge types: none
   n_2: [5]
     Features: none
-    Edge types: 
+    Edge types: none
   ... (2 more)
 
  Edge types:
@@ -896,7 +896,7 @@ StellarGraph: Undirected multigraph
     Edge types: n_21-e_0->n_21, n_21-e_1->n_21, ... (21 more)
   n_20: [41]
     Features: none
-    Edge types: 
+    Edge types: none
   ... (20 more)
 
  Edge types:
@@ -917,67 +917,67 @@ StellarGraph: Undirected multigraph
     Edge types: n_21-e_0->n_21, n_21-e_1->n_21, n_21-e_10->n_21, n_21-e_11->n_21, n_21-e_12->n_21, ... (18 more)
   n_20: [41]
     Features: none
-    Edge types: 
+    Edge types: none
   n_19: [39]
     Features: none
-    Edge types: 
+    Edge types: none
   n_18: [37]
     Features: none
-    Edge types: 
+    Edge types: none
   n_17: [35]
     Features: none
-    Edge types: 
+    Edge types: none
   n_16: [33]
     Features: none
-    Edge types: 
+    Edge types: none
   n_15: [31]
     Features: none
-    Edge types: 
+    Edge types: none
   n_14: [29]
     Features: none
-    Edge types: 
+    Edge types: none
   n_13: [27]
     Features: none
-    Edge types: 
+    Edge types: none
   n_12: [25]
     Features: none
-    Edge types: 
+    Edge types: none
   n_11: [23]
     Features: none
-    Edge types: 
+    Edge types: none
   n_10: [21]
     Features: none
-    Edge types: 
+    Edge types: none
   n_9: [19]
     Features: none
-    Edge types: 
+    Edge types: none
   n_8: [17]
     Features: none
-    Edge types: 
+    Edge types: none
   n_7: [15]
     Features: none
-    Edge types: 
+    Edge types: none
   n_6: [13]
     Features: none
-    Edge types: 
+    Edge types: none
   n_5: [11]
     Features: none
-    Edge types: 
+    Edge types: none
   n_4: [9]
     Features: none
-    Edge types: 
+    Edge types: none
   n_3: [7]
     Features: none
-    Edge types: 
+    Edge types: none
   n_2: [5]
     Features: none
-    Edge types: 
+    Edge types: none
   n_1: [3]
     Features: none
-    Edge types: 
+    Edge types: none
   n_0: [1]
     Features: none
-    Edge types: 
+    Edge types: none
 
  Edge types:
     n_21-e_22->n_21: [45]
