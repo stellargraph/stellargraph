@@ -22,6 +22,9 @@ import numpy as np
 import warnings
 
 
+_BINARY_OPERATORS = ["h", "avg", "l1", "l2"]
+
+
 def _operator_hadamard(u, v):
     return u * v
 
@@ -64,20 +67,19 @@ class LinkPredictionClassifier:
 
     """
 
-    _BINARY_OPERATORS = ["h", "avg", "l1", "l2"]
-
     def __init__(self, transform_node, binary_operators=None):
         self.transform_node = transform_node
         if binary_operators is not None:
             self._binary_operators = binary_operators
         else:
-            self._binary_operators = self._BINARY_OPERATORS
+            self._binary_operators = _BINARY_OPERATORS
         self._classifiers = dict()
 
-    def _transform_node_pairs(self, link_examples):
+    def _transform_node_pairs(self, link_examples, transform_node=None):
+        if transform_node is None:
+            transform_node = self.transform_node
         return [
-            (self.transform_node(src), self.transform_node(dst))
-            for src, dst in link_examples
+            (transform_node(src), transform_node(dst)) for src, dst in link_examples
         ]
 
     def fit(self, link_examples, link_labels, max_iter=500):
@@ -116,12 +118,14 @@ class LinkPredictionClassifier:
             clf.fit(link_features, link_labels)
             self._classifiers[binary_operator] = clf
 
-    def predict(self, link_examples, binary_operators=None):
+    def predict(self, link_examples, transform_node=None, binary_operators=None):
         """
         Predict links using trained classifiers.
 
         Args:
             link_examples (list of tuple): Tuples of links to predict (source, target)
+            transform_node (callable, optional): If provided, use this function to transform node
+                IDs into node features instead of the one used to train the classifiers.
             binary_operators (list of str, optional): If provided, only predict using these binary
                 operators regardless of which classifiers have been trained. By default, all trained
                 classifiers are used.
@@ -129,7 +133,7 @@ class LinkPredictionClassifier:
         Returns:
             Dict of predictions grouped by binary operator
         """
-        node_feature_pairs = self._transform_node_pairs(link_examples)
+        node_feature_pairs = self._transform_node_pairs(link_examples, transform_node)
         predictions = dict()
 
         if binary_operators is None:
@@ -151,7 +155,9 @@ class LinkPredictionClassifier:
 
         return predictions
 
-    def evaluate(self, link_examples, link_labels):
+    def evaluate_roc_auc(
+        self, link_examples, link_labels, transform_node=None, binary_operators=None
+    ):
         """
         Evaluate trained classifiers using the provided test set.
 
@@ -159,11 +165,16 @@ class LinkPredictionClassifier:
             link_examples (list of tuple): Tuples of test set links to predict (source, target)
             link_labels (list of int): List of labels corresponding to link examples - 1 for positive,
                 0 for negative.
+            transform_node (callable, optional): If provided, use this function to transform node
+                IDs into node features instead of the one used to train the classifiers.
+            binary_operators (list of str, optional): If provided, only predict using these binary
+                operators regardless of which classifiers have been trained. By default, all trained
+                classifiers are used.
 
         Returns:
             Dict of Scores grouped by binary operator
         """
-        predictions = self.predict(link_examples)
+        predictions = self.predict(link_examples, transform_node, binary_operators)
         scores = dict()
         for binary_operator, predicted in predictions.items():
             if self._classifiers[binary_operator].classes_[0] == 1:
