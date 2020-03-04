@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import GCN
+from . import GCN, GAT, APPNP, PPNP
 from tensorflow.keras.layers import Input, Dense, Lambda, Layer
 import tensorflow as tf
 from tensorflow.keras import backend as K
@@ -27,6 +27,7 @@ __all__ = [
 ]
 
 _NODE_FEATS = "GCN_INFO_MAX_NODE_FEATURES"
+
 
 class Discriminator(Layer):
     """
@@ -73,6 +74,12 @@ def fullbatch_infomax_node_model(base_model):
     Returns:
         input and output layers for use with a keras model
     """
+
+    if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+        raise TypeError(
+            f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+        )
+
     # Inputs for features
     x_t = Input(batch_shape=(1, base_model.n_nodes, base_model.n_features))
     # Inputs for shuffled features
@@ -95,14 +102,10 @@ def fullbatch_infomax_node_model(base_model):
     x_inp = [x_corr, x_t, out_indices_t] + A_placeholders
 
     node_feats = base_model([x_t, out_indices_t] + A_placeholders)
-    node_feats = Lambda(lambda x: K.squeeze(x, axis=0), name=_NODE_FEATS,)(
-        node_feats
-    )
+    node_feats = Lambda(lambda x: K.squeeze(x, axis=0), name=_NODE_FEATS,)(node_feats)
 
     node_feats_corrupted = base_model([x_corr, out_indices_t] + A_placeholders)
-    node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(
-        node_feats_corrupted
-    )
+    node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(node_feats_corrupted)
 
     summary = Lambda(lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0)))(
         node_feats
@@ -128,7 +131,7 @@ def fullbatch_infomax_embedding_model(info_max_model):
     Returns:
         input and output layers for use with a keras model
     """
-    x_emb_in = info_max_model.inputs
+    x_emb_in = info_max_model.inputs[1:]
     x_emb_out = info_max_model.get_layer(_NODE_FEATS).output
 
     return x_emb_in, x_emb_out
