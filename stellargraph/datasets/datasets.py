@@ -33,6 +33,46 @@ from sklearn import preprocessing
 log = logging.getLogger(__name__)
 
 
+def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
+    assert isinstance(dataset, (Cora, CiteSeer))
+    dataset.download()
+
+    # expected_files should be in this order
+    cites, content = [dataset._resolve_path(name) for name in dataset.expected_files]
+
+    feature_names = ["w_{}".format(ii) for ii in range(dataset._NUM_FEATURES)]
+    subject = "subject"
+    column_names = feature_names + [subject]
+    node_data = pd.read_csv(
+        content,
+        sep="\t",
+        header=None,
+        names=column_names,
+        dtype={0: dataset._NODES_DTYPE},
+    )
+
+    edgelist = pd.read_csv(
+        cites,
+        sep="\t",
+        header=None,
+        names=["target", "source"],
+        dtype=dataset._NODES_DTYPE,
+    )
+
+    valid_source = node_data.index.get_indexer(edgelist.source) >= 0
+    valid_target = node_data.index.get_indexer(edgelist.target) >= 0
+    edgelist = edgelist[valid_source & valid_target]
+
+    cls = StellarDiGraph if directed else StellarGraph
+    graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+    if largest_connected_component_only:
+        cc_ids = next(graph.connected_components())
+        return graph.subgraph(cc_ids), node_data[subject][cc_ids]
+
+    return graph, node_data[subject]
+
+
 class Cora(
     DatasetLoader,
     name="Cora",
@@ -45,6 +85,10 @@ class Cora(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 1433 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
+
+    _NODES_DTYPE = int
+    _NUM_FEATURES = 1433
+
     def load(self, directed=False, largest_connected_component_only=False):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
@@ -63,32 +107,7 @@ class Cora(
             :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
             and edges, and the second element is a pandas Series of the node subject class labels.
         """
-        self.download()
-        edgelist = pd.read_csv(
-            self._resolve_path("cora.cites"),
-            sep="\t",
-            header=None,
-            names=["target", "source"],
-        )
-
-        feature_names = ["w_{}".format(ii) for ii in range(1433)]
-        subject = "subject"
-        column_names = feature_names + [subject]
-        node_data = pd.read_csv(
-            self._resolve_path("cora.content"),
-            sep="\t",
-            header=None,
-            names=column_names,
-        )
-
-        cls = StellarDiGraph if directed else StellarGraph
-        graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
-
-        if largest_connected_component_only:
-            cc_ids = next(graph.connected_components())
-            return graph.subgraph(cc_ids), node_data[subject][cc_ids]
-
-        return graph, node_data[subject]
+        return _load_cora_or_citeseer(self, directed, largest_connected_component_only)
 
 
 class CiteSeer(
@@ -99,11 +118,33 @@ class CiteSeer(
     url_archive_format="gztar",
     expected_files=["citeseer.cites", "citeseer.content"],
     description="The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. "
-    "The citation network consists of 4732 links. Each publication in the dataset is described by a 0/1-valued word vector "
+    "The citation network consists of 4732 links, although 17 of these have a source or target publication that isn't in the dataset and only 4715 are included in the graph. "
+    "Each publication in the dataset is described by a 0/1-valued word vector "
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    pass
+    # some node IDs are integers like 100157 and some are strings like
+    # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all to
+    # be treated as strings.
+    _NODES_DTYPE = str
+    _NUM_FEATURES = 3703
+
+    def load(self, largest_connected_component_only=False):
+        """
+        Load this dataset into an undirected homogeneous graph, downloading it if required.
+
+        The node feature vectors are included.
+
+        Args:
+            largest_connected_component_only (bool): if True, returns only the largest connected
+                component, not the whole graph.
+
+        Returns:
+            A tuple where the first element is the :class:`StellarGraph` object with the nodes, node
+            feature vectors and edges, and the second element is a pandas Series of the node subject
+            class labels.
+        """
+        return _load_cora_or_citeseer(self, False, largest_connected_component_only)
 
 
 class PubMedDiabetes(
@@ -477,3 +518,146 @@ class MUTAG(
             graphs.append(graph)
 
         return graphs, df_graph_labels["label"]
+
+
+def _load_tsv_knowledge_graph(dataset):
+    dataset.download()
+
+    train, test, valid = [
+        pd.read_csv(
+            dataset._resolve_path(name), sep="\t", names=["source", "label", "target"]
+        )
+        for name in dataset.expected_files
+    ]
+
+    all_data = pd.concat([train, test, valid], ignore_index=True)
+
+    node_ids = pd.unique(pd.concat([all_data.source, all_data.target]))
+    nodes = pd.DataFrame(index=node_ids)
+
+    edges = {name: df.drop(columns="label") for name, df in all_data.groupby("label")}
+
+    return StellarDiGraph(nodes=nodes, edges=edges), train, test, valid
+
+
+class WN18(
+    DatasetLoader,
+    name="WN18",
+    directory_name="wordnet-mlj12",
+    url="https://ndownloader.figshare.com/files/21768732",
+    url_archive_format="zip",
+    expected_files=[
+        "wordnet-mlj12-train.txt",
+        "wordnet-mlj12-test.txt",
+        "wordnet-mlj12-valid.txt",
+    ],
+    description="The WN18 dataset consists of triplets from WordNet 3.0 (http://wordnet.princeton.edu). There are "
+    "40,943 synsets and 18 relation types among them. The training set contains 141442 triplets, the "
+    "validation set 5000 and the test set 5000. "
+    "Antoine Bordes, Xavier Glorot, Jason Weston and Yoshua Bengio “A Semantic Matching Energy Function for Learning with Multi-relational Data” (2014).\n\n"
+    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results. Prefer WN18RR. See: "
+    "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015), and "
+    "Dettmers, Tim, Pasquale Minervini, Pontus Stenetorp and Sebastian Riedel “Convolutional 2D Knowledge Graph Embeddings” (2017).",
+    source="https://everest.hds.utc.fr/doku.php?id=en:transe",
+):
+    def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
+        return _load_tsv_knowledge_graph(self)
+
+
+class WN18RR(
+    DatasetLoader,
+    name="WN18RR",
+    directory_name="WN18RR",
+    url="https://ndownloader.figshare.com/files/21844185",
+    url_archive_format="zip",
+    expected_files=["train.txt", "test.txt", "valid.txt"],
+    description="The WN18RR dataset consists of triplets from WordNet 3.0 (http://wordnet.princeton.edu). There are "
+    "40,943 synsets and 11 relation types among them. The training set contains 86835 triplets, the validation set 3034 and the test set 3134. "
+    "It is a reduced version of WN18 where inverse relations have been removed."
+    "Tim Dettmers, Pasquale Minervini, Pontus Stenetorp and Sebastian Riedel “Convolutional 2D Knowledge Graph Embeddings” (2017).",
+    source="https://github.com/TimDettmers/ConvE",
+):
+    def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
+        return _load_tsv_knowledge_graph(self)
+
+
+class FB15k(
+    DatasetLoader,
+    name="FB15k",
+    directory_name="FB15k",
+    url="https://ndownloader.figshare.com/files/21768729",
+    url_archive_format="zip",
+    expected_files=[
+        "freebase_mtr100_mte100-train.txt",
+        "freebase_mtr100_mte100-test.txt",
+        "freebase_mtr100_mte100-valid.txt",
+    ],
+    description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
+    "extracted from Freebase (http://www.freebase.com). There are 14,951 mids and 1,345 relation types among them. "
+    "The training set contains 483142 triplets, the validation set 50000 and the test set 59071. "
+    "Antoine Bordes, Nicolas Usunier, Alberto Garcia-Durán, Jason Weston and Oksana Yakhnenko “Translating Embeddings for Modeling Multi-relational Data” (2013).\n\n"
+    "Note: this dataset contains many inverse relations, and so should only be used to compare against published results. Prefer FB15k_237. See: "
+    "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015), and "
+    "Dettmers, Tim, Pasquale Minervini, Pontus Stenetorp and Sebastian Riedel “Convolutional 2D Knowledge Graph Embeddings” (2017).",
+    source="https://everest.hds.utc.fr/doku.php?id=en:transe",
+):
+    def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
+        return _load_tsv_knowledge_graph(self)
+
+
+class FB15k_237(
+    DatasetLoader,
+    name="FB15k-237",
+    directory_name="FB15k-237",
+    url="https://ndownloader.figshare.com/files/21844209",
+    url_archive_format="zip",
+    expected_files=["train.txt", "test.txt", "valid.txt"],
+    description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
+    "extracted from Freebase (http://www.freebase.com). There are 14541 mids and 237 relation types among them. "
+    "The training set contains 272115 triplets, the validation set 17535 and the test set 20466."
+    "It is a reduced version of FB15k where inverse relations have been removed."
+    "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015).",
+    source="https://github.com/TimDettmers/ConvE",
+):
+    def load(self):
+        """
+        Load this data into a directed heterogeneous graph.
+
+        Returns:
+            A tuple ``(graph, train, test, validation)`` where ``graph`` is a
+            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
+            (the relation type). The three DataFrames together make up the edges included in
+            ``graph``.
+        """
+        return _load_tsv_knowledge_graph(self)

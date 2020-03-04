@@ -122,7 +122,7 @@ class BatchedLinkGenerator(abc.ABC):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
         # Otherwise pass iterable (check?) to standard LinkSequence
-        elif isinstance(link_ids, collections.Iterable):
+        elif isinstance(link_ids, collections.abc.Iterable):
             # Check all IDs are actually in the graph and are of expected type
             for link in link_ids:
                 if len(link) != 2:

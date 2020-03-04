@@ -179,3 +179,64 @@ def test_aifb_load() -> None:
     assert g.node_feature_sizes() == {"default": 8285}
 
     assert len(affiliation) == 178
+
+
+@pytest.mark.parametrize("largest_cc_only", [False, True])
+def test_citeseer_load(largest_cc_only) -> None:
+    g, subjects = CiteSeer().load(largest_cc_only)
+
+    if largest_cc_only:
+        expected_nodes = 2110
+        expected_edges = 3757
+    else:
+        expected_nodes = 3312
+        expected_edges = 4715
+
+    assert g.number_of_nodes() == expected_nodes
+    assert g.number_of_edges() == expected_edges
+
+    assert len(subjects) == g.number_of_nodes()
+    assert set(subjects.index) == set(g.nodes())
+
+    assert set(subjects) == {"AI", "Agents", "DB", "HCI", "IR", "ML"}
+
+
+def _knowledge_graph_load(dataset, nodes, rels, train, test, valid):
+    g, train_df, test_df, valid_df = dataset.load()
+
+    assert g.number_of_nodes() == nodes
+    assert g.number_of_edges() == train + test + valid
+    assert len({et for _, _, et in g.edges(include_edge_type=True)}) == rels
+
+    assert len(train_df) == train
+    assert len(test_df) == test
+    assert len(valid_df) == valid
+
+    cols = {"source", "label", "target"}
+    assert set(train_df.columns) == cols
+    assert set(test_df.columns) == cols
+    assert set(valid_df.columns) == cols
+
+
+def test_wn18_load() -> None:
+    _knowledge_graph_load(
+        WN18(), nodes=40943, rels=18, train=141442, test=5000, valid=5000,
+    )
+
+
+def test_wn18rr_load() -> None:
+    _knowledge_graph_load(
+        WN18RR(), nodes=40943, rels=11, train=86835, test=3134, valid=3034,
+    )
+
+
+def test_fb15k_load() -> None:
+    _knowledge_graph_load(
+        FB15k(), nodes=14951, rels=1345, train=483142, test=59071, valid=50000,
+    )
+
+
+def test_fb15k_237_load() -> None:
+    _knowledge_graph_load(
+        FB15k_237(), nodes=14541, rels=237, train=272115, test=20466, valid=17535,
+    )
