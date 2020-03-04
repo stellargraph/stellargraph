@@ -24,7 +24,7 @@ import pytest
 
 
 def create_graph_features():
-    # APPNP, ClusterGCN, GCN, PPNP, node_mappers
+    # APPNP, ClusterGCN, GCN, PPNP, node_mappers, full_batch_generators
     features = np.array([[1, 1], [1, 0], [0, 1]])
     nodes = pd.DataFrame(features, index=["a", "b", "c"])
     edges = pd.DataFrame(
@@ -63,7 +63,10 @@ def example_graph_nx(
     return graph
 
 
-def _repeated_features(values_to_repeat, width):
+def repeated_features(values_to_repeat, width):
+    if width is None:
+        return []
+
     column = np.expand_dims(values_to_repeat, axis=1)
     return column.repeat(width, axis=1)
 
@@ -77,10 +80,7 @@ def example_graph(
 ):
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
     nodes = [1, 2, 3, 4]
-    if feature_size is not None:
-        features = _repeated_features(nodes, feature_size)
-    else:
-        features = []
+    features = repeated_features(nodes, feature_size)
 
     nodes = pd.DataFrame(features, index=nodes)
 
@@ -118,7 +118,7 @@ def example_hin_1(
             return []
         else:
             feature_size = feature_sizes.get(label, 10)
-            return _repeated_features(ids, feature_size)
+            return repeated_features(ids, feature_size)
 
     a_ids = [0, 1, 2, 3]
     a = pd.DataFrame(features("A", a_ids), index=a_ids)
