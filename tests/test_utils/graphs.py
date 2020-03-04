@@ -111,11 +111,7 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None,
-    is_directed=False,
-    self_loop=False,
-    node_types=("A", "B"),
-    edge_types=("R", "F"),
+    feature_sizes=None, is_directed=False, self_loop=False
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
@@ -124,14 +120,11 @@ def example_hin_1(
             feature_size = feature_sizes.get(label, 10)
             return repeated_features(ids, feature_size)
 
-    a_type, b_type = node_types
-    r_type, f_type = edge_types
-
     a_ids = [0, 1, 2, 3]
-    a = pd.DataFrame(features(a_type, a_ids), index=a_ids)
+    a = pd.DataFrame(features("A", a_ids), index=a_ids)
 
     b_ids = [4, 5, 6]
-    b = pd.DataFrame(features(b_type, b_ids), index=b_ids)
+    b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
     r = pd.DataFrame(
         [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
@@ -150,7 +143,7 @@ def example_hin_1(
     f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
 
     cls = StellarDiGraph if is_directed else StellarGraph
-    return cls(nodes={a_type: a, b_type: b}, edges={r_type: r, f_type: f})
+    return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
 
 
 def create_test_graph(is_directed=False):

@@ -48,19 +48,10 @@ from .. import test_utils
 pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
-# FIXME (#535): Consider using graph fixtures
-def example_HIN_1(feature_size_by_type=None):
-    return example_hin_1(
-        feature_size_by_type,
-        node_types=("movie", "user"),
-        edge_types=("rating", "friend"),
-    )
-
-
 def example_HIN_homo(feature_size_by_type=None):
     nlist = [0, 1, 2, 3, 4, 5]
     if feature_size_by_type is not None:
-        features = repeated_features(nlist, feature_size_by_type["user"])
+        features = repeated_features(nlist, feature_size_by_type["B"])
     else:
         features = []
 
@@ -69,7 +60,7 @@ def example_HIN_homo(feature_size_by_type=None):
         [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], columns=["source", "target"]
     )
 
-    return StellarGraph({"user": nodes}, {"friend": edges})
+    return StellarGraph({"B": nodes}, {"F": edges})
 
 
 def example_hin_random(
@@ -424,7 +415,7 @@ class Test_HinSAGELinkGenerator(object):
     Tests of HinSAGELinkGenerator class
     """
 
-    n_feat = {"user": 5, "movie": 10}
+    n_feat = {"B": 5, "A": 10}
     batch_size = 2
     num_samples = [2, 3]
 
@@ -439,16 +430,16 @@ class Test_HinSAGELinkGenerator(object):
             G,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            head_node_types=["user", "user"],
+            head_node_types=["B", "B"],
         )
         mapper = gen.flow(links, link_labels)
 
         assert mapper.data_size == len(links)
         assert len(mapper.ids) == len(links)
-        assert tuple(gen.head_node_types) == ("user", "user")
+        assert tuple(gen.head_node_types) == ("B", "B")
 
         # Constructor with a heterogeneous graph:
-        G = example_HIN_1(self.n_feat)
+        G = example_hin_1(self.n_feat)
         links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # ('movie', 'user') links
         link_labels = [0] * len(links)
 
@@ -456,17 +447,17 @@ class Test_HinSAGELinkGenerator(object):
             G,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            head_node_types=["movie", "user"],
+            head_node_types=["A", "B"],
         )
         mapper = gen.flow(links, link_labels)
 
         assert mapper.data_size == len(links)
         assert len(mapper.ids) == len(links)
         assert mapper.data_size == len(link_labels)
-        assert tuple(gen.head_node_types) == ("movie", "user")
+        assert tuple(gen.head_node_types) == ("A", "B")
 
     def test_HinSAGELinkGenerator_constructor_multiple_link_types(self):
-        G = example_HIN_1(self.n_feat)
+        G = example_hin_1(self.n_feat)
 
         # first 3 are ('movie', 'user') links, the last is ('user', 'movie') link.
         links = [(1, 4), (1, 5), (0, 4), (5, 0)]
@@ -477,7 +468,7 @@ class Test_HinSAGELinkGenerator(object):
                 G,
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
-                head_node_types=["movie", "user"],
+                head_node_types=["A", "B"],
             ).flow(links, link_labels)
 
         # all edges in G, which have multiple link types
@@ -489,11 +480,11 @@ class Test_HinSAGELinkGenerator(object):
                 G,
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
-                head_node_types=["user", "user"],
+                head_node_types=["B", "B"],
             ).flow(links, link_labels)
 
     def test_HinSAGELinkGenerator_1(self):
-        G = example_HIN_1(self.n_feat)
+        G = example_hin_1(self.n_feat)
         links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
         data_size = len(links)
         link_labels = [0] * data_size
@@ -502,7 +493,7 @@ class Test_HinSAGELinkGenerator(object):
             G,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            head_node_types=["movie", "user"],
+            head_node_types=["A", "B"],
         ).flow(links, link_labels)
 
         assert len(mapper) == 2
@@ -510,47 +501,47 @@ class Test_HinSAGELinkGenerator(object):
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
             assert len(nf) == 10
-            assert nf[0].shape == (self.batch_size, 1, self.n_feat["movie"])
-            assert nf[1].shape == (self.batch_size, 1, self.n_feat["user"])
+            assert nf[0].shape == (self.batch_size, 1, self.n_feat["A"])
+            assert nf[1].shape == (self.batch_size, 1, self.n_feat["B"])
             assert nf[2].shape == (
                 self.batch_size,
                 self.num_samples[0],
-                self.n_feat["user"],
+                self.n_feat["B"],
             )
             assert nf[3].shape == (
                 self.batch_size,
                 self.num_samples[0],
-                self.n_feat["user"],
+                self.n_feat["B"],
             )
             assert nf[4].shape == (
                 self.batch_size,
                 self.num_samples[0],
-                self.n_feat["movie"],
+                self.n_feat["A"],
             )
             assert nf[5].shape == (
                 self.batch_size,
                 np.multiply(*self.num_samples),
-                self.n_feat["user"],
+                self.n_feat["B"],
             )
             assert nf[6].shape == (
                 self.batch_size,
                 np.multiply(*self.num_samples),
-                self.n_feat["movie"],
+                self.n_feat["A"],
             )
             assert nf[7].shape == (
                 self.batch_size,
                 np.multiply(*self.num_samples),
-                self.n_feat["user"],
+                self.n_feat["B"],
             )
             assert nf[8].shape == (
                 self.batch_size,
                 np.multiply(*self.num_samples),
-                self.n_feat["movie"],
+                self.n_feat["A"],
             )
             assert nf[9].shape == (
                 self.batch_size,
                 np.multiply(*self.num_samples),
-                self.n_feat["user"],
+                self.n_feat["B"],
             )
 
         with pytest.raises(IndexError):
@@ -558,13 +549,13 @@ class Test_HinSAGELinkGenerator(object):
 
     def test_HinSAGELinkGenerator_shuffle(self):
         def test_edge_consistency(shuffle):
-            G = example_HIN_1({"user": 1, "movie": 1})
+            G = example_hin_1({"B": 1, "A": 1})
             edges = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
             data_size = len(edges)
             edge_labels = np.arange(data_size)
 
             mapper = HinSAGELinkGenerator(
-                G, batch_size=2, num_samples=[0], head_node_types=["movie", "user"]
+                G, batch_size=2, num_samples=[0], head_node_types=["A", "B"]
             ).flow(edges, edge_labels, shuffle=shuffle)
 
             assert len(mapper) == 2
@@ -584,7 +575,7 @@ class Test_HinSAGELinkGenerator(object):
         """
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
-        G = example_HIN_1(self.n_feat)
+        G = example_hin_1(self.n_feat)
         links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
         data_size = len(links)
 
@@ -592,7 +583,7 @@ class Test_HinSAGELinkGenerator(object):
             G,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
-            head_node_types=["movie", "user"],
+            head_node_types=["A", "B"],
         ).flow(links)
         for i in range(len(gen)):
             assert gen[i][1] is None

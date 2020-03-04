@@ -26,7 +26,6 @@ import pytest
 from ..test_utils.graphs import example_graph_random
 
 
-# FIXME (#535): Consider using graph fixtures
 def example_Graph_2(feature_size=None, n_nodes=100, n_edges=200):
     return example_graph_random(feature_size, n_edges, n_nodes, n_isolates=0)
 
