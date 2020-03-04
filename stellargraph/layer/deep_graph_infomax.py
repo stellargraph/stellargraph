@@ -55,7 +55,7 @@ class Discriminator(Layer):
         """
         features, summary = inputs
 
-        score = tf.linalg.matvec(tf.linalg.matmul(features, self.kernel), summary,)
+        score = tf.linalg.matvec(tf.linalg.matmul(features, self.kernel), summary)
 
         return score
 
@@ -148,12 +148,12 @@ class GCNInfoMax(GCN):
         x_inp = [x_corr, x_t, out_indices_t] + A_placeholders
 
         node_feats = self([x_t, out_indices_t] + A_placeholders)
-        node_feats = Lambda(lambda x: K.squeeze(x, axis=0,), name=self._NODE_FEATS,)(
+        node_feats = Lambda(lambda x: K.squeeze(x, axis=0), name=self._NODE_FEATS,)(
             node_feats
         )
 
         node_feats_corrupted = self([x_corr, out_indices_t] + A_placeholders)
-        node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0,),)(
+        node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(
             node_feats_corrupted
         )
 

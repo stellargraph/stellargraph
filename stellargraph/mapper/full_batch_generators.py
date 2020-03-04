@@ -576,9 +576,9 @@ class CorruptedFullBatchNodeGenerator(FullBatchNodeGenerator):
 
         if self.use_sparse:
             return SparseFullBatchSequence(
-                self.features, self.Aadj, targets, node_indices, corruption=True,
+                self.features, self.Aadj, targets, node_indices, corruption=True
             )
         else:
             return FullBatchSequence(
-                self.features, self.Aadj, targets, node_indices, corruption=True,
+                self.features, self.Aadj, targets, node_indices, corruption=True
             )

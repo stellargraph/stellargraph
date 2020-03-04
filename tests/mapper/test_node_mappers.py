@@ -947,7 +947,7 @@ def test_corrupted_full_batch_generator(sparse):
     assert features.shape == shuffled_feats.shape
 
     # check shuffled_feats are feats
-    assert not np.array_equal(features, shuffled_feats,)
+    assert not np.array_equal(features, shuffled_feats)
 
     # check that all feature vecs in shuffled_feats correspond to a feature vec in features
     assert all(
