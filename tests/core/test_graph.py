@@ -719,53 +719,61 @@ def test_isolated_node_neighbor_methods(is_directed):
     assert graph.out_nodes(1) == []
 
 
-def in_sequence(s, *others):
-    for x in others:
-        assert x in s
-
-    for a, b in zip(others, others[1:]):
-        assert s.index(a) < s.index(b), s
-
-
 @pytest.mark.parametrize("is_directed", [False, True])
 def test_info_homogeneous(is_directed):
 
     g = example_graph(
         feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed
     )
-    info = g.info()
+
     if is_directed:
-        assert "StellarDiGraph: Directed multigraph" in info
+        title = "StellarDiGraph: Directed multigraph"
     else:
-        assert "StellarGraph: Undirected multigraph" in info
-    assert "Nodes: 4, Edges: 4" in info
+        title = "StellarGraph: Undirected multigraph"
 
-    assert " ABC: [4]" in info
-    assert " Features: float32 vector, length 12"
-    assert " Edge types: ABC-xyz->ABC" in info
+    # literal match to check the output is good for human consumption
+    assert (
+        g.info()
+        == f"""\
+{title}
+ Nodes: 4, Edges: 4
 
-    assert " ABC-xyz->ABC: [4]" in info
+ Node types:
+  ABC: [4]
+    Features: float32 vector, length 12
+    Edge types: ABC-xyz->ABC
+
+ Edge types:
+    ABC-xyz->ABC: [4]"""
+    )
 
 
 def test_info_heterogeneous():
     g = example_hin_1({"A": 0, "B": 34})
-    info = g.info()
-    assert "StellarGraph: Undirected multigraph" in info
-    assert "Nodes: 7, Edges: 6" in info
+    # literal match to check the output is good for human consumption
+    assert (
+        g.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 7, Edges: 6
 
-    assert " A: [4]" in info
-    assert " Features: none"
-    assert " Edge types: A-R->B" in info
-    assert " B: [3]" in info
-    assert " Features: float32 vector, length 34"
-    assert " Edge types: B-F->B, B-R->A" in info
+ Node types:
+  A: [4]
+    Features: none
+    Edge types: A-R->B
+  B: [3]
+    Features: float32 vector, length 34
+    Edge types: B-F->B, B-R->A
 
-    assert " A-R->B: [5]"
-    assert " B-F->B: [1]"
+ Edge types:
+    A-R->B: [3]
+    B-R->A: [2]
+    B-F->B: [1]"""
+    )
 
 
 def test_info_truncate():
-    max_node_type = 22
+    max_node_type = 21
     max_node = (max_node_type + 1) * (max_node_type + 1) - 1
 
     def edges(i):
@@ -779,56 +787,222 @@ def test_info_truncate():
             f"n_{i}": pd.DataFrame(index=range(i * i, (i + 1) * (i + 1)))
             for i in range(max_node_type + 1)
         },
-        {f"e_{i}": edges(i) for i in range(45)},
+        {f"e_{i}": edges(i) for i in range(23)},
     )
 
-    in_sequence(
-        graph.info(),
-        "\n Node types:",
-        "\n  n_22: [45]",
-        "\n    Edge types: n_22-e_0->n_22, n_22-e_1->n_22, n_22-e_10->n_22, n_22-e_11->n_22, n_22-e_12->n_22, ... (40 more)",
-        "\n  n_21: [43]",
-        "\n    Edge types: n_21-e_44->n_22\n",
-        "\n  n_20: [41]",
-        "\n  n_3: [7]",
-        "\n  ... (3 more)",
-        "\n Edge types:",
-        "\n    n_22-e_44->n_21: [89]",
-        "\n    n_22-e_43->n_22: [87]",
-        "\n    n_22-e_42->n_22: [85]",
-        "\n    n_22-e_25->n_22: [51]",
-        "\n    ... (25 more)",
+    # literal matches to check the output is good for human consumption
+    assert (
+        graph.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 484, Edges: 529
+
+ Node types:
+  n_21: [43]
+    Features: none
+    Edge types: n_21-e_0->n_21, n_21-e_1->n_21, n_21-e_10->n_21, n_21-e_11->n_21, n_21-e_12->n_21, ... (18 more)
+  n_20: [41]
+    Features: none
+    Edge types: none
+  n_19: [39]
+    Features: none
+    Edge types: none
+  n_18: [37]
+    Features: none
+    Edge types: none
+  n_17: [35]
+    Features: none
+    Edge types: none
+  n_16: [33]
+    Features: none
+    Edge types: none
+  n_15: [31]
+    Features: none
+    Edge types: none
+  n_14: [29]
+    Features: none
+    Edge types: none
+  n_13: [27]
+    Features: none
+    Edge types: none
+  n_12: [25]
+    Features: none
+    Edge types: none
+  n_11: [23]
+    Features: none
+    Edge types: none
+  n_10: [21]
+    Features: none
+    Edge types: none
+  n_9: [19]
+    Features: none
+    Edge types: none
+  n_8: [17]
+    Features: none
+    Edge types: none
+  n_7: [15]
+    Features: none
+    Edge types: none
+  n_6: [13]
+    Features: none
+    Edge types: none
+  n_5: [11]
+    Features: none
+    Edge types: none
+  n_4: [9]
+    Features: none
+    Edge types: none
+  n_3: [7]
+    Features: none
+    Edge types: none
+  n_2: [5]
+    Features: none
+    Edge types: none
+  ... (2 more)
+
+ Edge types:
+    n_21-e_22->n_21: [45]
+    n_21-e_21->n_21: [43]
+    n_21-e_20->n_21: [41]
+    n_21-e_19->n_21: [39]
+    n_21-e_18->n_21: [37]
+    n_21-e_17->n_21: [35]
+    n_21-e_16->n_21: [33]
+    n_21-e_15->n_21: [31]
+    n_21-e_14->n_21: [29]
+    n_21-e_13->n_21: [27]
+    n_21-e_12->n_21: [25]
+    n_21-e_11->n_21: [23]
+    n_21-e_10->n_21: [21]
+    n_21-e_9->n_21: [19]
+    n_21-e_8->n_21: [17]
+    n_21-e_7->n_21: [15]
+    n_21-e_6->n_21: [13]
+    n_21-e_5->n_21: [11]
+    n_21-e_4->n_21: [9]
+    n_21-e_3->n_21: [7]
+    ... (3 more)"""
     )
 
-    in_sequence(
-        graph.info(truncate=2),
-        "\n Node types:",
-        "\n  n_22: [45]",
-        "\n    Edge types: n_22-e_0->n_22, n_22-e_1->n_22, ... (43 more)",
-        "\n  n_21: [43]",
-        "\n    Edge types: n_21-e_44->n_22\n",
-        "\n  ... (21 more)",
-        "\n Edge types:",
-        "\n    n_22-e_44->n_21: [89]",
-        "\n    n_22-e_43->n_22: [87]",
-        "\n    ... (43 more)",
+    assert (
+        graph.info(truncate=2)
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 484, Edges: 529
+
+ Node types:
+  n_21: [43]
+    Features: none
+    Edge types: n_21-e_0->n_21, n_21-e_1->n_21, ... (21 more)
+  n_20: [41]
+    Features: none
+    Edge types: none
+  ... (20 more)
+
+ Edge types:
+    n_21-e_22->n_21: [45]
+    n_21-e_21->n_21: [43]
+    ... (21 more)"""
     )
 
-    in_sequence(
-        graph.info(truncate=None),
-        "\n Node types:",
-        "\n  n_22: [45]",
-        # individual listing is still truncated
-        "\n    Edge types: n_22-e_0->n_22, n_22-e_1->n_22, n_22-e_10->n_22, n_22-e_11->n_22, n_22-e_12->n_22, ... (40 more)",
-        "\n  n_21: [43]",
-        "\n  n_20: [41]",
-        "\n  n_1: [3]",
-        "\n  n_0: [1]",
-        "\n Edge types:",
-        "\n    n_22-e_44->n_21: [89]",
-        "\n    n_22-e_43->n_22: [87]",
-        "\n    n_22-e_1->n_22: [3]",
-        "\n    n_22-e_0->n_22: [1]",
+    assert (
+        graph.info(truncate=None)
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 484, Edges: 529
+
+ Node types:
+  n_21: [43]
+    Features: none
+    Edge types: n_21-e_0->n_21, n_21-e_1->n_21, n_21-e_10->n_21, n_21-e_11->n_21, n_21-e_12->n_21, ... (18 more)
+  n_20: [41]
+    Features: none
+    Edge types: none
+  n_19: [39]
+    Features: none
+    Edge types: none
+  n_18: [37]
+    Features: none
+    Edge types: none
+  n_17: [35]
+    Features: none
+    Edge types: none
+  n_16: [33]
+    Features: none
+    Edge types: none
+  n_15: [31]
+    Features: none
+    Edge types: none
+  n_14: [29]
+    Features: none
+    Edge types: none
+  n_13: [27]
+    Features: none
+    Edge types: none
+  n_12: [25]
+    Features: none
+    Edge types: none
+  n_11: [23]
+    Features: none
+    Edge types: none
+  n_10: [21]
+    Features: none
+    Edge types: none
+  n_9: [19]
+    Features: none
+    Edge types: none
+  n_8: [17]
+    Features: none
+    Edge types: none
+  n_7: [15]
+    Features: none
+    Edge types: none
+  n_6: [13]
+    Features: none
+    Edge types: none
+  n_5: [11]
+    Features: none
+    Edge types: none
+  n_4: [9]
+    Features: none
+    Edge types: none
+  n_3: [7]
+    Features: none
+    Edge types: none
+  n_2: [5]
+    Features: none
+    Edge types: none
+  n_1: [3]
+    Features: none
+    Edge types: none
+  n_0: [1]
+    Features: none
+    Edge types: none
+
+ Edge types:
+    n_21-e_22->n_21: [45]
+    n_21-e_21->n_21: [43]
+    n_21-e_20->n_21: [41]
+    n_21-e_19->n_21: [39]
+    n_21-e_18->n_21: [37]
+    n_21-e_17->n_21: [35]
+    n_21-e_16->n_21: [33]
+    n_21-e_15->n_21: [31]
+    n_21-e_14->n_21: [29]
+    n_21-e_13->n_21: [27]
+    n_21-e_12->n_21: [25]
+    n_21-e_11->n_21: [23]
+    n_21-e_10->n_21: [21]
+    n_21-e_9->n_21: [19]
+    n_21-e_8->n_21: [17]
+    n_21-e_7->n_21: [15]
+    n_21-e_6->n_21: [13]
+    n_21-e_5->n_21: [11]
+    n_21-e_4->n_21: [9]
+    n_21-e_3->n_21: [7]
+    n_21-e_2->n_21: [5]
+    n_21-e_1->n_21: [3]
+    n_21-e_0->n_21: [1]"""
     )
 
 

@@ -818,11 +818,15 @@ class StellarGraph:
             else:
                 feature_text = "none"
 
-            edge_types = comma_sep(
-                [str_edge_type(et) for et in gs.schema[nt]],
-                limit=truncate_edge_types_per_node,
-                stringify=str,
-            )
+            edges = gs.schema[nt]
+            if edges:
+                edge_types = comma_sep(
+                    [str_edge_type(et) for et in gs.schema[nt]],
+                    limit=truncate_edge_types_per_node,
+                    stringify=str,
+                )
+            else:
+                edge_types = "none"
             return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
 
         # sort the node types in decreasing order of frequency
