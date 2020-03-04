@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import pytest
-import networkx as nx
 import numpy as np
 import tensorflow as tf
 from stellargraph import StellarGraph
@@ -43,19 +42,18 @@ from tensorflow.keras.losses import categorical_crossentropy, binary_crossentrop
 
 # FIXME (#535): Consider using graph fixtures
 def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2), (5, 6), (1, 5)]
-    G.add_nodes_from([1, 2, 3, 4, 5, 6], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
+    nlist = [1, 2, 3, 4, 5, 6]
     if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
+        features = np.ones((len(nlist), feature_size))
     else:
-        return StellarGraph(G)
+        features = []
+
+    elist = [(1, 2), (2, 3), (1, 4), (3, 2), (5, 6), (1, 5)]
+
+    return StellarGraph(
+        pd.DataFrame(features, index=nlist),
+        pd.DataFrame(elist, columns=["source", "target"]),
+    )
 
 
 def create_graphSAGE_model(graph, link_prediction=False):
