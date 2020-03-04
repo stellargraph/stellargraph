@@ -16,6 +16,7 @@
 
 import pandas as pd
 import pytest
+import numpy as np
 import networkx as nx
 from stellargraph.data.explorer import TemporalRandomWalk
 from stellargraph.core.graph import StellarGraph
@@ -59,3 +60,24 @@ def test_not_progressing_enough(temporal_graph):
 
     with pytest.raises(RuntimeError, match=r".* discarded .*"):
         rw.run(num_cw=1, cw_size=cw_size, max_walk_length=cw_size, seed=None)
+
+
+def test_exp_biases(temporal_graph):
+    rw = TemporalRandomWalk(temporal_graph)
+    times = np.array([1, 2, 3])
+    t_0 = 1
+    expected = np.exp(t_0 - times) / sum(np.exp(t_0 - times))
+    biases = rw._exp_biases(times, t_0, decay=True)
+    assert np.allclose(biases, expected)
+
+
+def test_exp_biases_extreme(temporal_graph):
+    rw = TemporalRandomWalk(temporal_graph)
+
+    large_times = [100000, 100001]
+    biases = rw._exp_biases(large_times, t_0=0, decay=True)
+    assert sum(biases) == pytest.approx(1)
+
+    small_times = [0.000001, 0.000002]
+    biases = rw._exp_biases(small_times, t_0=0, decay=True)
+    assert sum(biases) == pytest.approx(1)
