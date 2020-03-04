@@ -574,7 +574,7 @@ class GraphSequence(Sequence):
         self.on_epoch_end()
 
     def __len__(self):
-        num_batches = len(self.graphs) // self.batch_size + 1
+        num_batches = int(np.ceil(len(self.graphs)/self.batch_size))
         return num_batches
 
     def __normalize_adj(self, adj):
@@ -632,7 +632,10 @@ class GraphSequence(Sequence):
             for adj_graph in adj_graphs
         ]
         adj_graphs = np.stack(adj_graphs)
-        out_indices = np.array([-graph.number_of_nodes() for graph in graphs])[:, np.newaxis]
+        out_indices = np.full((len(graphs), max_nodes), fill_value=False, dtype=np.bool)
+        for index, graph in enumerate(graphs):
+            out_indices[index, :graph.number_of_nodes()] = True
+        # out_indices = np.array([-graph.number_of_nodes() for graph in graphs])[:, np.newaxis]
         # features is array of dimensionality
         #      number of graphs x max number of nodes in graph x feature dimensionality
         # out_indices is array of dimensionality
@@ -642,9 +645,7 @@ class GraphSequence(Sequence):
         # graph_targets is list of arrays
         #      number of graphs x number of classes
         return [features, out_indices, adj_graphs], graph_targets
-
-    def __pad_array(self, data, pad_width):
-        return
+        #return [features, adj_graphs], graph_targets
 
     def on_epoch_end(self):
         """
