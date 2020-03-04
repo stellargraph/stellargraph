@@ -48,7 +48,7 @@ class Discriminator(Layer):
         Applies the layer to the inputs.
 
         Args:
-            inputs: a list of tensors with shapes [(N, F), (F,)] containing the node features and summary feature
+            inputs: a list or tuple of tensors with shapes [(N, F), (F,)] containing the node features and summary feature
                 vector.
         """
         features, summary = inputs
