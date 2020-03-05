@@ -247,7 +247,7 @@ class StellarGraph:
 
             warnings.warn(
                 "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
-                DeprecationWarning
+                DeprecationWarning,
             )
 
             nodes, edges = convert.from_networkx(
