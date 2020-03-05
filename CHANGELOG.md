@@ -7,6 +7,7 @@
 ### Major features and improvements
 
 - New algorithms:
+  - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750). The implementation is not fully tested.
 
 ### Breaking changes
 

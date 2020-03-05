@@ -21,7 +21,6 @@ from tensorflow.keras import initializers, constraints, regularizers
 import numpy as np
 import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
-from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
 
 
@@ -106,7 +105,6 @@ class AttentiveWalk(Layer):
         return expected_walk
 
 
-@experimental(reason="lack of unit tests", issues=[804])
 def get_embeddings(model):
     """
     This function returns the embeddings from a model with Watch Your Step embeddings.
@@ -129,7 +127,6 @@ def get_embeddings(model):
     return embeddings
 
 
-@experimental(reason="lack of unit tests", issues=[804])
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention

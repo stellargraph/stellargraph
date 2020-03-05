@@ -197,8 +197,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Metapath2Vec [3] | The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring node attributes. The implementation combines StellarGraph's metapath-guided random walk generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm. As with node2vec, the learned node representations (node embeddings) can be used in downstream machine learning models to solve tasks such as node classification, link prediction, etc, for heterogeneous networks. |
 | Relational Graph Convolutional Network [11] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
 | ComplEx[12] | The ComplEx algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
-| GraphWave [13] | GraphWave calculates unsupervised structural embeddings via wavelet diffusion through the graph. |
-
+| Watch Your Step[13] | The Watch Your Step algorithm computes node embeddings by using adjacency powers to simulate expected random walks. |
 ## Getting Help
 
 Documentation for StellarGraph can be found [here](https://stellargraph.readthedocs.io).
@@ -262,4 +261,6 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 
 12. Complex Embeddings for Simple Link Prediction. T. Trouillon, J. Welbl, S. Riedel, É. Gaussier and G. Bouchard, ICML 2016. ([link](http://jmlr.org/proceedings/papers/v48/trouillon16.pdf))
 
-13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 1028, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf)).
+13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 2018, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf))
+
+14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018, arxiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
