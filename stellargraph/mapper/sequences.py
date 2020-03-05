@@ -43,6 +43,7 @@ from ..data.unsupervised_sampler import UnsupervisedSampler
 from ..core.utils import is_real_iterable
 from ..random import random_state
 from scipy import sparse
+from ..core.experimental import experimental
 
 
 class NodeSequence(Sequence):
@@ -531,6 +532,7 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
+@experimental(reason="Missing unit tests")
 class GraphSequence(Sequence):
     """
     A Keras-compatible data generator for graph inference graph classification models.
@@ -544,10 +546,10 @@ class GraphSequence(Sequence):
     Args:
         graphs (list)): The graphs as StellarGraph objects
         targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
-            where N is the number of graphs and C is the target size (e.g., number of classes for one-hot class targets)
+            where N is the number of graphs and C is the target size (e.g., number of classes.)
         normalize_adj (bool, optional): Specifies whether the adjacency matrix for each graph should
             be normalized or not. The default is True.
-        batch_size (int, optional): The batch size. It defaults to 1 that is full batch.
+        batch_size (int, optional): The batch size. It defaults to 1.
         name (str, optional): An optional name for this generator object.
     """
 
@@ -574,8 +576,7 @@ class GraphSequence(Sequence):
         self.on_epoch_end()
 
     def __len__(self):
-        num_batches = int(np.ceil(len(self.graphs) / self.batch_size))
-        return num_batches
+        return int(np.ceil(len(self.graphs) / self.batch_size))
 
     def __normalize_adj(self, adj):
         adj = adj.tolil()
@@ -589,19 +590,18 @@ class GraphSequence(Sequence):
         return adj
 
     def __getitem__(self, index):
-        # The next batch should be the adjacency matrix for the graph and the corresponding feature vectors
-        # and target if available.
         graphs = self.graphs[
             index * self.batch_size : (index * self.batch_size) + self.batch_size
         ]
         adj_graphs = [graph.to_adjacency_matrix() for graph in graphs]
 
-        # The number of nodes for the largest graph in the batch. We are going to pad with 0s the adjacency and node
-        # feature matrices to equal in size the adjacency and feature matrices of the largest graph.
+        # The number of nodes for the largest graph in the batch. We are going to pad with 0 rows and columns
+        # the adjacency and node feature matrices (only the rows in this case) to equal in size the adjacency and
+        # feature matrices of the largest graph.
         max_nodes = max([graph.number_of_nodes() for graph in graphs])
 
         # The operations to normalize the adjacency matrix are too slow.
-        # Either optimize this or implement as a layer(?)
+        # Either optimize this or implement as a layer.
         if self.normalize_adj:
             adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
 
@@ -633,26 +633,24 @@ class GraphSequence(Sequence):
             for adj_graph in adj_graphs
         ]
         adj_graphs = np.stack(adj_graphs)
-        out_indices = np.full((len(graphs), max_nodes), fill_value=False, dtype=np.bool)
+        masks = np.full((len(graphs), max_nodes), fill_value=False, dtype=np.bool)
         for index, graph in enumerate(graphs):
-            out_indices[index, : graph.number_of_nodes()] = True
-        # out_indices = np.array([-graph.number_of_nodes() for graph in graphs])[:, np.newaxis]
+            masks[index, : graph.number_of_nodes()] = True
+
         # features is array of dimensionality
-        #      number of graphs x max number of nodes in graph x feature dimensionality
-        # out_indices is array of dimensionality
-        #      number of graphs x 1
+        #      batch size x max number of nodes in graph x node feature dimensionality
+        # masks is array of dimensionality
+        #      batch size x max number of nodes
         # adj_graphs is array of dimensionality
-        #      number of graphs x max number of nodes x max number of nodes
-        # graph_targets is list of arrays
-        #      number of graphs x number of classes
-        return [features, out_indices, adj_graphs], graph_targets
-        # return [features, adj_graphs], graph_targets
+        #      batch size x max number of nodes x max number of nodes
+        # graph_targets is array of dimensionality
+        #      batch size x number of classes
+        return [features, masks, adj_graphs], graph_targets
 
     def on_epoch_end(self):
         """
          Shuffle all graphs at the end of each epoch
         """
-        # FIXME: We should probably change it so that indexes are stored in the self.
         indexes = list(range(len(self.graphs)))
         random.shuffle(indexes)
         self.graphs = [self.graphs[i] for i in indexes]

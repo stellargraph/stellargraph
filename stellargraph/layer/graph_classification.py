@@ -30,8 +30,10 @@ from tensorflow.keras.layers import (
 
 from ..mapper import GraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
+from ..core.experimental import experimental
 
 
+@experimental(reason="Missing unit tests")
 class GraphClassificationConvolution(ClusterGraphConvolution):
 
     """
@@ -89,6 +91,7 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
         return output
 
 
+@experimental(reason="Missing unit tests")
 class GraphClassification:
     """
     A stack of :class:`GraphClassificationConvolution` layers together with a `GlobalAveragePooling1D` layer
