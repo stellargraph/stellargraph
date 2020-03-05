@@ -22,9 +22,6 @@ import numpy as np
 import warnings
 
 
-_BINARY_OPERATORS = ["h", "avg", "l1", "l2"]
-
-
 def _operator_hadamard(u, v):
     return u * v
 
@@ -41,17 +38,22 @@ def _operator_l2(u, v):
     return (u - v) ** 2
 
 
-def _create_link_feature(pair, binary_operator):
-    u, v = pair
-    if binary_operator == "h":
-        return _operator_hadamard(u, v)
-    elif binary_operator == "avg":
-        return _operator_avg(u, v)
-    elif binary_operator == "l1":
-        return _operator_l1(u, v)
-    elif binary_operator == "l2":
-        return _operator_l2(u, v)
-    else:
+_known_operators = {
+    "h": _operator_hadamard,
+    "avg": _operator_avg,
+    "l1": _operator_l1,
+    "l2": _operator_l2,
+}
+
+
+def _get_operator(binary_operator):
+    if callable(binary_operator):
+        # the argument is a callable itself
+        return binary_operator
+    try:
+        return _known_operators[binary_operator]
+    except:
+        # catch all exceptions to handle non-hashability, etc
         raise ValueError(f"Unexpected binary operator: {binary_operator}")
 
 
@@ -72,7 +74,7 @@ class LinkPredictionClassifier:
         if binary_operators is not None:
             self._binary_operators = binary_operators
         else:
-            self._binary_operators = _BINARY_OPERATORS
+            self._binary_operators = _known_operators.keys()
         self._classifiers = dict()
 
     def _transform_node_pairs(self, link_examples, transform_node=None):
@@ -96,10 +98,8 @@ class LinkPredictionClassifier:
         """
         node_feature_pairs = self._transform_node_pairs(link_examples)
         for binary_operator in self._binary_operators:
-            link_features = [
-                _create_link_feature(pair, binary_operator)
-                for pair in node_feature_pairs
-            ]
+            operator_func = _get_operator(binary_operator)
+            link_features = [operator_func(src, dst) for src, dst in node_feature_pairs]
             clf = Pipeline(
                 steps=[
                     ("sc", StandardScaler()),
@@ -147,9 +147,9 @@ class LinkPredictionClassifier:
                 )
             else:
                 classifier = self._classifiers[binary_operator]
+                operator_func = _get_operator(binary_operator)
                 link_features = [
-                    _create_link_feature(pair, binary_operator)
-                    for pair in node_feature_pairs
+                    operator_func(src, dst) for src, dst in node_feature_pairs
                 ]
                 predictions[binary_operator] = classifier.predict_proba(link_features)
 

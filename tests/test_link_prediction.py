@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.link_prediction import LinkPredictionClassifier, _create_link_feature
+from stellargraph.link_prediction import LinkPredictionClassifier, _get_operator
 import pytest
 import numpy as np
 
@@ -59,7 +59,7 @@ def test_link_prediction_classifier_predict(binary_operators):
     link_examples = [(1, 2), (2, 3)]
     clf._classifiers = {op: MockClassifier(lambda x: x) for op in binary_operators}
     expected = {
-        op: [_create_link_feature(pair, op) for pair in link_examples]
+        op: [_get_operator(op)(src, dst) for src, dst in link_examples]
         for op in binary_operators
     }
 
