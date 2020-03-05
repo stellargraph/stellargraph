@@ -20,7 +20,7 @@ def test_AttentiveWalk_config():
 def test_AttentiveWalk():
 
     random_partial_powers = np.random.random((2, 5, 31))
-    att_wlk = AttentiveWalk(walk_length=5, attention_initializer='ones')
+    att_wlk = AttentiveWalk(walk_length=5, attention_initializer="ones")
 
     output = att_wlk(random_partial_powers).numpy()
 
@@ -71,4 +71,4 @@ def test_WatchYourStep(barbell):
 
     embs = get_embeddings(model)
 
-    assert(embs.shape == (len(barbell.nodes()), wys.embedding_dimension))
+    assert embs.shape == (len(barbell.nodes()), wys.embedding_dimension)

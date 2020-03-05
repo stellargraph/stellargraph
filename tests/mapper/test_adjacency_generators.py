@@ -106,7 +106,7 @@ def test_partial_powers(barbell, num_powers):
 
     Aadj = normalize_adj(barbell.to_adjacency_matrix(), symmetric=False).todense()
     actual_powers = [Aadj]
-    for _ in range(num_powers-1):
+    for _ in range(num_powers - 1):
         actual_powers.append(actual_powers[-1].dot(Aadj))
 
     generator = AdjacencyPowerGenerator(barbell, num_powers=num_powers)
