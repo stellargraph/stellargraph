@@ -17,7 +17,7 @@
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
 - DistMult: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
-- GCN Deep Graph Infomax has been implemented to perform unsupervised GCN training. 
+- GCN Deep Graph Infomax has been implemented to perform unsupervised GCN training.
 
 ### Bug fixes and other changes
 
