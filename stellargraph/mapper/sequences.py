@@ -86,7 +86,7 @@ class NodeSequence(Sequence):
             self.targets = None
 
         # Store the generator to draw samples from graph
-        if isinstance(sample_function, collections.Callable):
+        if isinstance(sample_function, collections.abc.Callable):
             self._sample_function = sample_function
         else:
             raise TypeError(
@@ -190,7 +190,7 @@ class LinkSequence(Sequence):
             raise ValueError("Length of link ids must match length of link targets")
 
         # Store the generator to draw samples from graph
-        if isinstance(sample_function, collections.Callable):
+        if isinstance(sample_function, collections.abc.Callable):
             self._sample_features = sample_function
         else:
             raise TypeError(
@@ -269,7 +269,7 @@ class OnDemandLinkSequence(Sequence):
 
     def __init__(self, sample_function, batch_size, walker, shuffle=True):
         # Store the generator to draw samples from graph
-        if isinstance(sample_function, collections.Callable):
+        if isinstance(sample_function, collections.abc.Callable):
             self._sample_features = sample_function
         else:
             raise TypeError(

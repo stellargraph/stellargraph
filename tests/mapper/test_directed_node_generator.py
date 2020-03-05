@@ -29,13 +29,9 @@ def create_simple_graph():
         A small, directed graph with 3 nodes and 2 edges in StellarDiGraph format.
     """
 
-    g = nx.DiGraph()
-    edges = [(1, 2), (2, 3)]
-    g.add_edges_from(edges)
-    nodes = list(g.nodes())
-    features = [(node, -1.0 * node) for node in nodes]
-    df = pd.DataFrame(features, columns=["id", "f0"]).set_index("id")
-    return StellarDiGraph(g, node_features=df)
+    nodes = pd.DataFrame([-1, -2, -3], index=[1, 2, 3])
+    edges = pd.DataFrame([(1, 2), (2, 3)], columns=["source", "target"])
+    return StellarDiGraph(nodes, edges)
 
 
 class TestDirectedNodeGenerator(object):
