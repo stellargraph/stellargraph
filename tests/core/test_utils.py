@@ -20,7 +20,6 @@ Utils tests:
 
 """
 import pytest
-import scipy as sp
 
 from stellargraph.core.utils import *
 from ..test_utils.graphs import example_graph_random
@@ -68,18 +67,6 @@ def test_rescale_laplacian(example_graph):
     rl = rescale_laplacian(normalized_laplacian(Aadj))
     assert rl.max() < 1
     assert rl.get_shape() == Aadj.get_shape()
-
-
-def test_chebyshev_polynomial(example_graph):
-    node_list = list(example_graph.nodes())
-    Aadj = example_graph.to_adjacency_matrix()
-
-    k = 2
-    cp = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(Aadj)), k)
-    assert len(cp) == k + 1
-    assert np.array_equal(cp[0].todense(), sp.eye(Aadj.shape[0]).todense())
-    assert cp[1].max() < 1
-    assert 5 == pytest.approx(cp[2].todense()[:5, :5].sum(), 0.1)
 
 
 def test_GCN_Aadj_feats_op(example_graph):

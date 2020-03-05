@@ -96,34 +96,6 @@ def rescale_laplacian(laplacian):
     return scaled_laplacian
 
 
-def chebyshev_polynomial(X, k):
-    """
-    Calculate Chebyshev polynomials up to order k. For more info, see https://en.wikipedia.org/wiki/Chebyshev_filter
-
-    Args:
-        X: adjacency matrix
-        k: maximum polynomial degree
-
-    Returns:
-        Return a list of sparse matrices.
-    """
-
-    print("Calculating Chebyshev polynomials up to order {}...".format(k))
-
-    T_k = list()
-    T_k.append(sp.eye(X.shape[0]).tocsr())
-    T_k.append(X)
-
-    def chebyshev_recurrence(T_k_minus_one, T_k_minus_two, X):
-        X_ = sp.csr_matrix(X, copy=True)
-        return 2 * X_.dot(T_k_minus_one) - T_k_minus_two
-
-    for i in range(2, k + 1):
-        T_k.append(chebyshev_recurrence(T_k[-1], T_k[-2], X))
-
-    return T_k
-
-
 def PPNP_Aadj_feats_op(features, A, teleport_probability=0.1):
     """
     This function calculates the personalized page rank matrix of Eq 2 in [1].
