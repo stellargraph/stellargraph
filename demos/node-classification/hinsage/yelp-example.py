@@ -249,8 +249,8 @@ if __name__ == "__main__":
     features = {"user": user_features, "business": business_features}
 
     # Create stellar Graph object
-    G = StellarGraph(
-        Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features
+    G = StellarGraph.from_networkx(
+        Gnx, node_type_attr="ntype", edge_type_attr="etype", node_features=features
     )
 
     train(
