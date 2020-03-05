@@ -16,7 +16,7 @@
 
 import tensorflow as tf
 
-from ..core.experimental import experimental
+from .core.experimental import experimental
 
 
 @experimental(reason="lack of unit tests", issues=[804])

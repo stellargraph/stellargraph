@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import numpy as np
+import pandas as pd
 import pytest
 import networkx as nx
 from stellargraph.data.explorer import BiasedRandomWalk
@@ -29,38 +30,46 @@ def create_test_weighted_graph(is_multigraph=False):
 
     :return: .
     """
-    g = nx.MultiGraph() if is_multigraph else nx.Graph()
-    edges = [
-        ("0", 1, 3),
-        ("0", 2, 4),
-        (1, 3, 1),
-        (1, 4, 7),
-        (3, 6, 9),
-        (4, 7, 2),
-        (4, 8, 5),
-        (2, 5, 7),
-        (5, 9, 5),
-        (5, 10, 6),
-        ("0", "0", 7),
-        (1, 1, 8),
-        (3, 3, 8),
-        (6, 6, 9),
-        (4, 4, 1),
-        (7, 7, 2),
-        (8, 8, 3),
-        (2, 2, 4),
-        (5, 5, 5),
-        (9, 9, 6),
-        ("self loner", "self loner", 0),  # an isolated node with a self link
-    ]
+    nodes = pd.DataFrame(
+        index=["0", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "self loner", "loner"]
+    )
+    edges = pd.DataFrame(
+        [
+            ("0", 1, 3),
+            ("0", 2, 4),
+            (1, 3, 1),
+            (1, 4, 7),
+            (3, 6, 9),
+            (4, 7, 2),
+            (4, 8, 5),
+            (2, 5, 7),
+            (5, 9, 5),
+            (5, 10, 6),
+            ("0", "0", 7),
+            (1, 1, 8),
+            (3, 3, 8),
+            (6, 6, 9),
+            (4, 4, 1),
+            (7, 7, 2),
+            (8, 8, 3),
+            (2, 2, 4),
+            (5, 5, 5),
+            (9, 9, 6),
+            ("self loner", "self loner", 0),  # an isolated node with a self link
+        ],
+        columns=["source", "target", "weight"],
+    )
 
-    g.add_weighted_edges_from(edges)
+    return StellarGraph(nodes, edges)
 
-    g.add_node("loner")  # an isolated node without self link
 
-    g = StellarGraph(g)
-
-    return g
+def weighted(a, b, c, d):
+    nodes = pd.DataFrame(index=[1, 2, 3, 4])
+    edges = pd.DataFrame(
+        [(1, 2, a), (2, 3, b), (3, 4, c), (4, 1, d)],
+        columns=["source", "target", "weight"],
+    )
+    return StellarGraph(nodes, edges)
 
 
 class TestBiasedWeightedRandomWalk(object):
@@ -84,11 +93,7 @@ class TestBiasedWeightedRandomWalk(object):
     def test_identity_unweighted_weighted_1_walks(self):
 
         # graph with all edge weights = 1
-        g = nx.Graph()
-        edges = [(1, 2, 1), (2, 3, 1), (3, 4, 1), (4, 1, 1)]
-        g.add_weighted_edges_from(edges)
-        g = StellarGraph(g)
-
+        g = weighted(1, 1, 1, 1)
         nodes = g.nodes()
         n = 4
         length = 4
@@ -106,11 +111,7 @@ class TestBiasedWeightedRandomWalk(object):
     def test_weighted_walks(self):
 
         # all positive walks
-        g = nx.Graph()
-        edges = [(1, 2, 1), (2, 3, 2), (3, 4, 3), (4, 1, 4)]
-
-        g.add_weighted_edges_from(edges)
-        g = StellarGraph(g)
+        g = weighted(1, 2, 3, 4)
 
         nodes = list(g.nodes())
         n = 1
@@ -130,11 +131,7 @@ class TestBiasedWeightedRandomWalk(object):
         )
 
         # negative edge
-        g = nx.Graph()
-        edges = [(1, 2, 1), (2, 3, -2), (3, 4, 3), (4, 1, 4)]
-
-        g.add_weighted_edges_from(edges)
-        g = StellarGraph(g)
+        g = weighted(1, -2, 3, 4)
 
         biasedrw = BiasedRandomWalk(g)
 
@@ -144,11 +141,7 @@ class TestBiasedWeightedRandomWalk(object):
             )
 
         # edge with weight infinity
-        g = nx.Graph()
-        edges = [(1, 2, 1), (2, 3, np.inf), (3, 4, 3), (4, 1, 4)]
-
-        g.add_weighted_edges_from(edges)
-        g = StellarGraph(g)
+        g = weighted(1, np.inf, 3, 4)
 
         biasedrw = BiasedRandomWalk(g)
 
@@ -167,7 +160,7 @@ class TestBiasedWeightedRandomWalk(object):
         g[3][4]["w"] = 3
         g[4][1]["w"] = 4
 
-        g = StellarGraph(g, edge_weight_label="w")
+        g = StellarGraph.from_networkx(g, edge_weight_attr="w")
 
         nodes = list(g.nodes())
         n = 1
@@ -443,13 +436,16 @@ class TestBiasedRandomWalk(object):
                 assert node == "self loner"  # all nodes should be the same node
 
     def test_walk_biases(self):
-        graph = nx.Graph()
         # a square with a triangle:
         #   0-3
         #  /| |
         # 1-2-4
-        graph.add_edges_from([(0, 1), (0, 2), (0, 3), (1, 2), (2, 4), (3, 4)])
-        graph = StellarGraph(graph)
+        nodes = pd.DataFrame(index=range(5))
+        edges = pd.DataFrame(
+            [(0, 1), (0, 2), (0, 3), (1, 2), (2, 4), (3, 4)],
+            columns=["source", "target"],
+        )
+        graph = StellarGraph(nodes, edges)
         biasedrw = BiasedRandomWalk(graph)
 
         # there's 18 total walks of length 4 starting at 0 in `graph`,

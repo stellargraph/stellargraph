@@ -14,5 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Global version information
-__version__ = "0.11.0b"
+"""
+This contains the code for interpreting the modules, such as the importance or saliency of a
+node or link to a prediction.
+"""
+
+from .saliency_maps import *

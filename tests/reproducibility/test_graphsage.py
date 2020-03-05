@@ -145,6 +145,67 @@ def gs_nai(
     return model
 
 
+def gs_link_pred_model(num_samples, generator, optimizer, bias, dropout, normalize):
+    layer_sizes = [50] * len(num_samples)
+    graphsage = GraphSAGE(
+        layer_sizes=layer_sizes,
+        generator=generator,
+        bias=bias,
+        dropout=dropout,
+        normalize=normalize,
+    )
+    # Build the model and expose input and output sockets of graphsage, for node pair inputs:
+    x_inp, x_out = graphsage.build()
+    pred = link_classification(
+        output_dim=1, output_act="relu", edge_embedding_method="ip"
+    )(x_out)
+
+    model = tf.keras.Model(inputs=x_inp, outputs=pred)
+
+    model.compile(
+        optimizer=optimizer, loss=tf.keras.losses.binary_crossentropy,
+    )
+
+    return model
+
+
+def gs_link_prediction(
+    g,
+    edge_ids,
+    edge_labels,
+    num_samples,
+    optimizer,
+    batch_size=4,
+    epochs=4,
+    bias=True,
+    dropout=0.0,
+    normalize="l2",
+    seed=0,
+    shuffle=True,
+):
+    set_seed(seed)
+    tf.random.set_seed(seed)
+    if shuffle:
+        random.seed(seed)
+
+    generator = GraphSAGELinkGenerator(g, batch_size, num_samples)
+    train_gen = generator.flow(edge_ids, edge_labels, shuffle=True)
+
+    model = gs_link_pred_model(
+        num_samples, generator, optimizer, bias, dropout, normalize
+    )
+
+    model.fit_generator(
+        train_gen,
+        epochs=epochs,
+        verbose=1,
+        use_multiprocessing=False,
+        workers=4,
+        shuffle=shuffle,
+    )
+    return model
+
+
 @pytest.mark.parametrize("shuffle", [True, False])
 def test_unsupervised(petersen_graph, shuffle):
     assert_reproducible(
@@ -167,5 +228,23 @@ def test_nai(petersen_graph, shuffle):
     assert_reproducible(
         lambda: gs_nai(
             petersen_graph, targets, [2, 2], tf.optimizers.Adam(1e-3), shuffle=shuffle
+        )
+    )
+
+
+# FIXME (#970): This test fails intermittently with shuffle=True
+@pytest.mark.parametrize("shuffle", [False])
+def test_link_prediction(petersen_graph, shuffle):
+    num_examples = 10
+    edge_ids = np.random.choice(petersen_graph.nodes(), size=(num_examples, 2))
+    edge_labels = np.random.choice([0, 1], size=num_examples)
+    assert_reproducible(
+        lambda: gs_link_prediction(
+            petersen_graph,
+            edge_ids,
+            edge_labels,
+            [2, 2],
+            tf.optimizers.Adam(1e-3),
+            shuffle=shuffle,
         )
     )
