@@ -245,6 +245,11 @@ class StellarGraph:
                     "graph: expected no value when using 'nodes' and 'edges' parameters, found: {graph!r}"
                 )
 
+            warnings.warn(
+                "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
+                DeprecationWarning
+            )
+
             nodes, edges = convert.from_networkx(
                 graph,
                 node_type_attr=node_type_name,
