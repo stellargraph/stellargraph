@@ -17,8 +17,6 @@ import collections
 import scipy.sparse as sp
 from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras import backend as K
 
 
 def is_real_iterable(x):
@@ -158,25 +156,22 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
-    The features and adjacency matrix will be manipulated by either 'gcn' (applying localpool filter as a default), 'chebyshev', or
+    The features and adjacency matrix will be manipulated by either 'gcn' (applying localpool filter as a default), or
     'sgcn' filters.
 
-    For more information about 'localpool', 'chebyshev', and 'smoothed' filters, please read details:
-        [1] https://en.wikipedia.org/wiki/Chebyshev_filter
-        [2] https://arxiv.org/abs/1609.02907
-        [3] https://arxiv.org/abs/1902.07153
+    For more information about 'localpool' and 'smoothed' filters, please read details:
+        [1] https://arxiv.org/abs/1609.02907
+        [2] https://arxiv.org/abs/1902.07153
 
     Args:
         features: node features in the graph
         A: adjacency matrix
         k (int or None): If method is 'sgcn' then it should be an integer indicating the power to raise the
         normalised adjacency matrix with self loops before multiplying the node features matrix.
-        If method is 'chebyshev' then it should be an integer indicating the maximum order of the Chebyshev polynomials.
-        method: to specify the filter to use with gcn. If method=gcn, default filter is localpool, other options are 'chebyshev' and 'sgcn'.
-
+        method: to specify the filter to use with gcn. If method=gcn, default filter is localpool, other options are 'sgcn'.
 
     Returns:
-        features (transformed in case of "chebyshev" filter applied), transformed adjacency matrix
+        features, transformed adjacency matrix
     """
 
     def preprocess_adj(adj, symmetric=True):
@@ -191,20 +186,6 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
         # Local pooling filters (see 'renormalization trick' in Kipf & Welling, arXiv 2016) """
         print("Using GCN (local pooling) filters...")
         A = preprocess_adj(A)
-
-    elif method == "chebyshev":
-        # Chebyshev polynomial basis filters (Defferard et al., NIPS 2016)
-        print("Using Chebyshev polynomial filters...")
-        if isinstance(k, int) and k >= 2:
-            # default minimum degree for Chebyshev polynomials.
-            T_k = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(A)), k)
-            features = [features] + T_k
-        else:
-            raise ValueError(
-                "max_degree should be positive integer of value at least 2 for method='chebyshev'; but received type {} with value {}.".format(
-                    type(k), k
-                )
-            )
 
     elif method == "sgc":
         # Smoothing filter (Simplifying Graph Convolutional Networks)
