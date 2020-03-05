@@ -18,6 +18,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 import numpy as np
 from ..core import StellarGraph
+from ..core.validation import require_integer_in_range
 from ..core.utils import normalize_adj
 from ..core.experimental import experimental
 
@@ -40,6 +41,8 @@ class AdjacencyPowerGenerator:
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
+        require_integer_in_range(num_powers, "num_powers", min_val=1)
+
         Aadj = G.to_adjacency_matrix().tocoo()
         indices = np.column_stack((Aadj.col, Aadj.row))
 
@@ -57,17 +60,21 @@ class AdjacencyPowerGenerator:
 
         self.num_powers = num_powers
 
-    def flow(self, batch_size, threads=1):
+    def flow(self, batch_size, num_parallel_calls=1):
         """
         Creates the `tensorflow.data.Dataset` object for training node embeddings from powers of the adjacency matrix.
 
         Args:
             batch_size (int): the number of rows of the adjacency powers to include in each batch.
-            threads (int): the number of threads to use for pre-processing of batches.
+            num_parallel_calls (int): the number of threads to use for pre-processing of batches.
 
         Returns:
             A `tensorflow.data.Dataset` object for training node embeddings from powers of the adjacency matrix.
         """
+
+        require_integer_in_range(batch_size, "batch_size", min_val=1)
+        require_integer_in_range(num_parallel_calls, "num_parallel_calls", min_val=1)
+
         row_dataset = tf.data.Dataset.from_tensor_slices(
             tf.sparse.eye(int(self.Aadj_T.shape[0]))
         )
@@ -76,7 +83,7 @@ class AdjacencyPowerGenerator:
             lambda ohe_rows: _partial_powers(
                 ohe_rows, self.transition_matrix_T, num_powers=self.num_powers
             ),
-            num_parallel_calls=threads,
+            num_parallel_calls=num_parallel_calls,
         )
 
         row_index_dataset = tf.data.Dataset.range(self.Aadj_T.shape[0])
@@ -87,7 +94,7 @@ class AdjacencyPowerGenerator:
 
         batch_adj_dataset = row_dataset.map(
             lambda ohe_rows: _select_row_from_sparse_tensor(ohe_rows, self.Aadj_T),
-            num_parallel_calls=threads,
+            num_parallel_calls=num_parallel_calls,
         )
 
         training_dataset = tf.data.Dataset.zip(
