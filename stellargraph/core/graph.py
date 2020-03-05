@@ -371,7 +371,6 @@ class StellarGraph:
             A ``StellarGraph`` (if ``graph`` is undirected) or ``StellarDiGraph`` (if ``graph`` is
             directed) instance representing the data in ``graph`` and ``node_features``.
         """
-        StellarGraph(graph)
         nodes, edges = convert.from_networkx(
             graph,
             node_type_attr=node_type_attr,
