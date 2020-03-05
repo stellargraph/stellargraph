@@ -17,10 +17,12 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate, Dense
 from tensorflow.keras import backend as K
+from tensorflow.keras import initializers, constraints, regularizers
 import numpy as np
 import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 from ..core.experimental import experimental
+from ..core.validation import require_integer_in_range
 
 
 class AttentiveWalk(Layer):
@@ -51,10 +53,20 @@ class AttentiveWalk(Layer):
             kwargs["input_shape"] = input_dim
 
         self.walk_length = walk_length
-        self.attention_initializer = attention_initializer
-        self.attention_regularizer = attention_regularizer
-        self.attention_constraint = attention_constraint
+        self.attention_initializer = initializers.get(attention_initializer)
+        self.attention_regularizer = regularizers.get(attention_regularizer)
+        self.attention_constraint = constraints.get(attention_constraint)
         super().__init__(**kwargs)
+
+    def get_config(self):
+        config = {
+            "walk_length": self.walk_length,
+            "attention_initializer": initializers.serialize(self.attention_initializer),
+            "attention_regularizer": regularizers.serialize(self.attention_regularizer),
+            "attention_constraint": constraints.serialize(self.attention_constraint),
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
 
     def compute_output_shape(self, input_shapes):
         return (input_shapes[0][-1],)
@@ -151,11 +163,8 @@ class WatchYourStep:
                 "generator should be an instance of AdjacencyPowerGenerator."
             )
 
-        if not isinstance(num_walks, int):
-            raise TypeError("num_walks should be an int.")
-
-        if num_walks <= 0:
-            raise ValueError("num_walks should be a positive int.")
+        require_integer_in_range(num_walks, "num_walks", min_val=1)
+        require_integer_in_range(embedding_dimension, "embedding_dimension", min_val=2)
 
         self.num_walks = num_walks
         self.num_powers = generator.num_powers
