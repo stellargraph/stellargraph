@@ -171,6 +171,6 @@ class Node2VecFeatureLearning(object):
                 )
 
         return np.array(X), edge_data[1]
-    
+
     def get_embedding(self, node):
         return self.model[str(node)]
