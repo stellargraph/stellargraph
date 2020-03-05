@@ -60,7 +60,7 @@ def example_graph_nx(
         for v in graph.nodes():
             graph.nodes[v][feature_name] = int(v) * np.ones(feature_size)
 
-    return graph
+    return StellarGraph(graph)
 
 
 def repeated_features(values_to_repeat, width):
