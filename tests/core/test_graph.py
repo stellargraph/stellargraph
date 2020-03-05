@@ -119,7 +119,7 @@ def test_legacy_constructor_warning():
             cls(nx.Graph())
 
     # make sure that we're disabling new uses of the legacy constructor correctly in this repo (see
-    # also: filterwarnings in pytest.ini, PYTHONWARNINGS in pipeline.yml)
+    # also: filterwarnings in pytest.ini, PYTHONWARNINGS in .buildkite/docker-compose.yml)
     with pytest.raises(DeprecationWarning):
         StellarGraph(nx.Graph())
 

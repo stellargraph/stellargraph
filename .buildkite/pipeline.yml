@@ -90,10 +90,6 @@ steps:
       docker-compose#v3.2.0:
         <<: *compose-config
         run: runner-3_6
-        env:
-          # make sure that no new uses of the legacy constructor are added (see also: test in
-          # test_graph.py, filterwarnings in pytest.ini)
-          - "PYTHONWARNINGS=error:Constructing a StellarGraph:DeprecationWarning"
     agents:
       queue: "t2large"
     soft_fail:
