@@ -159,7 +159,9 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
         print("Using GCN (local pooling) filters...")
         A = preprocess_adj(A)
     elif method == "chebyshev":
-        raise ValueError("method 'chebyshev' did not behave correctly and has been removed")
+        raise ValueError(
+            "method 'chebyshev' did not behave correctly and has been removed"
+        )
     elif method == "sgc":
         # Smoothing filter (Simplifying Graph Convolutional Networks)
         if isinstance(k, int) and k > 0:
