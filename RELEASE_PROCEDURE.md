@@ -8,6 +8,11 @@
      git push -u origin release-X.X.X
      ```
    - Release-related changes are made via Pull Requests from feature branches into the new release branch:
+  ```shell
+git checkout -b release-X.X.X-changes release-X.X.X
+git push -u origin release-X.X.X-changes```
+
+Now make the release changes described below.
      - MUST do:
        - Version bumping: Change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
          - `stellargraph/version.py`
@@ -18,7 +23,15 @@
      - NEVER do:
        - Add new features
 
-   - Once the release branch is ready to be merged, create a new Pull Request from the release branch into `master`. This should only be used to exercise CI and for the rest of the team the approve that all necessary changes have been made for release, and **not for doing the actual merge**. **The actual merge into master should be done locally in the next step.**
+  - Now commit and push the changes to `release-X.X.X-changes`
+
+```shell
+ git commit release-X.X.X-changes -m "bumped version"
+ git push -u origin release-X.X.X-changes```
+
+- Make a PR from `release-X.X.X-changes` into `release-X.X.X` and merge once approved
+
+   - Once the `release-X.X.X` branch is ready to be merged, create a new Pull Request from the release branch into `master`. This should only be used to exercise CI and for the rest of the team the approve that all necessary changes have been made for release, and **not for doing the actual merge**. **The actual merge into master should be done locally in the next step.**
 
 2. **Merge release branch into `master` locally**
 
