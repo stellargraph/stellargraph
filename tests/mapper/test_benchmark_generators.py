@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,23 +23,11 @@ import numpy as np
 import networkx as nx
 import pytest
 
+from ..test_utils.graphs import example_graph_random
+
 
 def example_Graph_2(feature_size=None, n_nodes=100, n_edges=200):
-    G = nx.Graph()
-
-    edges = [
-        (random.randint(0, n_nodes - 1), random.randint(0, n_nodes - 1))
-        for _ in range(n_edges)
-    ]
-    G.add_edges_from(edges)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-
-    G = StellarGraph(G, node_features="feature")
-    return G
+    return example_graph_random(feature_size, n_edges, n_nodes, n_isolates=0)
 
 
 @pytest.mark.benchmark(group="generator")

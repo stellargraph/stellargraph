@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
-from ..mapper import FullBatchNodeGenerator
+from ..mapper import FullBatchGenerator
 from .misc import SqueezedSparseConversion
 from .preprocessing_layer import GraphPreProcessingLayer
 
@@ -56,46 +57,45 @@ class GraphConvolution(Layer):
         use_bias (bool): toggles an optional bias
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
-        kernel_initializer (str or func): The initialiser to use for the weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the bias;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights.
+        kernel_constraint (str or func, optional): The constraint to use for the weights.
+        bias_initializer (str or func, optional): The initialiser to use for the bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias.
+        bias_constraint (str or func, optional): The constraint to use for the bias.
     """
 
     def __init__(
-        self, units, activation=None, use_bias=True, final_layer=False, **kwargs
+        self,
+        units,
+        activation=None,
+        use_bias=True,
+        final_layer=False,
+        input_dim=None,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        **kwargs
     ):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         self.units = units
         self.activation = activations.get(activation)
         self.use_bias = use_bias
         self.final_layer = final_layer
-        self._get_regularisers_from_keywords(kwargs)
-        super().__init__(**kwargs)
 
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+
+        super().__init__(**kwargs)
 
     def get_config(self):
         """
@@ -233,16 +233,30 @@ class GCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
-    pre-processing the generator object should be instantiated as follows::
+    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
+    or the :class:`FullBatchLinkGenerator` class for link inference.
 
-        generator = FullBatchNodeGenerator(G, method="gcn")
+    To have the appropriate pre-processing the generator object should be instanciated
+    with the `method='gcn'` argument.
 
     Note that currently the GCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
 
     For more details, please see the GCN demo notebook:
     demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
+
+    Example:
+        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        object ``G``::
+
+            generator = FullBatchNodeGenerator(G, method="gcn")
+            gcn = GCN(
+                    layer_sizes=[32, 4],
+                    activations=["elu","softmax"],
+                    generator=generator,
+                    dropout=0.5
+                )
+            x_inp, predictions = gcn.build()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -257,19 +271,6 @@ class GCN:
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
-    Examples:
-        Creating a GCN node classification model from an existing :class:`StellarGraph`
-        object ``G``::
-
-            generator = FullBatchNodeGenerator(G, method="gcn")
-            gcn = GCN(
-                    layer_sizes=[32, 4],
-                    activations=["elu","softmax"],
-                    generator=generator,
-                    dropout=0.5
-                )
-            x_inp, predictions = gcn.node_model()
-
     Args:
         layer_sizes (list of int): Output sizes of GCN layers in the stack.
         generator (FullBatchNodeGenerator): The generator instance.
@@ -277,31 +278,49 @@ class GCN:
         dropout (float): Dropout rate applied to input features of each GCN layer.
         activations (list of str or func): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu'].
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
 
     def __init__(
-        self, layer_sizes, generator, bias=True, dropout=0.0, activations=None, **kwargs
+        self,
+        layer_sizes,
+        generator,
+        bias=True,
+        dropout=0.0,
+        activations=None,
+        kernel_initializer=None,
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer=None,
+        bias_regularizer=None,
+        bias_constraint=None,
     ):
-        if not isinstance(generator, FullBatchNodeGenerator):
-            raise TypeError("Generator should be a instance of FullBatchNodeGenerator")
+        if not isinstance(generator, FullBatchGenerator):
+            raise TypeError(
+                "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+            )
 
         n_layers = len(layer_sizes)
         self.layer_sizes = layer_sizes
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.generator = generator
-        self.support = 1
+
+        # Copy required information from generator
         self.method = generator.method
+        self.multiplicity = generator.multiplicity
+        self.n_nodes = generator.features.shape[0]
+        self.n_features = generator.features.shape[1]
 
         # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
         if self.method == "none":
-            self.graph_norm_layer = GraphPreProcessingLayer(
-                num_of_nodes=self.generator.Aadj.shape[0]
-            )
+            self.graph_norm_layer = GraphPreProcessingLayer(num_of_nodes=self.n_nodes)
 
         # Activation function for each layer
         if activations is None:
@@ -311,9 +330,6 @@ class GCN:
                 "Invalid number of activations; require one function per layer"
             )
         self.activations = activations
-
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
 
         # Initialize a stack of GCN layers
         self._layers = []
@@ -325,24 +341,14 @@ class GCN:
                     activation=self.activations[ii],
                     use_bias=self.bias,
                     final_layer=ii == (n_layers - 1),
-                    **self._regularisers
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, x):
         """
@@ -406,21 +412,26 @@ class GCN:
 
         return h_layer
 
-    def node_model(self):
+    def build(self, multiplicity=None):
         """
-        Builds a GCN model for node prediction
+        Builds a GCN model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors for the GCN model (containing node features and graph laplacian),
-            and `x_out` is a Keras tensor for the GCN model output.
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
+            input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
         """
-        # Placeholder for node features
-        N_nodes = self.generator.features.shape[0]
-        N_feat = self.generator.features.shape[1]
+        # Inputs for features
+        x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
 
-        # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, N_nodes, N_feat))
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        # If not specified use multiplicity from instanciation
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        # Indices to gather for model output
+        if multiplicity == 1:
+            out_indices_t = Input(batch_shape=(1, None), dtype="int32")
+        else:
+            out_indices_t = Input(batch_shape=(1, None, multiplicity), dtype="int32")
 
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
@@ -431,7 +442,7 @@ class GCN:
 
         else:
             # Placeholders for the dense adjacency matrix
-            A_m = Input(batch_shape=(1, N_nodes, N_nodes))
+            A_m = Input(batch_shape=(1, self.n_nodes, self.n_nodes))
             A_placeholders = [A_m]
 
         # TODO: Support multiple matrices
@@ -446,3 +457,17 @@ class GCN:
             self.x_out_flat = x_out
 
         return x_inp, x_out
+
+    def link_model(self):
+        if self.multiplicity != 2:
+            warnings.warn(
+                "Link model requested but a generator not supporting links was supplied."
+            )
+        return self.build(multiplicity=2)
+
+    def node_model(self):
+        if self.multiplicity != 1:
+            warnings.warn(
+                "Node model requested but a generator not supporting nodes was supplied."
+            )
+        return self.build(multiplicity=1)

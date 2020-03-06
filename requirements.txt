@@ -1,16 +1,4 @@
-networkx>=2.2
+# Convenience for installing stellargraph for development (editable mode, appropriate dependencies)
 setuptools>=39.1.0
-tensorflow>=2.0.0
-numba>=0.39.0
-numpy>=1.14
-scipy>=1.1.0
-jupyter>=1.0.0
-scikit_learn>=0.20
-matplotlib>=2.2
-pandas>=0.24
-gensim>=3.4.0
-pytest==5.3.1
-pytest-benchmark>=3.1
-pytest-cov>=2.6.0
-coveralls>=1.5.1
-coverage>=4.4,<5.0
+# not igraph, because that doesn't work on all platforms
+-e .[demos,test]

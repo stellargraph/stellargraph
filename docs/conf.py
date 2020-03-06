@@ -25,7 +25,7 @@ with open(os.path.abspath("../stellargraph/version.py"), "r") as fh:
 # -- Project information -----------------------------------------------------
 
 project = "StellarGraph"
-copyright = "2018-2019, Data61, CSIRO"
+copyright = "2018-2020, Data61, CSIRO"
 author = "Data61, CSIRO"
 
 # Get global version
@@ -176,7 +176,7 @@ texinfo_documents = [
         "StellarGraph Documentation",
         author,
         "StellarGraph",
-        "One line description of project.",
+        "StellarGraph is a graph machine learning library for Python.",
         "Miscellaneous",
     ),
 ]

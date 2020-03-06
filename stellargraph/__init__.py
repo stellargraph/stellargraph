@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,17 +33,25 @@ __all__ = [
 from .version import __version__
 
 # Import modules
-from stellargraph import mapper, layer, utils
+from stellargraph import (
+    calibration,
+    ensemble,
+    interpretability,
+    losses,
+    layer,
+    mapper,
+    utils,
+)
 
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
 from stellargraph.core.schema import GraphSchema
-from stellargraph.utils.calibration import TemperatureCalibration, IsotonicCalibration
-from stellargraph.utils.calibration import (
+from stellargraph.calibration import TemperatureCalibration, IsotonicCalibration
+from stellargraph.calibration import (
     plot_reliability_diagram,
     expected_calibration_error,
 )
-from stellargraph.utils.ensemble import Ensemble, BaggingEnsemble
+from stellargraph.ensemble import Ensemble, BaggingEnsemble
 
 # Custom layers for keras deserialization:
 custom_keras_layers = {

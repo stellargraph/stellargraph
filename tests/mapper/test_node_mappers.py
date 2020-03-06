@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ Mapper tests:
 
 """
 from stellargraph.core.graph import *
-from stellargraph.core.graph_networkx import NetworkXStellarGraph
 from stellargraph.mapper import *
 
 import networkx as nx
@@ -29,146 +28,81 @@ import random
 import pytest
 import pandas as pd
 import scipy.sparse as sps
+from ..test_utils.graphs import (
+    example_graph,
+    example_graph_random,
+    example_hin_1,
+    create_graph_features,
+    repeated_features,
+)
+from .. import test_utils
 
 
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+pytestmark = test_utils.ignore_stellargraph_experimental_mark
 
 
+# FIXME (#535): Consider using graph fixtures
 def example_graph_2(feature_size=None):
-    G = nx.Graph()
+    nlist = [1, 2, 3, 4, 5]
+    nodes = pd.DataFrame(repeated_features(nlist, feature_size), index=nlist)
+
     elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
-    G.add_nodes_from([1, 2, 3, 4, 5], label="default")
-    G.add_edges_from(elist, label="default")
+    edges = pd.DataFrame(elist, columns=["source", "target"])
 
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_graph_3(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
-    G = nx.Graph()
-    n_noniso = n_nodes - n_isolates
-    edges = [
-        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
-        for _ in range(n_edges)
-    ]
-    G.add_nodes_from(range(n_nodes))
-    G.add_edges_from(edges, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_digraph_2(feature_size=None):
-    G = nx.DiGraph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarDiGraph(G, node_features="feature")
-
-    else:
-        return StellarDiGraph(G)
-
-
-def example_hin_1(feature_size_by_type=None):
-    G = nx.Graph()
-    G.add_nodes_from([0, 1, 2, 3], label="A")
-    G.add_nodes_from([4, 5, 6], label="B")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
-    G.add_edges_from([(4, 5)], label="F")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+    return StellarGraph(nodes, edges)
 
 
 def example_hin_2(feature_size_by_type=None):
+    if feature_size_by_type is None:
+        feature_size_by_type = {"t1": None, "t2": None}
+
     nodes_type_1 = [0, 1, 2, 3]
     nodes_type_2 = [4, 5]
+    nodes = {
+        "t1": pd.DataFrame(
+            repeated_features(nodes_type_1, feature_size_by_type["t1"]),
+            index=nodes_type_1,
+        ),
+        "t2": pd.DataFrame(
+            repeated_features(nodes_type_2, feature_size_by_type["t2"]),
+            index=nodes_type_2,
+        ),
+    }
+    edges = {
+        "e1": pd.DataFrame(
+            [(0, 4), (1, 4), (2, 5), (3, 5)], columns=["source", "target"]
+        )
+    }
 
-    # Create isolated graphs
-    G = nx.Graph()
-    G.add_nodes_from(nodes_type_1, label="t1")
-    G.add_nodes_from(nodes_type_2, label="t2")
-    G.add_edges_from([(0, 4), (1, 4), (2, 5), (3, 5)], label="e1")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-
-        G = StellarGraph(G, node_features="feature")
-
-    else:
-        G = StellarGraph(G)
-
-    return G, nodes_type_1, nodes_type_2
+    return StellarGraph(nodes, edges), nodes_type_1, nodes_type_2
 
 
 def example_hin_3(feature_size_by_type=None):
-    nodes_type_1 = [0, 1, 2]
-    nodes_type_2 = [4, 5, 6]
+    if feature_size_by_type is None:
+        feature_size_by_type = {"t1": None, "t2": None}
 
-    # Create isolated graphs
-    G = nx.Graph()
-    G.add_nodes_from(nodes_type_1, label="t1")
-    G.add_nodes_from(nodes_type_2, label="t2")
-    G.add_edges_from([(0, 4), (1, 5)], label="e1")
-    G.add_edges_from([(0, 2)], label="e2")
+    nodes_type_1 = np.array([0, 1, 2])
+    nodes_type_2 = np.array([4, 5, 6])
+    nodes = {
+        "t1": pd.DataFrame(
+            repeated_features(10 + nodes_type_1, feature_size_by_type["t1"]),
+            index=nodes_type_1,
+        ),
+        "t2": pd.DataFrame(
+            repeated_features(10 + nodes_type_2, feature_size_by_type["t2"]),
+            index=nodes_type_2,
+        ),
+    }
+    edges = {
+        "e1": pd.DataFrame([(0, 4), (1, 5)], columns=["source", "target"]),
+        "e2": pd.DataFrame([(0, 2)], columns=["source", "target"], index=[2]),
+    }
 
     # Node 2 has no edges of type 1
     # Node 1 has no edges of type 2
     # Node 6 has no edges
 
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = (int(v) + 10) * np.ones(
-                feature_size_by_type[nt], dtype="int"
-            )
-
-        G = StellarGraph(G, node_features="feature")
-
-    else:
-        G = StellarGraph(G)
-
-    return G, nodes_type_1, nodes_type_2
+    return StellarGraph(nodes, edges), nodes_type_1, nodes_type_2
 
 
 def test_nodemapper_constructor_nx():
@@ -188,7 +122,7 @@ def test_nodemapper_constructor_no_feats():
     """
     n_feat = 4
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -196,7 +130,7 @@ def test_nodemapper_constructor_no_feats():
 def test_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2])
 
@@ -212,7 +146,7 @@ def test_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = GraphSAGENodeGenerator(G1, batch_size=n_batch, num_samples=[2, 2]).flow(
         G1.nodes()
@@ -250,45 +184,45 @@ def test_nodemapper_1():
         GraphSAGENodeGenerator(G1, batch_size=2, num_samples=[2, 2]).flow(["A", "B"])
 
 
-def test_nodemapper_shuffle():
+@pytest.mark.parametrize("shuffle", [True, False])
+def test_nodemapper_shuffle(shuffle):
     n_feat = 1
     n_batch = 2
 
     G = example_graph_2(feature_size=n_feat)
     nodes = list(G.nodes())
 
-    # With shuffle
-    random.seed(15)
-    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
-        nodes, nodes, shuffle=True
+    def flatten_features(seq):
+        # check (features == labels) and return flattened features
+        batches = [
+            (np.ravel(seq[i][0][0]), np.array(seq[i][1])) for i in range(len(seq))
+        ]
+        features, labels = zip(*batches)
+        features, labels = np.concatenate(features), np.concatenate(labels)
+        assert all(features == labels)
+        return features
+
+    def consecutive_epochs(seq):
+        features = flatten_features(seq)
+        seq.on_epoch_end()
+        features_next = flatten_features(seq)
+        return features, features_next
+
+    seq = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
+        nodes, nodes, shuffle=shuffle
     )
 
-    expected_node_batches = [[5, 4], [3, 1], [2]]
-    assert len(mapper) == 3
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
-        assert all(np.array(nl) == expected_node_batches[ii])
+    max_iter = 5
+    comparison_results = set()
 
-    # This should re-shuffle the IDs
-    mapper.on_epoch_end()
-    expected_node_batches = [[4, 3], [1, 5], [2]]
-    assert len(mapper) == 3
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
-        assert all(np.array(nl) == expected_node_batches[ii])
+    for i in range(max_iter):
+        f1, f2 = consecutive_epochs(seq)
+        comparison_results.add(all(f1 == f2))
 
-    # With no shuffle
-    mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
-        nodes, nodes, shuffle=False
-    )
-    expected_node_batches = [[1, 2], [3, 4], [5]]
-    assert len(mapper) == 3
-    for ii in range(len(mapper)):
-        nf, nl = mapper[ii]
-        assert all(np.ravel(nf[0]) == expected_node_batches[ii])
-        assert all(np.array(nl) == expected_node_batches[ii])
+    if not shuffle:
+        assert comparison_results == {True}
+    else:
+        assert False in comparison_results
 
 
 def test_nodemapper_with_labels():
@@ -327,7 +261,7 @@ def test_nodemapper_zero_samples():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
         G.nodes()
     )
@@ -342,7 +276,7 @@ def test_nodemapper_zero_samples():
         assert nl is None
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
     mapper = GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0, 0]).flow(
         G.nodes()
     )
@@ -363,12 +297,10 @@ def test_nodemapper_isolated_nodes():
     n_batch = 2
 
     # test graph
-    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
 
     # Check connectedness
-    assert isinstance(G, NetworkXStellarGraph)
-    # XXX Hack - Only works for NetworkXStellarGraph instances
-    Gnx = G._graph
+    Gnx = G.to_networkx()
     ccs = list(nx.connected_components(Gnx))
     assert len(ccs) == 2
 
@@ -408,7 +340,7 @@ def test_nodemapper_incorrect_targets():
     n_batch = 2
 
     # test graph
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     with pytest.raises(TypeError):
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
@@ -423,7 +355,7 @@ def test_nodemapper_incorrect_targets():
 
 def test_hinnodemapper_constructor():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes)
+    G = example_hin_1(feature_sizes=feature_sizes)
 
     # Should fail when head nodes are of different type
     with pytest.raises(ValueError):
@@ -440,7 +372,7 @@ def test_hinnodemapper_constructor():
 
 def test_hinnodemapper_constructor_all_options():
     feature_sizes = {"A": 10, "B": 10}
-    G = example_hin_1(feature_sizes)
+    G = example_hin_1(feature_sizes=feature_sizes)
 
     gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
 
@@ -451,7 +383,7 @@ def test_hinnodemapper_constructor_all_options():
 
 
 def test_hinnodemapper_constructor_no_features():
-    G = example_hin_1(feature_size_by_type=None)
+    G = example_hin_1(feature_sizes=None)
     with pytest.raises(RuntimeError):
         mapper = HinSAGENodeGenerator(
             G, batch_size=2, num_samples=[2, 2], head_node_type="A"
@@ -517,7 +449,7 @@ def test_hinnodemapper_level_2():
         assert bf.shape[0] == batch_size
         assert bf.shape[2] == feature_sizes[nt]
 
-        batch_node_types = {schema.get_node_type(n) for n in np.ravel(bf)}
+        batch_node_types = {G.node_type(n) for n in np.ravel(bf)}
 
         assert len(batch_node_types) == 1
         assert nt in batch_node_types
@@ -600,7 +532,7 @@ def test_hinnodemapper_manual_schema():
     G, nodes_type_1, nodes_type_2 = example_hin_2(feature_sizes)
 
     # Create manual schema
-    schema = G.create_graph_schema(create_type_maps=True)
+    schema = G.create_graph_schema()
     HinSAGENodeGenerator(
         G, schema=schema, batch_size=n_batch, num_samples=[1], head_node_type="t1"
     ).flow(nodes_type_1)
@@ -673,7 +605,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
     Attri2VecNodeGenerator requires the graph to have features
     """
 
-    G = example_graph_1()
+    G = example_graph()
     with pytest.raises(RuntimeError):
         Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -681,7 +613,7 @@ def test_attri2vec_nodemapper_constructor_no_feats():
 def test_attri2vec_nodemapper_constructor():
     n_feat = 4
 
-    G = example_graph_1(feature_size=n_feat)
+    G = example_graph(feature_size=n_feat)
 
     generator = Attri2VecNodeGenerator(G, batch_size=2)
 
@@ -697,7 +629,7 @@ def test_attri2vec_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1(n_feat)
+    G1 = example_graph(n_feat)
 
     mapper1 = Attri2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
     assert len(mapper1) == 2
@@ -796,7 +728,7 @@ def test_node2vec_nodemapper_1():
     assert nf.shape == (1,)
 
 
-def test_attri2vec_nodemapper_2():
+def test_node2vec_nodemapper_2():
 
     n_batch = 2
 
@@ -816,14 +748,6 @@ def test_attri2vec_nodemapper_2():
         assert all(np.ravel(nf) == expected_node_batches[ii])
 
 
-def create_graph_features():
-    G = nx.Graph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
-    G = G.to_undirected()
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
-
-
 class Test_FullBatchNodeGenerator:
     """
     Tests of FullBatchNodeGenerator class
@@ -832,7 +756,7 @@ class Test_FullBatchNodeGenerator:
     n_feat = 4
     target_dim = 5
 
-    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
     N = len(G.nodes())
 
     def test_generator_constructor(self):
@@ -952,35 +876,18 @@ class Test_FullBatchNodeGenerator:
 
     def test_fullbatch_generator_init_1(self):
         G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
-
         generator = FullBatchNodeGenerator(G, method=None)
         assert np.array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
-
+        G, _ = create_graph_features()
         func = "Not callable"
 
         with pytest.raises(ValueError):
             generator = FullBatchNodeGenerator(G, "test", transform=func)
 
     def test_fullbatch_generator_transform(self):
-        G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
+        G, _ = create_graph_features()
 
         def func(features, A, **kwargs):
             return features, A.dot(A)

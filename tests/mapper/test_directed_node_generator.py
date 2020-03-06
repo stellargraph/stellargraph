@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-import pytest
 import networkx as nx
 import pandas as pd
 from stellargraph.mapper import DirectedGraphSAGENodeGenerator
-from stellargraph.core.graph import StellarGraph, StellarDiGraph
+from stellargraph.core.graph import StellarDiGraph
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_simple_graph():
     """
     Creates a simple directed graph for testing. The node ids are integers.
@@ -30,13 +29,9 @@ def create_simple_graph():
         A small, directed graph with 3 nodes and 2 edges in StellarDiGraph format.
     """
 
-    g = nx.DiGraph()
-    edges = [(1, 2), (2, 3)]
-    g.add_edges_from(edges)
-    nodes = list(g.nodes())
-    features = [(node, -1.0 * node) for node in nodes]
-    df = pd.DataFrame(features, columns=["id", "f0"]).set_index("id")
-    return StellarDiGraph(g, node_features=df)
+    nodes = pd.DataFrame([-1, -2, -3], index=[1, 2, 3])
+    edges = pd.DataFrame([(1, 2), (2, 3)], columns=["source", "target"])
+    return StellarDiGraph(nodes, edges)
 
 
 class TestDirectedNodeGenerator(object):
@@ -57,7 +52,7 @@ class TestDirectedNodeGenerator(object):
         flow = gen.flow(node_ids=nodes, shuffle=False)
 
         # Obtain tree of sampled features
-        features = gen.sample_features(nodes)
+        features = gen.sample_features(nodes, 0)
         num_hops = len(in_samples)
         tree_len = 2 ** (num_hops + 1) - 1
         assert len(features) == tree_len
@@ -124,7 +119,7 @@ class TestDirectedNodeGenerator(object):
         )
         flow = gen.flow(node_ids=nodes, shuffle=False)
 
-        features = gen.sample_features(nodes)
+        features = gen.sample_features(nodes, 0)
         num_hops = 2
         tree_len = 2 ** (num_hops + 1) - 1
         assert len(features) == tree_len

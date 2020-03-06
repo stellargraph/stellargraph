@@ -18,13 +18,13 @@
 __all__ = ["UnsupervisedSampler"]
 
 
-import random
 import numpy as np
 
 from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
 from stellargraph.data.explorer import BiasedRandomWalk
+from stellargraph.random import random_state
 
 
 class UnsupervisedSampler:
@@ -45,12 +45,6 @@ class UnsupervisedSampler:
             length (int): An integer giving the length of the walks. Length must be at least 2.
             number_of_walks (int): Number of walks from each root node.
             seed(int): the seed used to generate the initial random state
-            bidirectional(bool): whether to collect node context pairs in a bidirectional way: for node 'u' with its
-                following context node 'v' in a random walk, if birectional is set to be True, both '(u, v)' and '(v, u)'
-                are collected as node-context pairs, otherwise, only '(u, v)' is collected as a node-context pair. The default value
-                is set to False.
-            context_sampling(bool): whether to perform sampling on the length of random walks for collect node context pairs. The default
-                value is set to False.
             walker: the walker used to generate random walks, which can be an instance of UniformRandomWalk or BiasedRandomWalk. If walker
                 is None, it will be set to an instance of UniformRandomWalk.
             **kwargs: optional hyperparameters (p, q, weighted) for biased random walkers.
@@ -63,8 +57,6 @@ class UnsupervisedSampler:
         length=2,
         number_of_walks=1,
         seed=None,
-        bidirectional=False,
-        context_sampling=False,
         walker=None,
         **kwargs,
     ):
@@ -125,28 +117,16 @@ class UnsupervisedSampler:
         else:
             self.number_of_walks = number_of_walks
 
-        # Determine whether to collect node context pairs in a bidirectional way
-        if not isinstance(bidirectional, bool):
-            raise TypeError("bidirectional should be a bool variable")
-        else:
-            self.bidirectional = bidirectional
-
-        # Determine whether to perform sampling on the length of random walks
-        if not isinstance(context_sampling, bool):
-            raise TypeError("context_sampling should be a bool variable")
-        else:
-            self.context_sampling = context_sampling
-
         # Setup an interal random state with the given seed
-        self.random = random.Random(seed)
+        _, self.np_random = random_state(seed)
 
-    def generator(self, batch_size):
-
+    def run(self, batch_size):
         """
-        This method yields a batch_size number of positive and negative samples from the graph.
-        This method generates one walk at a time of a given length from each root node and returns
-        the positive pairs from the walks and the same number of negative pairs from a global
-        node sampling distribution.
+        This method returns a batch_size number of positive and negative samples from the graph.
+        A random walk is generated from each root node, which are transformed into positive context
+        pairs, and the same number of negative pairs are generated from a global node sampling
+        distribution. The resulting list of context pairs are shuffled and converted to batches of
+        size ``batch_size``.
 
         Currently the global node sampling distribution for the negative pairs is the degree
         distribution to the 3/4 power. This is the same used in node2vec
@@ -157,90 +137,56 @@ class UnsupervisedSampler:
                 This must be an even number.
 
         Returns:
-            Tuple of lists of target/context pairs and labels – 0 for a negative and 1 for a
-             positive pair: ([[target, context] ,... ], [label, ...])
+            List of batches, where each batch is a tuple of (list context pairs, list of labels)
         """
         self._check_parameter_values(batch_size)
 
-        positive_pairs = list()
-        negative_pairs = list()
-
-        sample_counter = 0
-
         all_nodes = list(self.graph.nodes())
-
         # Use the sampling distribution as per node2vec
         degrees = self.graph.node_degrees()
-        sampling_distribution = [degrees[n] ** 0.75 for n in all_nodes]
 
-        done = False
-        while not done:
-            self.random.shuffle(self.nodes)
-            for node in self.nodes:  # iterate over root nodes
-                # Set the walk length
-                if self.context_sampling:
-                    walk_length = int(np.ceil(self.length * self.random.random()))
-                else:
-                    walk_length = self.length
-                # Get 1 walk at a time. For now its assumed that its a uniform random walker or biased random walker
-                if isinstance(
-                    self.walker, UniformRandomWalk
-                ):  # for uniform random walk
-                    walk = self.walker.run(
-                        nodes=[node],  # root nodes
-                        length=walk_length,  # maximum length of a random walk
-                        n=1,  # number of random walks per root node
-                    )
-                else:  # for biased random walk
-                    walk = self.walker.run(
-                        nodes=[node],  # root nodes
-                        length=walk_length,  # maximum length of a random walk
-                        n=1,  # number of random walks per root node
-                        p=self.p,  # defines probability, 1/p, of returning to source node
-                        q=self.q,  # defines probability, 1/q, for moving to a node away from the source node
-                        weighted=self.weighted,  #  indicates whether the walk is unweighted or weighted
-                    )
-                # (target,context) pair sampling
-                target = walk[0][0]
-                context_window = walk[0][1:]
-                for context in context_window:
-                    # Don't add self pairs
-                    if context == target:
-                        continue
+        sampling_distribution = np.array([degrees[n] ** 0.75 for n in all_nodes])
+        sampling_distribution_norm = sampling_distribution / np.sum(
+            sampling_distribution
+        )
 
-                    for _ in range(2):
-                        positive_pairs.append((target, context))
-                        sample_counter += 1
+        if isinstance(self.walker, UniformRandomWalk):  # for uniform random walk
+            walk = self.walker.run(
+                nodes=self.nodes, length=self.length, n=self.number_of_walks
+            )
+        else:  # for biased random walk
+            walk = self.walker.run(
+                nodes=self.nodes, length=self.length, n=self.number_of_walks, p=self.p, q=self.q, weighted=self.weighted
+            )
 
-                        # For each positive sample, add a negative sample.
-                        random_sample = self.random.choices(
-                            all_nodes, weights=sampling_distribution, k=1
-                        )
-                        negative_pairs.append((target, *random_sample))
-                        sample_counter += 1
+        # first item in each walk is the target/head node
+        targets = [walk[0] for walk in walks]
 
-                        # If the batch_size number of samples are accumulated, yield.
-                        if sample_counter == batch_size:
-                            all_pairs = positive_pairs + negative_pairs
-                            all_targets = [1] * len(positive_pairs) + [0] * len(
-                                negative_pairs
-                            )
+        positive_pairs = np.array(
+            [
+                (target, positive_context)
+                for target, walk in zip(targets, walks)
+                for positive_context in walk[1:]
+            ]
+        )
 
-                            positive_pairs.clear()
-                            negative_pairs.clear()
-                            sample_counter = 0
+        negative_samples = self.np_random.choice(
+            all_nodes, size=len(positive_pairs), p=sampling_distribution_norm
+        )
+        negative_pairs = np.column_stack((positive_pairs[:, 0], negative_samples))
 
-                            edge_ids_labels = list(zip(all_pairs, all_targets))
-                            self.random.shuffle(edge_ids_labels)
-                            edge_ids, edge_labels = [
-                                [z[i] for z in edge_ids_labels] for i in (0, 1)
-                            ]
+        pairs = np.concatenate((positive_pairs, negative_pairs), axis=0)
+        labels = np.repeat([1, 0], len(positive_pairs))
 
-                            yield edge_ids, edge_labels
+        # shuffle indices - note this doesn't ensure an equal number of positive/negative examples in
+        # each batch, just an equal number overall
+        indices = self.np_random.permutation(len(pairs))
 
-                        if self.bidirectional is False:
-                            break
-                        target, context = context, target
+        batch_indices = [
+            indices[i : i + batch_size] for i in range(0, len(indices), batch_size)
+        ]
+
+        return [(pairs[i], labels[i]) for i in batch_indices]
 
     def _check_parameter_values(self, batch_size):
         """

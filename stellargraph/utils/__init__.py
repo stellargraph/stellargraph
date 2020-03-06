@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,4 @@ This contains the utility objects used by the StellarGraph library.
 
 """
 
-from .calibration import *
-from .ensemble import *
-from .saliency_maps import *
+from .history import *

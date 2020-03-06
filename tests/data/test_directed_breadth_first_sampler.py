@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,77 +16,14 @@
 
 import random
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
-from stellargraph.core.graph import StellarGraph, StellarDiGraph
-
-
-def create_simple_graph():
-    """
-    Creates a simple directed graph for testing. The node ids are string or integers.
-
-    :return: A small, directed graph with 4 nodes and 6 edges in StellarDiGraph format.
-    """
-
-    g = nx.DiGraph()
-    edges = [
-        ("root", 2),
-        ("root", 1),
-        ("root", "0"),
-        (2, "c2.1"),
-        (2, "c2.2"),
-        (1, "c1.1"),
-    ]
-    g.add_edges_from(edges)
-    return StellarDiGraph(g)
-
-
-def create_test_graph():
-    """
-    Creates a simple graph for testing. The node ids are string or integers.
-
-    :return: A simple graph with 13 nodes and 24 edges (including self loops for all but two of the nodes) in
-    StellarDiGraph format.
-    """
-    g = nx.DiGraph()
-    edges = [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, 7),
-        (4, 8),
-        (2, 5),
-        (5, 9),
-        (5, 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        (7, 7),
-        (8, 8),
-        (2, 2),
-        (5, 5),
-        (9, 9),
-        (
-            "self loner",
-            "self loner",
-        ),  # node that is not connected with any other nodes but has self loop
-    ]
-
-    g.add_edges_from(edges)
-    g.add_node(
-        "loner"
-    )  # node that is not connected to any other nodes and not having a self loop
-
-    return StellarDiGraph(g)
+from stellargraph.core.graph import StellarDiGraph
+from ..test_utils.graphs import create_test_graph, tree_graph
 
 
 class TestDirectedBreadthFirstNeighbours(object):
     def test_parameter_checking(self):
-        g = create_test_graph()
+        g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
         nodes = ["0", 1]
@@ -164,9 +101,8 @@ class TestDirectedBreadthFirstNeighbours(object):
         subgraph = bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size)
         assert len(subgraph) == 0
 
-    def test_zero_hops(self):
-        g = create_simple_graph()
-        bfw = DirectedBreadthFirstNeighbours(g)
+    def test_zero_hops(self, tree_graph):
+        bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # By consensus, a zero-length walk raises an error.
         with pytest.raises(ValueError):
             subgraph = bfw.run(nodes=["root"], n=1, in_size=[], out_size=[])
@@ -174,9 +110,8 @@ class TestDirectedBreadthFirstNeighbours(object):
         # assert len(subgraph) == 1
         # assert len(subgraph[0]) == 1
 
-    def test_one_hop(self):
-        g = create_simple_graph()
-        bfw = DirectedBreadthFirstNeighbours(g)
+    def test_one_hop(self, tree_graph):
+        bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # - The following case should be [[["root"], [None], [child]]]
         subgraph = bfw.run(nodes=["root"], n=1, in_size=[1], out_size=[1])
         assert len(subgraph) == 1
@@ -208,9 +143,8 @@ class TestDirectedBreadthFirstNeighbours(object):
         for child in subgraph[0][2]:
             assert child in ["0", 1, 2]
 
-    def test_two_hops(self):
-        g = create_simple_graph()
-        bfw = DirectedBreadthFirstNeighbours(g)
+    def test_two_hops(self, tree_graph):
+        bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # - The following case should be [[["root"], [None], [child*2], [None], [None*2], ["root"*2], [grandchild*4]]]
         in_size = [1, 1]
         out_size = [2, 2]
@@ -246,7 +180,7 @@ class TestDirectedBreadthFirstNeighbours(object):
                     assert grandchild in ["c2.1", "c2.2"]
         # - Check structure size for multiple start nodes
         # - For each start node, should be [[[node], [in], [out], [in.in], [in.out], [out.in], [out.out]]]
-        nodes = list(g.nodes())
+        nodes = list(tree_graph.nodes())
         in_size = [2, 3]
         out_size = [4, 5]
         subgraph = bfw.run(nodes=nodes, n=1, in_size=in_size, out_size=out_size)
@@ -262,7 +196,7 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(node_graph[6]) == out_size[0] * out_size[1]
 
     def test_three_hops(self):
-        g = create_test_graph()
+        g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
         graph_nodes = list(g.nodes())
         for _ in range(50):
@@ -289,7 +223,7 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(subgraph[0][14]) == out_size[0] * out_size[1] * out_size[2]
 
     def test_benchmark_bfs_walk(self, benchmark):
-        g = create_test_graph()
+        g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
         nodes = ["0"]

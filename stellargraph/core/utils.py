@@ -17,6 +17,8 @@ import collections
 import scipy.sparse as sp
 from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras import backend as K
 
 
 def is_real_iterable(x):
@@ -29,7 +31,7 @@ def is_real_iterable(x):
     Returns:
         True if x is an iterable (but not a string) and False otherwise
     """
-    return isinstance(x, collections.Iterable) and not isinstance(x, (str, bytes))
+    return isinstance(x, collections.abc.Iterable) and not isinstance(x, (str, bytes))
 
 
 def normalize_adj(adj, symmetric=True):

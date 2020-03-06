@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2019 Data61, CSIRO
+# Copyright 2018-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,5 +23,5 @@ The data package contains classes and functions to read, process, and query grap
 from .explorer import *
 from .edge_splitter import *
 from .node_splitter import *
-from .loader import from_epgm, load_dataset_BlogCatalog3
+from .loader import from_epgm
 from .unsupervised_sampler import *

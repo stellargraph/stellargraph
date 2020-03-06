@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2017-2019 Data61, CSIRO
+# Copyright 2017-2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import UniformRandomMetaPathWalk
 from stellargraph.core.graph import StellarGraph
 
 
+# FIXME (#535): Consider using graph fixtures
 def create_test_graph():
     """
     Creates a simple graph for testing the BreadthFirstWalk class. The node ids are string or integers. Each node
@@ -31,47 +32,41 @@ def create_test_graph():
         networkx format.
 
     """
-    g = nx.Graph()
-    edges = [
-        ("0", 1),
-        ("0", 2),
-        (1, 3),
-        (1, 4),
-        (3, 6),
-        (4, "7"),
-        (4, 8),
-        (2, "5"),
-        ("5", 9),
-        ("5", 10),
-        ("0", "0"),
-        (1, 1),
-        (3, 3),
-        (6, 6),
-        (4, 4),
-        ("7", "7"),
-        (8, 8),
-        (2, 2),
-        ("5", "5"),
-        (9, 9),
-        (
-            "self loner",
-            "self loner",
-        ),  # node that is not connected with any other nodes but has self loop
-    ]
+    nodes = {
+        "s": pd.DataFrame(index=["0", "5", "7", "self loner", "loner"]),
+        "n": pd.DataFrame(index=[1, 2, 3, 4, 6, 8, 9, 10]),
+    }
+    edges = pd.DataFrame(
+        [
+            ("0", 1),
+            ("0", 2),
+            (1, 3),
+            (1, 4),
+            (3, 6),
+            (4, "7"),
+            (4, 8),
+            (2, "5"),
+            ("5", 9),
+            ("5", 10),
+            ("0", "0"),
+            (1, 1),
+            (3, 3),
+            (6, 6),
+            (4, 4),
+            ("7", "7"),
+            (8, 8),
+            (2, 2),
+            ("5", "5"),
+            (9, 9),
+            (
+                "self loner",
+                "self loner",
+            ),  # node that is not connected with any other nodes but has self loop
+        ],
+        columns=["source", "target"],
+    )
 
-    g.add_edges_from(edges)
-    g.add_node(
-        "loner"
-    )  # node that is not connected to any other nodes and not having a self loop
-
-    for node in g.nodes():
-        if type(node) == str:  # make these type s for string
-            g.nodes[node]["label"] = "s"
-        else:  # make these type n for number
-            g.nodes[node]["label"] = "n"
-
-    g = StellarGraph(g)
-    return g
+    return StellarGraph(nodes, edges)
 
 
 class TestMetaPathWalk(object):
