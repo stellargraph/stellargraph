@@ -532,8 +532,8 @@ class RelationalFullBatchNodeSequence(Sequence):
 
 class CorruptedNodeSequence(Sequence):
     """
-    Keras compatible data generator that wraps a FullBatchSequence, SparseFullBatchSequence, or
-    RelationalFullBatchNodeSequence and provides corrupted data for training Deep Graph Infomax.
+    Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
+    data for training Deep Graph Infomax.
 
     Args:
         base_generator: the uncorrupted Sequence object.
@@ -542,16 +542,11 @@ class CorruptedNodeSequence(Sequence):
     def __init__(self, base_generator):
 
         if not isinstance(
-            base_generator,
-            (
-                FullBatchSequence,
-                SparseFullBatchSequence,
-                RelationalFullBatchNodeSequence,
-            ),
+            base_generator, (FullBatchSequence, SparseFullBatchSequence,),
         ):
             raise TypeError(
-                f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
-                f"or RelationalFullBatchNodeSequence, found {type(base_generator).__name__}"
+                f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
+                f"found {type(base_generator).__name__}"
             )
 
         self.base_generator = base_generator

@@ -21,7 +21,7 @@ from tensorflow.keras.layers import Input, Dense, Lambda, Layer
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-__all__ = ["InfoMax"]
+__all__ = ["DeepGraphInfoMax"]
 
 
 class Discriminator(Layer):
@@ -59,7 +59,7 @@ class Discriminator(Layer):
 
 
 @experimental(reason="lack of unit tests", issues=[1003])
-class InfoMax:
+class DeepGraphInfoMax:
     """
     A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
     (https://arxiv.org/pdf/1809.10341.pdf).
@@ -82,7 +82,7 @@ class InfoMax:
         # specific to full batch models
         self.corruptible_inputs_idxs = [0]
 
-    def unsupervised_node_model(self):
+    def build(self):
         """
         A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
 
@@ -91,10 +91,12 @@ class InfoMax:
         Example:
 
             ```
-            x_in, x_out = infomax.unsupervised_node_model()
+            x_in, x_out = dg_infomax.build()
             model = Model(inputs=x_in, outputs=x_out)
             model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, ...)
             ```
+
+        Where `dg_infomax` is an instance of `DeepGraphInfoMax`.
 
         Returns:
             input and output layers for use with a keras model
@@ -136,7 +138,7 @@ class InfoMax:
 
         Args:
             model (keras.Model): the base Deep Graph Infomax model with inputs and outputs created from
-                InfoMax.unsupervised_node_model
+                DeepGraphInfoMax.build()
         Returns:
             input and output layers for use with a keras model
         """
