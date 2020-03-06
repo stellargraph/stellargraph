@@ -32,14 +32,9 @@ def graph_log_likelihood(y_true, y_pred):
 
     loss = tf.math.reduce_sum(
         tf.abs(
-            -(expected_walks * _log_sigmoid(scores))
-            - adj_mask * (-scores - _log_sigmoid(scores))
+            -(expected_walks * tf.math.log_sigmoid(scores))
+            - adj_mask * (-scores + tf.math.log_sigmoid(scores))
         )
     )
 
     return tf.expand_dims(loss, 0)
-
-
-def _log_sigmoid(x):
-
-    return tf.math.log(1 + tf.math.exp(-x))
