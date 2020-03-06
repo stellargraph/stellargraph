@@ -274,6 +274,15 @@ class StellarGraph:
             weight_column=edge_weight_column,
         )
 
+        edge_node_set = set(self._edges.sources)
+        edge_node_set.update(self._edges.targets)
+        node_set = set(self._nodes.ids.pandas_index)
+        if not edge_node_set.issubset(node_set):
+            raise ValueError(
+                f"Found nodes referenced in `edges` not contained in `nodes`. Either add these nodes "
+                f"to `nodes` or remove the edges containing them."
+            )
+
     @staticmethod
     def from_networkx(
         graph,

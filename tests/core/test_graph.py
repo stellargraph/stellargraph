@@ -114,6 +114,28 @@ def test_digraph_constructor():
         assert sg.number_of_edges() == 0
 
 
+def test_graph_constructor_extra_nodes_in_edges():
+    nodes = pd.DataFrame([], index=[0, 1, 2, 3, 4])
+    edges = {
+        "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
+        "b": pd.DataFrame({"source": [4, 5], "target": [0, 2]}, index=[1, 2]),
+    }
+
+    with pytest.raises(ValueError):
+        g = StellarGraph(nodes=nodes, edges=edges)
+
+    # adding an extra node should fix things
+    nodes = pd.DataFrame([], index=[0, 1, 2, 3, 4, 5])
+    g = StellarGraph(nodes=nodes, edges=edges)
+
+    # removing the bad edge should also fix
+    nodes = pd.DataFrame([], index=[0, 1, 2, 3, 4])
+    edges = {
+        "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
+        "b": pd.DataFrame({"source": [4], "target": [0]}, index=[1]),
+    }
+
+
 def test_info():
     sg = create_graph_1()
     info_str = sg.info()
