@@ -8,12 +8,11 @@
      git push -u origin release-X.X.X
      ```
 
-Release-related changes are made via Pull Requests from feature branches into the new release branch:
-
-```shell
-git checkout -b release-X.X.X-changes release-X.X.X
-git push -u origin release-X.X.X-changes
-```
+   - Release-related changes are made via Pull Requests from feature branches into the new release branch
+     ```shell
+     git checkout -b release-X.X.X-changes release-X.X.X
+     git push -u origin release-X.X.X-changes
+     ```
 
    - Make the release changes described below.
      - MUST do:
@@ -26,11 +25,11 @@ git push -u origin release-X.X.X-changes
      - NEVER do:
        - Add new features
 
-  - Commit and push the changes to `release-X.X.X-changes`
-    ```shell
-    git commit release-X.X.X-changes -m "bumped version"
-    git push -u origin release-X.X.X-changes
-    ```
+   - Commit and push the changes to `release-X.X.X-changes`
+     ```shell
+     git commit -m "Bump version"
+     git push -u origin release-X.X.X-changes
+     ```
 
    - Make a PR from `release-X.X.X-changes` into `release-X.X.X` and merge once approved
 
