@@ -256,15 +256,10 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        if nodes is None:
-            nodes = {}
         if edges is None:
             edges = {}
 
         self._is_directed = is_directed
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
         self._edges = convert.convert_edges(
             edges,
             name="edges",
@@ -276,6 +271,16 @@ class StellarGraph:
 
         edge_node_set = set(self._edges.sources)
         edge_node_set.update(self._edges.targets)
+
+        if nodes is None and edges is not None:
+            nodes = pd.DataFrame([], index=edge_node_set)
+        elif nodes is None:
+            nodes = {}
+
+        self._nodes = convert.convert_nodes(
+            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
+        )
+
         node_set = set(self._nodes.ids.pandas_index)
         if not edge_node_set.issubset(node_set):
             raise ValueError(

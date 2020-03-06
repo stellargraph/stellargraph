@@ -115,7 +115,7 @@ def test_digraph_constructor():
 
 
 def test_graph_constructor_extra_nodes_in_edges():
-    nodes = pd.DataFrame([], index=[0, 1, 2, 3, 4])
+    nodes = pd.DataFrame(np.ones((5, 1)), index=[0, 1, 2, 3, 4])
     edges = {
         "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
         "b": pd.DataFrame({"source": [4, 5], "target": [0, 2]}, index=[1, 2]),
@@ -125,15 +125,26 @@ def test_graph_constructor_extra_nodes_in_edges():
         g = StellarGraph(nodes=nodes, edges=edges)
 
     # adding an extra node should fix things
-    nodes = pd.DataFrame([], index=[0, 1, 2, 3, 4, 5])
+    nodes = pd.DataFrame(np.ones((6, 1)), index=[0, 1, 2, 3, 4, 5])
     g = StellarGraph(nodes=nodes, edges=edges)
 
     # removing the bad edge should also fix
-    nodes = pd.DataFrame([], index=[0, 1, 2, 3, 4])
+    nodes = pd.DataFrame(np.ones((5, 1)), index=[0, 1, 2, 3, 4])
     edges = {
         "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
         "b": pd.DataFrame({"source": [4], "target": [0]}, index=[1]),
     }
+
+
+def test_graph_constructor_nodes_from_edges():
+    edges = {
+        "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
+        "b": pd.DataFrame({"source": [4, 5], "target": [0, 2]}, index=[1, 2]),
+    }
+
+    g = StellarGraph(nodes=None, edges=edges)
+
+    assert sorted(g.nodes()) == [0, 1, 2, 4, 5]
 
 
 def test_info():
