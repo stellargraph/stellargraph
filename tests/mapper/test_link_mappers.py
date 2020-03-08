@@ -693,9 +693,9 @@ class Test_Attri2VecLinkGenerator:
             e1 = edges[nl[0]]
             e2 = edges[nl[1]]
             assert nf[0][0, 0] == e1[0]
-            assert nf[1][0] == G.get_index_for_nodes([e1[1]])[0]
+            assert nf[1][0] == G._get_index_for_nodes([e1[1]])[0]
             assert nf[0][1, 0] == e2[0]
-            assert nf[1][1] == G.get_index_for_nodes([e2[1]])[0]
+            assert nf[1][1] == G._get_index_for_nodes([e2[1]])[0]
 
     def test_Attri2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
@@ -781,7 +781,7 @@ class Test_Node2VecLinkGenerator:
 
     def test_LinkMapper_constructor(self):
 
-        G = example_Graph_1(self.n_feat)
+        G = example_graph(self.n_feat)
         edge_labels = [0] * G.number_of_edges()
 
         generator = Node2VecLinkGenerator(G, batch_size=self.batch_size)
@@ -790,7 +790,7 @@ class Test_Node2VecLinkGenerator:
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
 
-        G = example_Graph_1()
+        G = example_graph()
         edge_labels = [0] * G.number_of_edges()
 
         generator = Node2VecLinkGenerator(G, batch_size=self.batch_size)
@@ -801,7 +801,7 @@ class Test_Node2VecLinkGenerator:
 
     def test_Node2VecLinkGenerator_1(self):
 
-        G = example_Graph_2()
+        G = example_graph()
         data_size = G.number_of_edges()
         edge_labels = [0] * data_size
 
@@ -823,7 +823,7 @@ class Test_Node2VecLinkGenerator:
             nf, nl = mapper[2]
 
     def test_edge_consistency(self):
-        G = example_Graph_2(1)
+        G = example_graph(1)
         edges = list(G.edges())
         edge_labels = list(range(len(edges)))
 
@@ -835,10 +835,10 @@ class Test_Node2VecLinkGenerator:
             nf, nl = mapper[batch]
             e1 = edges[nl[0]]
             e2 = edges[nl[1]]
-            assert nf[0][0] == G.get_index_for_nodes([e1[0]])[0]
-            assert nf[1][0] == G.get_index_for_nodes([e1[1]])[0]
-            assert nf[0][1] == G.get_index_for_nodes([e2[0]])[0]
-            assert nf[1][1] == G.get_index_for_nodes([e2[1]])[0]
+            assert nf[0][0] == G._get_index_for_nodes([e1[0]])[0]
+            assert nf[1][0] == G._get_index_for_nodes([e1[1]])[0]
+            assert nf[0][1] == G._get_index_for_nodes([e2[0]])[0]
+            assert nf[1][1] == G._get_index_for_nodes([e2[1]])[0]
 
     def test_Node2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
@@ -852,7 +852,7 @@ class Test_Node2VecLinkGenerator:
         """
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
-        G = example_Graph_2()
+        G = example_graph()
         gen = Node2VecLinkGenerator(G, batch_size=self.batch_size).flow(G.edges())
         for i in range(len(gen)):
             assert gen[i][1] is None
@@ -883,7 +883,7 @@ class Test_Node2VecLinkGenerator:
 
     def test_Node2VecLinkGenerator_unsupervisedSampler_sample_generation(self):
 
-        G = example_Graph_2()
+        G = example_graph()
 
         unsupervisedSamples = UnsupervisedSampler(G)
 
@@ -891,9 +891,9 @@ class Test_Node2VecLinkGenerator:
             unsupervisedSamples
         )
 
-        assert mapper.data_size == 16
-        assert self.batch_size == 2
-        assert len(mapper) == 8
+        assert mapper.data_size == len(list(G.nodes())) * 2
+        assert mapper.batch_size == self.batch_size
+        assert len(mapper) == np.ceil(mapper.data_size / mapper.batch_size)
 
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
@@ -906,9 +906,9 @@ class Test_Node2VecLinkGenerator:
             assert sorted(nl) == [0, 1]
 
         with pytest.raises(IndexError):
-            nf, nl = mapper[8]
+            nf, nl = mapper[len(mapper)]
 
-            
+
 class Test_DirectedGraphSAGELinkGenerator:
     """
     Tests of GraphSAGELinkGenerator class
@@ -1005,7 +1005,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         edge_labels = [0] * data_size
 
         mapper = DirectedGraphSAGELinkGenerator(
-            G, batch_size=self.batch_size, in_samples=[0], out_samples=[0],
+            G, batch_size=self.batch_size, in_samples=[0], out_samples=[0]
         ).flow(G.edges(), edge_labels)
 
         assert len(mapper) == 2

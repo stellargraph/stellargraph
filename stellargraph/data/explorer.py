@@ -853,7 +853,7 @@ class TemporalRandomWalk(GraphWalk):
 
         edges, times = self.graph.edges(include_edge_weight=True)
         edge_biases = self._temporal_biases(
-            times, None, bias_type=initial_edge_bias, is_forward=False,
+            times, None, bias_type=initial_edge_bias, is_forward=False
         )
 
         successes = 0

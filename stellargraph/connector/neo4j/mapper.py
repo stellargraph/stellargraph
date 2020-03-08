@@ -14,19 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = [
-    "Neo4JGraphSAGENodeGenerator",
-    "Neo4JDirectedGraphSAGENodeGenerator",
-]
+__all__ = ["Neo4JGraphSAGENodeGenerator", "Neo4JDirectedGraphSAGENodeGenerator"]
 
 import warnings
 import numpy as np
 import itertools as it
 
-from .sampler import (
-    Neo4JDirectedBreadthFirstNeighbors,
-    Neo4JSampledBreadthFirstWalk,
-)
+from .sampler import Neo4JDirectedBreadthFirstNeighbors, Neo4JSampledBreadthFirstWalk
 
 from ...core.graph import StellarGraph, GraphSchema
 from ...mapper import NodeSequence

@@ -41,14 +41,6 @@ class TestUnsupervisedSampler(object):
         with pytest.raises(ValueError):
             UnsupervisedSampler(G=line_graph, nodes=1)
 
-        # bidirectional option should be a bool variable
-        with pytest.raises(TypeError):
-            UnsupervisedSampler(G=g, bidirectional=1)
-
-        # context_sampling option should be a bool variable
-        with pytest.raises(TypeError):
-            UnsupervisedSampler(G=g, context_sampling=1)
-
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes
         sampler = UnsupervisedSampler(G=line_graph, nodes=None)
         assert sampler.nodes == list(line_graph.nodes())

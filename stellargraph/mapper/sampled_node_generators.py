@@ -600,7 +600,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
         super().__init__(G, batch_size)
         self.name = name
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Get the ids of the head nodes, and return these as a list of feature
         arrays for the node2vec algorithm.
@@ -613,7 +613,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             head node.
         """
 
-        head_node_ids = self.graph.get_index_for_nodes(head_nodes)
+        head_node_ids = self.graph._get_index_for_nodes(head_nodes)
         batch_feats = np.array(head_node_ids)
         return batch_feats
 

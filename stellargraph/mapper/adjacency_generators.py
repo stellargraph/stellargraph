@@ -44,9 +44,7 @@ class AdjacencyPowerGenerator:
         indices = np.column_stack((Aadj.col, Aadj.row))
 
         self.Aadj_T = tf.sparse.SparseTensor(
-            indices=indices,
-            values=Aadj.data.astype(np.float32),
-            dense_shape=Aadj.shape,
+            indices=indices, values=Aadj.data.astype(np.float32), dense_shape=Aadj.shape
         )
 
         self.transition_matrix_T = tf.sparse.SparseTensor(

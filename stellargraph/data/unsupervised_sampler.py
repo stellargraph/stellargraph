@@ -151,12 +151,17 @@ class UnsupervisedSampler:
         )
 
         if isinstance(self.walker, UniformRandomWalk):  # for uniform random walk
-            walk = self.walker.run(
+            walks = self.walker.run(
                 nodes=self.nodes, length=self.length, n=self.number_of_walks
             )
         else:  # for biased random walk
-            walk = self.walker.run(
-                nodes=self.nodes, length=self.length, n=self.number_of_walks, p=self.p, q=self.q, weighted=self.weighted
+            walks = self.walker.run(
+                nodes=self.nodes,
+                length=self.length,
+                n=self.number_of_walks,
+                p=self.p,
+                q=self.q,
+                weighted=self.weighted,
             )
 
         # first item in each walk is the target/head node

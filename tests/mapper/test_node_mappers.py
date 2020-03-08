@@ -687,7 +687,7 @@ def test_node2vec_nodemapper_constructor_nx():
 
 def test_node2vec_nodemapper_constructor():
 
-    G = example_graph_1()
+    G = example_graph()
 
     generator = Node2VecNodeGenerator(G, batch_size=2)
 
@@ -703,7 +703,7 @@ def test_node2vec_nodemapper_1():
     n_batch = 2
 
     # test graph
-    G1 = example_graph_1()
+    G1 = example_graph()
 
     mapper1 = Node2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
     assert len(mapper1) == 2
@@ -738,9 +738,9 @@ def test_node2vec_nodemapper_2():
     # With no shuffle
     mapper = Node2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
     expected_node_batches = [
-        G.get_index_for_nodes([1, 2]),
-        G.get_index_for_nodes([3, 4]),
-        G.get_index_for_nodes([5]),
+        G._get_index_for_nodes([1, 2]),
+        G._get_index_for_nodes([3, 4]),
+        G._get_index_for_nodes([5]),
     ]
     assert len(mapper) == 3
     for ii in range(len(mapper)):

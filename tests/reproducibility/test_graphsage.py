@@ -162,9 +162,7 @@ def gs_link_pred_model(num_samples, generator, optimizer, bias, dropout, normali
 
     model = tf.keras.Model(inputs=x_inp, outputs=pred)
 
-    model.compile(
-        optimizer=optimizer, loss=tf.keras.losses.binary_crossentropy,
-    )
+    model.compile(optimizer=optimizer, loss=tf.keras.losses.binary_crossentropy)
 
     return model
 

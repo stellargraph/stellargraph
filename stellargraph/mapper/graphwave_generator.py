@@ -137,7 +137,7 @@ class GraphWaveGenerator:
 
         def _map_func(x):
             return _empirical_characteristic_function(
-                _chebyshev(x, self.laplacian, self.coeffs, self.max_eig), ts,
+                _chebyshev(x, self.laplacian, self.coeffs, self.max_eig), ts
             )
 
         node_idxs = self._node_lookup(node_ids)

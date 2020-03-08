@@ -655,7 +655,7 @@ def test_neighbors_unweighted_hom(is_directed):
     graph = example_unweighted_hom(is_directed=is_directed)
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
-        graph.neighbors(1, include_edge_weight=True), [(0, 1), (0, 1), (2, 1), (3, 1)],
+        graph.neighbors(1, include_edge_weight=True), [(0, 1), (0, 1), (2, 1), (3, 1)]
     )
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]), []
