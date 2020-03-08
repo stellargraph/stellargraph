@@ -903,7 +903,7 @@ class Test_Node2VecLinkGenerator:
             assert nf[0].shape == (min(self.batch_size, mapper.data_size),)
             assert nf[1].shape == (min(self.batch_size, mapper.data_size),)
             assert len(nl) == min(self.batch_size, mapper.data_size)
-            #assert sorted(nl) == [0, 1]
+            # assert sorted(nl) == [0, 1]
 
         with pytest.raises(IndexError):
             nf, nl = mapper[len(mapper)]
