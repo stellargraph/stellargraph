@@ -220,25 +220,25 @@ def _knowledge_graph_load(dataset, nodes, rels, train, test, valid):
 
 def test_wn18_load() -> None:
     _knowledge_graph_load(
-        WN18(), nodes=40943, rels=18, train=141442, test=5000, valid=5000
+        WN18(), nodes=40943, rels=18, train=141442, test=5000, valid=5000,
     )
 
 
 def test_wn18rr_load() -> None:
     _knowledge_graph_load(
-        WN18RR(), nodes=40943, rels=11, train=86835, test=3134, valid=3034
+        WN18RR(), nodes=40943, rels=11, train=86835, test=3134, valid=3034,
     )
 
 
 def test_fb15k_load() -> None:
     _knowledge_graph_load(
-        FB15k(), nodes=14951, rels=1345, train=483142, test=59071, valid=50000
+        FB15k(), nodes=14951, rels=1345, train=483142, test=59071, valid=50000,
     )
 
 
 def test_fb15k_237_load() -> None:
     _knowledge_graph_load(
-        FB15k_237(), nodes=14541, rels=237, train=272115, test=20466, valid=17535
+        FB15k_237(), nodes=14541, rels=237, train=272115, test=20466, valid=17535,
     )
 
 

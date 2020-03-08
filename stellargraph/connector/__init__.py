@@ -18,4 +18,6 @@
     The connector package contains classes and functions to support sampling for remote databases.
 """
 
-__all__ = ["neo4j"]
+__all__ = [
+    "neo4j",
+]

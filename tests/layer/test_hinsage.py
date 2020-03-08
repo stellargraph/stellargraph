@@ -594,7 +594,7 @@ def test_hinsage_from_generator():
         head = feats[0][0]
         B_neighs = feats[0][1]
 
-        layer_1_out.append(hinsage_layer(head, [B_neighs]))
+        layer_1_out.append(hinsage_layer(head, [B_neighs,]))
 
         # 1st layer
         # aggregate for the neighbour nodes
@@ -610,7 +610,7 @@ def test_hinsage_from_generator():
         head = layer_1_out[0]
         B_neighs = layer_1_out[1]
 
-        layer_2_out.append(hinsage_layer(head, [B_neighs]))
+        layer_2_out.append(hinsage_layer(head, [B_neighs,]))
 
         actual = model.predict(batch_feats[i][0])
         assert np.isclose(layer_2_out[0], actual).all()

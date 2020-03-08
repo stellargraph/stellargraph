@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ["Neo4JSampledBreadthFirstWalk", "Neo4JDirectedBreadthFirstNeighbors"]
+__all__ = [
+    "Neo4JSampledBreadthFirstWalk",
+    "Neo4JDirectedBreadthFirstNeighbors",
+]
 
 import numpy as np
 import warnings

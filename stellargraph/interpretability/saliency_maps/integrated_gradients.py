@@ -85,7 +85,7 @@ class IntegratedGradients:
         self._model = model
 
     def get_integrated_node_masks(
-        self, node_idx, class_of_interest, features_baseline=None, steps=20
+        self, node_idx, class_of_interest, features_baseline=None, steps=20,
     ):
         """
         Args:
@@ -171,7 +171,11 @@ class IntegratedGradients:
                     adj_step,
                 ]
             else:
-                model_input = [self._features, np.array([[node_idx]]), adj_step]
+                model_input = [
+                    self._features,
+                    np.array([[node_idx]]),
+                    adj_step,
+                ]
 
             model_input = [tf.convert_to_tensor(x) for x in model_input]
             grads = self._compute_gradients(
@@ -195,7 +199,9 @@ class IntegratedGradients:
 
         return total_gradients
 
-    def get_node_importance(self, node_idx, class_of_interest, steps=20):
+    def get_node_importance(
+        self, node_idx, class_of_interest, steps=20,
+    ):
         """
         The importance of the node is defined as the sum of all the feature importance of the node.
 
@@ -208,7 +214,7 @@ class IntegratedGradients:
         """
 
         gradients = self.get_integrated_node_masks(
-            node_idx, class_of_interest, steps=steps
+            node_idx, class_of_interest, steps=steps,
         )
 
         return np.sum(gradients, axis=-1)

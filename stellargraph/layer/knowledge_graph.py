@@ -91,7 +91,11 @@ class ComplEx:
     """
 
     def __init__(
-        self, generator, k, embeddings_initializer="normal", embeddings_regularizer=None
+        self,
+        generator,
+        k,
+        embeddings_initializer="normal",
+        embeddings_regularizer=None,
     ):
         if not isinstance(generator, KGTripleGenerator):
             raise TypeError(

@@ -176,7 +176,7 @@ class TestEdgeSplitterHomogeneous(object):
         g, es_obj = cora
         p = 0.1
 
-        (g_test, edge_data_ids_test, edge_data_labels_test) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="global", keep_connected=True
         )
 
@@ -204,7 +204,7 @@ class TestEdgeSplitterHomogeneous(object):
         g, es_obj = cora
         p = 0.1
         # using default sampling probabilities
-        (g_test, edge_data_ids_test, edge_data_labels_test) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="local", keep_connected=True
         )
 
@@ -220,7 +220,7 @@ class TestEdgeSplitterHomogeneous(object):
         assert nx.is_connected(g_test)
 
         sampling_probs = [0.0, 0.0, 0.1, 0.2, 0.5, 0.2]
-        (g_test, edge_data_ids_test, edge_data_labels_test) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="local", probs=sampling_probs, keep_connected=True
         )
 
@@ -418,7 +418,7 @@ class TestEdgeSplitterHeterogeneous(object):
 
     def _test_split_data_by_edge_type(self, g, es_obj, method):
         p = 0.1
-        (g_test, edge_data_ids_test, edge_data_labels_test) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method=method, edge_label="friend", keep_connected=True
         )
 
@@ -452,7 +452,7 @@ class TestEdgeSplitterHeterogeneous(object):
     def test_split_data_global(self, heterogeneous_graph):
         g, es_obj = heterogeneous_graph
         p = 0.1
-        (g_test, edge_data_ids_test, edge_data_labels_test) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="global", keep_connected=True
         )
 
@@ -472,7 +472,7 @@ class TestEdgeSplitterHeterogeneous(object):
         p = 0.1
 
         # using default sampling probabilities
-        (g_test, edge_data_ids_test, edge_data_labels_test) = es_obj.train_test_split(
+        (g_test, edge_data_ids_test, edge_data_labels_test,) = es_obj.train_test_split(
             p=p, method="local", keep_connected=True
         )
 

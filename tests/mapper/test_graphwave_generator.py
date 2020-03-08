@@ -145,7 +145,7 @@ def test_flow_repeat(barbell, repeat):
 
     for i, x in enumerate(
         generator.flow(
-            barbell.nodes(), sample_points=sample_points, batch_size=1, repeat=repeat
+            barbell.nodes(), sample_points=sample_points, batch_size=1, repeat=repeat,
         )
     ):
 
@@ -224,7 +224,7 @@ def test_flow_node_ids(barbell):
     expected_targets = generator._node_lookup(node_ids)
     actual_targets = []
     for x in generator.flow(
-        node_ids, sample_points=sample_points, batch_size=1, targets=expected_targets
+        node_ids, sample_points=sample_points, batch_size=1, targets=expected_targets,
     ):
 
         actual_targets.append(x[1].numpy())
@@ -239,7 +239,7 @@ def test_chebyshev(barbell):
     """
     scales = (1, 5, 10)
     sample_points = np.linspace(0, 100, 50).astype(np.float32)
-    generator = GraphWaveGenerator(barbell, scales=scales, degree=50)
+    generator = GraphWaveGenerator(barbell, scales=scales, degree=50,)
 
     # calculate wavelets exactly using eigenvalues
     adj = np.asarray(barbell.to_adjacency_matrix().todense()).astype(np.float32)
@@ -258,7 +258,7 @@ def test_chebyshev(barbell):
     ts = tf.convert_to_tensor(sample_points)
 
     expected_dataset = tf.data.Dataset.from_tensor_slices(psis).map(
-        lambda x: _empirical_characteristic_function(x, ts)
+        lambda x: _empirical_characteristic_function(x, ts),
     )
     expected_embeddings = _epoch_as_matrix(expected_dataset)
 

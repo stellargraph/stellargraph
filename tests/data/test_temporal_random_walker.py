@@ -28,7 +28,7 @@ def temporal_graph():
     edges = [(1, 2, 5), (2, 3, 2), (2, 4, 10), (4, 5, 3), (4, 6, 12)]
     edge_cols = ["source", "target", "weight"]
     return StellarGraph(
-        nodes=pd.DataFrame(index=nodes), edges=pd.DataFrame(edges, columns=edge_cols)
+        nodes=pd.DataFrame(index=nodes), edges=pd.DataFrame(edges, columns=edge_cols),
     )
 
 

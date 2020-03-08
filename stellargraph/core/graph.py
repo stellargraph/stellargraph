@@ -268,7 +268,7 @@ class StellarGraph:
 
         self._is_directed = is_directed
         self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype
+            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
         )
         self._edges = convert.convert_edges(
             edges,
@@ -1141,7 +1141,9 @@ class StellarGraph:
                 features = self.node_features(node_ids, node_type=ty)
 
                 for node_id, node_features in zip(node_ids, features):
-                    graph.add_node(node_id, **ty_dict, **{feature_attr: node_features})
+                    graph.add_node(
+                        node_id, **ty_dict, **{feature_attr: node_features},
+                    )
             else:
                 graph.add_nodes_from(node_ids, **ty_dict)
 
