@@ -114,6 +114,20 @@ def test_digraph_constructor():
         assert sg.number_of_edges() == 0
 
 
+def test_legacy_constructor_warning():
+    for cls in [StellarGraph, StellarDiGraph]:
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"Constructing a StellarGraph.*StellarGraph.from_networkx",
+        ):
+            cls(nx.Graph())
+
+    # make sure that we're disabling new uses of the legacy constructor correctly in this repo (see
+    # also: filterwarnings in pytest.ini, PYTHONWARNINGS in .buildkite/docker-compose.yml)
+    with pytest.raises(DeprecationWarning):
+        StellarGraph(nx.Graph())
+
+
 def test_info():
     sg = create_graph_1()
     info_str = sg.info()
