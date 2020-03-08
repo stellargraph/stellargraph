@@ -25,24 +25,8 @@ from stellargraph.layer.node2vec import *
 
 from tensorflow import keras
 import numpy as np
-import networkx as nx
 import pytest
-
-
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
+from ..test_utils.graphs import example_graph
 
 
 def test_node2vec_constructor():
@@ -56,7 +40,7 @@ def test_node2vec_constructor():
         Node2Vec(emb_size=4)
 
     # Construction from generator
-    G = example_graph_1()
+    G = example_graph()
     gen = Node2VecNodeGenerator(G, batch_size=2)
     node2vec = Node2Vec(emb_size=4, generator=gen)
 
