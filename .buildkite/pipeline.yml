@@ -95,6 +95,21 @@ steps:
     soft_fail:
       - exit_status: 2
 
+  - label: ":python::book: test neo4j notebooks"
+    <<: *timeout
+    key: "test-neo4j-notebooks"
+    depends_on: "runner-3_6"
+    command: ".buildkite/steps/test-neo4j-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+        env:
+          - STELLARGRAPH_NEO4J_HOST=neo4j
+    agents:
+      queue: "t2large"
+
   - label: ":python-black: format"
     <<: *timeout
     plugins:

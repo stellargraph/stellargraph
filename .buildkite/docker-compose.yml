@@ -37,6 +37,8 @@ services:
       - BUILDKITE_COMMIT
       - BUILDKITE_TAG
       - CODECOV_TOKEN
+    depends_on:
+      - neo4j
 
   runner-3_7:
     <<: *runner-config
@@ -44,3 +46,9 @@ services:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
+
+  neo4j:
+    build: docker/stellargraph-neo4j
+    environment:
+      # this is running entirely locally on a CI machine, so authentication is unnecessary
+      NEO4J_AUTH: "none"
