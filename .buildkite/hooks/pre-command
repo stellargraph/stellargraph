@@ -18,3 +18,7 @@ esac
 echo "IMAGE_TAG=$IMAGE_TAG"
 
 export IMAGE_TAG
+
+# these are exported to avoid timeout when pushing images
+export COMPOSE_HTTP_TIMEOUT="720"
+export DOCKER_CLIENT_TIMEOUT="720"
