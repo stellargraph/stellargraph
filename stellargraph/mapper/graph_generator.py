@@ -37,28 +37,31 @@ class GraphGenerator:
 
     def __init__(self, graphs, name=None):
 
+        self.node_features_size = None
         for graph in graphs:
             if not isinstance(graph, StellarGraph):
-                raise TypeError("All graphs must be StellarGraph objects.")
+                raise TypeError(
+                    f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
+                )
+            if len(graph.node_types) > 1:
+                raise ValueError(
+                    "graphs: node generator requires graphs with single node type, "
+                    f"found a graph with {graph.node_types} node types."
+                )
+
+            graph.check_graph_for_ml()
+
+            # we require that all graphs have node features of the same dimensionality
+            f_dim = graph.node_feature_sizes()[list(graph.node_types)[0]]
+            if self.node_features_size is None:
+                self.node_features_size = f_dim
+            elif self.node_features_size != f_dim:
+                raise ValueError(
+                    f"graphs: expected node features for all graph to have same dimensions, found {self.node_features_size} vs {f_dim}"
+                )
 
         self.graphs = graphs
         self.name = name
-        # we assume that all graphs have node features of the same dimensionality
-        self.node_features_size = graphs[0].node_features(graphs[0].nodes()).shape[1]
-
-        # Check if the graph has features
-        for graph in self.graphs:
-            graph.check_graph_for_ml()
-
-        # Check that there is only a single node type
-        for graph in self.graphs:
-            if len(graph.node_types) > 1:
-                raise ValueError(
-                    "{}: node generator requires graph with single node type; "
-                    "a graph with multiple node types is passed. Stopping.".format(
-                        type(self).__name__
-                    )
-                )
 
     def flow(self, graph_ilocs, targets=None, batch_size=1, name=None):
         """
@@ -70,7 +73,7 @@ class GraphGenerator:
                 (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
                 len(targets))`.
-            batch_size (int, optional): The batch size that defaults to 1.
+            batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
@@ -81,17 +84,13 @@ class GraphGenerator:
             # Check targets is an iterable
             if not is_real_iterable(targets):
                 raise TypeError(
-                    "{}: Targets must be an iterable or None".format(
-                        type(self).__name__
-                    )
+                    f"targets: expected an iterable or None object, found {type(targets).__name__}"
                 )
 
             # Check targets correct shape
             if len(targets) != len(graph_ilocs):
                 raise ValueError(
-                    "{}: Targets must be the same length as node_ids".format(
-                        type(self).__name__
-                    )
+                    f"expected targets to be the same length as node_ids, found {len(targets)} vs {len(graph_ilocs)}"
                 )
 
         return GraphSequence(

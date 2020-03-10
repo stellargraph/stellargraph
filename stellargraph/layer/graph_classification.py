@@ -136,14 +136,12 @@ class GraphClassification:
         self, layer_sizes, activations, generator, bias=True, dropout=0.0, **kwargs
     ):
         if not isinstance(generator, GraphGenerator):
-            raise TypeError("Generator should be a instance of GraphGenerator")
+            raise TypeError(f"generator: expected instance of GraphGenerator, found {type(generator).__name__}")
 
         if len(layer_sizes) != len(activations):
-            raise AssertionError(
-                "The number of given layers should be the same as the number of activations."
-                "However given len(layer_sizes): {} vs len(activations): {}".format(
-                    len(layer_sizes), len(activations)
-                )
+            raise ValueError(
+                "expected the number of layers to be the same as the number of activations,"
+                f"found {len(layer_sizes)} layer sizes vs {len(activations)} activations"
             )
 
         self.layer_sizes = layer_sizes

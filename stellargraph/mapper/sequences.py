@@ -40,7 +40,7 @@ from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 from ..data.unsupervised_sampler import UnsupervisedSampler
-from ..core.utils import is_real_iterable
+from ..core.utils import is_real_iterable, normalize_adj
 from ..random import random_state
 from scipy import sparse
 from ..core.experimental import experimental
@@ -578,16 +578,16 @@ class GraphSequence(Sequence):
     def __len__(self):
         return int(np.ceil(len(self.graphs) / self.batch_size))
 
-    def __normalize_adj(self, adj):
-        adj = adj.tolil()
-        adj.setdiag(1)  # add self loops
-        degree_matrix_diag = 1.0 / np.sqrt(adj.sum(axis=1))
-        degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
-        degree_matrix = sparse.lil_matrix(adj.shape)
-        degree_matrix.setdiag(degree_matrix_diag)
-        degree_matrix = degree_matrix.tocsr()
-        adj = degree_matrix @ adj @ degree_matrix
-        return adj
+    # def __normalize_adj(self, adj):
+    #     adj = adj.tolil()
+    #     adj.setdiag(1)  # add self loops
+    #     degree_matrix_diag = 1.0 / np.sqrt(adj.sum(axis=1))
+    #     degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
+    #     degree_matrix = sparse.lil_matrix(adj.shape)
+    #     degree_matrix.setdiag(degree_matrix_diag)
+    #     degree_matrix = degree_matrix.tocsr()
+    #     adj = degree_matrix @ adj @ degree_matrix
+    #     return adj
 
     def __getitem__(self, index):
         graphs = self.graphs[
@@ -603,7 +603,8 @@ class GraphSequence(Sequence):
         # The operations to normalize the adjacency matrix are a bit slow.
         # FIXME: Either optimize this or implement as a layer.
         if self.normalize_adj:
-            adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
+            adj_graphs = [normalize_adj(adj).toarray() for adj in adj_graphs]
+            # adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
 
         graph_targets = None
         #
