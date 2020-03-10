@@ -219,7 +219,7 @@ class GraphClassification:
 
     def build(self):
         """
-        Builds a Graph Classification model for node prediction.
+        Builds a Graph Classification model.
 
         Returns:
             tuple: `(x_inp, x_out)`, where `x_inp` is a list of two input tensors for the

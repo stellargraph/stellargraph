@@ -22,13 +22,12 @@ class GraphGenerator:
     """
     A data generator for use with graph classification algorithms.
 
-    The supplied graphs should be StellarGraph objects ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graphs should be :class:`StellarGraph` objects ready for machine learning. Currently the model
+    requires node features to be available for all nodes in the graph.
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    This generator will supply the features arrays and the adjacency matrices to a
+    This generator supplies the features arrays and the adjacency matrices to a
     mini-batch Keras graph classification model.
 
     Args:
@@ -64,7 +63,7 @@ class GraphGenerator:
     def flow(self, graph_ilocs, targets=None, batch_size=1, name=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
-        with the supplied graph indexes and numeric targets.
+        with the supplied graph indexes and targets.
 
         Args:
             graph_ilocs (iterable): an iterable of graph indexes in self.graphs for the graphs of interest
@@ -75,8 +74,7 @@ class GraphGenerator:
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A :class:`GraphSequence` object to use with Keras
-            methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
+            A :class:`GraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
