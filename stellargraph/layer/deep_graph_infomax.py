@@ -17,9 +17,11 @@
 from . import GCN, GAT, APPNP, PPNP
 from ..core.experimental import experimental
 
-from tensorflow.keras.layers import Input, Dense, Lambda, Layer
+import numpy as np
+from tensorflow.keras.layers import Input, Lambda, Layer
 import tensorflow as tf
 from tensorflow.keras import backend as K
+import warnings
 
 __all__ = ["DeepGraphInfoMax"]
 
@@ -68,8 +70,6 @@ class DeepGraphInfoMax:
         base_model: the base stellargraph model class
     """
 
-    _NODE_FEATS = "INFO_MAX_NODE_FEATURES"
-
     def __init__(self, base_model):
 
         if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
@@ -78,6 +78,8 @@ class DeepGraphInfoMax:
             )
 
         self.base_model = base_model
+
+        self._NODE_FEATS = "INFO_MAX_NODE_FEATURES" + ''.join(map(chr, np.random.randint(32, 122, size=8)))
 
         # specific to full batch models
         self.corruptible_inputs_idxs = [0]
@@ -88,26 +90,30 @@ class DeepGraphInfoMax:
 
         Note that the tf.nn.sigmoid_cross_entropy_with_logits loss must be used with this model.
 
-        Example:
+        Example::
 
-            ```
+            dg_infomax = DeepGraphInfoMax(...)
             x_in, x_out = dg_infomax.build()
             model = Model(inputs=x_in, outputs=x_out)
             model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, ...)
-            ```
-
-        Where `dg_infomax` is an instance of `DeepGraphInfoMax`.
 
         Returns:
             input and output layers for use with a keras model
         """
+
+        if self.base_model.multiplicity != 1:
+            warnings.warn(
+                f"multiplicity: expected the base_model to have a multiplicity of 1, found"
+                f" ({self.base_model.multiplicity}). A multiplicity of 1 will be used to construct the base model."
+            )
+
         x_inp, node_feats = self.base_model.build(multiplicity=1)
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self.corruptible_inputs_idxs
         ]
 
         # shallow copy normal inputs and replace corruptible inputs with new inputs
-        x_in_corr = [x for x in x_inp]
+        x_in_corr = x_inp.copy()
         for i, x in zip(self.corruptible_inputs_idxs, x_corr):
             x_in_corr[i] = x
 
