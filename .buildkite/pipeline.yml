@@ -5,6 +5,11 @@ timeout: &timeout
   # (https://github.com/buildkite/feedback/issues/170).
   timeout_in_minutes: 30
 
+docker-timeout: &docker-timeout
+  env:
+    - DOCKER_CLIENT_TIMEOUT=360
+    - COMPOSE_HTTP_TIMEOUT=360
+
 compose-config: &compose-config
   config:
     - docker-compose.yml
@@ -17,6 +22,7 @@ plugins: &plugins
 steps:
   - label: ":docker::python: build 3.6 runner"
     <<: *timeout
+    <<: *docker-timeout
     key: "runner-3_6"
     plugins:
       <<: *plugins
@@ -36,6 +42,7 @@ steps:
 
   - label: ":docker::python: build 3.7 runner"
     <<: *timeout
+    <<: *docker-timeout
     key: "runner-3_7"
     plugins:
       <<: *plugins
@@ -175,6 +182,7 @@ steps:
 
   - label: ":docker: build image"
     <<: *timeout
+    <<: *docker-timeout
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:
