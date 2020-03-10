@@ -56,6 +56,7 @@ EXTRAS_REQUIRES = {
         "nbconvert>=5.5.0",
         "treon>=0.1.2",
         "papermill>=2.0.0",
+        "rdflib",
     ],
 }
 
