@@ -18,6 +18,7 @@ Some new algorithms and features are still under active development, and are ava
 
 - DistMult: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
 - GraphClassification: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929).
+
 ### Bug fixes and other changes
 
 - `StellarGraph.to_adjacency_matrix` is at least 15× faster on undirected graphs [\#932](http://github.com/stellargraph/stellargraph/pull/932)

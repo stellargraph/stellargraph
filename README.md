@@ -199,6 +199,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | ComplEx[12] | The ComplEx algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | GraphWave [13] | GraphWave calculates unsupervised structural embeddings via wavelet diffusion through the graph. |
 | Supervised Graph Classification | A model for supervised graph classification based on GCN [6] layers and mean pooling readout. |
+
 ## Getting Help
 
 Documentation for StellarGraph can be found [here](https://stellargraph.readthedocs.io).
