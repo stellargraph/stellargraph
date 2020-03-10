@@ -17,16 +17,15 @@
 from . import GCN, GAT, APPNP, PPNP
 from ..core.experimental import experimental
 
-import numpy as np
-from tensorflow.keras.layers import Input, Lambda, Layer
+from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
 from tensorflow.keras import backend as K
 import warnings
 
-__all__ = ["DeepGraphInfoMax"]
+__all__ = ["DeepGraphInfoMax", "BilinearTransform"]
 
 
-class Discriminator(Layer):
+class BilinearTransform(Layer):
     """
     This Layer computes the Discriminator function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
     """
@@ -37,7 +36,7 @@ class Discriminator(Layer):
     def build(self, input_shapes):
 
         self.kernel = self.add_weight(
-            shape=(input_shapes[0][1], input_shapes[0][1]),
+            shape=(input_shapes[0][-1], input_shapes[0][-1]),
             initializer="glorot_uniform",
             name="kernel",
             regularizer=None,
@@ -53,9 +52,14 @@ class Discriminator(Layer):
             inputs: a list or tuple of tensors with shapes [(N, F), (F,)] containing the node features and summary feature
                 vector.
         """
+
         features, summary = inputs
 
-        score = tf.linalg.matvec(features, tf.linalg.matvec(self.kernel, summary))
+        summary_rank = len(summary.shape)
+        feat_rank = len(features.shape)
+
+        score = tf.tensordot(self.kernel, summary, [[1], [summary_rank - 1]])
+        score = tf.tensordot(features, score, [[feat_rank - 1], [0]])
 
         return score
 
@@ -79,10 +83,10 @@ class DeepGraphInfoMax:
 
         self.base_model = base_model
 
-        self._NODE_FEATS = "INFO_MAX_NODE_FEATURES" + ''.join(map(chr, np.random.randint(32, 122, size=8)))
+        self._node_feats = None
 
         # specific to full batch models
-        self.corruptible_inputs_idxs = [0]
+        self._corruptible_inputs_idxs = [0]
 
     def build(self):
         """
@@ -107,35 +111,26 @@ class DeepGraphInfoMax:
                 f" ({self.base_model.multiplicity}). A multiplicity of 1 will be used to construct the base model."
             )
 
-        x_inp, node_feats = self.base_model.build(multiplicity=1)
+        x_inp, self._node_feats = self.base_model.build(multiplicity=1)
         x_corr = [
-            Input(batch_shape=x_inp[i].shape) for i in self.corruptible_inputs_idxs
+            Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
         ]
 
         # shallow copy normal inputs and replace corruptible inputs with new inputs
         x_in_corr = x_inp.copy()
-        for i, x in zip(self.corruptible_inputs_idxs, x_corr):
+        for i, x in zip(self._corruptible_inputs_idxs, x_corr):
             x_in_corr[i] = x
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        # squeezing is specific to full batch models
-        node_feats = Lambda(lambda x: K.squeeze(x, axis=0), name=self._NODE_FEATS)(
-            node_feats
-        )
-        node_feats_corrupted = Lambda(lambda x: K.squeeze(x, axis=0))(node_feats_corr)
+        summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(self._node_feats))
 
-        summary = Lambda(lambda x: tf.math.sigmoid(tf.math.reduce_mean(x, axis=0)))(
-            node_feats
-        )
+        discriminator = BilinearTransform()
+        scores = discriminator([self._node_feats, summary])
+        scores_corrupted = discriminator([node_feats_corr, summary])
 
-        discriminator = Discriminator()
-        scores = discriminator([node_feats, summary])
-        scores_corrupted = discriminator([node_feats_corrupted, summary])
+        x_out = tf.concat([scores, scores_corrupted], axis=2)
 
-        x_out = tf.stack([scores, scores_corrupted], axis=1)
-
-        x_out = K.expand_dims(x_out, axis=0)
         return x_corr + x_inp, x_out
 
     def embedding_model(self, model):
@@ -148,7 +143,12 @@ class DeepGraphInfoMax:
         Returns:
             input and output layers for use with a keras model
         """
-        x_emb_in = model.inputs[len(self.corruptible_inputs_idxs) :]
-        x_emb_out = model.get_layer(self._NODE_FEATS).output
+        x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
+
+        x_emb_out = self._node_feats
+
+        if x_emb_out.shape[0] == 1:
+            squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
+            x_emb_out = squeeze_layer(x_emb_out)
 
         return x_emb_in, x_emb_out
