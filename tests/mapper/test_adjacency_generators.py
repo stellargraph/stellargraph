@@ -16,7 +16,8 @@
 
 from stellargraph.core.utils import normalize_adj
 from stellargraph.mapper.adjacency_generators import AdjacencyPowerGenerator
-from .test_graphwave_generator import barbell
+from ..test_utils.graphs import barbell
+import tensorflow as tf
 
 
 import numpy as np
@@ -48,12 +49,8 @@ def test_bad_init(barbell):
 def test_flow(barbell):
 
     generator = AdjacencyPowerGenerator(barbell, num_powers=5)
-    for i, x in enumerate(generator.flow(batch_size=1)):
-
-        if i > 5:
-            break
-
-    assert i > 5
+    dataset = generator.flow(batch_size=1)
+    assert tf.data.experimental.cardinality(dataset).numpy() == -1
 
 
 def test_bad_flow(barbell):
@@ -78,13 +75,11 @@ def test_flow_batch_size(barbell, batch_size):
 
     num_powers = 5
     generator = AdjacencyPowerGenerator(barbell, num_powers=num_powers)
-    for x, y in generator.flow(batch_size=batch_size):
+    for x, y in generator.flow(batch_size=batch_size).take(1):
 
         assert x[0].shape == (batch_size,)
         assert y.shape == (batch_size, 1, len(barbell.nodes()))
         assert x[1].shape == (batch_size, num_powers, len(barbell.nodes()))
-
-        break
 
 
 @pytest.mark.parametrize("num_powers", [2, 4, 8])
@@ -92,13 +87,11 @@ def test_flow_batch_size(barbell, num_powers):
 
     batch_size = 2
     generator = AdjacencyPowerGenerator(barbell, num_powers=num_powers)
-    for x, y in generator.flow(batch_size=batch_size):
+    for x, y in generator.flow(batch_size=batch_size).take(1):
 
         assert x[0].shape == (batch_size,)
         assert y.shape == (batch_size, 1, len(barbell.nodes()))
         assert x[1].shape == (batch_size, num_powers, len(barbell.nodes()))
-
-        break
 
 
 @pytest.mark.parametrize("num_powers", [2, 4, 8])

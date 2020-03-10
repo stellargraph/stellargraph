@@ -143,6 +143,9 @@ class WatchYourStep:
         attention_initializer (str or func, optional): The initialiser to use for the attention weights.
         attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
         attention_constraint (str or func, optional): The constraint to use for the attention weights.
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
+        embeddings_regularizer (str or func, optional): The regulariser to use for the embeddings.
+        embeddings_constraint (str or func, optional): The constraint to use for the embeddings.
     """
 
     def __init__(
@@ -153,6 +156,9 @@ class WatchYourStep:
         attention_initializer="glorot_uniform",
         attention_regularizer=None,
         attention_constraint=None,
+        embeddings_initializer="uniform",
+        embeddings_regularizer=None,
+        embeddings_constraint=None,
     ):
 
         if not isinstance(generator, AdjacencyPowerGenerator):
@@ -174,9 +180,14 @@ class WatchYourStep:
             embedding_dimension -= 1
 
         self.embedding_dimension = embedding_dimension
+
         self.attention_regularizer = attention_regularizer
         self.attention_initializer = attention_initializer
         self.attention_constraint = attention_constraint
+
+        self.embeddings_initializer = embeddings_initializer
+        self.embeddings_regularizer = embeddings_regularizer
+        self.embeddings_constraint = embeddings_constraint
 
     def build(self):
         """
@@ -194,6 +205,9 @@ class WatchYourStep:
             int(self.embedding_dimension / 2),
             input_length=None,
             name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
+            embeddings_initializer=self.embeddings_initializer,
+            embeddings_regularizer=self.embeddings_regularizer,
+            embeddings_constraint=self.embeddings_constraint,
         )
 
         vectors_left = left_embedding(input_rows)
@@ -204,7 +218,9 @@ class WatchYourStep:
         outer_product = Dense(
             self.n_nodes,
             use_bias=False,
-            kernel_initializer="uniform",
+            kernel_initializer=self.embeddings_initializer,
+            kernel_regularizer=self.embeddings_regularizer,
+            kernel_constraint=self.embeddings_constraint,
             name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
         )(vectors_left)
 

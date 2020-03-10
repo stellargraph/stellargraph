@@ -20,7 +20,7 @@ from stellargraph.mapper.graphwave_generator import (
     _empirical_characteristic_function,
 )
 
-import networkx as nx
+from ..test_utils.graphs import barbell
 import numpy as np
 import pytest
 import scipy.sparse as sps
@@ -29,11 +29,6 @@ import tensorflow as tf
 
 def _epoch_as_matrix(dataset):
     return np.vstack([x.numpy() for x in dataset])
-
-
-@pytest.fixture
-def barbell():
-    return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
 
 
 def test_init(barbell):

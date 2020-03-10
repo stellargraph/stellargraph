@@ -88,3 +88,15 @@ def test_WatchYourStep(barbell):
     embs = get_embeddings(model)
 
     assert embs.shape == (len(barbell.nodes()), wys.embedding_dimension)
+
+
+def test_WatchYourStep_embeddings(barbell):
+    generator = AdjacencyPowerGenerator(barbell, num_powers=5)
+    wys = WatchYourStep(generator, embeddings_initializer="ones")
+    x_in, x_out = wys.build()
+
+    model = Model(inputs=x_in, outputs=x_out)
+    model.compile(optimizer="adam", loss=graph_log_likelihood)
+    embs = get_embeddings(model)
+
+    assert (embs == 1).all()
