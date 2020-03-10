@@ -46,9 +46,9 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
     Notes:
       - The inputs are tensors with a batch dimension.
 
-      - There are 2 inputs required, the node features and the normalized graph adjacency matrix.
+      - There are 2 inputs required, the node features and the normalized graph adjacency matrices for each batch entry.
 
-      - This class assumes that the normalized graph adjacency matrix is passed as input to the Keras methods.
+      - This class assumes that the normalized graph adjacency matrices are passed as input to the Keras methods.
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -92,7 +92,7 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
 @experimental(reason="Missing unit tests")
 class GraphClassification:
     """
-    A stack of :class:`GraphClassificationConvolution` layers together with a `GlobalAveragePooling1D` layer
+    A stack of :class:`GraphClassificationConvolution` layers together with a Keras `GlobalAveragePooling1D` layer
     that implement a supervised graph classification network using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
@@ -108,8 +108,8 @@ class GraphClassification:
 
     Examples:
         Creating a graph classification model from a list of :class:`StellarGraph`
-        object ``graphs``. We also add a fully connected dense layer and a binary classification
-        layer with `softmax` activation::
+        objects (``graphs``). We also add two fully connected dense layers using the last one for binary classification
+        with `softmax` activation::
 
             generator = GraphGenerator(graphs)
             model = GraphClassification(
@@ -123,13 +123,13 @@ class GraphClassification:
             predictions = Dense(units=2, activation='softmax')(predictions)
 
     Args:
-        layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack.
-        activations (list of str): list of activations applied to each layer's output.
+        layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.
+        activations (list of str): list of activations applied to each GCN layer's output.
         generator (GraphGenerator): an instance of :class:`GraphGenerator` class constructed on the graphs used for
             training.
         bias (bool, optional): toggles an optional bias in graph convolutional layers.
-        dropout (float, optional): dropout rate applied to input features of each graph convolutional layer.
-        kernel_regularizer (str): normalization applied to the kernels of graph convolutional layers.
+        dropout (float, optional): dropout rate applied to input features of each GCN layer.
+        kernel_regularizer (str): normalization applied to the GCN layer kernels.
     """
 
     def __init__(
