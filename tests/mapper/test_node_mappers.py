@@ -909,7 +909,7 @@ class Test_FullBatchNodeGenerator:
 @pytest.mark.parametrize("sparse", [True, False])
 def test_corrupt_full_batch_generator(sparse):
 
-    G, _ = create_graph_features()
+    G = example_graph_random(n_nodes=20, rand_feats=True)
 
     generator = FullBatchNodeGenerator(G, sparse=sparse)
 

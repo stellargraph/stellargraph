@@ -558,7 +558,7 @@ class CorruptedNodeSequence(Sequence):
 
     def __getitem__(self, index):
 
-        inputs, _ = self.base_generator[0]
+        inputs, _ = self.base_generator[index]
         features = inputs[0]
 
         shuffled_idxs = np.random.permutation(features.shape[1])
