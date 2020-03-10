@@ -13,13 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import tensorflow as tf
-from tensorflow.keras import backend as K
-import numpy as np
-from ..core import StellarGraph
-from ..core.validation import require_integer_in_range
-from scipy.sparse.linalg import eigs
-from scipy.sparse import diags
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from .sequences import GraphSequence
@@ -29,17 +22,17 @@ class GraphGenerator:
     """
     A data generator for use with graph classification algorithms.
 
-    The supplied graph G should be a StellarGraph object that is ready for
+    The supplied graphs should be StellarGraph objects ready for
     machine learning. Currently the model requires node features to be available for all
     nodes in the graph.
-    Use the :meth:`flow` method supplying the nodes and (optionally) targets
+    Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    This generator will supply the features array and the adjacency matrix to a
-    mini-batch Keras graph ML model.
+    This generator will supply the features arrays and the adjacency matrices to a
+    mini-batch Keras graph classification model.
 
     Args:
-        graphs (list): a collection of ready for machine-learning StellarGraph-type graph objects
+        graphs (list): a collection of ready for machine-learning StellarGraph-type objects
         name (str): an optional name of the generator
     """
 
@@ -47,13 +40,12 @@ class GraphGenerator:
 
         for graph in graphs:
             if not isinstance(graph, StellarGraph):
-                raise TypeError("All graphs must be a StellarGraph or StellarDiGraph object.")
+                raise TypeError("All graphs must be StellarGraph objects.")
 
         self.graphs = graphs
+        self.name = name
         # we assume that all graphs have node features of the same dimensionality
         self.node_features_size = graphs[0].node_features(graphs[0].nodes()).shape[1]
-        self.name = name
-
 
         # Check if the graph has features
         for graph in self.graphs:
@@ -72,19 +64,19 @@ class GraphGenerator:
     def flow(self, graph_ilocs, targets=None, batch_size=1, name=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
-        with the supplied node ids and numeric targets.
+        with the supplied graph indexes and numeric targets.
 
         Args:
             graph_ilocs (iterable): an iterable of graph indexes in self.graphs for the graphs of interest
-                (e.g., training, validation, or test set nodes)
+                (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
-                len(targets))`
+                len(targets))`.
             batch_size (int, optional): The batch size that defaults to 1.
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A GraphSequence object to use with Keras
-            methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
+            A :class:`GraphSequence` object to use with Keras
+            methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:

@@ -532,19 +532,19 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-@experimental(reason="Missing unit tests")
+@experimental(reason="Missing unit tests.")
 class GraphSequence(Sequence):
     """
-    A Keras-compatible data generator for graph inference graph classification models.
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    A Keras-compatible data generator for training and evaluating graph classification models.
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
     :class:`GraphGenerator`.
 
     Args:
-        graphs (list)): The graphs as StellarGraph objects
+        graphs (list)): The graphs as StellarGraph objects.
         targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
             where N is the number of graphs and C is the target size (e.g., number of classes.)
         normalize_adj (bool, optional): Specifies whether the adjacency matrix for each graph should
@@ -600,8 +600,8 @@ class GraphSequence(Sequence):
         # feature matrices of the largest graph.
         max_nodes = max([graph.number_of_nodes() for graph in graphs])
 
-        # The operations to normalize the adjacency matrix are too slow.
-        # Either optimize this or implement as a layer.
+        # The operations to normalize the adjacency matrix are a bit slow.
+        # FIXME: Either optimize this or implement as a layer.
         if self.normalize_adj:
             adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
 

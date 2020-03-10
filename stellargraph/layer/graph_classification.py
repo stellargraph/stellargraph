@@ -48,8 +48,7 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
 
       - There are 2 inputs required, the node features and the normalized graph adjacency matrix.
 
-      - This class assumes that the normalized graph adjacency matrix is passed as
-        input to the Keras methods.
+      - This class assumes that the normalized graph adjacency matrix is passed as input to the Keras methods.
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -72,8 +71,7 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
             inputs (list or tuple): a list or tuple of 2 input tensors that includes
                 node features (size batch_size x N x F),
                 graph adjacency matrix (batch_size x N x N),
-                where N is the number of nodes in the graph, and
-                F is the dimensionality of node features.
+                where N is the number of nodes in the graph, and F is the dimensionality of node features.
 
         Returns:
             Keras Tensor that represents the output of the layer.
@@ -127,9 +125,10 @@ class GraphClassification:
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack.
         activations (list of str): list of activations applied to each layer's output.
-        generator (GraphGenerator): an instance of GraphGenerator class constructed on the graphs used for training.
-        bias (bool): toggles an optional bias in graph convolutional layers.
-        dropout (float): dropout rate applied to input features of each graph convolutional layer.
+        generator (GraphGenerator): an instance of :class:`GraphGenerator` class constructed on the graphs used for
+            training.
+        bias (bool, optional): toggles an optional bias in graph convolutional layers.
+        dropout (float, optional): dropout rate applied to input features of each graph convolutional layer.
         kernel_regularizer (str): normalization applied to the kernels of graph convolutional layers.
     """
 
@@ -186,7 +185,7 @@ class GraphClassification:
 
     def __call__(self, x):
         """
-        Apply a stack of GraphClassificationConvolution to the inputs.
+        Apply a stack of :class:`GraphClassificationConvolution` layers to the inputs.
         The input tensors are expected to be a list of the following:
         [
             Node features shape (batch size, N, F),
