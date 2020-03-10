@@ -5,6 +5,3 @@ services:
     build:
       dockerfile: docker/stellargraph/Dockerfile
       context: .
-    environment:
-      - DOCKER_CLIENT_TIMEOUT=360
-      - COMPOSE_HTTP_TIMEOUT=360
