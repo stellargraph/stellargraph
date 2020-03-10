@@ -123,7 +123,9 @@ class DeepGraphInfoMax:
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(self._node_feats))
+        summary = tf.keras.activations.sigmoid(
+            GlobalAveragePooling1D()(self._node_feats)
+        )
 
         discriminator = BilinearTransform()
         scores = discriminator([self._node_feats, summary])
