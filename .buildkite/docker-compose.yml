@@ -40,12 +40,10 @@ services:
       - DOCKER_CLIENT_TIMEOUT=180
       - COMPOSE_HTTP_TIMEOUT=180
 
+
   runner-3_7:
     <<: *runner-config
     build:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
-    environment:
-      - DOCKER_CLIENT_TIMEOUT=180
-      - COMPOSE_HTTP_TIMEOUT=180
