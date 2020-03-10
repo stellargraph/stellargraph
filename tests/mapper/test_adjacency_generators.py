@@ -103,10 +103,8 @@ def test_partial_powers(barbell, num_powers):
         actual_powers.append(actual_powers[-1].dot(Aadj))
 
     generator = AdjacencyPowerGenerator(barbell, num_powers=num_powers)
-    for i, (x, y) in enumerate(generator.flow(batch_size=1)):
-
-        if i == len(barbell.nodes()):
-            break
+    dataset = generator.flow(batch_size=1)
+    for i, (x, y) in enumerate(dataset.take(barbell.number_of_nodes())):
 
         partial_powers = x[1].numpy()
         for j in range(num_powers):
