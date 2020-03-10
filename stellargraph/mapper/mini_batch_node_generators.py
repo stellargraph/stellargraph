@@ -20,7 +20,6 @@ Mappers to provide input data for the graph models in layers.
 """
 __all__ = ["ClusterNodeGenerator", "ClusterNodeSequence"]
 
-import random
 import copy
 import numpy as np
 import networkx as nx
@@ -29,6 +28,7 @@ from tensorflow.keras.utils import Sequence
 from scipy import sparse
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
+from ..random import random_state
 
 
 class ClusterNodeGenerator:
@@ -58,9 +58,10 @@ class ClusterNodeGenerator:
         q (float): The number of clusters to combine for each mini-batch. The default is 1.
         lam (float): The mixture coefficient for adjacency matrix normalisation.
         name (str): an optional name of the generator
+        seed (int, optional): Random seed
     """
 
-    def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
+    def __init__(self, G, clusters=1, q=1, lam=0.1, name=None, seed=None):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
@@ -70,6 +71,7 @@ class ClusterNodeGenerator:
         self.q = q  # The number of clusters to sample per mini-batch
         self.lam = lam
         self.clusters = clusters
+        self._rs, _ = random_state(seed)
 
         if isinstance(clusters, list):
             self.k = len(clusters)
@@ -128,7 +130,7 @@ class ClusterNodeGenerator:
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
             all_nodes = list(G.nodes())
-            random.shuffle(all_nodes)
+            self._rs.shuffle(all_nodes)
             cluster_size = len(all_nodes) // self.k
             self.clusters = [
                 all_nodes[i : i + cluster_size]
@@ -147,7 +149,7 @@ class ClusterNodeGenerator:
         # Get the features for the nodes
         self.features = G.node_features(self.node_list)
 
-    def flow(self, node_ids, targets=None, name=None):
+    def flow(self, node_ids, targets=None, name=None, seed=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
         with the supplied node ids and numeric targets.
@@ -158,6 +160,7 @@ class ClusterNodeGenerator:
             targets (2d array, optional): a 2D array of numeric node targets with shape `(len(node_ids),
                 target_size)`
             name (str, optional): An optional name for the returned generator object.
+            seed (int, optional): Random seed
 
         Returns:
             A ClusterNodeSequence object to use with ClusterGCN in Keras
@@ -189,6 +192,7 @@ class ClusterNodeGenerator:
             q=self.q,
             lam=self.lam,
             name=name,
+            seed=seed,
         )
 
 
@@ -228,6 +232,7 @@ class ClusterNodeSequence(Sequence):
         q=1,
         lam=0.1,
         name=None,
+        seed=None,
     ):
 
         self.name = name
@@ -242,6 +247,7 @@ class ClusterNodeSequence(Sequence):
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
         self.target_ids = list()
+        self._rs, _ = random_state(seed)
 
         if len(clusters) % self.q != 0:
             raise ValueError(
@@ -349,7 +355,7 @@ class ClusterNodeSequence(Sequence):
         if self.q > 1:
             # combine clusters
             cluster_indices = list(range(len(self.clusters_original)))
-            random.shuffle(cluster_indices)
+            self._rs.shuffle(cluster_indices)
             self.clusters = []
 
             for i in range(0, len(cluster_indices) - 1, self.q):
@@ -363,4 +369,4 @@ class ClusterNodeSequence(Sequence):
 
         self.__node_buffer = dict()
 
-        random.shuffle(self.clusters)
+        self._rs.shuffle(self.clusters)
