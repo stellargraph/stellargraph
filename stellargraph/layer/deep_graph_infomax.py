@@ -22,7 +22,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 import warnings
 
-__all__ = ["DeepGraphInfoMax", "DGIDiscriminator"]
+__all__ = ["DeepGraphInfomax", "DGIDiscriminator"]
 
 
 class DGIDiscriminator(Layer):
@@ -66,7 +66,7 @@ class DGIDiscriminator(Layer):
 
 
 @experimental(reason="lack of unit tests", issues=[1003])
-class DeepGraphInfoMax:
+class DeepGraphInfomax:
     """
     A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
     (https://arxiv.org/pdf/1809.10341.pdf).

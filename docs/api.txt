@@ -105,7 +105,7 @@ Deep Graph Infomax Models
 -------------------------
 
 .. automodule:: stellargraph.layer.deep_graph_infomax
-  :members: DeepGraphInfoMax, DGIDiscriminator
+  :members: DeepGraphInfomax, DGIDiscriminator
 
 Link prediction layers
 ------------------------
