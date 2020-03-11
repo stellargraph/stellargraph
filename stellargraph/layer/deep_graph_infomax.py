@@ -112,7 +112,8 @@ class DeepGraphInfomax:
             input and output layers for use with a keras model
         """
 
-        x_inp, self._node_feats = self.base_model.build(multiplicity=1)
+        x_inp, node_feats = self.base_model.build(multiplicity=1)
+        node_feats = Lambda(lambda x: x, name=self._unique_id)(node_feats)
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
         ]
@@ -125,11 +126,11 @@ class DeepGraphInfomax:
         node_feats_corr = self.base_model(x_in_corr)
 
         summary = tf.keras.activations.sigmoid(
-            GlobalAveragePooling1D()(self._node_feats)
+            GlobalAveragePooling1D()(node_feats)
         )
 
-        discriminator = DGIDiscriminator(name=self._unique_id)
-        scores = discriminator([self._node_feats, summary])
+        discriminator = DGIDiscriminator()
+        scores = discriminator([node_feats, summary])
         scores_corrupted = discriminator([node_feats_corr, summary])
 
         x_out = tf.stack([scores, scores_corrupted], axis=2)
@@ -146,15 +147,16 @@ class DeepGraphInfomax:
         Returns:
             input and output layers for use with a keras model
         """
-        
-        if not any(layer.name == self._unique_id for layer in model.layers):
+
+        try:
+            x_emb_out = model.get_layer(self._unique_id).output
+        except ValueError:
             raise ValueError(
                 f"model: model must be a keras model with inputs and outputs created "
                 f"by the build() method of this instance of DeepGraphInfoMax"
             )
 
         x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
-        x_emb_out = self._node_feats
 
         squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
         x_emb_out = squeeze_layer(x_emb_out)

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.layer import DeepGraphInfoMax, GCN
+from stellargraph.layer import DeepGraphInfomax, GCN
 from stellargraph.mapper import FullBatchNodeGenerator, CorruptedGenerator
 from ..test_utils.graphs import example_graph_random
 import tensorflow as tf
@@ -31,7 +31,7 @@ def test_dgi():
     gen = corrupted_generator.flow(G.nodes())
 
     gcn = GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
-    infomax = DeepGraphInfoMax(gcn)
+    infomax = DeepGraphInfomax(gcn)
 
     model = tf.keras.Model(*infomax.build())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
@@ -51,10 +51,10 @@ def test_dgi_embedding_model_wrong_model():
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
-    infomax_1 = DeepGraphInfoMax(
+    infomax_1 = DeepGraphInfomax(
         GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
     )
-    infomax_2 = DeepGraphInfoMax(
+    infomax_2 = DeepGraphInfomax(
         GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
     )
 
