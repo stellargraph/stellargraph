@@ -34,8 +34,14 @@ from sklearn import preprocessing
 log = logging.getLogger(__name__)
 
 
-def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
+def _load_cora_or_citeseer(
+    dataset, directed, largest_connected_component_only, edge_weights, nodes_dtype
+):
     assert isinstance(dataset, (Cora, CiteSeer))
+
+    if nodes_dtype is None:
+        nodes_dtype = dataset._NODES_DTYPE
+
     dataset.download()
 
     # expected_files should be in this order
@@ -45,24 +51,21 @@ def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
     subject = "subject"
     column_names = feature_names + [subject]
     node_data = pd.read_csv(
-        content,
-        sep="\t",
-        header=None,
-        names=column_names,
-        dtype={0: dataset._NODES_DTYPE},
+        content, sep="\t", header=None, names=column_names, dtype={0: nodes_dtype},
     )
 
     edgelist = pd.read_csv(
-        cites,
-        sep="\t",
-        header=None,
-        names=["target", "source"],
-        dtype=dataset._NODES_DTYPE,
+        cites, sep="\t", header=None, names=["target", "source"], dtype=nodes_dtype,
     )
 
     valid_source = node_data.index.get_indexer(edgelist.source) >= 0
     valid_target = node_data.index.get_indexer(edgelist.target) >= 0
     edgelist = edgelist[valid_source & valid_target]
+
+    if edge_weights is not None:
+        source_feats = node_data.loc[edgelist.source]
+        target_feats = node_data.loc[edgelist.target]
+        edgelist["weight"] = edge_weights(source_feats, target_feats)
 
     cls = StellarDiGraph if directed else StellarGraph
     graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
@@ -87,10 +90,15 @@ class Cora(
     source="https://linqs.soe.ucsc.edu/data",
 ):
 
-    _NODES_DTYPE = int
     _NUM_FEATURES = 1433
 
-    def load(self, directed=False, largest_connected_component_only=False):
+    def load(
+        self,
+        directed=False,
+        largest_connected_component_only=False,
+        edge_weights=None,
+        str_node_ids=False,
+    ):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
         required.
@@ -102,13 +110,22 @@ class Cora(
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
             largest_connected_component_only (bool): if True, returns only the largest connected
                 component, not the whole graph.
+            edge_weights (callable, optional): a function that accepts two Pandas DataFrames; the
+                first contains all information about the source node of each edge (including
+                subject), and the second is similar, for the target node of each edge. This should
+                return a sequence of numbers (e.g. a 1D NumPy array) of edge weights for each edge.
+            str_node_ids (bool): if True, load the node IDs as strings, rather than integers.
 
         Returns:
             A tuple where the first element is the :class:`StellarGraph` object (or
             :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
             and edges, and the second element is a pandas Series of the node subject class labels.
         """
-        return _load_cora_or_citeseer(self, directed, largest_connected_component_only)
+        nodes_dtype = str if str_node_ids else int
+
+        return _load_cora_or_citeseer(
+            self, directed, largest_connected_component_only, edge_weights, nodes_dtype
+        )
 
 
 class CiteSeer(
@@ -124,10 +141,6 @@ class CiteSeer(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    # some node IDs are integers like 100157 and some are strings like
-    # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all to
-    # be treated as strings.
-    _NODES_DTYPE = str
     _NUM_FEATURES = 3703
 
     def load(self, largest_connected_component_only=False):
@@ -145,7 +158,14 @@ class CiteSeer(
             feature vectors and edges, and the second element is a pandas Series of the node subject
             class labels.
         """
-        return _load_cora_or_citeseer(self, False, largest_connected_component_only)
+        # some node IDs are integers like 100157 and some are strings like
+        # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all
+        # to be treated as strings.
+        nodes_dtype = str
+
+        return _load_cora_or_citeseer(
+            self, False, largest_connected_component_only, None, nodes_dtype
+        )
 
 
 class PubMedDiabetes(

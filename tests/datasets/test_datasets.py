@@ -151,6 +151,7 @@ def test_cora_load(is_directed, largest_cc_only) -> None:
         expected_nodes = 2708
         expected_edges = 5429
 
+    assert g.nodes().dtype == int
     assert g.is_directed() == is_directed
 
     assert g.number_of_nodes() == expected_nodes
@@ -167,6 +168,40 @@ def test_cora_load(is_directed, largest_cc_only) -> None:
         "Rule_Learning",
         "Theory",
     }
+
+
+def test_cora_load_weighted() -> None:
+    def weights(sources, targets):
+        sources_numpy = sources.iloc[:, :-1].to_numpy()
+        targets_numpy = targets.iloc[:, :-1].to_numpy()
+
+        and_ = (sources_numpy & targets_numpy).sum(axis=1)
+        or_ = (sources_numpy | targets_numpy).sum(axis=1)
+        jaccard = and_ / or_
+
+        same_subject = sources.subject.to_numpy() == targets.subject.to_numpy()
+
+        return same_subject + jaccard
+
+    g, subjects = Cora().load(edge_weights=weights)
+
+    _, weights = g.edges(include_edge_weight=True)
+    # some edges have neither subject nor any features in common
+    assert weights.min() == 0.0
+    # "same subject" is either 0 or 1 and some edges definitely have 1, and jaccard is in [0, 1], so
+    # we can get a bound on the weights:
+    assert 1 <= weights.max() <= 2
+
+
+def test_cora_load_str() -> None:
+    g, subjects = Cora().load(str_node_ids=True)
+
+    # if everything is wrong, a top-level == gives better errors
+    assert type(g.nodes()[0]) == str
+    # but still good to check everything
+    assert all(type(n) == str for n in g.nodes())
+
+    assert set(subjects.index) == set(g.nodes())
 
 
 def test_aifb_load() -> None:
