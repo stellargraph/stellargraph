@@ -71,6 +71,3 @@ def test_dgi_embedding_model_wrong_model():
 
     with pytest.raises(ValueError, match="model: *."):
         infomax_1.embedding_model(model_2)
-
-    emb_model_1 = tf.keras.Model(*infomax_1.embedding_model(model_1))
-    emb_model_2 = tf.keras.Model(*infomax_2.embedding_model(model_2))
