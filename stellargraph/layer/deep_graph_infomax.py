@@ -125,9 +125,7 @@ class DeepGraphInfomax:
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        summary = tf.keras.activations.sigmoid(
-            GlobalAveragePooling1D()(node_feats)
-        )
+        summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(node_feats))
 
         discriminator = DGIDiscriminator()
         scores = discriminator([node_feats, summary])
