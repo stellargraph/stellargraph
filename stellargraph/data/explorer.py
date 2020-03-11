@@ -818,13 +818,17 @@ class TemporalRandomWalk(GraphWalk):
                 than or equal to the context window size.
             initial_edge_bias (str, optional): distribution to use when choosing a random
                 initial temporal edge to start from. Available options are:
+
                 * None (default) - the initial edge is picked from a uniform distribution
                 * "exponential" - heavily biased towards more recent edges.
+
             walk_bias (str, optional): distribution to use when choosing a random
                 neighbour to walk through. Available options are:
+
                 * None (default) - neighbours are picked from a uniform distribution
                 * "exponential" - exponentially decaying probability, resulting in a bias
                     towards shorter time gaps
+
             p_walk_success_threshold (float): Lower bound for the proportion of successful
                 (i.e. longer than minimum length) walks. If the 95% percentile of the
                 estimated proportion is less than the provided threshold, a RuntimeError
