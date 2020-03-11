@@ -215,12 +215,8 @@ class ComplEx:
             mod_o_pred = np.inner(n_conj, ss * rs).real
             mod_s_pred = np.inner(n, rs * os.conj()).real
 
-            mod_o_raw = ranks(
-                mod_o_pred, true_ilocs=objects, true_is_source=True
-            )
-            mod_s_raw = ranks(
-                mod_s_pred, true_ilocs=subjects, true_is_source=False
-            )
+            mod_o_raw = ranks(mod_o_pred, true_ilocs=objects, true_is_source=True)
+            mod_s_raw = ranks(mod_s_pred, true_ilocs=subjects, true_is_source=False)
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
 
