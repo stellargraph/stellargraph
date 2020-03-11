@@ -720,7 +720,7 @@ class IAEnronEmployees(
     "There are 50572 edges, and each of them contains timestamp information. "
     "Edges refer to 151 unique node IDs in total.",
     source="http://networkrepository.com/ia-enron-employees.php",
-    create_directory=True,
+    url_contains_directory=False,
 ):
     def load(self):
         """

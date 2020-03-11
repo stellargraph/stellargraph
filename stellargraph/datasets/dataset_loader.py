@@ -49,7 +49,7 @@ class DatasetLoader:
     description = ""
     source = ""
     data_subdirectory_name: Optional[str] = None
-    create_directory: bool = False
+    url_contains_directory: bool = True
 
     @classmethod
     def __init_subclass__(
@@ -62,7 +62,7 @@ class DatasetLoader:
         description: str,
         source: str,
         data_subdirectory_name: Optional[str] = None,
-        create_directory: bool = False,
+        url_contains_directory: bool = True,
         **kwargs: Any,
     ) -> None:
         """Used to set class variables during the class definition of derived classes and generate customised docs.
@@ -75,7 +75,7 @@ class DatasetLoader:
         cls.description = description
         cls.source = source
         cls.data_subdirectory_name = data_subdirectory_name
-        cls.create_directory = create_directory
+        cls.url_contains_directory = url_contains_directory
 
         if url_archive_format is None and len(expected_files) != 1:
             raise ValueError(
@@ -129,10 +129,10 @@ class DatasetLoader:
         return os.path.join(self.base_directory, filename)
 
     def _resolve_unpack_path(self):
-        if self.create_directory:
-            return self.base_directory
-        else:
+        if self.url_contains_directory:
             return self._all_datasets_directory()
+        else:
+            return self.base_directory
 
     def _missing_files(self) -> List[str]:
         """Returns a list of files that are missing"""
