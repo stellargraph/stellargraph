@@ -588,8 +588,6 @@ class GraphSequence(Sequence):
         # feature matrices of the largest graph.
         max_nodes = max([graph.number_of_nodes() for graph in graphs])
 
-        # The operations to normalize the adjacency matrix are a bit slow.
-        # FIXME: Either optimize this or implement as a layer.
         if self.normalize_adj:
             adj_graphs = [normalize_adj(adj).toarray() for adj in adj_graphs]
 

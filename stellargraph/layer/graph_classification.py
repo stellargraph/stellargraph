@@ -54,14 +54,20 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
         units (int): dimensionality of output feature vectors
         activation (str): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
-        bias_initializer (str): name of the initializer for bias
-        kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
-        bias_regularizer (str): name of regularizer to be applied to layer bias. Must be a Keras regularizer.
-        activity_regularizer (str): not used in the current implementation
-        kernel_constraint (str): constraint applied to layer's kernel
-        bias_constraint (str): constraint applied to layer's bias
-    """
+
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each graph
+            convolutional layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each graph
+            convolutional layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer graph
+            convolutional.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer graph
+            convolutional.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer graph
+            convolutional.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer graph
+            convolutional.
+     """
 
     def call(self, inputs):
         """
@@ -129,14 +135,39 @@ class GraphClassification:
             training.
         bias (bool, optional): toggles an optional bias in graph convolutional layers.
         dropout (float, optional): dropout rate applied to input features of each GCN layer.
-        kernel_regularizer (str): normalization applied to the GCN layer kernels.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each graph
+            convolutional layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each graph
+            convolutional layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer graph
+            convolutional.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer graph
+            convolutional.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer graph
+            convolutional.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer graph
+            convolutional.
+
     """
 
     def __init__(
-        self, layer_sizes, activations, generator, bias=True, dropout=0.0, **kwargs
+        self,
+        layer_sizes,
+        activations,
+        generator,
+        bias=True,
+        dropout=0.0,
+        kernel_initializer=None,
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer=None,
+        bias_regularizer=None,
+        bias_constraint=None,
     ):
         if not isinstance(generator, GraphGenerator):
-            raise TypeError(f"generator: expected instance of GraphGenerator, found {type(generator).__name__}")
+            raise TypeError(
+                f"generator: expected instance of GraphGenerator, found {type(generator).__name__}"
+            )
 
         if len(layer_sizes) != len(activations):
             raise ValueError(
@@ -150,9 +181,6 @@ class GraphClassification:
         self.dropout = dropout
         self.generator = generator
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Initialize a stack of GraphClassificationConvolution layers
         n_layers = len(self.layer_sizes)
         self._layers = []
@@ -162,24 +190,17 @@ class GraphClassification:
             self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 GraphClassificationConvolution(
-                    l, activation=a, use_bias=self.bias, **self._regularisers
+                    l,
+                    activation=a,
+                    use_bias=self.bias,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, x):
         """
