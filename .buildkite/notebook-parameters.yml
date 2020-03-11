@@ -5,6 +5,7 @@ epochs: 2
 batch_size: 5
 # short random walks
 walk_length: 5
+cw_size: 5
 # minimal ensembles:
 n_estimators: 2
 n_predictions: 2
