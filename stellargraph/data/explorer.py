@@ -826,8 +826,7 @@ class TemporalRandomWalk(GraphWalk):
                 neighbour to walk through. Available options are:
 
                 * None (default) - neighbours are picked from a uniform distribution
-                * "exponential" - exponentially decaying probability, resulting in a bias
-                    towards shorter time gaps
+                * "exponential" - exponentially decaying probability, resulting in a bias towards shorter time gaps
 
             p_walk_success_threshold (float): Lower bound for the proportion of successful
                 (i.e. longer than minimum length) walks. If the 95% percentile of the
