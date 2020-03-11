@@ -916,7 +916,7 @@ def test_corrupt_full_batch_generator(sparse):
     base_gen = generator.flow(G.nodes())
     gen = CorruptedNodeSequence(base_gen)
 
-    [shuffled_feats, features, *_], targets = gen.__getitem__(0)
+    [shuffled_feats, features, *_], targets = gen[0]
 
     assert features.shape == shuffled_feats.shape
 
