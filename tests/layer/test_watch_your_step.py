@@ -16,7 +16,7 @@
 
 from stellargraph.layer import AttentiveWalk, WatchYourStep, get_embeddings
 import numpy as np
-from ..mapper.test_graphwave_generator import barbell
+from ..test_utils.graphs import barbell
 from stellargraph.mapper import AdjacencyPowerGenerator
 from stellargraph.losses import graph_log_likelihood
 import pytest
