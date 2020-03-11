@@ -32,7 +32,7 @@ from .schema import GraphSchema, EdgeType
 from .experimental import experimental, ExperimentalWarning
 from .element_data import NodeData, EdgeData, ExternalIdIndex
 from .utils import is_real_iterable
-from .validation import comma_sep
+from .validation import comma_sep, separated
 from . import convert
 
 
@@ -244,6 +244,11 @@ class StellarGraph:
                 raise ValueError(
                     "graph: expected no value when using 'nodes' and 'edges' parameters, found: {graph!r}"
                 )
+
+            warnings.warn(
+                "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
+                DeprecationWarning,
+            )
 
             nodes, edges = convert.from_networkx(
                 graph,
@@ -779,7 +784,7 @@ class StellarGraph:
 
         return zip(*unique_ets)
 
-    def info(self, show_attributes=True, sample=None):
+    def info(self, show_attributes=True, sample=None, truncate=20):
         """
         Return an information string summarizing information on the current graph.
         This includes node and edge type information and their attributes.
@@ -791,50 +796,87 @@ class StellarGraph:
             show_attributes (bool, default True): If True, include attributes information
             sample (int): To speed up the graph analysis, use only a random sample of
                           this many nodes and edges.
-
+            truncate (int, optional): If an integer, show only the ``truncate`` most common node and
+                edge type triples; if ``None``, list each one individually.
         Returns:
             An information string.
         """
-        directed_str = "Directed" if self.is_directed() else "Undirected"
-        lines = [
-            f"{type(self).__name__}: {directed_str} multigraph",
-            f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
-        ]
+        # always truncate the edge types listed for each node type, since they're redundant with the
+        # individual listing of edge types, and make for a single very long line
+        truncate_edge_types_per_node = 5
+        if truncate is not None:
+            truncate_edge_types_per_node = min(truncate_edge_types_per_node, truncate)
 
         # Numpy processing is much faster than NetworkX processing, so we don't bother sampling.
         gs = self.create_graph_schema()
+
+        feature_info = self._nodes.feature_info()
 
         def str_edge_type(et):
             n1, rel, n2 = et
             return f"{n1}-{rel}->{n2}"
 
-        lines.append("")
-        lines.append(" Node types:")
-
-        feature_info = self._nodes.feature_info()
-        for nt in gs.node_types:
-            nodes = self.nodes_of_type(nt)
-            lines.append(f"  {nt}: [{len(nodes)}]")
-
+        def str_node_type(count, nt):
             feature_size, feature_dtype = feature_info[nt]
             if feature_size > 0:
                 feature_text = f"{feature_dtype.name} vector, length {feature_size}"
             else:
                 feature_text = "none"
-            lines.append(f"    Features: {feature_text}")
 
-            edge_types = ", ".join(str_edge_type(et) for et in gs.schema[nt])
-            lines.append(f"    Edge types: {edge_types}")
+            edges = gs.schema[nt]
+            if edges:
+                edge_types = comma_sep(
+                    [str_edge_type(et) for et in gs.schema[nt]],
+                    limit=truncate_edge_types_per_node,
+                    stringify=str,
+                )
+            else:
+                edge_types = "none"
+            return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
+
+        # sort the node types in decreasing order of frequency
+        node_types = sorted(
+            ((len(self.nodes_of_type(nt)), nt) for nt in gs.node_types), reverse=True
+        )
+        nodes = separated(
+            [str_node_type(count, nt) for count, nt in node_types],
+            limit=truncate,
+            stringify=str,
+            sep="\n  ",
+        )
+
+        # FIXME: it would be better for the schema to just include the counts directly
+        unique_ets = self._unique_type_triples(return_counts=True)
+        edge_types = sorted(
+            (
+                (count, EdgeType(src_ty, rel_ty, tgt_ty))
+                for src_ty, rel_ty, tgt_ty, count in unique_ets
+            ),
+            reverse=True,
+        )
+
+        edges = separated(
+            [f"{str_edge_type(et)}: [{count}]" for count, et in edge_types],
+            limit=truncate,
+            stringify=str,
+            sep="\n    ",
+        )
+
+        directed_str = "Directed" if self.is_directed() else "Undirected"
+        lines = [
+            f"{type(self).__name__}: {directed_str} multigraph",
+            f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
+            "",
+            " Node types:",
+        ]
+        if nodes:
+            lines.append("  " + nodes)
 
         lines.append("")
         lines.append(" Edge types:")
 
-        # FIXME: it would be better for the schema to just include the counts directly
-        for src_ty, rel_ty, tgt_ty, count in self._unique_type_triples(
-            return_counts=True
-        ):
-            et = EdgeType(src_ty, rel_ty, tgt_ty)
-            lines.append(f"    {str_edge_type(et)}: [{count}]")
+        if edges:
+            lines.append("    " + edges)
 
         return "\n".join(lines)
 
