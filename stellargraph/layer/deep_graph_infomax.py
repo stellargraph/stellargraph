@@ -91,7 +91,7 @@ class DeepGraphInfomax:
         self.base_model = base_model
 
         self._node_feats = None
-
+        self._unique_id = hex(id(self))
         # specific to full batch models
         self._corruptible_inputs_idxs = [0]
 
@@ -136,14 +136,6 @@ class DeepGraphInfomax:
 
         return x_corr + x_inp, x_out
 
-    @property
-    def _unique_id(self):
-        """
-        A unique string id for this object to be used as a keras layer name.
-        """
-        id = str(self).replace(" ", "")[1:-1]
-        return id
-
     def embedding_model(self, model):
         """
         A function to create the the inputs and outputs for an embedding model.
@@ -154,11 +146,11 @@ class DeepGraphInfomax:
         Returns:
             input and output layers for use with a keras model
         """
-
+        
         if not any(layer.name == self._unique_id for layer in model.layers):
             raise ValueError(
                 f"model: model must be a keras model with inputs and outputs created "
-                f"by this instance of DeepGraphInfoMax.build() function."
+                f"by the build() method of this instance of DeepGraphInfoMax"
             )
 
         x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
