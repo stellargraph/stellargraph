@@ -577,17 +577,6 @@ class GraphSequence(Sequence):
     def __len__(self):
         return int(np.ceil(len(self.graphs) / self.batch_size))
 
-    # def __normalize_adj(self, adj):
-    #     adj = adj.tolil()
-    #     adj.setdiag(1)  # add self loops
-    #     degree_matrix_diag = 1.0 / np.sqrt(adj.sum(axis=1))
-    #     degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
-    #     degree_matrix = sparse.lil_matrix(adj.shape)
-    #     degree_matrix.setdiag(degree_matrix_diag)
-    #     degree_matrix = degree_matrix.tocsr()
-    #     adj = degree_matrix @ adj @ degree_matrix
-    #     return adj
-
     def __getitem__(self, index):
         graphs = self.graphs[
             index * self.batch_size : (index * self.batch_size) + self.batch_size
@@ -621,10 +610,7 @@ class GraphSequence(Sequence):
         ]
         features = np.stack(features)
         adj_graphs = [
-            np.pad(
-                adj_graph,
-                pad_width=(0, max_nodes - len(adj_graph)),
-            )
+            np.pad(adj_graph, pad_width=(0, max_nodes - len(adj_graph)))
             for adj_graph in adj_graphs
         ]
         adj_graphs = np.stack(adj_graphs)
