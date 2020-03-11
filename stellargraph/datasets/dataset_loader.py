@@ -45,24 +45,25 @@ class DatasetLoader:
     directory_name = ""
     url = ""
     url_archive_format: Optional[str] = None
+    url_archive_contains_directory: bool = True
     expected_files: List[str] = []
     description = ""
     source = ""
     data_subdirectory_name: Optional[str] = None
-    url_archive_contains_directory: bool = True
 
     @classmethod
     def __init_subclass__(
         cls,
+        *,
         name: str,
         directory_name: str,
         url: str,
         url_archive_format: Optional[str],
+        url_archive_contains_directory: bool = True,
         expected_files: List[str],
         description: str,
         source: str,
         data_subdirectory_name: Optional[str] = None,
-        url_archive_contains_directory: bool = True,
         **kwargs: Any,
     ) -> None:
         """Used to set class variables during the class definition of derived classes and generate customised docs.
@@ -71,11 +72,11 @@ class DatasetLoader:
         cls.directory_name = directory_name
         cls.url = url
         cls.url_archive_format = url_archive_format
+        cls.url_archive_contains_directory = url_archive_contains_directory
         cls.expected_files = expected_files
         cls.description = description
         cls.source = source
         cls.data_subdirectory_name = data_subdirectory_name
-        cls.url_archive_contains_directory = url_archive_contains_directory
 
         if url_archive_format is None and len(expected_files) != 1:
             raise ValueError(

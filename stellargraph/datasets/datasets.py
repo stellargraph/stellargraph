@@ -728,8 +728,16 @@ class IAEnronEmployees(
         Load this data into a set of nodes and edges
 
         Returns:
-            A tuple ``(nodes, edges)`` where each element is a Pandas DataFrame. Edges are kept
-            sorted in ascending order of time as per the original dataset.
+            A tuple ``(graph, edges)``
+
+            ``graph`` is a :class:`StellarGraph` containing all the data. Timestamp information on
+            edges are encoded as edge weights.
+
+            ``edges`` are the original edges from the dataset which are sorted in ascending
+            order of time - these can be used to create train/test splits based on time values.
+
+            Node IDs in the returned data structures are all converted to strings to allow for
+            compatibility with with ``gensim``'s ``Word2Vec`` model.
         """
         self.download()
 
@@ -749,4 +757,4 @@ class IAEnronEmployees(
             )
         )
 
-        return nodes, edges
+        return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges
