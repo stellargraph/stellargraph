@@ -91,7 +91,7 @@ class DeepGraphInfomax:
         self.base_model = base_model
 
         self._node_feats = None
-        self._unique_id = hex(id(self))
+        self._unique_id = f"DEEP_GRAPH_INFOMAX_{id(self)}"
         # specific to full batch models
         self._corruptible_inputs_idxs = [0]
 
@@ -113,6 +113,7 @@ class DeepGraphInfomax:
         """
 
         x_inp, node_feats = self.base_model.build(multiplicity=1)
+        # identity layer so we can attach a name to the tensor
         node_feats = Lambda(lambda x: x, name=self._unique_id)(node_feats)
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
