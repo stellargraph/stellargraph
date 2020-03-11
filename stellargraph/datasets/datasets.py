@@ -711,16 +711,17 @@ class FB15k_237(
 
 class IAEnronEmployees(
     DatasetLoader,
-    name="IAEnronEmployees",
+    name="ia-enron-employees",
     directory_name="ia-enron-employees",
     url="http://nrvis.com/download/data/dynamic/ia-enron-employees.zip",
     url_archive_format="zip",
+    url_archive_contains_directory=False,
     expected_files=["ia-enron-employees.edges", "readme.html"],
     description="A dataset of edges that represent emails sent from one employee to another."
     "There are 50572 edges, and each of them contains timestamp information. "
-    "Edges refer to 151 unique node IDs in total.",
+    "Edges refer to 151 unique node IDs in total."
+    "Ryan A. Rossi and Nesreen K. Ahmed “The Network Data Repository with Interactive Graph Analytics and Visualization” (2015)",
     source="http://networkrepository.com/ia-enron-employees.php",
-    url_contains_directory=False,
 ):
     def load(self):
         """
@@ -733,16 +734,19 @@ class IAEnronEmployees(
         self.download()
 
         edges_path = self._resolve_path("ia-enron-employees.edges")
-        edges = pd.read_csv(edges_path, sep=" ", header=None)
-
-        # clean up columns
-        edges.columns = ["source", "target", "x", "time"]
+        edges = pd.read_csv(
+            edges_path,
+            sep=" ",
+            header=None,
+            names=["source", "target", "x", "time"],
+            usecols=["source", "target", "time"],
+        )
         edges[["source", "target"]] = edges[["source", "target"]].astype(str)
-        edges = edges.drop(columns=["x"])  # unused column
 
         nodes = pd.DataFrame(
-            np.unique(pd.concat([edges["source"], edges["target"]], ignore_index=True)),
-            columns=["id"],
-        ).set_index("id")
+            index=np.unique(
+                pd.concat([edges["source"], edges["target"]], ignore_index=True)
+            )
+        )
 
         return nodes, edges
