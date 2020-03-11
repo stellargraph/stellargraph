@@ -158,7 +158,7 @@ class DeepGraphInfoMax:
         if not any(layer.name == self._unique_id for layer in model.layers):
             raise ValueError(
                 f"model: model must be a keras model with inputs and outputs created "
-                f"by this instance of DeepGraphInfoMax.build() function."
+                f"by the build() method of this instance of DeepGraphInfoMax"
             )
 
         x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
