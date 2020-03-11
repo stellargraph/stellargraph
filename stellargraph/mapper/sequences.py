@@ -592,7 +592,6 @@ class GraphSequence(Sequence):
         # FIXME: Either optimize this or implement as a layer.
         if self.normalize_adj:
             adj_graphs = [normalize_adj(adj).toarray() for adj in adj_graphs]
-            # adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
 
         graph_targets = None
         if self.targets is not None:
