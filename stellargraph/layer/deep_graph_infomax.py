@@ -91,7 +91,7 @@ class DeepGraphInfomax:
         self.base_model = base_model
 
         self._node_feats = None
-        self._unique_id = hex(id(self))
+        self._unique_id = f"DEEP_GRAPH_INFOMAX_{id(self)}"
         # specific to full batch models
         self._corruptible_inputs_idxs = [0]
 
