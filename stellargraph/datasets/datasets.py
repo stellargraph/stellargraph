@@ -707,3 +707,44 @@ class FB15k_237(
             ``graph``.
         """
         return _load_tsv_knowledge_graph(self)
+
+
+class IAEnronEmployees(
+    DatasetLoader,
+    name="IAEnronEmployees",
+    directory_name="ia-enron-employees",
+    url="http://nrvis.com/download/data/dynamic/ia-enron-employees.zip",
+    url_archive_format="zip",
+    expected_files=["ia-enron-employees.edges", "readme.html"],
+    description="A dataset of edges that represent emails sent from one employee to another."
+    "There are 50572 edges, and each of them contains timestamp information. "
+    "Edges refer to 151 unique node IDs in total.",
+    source="http://networkrepository.com/ia-enron-employees.php",
+    create_directory=True,
+):
+    def load(self):
+        """
+        Load this data into a set of nodes and edges
+
+        Returns:
+            A tuple ``(nodes, edges)`` where each element is a Pandas DataFrame. Edges are kept
+            sorted in ascending order of time as per the original dataset.
+        """
+        self.download()
+
+        edges_path = self._resolve_path("ia-enron-employees.edges")
+        edges = pd.read_csv(edges_path, sep=" ", header=None)
+
+        # clean up columns
+        edges.columns = ["source", "target", "x", "time"]
+        edges[["source", "target"]] = edges[["source", "target"]].astype(str)
+        edges = edges.drop(columns=["x"])  # unused column
+
+        # time in seconds
+        edges["time"] = edges["time"]
+        nodes = pd.DataFrame(
+            np.unique(pd.concat([edges["source"], edges["target"]], ignore_index=True)),
+            columns=["id"],
+        ).set_index("id")
+
+        return nodes, edges

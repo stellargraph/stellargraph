@@ -49,6 +49,7 @@ class DatasetLoader:
     description = ""
     source = ""
     data_subdirectory_name: Optional[str] = None
+    create_directory: bool = False
 
     @classmethod
     def __init_subclass__(
@@ -61,6 +62,7 @@ class DatasetLoader:
         description: str,
         source: str,
         data_subdirectory_name: Optional[str] = None,
+        create_directory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Used to set class variables during the class definition of derived classes and generate customised docs.
@@ -73,6 +75,7 @@ class DatasetLoader:
         cls.description = description
         cls.source = source
         cls.data_subdirectory_name = data_subdirectory_name
+        cls.create_directory = create_directory
 
         if url_archive_format is None and len(expected_files) != 1:
             raise ValueError(
@@ -125,6 +128,12 @@ class DatasetLoader:
         """Convert dataset relative file names to their full path on filesystem"""
         return os.path.join(self.base_directory, filename)
 
+    def _resolve_unpack_path(self):
+        if self.create_directory:
+            return self.base_directory
+        else:
+            return self._all_datasets_directory()
+
     def _missing_files(self) -> List[str]:
         """Returns a list of files that are missing"""
         return [
@@ -175,7 +184,7 @@ class DatasetLoader:
                 # directory_name for this dataset must match the directory name inside the archive file
                 unpack_archive(
                     temporary_filename,
-                    self._all_datasets_directory(),
+                    self._resolve_unpack_path(),
                     self.url_archive_format,
                 )
             # verify the download
