@@ -532,7 +532,6 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-@experimental(reason="Missing unit tests.")
 class GraphSequence(Sequence):
     """
     A Keras-compatible data generator for training and evaluating graph classification models.
@@ -607,7 +606,6 @@ class GraphSequence(Sequence):
             # adj_graphs = [self.__normalize_adj(adj).toarray() for adj in adj_graphs]
 
         graph_targets = None
-        #
         if self.targets is not None:
             graph_targets = self.targets[
                 index * self.batch_size : (index * self.batch_size) + self.batch_size
@@ -617,9 +615,7 @@ class GraphSequence(Sequence):
         features = [
             np.pad(
                 graph.node_features(graph.nodes()),
-                pad_width=(0, max_nodes - graph.number_of_nodes()),
-                mode="constant",
-                constant_values=0.0,
+                pad_width=((0, max_nodes - graph.number_of_nodes()), (0, 0)),
             )[:, : self.node_features_size]
             for graph in graphs
         ]
@@ -628,8 +624,6 @@ class GraphSequence(Sequence):
             np.pad(
                 adj_graph,
                 pad_width=(0, max_nodes - len(adj_graph)),
-                mode="constant",
-                constant_values=0.0,
             )
             for adj_graph in adj_graphs
         ]
