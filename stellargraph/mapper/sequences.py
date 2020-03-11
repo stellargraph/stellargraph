@@ -554,7 +554,7 @@ class CorruptedNodeSequence(Sequence):
         self.targets[0, :, 0] = 1.0
 
     def __len__(self):
-        return self.base_generator.__len__()
+        return len(self.base_generator)
 
     def __getitem__(self, index):
 
