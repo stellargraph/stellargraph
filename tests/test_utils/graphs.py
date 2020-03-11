@@ -203,7 +203,7 @@ def example_graph_random(
     n_nodes=6,
     n_isolates=1,
     is_directed=False,
-    rand_feats=False,
+    random_features=False,
 ):
     # core/utils, link mapper, node mapper graph 3
 
@@ -215,7 +215,7 @@ def example_graph_random(
     node_ids = range(n_nodes)
     if feature_size is None:
         nodes = pd.DataFrame(index=node_ids)
-    elif rand_feats:
+    elif random_features:
         nodes = pd.DataFrame(
             np.random.random((len(node_ids), feature_size)), index=node_ids
         )

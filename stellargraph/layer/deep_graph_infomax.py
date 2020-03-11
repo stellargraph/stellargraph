@@ -22,10 +22,10 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 import warnings
 
-__all__ = ["DeepGraphInfoMax", "BilinearTransform"]
+__all__ = ["DeepGraphInfoMax", "DGIDiscriminator"]
 
 
-class BilinearTransform(Layer):
+class DGIDiscriminator(Layer):
     """
     This Layer computes the Discriminator function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
     """
@@ -35,8 +35,11 @@ class BilinearTransform(Layer):
 
     def build(self, input_shapes):
 
+        first_size = input_shapes[0][-1]
+        second_size = input_shapes[1][-1]
+
         self.kernel = self.add_weight(
-            shape=(input_shapes[0][-1], input_shapes[0][-1]),
+            shape=(first_size, second_size),
             initializer="glorot_uniform",
             name="kernel",
             regularizer=None,
@@ -49,17 +52,15 @@ class BilinearTransform(Layer):
         Applies the layer to the inputs.
 
         Args:
-            inputs: a list or tuple of tensors with shapes [(N, F), (F,)] containing the node features and summary feature
-                vector.
+            inputs: a list or tuple of tensors with shapes [(batch, N, F1), (batch, F2)] containing the node features and a
+                summary feature vector.
+        Returns:
+            a Tensor with shape (1, N)
         """
 
         features, summary = inputs
 
-        summary_rank = len(summary.shape)
-        feat_rank = len(features.shape)
-
-        score = tf.tensordot(self.kernel, summary, [[1], [summary_rank - 1]])
-        score = tf.tensordot(features, score, [[feat_rank - 1], [0]])
+        score = tf.linalg.matvec(features, tf.linalg.matvec(self.kernel, summary),)
 
         return score
 
@@ -79,6 +80,12 @@ class DeepGraphInfoMax:
         if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
             raise TypeError(
                 f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+            )
+
+        if base_model.multiplicity != 1:
+            warnings.warn(
+                f"multiplicity: expected the base_model to have a multiplicity of 1, found"
+                f" ({self.base_model.multiplicity}). A multiplicity of 1 will be used to construct the base model."
             )
 
         self.base_model = base_model
@@ -105,12 +112,6 @@ class DeepGraphInfoMax:
             input and output layers for use with a keras model
         """
 
-        if self.base_model.multiplicity != 1:
-            warnings.warn(
-                f"multiplicity: expected the base_model to have a multiplicity of 1, found"
-                f" ({self.base_model.multiplicity}). A multiplicity of 1 will be used to construct the base model."
-            )
-
         x_inp, self._node_feats = self.base_model.build(multiplicity=1)
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
@@ -127,13 +128,21 @@ class DeepGraphInfoMax:
             GlobalAveragePooling1D()(self._node_feats)
         )
 
-        discriminator = BilinearTransform()
+        discriminator = DGIDiscriminator(name=self._unique_id)
         scores = discriminator([self._node_feats, summary])
         scores_corrupted = discriminator([node_feats_corr, summary])
 
-        x_out = tf.concat([scores, scores_corrupted], axis=2)
+        x_out = tf.stack([scores, scores_corrupted], axis=2)
 
         return x_corr + x_inp, x_out
+
+    @property
+    def _unique_id(self):
+        """
+        A unique string id for this object to be used as a keras layer name.
+        """
+        id = str(self).replace(" ", "")[1:-1]
+        return id
 
     def embedding_model(self, model):
         """
@@ -145,12 +154,17 @@ class DeepGraphInfoMax:
         Returns:
             input and output layers for use with a keras model
         """
-        x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
 
+        if not any(layer.name == self._unique_id for layer in model.layers):
+            raise ValueError(
+                f"model: model must be a keras model with inputs and outputs created "
+                f"by this instance of DeepGraphInfoMax.build() function."
+            )
+
+        x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
         x_emb_out = self._node_feats
 
-        if x_emb_out.shape[0] == 1:
-            squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
-            x_emb_out = squeeze_layer(x_emb_out)
+        squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
+        x_emb_out = squeeze_layer(x_emb_out)
 
         return x_emb_in, x_emb_out
