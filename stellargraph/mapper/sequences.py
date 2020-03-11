@@ -546,19 +546,17 @@ class GraphSequence(Sequence):
         graphs (list)): The graphs as StellarGraph objects.
         targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
             where N is the number of graphs and C is the target size (e.g., number of classes.)
-        normalize_adj (bool, optional): Specifies whether the adjacency matrix for each graph should
+        normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
             be normalized or not. The default is True.
         batch_size (int, optional): The batch size. It defaults to 1.
         name (str, optional): An optional name for this generator object.
     """
 
-    def __init__(
-        self, graphs, targets=None, normalize_adj=True, batch_size=1, name=None
-    ):
+    def __init__(self, graphs, targets=None, normalize=True, batch_size=1, name=None):
 
         self.name = name
         self.graphs = graphs
-        self.normalize_adj = normalize_adj
+        self.normalize_adj = normalize
         self.targets = targets
         self.batch_size = batch_size
         # we assume that all graphs have node features of the same dimensionality
@@ -572,6 +570,13 @@ class GraphSequence(Sequence):
 
             self.targets = np.asanyarray(targets)
 
+        if self.normalize_adj:
+            self.normalized_adjs = [
+                normalize_adj(graph.to_adjacency_matrix()) for graph in graphs
+            ]
+        else:
+            self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
+
         self.on_epoch_end()
 
     def __len__(self):
@@ -581,15 +586,15 @@ class GraphSequence(Sequence):
         graphs = self.graphs[
             index * self.batch_size : (index * self.batch_size) + self.batch_size
         ]
-        adj_graphs = [graph.to_adjacency_matrix() for graph in graphs]
+
+        adj_graphs = self.normalized_adjs[
+            index * self.batch_size : (index * self.batch_size) + self.batch_size
+        ]
 
         # The number of nodes for the largest graph in the batch. We are going to pad with 0 rows and columns
         # the adjacency and node feature matrices (only the rows in this case) to equal in size the adjacency and
         # feature matrices of the largest graph.
         max_nodes = max([graph.number_of_nodes() for graph in graphs])
-
-        if self.normalize_adj:
-            adj_graphs = [normalize_adj(adj).toarray() for adj in adj_graphs]
 
         graph_targets = None
         if self.targets is not None:
@@ -602,15 +607,15 @@ class GraphSequence(Sequence):
             np.pad(
                 graph.node_features(graph.nodes()),
                 pad_width=((0, max_nodes - graph.number_of_nodes()), (0, 0)),
-            )[:, : self.node_features_size]
+            )
             for graph in graphs
         ]
         features = np.stack(features)
-        adj_graphs = [
-            np.pad(adj_graph, pad_width=(0, max_nodes - len(adj_graph)))
-            for adj_graph in adj_graphs
-        ]
-        adj_graphs = np.stack(adj_graphs)
+
+        for adj in adj_graphs:
+            adj.resize((max_nodes, max_nodes))
+        adj_graphs = np.stack([adj.toarray() for adj in adj_graphs])
+
         masks = np.full((len(graphs), max_nodes), fill_value=False, dtype=np.bool)
         for index, graph in enumerate(graphs):
             masks[index, : graph.number_of_nodes()] = True
@@ -632,4 +637,5 @@ class GraphSequence(Sequence):
         indexes = list(range(len(self.graphs)))
         random.shuffle(indexes)
         self.graphs = [self.graphs[i] for i in indexes]
+        self.normalized_adjs = [self.normalized_adjs[i] for i in indexes]
         self.targets = self.targets[indexes]

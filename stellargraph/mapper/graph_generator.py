@@ -48,7 +48,7 @@ class GraphGenerator:
             if len(graph.node_types) > 1:
                 raise ValueError(
                     "graphs: node generator requires graphs with single node type, "
-                    f"found a graph with {graph.node_types} node types."
+                    f"found a graph with {len(graph.node_types)} node types."
                 )
 
             graph.check_graph_for_ml()
@@ -59,7 +59,8 @@ class GraphGenerator:
                 self.node_features_size = f_dim
             elif self.node_features_size != f_dim:
                 raise ValueError(
-                    f"graphs: expected node features for all graph to have same dimensions, found {self.node_features_size} vs {f_dim}"
+                    "graphs: expected node features for all graph to have same dimensions,"
+                    f"found {self.node_features_size} vs {f_dim}"
                 )
 
         self.graphs = graphs
