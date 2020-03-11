@@ -544,6 +544,7 @@ class GraphSequence(Sequence):
 
     Args:
         graphs (list)): The graphs as StellarGraph objects.
+        node_features_size (int): The dimensionality of node features.
         targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
             where N is the number of graphs and C is the target size (e.g., number of classes.)
         normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
@@ -552,20 +553,20 @@ class GraphSequence(Sequence):
         name (str, optional): An optional name for this generator object.
     """
 
-    def __init__(self, graphs, targets=None, normalize=True, batch_size=1, name=None):
+    def __init__(self, graphs, node_features_size, targets=None, normalize=True, batch_size=1, name=None):
 
         self.name = name
         self.graphs = graphs
         self.normalize_adj = normalize
         self.targets = targets
         self.batch_size = batch_size
-        # we assume that all graphs have node features of the same dimensionality
-        self.node_features_size = graphs[0].node_features(graphs[0].nodes()).shape[1]
+        self.node_features_size = node_features_size
 
         if targets is not None:
             if len(graphs) != len(targets):
                 raise ValueError(
-                    "When passed together targets and the number of graphs should be the same length."
+                    "expected the number of target values and the number of graphs to be the same length,"
+                    f"found {len(graphs)} graphs and {len(targets)} targets."
                 )
 
             self.targets = np.asanyarray(targets)
