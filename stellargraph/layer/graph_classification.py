@@ -33,7 +33,7 @@ from .cluster_gcn import ClusterGraphConvolution
 from ..core.experimental import experimental
 
 
-@experimental(reason="Missing unit tests")
+@experimental(reason="Missing unit tests.", issues=[1042])
 class GraphClassificationConvolution(ClusterGraphConvolution):
 
     """
