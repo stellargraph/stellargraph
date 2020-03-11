@@ -526,5 +526,11 @@ class CorruptedGenerator:
         self.base_generator = base_generator
 
     def flow(self, *args, **kwargs):
+        """
+        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
 
+        Args:
+            args: the positional arguments for the self.base_generator.flow(...) method
+            kwargs: the keyword arguments for the self.base_generator.flow(...) method
+        """
         return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
