@@ -198,12 +198,7 @@ def example_graph_1_saliency_maps(feature_size=None):
 
 
 def example_graph_random(
-    feature_size=4,
-    n_edges=20,
-    n_nodes=6,
-    n_isolates=1,
-    is_directed=False,
-    random_features=False,
+    feature_size=4, n_edges=20, n_nodes=6, n_isolates=1, is_directed=False,
 ):
     # core/utils, link mapper, node mapper graph 3
 
@@ -215,13 +210,10 @@ def example_graph_random(
     node_ids = range(n_nodes)
     if feature_size is None:
         nodes = pd.DataFrame(index=node_ids)
-    elif random_features:
+    else:
         nodes = pd.DataFrame(
             np.random.random((len(node_ids), feature_size)), index=node_ids
         )
-    else:
-        # Example features
-        nodes = pd.DataFrame(np.ones((len(node_ids), feature_size)), index=node_ids)
 
     n_noniso = n_nodes - n_isolates
     elist = [
