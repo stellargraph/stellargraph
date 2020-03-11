@@ -740,8 +740,6 @@ class IAEnronEmployees(
         edges[["source", "target"]] = edges[["source", "target"]].astype(str)
         edges = edges.drop(columns=["x"])  # unused column
 
-        # time in seconds
-        edges["time"] = edges["time"]
         nodes = pd.DataFrame(
             np.unique(pd.concat([edges["source"], edges["target"]], ignore_index=True)),
             columns=["id"],
