@@ -15,9 +15,17 @@
 # limitations under the License.
 
 import warnings
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
-from tensorflow.keras import activations, initializers, constraints, regularizers, Sequential, Model
+from tensorflow.keras import (
+    activations,
+    initializers,
+    constraints,
+    regularizers,
+    Sequential,
+    Model,
+)
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, LSTM, Dense
 
 from ..mapper import FullBatchGenerator
@@ -85,8 +93,8 @@ class GraphConvolution1(Layer):
 
         self.activation = activations.get(activation)
         self.use_bias = use_bias
-        
-        self.adj = A
+
+        self.adj = self.calculate_laplacian(A)
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -122,6 +130,11 @@ class GraphConvolution1(Layer):
         base_config = super().get_config()
         return {**base_config, **config}
 
+    def calculate_laplacian(self, adj):
+        D = np.diag(np.ravel(adj.sum(axis=0)) ** (-0.5))
+        adj = np.dot(D, np.dot(adj, D))
+        return adj
+
     def compute_output_shape(self, input_shapes):
         """
         Computes the output shape of the layer.
@@ -135,12 +148,12 @@ class GraphConvolution1(Layer):
             An input shape tuple.
         """
         feature_shape, As_shape = input_shapes
-        
+
         return feature_shape[0], feature_shape[1], self.units
 
     def set_A(self, A):
         K.set_value(self.A, A)
-    
+
     def build(self, input_shapes):
         """
         Builds the layer
@@ -152,12 +165,14 @@ class GraphConvolution1(Layer):
         n_nodes = input_shapes[-1]
         t_steps = input_shapes[-2]
         self.A = self.add_weight(
-            name="A", shape=(n_nodes, n_nodes), 
-            trainable=False, initializer=initializers.constant(self.adj)
+            name="A",
+            shape=(n_nodes, n_nodes),
+            trainable=False,
+            initializer=initializers.constant(self.adj),
         )
-        
-        #K.set_value(self.A, self.adj)
-        
+
+        # K.set_value(self.A, self.adj)
+
         self.kernel = self.add_weight(
             shape=(t_steps, t_steps),
             initializer=self.kernel_initializer,
@@ -190,56 +205,33 @@ class GraphConvolution1(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        
+
         # Calculate the layer operation of GCN
         # output = self.kernel * K.dot(features, self.A)
-        
+
         h_graph = K.dot(features, self.A)
         output = tf.transpose(
-                K.dot(tf.transpose(h_graph, [0,2,1]), self.kernel),
-                [0,2,1]
-                )
-        
+            K.dot(tf.transpose(h_graph, [0, 2, 1]), self.kernel), [0, 2, 1]
+        )
+
         # Add optional bias & apply activation
         if self.bias is not None:
             output += self.bias
-            
+
         output = self.activation(output)
 
         return output
 
 
-
-
 class Graph_Convolution_LSTM(Model):
-    
-    def __init__(self, outputs, adj):
-        super(Graph_Convolution_LSTM, self).__init__()
-        self.gcn1 = GraphConvolution1(A = adj, activation = 'relu' )
-        self.gcn2 = GraphConvolution1(A = adj, activation = 'relu' )
-        self.lstm = LSTM(200, return_sequences = False)
-        self.dense = Dense(outputs, activation='sigmoid')
-        self.dropout = Dropout(0.5)
-
-    def call(self, inputs):
-        x = self.gcn1(inputs)
-        x = self.gcn2(x)
-        x = self.lstm(x)
-        x = self.dropout(x)
-        x = self.dense(x)
-        return x 
-
-class GCN_LSTM:
-    """
-    """
     def __init__(
         self,
-        train_shape,
+        outputs,
         adj,
-        layer_sizes = 200,
+        layer_sizes=200,
         bias=True,
-        dropout=0.0,
-        activations=None,
+        dropout=0.5,
+        activations="relu",
         kernel_initializer=None,
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -247,60 +239,32 @@ class GCN_LSTM:
         bias_regularizer=None,
         bias_constraint=None,
     ):
-        
 
-      
+        super(Graph_Convolution_LSTM, self).__init__()
+
         self.layer_sizes = layer_sizes
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
-        self.adj = adj
+        self.outputs = outputs
 
-        # Copy required information from generator
-       # self.method = generator.method
-        self.seq_len = train_shape[0]
-        self.n_nodes = train_shape[1]
-        self.activations = activations
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
 
-        # Initialize a stack of graph convolution and LSTM layers
-       
-        self.gcn_l = GraphConvolution1(activation = 'relu')
-        self.lstm_l = LSTM(layer_sizes, return_sequences = False)
-        self.dropout_l = Dropout(self.dropout)
-        self.dense_l = Dense(self.n_nodes, activation = 'sigmoid')
-        
-        
-    def __call__(self, x):
-        """
-        Apply a stack of GCN layers to the inputs.
-        The input tensors are expected to be a list of the following:
-        [
-            Node features shape (1, N, F),
-            Adjacency indices (1, E, 2),
-            Adjacency values (1, E),
-            Output indices (1, O)
-        ]
-        where N is the number of nodes, F the number of input features,
-              E is the number of edges, O the number of output nodes.
+        self.gcn1 = GraphConvolution1(A=adj, activation=self.activations)
+        self.gcn2 = GraphConvolution1(A=adj, activation=self.activations)
+        self.lstm = LSTM(self.layer_sizes, return_sequences=False)
+        self.dense = Dense(self.outputs, activation="sigmoid")
+        self.dropout = Dropout(self.dropout)
 
-        Args:
-            x (Tensor): input tensors
-
-        Returns:
-            Output tensor
-        """
-        x_features, x_adj = x
-
-        # Currently we require the batch dimension to be one for full-batch methods
-        seq_dim, n_nodes, _ = K.int_shape(x_features)
-       
-       
-        h_layer = self.gcn_l(input_shape = (x_features.shape[1], x_features.shape[2],))
-        h_layer = self.lstm_l(h_layer)
-        h_layer = self.dropout_l(h_layer)
-        h_layer  = self.dense_l(h_layer)
-        
-        return h_layer
-                
-                
-   
+    def call(self, inputs):
+        x = self.gcn1(inputs)
+        x = self.gcn2(x)
+        x = self.lstm(x)
+        x = self.dropout(x)
+        x = self.dense(x)
+        return x
