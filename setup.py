@@ -47,6 +47,7 @@ REQUIRES = [
 EXTRAS_REQUIRES = {
     "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
     "igraph": ["python-igraph"],
+    "neo4j": ["py2neo"],
     "test": [
         "pytest==5.3.1",
         "pytest-benchmark>=3.1",
