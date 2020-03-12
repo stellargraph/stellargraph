@@ -1,4 +1,7 @@
 ---
+# the comments are too noisy to be useful
+comment: false
+
 coverage:
   precision: 1
   round: nearest

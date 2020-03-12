@@ -123,7 +123,7 @@ class FullBatchGenerator(ABC):
             else:
                 raise ValueError("argument 'transform' must be a callable.")
 
-        elif self.method in ["gcn", "chebyshev", "sgc"]:
+        elif self.method in ["gcn", "sgc"]:
             self.features, self.Aadj = GCN_Aadj_feats_op(
                 features=self.features, A=self.Aadj, k=self.k, method=self.method
             )
@@ -151,7 +151,7 @@ class FullBatchGenerator(ABC):
         else:
             raise ValueError(
                 "Undefined method for adjacency matrix transformation. "
-                "Accepted: 'gcn' (default), 'chebyshev','sgc', and 'self_loops'."
+                "Accepted: 'gcn' (default), 'sgc', and 'self_loops'."
             )
 
     def flow(self, node_ids, targets=None):
@@ -167,8 +167,8 @@ class FullBatchGenerator(ABC):
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
 
         """
         if targets is not None:
@@ -213,8 +213,6 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
     *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
-    *   ``method='chebyshev'``: Implements the approximate spectral convolution
-        operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
         to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
@@ -236,8 +234,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         x_inputs, y_train = train_flow[0]
         model.fit(x=x_inputs, y=y_train)
 
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_flow, epochs=num_epochs)
+        # Alternatively, use the generator itself with model.fit:
+        model.fit(train_flow, epochs=num_epochs)
 
     For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
@@ -246,10 +244,9 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'chebyshev','sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method or the
-            Chebyshev series order for the 'chebyshev' method. In both cases this
-            should be positive integer.
+            'sgc', 'self_loops', or 'none'.
+        k (None or int): This is the smoothing order for the 'sgc' method. This should be positive
+            integer.
         transform (callable): an optional function to apply on features and adjacency matrix
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
@@ -273,8 +270,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
 
         """
         return super().flow(node_ids, targets)
@@ -302,8 +299,6 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
     *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
-    *   ``method='chebyshev'``: Implements the approximate spectral convolution
-        operator by implementing the k-th order Chebyshev expansion of Eq. 5 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
         to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
@@ -325,8 +320,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         x_inputs, y_train = train_flow[0]
         model.fit(x=x_inputs, y=y_train)
 
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_flow, epochs=num_epochs)
+        # Alternatively, use the generator itself with model.fit:
+        model.fit(train_flow, epochs=num_epochs)
 
     For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
@@ -335,10 +330,9 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'chebyshev','sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method or the
-            Chebyshev series order for the 'chebyshev' method. In both cases this
-            should be positive integer.
+            'sgc', 'self_loops', or 'none'.
+        k (None or int): This is the smoothing order for the 'sgc' method. This should be positive
+            integer.
         transform (callable): an optional function to apply on features and adjacency matrix
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
@@ -362,8 +356,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
 
         """
         return super().flow(link_ids, targets)
@@ -395,8 +389,8 @@ class RelationalFullBatchNodeGenerator:
         train_data_gen = G_generator.flow(node_ids, node_targets)
 
         # Fetch the data from train_data_gen, and feed into a Keras model:
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_gen, epochs=num_epochs, ...)
+        # Alternatively, use the generator itself with model.fit:
+        model.fit(train_gen, epochs=num_epochs, ...)
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -483,8 +477,8 @@ class RelationalFullBatchNodeGenerator:
 
         Returns:
             A NodeSequence object to use with RGCN models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
         """
 
         if targets is not None:

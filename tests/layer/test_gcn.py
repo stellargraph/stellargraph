@@ -153,8 +153,8 @@ def test_GCN_apply_dense():
     preds_1 = model.predict([features[None, :, :], out_indices, adj])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -182,8 +182,8 @@ def test_GCN_apply_sparse():
     preds_1 = model.predict([features[None, :, :], out_indices, A_indices, A_values])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -205,8 +205,8 @@ def test_GCN_linkmodel_apply_dense():
     preds_1 = model.predict([features[None, :, :], out_indices, adj])
     assert preds_1.shape == (1, 2, 2, 3)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow([("a", "b"), ("b", "c")]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow([("a", "b"), ("b", "c")]))
     assert preds_2.shape == (1, 2, 2, 3)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -234,8 +234,8 @@ def test_GCN_linkmodel_apply_sparse():
     preds_1 = model.predict([features[None, :, :], out_indices, A_indices, A_values])
     assert preds_1.shape == (1, 2, 2, 3)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow([("a", "b"), ("b", "c")]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow([("a", "b"), ("b", "c")]))
     assert preds_2.shape == (1, 2, 2, 3)
 
     assert preds_1 == pytest.approx(preds_2)

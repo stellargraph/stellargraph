@@ -707,3 +707,54 @@ class FB15k_237(
             ``graph``.
         """
         return _load_tsv_knowledge_graph(self)
+
+
+class IAEnronEmployees(
+    DatasetLoader,
+    name="ia-enron-employees",
+    directory_name="ia-enron-employees",
+    url="http://nrvis.com/download/data/dynamic/ia-enron-employees.zip",
+    url_archive_format="zip",
+    url_archive_contains_directory=False,
+    expected_files=["ia-enron-employees.edges", "readme.html"],
+    description="A dataset of edges that represent emails sent from one employee to another."
+    "There are 50572 edges, and each of them contains timestamp information. "
+    "Edges refer to 151 unique node IDs in total."
+    "Ryan A. Rossi and Nesreen K. Ahmed “The Network Data Repository with Interactive Graph Analytics and Visualization” (2015)",
+    source="http://networkrepository.com/ia-enron-employees.php",
+):
+    def load(self):
+        """
+        Load this data into a set of nodes and edges
+
+        Returns:
+            A tuple ``(graph, edges)``
+
+            ``graph`` is a :class:`StellarGraph` containing all the data. Timestamp information on
+            edges are encoded as edge weights.
+
+            ``edges`` are the original edges from the dataset which are sorted in ascending
+            order of time - these can be used to create train/test splits based on time values.
+
+            Node IDs in the returned data structures are all converted to strings to allow for
+            compatibility with with ``gensim``'s ``Word2Vec`` model.
+        """
+        self.download()
+
+        edges_path = self._resolve_path("ia-enron-employees.edges")
+        edges = pd.read_csv(
+            edges_path,
+            sep=" ",
+            header=None,
+            names=["source", "target", "x", "time"],
+            usecols=["source", "target", "time"],
+        )
+        edges[["source", "target"]] = edges[["source", "target"]].astype(str)
+
+        nodes = pd.DataFrame(
+            index=np.unique(
+                pd.concat([edges["source"], edges["target"]], ignore_index=True)
+            )
+        )
+
+        return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges
