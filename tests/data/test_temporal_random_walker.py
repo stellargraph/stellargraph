@@ -17,19 +17,30 @@
 import pandas as pd
 import pytest
 import numpy as np
-import networkx as nx
 from stellargraph.data.explorer import TemporalRandomWalk
 from stellargraph.core.graph import StellarGraph
+
+
+def create_temporal_graph(nodes, edges):
+    edge_cols = ["source", "target", "weight"]
+    return StellarGraph(
+        nodes=pd.DataFrame(index=nodes), edges=pd.DataFrame(edges, columns=edge_cols),
+    )
 
 
 @pytest.fixture()
 def temporal_graph():
     nodes = [1, 2, 3, 4, 5, 6]
     edges = [(1, 2, 5), (2, 3, 2), (2, 4, 10), (4, 5, 3), (4, 6, 12)]
-    edge_cols = ["source", "target", "weight"]
-    return StellarGraph(
-        nodes=pd.DataFrame(index=nodes), edges=pd.DataFrame(edges, columns=edge_cols),
-    )
+    return create_temporal_graph(nodes, edges)
+
+
+def temporal_graph_negative_times(num_edges):
+    nodes = [1, 2, 3, 4, 5, 6]
+    edges = [
+        (np.random.choice(nodes), np.random.choice(nodes), -1) for _ in range(num_edges)
+    ]
+    return create_temporal_graph(nodes, edges)
 
 
 def test_temporal_walks(temporal_graph):
@@ -81,3 +92,14 @@ def test_exp_biases_extreme(temporal_graph):
     small_times = [0.000001, 0.000002]
     biases = rw._exp_biases(small_times, t_0=0, decay=True)
     assert sum(biases) == pytest.approx(1)
+
+
+@pytest.mark.parametrize("num_edges", [1, 10, 20])
+def test_validate_times(num_edges):
+    with pytest.raises(ValueError, match=r".*edge times must be non-negative.*") as err:
+        TemporalRandomWalk(temporal_graph_negative_times(num_edges))
+
+    err_msg = err.value.args[0]
+    assert str(num_edges) in err_msg
+    if num_edges > 10:
+        assert err_msg.endswith("...")

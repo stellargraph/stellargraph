@@ -796,6 +796,29 @@ class TemporalRandomWalk(GraphWalk):
     for the algorithm, only the relative differences (e.g. seconds, days, etc).
     """
 
+    def __init__(self, graph, graph_schema=None, seed=None):
+        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        self._edges, self._times = self.graph.edges(include_edge_weight=True)
+        self._validate_times()
+
+    def _validate_times(self):
+        (neg_time_locs,) = np.where(self._times < 0)
+        num_neg_times = len(neg_time_locs)
+        if num_neg_times > 0:
+            max_edges_shown = 10
+            neg_time_edges_formatted = ", ".join(
+                [
+                    str((self._edges[loc], self._times[loc]))
+                    for loc in neg_time_locs[:max_edges_shown]
+                ]
+            )
+            if num_neg_times > max_edges_shown:
+                neg_time_edges_formatted += " ..."
+            raise ValueError(
+                f"All edge times must be non-negative. Found {num_neg_times} negatives: "
+                f"{neg_time_edges_formatted}",
+            )
+
     def run(
         self,
         num_cw,
@@ -855,9 +878,8 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         num_cw_curr = 0
 
-        edges, times = self.graph.edges(include_edge_weight=True)
         edge_biases = self._temporal_biases(
-            times, None, bias_type=initial_edge_bias, is_forward=False,
+            self._times, None, bias_type=initial_edge_bias, is_forward=False,
         )
 
         successes = 0
@@ -872,9 +894,9 @@ class TemporalRandomWalk(GraphWalk):
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
-            first_edge_index = self._sample(len(edges), edge_biases, np_rs)
-            src, dst = edges[first_edge_index]
-            t = times[first_edge_index]
+            first_edge_index = self._sample(len(self._edges), edge_biases, np_rs)
+            src, dst = self._edges[first_edge_index]
+            t = self._times[first_edge_index]
 
             remaining_length = num_cw - num_cw_curr + cw_size - 1
 
