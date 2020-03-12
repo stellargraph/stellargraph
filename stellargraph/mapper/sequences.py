@@ -25,6 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
+    "CorruptedNodeSequence",
 ]
 
 import warnings
@@ -527,3 +528,40 @@ class RelationalFullBatchNodeSequence(Sequence):
 
     def __getitem__(self, index):
         return self.inputs, self.targets
+
+
+class CorruptedNodeSequence(Sequence):
+    """
+    Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
+    data for training Deep Graph Infomax.
+
+    Args:
+        base_generator: the uncorrupted Sequence object.
+    """
+
+    def __init__(self, base_generator):
+
+        if not isinstance(
+            base_generator, (FullBatchSequence, SparseFullBatchSequence,),
+        ):
+            raise TypeError(
+                f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
+                f"found {type(base_generator).__name__}"
+            )
+
+        self.base_generator = base_generator
+        self.targets = np.zeros((1, len(base_generator.target_indices), 2))
+        self.targets[0, :, 0] = 1.0
+
+    def __len__(self):
+        return len(self.base_generator)
+
+    def __getitem__(self, index):
+
+        inputs, _ = self.base_generator[index]
+        features = inputs[0]
+
+        shuffled_idxs = np.random.permutation(features.shape[1])
+        shuffled_feats = features[:, shuffled_idxs, :]
+
+        return [shuffled_feats] + inputs, self.targets

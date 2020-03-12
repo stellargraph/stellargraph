@@ -23,6 +23,7 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
+    "CorruptedGenerator",
 ]
 
 import warnings
@@ -40,6 +41,7 @@ from . import (
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
+    CorruptedNodeSequence,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
@@ -497,3 +499,32 @@ class RelationalFullBatchNodeGenerator:
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
+
+
+class CorruptedGenerator:
+    """
+    Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
+    data for training Deep Graph Infomax.
+
+    Args:
+        base_generator: the uncorrupted Sequence object.
+    """
+
+    def __init__(self, base_generator):
+
+        if not isinstance(base_generator, FullBatchNodeGenerator,):
+            raise TypeError(
+                f"base_generator: expected FullBatchNodeGenerator, "
+                f"found {type(base_generator).__name__}"
+            )
+        self.base_generator = base_generator
+
+    def flow(self, *args, **kwargs):
+        """
+        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
+
+        Args:
+            args: the positional arguments for the self.base_generator.flow(...) method
+            kwargs: the keyword arguments for the self.base_generator.flow(...) method
+        """
+        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
