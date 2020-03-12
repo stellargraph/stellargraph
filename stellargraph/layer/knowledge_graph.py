@@ -175,6 +175,20 @@ class ComplEx:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
+        # create dictionary of edges by type
+        # probably a way of doing this with SG class
+        edges = known_edges_graph.edges(include_edge_type=True)
+        edges = set(zip(
+            known_edges_graph._get_index_for_nodes([s for s, _, _ in edges]),
+            known_edges_graph._get_index_for_nodes([o for _, o, _ in edges]),
+            known_edges_graph._edges.types.to_iloc([r for _, _, r in edges]),
+        ))
+
+        rel_set = set(r for _, _, r in edges)
+        edges_by_type = dict(
+            (rel, set((s, o) for s, o, r in edges if r == rel)) for rel in rel_set
+        )
+
         def ranks(pred, true_ilocs, true_is_source):
             batch_size = len(true_ilocs)
             assert pred.shape == (num_nodes, batch_size)
@@ -186,7 +200,20 @@ class ComplEx:
             # for each column, compare all the scores against the score of the true edge
             greater = pred > true_scores
 
+            # get indices of all entries in greater that correspond to real edges
+            if true_is_source:
+                real_edges = [(s, i)
+                              for i, (obj, rel) in enumerate(zip(true_ilocs, rels))
+                              for s, o in edges_by_type[rel] if o == obj
+                              ]
+            else:
+                real_edges = [(o, i)
+                              for i, (subj, rel) in enumerate(zip(true_ilocs, rels))
+                              for s, o in edges_by_type[rel] if s == subj
+                              ]
+
             # the raw rank is the number of elements scored higher than the true edge
+            greater[real_edges] = False
             raw_rank = 1 + greater.sum(axis=0)
             assert raw_rank.shape == (batch_size,)
 
