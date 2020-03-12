@@ -508,7 +508,8 @@ class SampledBreadthFirstWalk(GraphWalk):
 
         Args:
             nodes (list): A list of root node ids such that from each node a BFWs will be generated up to the
-                given depth d.
+                given depth. The depth of each of the walks is inferred from the length of the ``n_size``
+                list parameter.
             n_size (list of int): The number of neighbouring nodes to expand at each depth of the walk.
                 Sampling of neighbours is always done with replacement regardless of the node degree and
                 number of neighbours requested.
