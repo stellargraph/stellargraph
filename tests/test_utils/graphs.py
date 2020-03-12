@@ -282,3 +282,8 @@ def tree_graph() -> StellarGraph:
     )
 
     return StellarDiGraph(nodes, edges)
+
+
+@pytest.fixture
+def barbell():
+    return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))

@@ -240,3 +240,29 @@ def test_fb15k_237_load() -> None:
     _knowledge_graph_load(
         FB15k_237(), nodes=14541, rels=237, train=272115, test=20466, valid=17535,
     )
+
+
+def test_pubmeddiabetes_load() -> None:
+    g, labels = PubMedDiabetes().load()
+
+    n_nodes = 19717
+
+    assert g.number_of_nodes() == n_nodes
+    assert g.number_of_edges() == 44338
+
+    assert g.node_feature_sizes() == {"paper": 500}
+
+    assert len(labels) == n_nodes
+    assert set(labels.index) == set(g.nodes())
+
+
+def test_ia_enron_employees_load() -> None:
+    graph, edges = IAEnronEmployees().load()
+
+    n_nodes = 151
+    n_edges = 50572
+
+    assert graph.number_of_nodes() == n_nodes
+    assert graph.number_of_edges() == n_edges
+    assert len(edges) == n_edges
+    assert set(edges.columns) == {"source", "target", "time"}

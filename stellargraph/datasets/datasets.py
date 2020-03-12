@@ -23,6 +23,7 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 
 from .dataset_loader import DatasetLoader
 from ..core.graph import StellarGraph, StellarDiGraph
+import itertools
 import logging
 import os
 import pandas as pd
@@ -164,7 +165,52 @@ class PubMedDiabetes(
     source="https://linqs.soe.ucsc.edu/data",
     data_subdirectory_name="data",
 ):
-    pass
+    def load(self):
+        """
+        Load this graph into an undirected homogeneous graph, downloading it if required.
+
+        Returns:
+            A tuple where the first element is a :class:`StellarGraph` instance containing the graph
+            data and features, and the second element is a pandas Series of node class labels.
+        """
+        self.download()
+
+        directed, _graph, node = [self._resolve_path(f) for f in self.expected_files]
+        edgelist = pd.read_csv(
+            directed,
+            sep="\t",
+            skiprows=2,
+            header=None,
+            names=["id", "source", "pipe", "target"],
+            usecols=["source", "target"],
+        )
+        edgelist.source = edgelist.source.str.lstrip("paper:").astype(int)
+        edgelist.target = edgelist.target.str.lstrip("paper:").astype(int)
+
+        def parse_feature(feat):
+            name, value = feat.split("=")
+            return name, float(value)
+
+        def parse_line(line):
+            pid, raw_label, *raw_features, _summary = line.split("\t")
+            features = dict(parse_feature(feat) for feat in raw_features)
+            features["pid"] = int(pid)
+            features["label"] = int(parse_feature(raw_label)[1])
+            return features
+
+        with open(node) as fp:
+            node_data = pd.DataFrame(
+                parse_line(line) for line in itertools.islice(fp, 2, None)
+            )
+
+        node_data.fillna(0, inplace=True)
+        node_data.set_index("pid", inplace=True)
+
+        labels = node_data["label"]
+
+        nodes = node_data.drop(columns="label")
+
+        return StellarGraph({"paper": nodes}, {"cites": edgelist}), labels
 
 
 class BlogCatalog3(
@@ -661,3 +707,54 @@ class FB15k_237(
             ``graph``.
         """
         return _load_tsv_knowledge_graph(self)
+
+
+class IAEnronEmployees(
+    DatasetLoader,
+    name="ia-enron-employees",
+    directory_name="ia-enron-employees",
+    url="http://nrvis.com/download/data/dynamic/ia-enron-employees.zip",
+    url_archive_format="zip",
+    url_archive_contains_directory=False,
+    expected_files=["ia-enron-employees.edges", "readme.html"],
+    description="A dataset of edges that represent emails sent from one employee to another."
+    "There are 50572 edges, and each of them contains timestamp information. "
+    "Edges refer to 151 unique node IDs in total."
+    "Ryan A. Rossi and Nesreen K. Ahmed “The Network Data Repository with Interactive Graph Analytics and Visualization” (2015)",
+    source="http://networkrepository.com/ia-enron-employees.php",
+):
+    def load(self):
+        """
+        Load this data into a set of nodes and edges
+
+        Returns:
+            A tuple ``(graph, edges)``
+
+            ``graph`` is a :class:`StellarGraph` containing all the data. Timestamp information on
+            edges are encoded as edge weights.
+
+            ``edges`` are the original edges from the dataset which are sorted in ascending
+            order of time - these can be used to create train/test splits based on time values.
+
+            Node IDs in the returned data structures are all converted to strings to allow for
+            compatibility with with ``gensim``'s ``Word2Vec`` model.
+        """
+        self.download()
+
+        edges_path = self._resolve_path("ia-enron-employees.edges")
+        edges = pd.read_csv(
+            edges_path,
+            sep=" ",
+            header=None,
+            names=["source", "target", "x", "time"],
+            usecols=["source", "target", "time"],
+        )
+        edges[["source", "target"]] = edges[["source", "target"]].astype(str)
+
+        nodes = pd.DataFrame(
+            index=np.unique(
+                pd.concat([edges["source"], edges["target"]], ignore_index=True)
+            )
+        )
+
+        return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges

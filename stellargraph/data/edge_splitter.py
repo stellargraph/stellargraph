@@ -23,6 +23,9 @@ import pandas as pd
 import numpy as np
 from math import isclose
 
+from ..core import StellarGraph
+from ..globalvar import FEATURE_ATTR_NAME
+
 
 class EdgeSplitter(object):
     """
@@ -58,6 +61,15 @@ class EdgeSplitter(object):
     """
 
     def __init__(self, g, g_master=None):
+        # rather than rewrite this to use StellarGraph natively, this has the desired API (StellarGraphs in and
+        # StellarGraphs out) by converting to/from NetworkX at the boundaries
+        self._input_was_stellargraph = isinstance(g, StellarGraph)
+        if self._input_was_stellargraph:
+            g = g.to_networkx()
+
+        if isinstance(g_master, StellarGraph):
+            g_master = g_master.to_networkx()
+
         # the original graph copied over
         self.g = g.copy()
         self.g_master = g_master
@@ -307,7 +319,10 @@ class EdgeSplitter(object):
         Returns:
             The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first array of
             dimensionality Nx2 (where N is the number of edges) holding the node ids for the edges and the second of
-            dimensionality Nx1 holding the edge labels, 0 for negative and 1 for positive examples.
+            dimensionality Nx1 holding the edge labels, 0 for negative and 1 for positive examples. The graph
+            matches the input graph passed to the :class:`EdgeSplitter` constructor: the returned graph is a
+            :class:`StellarGraph` instance if the input graph was one, and, similarly, a NetworkX graph if the input
+            graph was one.
         """
         if p <= 0 or p >= 1:
             raise ValueError("The value of p must be in the interval (0,1)")
@@ -363,7 +378,15 @@ class EdgeSplitter(object):
                 p=p, method=method, probs=probs, keep_connected=keep_connected
             )
 
-        return self.g_train, edge_data_ids, edge_data_labels
+        if self._input_was_stellargraph:
+            # if the graphs came in as a StellarGraph, return one too
+            result_graph = StellarGraph.from_networkx(
+                self.g_train, node_features=FEATURE_ATTR_NAME
+            )
+        else:
+            result_graph = self.g_train
+
+        return result_graph, edge_data_ids, edge_data_labels
 
     def _get_edges(
         self, edge_label, edge_attribute_label=None, edge_attribute_threshold=None

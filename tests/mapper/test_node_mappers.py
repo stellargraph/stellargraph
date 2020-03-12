@@ -53,58 +53,56 @@ def example_graph_2(feature_size=None):
 
 
 def example_hin_2(feature_size_by_type=None):
+    if feature_size_by_type is None:
+        feature_size_by_type = {"t1": None, "t2": None}
+
     nodes_type_1 = [0, 1, 2, 3]
     nodes_type_2 = [4, 5]
+    nodes = {
+        "t1": pd.DataFrame(
+            repeated_features(nodes_type_1, feature_size_by_type["t1"]),
+            index=nodes_type_1,
+        ),
+        "t2": pd.DataFrame(
+            repeated_features(nodes_type_2, feature_size_by_type["t2"]),
+            index=nodes_type_2,
+        ),
+    }
+    edges = {
+        "e1": pd.DataFrame(
+            [(0, 4), (1, 4), (2, 5), (3, 5)], columns=["source", "target"]
+        )
+    }
 
-    # Create isolated graphs
-    G = nx.Graph()
-    G.add_nodes_from(nodes_type_1, label="t1")
-    G.add_nodes_from(nodes_type_2, label="t2")
-    G.add_edges_from([(0, 4), (1, 4), (2, 5), (3, 5)], label="e1")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-
-        G = StellarGraph(G, node_features="feature")
-
-    else:
-        G = StellarGraph(G)
-
-    return G, nodes_type_1, nodes_type_2
+    return StellarGraph(nodes, edges), nodes_type_1, nodes_type_2
 
 
 def example_hin_3(feature_size_by_type=None):
-    nodes_type_1 = [0, 1, 2]
-    nodes_type_2 = [4, 5, 6]
+    if feature_size_by_type is None:
+        feature_size_by_type = {"t1": None, "t2": None}
 
-    # Create isolated graphs
-    G = nx.Graph()
-    G.add_nodes_from(nodes_type_1, label="t1")
-    G.add_nodes_from(nodes_type_2, label="t2")
-    G.add_edges_from([(0, 4), (1, 5)], label="e1")
-    G.add_edges_from([(0, 2)], label="e2")
+    nodes_type_1 = np.array([0, 1, 2])
+    nodes_type_2 = np.array([4, 5, 6])
+    nodes = {
+        "t1": pd.DataFrame(
+            repeated_features(10 + nodes_type_1, feature_size_by_type["t1"]),
+            index=nodes_type_1,
+        ),
+        "t2": pd.DataFrame(
+            repeated_features(10 + nodes_type_2, feature_size_by_type["t2"]),
+            index=nodes_type_2,
+        ),
+    }
+    edges = {
+        "e1": pd.DataFrame([(0, 4), (1, 5)], columns=["source", "target"]),
+        "e2": pd.DataFrame([(0, 2)], columns=["source", "target"], index=[2]),
+    }
 
     # Node 2 has no edges of type 1
     # Node 1 has no edges of type 2
     # Node 6 has no edges
 
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = (int(v) + 10) * np.ones(
-                feature_size_by_type[nt], dtype="int"
-            )
-
-        G = StellarGraph(G, node_features="feature")
-
-    else:
-        G = StellarGraph(G)
-
-    return G, nodes_type_1, nodes_type_2
+    return StellarGraph(nodes, edges), nodes_type_1, nodes_type_2
 
 
 def test_nodemapper_constructor_nx():
