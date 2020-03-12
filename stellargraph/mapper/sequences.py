@@ -25,6 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
+    "CorruptedNodeSequence",
 ]
 
 import warnings
@@ -45,8 +46,8 @@ from ..random import random_state
 
 class NodeSequence(Sequence):
     """Keras-compatible data generator to use with the Keras
-    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
-    and :meth:`keras.Model.predict_generator`.
+    methods :meth:`keras.Model.fit`, :meth:`keras.Model.evaluate`,
+    and :meth:`keras.Model.predict`.
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
@@ -149,8 +150,8 @@ class NodeSequence(Sequence):
 
 class LinkSequence(Sequence):
     """
-    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
-    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit`,
+    :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
     :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
@@ -251,8 +252,8 @@ class LinkSequence(Sequence):
 
 class OnDemandLinkSequence(Sequence):
     """
-    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
-    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit`,
+    :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
@@ -351,9 +352,9 @@ class FullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
     :class:`FullBatchNodeGenerator`.
@@ -409,9 +410,9 @@ class SparseFullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class uses sparse matrix representations to send data to the models,
     and only works with the Keras tensorflow backend. For any other backends,
@@ -475,9 +476,9 @@ class RelationalFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models on relational graphs
     that require full-batch training (e.g., RGCN).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class uses either dense or sparse representations to send data to the models.
 
@@ -527,3 +528,40 @@ class RelationalFullBatchNodeSequence(Sequence):
 
     def __getitem__(self, index):
         return self.inputs, self.targets
+
+
+class CorruptedNodeSequence(Sequence):
+    """
+    Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
+    data for training Deep Graph Infomax.
+
+    Args:
+        base_generator: the uncorrupted Sequence object.
+    """
+
+    def __init__(self, base_generator):
+
+        if not isinstance(
+            base_generator, (FullBatchSequence, SparseFullBatchSequence,),
+        ):
+            raise TypeError(
+                f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
+                f"found {type(base_generator).__name__}"
+            )
+
+        self.base_generator = base_generator
+        self.targets = np.zeros((1, len(base_generator.target_indices), 2))
+        self.targets[0, :, 0] = 1.0
+
+    def __len__(self):
+        return len(self.base_generator)
+
+    def __getitem__(self, index):
+
+        inputs, _ = self.base_generator[index]
+        features = inputs[0]
+
+        shuffled_idxs = np.random.permutation(features.shape[1])
+        shuffled_feats = features[:, shuffled_idxs, :]
+
+        return [shuffled_feats] + inputs, self.targets

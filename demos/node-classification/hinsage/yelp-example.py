@@ -124,12 +124,10 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(
-        train_gen, epochs=num_epochs, verbose=2, shuffle=False
-    )
+    history = model.fit(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
 
     # Evaluate on test set and print metrics
-    predictions = model.predict_generator(test_gen)
+    predictions = model.predict(test_gen)
     binary_predictions = predictions[:, 1] > 0.5
     print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
 

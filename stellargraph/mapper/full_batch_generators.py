@@ -23,6 +23,7 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
+    "CorruptedGenerator",
 ]
 
 import warnings
@@ -40,6 +41,7 @@ from . import (
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
+    CorruptedNodeSequence,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
@@ -167,8 +169,8 @@ class FullBatchGenerator(ABC):
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
 
         """
         if targets is not None:
@@ -234,8 +236,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         x_inputs, y_train = train_flow[0]
         model.fit(x=x_inputs, y=y_train)
 
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_flow, epochs=num_epochs)
+        # Alternatively, use the generator itself with model.fit:
+        model.fit(train_flow, epochs=num_epochs)
 
     For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
@@ -270,8 +272,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
 
         """
         return super().flow(node_ids, targets)
@@ -320,8 +322,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         x_inputs, y_train = train_flow[0]
         model.fit(x=x_inputs, y=y_train)
 
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_flow, epochs=num_epochs)
+        # Alternatively, use the generator itself with model.fit:
+        model.fit(train_flow, epochs=num_epochs)
 
     For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos:
         `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
@@ -356,8 +358,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
 
         """
         return super().flow(link_ids, targets)
@@ -389,8 +391,8 @@ class RelationalFullBatchNodeGenerator:
         train_data_gen = G_generator.flow(node_ids, node_targets)
 
         # Fetch the data from train_data_gen, and feed into a Keras model:
-        # Alternatively, use the generator itself with model.fit_generator:
-        model.fit_generator(train_gen, epochs=num_epochs, ...)
+        # Alternatively, use the generator itself with model.fit:
+        model.fit(train_gen, epochs=num_epochs, ...)
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -477,8 +479,8 @@ class RelationalFullBatchNodeGenerator:
 
         Returns:
             A NodeSequence object to use with RGCN models
-            in Keras methods :meth:`fit_generator`, :meth:`evaluate_generator`,
-            and :meth:`predict_generator`
+            in Keras methods :meth:`fit`, :meth:`evaluate`,
+            and :meth:`predict`
         """
 
         if targets is not None:
@@ -497,3 +499,32 @@ class RelationalFullBatchNodeGenerator:
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
+
+
+class CorruptedGenerator:
+    """
+    Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
+    data for training Deep Graph Infomax.
+
+    Args:
+        base_generator: the uncorrupted Sequence object.
+    """
+
+    def __init__(self, base_generator):
+
+        if not isinstance(base_generator, FullBatchNodeGenerator,):
+            raise TypeError(
+                f"base_generator: expected FullBatchNodeGenerator, "
+                f"found {type(base_generator).__name__}"
+            )
+        self.base_generator = base_generator
+
+    def flow(self, *args, **kwargs):
+        """
+        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
+
+        Args:
+            args: the positional arguments for the self.base_generator.flow(...) method
+            kwargs: the keyword arguments for the self.base_generator.flow(...) method
+        """
+        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
