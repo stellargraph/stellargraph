@@ -175,7 +175,7 @@ class ComplEx:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
-        def ranks(pred, true_ilocs, true_is_source):
+        def ranks(pred, true_ilocs):
             batch_size = len(true_ilocs)
             assert pred.shape == (num_nodes, batch_size)
 
@@ -192,31 +192,30 @@ class ComplEx:
 
             return raw_rank
 
-        n, all_r = ComplEx.embeddings(model)
-        n_conj = n.conj()
+        all_node_embs, all_rel_embs = ComplEx.embeddings(model)
+        all_node_embs_conj = all_node_embs.conj()
 
         raws = []
 
         # run through the batches and compute the ranks for each one
         num_tested = 0
-        for i in range(len(test_data)):
-            ((subjects, rels, objects),) = test_data[i]
+        for ((subjects, rels, objects),) in test_data:
             num_tested += len(subjects)
 
             # batch_size x k
-            ss = n[subjects, :]
-            rs = all_r[rels, :]
-            os = n[objects, :]
+            ss = all_node_embs[subjects, :]
+            rs = all_rel_embs[rels, :]
+            os = all_node_embs[objects, :]
 
             # reproduce the scoring function for ranking the given subject and relation against all
             # other nodes (objects), and similarly given relation and object against all
             # subjects. The bulk operations give speeeeeeeeed.
             # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
-            mod_o_pred = np.inner(n_conj, ss * rs).real
-            mod_s_pred = np.inner(n, rs * os.conj()).real
+            mod_o_pred = np.inner(all_node_embs_conj, ss * rs).real
+            mod_s_pred = np.inner(all_node_embs, rs * os.conj()).real
 
-            mod_o_raw = ranks(mod_o_pred, true_ilocs=objects, true_is_source=True)
-            mod_s_raw = ranks(mod_s_pred, true_ilocs=subjects, true_is_source=False)
+            mod_o_raw = ranks(mod_o_pred, true_ilocs=objects)
+            mod_s_raw = ranks(mod_s_pred, true_ilocs=subjects)
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
 
