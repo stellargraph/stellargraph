@@ -43,7 +43,7 @@ from ..data import (
     SampledHeterogeneousBreadthFirstWalk,
     DirectedBreadthFirstNeighbours,
 )
-from ..core.graph import StellarGraph, StellarDiGraph, GraphSchema
+from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
 from . import NodeSequence
 from ..random import SeededPerBatch
