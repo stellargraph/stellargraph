@@ -188,7 +188,7 @@ class EdgeSplitter(object):
              sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
             keep_connected (bool): If True then when positive edges are removed care is taken that the reduced graph
              remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
-            edge_attribute_label (str, optional): The label for the edge attribute to split on
+            edge_attribute_label (str): The label for the edge attribute to split on
             edge_attribute_threshold (str, optional): The threshold value applied to the edge attribute when sampling positive
              examples
 
@@ -398,8 +398,8 @@ class EdgeSplitter(object):
 
         Args:
             edge_label (str): The type of edges to filter
-            edge_attribute_label (str): The edge attribute to use for filtering graph edges
-            edge_attribute_threshold (str): The threshold applied to the edge attribute for filtering edges.
+            edge_attribute_label (str, optional): The edge attribute to use for filtering graph edges
+            edge_attribute_threshold (str, optional): The threshold applied to the edge attribute for filtering edges.
 
         Returns:
             (list) List of edges that satisfy the filtering criteria.
