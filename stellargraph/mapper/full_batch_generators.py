@@ -239,8 +239,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the GCN/GAT, PPNP/APPNP and SGC demos:
-        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
@@ -325,8 +324,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos:
-        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
         G (StellarGraphBase): a machine-learning StellarGraph-type graph
