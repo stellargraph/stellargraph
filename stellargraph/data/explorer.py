@@ -807,7 +807,7 @@ class TemporalRandomWalk(GraphWalk):
         seed=None,
     ):
         """
-        Perform a time respecting random walk starting from the root nodes.
+        Perform a time respecting random walk starting from randomly selected temporal edges.
 
         Args:
             num_cw (int): Total number of context windows to generate. For comparable
