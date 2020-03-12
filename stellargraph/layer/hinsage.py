@@ -288,7 +288,7 @@ class HinSAGE:
         kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
             defaults to None.
 
-    Note::
+    .. note::
         If a generator is not specified, then additional keyword arguments must be supplied:
 
         * n_samples (list): The number of samples per layer in the model.
