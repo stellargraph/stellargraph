@@ -83,7 +83,7 @@ steps:
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 37
+    parallelism: 38
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
