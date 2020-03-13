@@ -287,13 +287,13 @@ class HinSAGE:
             defaults to ['relu', ..., 'relu', 'linear'].
         kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
             defaults to None.
-        n_samples (list): The number of samples per layer in the model.
-        input_neighbor_tree: A list of (node_type, [children]) tuples that specify the subtree to be created
-            by the HinSAGE model.
-        input_dim (dict): The input dimensions for each node type as a dictionary of the form
+        n_samples (list, optional): The number of samples per layer in the model.
+        input_neighbor_tree (list of tuple, optional): A list of (node_type, [children]) tuples that
+            specify the subtree to be created by the HinSAGE model.
+        input_dim (dict, optional): The input dimensions for each node type as a dictionary of the form
             ``{node_type: feature_size}``.
-        multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference and 2
-            for link inference (currently no others are supported).
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
+            inference and 2 for link inference (currently no others are supported).
 
     .. note::
         The values for ``n_samples``, ``input_neighbor_tree``, ``input_dim``, and ``multiplicity`` are
