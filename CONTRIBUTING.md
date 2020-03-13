@@ -66,6 +66,10 @@ StellarGraph considers courtesy and respect for others an essential part of the 
 
 9. Create a pull request on GitHub from your branch to `develop` branch. If you have already discussed the new features on GitHub with the developers and they are aware of what the pull request contains, then the developers will endeavour to approve the pull request promptly.
 
+#### Continuous Integration (CI)
+
+A pull request can only be merged if it passes tests. StellarGraph uses Buildkite CI to let a computero do the testing, and results are reported directly in each pull request. The full Buildkite pipeline can be viewed at <https://buildkite.com/stellar/stellargraph-public/>.
+
 ### Experimental code
 
 Functions, methods and classes can be marked as experimental using the `@experimental` decorator. For example:

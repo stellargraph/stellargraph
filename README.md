@@ -52,7 +52,6 @@
    * [Algorithms](#algorithms)
    * [Getting Help](#getting-help)
    * [Discourse Community](#discourse-community)
-   * [CI](#ci)
    * [Citing](#citing)
    * [References](#references)
 
@@ -209,12 +208,6 @@ Documentation for StellarGraph can be found [here](https://stellargraph.readthed
 ## Discourse Community
 
 Feel free to ask questions and discuss problems on the [StellarGraph Discourse forum](https://community.stellargraph.io).
-
-## CI
-
-### buildkite integration
-
-The Buildkite pipeline can be viewed in [https://buildkite.com/stellar/stellargraph-public/](https://buildkite.com/stellar/stellargraph-public/)
 
 ## Citing
 StellarGraph is designed, developed and supported by [CSIRO's Data61](https://data61.csiro.au/).
