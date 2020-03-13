@@ -35,6 +35,7 @@ from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.experimental import experimental
+from ..core.validation import comma_sep
 from ..random import random_state
 
 
@@ -798,26 +799,22 @@ class TemporalRandomWalk(GraphWalk):
 
     def __init__(self, graph, graph_schema=None, seed=None):
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
-        self._edges, self._times = self.graph.edges(include_edge_weight=True)
-        self._validate_times()
+        edges, times = self.graph.edges(include_edge_weight=True)
 
-    def _validate_times(self):
-        (neg_time_locs,) = np.where(self._times < 0)
+        # validate edge times
+        (neg_time_locs,) = np.where(times < 0)
         num_neg_times = len(neg_time_locs)
         if num_neg_times > 0:
-            max_edges_shown = 10
-            neg_time_edges_formatted = ", ".join(
-                [
-                    str((self._edges[loc], self._times[loc]))
-                    for loc in neg_time_locs[:max_edges_shown]
-                ]
+            neg_time_edges_formatted = comma_sep(
+                neg_time_locs, stringify=lambda loc: str((edges[loc], times[loc])),
             )
-            if num_neg_times > max_edges_shown:
-                neg_time_edges_formatted += " ..."
             raise ValueError(
-                f"All edge times must be non-negative. Found {num_neg_times} negatives: "
+                f"graph: expected edge times to be non-negative, found {num_neg_times}: "
                 f"{neg_time_edges_formatted}",
             )
+
+        self._edges = edges
+        self._times = times
 
     def run(
         self,

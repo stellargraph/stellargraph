@@ -35,10 +35,13 @@ def temporal_graph():
     return create_temporal_graph(nodes, edges)
 
 
-def temporal_graph_negative_times(num_edges):
+def temporal_graph_negative_times(num_neg_edges):
     nodes = [1, 2, 3, 4, 5, 6]
     edges = np.hstack(
-        [np.random.choice(nodes, size=(num_edges, 2)), -np.ones((num_edges, 1))]
+        [
+            np.random.choice(nodes, size=(num_neg_edges * 2, 2)),
+            np.repeat([[-1], [1]], num_neg_edges, axis=0),
+        ]
     )
     return create_temporal_graph(nodes, edges)
 
@@ -94,12 +97,12 @@ def test_exp_biases_extreme(temporal_graph):
     assert sum(biases) == pytest.approx(1)
 
 
-@pytest.mark.parametrize("num_edges", [1, 10, 20])
-def test_validate_times(num_edges):
-    with pytest.raises(ValueError, match=r".*edge times must be non-negative.*") as err:
-        TemporalRandomWalk(temporal_graph_negative_times(num_edges))
-
-    err_msg = err.value.args[0]
-    assert str(num_edges) in err_msg
-    if num_edges > 10:
-        assert err_msg.endswith("...")
+@pytest.mark.parametrize("num_neg_edges", [1, 20, 30])
+def test_validate_times(num_neg_edges):
+    num_more = num_neg_edges - 20
+    trailing = fr"\.\.\. \({num_more} more\)" if num_more > 0 else ""
+    matcher = (
+        fr"graph: expected edge times to be non-negative.*{num_neg_edges}.*{trailing}$"
+    )
+    with pytest.raises(ValueError, match=matcher):
+        TemporalRandomWalk(temporal_graph_negative_times(num_neg_edges))
