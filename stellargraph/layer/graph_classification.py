@@ -96,7 +96,7 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
 
 
 @experimental(reason="Missing unit tests")
-class GraphClassification:
+class GCNSupervisedGraphClassification:
     """
     A stack of :class:`GraphClassificationConvolution` layers together with a Keras `GlobalAveragePooling1D` layer
     that implement a supervised graph classification network using the GCN convolution operator
@@ -118,7 +118,7 @@ class GraphClassification:
         with `softmax` activation::
 
             generator = GraphGenerator(graphs)
-            model = GraphClassification(
+            model = GCNSupervisedGraphClassification(
                              layer_sizes=[32, 32],
                              activations=["elu","elu"],
                              generator=generator,
