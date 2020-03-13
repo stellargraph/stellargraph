@@ -254,3 +254,15 @@ def test_pubmeddiabetes_load() -> None:
 
     assert len(labels) == n_nodes
     assert set(labels.index) == set(g.nodes())
+
+
+def test_ia_enron_employees_load() -> None:
+    graph, edges = IAEnronEmployees().load()
+
+    n_nodes = 151
+    n_edges = 50572
+
+    assert graph.number_of_nodes() == n_nodes
+    assert graph.number_of_edges() == n_edges
+    assert len(edges) == n_edges
+    assert set(edges.columns) == {"source", "target", "time"}

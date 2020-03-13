@@ -45,6 +45,7 @@ class DatasetLoader:
     directory_name = ""
     url = ""
     url_archive_format: Optional[str] = None
+    url_archive_contains_directory: bool = True
     expected_files: List[str] = []
     description = ""
     source = ""
@@ -53,10 +54,12 @@ class DatasetLoader:
     @classmethod
     def __init_subclass__(
         cls,
+        *,
         name: str,
         directory_name: str,
         url: str,
         url_archive_format: Optional[str],
+        url_archive_contains_directory: bool = True,
         expected_files: List[str],
         description: str,
         source: str,
@@ -69,6 +72,7 @@ class DatasetLoader:
         cls.directory_name = directory_name
         cls.url = url
         cls.url_archive_format = url_archive_format
+        cls.url_archive_contains_directory = url_archive_contains_directory
         cls.expected_files = expected_files
         cls.description = description
         cls.source = source
@@ -125,6 +129,12 @@ class DatasetLoader:
         """Convert dataset relative file names to their full path on filesystem"""
         return os.path.join(self.base_directory, filename)
 
+    def _resolve_unpack_path(self):
+        if self.url_archive_contains_directory:
+            return self._all_datasets_directory()
+        else:
+            return self.base_directory
+
     def _missing_files(self) -> List[str]:
         """Returns a list of files that are missing"""
         return [
@@ -175,7 +185,7 @@ class DatasetLoader:
                 # directory_name for this dataset must match the directory name inside the archive file
                 unpack_archive(
                     temporary_filename,
-                    self._all_datasets_directory(),
+                    self._resolve_unpack_path(),
                     self.url_archive_format,
                 )
             # verify the download
