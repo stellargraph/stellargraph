@@ -278,7 +278,9 @@ class StellarGraph:
         # edge_node_set.update(self._edges.targets)
 
         if nodes is None and edges is not None:
-            nodes_from_edges = np.unique(np.concatenate([self._edges.targets, self._edges.sources]))
+            nodes_from_edges = np.unique(
+                np.concatenate([self._edges.targets, self._edges.sources])
+            )
             nodes = pd.DataFrame([], index=nodes_from_edges)
         elif nodes is None:
             nodes = {}
