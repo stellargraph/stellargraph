@@ -533,7 +533,6 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-<<<<<<< HEAD
 class GraphSequence(Sequence):
     """
     A Keras-compatible data generator for training and evaluating graph classification models.
@@ -555,7 +554,15 @@ class GraphSequence(Sequence):
         name (str, optional): An optional name for this generator object.
     """
 
-    def __init__(self, graphs, node_features_size, targets=None, normalize=True, batch_size=1, name=None):
+    def __init__(
+        self,
+        graphs,
+        node_features_size,
+        targets=None,
+        normalize=True,
+        batch_size=1,
+        name=None,
+    ):
 
         self.name = name
         self.graphs = graphs
@@ -642,7 +649,8 @@ class GraphSequence(Sequence):
         self.graphs = [self.graphs[i] for i in indexes]
         self.normalized_adjs = [self.normalized_adjs[i] for i in indexes]
         self.targets = self.targets[indexes]
-=======
+
+
 class CorruptedNodeSequence(Sequence):
     """
     Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
@@ -654,9 +662,7 @@ class CorruptedNodeSequence(Sequence):
 
     def __init__(self, base_generator):
 
-        if not isinstance(
-            base_generator, (FullBatchSequence, SparseFullBatchSequence,),
-        ):
+        if not isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
             raise TypeError(
                 f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
                 f"found {type(base_generator).__name__}"
@@ -678,4 +684,3 @@ class CorruptedNodeSequence(Sequence):
         shuffled_feats = features[:, shuffled_idxs, :]
 
         return [shuffled_feats] + inputs, self.targets
->>>>>>> develop
