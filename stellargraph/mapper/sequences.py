@@ -565,7 +565,7 @@ class GraphSequence(Sequence):
     ):
 
         self.name = name
-        self.graphs = graphs
+        self.graphs = np.asanyarray(graphs)
         self.normalize_adj = normalize
         self.targets = targets
         self.batch_size = batch_size
@@ -586,6 +586,8 @@ class GraphSequence(Sequence):
             ]
         else:
             self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
+
+        self.normalized_adjs = np.asanyarray(self.normalized_adjs)
 
         self.on_epoch_end()
 
@@ -646,8 +648,8 @@ class GraphSequence(Sequence):
         """
         indexes = list(range(len(self.graphs)))
         random.shuffle(indexes)
-        self.graphs = [self.graphs[i] for i in indexes]
-        self.normalized_adjs = [self.normalized_adjs[i] for i in indexes]
+        self.graphs = self.graphs[indexes]
+        self.normalized_adjs = self.normalized_adjs[indexes]
         self.targets = self.targets[indexes]
 
 
