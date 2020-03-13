@@ -24,7 +24,7 @@ class GraphGenerator:
     """
     A data generator for use with graph classification algorithms.
 
-    The supplied graphs should be :class:`StellarGraph` objects ready for machine learning. Currently the model
+    The supplied graphs should be :class:`StellarGraph` objects ready for machine learning. The generator
     requires node features to be available for all nodes in the graph.
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
