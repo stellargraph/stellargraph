@@ -278,30 +278,39 @@ class StellarGraph:
             nodes_from_edges = np.unique(
                 np.concatenate([self._edges.targets, self._edges.sources])
             )
-            nodes = pd.DataFrame([], index=nodes_from_edges)
+            self._nodes = convert.convert_nodes(
+                pd.DataFrame([], index=nodes_from_edges),
+                name="nodes",
+                default_type=node_type_default,
+                dtype=dtype,
+            )
+
         elif nodes is None:
-            nodes = {}
-
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
-
-        try:
-            self._nodes.ids.to_iloc(
-                np.concatenate([self._edges.sources, self._edges.targets]),
-                smaller_type=False,
-                strict=True,
+            self._nodes = convert.convert_nodes(
+                {}, name="nodes", default_type=node_type_default, dtype=dtype,
             )
-        except KeyError as e:
-            missing_values = e.args[0]
-            if not is_real_iterable(missing_values):
-                missing_values = [missing_values]
-            missing_values = pd.unique(missing_values)
-
-            raise ValueError(
-                f"edges: expected all source and target node IDs to be contained in `nodes`, "
-                f"found some missing: {comma_sep(missing_values)}"
+        else:
+            # only check self._nodes if nodes not created from edges
+            self._nodes = convert.convert_nodes(
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
             )
+
+            try:
+                self._nodes.ids.to_iloc(
+                    np.concatenate([self._edges.sources, self._edges.targets]),
+                    smaller_type=False,
+                    strict=True,
+                )
+            except KeyError as e:
+                missing_values = e.args[0]
+                if not is_real_iterable(missing_values):
+                    missing_values = [missing_values]
+                missing_values = pd.unique(missing_values)
+
+                raise ValueError(
+                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                    f"found some missing: {comma_sep(missing_values)}"
+                )
 
     @staticmethod
     def from_networkx(
