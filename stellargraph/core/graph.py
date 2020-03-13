@@ -274,9 +274,6 @@ class StellarGraph:
             weight_column=edge_weight_column,
         )
 
-        # edge_node_set = set(self._edges.sources)
-        # edge_node_set.update(self._edges.targets)
-
         if nodes is None and edges is not None:
             nodes_from_edges = np.unique(
                 np.concatenate([self._edges.targets, self._edges.sources])
