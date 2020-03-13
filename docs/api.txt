@@ -5,7 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph.core
-  :members: StellarGraph, GraphSchema
+  :members: StellarGraph, StellarDiGraph, GraphSchema
 
 
 Data
@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, GraphGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, GraphGenerator
 
 
 GraphSAGE model
@@ -100,12 +100,21 @@ Knowledge Graph models
 .. automodule:: stellargraph.layer.knowledge_graph
   :members: ComplEx, ComplExScore, DistMult, DistMultScore
 
+<<<<<<< HEAD
 Graph Classification model
 -------------
 
 .. automodule:: stellargraph.layer.graph_classification
   :members: GraphClassification, GraphClassificationConvolution
 
+=======
+
+Deep Graph Infomax Models
+-------------------------
+
+.. automodule:: stellargraph.layer.deep_graph_infomax
+  :members: DeepGraphInfomax, DGIDiscriminator
+>>>>>>> develop
 
 Link prediction layers
 ------------------------

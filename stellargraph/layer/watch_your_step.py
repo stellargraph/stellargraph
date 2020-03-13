@@ -17,10 +17,11 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Embedding, Input, Lambda, Concatenate, Dense
 from tensorflow.keras import backend as K
+from tensorflow.keras import initializers, constraints, regularizers
 import numpy as np
 import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
-from ..core.experimental import experimental
+from ..core.validation import require_integer_in_range
 
 
 class AttentiveWalk(Layer):
@@ -51,10 +52,20 @@ class AttentiveWalk(Layer):
             kwargs["input_shape"] = input_dim
 
         self.walk_length = walk_length
-        self.attention_initializer = attention_initializer
-        self.attention_regularizer = attention_regularizer
-        self.attention_constraint = attention_constraint
+        self.attention_initializer = initializers.get(attention_initializer)
+        self.attention_regularizer = regularizers.get(attention_regularizer)
+        self.attention_constraint = constraints.get(attention_constraint)
         super().__init__(**kwargs)
+
+    def get_config(self):
+        config = {
+            "walk_length": self.walk_length,
+            "attention_initializer": initializers.serialize(self.attention_initializer),
+            "attention_regularizer": regularizers.serialize(self.attention_regularizer),
+            "attention_constraint": constraints.serialize(self.attention_constraint),
+        }
+        base_config = super().get_config()
+        return {**base_config, **config}
 
     def compute_output_shape(self, input_shapes):
         return (input_shapes[0][-1],)
@@ -94,7 +105,6 @@ class AttentiveWalk(Layer):
         return expected_walk
 
 
-@experimental(reason="lack of unit tests", issues=[804])
 def get_embeddings(model):
     """
     This function returns the embeddings from a model with Watch Your Step embeddings.
@@ -117,7 +127,6 @@ def get_embeddings(model):
     return embeddings
 
 
-@experimental(reason="lack of unit tests", issues=[804])
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -134,6 +143,9 @@ class WatchYourStep:
         attention_initializer (str or func, optional): The initialiser to use for the attention weights.
         attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
         attention_constraint (str or func, optional): The constraint to use for the attention weights.
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
+        embeddings_regularizer (str or func, optional): The regulariser to use for the embeddings.
+        embeddings_constraint (str or func, optional): The constraint to use for the embeddings.
     """
 
     def __init__(
@@ -144,6 +156,9 @@ class WatchYourStep:
         attention_initializer="glorot_uniform",
         attention_regularizer=None,
         attention_constraint=None,
+        embeddings_initializer="uniform",
+        embeddings_regularizer=None,
+        embeddings_constraint=None,
     ):
 
         if not isinstance(generator, AdjacencyPowerGenerator):
@@ -151,11 +166,8 @@ class WatchYourStep:
                 "generator should be an instance of AdjacencyPowerGenerator."
             )
 
-        if not isinstance(num_walks, int):
-            raise TypeError("num_walks should be an int.")
-
-        if num_walks <= 0:
-            raise ValueError("num_walks should be a positive int.")
+        require_integer_in_range(num_walks, "num_walks", min_val=1)
+        require_integer_in_range(embedding_dimension, "embedding_dimension", min_val=2)
 
         self.num_walks = num_walks
         self.num_powers = generator.num_powers
@@ -168,9 +180,14 @@ class WatchYourStep:
             embedding_dimension -= 1
 
         self.embedding_dimension = embedding_dimension
+
         self.attention_regularizer = attention_regularizer
         self.attention_initializer = attention_initializer
         self.attention_constraint = attention_constraint
+
+        self.embeddings_initializer = embeddings_initializer
+        self.embeddings_regularizer = embeddings_regularizer
+        self.embeddings_constraint = embeddings_constraint
 
     def build(self):
         """
@@ -188,6 +205,9 @@ class WatchYourStep:
             int(self.embedding_dimension / 2),
             input_length=None,
             name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
+            embeddings_initializer=self.embeddings_initializer,
+            embeddings_regularizer=self.embeddings_regularizer,
+            embeddings_constraint=self.embeddings_constraint,
         )
 
         vectors_left = left_embedding(input_rows)
@@ -198,7 +218,9 @@ class WatchYourStep:
         outer_product = Dense(
             self.n_nodes,
             use_bias=False,
-            kernel_initializer="uniform",
+            kernel_initializer=self.embeddings_initializer,
+            kernel_regularizer=self.embeddings_regularizer,
+            kernel_constraint=self.embeddings_constraint,
             name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
         )(vectors_left)
 

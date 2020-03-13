@@ -7,6 +7,7 @@
 ### Major features and improvements
 
 - New algorithms:
+  - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750).
 
 ### Breaking changes
 
@@ -18,6 +19,7 @@ Some new algorithms and features are still under active development, and are ava
 
 - DistMult: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
 - GraphClassification: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929).
+- Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978) The implementation is not fully tested.
 
 ### Bug fixes and other changes
 

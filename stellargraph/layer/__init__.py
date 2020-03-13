@@ -37,3 +37,4 @@ from .rgcn import *
 from .watch_your_step import *
 from .knowledge_graph import *
 from .graph_classification import *
+from .deep_graph_infomax import *
