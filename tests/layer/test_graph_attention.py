@@ -507,7 +507,7 @@ class Test_GAT:
         model = keras.Model(inputs=x_in, outputs=x_out)
 
         ng = gen.flow(G.nodes())
-        actual = model.predict_generator(ng)
+        actual = model.predict(ng)
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             1.0 / G.number_of_nodes()
         )
@@ -533,7 +533,7 @@ class Test_GAT:
         model = keras.Model(inputs=x_in, outputs=x_out)
 
         ng = gen.flow(G.nodes())
-        actual = model.predict_generator(ng)
+        actual = model.predict(ng)
 
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             self.F_in
@@ -586,7 +586,7 @@ class Test_GAT:
         model2.set_weights(model_weights)
 
         # Test deserialized model
-        actual = model2.predict_generator(ng)
+        actual = model2.predict(ng)
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             1.0 / G.number_of_nodes()
         )

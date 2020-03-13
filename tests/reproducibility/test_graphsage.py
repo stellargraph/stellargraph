@@ -78,7 +78,7 @@ def unsup_gs(
 
     model = unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize)
 
-    model.fit_generator(
+    model.fit(
         train_gen,
         epochs=epochs,
         verbose=1,
@@ -134,7 +134,7 @@ def gs_nai(
         num_samples, generator, targets, optimizer, bias, dropout, normalize
     )
 
-    model.fit_generator(
+    model.fit(
         train_gen,
         epochs=epochs,
         verbose=1,
@@ -195,7 +195,7 @@ def gs_link_prediction(
         num_samples, generator, optimizer, bias, dropout, normalize
     )
 
-    model.fit_generator(
+    model.fit(
         train_gen,
         epochs=epochs,
         verbose=1,
