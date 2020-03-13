@@ -33,7 +33,7 @@ from .misc import SqueezedSparseConversion
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
-class GraphConvolution1(Layer):
+class GraphConvolution(Layer):
 
     """
     Graph Convolution (GCN) Keras layer.
@@ -43,16 +43,17 @@ class GraphConvolution1(Layer):
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
 
     Notes:
-      - The inputs are tensors with a batch dimension of 1:
+      - The inputs are tensors with a batch dimension:
         Keras requires this batch dimension, and for full-batch methods
         we only have a single "batch".
 
-      - There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+      - There are three inputs required, the node features: 
+         this is a 3 dimensional array, batch size, sequence length, and number of nodes,
+        the output indices (the nodes that are to be selected in the final layer),
         and the normalized graph Laplacian matrix
 
-      - This class assumes that the normalized Laplacian matrix is passed as
-        input to the Keras methods.
+      - This class assumes that a simple unweighted or wegited adjacency matrix is passed to it,
+          the normalized Laplacian matrix is calculated within the class.
 
       - The output indices are used when ``final_layer=True`` and the returned outputs
         are the final-layer features for the nodes indexed by output indices.
@@ -76,6 +77,7 @@ class GraphConvolution1(Layer):
 
     def __init__(
         self,
+        units,
         A,
         activation=None,
         use_bias=True,
@@ -91,10 +93,13 @@ class GraphConvolution1(Layer):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
 
+        self.units = units,
+        self.adj = self.calculate_laplacian(A)
+
         self.activation = activations.get(activation)
         self.use_bias = use_bias
-
-        self.adj = self.calculate_laplacian(A)
+        
+        self.final_layer = "False"
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -152,6 +157,10 @@ class GraphConvolution1(Layer):
         return feature_shape[0], feature_shape[1], self.units
 
     def set_A(self, A):
+        """
+        Sets the adjacnency matrix provided as input.
+        
+        """
         K.set_value(self.A, A)
 
     def build(self, input_shapes):
@@ -164,6 +173,7 @@ class GraphConvolution1(Layer):
         """
         n_nodes = input_shapes[-1]
         t_steps = input_shapes[-2]
+        
         self.A = self.add_weight(
             name="A",
             shape=(n_nodes, n_nodes),
@@ -198,16 +208,16 @@ class GraphConvolution1(Layer):
         Applies the layer.
 
         Args:
-            inputs (list): a list of 3 input tensors that includes
-                node features (size B x T x N),
-                where N is the number of nodes in the graph, and
+            inputs (ndarray): node features (size B x T x N),
+                where B is the batch size,
+                      T is the sequence length, and
+                      N is the number of nodes in the graph.
 
         Returns:
             Keras Tensor that represents the output of the layer.
         """
 
         # Calculate the layer operation of GCN
-        # output = self.kernel * K.dot(features, self.A)
 
         h_graph = K.dot(features, self.A)
         output = tf.transpose(
@@ -224,14 +234,78 @@ class GraphConvolution1(Layer):
 
 
 class Graph_Convolution_LSTM(Model):
+    
+    """
+    A stack of 2 Graph Convolutional layers followed by an LSTM, Dropout and,  Dense layer.
+    
+    This architecture is inspired by:  
+
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer,
+    activation functions for each hidden layers, and a generator object.
+
+    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
+    or the :class:`FullBatchLinkGenerator` class for link inference.
+
+    To have the appropriate pre-processing the generator object should be instanciated
+    with the `method='gcn'` argument.
+
+    Note that currently the GCN class is compatible with both sparse and dense adjacency
+    matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
+
+    For more details, please see the GCN demo notebook:
+    demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
+
+    Example:
+        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        object ``G``::
+
+            generator = FullBatchNodeGenerator(G, method="gcn")
+            gcn = GCN(
+                    layer_sizes=[32, 4],
+                    activations=["elu","softmax"],
+                    generator=generator,
+                    dropout=0.5
+                )
+            x_inp, predictions = gcn.build()
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`FullBatchNodeGenerator` object.
+
+      - This assumes that the normalized Lapalacian matrix is provided as input to
+        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
+        ``method='gcn'`` argument to do this pre-processing.
+
+      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
+
+    Args:
+        layer_sizes (list of int): Output sizes of GCN layers in the stack.
+        generator (FullBatchNodeGenerator): The generator instance.
+        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
+        dropout (float): Dropout rate applied to input features of each GCN layer.
+        activations (list of str or func): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu'].
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+    """
+    
     def __init__(
         self,
         outputs,
         adj,
-        layer_sizes=200,
+        layer_sizes=[10,200],
         bias=True,
         dropout=0.5,
-        activations="relu",
+        activations=["relu","relu","sigmoid"],
         kernel_initializer=None,
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -255,16 +329,16 @@ class Graph_Convolution_LSTM(Model):
         self.bias_regularizer = regularizers.get(bias_regularizer)
         self.bias_constraint = constraints.get(bias_constraint)
 
-        self.gcn1 = GraphConvolution1(A=adj, activation=self.activations)
-        self.gcn2 = GraphConvolution1(A=adj, activation=self.activations)
-        self.lstm = LSTM(self.layer_sizes, return_sequences=False)
-        self.dense = Dense(self.outputs, activation="sigmoid")
+        self.gcn_1 = GraphConvolution(units = layer_sizes[0], A=adj, activation=self.activations[0])
+        self.gcn_2 = GraphConvolution(units = layer_sizes[0], A=adj, activation=self.activations[1])
+        self.lstm = LSTM(self.layer_sizes[1], return_sequences=False)
+        self.dense = Dense(self.outputs, activation=self.activations[2])
         self.dropout = Dropout(self.dropout)
 
     def call(self, inputs):
-        x = self.gcn1(inputs)
-        x = self.gcn2(x)
-        x = self.lstm(x)
-        x = self.dropout(x)
-        x = self.dense(x)
-        return x
+        layer = self.gcn_1(inputs)
+        layer = self.gcn_2(layer)
+        layer = self.lstm(layer)
+        layer = self.dropout(layer)
+        layer = self.dense(layer)
+        return layer
