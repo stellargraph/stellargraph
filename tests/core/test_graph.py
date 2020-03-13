@@ -136,7 +136,7 @@ def test_graph_constructor_extra_nodes_in_edges():
     }
 
     with pytest.raises(ValueError):
-        g = StellarGraph(nodes=nodes, edges=edges)
+        g = StellarGraph(nodes, edges)
 
     # adding an extra node should fix things
     nodes = pd.DataFrame(np.ones((6, 1)), index=[0, 1, 2, 3, 4, 5])
