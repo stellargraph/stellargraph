@@ -274,11 +274,12 @@ class StellarGraph:
             weight_column=edge_weight_column,
         )
 
-        edge_node_set = set(self._edges.sources)
-        edge_node_set.update(self._edges.targets)
+        # edge_node_set = set(self._edges.sources)
+        # edge_node_set.update(self._edges.targets)
 
         if nodes is None and edges is not None:
-            nodes = pd.DataFrame([], index=edge_node_set)
+            nodes_from_edges = np.unique(np.concatenate([self._edges.targets, self._edges.sources]))
+            nodes = pd.DataFrame([], index=nodes_from_edges)
         elif nodes is None:
             nodes = {}
 
@@ -286,11 +287,21 @@ class StellarGraph:
             nodes, name="nodes", default_type=node_type_default, dtype=dtype,
         )
 
-        node_set = set(self._nodes.ids.pandas_index)
-        if not edge_node_set.issubset(node_set):
+        try:
+            self._nodes.ids.to_iloc(
+                np.concatenate([self._edges.sources, self._edges.targets]),
+                smaller_type=False,
+                strict=True,
+            )
+        except KeyError as e:
+            missing_values = e.args[0]
+            if not is_real_iterable(missing_values):
+                missing_values = [missing_values]
+            missing_values = pd.unique(missing_values)
+
             raise ValueError(
-                f"Found nodes referenced in `edges` not contained in `nodes`. Either add these nodes "
-                f"to `nodes` or remove the edges containing them."
+                f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                f"found some missing: {comma_sep(missing_values)}"
             )
 
     @staticmethod
