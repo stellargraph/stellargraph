@@ -37,9 +37,9 @@ def temporal_graph():
 
 def temporal_graph_negative_times(num_edges):
     nodes = [1, 2, 3, 4, 5, 6]
-    edges = [
-        (np.random.choice(nodes), np.random.choice(nodes), -1) for _ in range(num_edges)
-    ]
+    edges = np.hstack(
+        [np.random.choice(nodes, size=(num_edges, 2)), -np.ones((num_edges, 1))]
+    )
     return create_temporal_graph(nodes, edges)
 
 
