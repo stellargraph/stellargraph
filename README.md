@@ -42,9 +42,9 @@
 
 ## Table of Contents
    * [Introduction](#introduction)
-   * [Example: GCN](#example-gcn)
    * [Getting Started](#getting-started)
    * [Getting Help](#getting-help)
+   * [Example: GCN](#example-gcn)
    * [Algorithms](#algorithms)
    * [Installation](#installation)
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
