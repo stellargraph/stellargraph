@@ -40,7 +40,6 @@
 
 **StellarGraph** is a Python library for machine learning on graphs and networks.
 
-
 ## Table of Contents
    * [Introduction](#introduction)
    * [Example: GCN](#example-gcn)
@@ -70,7 +69,7 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 ## Example: GCN
 
-One of the earliest deep machine learning algorithms for graphs is a Graph Convolution Network (GCN) [6]. It's easy to apply to a graph, using StellarGraph. The follow example shows classifying nodes into some number of ground-truth classes, based on node and edge data loaded from files, with Pandas.
+One of the earliest deep machine learning algorithms for graphs is a Graph Convolution Network (GCN) [6]. It's easy to apply with StellarGraph. The follow example shows classifying nodes into some number of ground-truth classes, based on node and edge data loaded from files, with Pandas.
 
 ``` python
 import tensorflow as tf
@@ -94,6 +93,7 @@ graph = sg.StellarGraph(nodes, edges)
 generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
 train_gen = generator.flow(train_targets.index, train_targets)
 
+# two layers of GCN, each with hidden dimension 16
 gcn = sg.layer.GCN(
     layer_sizes=[16, 16], activations=["relu", "relu"], generator=generator, dropout=0.5
 )
