@@ -80,7 +80,7 @@ To run these examples, you'll need to install StellarGraph. One of the following
 
 ## Getting Help
 
-If you get stuck or have a problem, there's many ways to make progress:
+If you get stuck or have a problem, there's many ways to make progress and get help or support:
 
 - [Read the documentation](https://stellargraph.readthedocs.io).
 - [Consult the examples](https://github.com/stellargraph/stellargraph/tree/master/demos/)
