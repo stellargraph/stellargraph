@@ -67,53 +67,6 @@ The StellarGraph library offers state-of-the-art algorithms for graph machine le
 
 StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras high-level API](https://www.tensorflow.org/guide/keras), as well as [Pandas](https://pandas.pydata.org) and [NumPy](https://www.numpy.org). It is thus user-friendly, modular and extensible. It interoperates smoothly with code that builds on these, such as the standard Keras layers and [scikit-learn](http://scikit-learn.github.io/stable), so it is easy to augment the core graph machine learning algorithms provided by StellarGraph.
 
-## Example: GCN
-
-One of the earliest deep machine learning algorithms for graphs is a Graph Convolution Network (GCN) [6]. It's easy to apply with StellarGraph. The follow example shows classifying nodes into some number of ground-truth classes, based on node and edge data loaded from files, with Pandas.
-
-``` python
-import tensorflow as tf
-import stellargraph as sg
-import pandas as pd
-from sklearn import model_selection
-
-# Use Pandas to load and preprocess the data
-nodes = pd.read_csv("nodes.csv") # columns of node data
-edges = pd.read_csv("edges.csv") # "source" and "target" columns representing connections between nodes
-
-ground_truth_node_classes = pd.read_csv("labels.csv") # a column of the label for each node
-ground_truth_targets = pd.get_dummies(ground_truth_node_classes) # one-hot encoding
-
-# Use scikit-learn to compute training and test sets
-train_targets, test_targets = model_selection.train_test_split(ground_truth_targets, train_size=0.5)
-
-# Use StellarGraph to create the graph machine learning model, which consists of a graph, a data generator, and the GCN layers
-graph = sg.StellarGraph(nodes, edges)
-
-generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
-train_gen = generator.flow(train_targets.index, train_targets)
-
-# two layers of GCN, each with hidden dimension 16
-gcn = sg.layer.GCN(
-    layer_sizes=[16, 16], activations=["relu", "relu"], generator=generator, dropout=0.5
-)
-x_inp, x_out = gcn.build()
-
-# use TensorFlow Keras to add a layer to compute the (one-hot) predictions
-predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), activation="softmax")(x_out)
-
-# Use TensorFlow Keras to create a model and work with it (e.g. training and evaluation)
-model = tf.keras.Model(inputs=x_inp, outputs=predictions)
-model.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
-
-model.fit(train_gen, epochs=5)
-
-(loss, accuracy) = model.evaluate(generator.flow(test_targets.index, test_targets))
-print(f"Test set: loss = {loss}, accuracy = {accuracy}")
-```
-
-This algorithm is spelled out in more detail in [its extended narrated notebook](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb). We provide [many more algorithms, each with a detailed example](https://github.com/stellargraph/stellargraph/tree/master/demos/).
-
 ## Getting Started
 
 [The numerous detailed and narrated examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) are a good way to get started with StellarGraph. There is likely to be one that is similar to your data or your problem (if not, [let us know](#getting-help)).
@@ -135,6 +88,59 @@ If you get stuck or have a problem, there's many ways to make progress:
   - [Ask questions and discuss problems on the StellarGraph Discourse forum](https://community.stellargraph.io)
   - [File an issue](https://github.com/stellargraph/stellargraph/issues/new/choose)
 
+
+## Example: GCN
+
+One of the earliest deep machine learning algorithms for graphs is a Graph Convolution Network (GCN) [6]. It's easy to apply with StellarGraph. The follow example shows classifying nodes into some number of ground-truth classes, based on node and edge data loaded from files, with Pandas.
+
+``` python
+import tensorflow as tf
+import stellargraph as sg
+import pandas as pd
+from sklearn import model_selection
+
+#### Data preparation ####
+
+# Use Pandas to load and preprocess the data
+nodes = pd.read_csv("nodes.csv") # columns of node data
+edges = pd.read_csv("edges.csv") # "source" & "target" columns for each link between nodes
+
+node_classes = pd.read_csv("labels.csv") # a column of each node's class/label
+targets = pd.get_dummies(node_classes) # one-hot encoding
+
+# Use scikit-learn to compute training and test sets
+train_targets, test_targets = model_selection.train_test_split(targets, train_size=0.5)
+
+#### Graph machine learning model ####
+
+# Use StellarGraph to create the graph machine learning model: graph, data generator, and GCN layers
+graph = sg.StellarGraph(nodes, edges)
+
+generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
+train_gen = generator.flow(train_targets.index, train_targets)
+
+# two layers of GCN, each with hidden dimension 16
+gcn = sg.layer.GCN(
+    layer_sizes=[16, 16], activations=["relu", "relu"], generator=generator, dropout=0.5
+)
+x_inp, x_out = gcn.build() # input and output tensors
+
+# use TensorFlow Keras to add a layer to compute the (one-hot) predictions
+predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), activation="softmax")(x_out)
+
+#### Training and prediction ####
+
+# Use TensorFlow Keras to create a model and work with it  (e.g. training and evaluation)
+model = tf.keras.Model(inputs=x_inp, outputs=predictions)
+model.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
+
+model.fit(train_gen, epochs=5)
+
+(loss, accuracy) = model.evaluate(generator.flow(test_targets.index, test_targets))
+print(f"Test set: loss = {loss}, accuracy = {accuracy}")
+```
+
+This algorithm is spelled out in more detail in [its extended narrated notebook](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb). We provide [many more algorithms, each with a detailed example](https://github.com/stellargraph/stellargraph/tree/master/demos/).
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
