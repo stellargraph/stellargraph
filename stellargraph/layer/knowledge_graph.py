@@ -188,7 +188,7 @@ class ComplEx:
             assert unmodified_node_ilocs.shape == true_rel_ilocs.shape == (batch_size,)
 
             # the score of the true edge, for each edge in the batch (this indexes in lock-step,
-            # i.e. [pred[true_node_ilocs[0], range(batch_size)[0]], ...])
+            # i.e. [pred[true_modified_node_ilocs[0], range(batch_size)[0]], ...])
             true_scores = pred[true_modified_node_ilocs, range(batch_size)]
 
             # for each column, compare all the scores against the score of the true edge
