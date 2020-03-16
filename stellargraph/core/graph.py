@@ -274,27 +274,21 @@ class StellarGraph:
             weight_column=edge_weight_column,
         )
 
-        if nodes is None and edges is not None:
+        if nodes is None:
             nodes_from_edges = np.unique(
                 np.concatenate([self._edges.targets, self._edges.sources])
             )
-            self._nodes = convert.convert_nodes(
-                pd.DataFrame([], index=nodes_from_edges),
-                name="nodes",
-                default_type=node_type_default,
-                dtype=dtype,
-            )
-
-        elif nodes is None:
-            self._nodes = convert.convert_nodes(
-                {}, name="nodes", default_type=node_type_default, dtype=dtype,
-            )
+            nodes_after_inference = nodes_from_edges
         else:
-            # only check self._nodes if nodes not created from edges
-            self._nodes = convert.convert_nodes(
-                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-            )
+            nodes_after_inference = nodes
 
+        self._nodes = convert.convert_nodes(
+            nodes_after_inference, name="nodes", default_type=node_type_default, dtype=dtype,
+        )
+
+        if nodes is not None:
+            # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
+            # node mentioned in the edges
             try:
                 self._nodes.ids.to_iloc(
                     np.concatenate([self._edges.sources, self._edges.targets]),
