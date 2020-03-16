@@ -629,13 +629,15 @@ class GraphSequence(Sequence):
             masks[index, : graph.number_of_nodes()] = True
 
         # features is array of dimensionality
-        #      batch size x max number of nodes in graph x node feature dimensionality
+        #      batch size x N x F
         # masks is array of dimensionality
-        #      batch size x max number of nodes
+        #      batch size x N
         # adj_graphs is array of dimensionality
-        #      batch size x max number of nodes x max number of nodes
+        #      batch size x N x N
         # graph_targets is array of dimensionality
-        #      batch size x number of classes
+        #      batch size x C
+        # where N is the maximum number of nodes for largest graph in the batch, F is
+        # the node feature dimensionality, and C is the number of target classes
         return [features, masks, adj_graphs], graph_targets
 
     def on_epoch_end(self):
