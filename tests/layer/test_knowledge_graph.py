@@ -108,7 +108,7 @@ def test_complex_rankings():
 
     some_edges = StellarDiGraph(
         nodes,
-        {name: df.drop(columns="label") for name, df in some_edges_df.groupby("label")}
+        {name: df.drop(columns="label") for name, df in some_edges_df.groupby("label")},
     )
 
     all_edges = StellarDiGraph(
@@ -120,7 +120,9 @@ def test_complex_rankings():
     x_inp, x_out = ComplEx(gen, 5).build()
     model = Model(x_inp, x_out)
 
-    raw_some, filtered_some = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), some_edges)
+    raw_some, filtered_some = ComplEx.rank_edges_against_all_nodes(
+        model, gen.flow(df), some_edges
+    )
     # basic check that the ranks are formed correctly
     assert raw_some.dtype == int
     assert np.all(raw_some >= 1)
@@ -128,12 +130,16 @@ def test_complex_rankings():
     assert np.all(filtered_some <= raw_some)
     assert np.any(filtered_some < raw_some)
 
-    raw_no, filtered_no = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), no_edges)
+    raw_no, filtered_no = ComplEx.rank_edges_against_all_nodes(
+        model, gen.flow(df), no_edges
+    )
     np.testing.assert_array_equal(raw_no, raw_some)
     # with no edges, filtering does nothing
     np.testing.assert_array_equal(raw_no, filtered_no)
 
-    raw_all, filtered_all = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), all_edges)
+    raw_all, filtered_all = ComplEx.rank_edges_against_all_nodes(
+        model, gen.flow(df), all_edges
+    )
     np.testing.assert_array_equal(raw_all, raw_some)
     # when every edge is known, the filtering should eliminate every possibility
     assert np.all(filtered_all == 1)
@@ -157,7 +163,9 @@ def test_complex_rankings():
         expected_raw_mod_o_rank = rank(same_s_r)
         assert raw[0] == expected_raw_mod_o_rank
 
-        known_objects = some_edges_df[(some_edges_df.source == source) & (some_edges_df.label == rel)]
+        known_objects = some_edges_df[
+            (some_edges_df.source == source) & (some_edges_df.label == rel)
+        ]
         object_is_unknown = ~df.target.isin(known_objects.target)
         expected_filt_mod_o_rank = rank(same_s_r & object_is_unknown)
         assert filtered[0] == expected_filt_mod_o_rank
@@ -167,7 +175,9 @@ def test_complex_rankings():
         expected_raw_mod_s_rank = rank(same_r_o)
         assert raw[1] == expected_raw_mod_s_rank
 
-        known_subjects = some_edges_df[(some_edges_df.label == rel) & (some_edges_df.target == target)]
+        known_subjects = some_edges_df[
+            (some_edges_df.label == rel) & (some_edges_df.target == target)
+        ]
         subject_is_unknown = ~df.source.isin(known_subjects.source)
         expected_filt_mod_s_rank = rank(subject_is_unknown & same_r_o)
         assert filtered[1] == expected_filt_mod_s_rank
