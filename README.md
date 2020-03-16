@@ -56,20 +56,20 @@
 
 ## Introduction
 
-Graph-structured data represent entities as nodes (aka vertices) and relationships between them as edges (aka links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
-
-- homogeneous (with nodes and links of one type),
-- heterogeneous (with more than one type of nodes and/or links)
-- knowledge graphs (extreme heterogeneous graphs with thousands of types of edges)
-- graphs with or without any data on nodes
-- graphs with edge weights
-
 The StellarGraph library offers state-of-the-art algorithms for graph machine learning, making it easy to discover patterns and answer questions about graph-structured data. It can solve many machine learning tasks:
 
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
 - Interpretation of node classification through calculated importances of edges and neighbour nodes for selected target nodes [8].
+
+Graph-structured data represent entities as nodes (aka vertices) and relationships between them as edges (aka links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
+
+- homogeneous (with nodes and links of one type),
+- heterogeneous (with more than one type of nodes and/or links)
+- knowledge graphs (extreme heterogeneous graphs with thousands of types of edges)
+- graphs with or without data associated with nodes
+- graphs with edge weights
 
 StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras high-level API](https://www.tensorflow.org/guide/keras), as well as [Pandas](https://pandas.pydata.org) and [NumPy](https://www.numpy.org). It is thus user-friendly, modular and extensible. It interoperates smoothly with code that builds on these, such as the standard Keras layers and [scikit-learn](http://scikit-learn.github.io/stable), so it is easy to augment the core graph machine learning algorithms provided by StellarGraph.
 
