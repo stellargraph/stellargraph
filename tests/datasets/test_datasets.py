@@ -171,15 +171,15 @@ def test_cora_load(is_directed, largest_cc_only) -> None:
 
 
 def test_cora_load_weighted() -> None:
-    def weights(sources, targets):
-        sources_numpy = sources.iloc[:, :-1].to_numpy()
-        targets_numpy = targets.iloc[:, :-1].to_numpy()
+    def weights(graph, subjects, edges):
+        sources = graph.node_features(edges.source)
+        targets = graph.node_features(edges.target)
 
-        and_ = (sources_numpy & targets_numpy).sum(axis=1)
-        or_ = (sources_numpy | targets_numpy).sum(axis=1)
+        and_ = np.logical_and(sources, targets).sum(axis=1)
+        or_ = np.logical_or(sources, targets).sum(axis=1)
         jaccard = and_ / or_
 
-        same_subject = sources.subject.to_numpy() == targets.subject.to_numpy()
+        same_subject = subjects[edges.source].to_numpy() == subjects[edges.target].to_numpy()
 
         return same_subject + jaccard
 

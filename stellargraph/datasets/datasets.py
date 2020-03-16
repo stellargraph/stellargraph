@@ -62,19 +62,22 @@ def _load_cora_or_citeseer(
     valid_target = node_data.index.get_indexer(edgelist.target) >= 0
     edgelist = edgelist[valid_source & valid_target]
 
-    if edge_weights is not None:
-        source_feats = node_data.loc[edgelist.source]
-        target_feats = node_data.loc[edgelist.target]
-        edgelist["weight"] = edge_weights(source_feats, target_feats)
+    subjects = node_data[subject]
 
     cls = StellarDiGraph if directed else StellarGraph
     graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
 
+    if edge_weights is not None:
+        # A weighted graph means computing a second StellarGraph after using the unweighted one to
+        # compute the weights.
+        edgelist["weight"] = edge_weights(graph, subjects, edgelist)
+        graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
     if largest_connected_component_only:
         cc_ids = next(graph.connected_components())
-        return graph.subgraph(cc_ids), node_data[subject][cc_ids]
+        return graph.subgraph(cc_ids), subjects[cc_ids]
 
-    return graph, node_data[subject]
+    return graph, subjects
 
 
 class Cora(
@@ -110,10 +113,11 @@ class Cora(
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
             largest_connected_component_only (bool): if True, returns only the largest connected
                 component, not the whole graph.
-            edge_weights (callable, optional): a function that accepts two Pandas DataFrames; the
-                first contains all information about the source node of each edge (including
-                subject), and the second is similar, for the target node of each edge. This should
-                return a sequence of numbers (e.g. a 1D NumPy array) of edge weights for each edge.
+            edge_weights (callable, optional): a function that accepts three parameters: an
+                unweighted StellarGraph containing node features, a Pandas Series of the node
+                labels, a Pandas DataFrame of the edges (with `source` and `target` columns). It
+                should return a sequence of numbers (e.g. a 1D NumPy array) of edge weights for each
+                edge in the DataFrame.
             str_node_ids (bool): if True, load the node IDs as strings, rather than integers.
 
         Returns:
