@@ -48,18 +48,17 @@ class GraphConvolution(Layer):
         we only have a single "batch".
 
       - There are three inputs required, the node features: 
-         this is a 3 dimensional array, batch size, sequence length, and number of nodes,
-        the output indices (the nodes that are to be selected in the final layer),
-        and the normalized graph Laplacian matrix
+         this is a 3 dimensional array, batch size, sequence length, and number of nodes
+        
 
-      - This class assumes that a simple unweighted or wegited adjacency matrix is passed to it,
+      - This class assumes that a simple unweighted or weighted adjacency matrix is passed to it,
           the normalized Laplacian matrix is calculated within the class.
 
       - The output indices are used when ``final_layer=True`` and the returned outputs
         are the final-layer features for the nodes indexed by output indices.
+        
 
-      - If ``final_layer=False`` all the node features are output in the same ordering as
-        given by the adjacency matrix.
+      
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -82,6 +81,7 @@ class GraphConvolution(Layer):
         activation=None,
         use_bias=True,
         input_dim=None,
+        final_layer = False,
         kernel_initializer="glorot_uniform",
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -99,7 +99,7 @@ class GraphConvolution(Layer):
         self.activation = activations.get(activation)
         self.use_bias = use_bias
         
-        self.final_layer = "False"
+        self.final_layer =  final_layer
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -152,7 +152,7 @@ class GraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, As_shape = input_shapes
+        feature_shape = input_shapes
 
         return feature_shape[0], feature_shape[1], self.units
 
@@ -173,6 +173,7 @@ class GraphConvolution(Layer):
         """
         n_nodes = input_shapes[-1]
         t_steps = input_shapes[-2]
+        self.units = t_steps
         
         self.A = self.add_weight(
             name="A",
@@ -184,7 +185,7 @@ class GraphConvolution(Layer):
         # K.set_value(self.A, self.adj)
 
         self.kernel = self.add_weight(
-            shape=(t_steps, t_steps),
+            shape=(t_steps, self.units),
             initializer=self.kernel_initializer,
             name="kernel",
             regularizer=self.kernel_regularizer,
@@ -238,8 +239,10 @@ class Graph_Convolution_LSTM(Model):
     """
     A stack of 2 Graph Convolutional layers followed by an LSTM, Dropout and,  Dense layer.
     
-    This architecture is inspired by:  
+    This architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction
+                                      (https://arxiv.org/abs/1811.05320)
 
+    
     The model minimally requires specification of the layer sizes as a list of ints
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
