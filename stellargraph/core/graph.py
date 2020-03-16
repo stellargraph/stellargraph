@@ -276,10 +276,10 @@ class StellarGraph:
         )
 
         if nodes is None:
-            nodes_from_edges = np.unique(
+            nodes_from_edges = pd.unique(
                 np.concatenate([self._edges.targets, self._edges.sources])
             )
-            nodes_after_inference = nodes_from_edges
+            nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
         else:
             nodes_after_inference = nodes
 
