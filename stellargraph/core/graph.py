@@ -284,7 +284,10 @@ class StellarGraph:
             nodes_after_inference = nodes
 
         self._nodes = convert.convert_nodes(
-            nodes_after_inference, name="nodes", default_type=node_type_default, dtype=dtype,
+            nodes_after_inference,
+            name="nodes",
+            default_type=node_type_default,
+            dtype=dtype,
         )
 
         if nodes is not None:
