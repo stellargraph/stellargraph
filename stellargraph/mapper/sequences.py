@@ -595,13 +595,11 @@ class GraphSequence(Sequence):
         return int(np.ceil(len(self.graphs) / self.batch_size))
 
     def __getitem__(self, index):
-        graphs = self.graphs[
-            index * self.batch_size : (index * self.batch_size) + self.batch_size
-        ]
 
-        adj_graphs = self.normalized_adjs[
-            index * self.batch_size : (index * self.batch_size) + self.batch_size
-        ]
+        batch_start, batch_end = index * self.batch_size, (index + 1) * self.batch_size
+
+        graphs = self.graphs[batch_start:batch_end]
+        adj_graphs = self.normalized_adjs[batch_start:batch_end]
 
         # The number of nodes for the largest graph in the batch. We are going to pad with 0 rows and columns
         # the adjacency and node feature matrices (only the rows in this case) to equal in size the adjacency and
@@ -610,9 +608,7 @@ class GraphSequence(Sequence):
 
         graph_targets = None
         if self.targets is not None:
-            graph_targets = self.targets[
-                index * self.batch_size : (index * self.batch_size) + self.batch_size
-            ]
+            graph_targets = self.targets[batch_start:batch_end]
 
         # pad adjacency and feature matrices to equal the size of those from the largest graph
         features = [
