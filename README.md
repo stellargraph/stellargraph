@@ -56,7 +56,13 @@
 
 ## Introduction
 
-Graph-structured data represent entities as nodes (aka vertices) and relationships between them as edges (aka links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of both homogeneous networks (with nodes and links of one type) and heterogeneous networks (with more than one type of nodes and/or links).
+Graph-structured data represent entities as nodes (aka vertices) and relationships between them as edges (aka links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
+
+- homogeneous (with nodes and links of one type),
+- heterogeneous (with more than one type of nodes and/or links)
+- knowledge graphs (extreme heterogeneous graphs with thousands of types of edges)
+- graphs with or without any data on nodes
+- graphs with edge weights
 
 The StellarGraph library offers state-of-the-art algorithms for graph machine learning, making it easy to discover patterns and answer questions about graph-structured data. It can solve many machine learning tasks:
 
