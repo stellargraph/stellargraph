@@ -175,7 +175,7 @@ class ComplEx:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
-        def ranks(pred, true_node_ilocs, true_rel_ilocs, modified_object):
+        def ranks(pred, true_node_ilocs, true_rel_ilocs, modified_object, unchanged_node_ilocs):
             batch_size = len(true_node_ilocs)
             assert pred.shape == (num_nodes, batch_size)
 
@@ -190,72 +190,41 @@ class ComplEx:
             raw_rank = 1 + greater.sum(axis=0)
 
             # FIXME(#870): this would be better without external IDs <-> ilocs translation
-            true_nodes = known_edges_graph._nodes.ids.from_iloc(true_node_ilocs)
+            unchanged_nodes = known_edges_graph._nodes.ids.from_iloc(unchanged_node_ilocs)
             true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
-            for i, (node_id, rel) in enumerate(zip(true_nodes, true_rels)):
-                if modified_object:
-                    neighs = known_edges_graph.out_nodes(node_id, edge_types=[rel])
-                else:
-                    neighs = known_edges_graph.in_nodes(node_id, edge_types=[rel])
 
-                #import pdb; pdb.set_trace()
-                neigh_ilocs = known_edges_graph._get_index_for_nodes(neighs)
-                greater[neigh_ilocs, i] = False
+            if modified_object:
+
+                real_edges = (
+                    (o, i) for
+                    i, (s, r) in enumerate(zip(unchanged_nodes, true_rels))
+                    for o in known_edges_graph.out_nodes(s, edge_types=[r])
+
+                )
+
+                objs, col_idxs = zip(*real_edges)
+                row_idxs = known_edges_graph._get_index_for_nodes(objs)
+                col_idxs = list(col_idxs)
+
+            else:
+
+                real_edges = (
+                    (s, i) for
+                    i, (o, r) in enumerate(zip(unchanged_nodes, true_rels))
+                    for s in known_edges_graph.in_nodes(o, edge_types=[r])
+
+                )
+
+                subjs, col_idxs = zip(*real_edges)
+                row_idxs = known_edges_graph._get_index_for_nodes(subjs)
+                col_idxs = list(col_idxs)
+
+            greater[row_idxs, col_idxs] = False
 
             filtered_rank = 1 + greater.sum(axis=0)
 
             assert raw_rank.shape == filtered_rank.shape == (batch_size,)
             return raw_rank, filtered_rank
-
-        # kieranricardo's code from
-        # https://github.com/stellargraph/stellargraph/tree/feature/complex-filtered-scores (lightly
-        # modified)
-
-        # create dictionary of edges by type
-        # probably a way of doing this with SG class
-        # edges = known_edges_graph.edges(include_edge_type=True)
-        # edges = set(zip(
-        #     known_edges_graph._get_index_for_nodes([s for s, _, _ in edges]),
-        #     known_edges_graph._get_index_for_nodes([o for _, o, _ in edges]),
-        #     known_edges_graph._edges.types.to_iloc([r for _, _, r in edges]),
-        # ))
-
-        # rel_set = set(r for _, _, r in edges)
-        # edges_by_type = dict(
-        #     (rel, set((s, o) for s, o, r in edges if r == rel)) for rel in rel_set
-        # )
-
-        # def ranks(pred, true_node_ilocs, true_rel_ilocs, modified_object):
-        #     batch_size = len(true_node_ilocs)
-        #     assert pred.shape == (num_nodes, batch_size)
-
-        #     # the score of the true edge, for each edge in the batch (this indexes in lock-step,
-        #     # i.e. [pred[true_ilocs[0], range(batch_size)[0]], ...])
-        #     true_scores = pred[true_node_ilocs, range(batch_size)]
-
-        #     # for each column, compare all the scores against the score of the true edge
-        #     greater = pred > true_scores
-        #     raw_rank = 1 + greater.sum(axis=0)
-
-        #     # get indices of all entries in greater that correspond to real edges
-        #     if not modified_object:
-        #         real_edges = [(s, i)
-        #                       for i, (obj, rel) in enumerate(zip(true_node_ilocs, true_rel_ilocs))
-        #                       for s, o in edges_by_type[rel] if o == obj
-        #                       ]
-        #     else:
-        #         real_edges = [(o, i)
-        #                       for i, (subj, rel) in enumerate(zip(true_node_ilocs, true_rel_ilocs))
-        #                       for s, o in edges_by_type[rel] if s == subj
-        #                       ]
-
-        #     # the raw rank is the number of elements scored higher than the true edge
-        #     for x, i in real_edges:
-        #         greater[x, i] = False
-        #     filtered_rank = 1 + greater.sum(axis=0)
-        #     assert raw_rank.shape == (batch_size,)
-
-        #     return raw_rank, filtered_rank
 
         all_node_embs, all_rel_embs = ComplEx.embeddings(model)
         all_node_embs_conj = all_node_embs.conj()
@@ -280,8 +249,15 @@ class ComplEx:
             mod_o_pred = np.inner(all_node_embs_conj, ss * rs).real
             mod_s_pred = np.inner(all_node_embs, rs * os.conj()).real
 
-            mod_o_raw, mod_o_filt = ranks(mod_o_pred, true_node_ilocs=objects, true_rel_ilocs=rels, modified_object=True)
-            mod_s_raw, mod_s_filt = ranks(mod_s_pred, true_node_ilocs=subjects, true_rel_ilocs=rels, modified_object=False)
+            mod_o_raw, mod_o_filt = ranks(
+                mod_o_pred, true_node_ilocs=objects,
+                true_rel_ilocs=rels, modified_object=True,
+                unchanged_node_ilocs=subjects,
+            )
+            mod_s_raw, mod_s_filt = ranks(
+                mod_s_pred, true_node_ilocs=subjects, true_rel_ilocs=rels,
+                modified_object=False, unchanged_node_ilocs=objects,
+            )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
             filtereds.append(np.column_stack((mod_o_filt, mod_s_filt)))
