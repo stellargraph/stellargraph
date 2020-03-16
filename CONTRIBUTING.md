@@ -68,7 +68,7 @@ StellarGraph considers courtesy and respect for others an essential part of the 
 
 #### Continuous Integration (CI)
 
-A pull request can only be merged if it passes tests. StellarGraph uses Buildkite CI to let a computero do the testing, and results are reported directly in each pull request. The full Buildkite pipeline can be viewed at <https://buildkite.com/stellar/stellargraph-public/>.
+A pull request can only be merged if it passes tests. StellarGraph uses Buildkite CI to let a computer do the testing, and results are reported directly in each pull request. The full Buildkite pipeline can be viewed at <https://buildkite.com/stellar/stellargraph-public/>.
 
 ### Experimental code
 

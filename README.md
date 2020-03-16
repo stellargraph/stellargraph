@@ -101,12 +101,8 @@ from sklearn import model_selection
 
 #### Data preparation ####
 
-# Use Pandas to load and preprocess the data
-nodes = pd.read_csv("nodes.csv") # columns of node data
-edges = pd.read_csv("edges.csv") # "source" & "target" columns for each link between nodes
-
-node_classes = pd.read_csv("labels.csv") # a column of each node's class/label
-targets = pd.get_dummies(node_classes) # one-hot encoding
+# load data into pandas dataframes
+nodes, edges, targets = load_my_data()
 
 # Use scikit-learn to compute training and test sets
 train_targets, test_targets = model_selection.train_test_split(targets, train_size=0.5)
@@ -120,9 +116,7 @@ generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
 train_gen = generator.flow(train_targets.index, train_targets)
 
 # two layers of GCN, each with hidden dimension 16
-gcn = sg.layer.GCN(
-    layer_sizes=[16, 16], activations=["relu", "relu"], generator=generator, dropout=0.5
-)
+x_inp, x_out = sg.layer.GCN(layer_sizes=[16, 16], generator=generator).build()
 x_inp, x_out = gcn.build() # input and output tensors
 
 # use TensorFlow Keras to add a layer to compute the (one-hot) predictions
@@ -134,7 +128,7 @@ predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), act
 model = tf.keras.Model(inputs=x_inp, outputs=predictions)
 model.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
-model.fit(train_gen, epochs=5)
+model.fit(generator.flow(train_targets.index, train_targets), epochs=5)
 
 (loss, accuracy) = model.evaluate(generator.flow(test_targets.index, test_targets))
 print(f"Test set: loss = {loss}, accuracy = {accuracy}")
