@@ -98,7 +98,6 @@ class GraphGenerator:
 
         return GraphSequence(
             graphs=[self.graphs[i] for i in graph_ilocs],
-            node_features_size=self.node_features_size,
             targets=targets,
             batch_size=batch_size,
             name=name,

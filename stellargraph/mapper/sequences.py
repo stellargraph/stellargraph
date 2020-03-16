@@ -545,7 +545,6 @@ class GraphSequence(Sequence):
 
     Args:
         graphs (list)): The graphs as StellarGraph objects.
-        node_features_size (int): The dimensionality of node features.
         targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
             where N is the number of graphs and C is the target size (e.g., number of classes.)
         normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
@@ -557,7 +556,6 @@ class GraphSequence(Sequence):
     def __init__(
         self,
         graphs,
-        node_features_size,
         targets=None,
         normalize=True,
         batch_size=1,
@@ -569,7 +567,6 @@ class GraphSequence(Sequence):
         self.normalize_adj = normalize
         self.targets = targets
         self.batch_size = batch_size
-        self.node_features_size = node_features_size
 
         if targets is not None:
             if len(graphs) != len(targets):
@@ -648,7 +645,8 @@ class GraphSequence(Sequence):
         random.shuffle(indexes)
         self.graphs = self.graphs[indexes]
         self.normalized_adjs = self.normalized_adjs[indexes]
-        self.targets = self.targets[indexes]
+        if self.targets is not None:
+            self.targets = self.targets[indexes]
 
 
 class CorruptedNodeSequence(Sequence):
