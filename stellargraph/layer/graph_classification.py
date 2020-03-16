@@ -109,9 +109,6 @@ class GCNSupervisedGraphClassification:
     To use this class as a Keras model, the features and pre-processed adjacency matrix
     should be supplied using the :class:`GraphGenerator` class.
 
-    Notes:
-      - The inputs are tensors provided by the :class:`GraphGenerator` object.
-
     Examples:
         Creating a graph classification model from a list of :class:`StellarGraph`
         objects (``graphs``). We also add two fully connected dense layers using the last one for binary classification
