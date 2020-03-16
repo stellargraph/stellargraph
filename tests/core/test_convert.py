@@ -316,7 +316,7 @@ def test_from_networkx_heterogeneous_features(feature_type, dtype):
         node_features = {
             "a": pd.DataFrame(a_features, index=[0, 2]),
             "b": pd.DataFrame(b_features, index=[1]),
-            "c": pd.DataFrame(columns=range(0), index=[3]),
+            # c is implied
         }
     elif feature_type == "iterable no types":
         node_features = zip([0, 2, 1, 3], a_features + b_features + [[]])

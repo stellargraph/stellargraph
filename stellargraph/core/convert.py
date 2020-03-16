@@ -206,9 +206,15 @@ def _features_from_node_data(nodes, data, dtype):
 
         def single(node_type):
             node_info = nodes[node_type]
-            this_data = data[node_type]
+            this_data = data.get(node_type)
 
-            if isinstance(this_data, pd.DataFrame):
+            if this_data is None:
+                # no data specified for this type, so len(feature vector) = 0 for each node (this
+                # uses a range index for columns, to match the behaviour of the other feature
+                # converters here, that build DataFrames from NumPy arrays even when there's no
+                # data, i.e. array.shape = (num nodes, 0))
+                df = pd.DataFrame(columns=range(0), index=node_info.ids)
+            elif isinstance(this_data, pd.DataFrame):
                 df = this_data.astype(dtype, copy=False)
             elif isinstance(this_data, (Iterable, list)):
                 # this functionality is a bit peculiar (Pandas is generally nicer), and is
