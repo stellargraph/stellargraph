@@ -100,21 +100,19 @@ Knowledge Graph models
 .. automodule:: stellargraph.layer.knowledge_graph
   :members: ComplEx, ComplExScore, DistMult, DistMultScore
 
-<<<<<<< HEAD
-Graph Classification model
--------------
+
+GCN Supervised Graph Classification model
+-----------------------------------------
 
 .. automodule:: stellargraph.layer.graph_classification
-  :members: GraphClassification, GraphClassificationConvolution
+  :members: GCNSupervisedGraphClassification, GraphClassificationConvolution
 
-=======
 
 Deep Graph Infomax Models
 -------------------------
 
 .. automodule:: stellargraph.layer.deep_graph_infomax
   :members: DeepGraphInfomax, DGIDiscriminator
->>>>>>> develop
 
 Link prediction layers
 ------------------------
