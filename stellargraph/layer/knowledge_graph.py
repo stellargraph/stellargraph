@@ -175,13 +175,21 @@ class ComplEx:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
-        def ranks(pred, true_node_ilocs, true_rel_ilocs, modified_object, unchanged_node_ilocs):
-            batch_size = len(true_node_ilocs)
+        def ranks(
+            pred,
+            *,
+            true_modified_node_ilocs,
+            unmodified_node_ilocs,
+            true_rel_ilocs,
+            modified_object,
+        ):
+            batch_size = len(true_modified_node_ilocs)
             assert pred.shape == (num_nodes, batch_size)
+            assert unmodified_node_ilocs.shape == true_rel_ilocs.shape == (batch_size,)
 
             # the score of the true edge, for each edge in the batch (this indexes in lock-step,
             # i.e. [pred[true_node_ilocs[0], range(batch_size)[0]], ...])
-            true_scores = pred[true_node_ilocs, range(batch_size)]
+            true_scores = pred[true_modified_node_ilocs, range(batch_size)]
 
             # for each column, compare all the scores against the score of the true edge
             greater = pred > true_scores
@@ -190,36 +198,28 @@ class ComplEx:
             raw_rank = 1 + greater.sum(axis=0)
 
             # FIXME(#870): this would be better without external IDs <-> ilocs translation
-            unchanged_nodes = known_edges_graph._nodes.ids.from_iloc(unchanged_node_ilocs)
+            unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(
+                unmodified_node_ilocs
+            )
             true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
-
             if modified_object:
-
-                real_edges = (
-                    (o, i) for
-                    i, (s, r) in enumerate(zip(unchanged_nodes, true_rels))
-                    for o in known_edges_graph.out_nodes(s, edge_types=[r])
-
-                )
-
-                objs, col_idxs = zip(*real_edges)
-                row_idxs = known_edges_graph._get_index_for_nodes(objs)
-                col_idxs = list(col_idxs)
-
+                neigh_func = known_edges_graph.out_nodes
             else:
+                neigh_func = known_edges_graph.in_nodes
 
-                real_edges = (
-                    (s, i) for
-                    i, (o, r) in enumerate(zip(unchanged_nodes, true_rels))
-                    for s in known_edges_graph.in_nodes(o, edge_types=[r])
+            # collect all the neighbours into a single array to do one _get_index_for_nodes call,
+            # which has relatively high constant cost
+            neighbours = []
+            columns = []
+            for batch_column, (unmodified, r) in enumerate(
+                zip(unmodified_nodes, true_rels)
+            ):
+                this_neighs = neigh_func(unmodified, edge_types=[r])
+                neighbours.extend(this_neighs)
+                columns.extend(batch_column for _ in this_neighs)
 
-                )
-
-                subjs, col_idxs = zip(*real_edges)
-                row_idxs = known_edges_graph._get_index_for_nodes(subjs)
-                col_idxs = list(col_idxs)
-
-            greater[row_idxs, col_idxs] = False
+            neighbour_ilocs = known_edges_graph._get_index_for_nodes(neighbours)
+            greater[neighbour_ilocs, columns] = False
 
             filtered_rank = 1 + greater.sum(axis=0)
 
@@ -250,13 +250,18 @@ class ComplEx:
             mod_s_pred = np.inner(all_node_embs, rs * os.conj()).real
 
             mod_o_raw, mod_o_filt = ranks(
-                mod_o_pred, true_node_ilocs=objects,
-                true_rel_ilocs=rels, modified_object=True,
-                unchanged_node_ilocs=subjects,
+                mod_o_pred,
+                true_modified_node_ilocs=objects,
+                unmodified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=True,
             )
             mod_s_raw, mod_s_filt = ranks(
-                mod_s_pred, true_node_ilocs=subjects, true_rel_ilocs=rels,
-                modified_object=False, unchanged_node_ilocs=objects,
+                mod_s_pred,
+                true_modified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=False,
+                unmodified_node_ilocs=objects,
             )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))

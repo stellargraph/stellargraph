@@ -90,7 +90,6 @@ def test_complex(knowledge_graph):
 
 
 def test_complex_rankings():
-    tf.random.set_seed(0)
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]
     empty = pd.DataFrame(columns=["source", "target"])
@@ -100,7 +99,13 @@ def test_complex_rankings():
 
     no_edges = StellarDiGraph(nodes, {name: empty for name in rels})
 
-    some_edges_df = df.sample(n=20, random_state=1)
+    # the filtering is most interesting when there's a smattering of edges, somewhere between none
+    # and all; this does a stratified sample by label, to make sure there's at least one edge from
+    # each label.
+    one_per_label_df = df.groupby("label").apply(lambda df: df.sample(n=1)).droplevel(0)
+    others_df = df.sample(frac=0.25)
+    some_edges_df = pd.concat([one_per_label_df, others_df], ignore_index=True)
+
     some_edges = StellarDiGraph(
         nodes,
         {name: df.drop(columns="label") for name, df in some_edges_df.groupby("label")}
@@ -115,7 +120,7 @@ def test_complex_rankings():
     x_inp, x_out = ComplEx(gen, 5).build()
     model = Model(x_inp, x_out)
 
-    raw_some, filtered_some = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df[:1]), some_edges)
+    raw_some, filtered_some = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), some_edges)
     # basic check that the ranks are formed correctly
     assert raw_some.dtype == int
     assert np.all(raw_some >= 1)
@@ -123,15 +128,15 @@ def test_complex_rankings():
     assert np.all(filtered_some <= raw_some)
     assert np.any(filtered_some < raw_some)
 
-    #raw_no, filtered_no = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), no_edges)
-    #np.testing.assert_array_equal(raw_no, raw_some)
+    raw_no, filtered_no = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), no_edges)
+    np.testing.assert_array_equal(raw_no, raw_some)
     # with no edges, filtering does nothing
-    #np.testing.assert_array_equal(raw_no, filtered_no)
+    np.testing.assert_array_equal(raw_no, filtered_no)
 
-    #raw_all, filtered_all = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), all_edges)
-    #np.testing.assert_array_equal(raw_all, raw_some)
+    raw_all, filtered_all = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), all_edges)
+    np.testing.assert_array_equal(raw_all, raw_some)
     # when every edge is known, the filtering should eliminate every possibility
-    #assert np.all(filtered_all == 1)
+    assert np.all(filtered_all == 1)
 
     # check the ranks against computing them from the model predictions directly. That is, for each
     # edge, compare the rank against one computed by counting the predictions. This computes the
