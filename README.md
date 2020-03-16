@@ -101,7 +101,7 @@ from sklearn import model_selection
 
 #### Data preparation ####
 
-# load data into pandas dataframes
+# load data into Pandas DataFrames, e.g. from CSV files or a database
 nodes, edges, targets = load_my_data()
 
 # Use scikit-learn to compute training and test sets
@@ -113,11 +113,10 @@ train_targets, test_targets = model_selection.train_test_split(targets, train_si
 graph = sg.StellarGraph(nodes, edges)
 
 generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
-train_gen = generator.flow(train_targets.index, train_targets)
 
 # two layers of GCN, each with hidden dimension 16
-x_inp, x_out = sg.layer.GCN(layer_sizes=[16, 16], generator=generator).build()
-x_inp, x_out = gcn.build() # input and output tensors
+gcn = sg.layer.GCN(layer_sizes=[16, 16], generator=generator)
+x_inp, x_out = gcn.build() # create the input and output TensorFlow tensors
 
 # use TensorFlow Keras to add a layer to compute the (one-hot) predictions
 predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), activation="softmax")(x_out)
