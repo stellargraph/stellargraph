@@ -38,7 +38,7 @@
 </p>
 
 
-**StellarGraph** is a Python library for machine learning on graphs and networks.
+**StellarGraph** is a Python library for machine learning on [graphs and networks](https://en.wikipedia.org/wiki/Graph_\(discrete_mathematics\)).
 
 ## Table of Contents
    * [Introduction](#introduction)
@@ -56,12 +56,12 @@
 
 ## Introduction
 
-The StellarGraph library offers state-of-the-art algorithms for graph machine learning, making it easy to discover patterns and answer questions about graph-structured data. It can solve many machine learning tasks:
+The StellarGraph library offers state-of-the-art algorithms for [graph machine learning](https://medium.com/stellargraph/knowing-your-neighbours-machine-learning-on-graphs-9b7c3d0d5896), making it easy to discover patterns and answer questions about graph-structured data. It can solve many machine learning tasks:
 
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
-- Interpretation of node classification through calculated importances of edges and neighbour nodes for selected target nodes [8].
+- Interpretation of node classification through [calculated importances of edges and neighbour nodes for selected target nodes](https://medium.com/stellargraph/https-medium-com-stellargraph-saliency-maps-for-graph-machine-learning-5cca536974da) [8].
 
 Graph-structured data represent entities as nodes (aka vertices) and relationships between them as edges (aka links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
 
