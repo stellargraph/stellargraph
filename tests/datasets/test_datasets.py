@@ -179,7 +179,9 @@ def test_cora_load_weighted() -> None:
         or_ = np.logical_or(sources, targets).sum(axis=1)
         jaccard = and_ / or_
 
-        same_subject = subjects[edges.source].to_numpy() == subjects[edges.target].to_numpy()
+        same_subject = (
+            subjects[edges.source].to_numpy() == subjects[edges.target].to_numpy()
+        )
 
         return same_subject + jaccard
 
