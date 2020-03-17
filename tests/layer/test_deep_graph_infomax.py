@@ -32,7 +32,9 @@ def test_dgi_dense(model_type):
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
-    base_model = model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+    base_model = model_type(
+        generator=generator, activations=["relu"], layer_sizes=[emb_dim]
+    )
     infomax = DeepGraphInfomax(base_model)
 
     model = tf.keras.Model(*infomax.build())
@@ -55,7 +57,9 @@ def test_dgi_sparse(model_type):
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
-    base_model = model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+    base_model = model_type(
+        generator=generator, activations=["relu"], layer_sizes=[emb_dim]
+    )
     infomax = DeepGraphInfomax(base_model)
 
     model = tf.keras.Model(*infomax.build())
@@ -94,6 +98,3 @@ def test_dgi_embedding_wrong_model():
 
     with pytest.raises(ValueError, match="model: *."):
         infomax_1.embedding_model(model_2)
-
-
-
