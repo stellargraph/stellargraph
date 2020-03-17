@@ -302,9 +302,7 @@ class StellarGraph:
                     np.concatenate([self._edges.targets, self._edges.sources])
                 )
                 self._nodes.ids.to_iloc(
-                    nodes_from_edges,
-                    smaller_type=False,
-                    strict=True,
+                    nodes_from_edges, smaller_type=False, strict=True,
                 )
             except KeyError as e:
                 missing_values = e.args[0]
