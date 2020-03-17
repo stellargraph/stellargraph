@@ -15,7 +15,6 @@
 # limitations under the License.
 
 from . import GCN, GAT, APPNP, PPNP
-from ..core.experimental import experimental
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
@@ -67,7 +66,6 @@ class DGIDiscriminator(Layer):
         return score
 
 
-@experimental(reason="lack of unit tests", issues=[1003])
 class DeepGraphInfomax:
     """
     A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
