@@ -21,6 +21,8 @@ from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
 from tensorflow.keras import backend as K
 import warnings
+from string import ascii_lowercase
+import random
 
 __all__ = ["DeepGraphInfomax", "DGIDiscriminator"]
 
@@ -114,7 +116,8 @@ class DeepGraphInfomax:
 
         x_inp, node_feats = self.base_model.build(multiplicity=1)
         # identity layer so we can attach a name to the tensor
-        node_feats = Lambda(lambda x: x, name=self._unique_id)(node_feats)
+        rand_string = ''.join(random.choice(ascii_lowercase) for _ in range(5))
+        node_feats = Lambda(lambda x: x, name=self._unique_id+rand_string)(node_feats)
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
         ]
@@ -148,8 +151,8 @@ class DeepGraphInfomax:
         """
 
         try:
-            x_emb_out = model.get_layer(self._unique_id).output
-        except ValueError:
+            x_emb_out = [layer for layer in model.layers if self._unique_id in layer.name][0].output
+        except IndexError:
             raise ValueError(
                 f"model: model must be a keras model with inputs and outputs created "
                 f"by the build() method of this instance of DeepGraphInfoMax"

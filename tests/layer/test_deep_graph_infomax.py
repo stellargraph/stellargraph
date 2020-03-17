@@ -14,24 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.layer import DeepGraphInfomax, GCN
+from stellargraph.layer import DeepGraphInfomax, GCN, APPNP, GAT, PPNP
 from stellargraph.mapper import FullBatchNodeGenerator, CorruptedGenerator
 from ..test_utils.graphs import example_graph_random
 import tensorflow as tf
 import pytest
+import numpy as np
 
 
-def test_dgi():
+@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
+def test_dgi_dense(model_type):
 
     G = example_graph_random()
     emb_dim = 16
 
-    generator = FullBatchNodeGenerator(G)
+    generator = FullBatchNodeGenerator(G, sparse=False)
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
-    gcn = GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
-    infomax = DeepGraphInfomax(gcn)
+    base_model = model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+    infomax = DeepGraphInfomax(base_model)
 
     model = tf.keras.Model(*infomax.build())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
@@ -43,13 +45,34 @@ def test_dgi():
     assert embeddings.shape == (len(G.nodes()), emb_dim)
 
 
-def test_dgi_embedding_model_wrong_model():
+@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT])
+def test_dgi_sparse(model_type):
+
+    G = example_graph_random()
+    emb_dim = 16
+
+    generator = FullBatchNodeGenerator(G, sparse=True)
+    corrupted_generator = CorruptedGenerator(generator)
+    gen = corrupted_generator.flow(G.nodes())
+
+    base_model = model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+    infomax = DeepGraphInfomax(base_model)
+
+    model = tf.keras.Model(*infomax.build())
+    model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
+    model.fit(gen)
+
+    emb_model = tf.keras.Model(*infomax.embedding_model(model))
+    embeddings = emb_model.predict(generator.flow(G.nodes()))
+
+    assert embeddings.shape == (len(G.nodes()), emb_dim)
+
+
+def test_dgi_embedding_wrong_model():
     G = example_graph_random()
     emb_dim = 16
 
     generator = FullBatchNodeGenerator(G)
-    corrupted_generator = CorruptedGenerator(generator)
-    gen = corrupted_generator.flow(G.nodes())
 
     infomax_1 = DeepGraphInfomax(
         GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
@@ -62,7 +85,7 @@ def test_dgi_embedding_model_wrong_model():
 
     # check case when infomax_2.build() has not been called
     with pytest.raises(ValueError, match="model: *."):
-        emb_model = tf.keras.Model(*infomax_2.embedding_model(model_1))
+        infomax_2.embedding_model(model_1)
 
     # check case when infomax_2.build() has been called
     model_2 = tf.keras.Model(*infomax_2.build())
@@ -71,3 +94,6 @@ def test_dgi_embedding_model_wrong_model():
 
     with pytest.raises(ValueError, match="model: *."):
         infomax_1.embedding_model(model_2)
+
+
+
