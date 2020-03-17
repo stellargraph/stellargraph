@@ -89,7 +89,6 @@ class StellarGraph:
 
         Gs = StellarGraph(nodes, edges)
 
-
     If this data represents a directed graph (the ordering does matter)::
 
         Gs = StellarDiGraph(nodes, edges)

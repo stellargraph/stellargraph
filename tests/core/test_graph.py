@@ -135,7 +135,10 @@ def test_graph_constructor_extra_nodes_in_edges():
         "b": pd.DataFrame({"source": [4, 5], "target": [0, 2]}, index=[1, 2]),
     }
 
-    with pytest.raises(ValueError, match="^edges: expected all source and target node IDs to be contained in `nodes`, found some missing: 5$"):
+    with pytest.raises(
+        ValueError,
+        match="^edges: expected all source and target node IDs to be contained in `nodes`, found some missing: 5$",
+    ):
         g = StellarGraph(nodes, edges)
 
     # adding an extra node should fix things
