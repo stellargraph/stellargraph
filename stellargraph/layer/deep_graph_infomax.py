@@ -149,10 +149,8 @@ class DeepGraphInfomax:
         """
 
         try:
-            x_emb_out = [
-                layer for layer in model.layers if layer.name.startswith(self._unique_id)
-            ][0].output
-        except IndexError:
+            x_emb_out = next(layer for layer in model.layers if layer.name.startswith(self._unique_id)).output
+        except StopIteration:
             raise ValueError(
                 f"model: model must be a keras model with inputs and outputs created "
                 f"by the build() method of this instance of DeepGraphInfoMax"
