@@ -198,7 +198,8 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Relational Graph Convolutional Network [11] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
 | ComplEx[12] | The ComplEx algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | GraphWave [13] | GraphWave calculates unsupervised structural embeddings via wavelet diffusion through the graph. |
-| Watch Your Step[14] | The Watch Your Step algorithm computes node embeddings by using adjacency powers to simulate expected random walks. |
+| Watch Your Step [14] | The Watch Your Step algorithm computes node embeddings by using adjacency powers to simulate expected random walks. |
+| Deep Graph Infomax [15] | Deep Graph Infomax trains unsupervised GNNs to maximize the shared information between node level and graph level features. |
 
 
 ## Getting Help
@@ -266,3 +267,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 2018, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf))
 
 14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arxiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
+
+15. Deep Graph Infomax. P. Velickovic, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arxiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
