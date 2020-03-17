@@ -150,7 +150,9 @@ class DeepGraphInfomax:
 
         try:
             x_emb_out = next(
-                layer for layer in model.layers if layer.name.startswith(self._unique_id)
+                layer
+                for layer in model.layers
+                if layer.name.startswith(self._unique_id)
             ).output
         except StopIteration:
             raise ValueError(
