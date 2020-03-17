@@ -150,7 +150,7 @@ class DeepGraphInfomax:
 
         try:
             x_emb_out = [
-                layer for layer in model.layers if self._unique_id in layer.name
+                layer for layer in model.layers if layer.name.startswith(self._unique_id)
             ][0].output
         except IndexError:
             raise ValueError(
