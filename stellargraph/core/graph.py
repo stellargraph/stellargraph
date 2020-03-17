@@ -279,10 +279,11 @@ class StellarGraph:
             weight_column=edge_weight_column,
         )
 
+        nodes_from_edges = pd.unique(
+            np.concatenate([self._edges.targets, self._edges.sources])
+        )
+
         if nodes is None:
-            nodes_from_edges = pd.unique(
-                np.concatenate([self._edges.targets, self._edges.sources])
-            )
             nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
         else:
             nodes_after_inference = nodes
@@ -298,9 +299,6 @@ class StellarGraph:
             # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
             # node mentioned in the edges
             try:
-                nodes_from_edges = pd.unique(
-                    np.concatenate([self._edges.targets, self._edges.sources])
-                )
                 self._nodes.ids.to_iloc(
                     nodes_from_edges, smaller_type=False, strict=True,
                 )
