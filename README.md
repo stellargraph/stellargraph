@@ -1,7 +1,5 @@
 ![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
-# StellarGraph Machine Learning Library
-
 <p align="center">
   <a href="https://stellargraph.readthedocs.io/" alt="Docs">
     <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
@@ -38,6 +36,8 @@
 </p>
 
 
+# StellarGraph Machine Learning Library
+
 **StellarGraph** is a Python library for machine learning on [graphs and networks](https://en.wikipedia.org/wiki/Graph_\(discrete_mathematics\)).
 
 ## Table of Contents
@@ -61,9 +61,9 @@ The StellarGraph library offers state-of-the-art algorithms for [graph machine l
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - Classification and attribute inference of nodes or edges;
 - Link prediction;
-- Interpretation of node classification through [calculated importances of edges and neighbour nodes for selected target nodes](https://medium.com/stellargraph/https-medium-com-stellargraph-saliency-maps-for-graph-machine-learning-5cca536974da) [8].
+- [Interpretation of node classification](https://medium.com/stellargraph/https-medium-com-stellargraph-saliency-maps-for-graph-machine-learning-5cca536974da) [8].
 
-Graph-structured data represent entities as nodes (aka vertices) and relationships between them as edges (aka links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
+Graph-structured data represent entities as nodes (or vertices) and relationships between them as edges (or links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
 
 - homogeneous (with nodes and links of one type),
 - heterogeneous (with more than one type of nodes and/or links)
@@ -164,7 +164,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 ## Installation
 
-StellarGraph is a Python 3 library and we recommend using Python version `3.6.*`. The required Python version
+StellarGraph is a Python 3 library and we recommend using Python version `3.6`. The required Python version
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
 environment, available from [anaconda.com](https://www.anaconda.com/download/).
 
