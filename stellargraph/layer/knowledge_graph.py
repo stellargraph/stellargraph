@@ -194,6 +194,10 @@ class ComplEx:
             # the raw rank is the number of elements scored higher than the true edge
             raw_rank = 1 + greater.sum(axis=0)
 
+            # the filtered rank is the number of unknown elements scored higher, where an element is
+            # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
+            # exists in known_edges_graph.
+
             # FIXME(#870): this would be better without external IDs <-> ilocs translation
             unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(
                 unmodified_node_ilocs
