@@ -109,6 +109,8 @@ def test_ClusterGCN_init():
     assert cluster_gcn_model.dropout == 0.5
 
 
+@pytest.mark.filterwarnings("error:Converting sparse IndexedSlices.*large amount of memory:UserWarning")
+#@pytest.mark.filterwarnings("error::scipy.sparse.SparseEfficiencyWarning")
 def test_ClusterGCN_apply():
 
     G, _ = create_graph_features()
@@ -121,8 +123,16 @@ def test_ClusterGCN_apply():
 
     x_in, x_out = cluster_gcn_model.build()
     model = keras.Model(inputs=x_in, outputs=x_out)
+    model.compile("adam", "mse")
 
-    # Check fit method
+    gen = generator.flow(["a", "c"], [[0, 1], [1, 0]])
+    for i, (x, y) in enumerate(gen):
+        print(f"## {i}")
+        for t in x:
+            print(t)
+        print(y)
+    model.fit(gen)
+
     preds_2 = model.predict(generator.flow(["a", "b", "c"]))
     assert preds_2.shape == (1, 3, 2)
 

@@ -380,6 +380,7 @@ class GCN:
 
         # Convert input indices & values to a sparse matrix
         if self.use_sparse:
+            assert False
             A_indices, A_values = As
             Ainput = [
                 SqueezedSparseConversion(
@@ -399,6 +400,7 @@ class GCN:
 
         h_layer = x_in
         if self.method == "none":
+            assert False
             # For GCN, if no preprocessing has been done, we apply the preprocessing layer to perform that.
             Ainput = [self.graph_norm_layer(Ainput[0])]
         for layer in self._layers:
@@ -431,10 +433,12 @@ class GCN:
         if multiplicity == 1:
             out_indices_t = Input(batch_shape=(1, None), dtype="int32")
         else:
+            assert False
             out_indices_t = Input(batch_shape=(1, None, multiplicity), dtype="int32")
 
         # Create inputs for sparse or dense matrices
         if self.use_sparse:
+            assert False
             # Placeholders for the sparse adjacency matrix
             A_indices_t = Input(batch_shape=(1, None, 2), dtype="int64")
             A_values_t = Input(batch_shape=(1, None))

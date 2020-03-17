@@ -148,12 +148,26 @@ def test_GCN_apply_dense():
     x_in, x_out = gcnModel.build()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
+    model.compile("adam", "mse")
+
     # Check fit method
     out_indices = np.array([[0, 1]], dtype="int32")
-    preds_1 = model.predict([features[None, :, :], out_indices, adj])
+    arrays = [features[None, :, :], out_indices, adj]
+    targets = np.array([[[0, 1], [1, 0]]])
+
+    model.fit(arrays, targets)
+    preds_1 = model.predict(arrays)
     assert preds_1.shape == (1, 2, 2)
 
     # Check fit method
+    gen = generator.flow(["a", "b"], targets[0, ...])
+    for i, (x, y) in enumerate(gen):
+        print(f"## {i}")
+        for t in x:
+            print(t)
+        print(y)
+    model.fit(gen)
+    assert False
     preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 

@@ -16,8 +16,9 @@
 
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
-from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
+from tensorflow.keras.layers import Input, Layer, Dense, Lambda, Dropout, Reshape
 
+from .gcn import GraphConvolution
 from ..mapper import ClusterNodeGenerator
 
 
@@ -88,16 +89,20 @@ class ClusterGraphConvolution(Layer):
 
         super().__init__(**kwargs)
 
-        self.units = units
-        self.activation = activations.get(activation)
-        self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
-        self.activity_regularizer = regularizers.get(activity_regularizer)
-        self.kernel_constraint = constraints.get(kernel_constraint)
-        self.bias_constraint = constraints.get(bias_constraint)
+        self.dense = Dense(
+            units=units,
+            activation=activation,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            kernel_constraint=kernel_constraint,
+            bias_constraint=bias_constraint,
+            **kwargs
+        )
+
         self.final_layer = final_layer
 
     def get_config(self):
@@ -109,22 +114,9 @@ class ClusterGraphConvolution(Layer):
             A dictionary that contains the config of the layer
         """
 
-        config = {
-            "units": self.units,
-            "use_bias": self.use_bias,
-            "final_layer": self.final_layer,
-            "activation": activations.serialize(self.activation),
-            "kernel_initializer": initializers.serialize(self.kernel_initializer),
-            "bias_initializer": initializers.serialize(self.bias_initializer),
-            "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
-            "bias_regularizer": regularizers.serialize(self.bias_regularizer),
-            "activity_regularizer": regularizers.serialize(self.activity_regularizer),
-            "kernel_constraint": constraints.serialize(self.kernel_constraint),
-            "bias_constraint": constraints.serialize(self.bias_constraint),
-        }
-
-        base_config = super().get_config()
-        return {**base_config, **config}
+        base_config = self.dense.get_config()
+        config["final_layer"] = self.final_layer
+        return config
 
     def compute_output_shape(self, input_shapes):
         """
@@ -157,26 +149,7 @@ class ClusterGraphConvolution(Layer):
 
         """
         feat_shape = input_shapes[0]
-        input_dim = int(feat_shape[-1])
-
-        self.kernel = self.add_weight(
-            shape=(input_dim, self.units),
-            initializer=self.kernel_initializer,
-            name="kernel",
-            regularizer=self.kernel_regularizer,
-            constraint=self.kernel_constraint,
-        )
-
-        if self.use_bias:
-            self.bias = self.add_weight(
-                shape=(self.units,),
-                initializer=self.bias_initializer,
-                name="bias",
-                regularizer=self.bias_regularizer,
-                constraint=self.bias_constraint,
-            )
-        else:
-            self.bias = None
+        self.dense.build(feat_shape)
         self.built = True
 
     def call(self, inputs):
@@ -201,22 +174,19 @@ class ClusterGraphConvolution(Layer):
         out_indices = K.squeeze(out_indices, 0)
 
         # Calculate the layer operation of GCN multiplying the normalized adjacency matrix
-        # width the node features matrix.
+        # with the node features matrix.
         A = As[0]
         h_graph = K.dot(A, features)
-        output = K.dot(h_graph, self.kernel)
 
-        # Add optional bias & apply activation
-        if self.bias is not None:
-            output += self.bias
-        output = self.activation(output)
+        output = self.dense(h_graph)
 
         # On the final layer we gather the nodes referenced by the indices
         if self.final_layer:
+            #import pdb; pdb.set_trace()
             # Select the indices that are non-zero
             output = K.gather(output, out_indices)
-        else:
-            output = K.expand_dims(output, 0)
+
+        output = K.expand_dims(output, 0)
 
         return output
 
@@ -299,7 +269,7 @@ class ClusterGCN:
             a = self.activations[ii]
             self._layers.append(Dropout(self.dropout))
             self._layers.append(
-                ClusterGraphConvolution(
+                GraphConvolution(
                     l,
                     activation=a,
                     use_bias=self.bias,
@@ -349,7 +319,7 @@ class ClusterGCN:
         h_layer = x_in
 
         for layer in self._layers:
-            if isinstance(layer, ClusterGraphConvolution):
+            if isinstance(layer, (GraphConvolution, ClusterGraphConvolution)):
                 # For a GCN layer add the matrix and output indices
                 # Note that the output indices are only used if `final_layer=True`
                 h_layer = layer([h_layer, out_indices] + Ainput)
@@ -373,7 +343,7 @@ class ClusterGCN:
 
         # Inputs for features & target indices
         x_t = Input(batch_shape=(1, None, N_feat))
-        out_indices_t = Input(batch_shape=(1, None, None), dtype="int32")
+        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
         # Placeholders for the dense adjacency matrix
         A_m = Input(batch_shape=(1, None, None))
