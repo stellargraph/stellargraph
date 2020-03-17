@@ -66,9 +66,8 @@ class StellarGraph:
     - every StellarGraph can be a *multigraph*, meaning there can be multiple edges between any two
       nodes
 
-    To create a StellarGraph object, at a minimum pass the nodes and edges as Pandas
-    DataFrames. Each row of the nodes DataFrame represents a node in the graph, where the index is
-    the ID of the node. Each row of the edges DataFrame represents an edge, where the index is the
+    To create a StellarGraph object, at a minimum pass the edges as a Pandas
+    DataFrame. Each row of the edges DataFrame represents an edge, where the index is the
     ID of the edge, and the ``source`` and ``target`` columns store the node ID of the source and
     target nodes.
 
@@ -79,9 +78,8 @@ class StellarGraph:
         |  \\ |
         d -- c
 
-    The DataFrames might look like::
+    The DataFrame might look like::
 
-        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
         edges = pd.DataFrame(
             {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"]}
         )
@@ -96,6 +94,13 @@ class StellarGraph:
 
         Gs = StellarDiGraph(nodes, edges)
 
+    One can also pass a DataFrame of nodes. Each row of the nodes DataFrame represents a node in the
+    graph, where the index is the ID of the node. When this nodes DataFrame is not passed (the
+    argument is left as the default), the set of nodes is automatically inferred. This inference in
+    the example above is equivalent to::
+
+        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
+        Gs = StellarGraph(nodes, edges)
 
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
     above has two features ``x`` and ``y`` associated with each node::
