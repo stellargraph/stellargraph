@@ -58,7 +58,7 @@ class PPNPPropagationLayer(Layer):
         kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
-    def __init__(self, units, final_layer=False, input_dim=None, u**kwargs):
+    def __init__(self, units, final_layer=False, input_dim=None, **kwargs):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
 
