@@ -23,6 +23,7 @@ import numpy as np
 
 from tensorflow.keras import Model, initializers, losses
 
+from stellargraph import StellarGraph
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
 from stellargraph.layer.knowledge_graph import ComplEx, DistMult
 
@@ -85,6 +86,44 @@ def test_complex(knowledge_graph):
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+
+def test_complex_rankings():
+    nodes = ["a", "b", "c", "d"]
+    rels = ["W", "X", "Y", "Z"]
+    empty = pd.DataFrame(columns=["source", "target"])
+
+    every_edge = itertools.product(nodes, rels, nodes)
+    df = triple_df(*every_edge)
+
+    all_edges = StellarGraph(
+        nodes=pd.DataFrame(index=nodes),
+        edges={name: df.drop(columns="label") for name, df in df.groupby("label")},
+    )
+
+    gen = KGTripleGenerator(all_edges, 3)
+    x_inp, x_out = ComplEx(gen, 5).build()
+    model = Model(x_inp, x_out)
+
+    raw = ComplEx.rank_edges_against_all_nodes(model, gen.flow(df), all_edges)
+    # basic check that the ranks are formed correctly
+    assert raw.dtype == int
+    assert np.all(raw >= 1)
+
+    # check the ranks against computing them from the model predictions directly. That is, for each
+    # edge, compare the rank against one computed by counting the predictions.
+    predictions = model.predict(gen.flow(df))
+
+    for (source, rel, target), score, (mod_o_rank, mod_s_rank) in zip(
+        df.itertuples(index=False), predictions, raw
+    ):
+        mod_o_scores = predictions[(df.source == source) & (df.label == rel)]
+        expected_mod_o_rank = 1 + (mod_o_scores > score).sum()
+        assert mod_o_rank == expected_mod_o_rank
+
+        mod_s_scores = predictions[(df.label == rel) & (df.target == target)]
+        expected_mod_s_rank = 1 + (mod_s_scores > score).sum()
+        assert mod_s_rank == expected_mod_s_rank
 
 
 def test_dismult(knowledge_graph):

@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embedding
 
-from ..mapper.knowledge_graph import KGTripleGenerator
+from ..mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
 
@@ -136,6 +136,95 @@ class ComplEx:
         rel += model.get_layer(ComplEx._REL_REAL).embeddings.numpy()
 
         return node, rel
+
+    @staticmethod
+    def rank_edges_against_all_nodes(model, test_data, known_edges_graph):
+        """
+        Returns the ranks of the true edges in ``test_data``, when scored against all other similar
+        edges.
+
+        For each input edge ``E = (s, r, o)``, the score of the *modified-object* edge ``(s, r, n)``
+        is computed for every node ``n`` in the graph, and similarly the score of the
+        *modified-subject* edge ``(n, r, o)``.
+
+        This computes "raw" ranks: the score of each edge is ranked against all of the
+        modified-object and modified subject-ones, for instance, if ``E = ("a", "X", "b")`` has
+        score 3.14, and only one modified-object edge has a higher score (e.g. ``("a", "X", "c")``),
+        then the raw modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges
+        have score less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+
+        Args:
+            model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
+
+            test_data: the output of :meth:`KGTripleGenerator.flow` on some test triples
+
+            known_edges_graph (StellarGraph):
+                a graph instance containing all known edges/triples
+
+        Returns:
+            A numpy array of integer raw ranks. It has shape ``N × 2``, where N is the number of
+            test triples in ``test_data``; the first column (``array[:, 0]``) holds the
+            modified-object ranks, and the second (``array[:, 1]``) holds the modified-subject
+            ranks.
+        """
+
+        if not isinstance(test_data, KGTripleSequence):
+            raise TypeError(
+                "test_data: expected KGTripleSequence; found {type(test_data).__name__}"
+            )
+
+        num_nodes = known_edges_graph.number_of_nodes()
+
+        def ranks(pred, true_ilocs):
+            batch_size = len(true_ilocs)
+            assert pred.shape == (num_nodes, batch_size)
+
+            # the score of the true edge, for each edge in the batch (this indexes in lock-step,
+            # i.e. [pred[true_ilocs[0], range(batch_size)[0]], ...])
+            true_scores = pred[true_ilocs, range(batch_size)]
+
+            # for each column, compare all the scores against the score of the true edge
+            greater = pred > true_scores
+
+            # the raw rank is the number of elements scored higher than the true edge
+            raw_rank = 1 + greater.sum(axis=0)
+            assert raw_rank.shape == (batch_size,)
+
+            return raw_rank
+
+        all_node_embs, all_rel_embs = ComplEx.embeddings(model)
+        all_node_embs_conj = all_node_embs.conj()
+
+        raws = []
+
+        # run through the batches and compute the ranks for each one
+        num_tested = 0
+        for ((subjects, rels, objects),) in test_data:
+            num_tested += len(subjects)
+
+            # batch_size x k
+            ss = all_node_embs[subjects, :]
+            rs = all_rel_embs[rels, :]
+            os = all_node_embs[objects, :]
+
+            # reproduce the scoring function for ranking the given subject and relation against all
+            # other nodes (objects), and similarly given relation and object against all
+            # subjects. The bulk operations give speeeeeeeeed.
+            # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
+            mod_o_pred = np.inner(all_node_embs_conj, ss * rs).real
+            mod_s_pred = np.inner(all_node_embs, rs * os.conj()).real
+
+            mod_o_raw = ranks(mod_o_pred, true_ilocs=objects)
+            mod_s_raw = ranks(mod_s_pred, true_ilocs=subjects)
+
+            raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
+
+        # make one big array
+        raw = np.concatenate(raws)
+        # for each edge, there should be an pair of raw ranks
+        assert raw.shape == (num_tested, 2)
+
+        return raw
 
     def _embed(self, count, name):
         return Embedding(
