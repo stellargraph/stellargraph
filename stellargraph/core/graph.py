@@ -298,8 +298,11 @@ class StellarGraph:
             # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
             # node mentioned in the edges
             try:
+                nodes_from_edges = pd.unique(
+                    np.concatenate([self._edges.targets, self._edges.sources])
+                )
                 self._nodes.ids.to_iloc(
-                    np.concatenate([self._edges.sources, self._edges.targets]),
+                    nodes_from_edges,
                     smaller_type=False,
                     strict=True,
                 )
