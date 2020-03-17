@@ -8,7 +8,8 @@
 
 - New algorithms:
   - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750).
-
+  - Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978).
+  
 ### Breaking changes
 
 - `StellarGraph.to_networkx` parameters now use `attr` to refer to NetworkX attributes, not `name` or `label` [\#973](http://github.com/stellargraph/stellargraph/pull/973). Migration: for any named parameters in `graph.to_networkx(...)`, change `node_type_name=...` to `node_type_attr=...` and similarly `edge_type_name` to `edge_type_attr`, `edge_weight_label` to `edge_weight_attr`, `feature_name` to `feature_attr`.
@@ -18,7 +19,6 @@
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
 - DistMult: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
-- Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978) The implementation is not fully tested.
 
 ### Bug fixes and other changes
 
