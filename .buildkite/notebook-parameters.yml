@@ -16,3 +16,6 @@ val_size: 0.01
 metapaths: [["group", "group"], ["group", "user", "user", "group"]]
 # tiny embeddings for demos/link-prediction/knowledge-graphs/complex.ipynb
 embedding_dimension: 5
+# faster training of fewer models for demos/graph-classification/supervised-graph-classification.ipynb
+folds: 2
+num_restarts: 2
