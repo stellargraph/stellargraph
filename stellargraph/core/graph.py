@@ -163,7 +163,7 @@ class StellarGraph:
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs. Alternatively, nodes can be set to ``None`` in which case the node ids will be
+            IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features for each node.
             inferred from the ``edges`` parameter and the features will be set to empty features.
 
         edges (DataFrame or dict of hashable to Pandas DataFrame, optional):
