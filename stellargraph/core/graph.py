@@ -87,11 +87,11 @@ class StellarGraph:
     If this data represents an undirected graph (the ordering of each edge source/target doesn't
     matter)::
 
-        Gs = StellarGraph(nodes, edges)
+        Gs = StellarGraph(edges)
 
     If this data represents a directed graph (the ordering does matter)::
 
-        Gs = StellarDiGraph(nodes, edges)
+        Gs = StellarDiGraph(edges)
 
     One can also pass a DataFrame of nodes. Each row of the nodes DataFrame represents a node in the
     graph, where the index is the ID of the node. When this nodes DataFrame is not passed (the
@@ -167,7 +167,8 @@ class StellarGraph:
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features for each node.
+            IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features
+            for each node.
 
         edges (DataFrame or dict of hashable to Pandas DataFrame, optional):
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
