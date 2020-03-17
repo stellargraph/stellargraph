@@ -54,11 +54,13 @@ class PPNPPropagationLayer(Layer):
         units (int): dimensionality of output feature vectors
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
+        input_dim (int, optional): the size of the input shape, if known.
+        kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
     def __init__(self, units, final_layer=False, **kwargs):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 
