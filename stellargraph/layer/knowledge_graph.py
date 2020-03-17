@@ -144,11 +144,23 @@ class ComplEx:
         is computed for every node ``n`` in the graph, and similarly the score of the
         *modified-subject* edge ``(n, r, o)``.
 
-        This computes "raw" ranks: the score of each edge is ranked against all of the
-        modified-object and modified subject-ones, for instance, if ``E = ("a", "X", "b")`` has
-        score 3.14, and only one modified-object edge has a higher score (e.g. ``("a", "X", "c")``),
-        then the raw modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges
-        have score less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+        This computes "raw" and "filtered" ranks:
+
+        raw
+          The score of each edge is ranked against all of the modified-object and modified-subject
+          ones, for instance, if ``E = ("a", "X", "b")`` has score 3.14, and only one
+          modified-object edge has a higher score (e.g. ``F = ("a", "X", "c")``), then the raw
+          modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges have score
+          less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+
+        filtered
+          The score of each edge is ranked against only the unknown modified-object and
+          modified-subject edges. An edge is considered known if it is in ``known_edges_graph``
+          which should typically hold every edge in the dataset (that is everything from the train,
+          test and validation sets, if the data has been split). For instance, continuing the raw
+          example, if the higher-scoring edge ``F`` is in the graph, then it will be ignored, giving
+          a filtered modified-object rank for ``E`` of 1. (If ``F`` was not in the graph, the
+          filtered modified-object rank would be 2.)
 
         Args:
             model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
@@ -171,61 +183,6 @@ class ComplEx:
             )
 
         num_nodes = known_edges_graph.number_of_nodes()
-
-        def ranks(
-            pred,
-            *,
-            true_modified_node_ilocs,
-            unmodified_node_ilocs,
-            true_rel_ilocs,
-            modified_object,
-        ):
-            batch_size = len(true_modified_node_ilocs)
-            assert pred.shape == (num_nodes, batch_size)
-            assert unmodified_node_ilocs.shape == true_rel_ilocs.shape == (batch_size,)
-
-            # the score of the true edge, for each edge in the batch (this indexes in lock-step,
-            # i.e. [pred[true_modified_node_ilocs[0], range(batch_size)[0]], ...])
-            true_scores = pred[true_modified_node_ilocs, range(batch_size)]
-
-            # for each column, compare all the scores against the score of the true edge
-            greater = pred > true_scores
-
-            # the raw rank is the number of elements scored higher than the true edge
-            raw_rank = 1 + greater.sum(axis=0)
-
-            # the filtered rank is the number of unknown elements scored higher, where an element is
-            # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
-            # exists in known_edges_graph.
-
-            # FIXME(#870): this would be better without external IDs <-> ilocs translation
-            unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(
-                unmodified_node_ilocs
-            )
-            true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
-            if modified_object:
-                neigh_func = known_edges_graph.out_nodes
-            else:
-                neigh_func = known_edges_graph.in_nodes
-
-            # collect all the neighbours into a single array to do one _get_index_for_nodes call,
-            # which has relatively high constant cost
-            neighbours = []
-            columns = []
-            for batch_column, (unmodified, r) in enumerate(
-                zip(unmodified_nodes, true_rels)
-            ):
-                this_neighs = neigh_func(unmodified, edge_types=[r])
-                neighbours.extend(this_neighs)
-                columns.extend(batch_column for _ in this_neighs)
-
-            neighbour_ilocs = known_edges_graph._get_index_for_nodes(neighbours)
-            greater[neighbour_ilocs, columns] = False
-
-            filtered_rank = 1 + greater.sum(axis=0)
-
-            assert raw_rank.shape == filtered_rank.shape == (batch_size,)
-            return raw_rank, filtered_rank
 
         all_node_embs, all_rel_embs = ComplEx.embeddings(model)
         all_node_embs_conj = all_node_embs.conj()
@@ -250,19 +207,21 @@ class ComplEx:
             mod_o_pred = np.inner(all_node_embs_conj, ss * rs).real
             mod_s_pred = np.inner(all_node_embs, rs * os.conj()).real
 
-            mod_o_raw, mod_o_filt = ranks(
+            mod_o_raw, mod_o_filt = _ranks_from_score_columns(
                 mod_o_pred,
                 true_modified_node_ilocs=objects,
                 unmodified_node_ilocs=subjects,
                 true_rel_ilocs=rels,
                 modified_object=True,
+                known_edges_graph=known_edges_graph,
             )
-            mod_s_raw, mod_s_filt = ranks(
+            mod_s_raw, mod_s_filt = _ranks_from_score_columns(
                 mod_s_pred,
                 true_modified_node_ilocs=subjects,
                 true_rel_ilocs=rels,
                 modified_object=False,
                 unmodified_node_ilocs=objects,
+                known_edges_graph=known_edges_graph,
             )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
@@ -479,3 +438,84 @@ class DistMult:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+
+def _ranks_from_score_columns(
+    pred,
+    *,
+    true_modified_node_ilocs,
+    unmodified_node_ilocs,
+    true_rel_ilocs,
+    modified_object,
+    known_edges_graph,
+):
+    """
+    Compute the raw and filtered ranks of a set of true edges ``E = (s, r, o)`` against all
+    mutations of one end of them, e.g. ``E' = (s, r, n)`` for "modified-object".
+
+    The raw rank is the total number of edges scored higher than the true edge ``E``, and the
+    filtered rank is the total number of unknown edges (not in ``known_edges_graph``).
+
+    Args:
+
+        pred: a 2D array: each column represents the scores for a single true edge and its
+            mutations, where the row indicates the ``n`` in ``E'`` (e.g. row 0 corresponds to ``n``
+            = node with iloc 0)
+        true_modified_node_ilocs: an array of ilocs of the actual node that was modified, that is,
+            ``o`` for modified-object and ``s`` for modified subject``, index ``i`` corresponds to
+            the iloc for column ``pred[:, i]``.
+        unmodified_node_ilocs: similar to ``true_modified_node_ilocs``, except for the other end of
+            the edge: the node that was not modified.
+        true_rel_ilocs: similar to ``true_modified_node_ilocs``, except for the relationship type of
+            the edge (``r``).
+        modified_object (bool): whether the object was modified (``True``), or the subject
+            (``False``)
+        known_edges_graph (StellarGraph): a graph containing all the known edges that should be
+            ignored when computing filtered ranks
+
+    Returns:
+        a tuple of raw ranks and filtered ranks, each is an array of integers >= 1 where index ``i``
+        corresponds to the rank of the true edge among all of the scores in column ``pred[:, i]``.
+    """
+    batch_size = len(true_modified_node_ilocs)
+    assert pred.shape == (known_edges_graph.number_of_nodes(), batch_size)
+    assert unmodified_node_ilocs.shape == true_rel_ilocs.shape == (batch_size,)
+
+    # the score of the true edge, for each edge in the batch (this indexes in lock-step,
+    # i.e. [pred[true_modified_node_ilocs[0], range(batch_size)[0]], ...])
+    true_scores = pred[true_modified_node_ilocs, range(batch_size)]
+
+    # for each column, compare all the scores against the score of the true edge
+    greater = pred > true_scores
+
+    # the raw rank is the number of elements scored higher than the true edge
+    raw_rank = 1 + greater.sum(axis=0)
+
+    # the filtered rank is the number of unknown elements scored higher, where an element is
+    # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
+    # exists in known_edges_graph.
+
+    # FIXME(#870): this would be better without external IDs <-> ilocs translation
+    unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(unmodified_node_ilocs)
+    true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
+    if modified_object:
+        neigh_func = known_edges_graph.out_nodes
+    else:
+        neigh_func = known_edges_graph.in_nodes
+
+    # collect all the neighbours into a single array to do one _get_index_for_nodes call,
+    # which has relatively high constant cost
+    neighbours = []
+    columns = []
+    for batch_column, (unmodified, r) in enumerate(zip(unmodified_nodes, true_rels)):
+        this_neighs = neigh_func(unmodified, edge_types=[r])
+        neighbours.extend(this_neighs)
+        columns.extend(batch_column for _ in this_neighs)
+
+    neighbour_ilocs = known_edges_graph._get_index_for_nodes(neighbours)
+    greater[neighbour_ilocs, columns] = False
+
+    filtered_rank = 1 + greater.sum(axis=0)
+
+    assert raw_rank.shape == filtered_rank.shape == (batch_size,)
+    return raw_rank, filtered_rank
