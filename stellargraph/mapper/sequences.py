@@ -553,14 +553,7 @@ class GraphSequence(Sequence):
         name (str, optional): An optional name for this generator object.
     """
 
-    def __init__(
-        self,
-        graphs,
-        targets=None,
-        normalize=True,
-        batch_size=1,
-        name=None,
-    ):
+    def __init__(self, graphs, targets=None, normalize=True, batch_size=1, name=None):
 
         self.name = name
         self.graphs = np.asanyarray(graphs)
