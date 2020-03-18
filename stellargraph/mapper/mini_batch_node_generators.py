@@ -284,6 +284,8 @@ class ClusterNodeSequence(Sequence):
         #     NA + NI + λN(diag(A) + I) =
         #     NA + N(I + λ(diag(A) + I)) =
         #     NA + λN(diag(A) + (1 + 1/λ)I))
+        #
+        # (This could potentially become a layer, to benefit from a GPU.)
         degrees = np.asarray(adj_cluster.sum(axis=1)).ravel()
         normalization = 1 / (degrees + 1)
 
@@ -304,8 +306,6 @@ class ClusterNodeSequence(Sequence):
         cluster = self.clusters[index]
         adj_cluster = self.graph.to_adjacency_matrix(cluster)
 
-        # The operations to normalize the adjacency matrix are too slow.
-        # Either optimize this or implement as a layer(?)
         if self.normalize_adj:
             adj_cluster = self._diagonal_enhanced_normalization(adj_cluster)
         else:
