@@ -102,3 +102,4 @@ def test_cw_size_and_walk_length(temporal_graph, cw_size):
         walks = run()
         num_cw_obtained = sum([len(walk) - cw_size + 1 for walk in walks])
         assert num_cw == num_cw_obtained
+        assert max(map(len, walks)) <= max_walk_length
