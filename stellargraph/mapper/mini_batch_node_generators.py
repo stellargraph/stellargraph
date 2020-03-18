@@ -283,14 +283,14 @@ class ClusterNodeSequence(Sequence):
         # Expands to:
         #     NA + NI + λN(diag(A) + I) =
         #     NA + N(I + λ(diag(A) + I)) =
-        #     NA + λN(diag(A) + (1 + 1/λ) I))
+        #     NA + λN(diag(A) + (1 + 1/λ)I))
         degrees = np.asarray(adj_cluster.sum(axis=1)).ravel()
         normalization = 1 / (degrees + 1)
 
-        # N * A: multiply rows manually
+        # NA: multiply rows manually
         norm_adj = adj_cluster.multiply(normalization[:, None]).toarray()
 
-        # N * (1 + lambda) * (diag(A) + I): work with the diagonals directly
+        # λN(diag(A) + (1 + 1/λ)I): work with the diagonals directly
         diag = np.diag(norm_adj)
         diag_addition = (
             normalization * self.lam * (adj_cluster.diagonal() + (1 + 1 / self.lam))
