@@ -328,6 +328,9 @@ class StellarGraph:
             }
             Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
 
+        The dictionary only needs to include node types with features. If a node type isn't
+        mentioned in the dictionary (for example, if `nx_graph` above has a 3rd node type), each
+        node of that type will have a feature vector of length zero.
 
         You can also supply the node feature vectors as an iterator of `node_id`
         and feature vector pairs, for graphs with single and multiple node types::
