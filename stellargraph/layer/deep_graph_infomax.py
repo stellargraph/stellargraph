@@ -65,6 +65,38 @@ class DGIDiscriminator(Layer):
         return score
 
 
+class Readout(Layer):
+    """
+    This Layer computes the Readout function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build(self, input_shapes):
+
+        self.built = True
+
+    def call(self, node_feats):
+        """
+        Applies the layer to the inputs.
+
+        Args:
+            inputs:
+        Returns:
+            a Tensor with shape (1, N)
+        """
+
+        if len(node_feats.shape) == 3:
+            summary = tf.reduce_mean(node_feats, axis=1)
+        else:
+            summary = tf.reduce_mean(node_feats, axis=0)
+
+        summary = tf.math.sigmoid(summary)
+
+        return summary
+
+
 class DeepGraphInfomax:
     """
     A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
@@ -131,10 +163,7 @@ class DeepGraphInfomax:
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        if node_feats.shape[0] == 1:
-            summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(node_feats))
-        else:
-            summary = tf.reduce_mean(node_feats, axis=0)
+        summary = Readout()(node_feats)
 
         discriminator = DGIDiscriminator()
         scores = discriminator([node_feats, summary])
@@ -165,7 +194,7 @@ class DeepGraphInfomax:
 
         x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
 
-        if x_emb_out.shape[0] == 1:
+        if len(x_emb_out.shape) == 3:
             squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
             x_emb_out = squeeze_layer(x_emb_out)
 
