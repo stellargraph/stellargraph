@@ -976,3 +976,30 @@ class Test_FullBatchNodeGenerator:
             ppnp_sparse_failed = True
 
         assert ppnp_sparse_failed
+
+
+@pytest.mark.parametrize("sparse", [True, False])
+def test_corrupt_full_batch_generator(sparse):
+
+    G = example_graph_random(n_nodes=20)
+
+    generator = FullBatchNodeGenerator(G, sparse=sparse)
+
+    base_gen = generator.flow(G.nodes())
+    gen = CorruptedNodeSequence(base_gen)
+
+    [shuffled_feats, features, *_], targets = gen[0]
+
+    assert features.shape == shuffled_feats.shape
+
+    # check shuffled_feats are feats
+    assert not np.array_equal(features, shuffled_feats)
+
+    # check that all feature vecs in shuffled_feats correspond to a feature vec in features
+    assert all(
+        any(
+            np.array_equal(shuffled_feats[:, i, :], features[:, j, :])
+            for j in range(features.shape[1])
+        )
+        for i in range(shuffled_feats.shape[1])
+    )
