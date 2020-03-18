@@ -276,6 +276,28 @@ class ClusterNodeSequence(Sequence):
         num_batches = len(self.clusters_original) // self.q
         return num_batches
 
+    def _diagonal_enhanced_normalization(self, adj_cluster):
+        # Cluster-GCN normalization is:
+        #     A~ + λdiag(A~) where A~ = N(A + I) with normalization factor N = (D + I)^(-1)
+        #
+        # Expands to:
+        #     NA + NI + λN(diag(A) + I) =
+        #     NA + N(I + λ(diag(A) + I)) =
+        #     NA + λN(diag(A) + (1 + 1/λ) I))
+        degrees = np.asarray(adj_cluster.sum(axis=1)).ravel()
+        normalization = 1 / (degrees + 1)
+
+        # N * A: multiply rows manually
+        norm_adj = adj_cluster.multiply(normalization[:, None]).toarray()
+
+        # N * (1 + lambda) * (diag(A) + I): work with the diagonals directly
+        diag = np.diag(norm_adj)
+        diag_addition = (
+            normalization * self.lam * (adj_cluster.diagonal() + (1 + 1 / self.lam))
+        )
+        np.fill_diagonal(norm_adj, diag + diag_addition)
+        return norm_adj
+
     def __getitem__(self, index):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
@@ -285,24 +307,7 @@ class ClusterNodeSequence(Sequence):
         # The operations to normalize the adjacency matrix are too slow.
         # Either optimize this or implement as a layer(?)
         if self.normalize_adj:
-            # Cluster-GCN normalization is:
-            #     A~ + λdiag(A~) where A~ = N(A + I) with normalization factor N = (D + I)^(-1)
-            #
-            # Expands to:
-            #     NA + NI + λN(diag(A) + I) =
-            #     NA + N(I + λ(diag(A) + I)) =
-            #     NA + λN(diag(A) + (1 + 1/λ) I))
-            degrees = np.asarray(adj_cluster.sum(axis=1)).ravel()
-            normalization = 1 / (degrees + 1)
-
-            # N * A: multiply rows manually
-            norm_adj = adj_cluster.multiply(normalization[:, None]).toarray()
-
-            # N * (1 + lambda) * (diag(A) + I): work with the diagonals directly
-            diag = np.diag(norm_adj)
-            diag_addition = normalization * self.lam * (adj_cluster.diagonal() + (1 + 1 / self.lam))
-            np.fill_diagonal(norm_adj, diag + diag_addition)
-            adj_cluster = norm_adj
+            adj_cluster = self._diagonal_enhanced_normalization(adj_cluster)
         else:
             adj_cluster = adj_cluster.toarray()
 

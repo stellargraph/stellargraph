@@ -194,6 +194,7 @@ def test_ClusterNodeSquence():
         # no targets given
         assert batch[1] is None
 
+
 @pytest.mark.benchmark(group="ClusterGCN generator")
 @pytest.mark.parametrize("q", [1, 2, 10])
 def test_benchmark_ClusterGCN_generator(benchmark, q):
