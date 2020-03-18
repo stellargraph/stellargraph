@@ -43,6 +43,7 @@ from . import (
     RelationalFullBatchNodeSequence,
     CorruptedNodeSequence,
     GraphSAGENodeGenerator,
+    DirectedGraphSAGENodeGenerator,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
@@ -512,11 +513,12 @@ class CorruptedGenerator:
     def __init__(self, base_generator):
 
         if not isinstance(
-            base_generator, (FullBatchNodeGenerator, GraphSAGENodeGenerator)
+            base_generator,
+            (FullBatchNodeGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator),
         ):
             raise TypeError(
-                f"base_generator: expected FullBatchNodeGenerator or GraphSAGENodeGenerator, "
-                f"found {type(base_generator).__name__}"
+                f"base_generator: expected FullBatchNodeGenerator, GraphSAGENodeGenerator, "
+                f"or DirectedGraphSAGENodeGenerator, found {type(base_generator).__name__}"
             )
         self.base_generator = base_generator
 

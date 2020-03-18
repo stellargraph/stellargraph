@@ -1055,7 +1055,7 @@ class GraphSAGE:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def build(self, multiplicity=None):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -1066,9 +1066,12 @@ class GraphSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.multiplicity == 1:
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        if multiplicity == 1:
             return self.node_model()
-        elif self.multiplicity == 2:
+        elif multiplicity == 2:
             return self.link_model()
         else:
             raise RuntimeError(

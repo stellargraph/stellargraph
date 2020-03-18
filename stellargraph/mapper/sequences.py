@@ -653,43 +653,41 @@ class CorruptedNodeSequence(Sequence):
 
     def __init__(self, base_generator):
 
-        if not isinstance(
-            base_generator, (FullBatchSequence, SparseFullBatchSequence, NodeSequence),
-        ):
-            raise TypeError(
-                f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
-                f"found {type(base_generator).__name__}"
-            )
-
         self.base_generator = base_generator
 
         if isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
             self.targets = np.zeros((1, len(base_generator.target_indices), 2))
             self.targets[0, :, 0] = 1.0
-        else:
+        elif isinstance(base_generator, NodeSequence):
             self.targets = self.targets = np.zeros((base_generator.batch_size, 2))
             self.targets[:, 0] = 1.0
+        else:
+            raise TypeError(
+                f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
+                f"or NodeSequence, found {type(base_generator).__name__}"
+            )
 
     def __len__(self):
+
         return len(self.base_generator)
 
     def __getitem__(self, index):
+
+        inputs, _ = self.base_generator[index]
 
         if isinstance(
             self.base_generator, (FullBatchSequence, SparseFullBatchSequence)
         ):
 
-            inputs, _ = self.base_generator[index]
             features = inputs[0]
-
             shuffled_idxs = np.random.permutation(features.shape[1])
             shuffled_feats = features[:, shuffled_idxs, :]
 
             return [shuffled_feats] + inputs, self.targets
 
         else:
-            features, _ = self.base_generator[index]
 
+            features = inputs
             stacked_feats = np.concatenate(features, axis=1)
             shuffled_feats = stacked_feats.reshape(-1, features[0].shape[-1])
             shuffled_idxs = np.random.permutation(shuffled_feats.shape[0])

@@ -14,12 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import GCN, GAT, APPNP, PPNP
+from . import GCN, GAT, APPNP, PPNP, GraphSAGE, DirectedGraphSAGE
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
 from tensorflow.keras import backend as K
 import warnings
+import numpy as np
 
 __all__ = ["DeepGraphInfomax", "DGIDiscriminator"]
 
@@ -75,9 +76,16 @@ class DeepGraphInfomax:
 
     def __init__(self, base_model):
 
-        if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+        if isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+            self._corruptible_inputs_idxs = [0]
+        elif isinstance(base_model, DirectedGraphSAGE):
+            self._corruptible_inputs_idxs = np.arange(base_model.max_slots)
+        elif isinstance(base_model, GraphSAGE):
+            self._corruptible_inputs_idxs = np.arange(base_model.max_hops + 1)
+        else:
             raise TypeError(
-                f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+                f"base_model: expected GCN, GAT, APPNP, PPNP, GraphSAGE,"
+                f"or DirectedGraphSAGE, found {type(base_model).__name__}"
             )
 
         if base_model.multiplicity != 1:
@@ -90,8 +98,7 @@ class DeepGraphInfomax:
 
         self._node_feats = None
         self._unique_id = f"DEEP_GRAPH_INFOMAX_{id(self)}"
-        # specific to full batch models
-        self._corruptible_inputs_idxs = [0]
+
 
     def build(self):
         """
@@ -111,6 +118,7 @@ class DeepGraphInfomax:
         """
 
         x_inp, node_feats = self.base_model.build(multiplicity=1)
+
         # identity layer so we can attach a name to the tensor
         node_feats = Lambda(lambda x: x, name=self._unique_id)(node_feats)
         x_corr = [
@@ -124,13 +132,16 @@ class DeepGraphInfomax:
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(node_feats))
+        if node_feats.shape[0] == 1:
+            summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(node_feats))
+        else:
+            summary = tf.reduce_mean(node_feats, axis=0)
 
         discriminator = DGIDiscriminator()
         scores = discriminator([node_feats, summary])
         scores_corrupted = discriminator([node_feats_corr, summary])
 
-        x_out = tf.stack([scores, scores_corrupted], axis=2)
+        x_out = tf.stack([scores, scores_corrupted], axis=1)
 
         return x_corr + x_inp, x_out
 
@@ -155,7 +166,8 @@ class DeepGraphInfomax:
 
         x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
 
-        squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
-        x_emb_out = squeeze_layer(x_emb_out)
+        if x_emb_out.shape[0] == 1:
+            squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
+            x_emb_out = squeeze_layer(x_emb_out)
 
         return x_emb_in, x_emb_out
