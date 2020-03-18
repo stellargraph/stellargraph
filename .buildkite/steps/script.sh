@@ -18,7 +18,7 @@ echo "+++ running tests"
 # so there's no point spending too much time. It's good to check that the benchmark does run
 # successfully as a benchmark (that is, multiple iterations, not just once, as a test with
 # --benchmark-disable)
-small_benchmarks=("--benchmark-max-time=0.01" "--benchmark-warmup=off" "--benchmark-min-rounds=2")
+small_benchmarks=("--benchmark-disable" "--benchmark-max-time=0.01" "--benchmark-warmup=off" "--benchmark-min-rounds=2")
 
 py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" "${small_benchmarks[@]}" || exitCode=$?
 
