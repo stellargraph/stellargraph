@@ -391,7 +391,6 @@ class DistMult:
 
         return node, rel
 
-
     def __call__(self, x):
         """
         Apply embedding layers to the source, relation and object input "ilocs" (sequential integer
