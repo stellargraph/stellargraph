@@ -21,11 +21,23 @@ Stellar Machine Learning Library
 
 __all__ = [
     "data",
+    "calibration",
+    "ensemble",
+    "interpretability",
+    "losses",
     "layer",
     "mapper",
     "utils",
+    "custom_keras_layers",
+    "expected_calibration_error",
+    "plot_reliability_diagram",
+    "Ensemble",
+    "BaggingEnsemble",
+    "GraphSchema",
+    "IsotonicCalibration",
     "StellarDiGraph",
     "StellarGraph",
+    "TemperatureCalibration",
     "__version__",
 ]
 
@@ -34,6 +46,7 @@ from .version import __version__
 
 # Import modules
 from stellargraph import (
+    data,
     calibration,
     ensemble,
     interpretability,
