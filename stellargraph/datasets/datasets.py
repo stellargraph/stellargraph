@@ -578,12 +578,9 @@ def _load_tsv_knowledge_graph(dataset):
 
     all_data = pd.concat([train, test, valid], ignore_index=True)
 
-    node_ids = pd.unique(pd.concat([all_data.source, all_data.target]))
-    nodes = pd.DataFrame(index=node_ids)
-
     edges = {name: df.drop(columns="label") for name, df in all_data.groupby("label")}
 
-    return StellarDiGraph(nodes=nodes, edges=edges), train, test, valid
+    return StellarDiGraph(edges=edges), train, test, valid
 
 
 class WN18(
