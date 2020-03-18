@@ -141,8 +141,9 @@ def test_movielens_load() -> None:
 
 @pytest.mark.parametrize("is_directed", [False, True])
 @pytest.mark.parametrize("largest_cc_only", [False, True])
-def test_cora_load(is_directed, largest_cc_only) -> None:
-    g, subjects = Cora().load(is_directed, largest_cc_only)
+@pytest.mark.parametrize("subject_as_feature", [False, True])
+def test_cora_load(is_directed, largest_cc_only, subject_as_feature) -> None:
+    g, subjects = Cora().load(is_directed, largest_cc_only, subject_as_feature)
 
     if largest_cc_only:
         expected_nodes = 2485
@@ -151,10 +152,17 @@ def test_cora_load(is_directed, largest_cc_only) -> None:
         expected_nodes = 2708
         expected_edges = 5429
 
+    base_feature_size = 1433
+    if subject_as_feature:
+        feature_size = base_feature_size + 7
+    else:
+        feature_size = base_feature_size
+
     assert g.is_directed() == is_directed
 
     assert g.number_of_nodes() == expected_nodes
     assert g.number_of_edges() == expected_edges
+    assert g.node_feature_sizes() == {"paper": feature_size}
 
     assert len(subjects) == g.number_of_nodes()
     assert set(subjects.index) == set(g.nodes())
@@ -254,3 +262,15 @@ def test_pubmeddiabetes_load() -> None:
 
     assert len(labels) == n_nodes
     assert set(labels.index) == set(g.nodes())
+
+
+def test_ia_enron_employees_load() -> None:
+    graph, edges = IAEnronEmployees().load()
+
+    n_nodes = 151
+    n_edges = 50572
+
+    assert graph.number_of_nodes() == n_nodes
+    assert graph.number_of_edges() == n_edges
+    assert len(edges) == n_edges
+    assert set(edges.columns) == {"source", "target", "time"}
