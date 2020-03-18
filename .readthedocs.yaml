@@ -7,3 +7,5 @@ python:
   install:
     - method: pip
       path: .
+
+requirements_file: docs/requirements.txt
