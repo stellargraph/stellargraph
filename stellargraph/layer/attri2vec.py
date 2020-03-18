@@ -93,6 +93,22 @@ class Attri2Vec:
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
 
+        # store the trainable layers
+        self._layers = [
+            Dense(layer_size, activation=self.activation, use_bias=self.bias)
+            for layer_size in layer_sizes
+        ]
+
+        if self.multiplicity == 1:
+            self._output_embedding = None
+        else:
+            self._output_embedding = Embedding(
+                self.input_node_num,
+                layer_sizes[-1],
+                input_length=1,
+                name="output_embedding",
+            )
+
     def _get_sizes_from_generator(self, generator):
         """
         Sets node_num and input_feature_size from the generator.
@@ -142,11 +158,8 @@ class Attri2Vec:
         """
         # Form Attri2Vec layers iteratively
         h_layer = xin
-        for layer in range(0, self.n_layers):
-            h_layer = Dense(
-                self.dims[layer + 1], activation=self.activation, use_bias=self.bias
-            )(h_layer)
-            h_layer = self._normalization(h_layer)
+        for layer in self._layers:
+            h_layer = self._normalization(layer(h_layer))
 
         return h_layer
 
@@ -182,13 +195,9 @@ class Attri2Vec:
 
         # Expose input and out sockets of the model, for target node:
         x_inp_dst = Input(shape=(1,))
-        output_embedding = Embedding(
-            self.input_node_num,
-            self.dims[self.n_layers],
-            input_length=1,
-            name="output_embedding",
-        )
-        x_out_dst = output_embedding(x_inp_dst)
+
+        assert isinstance(self._output_embedding, Embedding)
+        x_out_dst = self._output_embedding(x_inp_dst)
         x_out_dst = Reshape((self.dims[self.n_layers],))(x_out_dst)
 
         x_inp = [x_inp_src, x_inp_dst]
