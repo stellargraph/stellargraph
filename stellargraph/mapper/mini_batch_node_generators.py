@@ -28,7 +28,7 @@ from tensorflow.keras.utils import Sequence
 
 from scipy import sparse
 from ..core.graph import StellarGraph
-from ..core.utils import is_real_iterable
+from ..core.utils import is_real_iterable, normalize_adj
 
 
 class ClusterNodeGenerator:
@@ -285,16 +285,26 @@ class ClusterNodeSequence(Sequence):
         # The operations to normalize the adjacency matrix are too slow.
         # Either optimize this or implement as a layer(?)
         if self.normalize_adj:
-            # add self loops
-            adj_cluster.setdiag(1)  # add self loops
-            degree_matrix_diag = 1.0 / (adj_cluster.sum(axis=1) + 1)
-            degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
-            degree_matrix = sparse.lil_matrix(adj_cluster.shape)
-            degree_matrix.setdiag(degree_matrix_diag)
-            adj_cluster = degree_matrix.tocsr() @ adj_cluster
-            adj_cluster.setdiag((1.0 + self.lam) * adj_cluster.diagonal())
+            # Cluster-GCN normalization is:
+            #     A~ + λdiag(A~) where A~ = N(A + I) with normalization factor N = (D + I)^(-1)
+            #
+            # Expands to:
+            #     NA + NI + λN(diag(A) + I) =
+            #     NA + N(I + λ(diag(A) + I)) =
+            #     NA + λN(diag(A) + (1 + 1/λ) I))
+            degrees = np.asarray(adj_cluster.sum(axis=1)).ravel()
+            normalization = 1 / (degrees + 1)
 
-        adj_cluster = adj_cluster.toarray()
+            # N * A: multiply rows manually
+            norm_adj = adj_cluster.multiply(normalization[:, None]).toarray()
+
+            # N * (1 + lambda) * (diag(A) + I): work with the diagonals directly
+            diag = np.diag(norm_adj)
+            diag_addition = normalization * self.lam * (adj_cluster.diagonal() + (1 + 1 / self.lam))
+            np.fill_diagonal(norm_adj, diag + diag_addition)
+            adj_cluster = norm_adj
+        else:
+            adj_cluster = adj_cluster.toarray()
 
         g_node_list = list(cluster)
 
