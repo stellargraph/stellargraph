@@ -1057,6 +1057,15 @@ StellarGraph: Undirected multigraph
     )
 
 
+def test_info_deprecated():
+    g = example_graph()
+    with pytest.warns(DeprecationWarning, match="'show_attributes' is no longer used"):
+        g.info(show_attributes=True)
+
+    with pytest.warns(DeprecationWarning, match="'sample' is no longer used"):
+        g.info(sample=10)
+
+
 def test_edges_include_weights():
     g = example_weighted_hin()
     edges, weights = g.edges(include_edge_weight=True)
