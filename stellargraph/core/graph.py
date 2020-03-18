@@ -649,7 +649,7 @@ class StellarGraph:
         if node_type is None:
             warnings.warn(
                 "'node_type' must now be specified and non-'None'; use `.nodes()` method to get all nodes",
-                DeprecationWarning
+                DeprecationWarning,
             )
             return self.nodes()
 
