@@ -10,7 +10,7 @@ Welcome to StellarGraph's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   overview
+   README
    api
    hinsage
 

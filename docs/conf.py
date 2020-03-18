@@ -56,6 +56,8 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
+    "recommonmark",
+    "sphinx_markdown_tables",
 ]
 
 # Add mappings
@@ -70,7 +72,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".txt"
+source_suffix = [".txt", ".md"]
 
 # The master toctree document.
 master_doc = "index"
