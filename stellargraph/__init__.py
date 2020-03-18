@@ -21,7 +21,7 @@ Stellar Machine Learning Library
 
 __all__ = [
     "data",
-    "datasets"
+    "datasets",
     "layer",
     "mapper",
     "utils",
