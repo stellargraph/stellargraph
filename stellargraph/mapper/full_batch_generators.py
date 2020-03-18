@@ -514,7 +514,11 @@ class CorruptedGenerator:
 
         if not isinstance(
             base_generator,
-            (FullBatchNodeGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator),
+            (
+                FullBatchNodeGenerator,
+                GraphSAGENodeGenerator,
+                DirectedGraphSAGENodeGenerator,
+            ),
         ):
             raise TypeError(
                 f"base_generator: expected FullBatchNodeGenerator, GraphSAGENodeGenerator, "

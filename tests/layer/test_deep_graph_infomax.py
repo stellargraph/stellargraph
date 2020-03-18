@@ -172,7 +172,9 @@ def test_dgi_graphsage(is_directed):
     G = example_graph_random(is_directed=is_directed)
 
     if is_directed:
-        generator = DirectedGraphSAGENodeGenerator(G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1])
+        generator = DirectedGraphSAGENodeGenerator(
+            G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1]
+        )
         base_model = DirectedGraphSAGE(generator=generator, layer_sizes=[4, 4])
     else:
         generator = GraphSAGENodeGenerator(G, batch_size=5, num_samples=[2, 3])

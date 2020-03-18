@@ -99,7 +99,6 @@ class DeepGraphInfomax:
         self._node_feats = None
         self._unique_id = f"DEEP_GRAPH_INFOMAX_{id(self)}"
 
-
     def build(self):
         """
         A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.

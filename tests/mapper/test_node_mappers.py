@@ -937,7 +937,9 @@ def test_corrupt_graphsage_generator(is_directed):
     G = example_graph_random(n_nodes=20, is_directed=is_directed)
 
     if is_directed:
-        generator = DirectedGraphSAGENodeGenerator(G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1])
+        generator = DirectedGraphSAGENodeGenerator(
+            G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1]
+        )
     else:
         generator = GraphSAGENodeGenerator(G, batch_size=5, num_samples=[2, 3])
 
