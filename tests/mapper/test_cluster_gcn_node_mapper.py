@@ -20,6 +20,8 @@ import pandas as pd
 import numpy as np
 import pytest
 
+from ..test_utils.graphs import example_graph_random
+
 
 # FIXME (#535): Consider using graph fixtures
 def create_stellargraph():
@@ -191,3 +193,14 @@ def test_ClusterNodeSquence():
         assert batch[0][2].shape == (1, 2, 2)
         # no targets given
         assert batch[1] is None
+
+@pytest.mark.benchmark(group="ClusterGCN generator")
+@pytest.mark.parametrize("q", [1, 2, 10])
+def test_benchmark_ClusterGCN_generator(benchmark, q):
+    G = example_graph_random(feature_size=10, n_nodes=1000, n_edges=5000)
+
+    generator = ClusterNodeGenerator(G, clusters=10, q=q)
+    seq = generator.flow(G.nodes())
+
+    # iterate over all the batches
+    benchmark(lambda: list(seq))
