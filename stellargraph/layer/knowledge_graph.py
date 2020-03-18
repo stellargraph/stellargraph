@@ -118,10 +118,10 @@ class ComplEx:
 
         # ComplEx generates embeddings in C, which we model as separate real and imaginary
         # embeddings
-        self.node_embeddings_real = embed(self.num_nodes, self._NODE_REAL)
-        self.node_embeddings_imag = embed(self.num_nodes, self._NODE_IMAG)
-        self.edge_type_embeddings_real = embed(self.num_edge_types, self._REL_REAL)
-        self.edge_type_embeddings_imag = embed(self.num_edge_types, self._REL_IMAG)
+        self._node_embeddings_real = embed(self.num_nodes, self._NODE_REAL)
+        self._node_embeddings_imag = embed(self.num_nodes, self._NODE_IMAG)
+        self._edge_type_embeddings_real = embed(self.num_edge_types, self._REL_REAL)
+        self._edge_type_embeddings_imag = embed(self.num_edge_types, self._REL_IMAG)
 
     # layer names
     _NODE_REAL = "COMPLEX_NODE_REAL"
@@ -251,14 +251,14 @@ class ComplEx:
         """
         s_iloc, r_iloc, o_iloc = x
 
-        s_re = self.node_embeddings_real(s_iloc)
-        s_im = self.node_embeddings_imag(s_iloc)
+        s_re = self._node_embeddings_real(s_iloc)
+        s_im = self._node_embeddings_imag(s_iloc)
 
-        r_re = self.edge_type_embeddings_real(r_iloc)
-        r_im = self.edge_type_embeddings_imag(r_iloc)
+        r_re = self._edge_type_embeddings_real(r_iloc)
+        r_im = self._edge_type_embeddings_imag(r_iloc)
 
-        o_re = self.node_embeddings_real(o_iloc)
-        o_im = self.node_embeddings_imag(o_iloc)
+        o_re = self._node_embeddings_real(o_iloc)
+        o_im = self._node_embeddings_imag(o_iloc)
 
         scoring = ComplExScore()
 
