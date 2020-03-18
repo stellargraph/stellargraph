@@ -1339,3 +1339,18 @@ def test_connected_components(is_directed):
 
     # check that `connected_components` works with `subgraph`
     assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
+
+
+def test_nodes_of_type():
+    g = example_hin_1()
+    assert sorted(g.nodes_of_type("A")) == [0, 1, 2, 3]
+    assert sorted(g.nodes_of_type("B")) == [4, 5, 6]
+
+    with pytest.raises(KeyError, match="'C'"):
+        g.nodes_of_type("C")
+
+    with pytest.warns(DeprecationWarning, match="'node_type' must now be specified"):
+        g.nodes_of_type()
+
+    with pytest.warns(DeprecationWarning, match="'node_type' must now be specified"):
+        g.nodes_of_type(None)

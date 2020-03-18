@@ -640,12 +640,17 @@ class StellarGraph:
         Get the nodes of the graph with the specified node types.
 
         Args:
-            node_type (hashable, optional): a type of nodes that exist in the graph
+            node_type (hashable): a type of nodes that exist in the graph (this must be passed,
+                omitting it or passing ``None`` is deprecated)
 
         Returns:
             A list of node IDs with type node_type
         """
         if node_type is None:
+            warnings.warn(
+                "'node_type' must now be specified and non-'None'; use `.nodes()` method to get all nodes",
+                DeprecationWarning
+            )
             return self.nodes()
 
         ilocs = self._nodes.type_range(node_type)
