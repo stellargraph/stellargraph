@@ -98,3 +98,55 @@ def test_dgi_embedding_wrong_model():
 
     with pytest.raises(ValueError, match="model: *."):
         infomax_1.embedding_model(model_2)
+
+
+def test_dgi_stateful():
+    G = example_graph_random()
+    emb_dim = 16
+
+    generator = FullBatchNodeGenerator(G)
+    corrupted_generator = CorruptedGenerator(generator)
+    gen = corrupted_generator.flow(G.nodes())
+
+    infomax = DeepGraphInfomax(
+        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+    )
+
+    model_1 = tf.keras.Model(*infomax.build())
+    model_2 = tf.keras.Model(*infomax.build())
+
+    # check embeddings are equal before training
+    embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(
+        generator.flow(G.nodes())
+    )
+    embeddings_2 = tf.keras.Model(*infomax.embedding_model(model_2)).predict(
+        generator.flow(G.nodes())
+    )
+
+    assert np.array_equal(embeddings_1, embeddings_2)
+
+    model_1.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
+    model_1.fit(gen)
+
+    # check embeddings are still equal after training one model
+    embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(
+        generator.flow(G.nodes())
+    )
+    embeddings_2 = tf.keras.Model(*infomax.embedding_model(model_2)).predict(
+        generator.flow(G.nodes())
+    )
+
+    assert np.array_equal(embeddings_1, embeddings_2)
+
+    model_2.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
+    model_2.fit(gen)
+
+    # check embeddings are still equal after training both models
+    embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(
+        generator.flow(G.nodes())
+    )
+    embeddings_2 = tf.keras.Model(*infomax.embedding_model(model_2)).predict(
+        generator.flow(G.nodes())
+    )
+
+    assert np.array_equal(embeddings_1, embeddings_2)
