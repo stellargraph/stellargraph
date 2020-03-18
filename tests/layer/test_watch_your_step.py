@@ -89,6 +89,9 @@ def test_WatchYourStep(barbell):
 
     assert embs.shape == (len(barbell.nodes()), wys.embedding_dimension)
 
+    model2 = Model(*wys.build())
+    assert np.array_equal(get_embeddings(model2), embs)
+
 
 def test_WatchYourStep_embeddings(barbell):
     generator = AdjacencyPowerGenerator(barbell, num_powers=5)
