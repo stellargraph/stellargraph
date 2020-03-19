@@ -124,6 +124,52 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
         return cell, resources
 
 
+class CloudRunnerPreprocessor(preprocessors.Preprocessor):
+    metadata_tag = "CloudRunner"  # special tag for added cells so that we can find them easily
+
+    colab_import_code = """\
+# install StellarGraph if running on Google Colab
+import sys
+if 'google.colab' in sys.modules:
+  !pip install -q stellargraph[demos]"""
+
+    notebook_file_path = ""
+
+    def preprocess(self, nb, resources):
+        # remove any cells we added in a previous run
+        cell_ids_to_remove = [index for index, cell in enumerate(nb.cells) if self.metadata_tag in cell['metadata'].get('tags', [])]
+        for index in sorted(cell_ids_to_remove, reverse=True):
+            del nb.cells[index]
+        # create a badge cell
+        git_branch = "master"
+        notebook_path = self.notebook_file_path
+        if not notebook_path.startswith('demos/'):
+            print(f"Notebook file path of {notebook_path} didn't start with demo")
+        # due to limited markdown support in Jupyter, place badges side-by-side with an html table
+        badge_markdown = f'''\
+<table><tr><td>
+  <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{git_branch}?filepath={notebook_path}" alt="Open In Binder">
+    <img src="https://mybinder.org/badge_logo.svg"/>
+  </a>
+</td><td>
+  <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{git_branch}/{notebook_path}" alt="Open In Colab">
+    <img src="https://colab.research.google.com/assets/colab-badge.svg"/>
+  </a>
+</td></tr></table>\
+'''
+        badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
+        badge_cell['metadata']['tags']=[self.metadata_tag]
+        nb.cells.insert(0, badge_cell)
+        # find first code cell
+        first_code_cell_id = next(index for index, cell in enumerate(nb.cells) if cell.cell_type == "code")
+        # create a Colab import statement
+        import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
+        nb.cells.insert(first_code_cell_id, import_cell)
+        badge_cell['metadata']['tags'] = [self.metadata_tag]
+
+        return nb, resources
+
+
 # ANSI terminal escape sequences
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
@@ -192,6 +238,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Perform default formatting, equivalent to -wcnks",
     )
+    parser.add_argument(
+        "-r",
+        "--run_cloud",
+        action="store_true",
+        help="Add or update cells that support running this notebook via cloud services",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-o",
@@ -231,9 +283,12 @@ if __name__ == "__main__":
     set_kernel = args.set_kernel or args.default
     execute_code = args.execute
     cell_timeout = args.cell_timeout
+    run_cloud = args.run_cloud
 
     # Add preprocessors
     preprocessor_list = []
+    if run_cloud:
+        preprocessor_list.append(CloudRunnerPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
@@ -291,6 +346,9 @@ if __name__ == "__main__":
 
         print(f"{YELLOW_BOLD} \nProcessing file {file_loc}{RESET}")
         in_notebook = nbformat.read(str(file_loc), as_version=4)
+
+        # the CloudRunnerPreprocessor needs to know the filename of this notebook - warning: class variable is modified
+        CloudRunnerPreprocessor.notebook_file_path = str(file_loc)
 
         writer = writers.FilesWriter()
 
