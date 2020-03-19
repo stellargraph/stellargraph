@@ -60,6 +60,7 @@ The StellarGraph library offers state-of-the-art algorithms for [graph machine l
 
 - Representation learning for nodes and edges, to be used for visualisation and various downstream machine learning tasks;
 - [Classification and attribute inference of nodes](https://medium.com/stellargraph/can-graph-machine-learning-identify-hate-speech-in-online-social-networks-58e3b80c9f7e) or edges;
+- Classification of whole graphs;
 - Link prediction;
 - [Interpretation of node classification](https://medium.com/stellargraph/https-medium-com-stellargraph-saliency-maps-for-graph-machine-learning-5cca536974da) [8].
 
