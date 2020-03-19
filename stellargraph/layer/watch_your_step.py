@@ -223,7 +223,6 @@ class WatchYourStep:
         # vectors
         outer_product = self._right_embedding(vectors_left)
 
-        sigmoids = tf.keras.activations.sigmoid(outer_product)
         expected_walk = self.num_walks * self._attentive_walk(input_powers)
 
         # layer to add batch dimension of 1 to output
