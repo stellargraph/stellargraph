@@ -376,7 +376,7 @@ def test_hinnodemapper_constructor_all_options():
 
     gen = HinSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], head_node_type="A")
 
-    nodes_of_type_a = G.nodes_of_type("A")
+    nodes_of_type_a = G.nodes(node_type="A")
     mapper = gen.flow(nodes_of_type_a)
     assert gen.batch_size == 2
     assert mapper.data_size == len(nodes_of_type_a)

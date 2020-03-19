@@ -1341,16 +1341,21 @@ def test_connected_components(is_directed):
     assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
 
 
-def test_nodes_of_type():
+def test_nodes_node_type_filter():
     g = example_hin_1()
-    assert sorted(g.nodes_of_type("A")) == [0, 1, 2, 3]
-    assert sorted(g.nodes_of_type("B")) == [4, 5, 6]
+    assert sorted(g.nodes(node_type="A")) == [0, 1, 2, 3]
+    assert sorted(g.nodes(node_type="B")) == [4, 5, 6]
 
     with pytest.raises(KeyError, match="'C'"):
-        g.nodes_of_type("C")
+        g.nodes(node_type="C")
 
-    with pytest.warns(DeprecationWarning, match="'node_type' must now be specified"):
-        g.nodes_of_type()
 
-    with pytest.warns(DeprecationWarning, match="'node_type' must now be specified"):
-        g.nodes_of_type(None)
+def test_nodes_of_type_deprecation():
+    g = example_hin_1()
+    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+        empty = g.nodes_of_type()
+    assert all(empty == g.nodes())
+
+    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+        a = g.nodes_of_type("A")
+    assert all(a == g.nodes(node_type="A"))
