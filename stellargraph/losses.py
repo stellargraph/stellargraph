@@ -28,10 +28,10 @@ def graph_log_likelihood(batch_adj, wys_output):
     matrix `batch_adj` to calculate how well the node embeddings capture the graph structure in some sense.
 
     Args:
-        batch_adj: tensor with shape (batch_rows, 1, num_nodes) containing rows of the adjacency matrix
-        wys_output: tensor with shape (batch_rows, 2, num_nodes) containing the embedding outer product
-            scores (with shape (batch_rows, 1, num_nodes) and attentive expected random walk
-            (with shape (batch_rows, 1, num_nodes) concatenated.
+        batch_adj: tensor with shape ``batch_rows x 1 x num_nodes`` containing rows of the adjacency matrix
+        wys_output: tensor with shape ``batch_rows x 2 x num_nodes`` containing the embedding outer product
+            scores with shape ``batch_rows x 1 x num_nodes`` and attentive expected random walk
+            with shape ``batch_rows x 1, num_nodes`` concatenated.
     Returns:
         the graph log likelihood loss for the batch
     """
