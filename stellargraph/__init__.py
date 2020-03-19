@@ -29,15 +29,9 @@ __all__ = [
     "mapper",
     "utils",
     "custom_keras_layers",
-    "expected_calibration_error",
-    "plot_reliability_diagram",
-    "Ensemble",
-    "BaggingEnsemble",
-    "GraphSchema",
-    "IsotonicCalibration",
     "StellarDiGraph",
     "StellarGraph",
-    "TemperatureCalibration",
+    "GraphSchema",
     "__version__",
 ]
 
@@ -59,12 +53,7 @@ from stellargraph import (
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
 from stellargraph.core.schema import GraphSchema
-from stellargraph.calibration import TemperatureCalibration, IsotonicCalibration
-from stellargraph.calibration import (
-    plot_reliability_diagram,
-    expected_calibration_error,
-)
-from stellargraph.ensemble import Ensemble, BaggingEnsemble
+import warnings
 
 # Custom layers for keras deserialization:
 custom_keras_layers = {
@@ -82,3 +71,41 @@ custom_keras_layers = {
     "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
     "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer,
 }
+
+
+def _top_level_deprecation_warning(name, path):
+    msg = (
+        f"'{name}' is no longer available at the top-level. "
+        f"Please use 'stellargraph.{path}.{name}' instead."
+    )
+    warnings.warn(msg, DeprecationWarning)
+
+
+def expected_calibration_error(*args, **kwargs):
+    _top_level_deprecation_warning("expected_calibration_error", "calibration")
+    return calibration.expected_calibration_error(*args, **kwargs)
+
+
+def plot_reliability_diagram(*args, **kwargs):
+    _top_level_deprecation_warning("plot_reliability_diagram", "calibration")
+    return calibration.plot_reliability_diagram(*args, **kwargs)
+
+
+def Ensemble(*args, **kwargs):
+    _top_level_deprecation_warning("Ensemble", "ensemble")
+    return ensemble.Ensemble(*args, **kwargs)
+
+
+def BaggingEnsemble(*args, **kwargs):
+    _top_level_deprecation_warning("BaggingEnsemble", "ensemble")
+    return ensemble.BaggingEnsemble(*args, **kwargs)
+
+
+def TemperatureCalibration(*args, **kwargs):
+    _top_level_deprecation_warning("TemperatureCalibration", "calibration")
+    return calibration.TemperatureCalibration(*args, **kwargs)
+
+
+def IsotonicCalibration(*args, **kwargs):
+    _top_level_deprecation_warning("IsotonicCalibration", "calibration")
+    return calibration.IsotonicCalibration(*args, **kwargs)
