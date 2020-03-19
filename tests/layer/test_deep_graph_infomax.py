@@ -23,37 +23,16 @@ import numpy as np
 
 
 @pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
-def test_dgi_dense(model_type):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_dgi(model_type, sparse):
+
+    if sparse and model_type is PPNP:
+        pytest.skip("PPNP doesn't support sparse=True")
 
     G = example_graph_random()
     emb_dim = 16
 
-    generator = FullBatchNodeGenerator(G, sparse=False)
-    corrupted_generator = CorruptedGenerator(generator)
-    gen = corrupted_generator.flow(G.nodes())
-
-    base_model = model_type(
-        generator=generator, activations=["relu"], layer_sizes=[emb_dim]
-    )
-    infomax = DeepGraphInfomax(base_model)
-
-    model = tf.keras.Model(*infomax.build())
-    model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
-    model.fit(gen)
-
-    emb_model = tf.keras.Model(*infomax.embedding_model(model))
-    embeddings = emb_model.predict(generator.flow(G.nodes()))
-
-    assert embeddings.shape == (len(G.nodes()), emb_dim)
-
-
-@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT])
-def test_dgi_sparse(model_type):
-
-    G = example_graph_random()
-    emb_dim = 16
-
-    generator = FullBatchNodeGenerator(G, sparse=True)
+    generator = FullBatchNodeGenerator(G, sparse=sparse)
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
