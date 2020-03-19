@@ -19,9 +19,13 @@ import tensorflow as tf
 from .core.experimental import experimental
 
 
+@experimental(reason="lack of unit tests", issues=[804])
 def graph_log_likelihood(batch_adj, wys_output):
     """
-    Computes the graph log likelihood loss function as in https://arxiv.org/abs/1710.09599
+    Computes the graph log likelihood loss function as in https://arxiv.org/abs/1710.09599. This is different
+    to most keras loss functions in that it doesn't directly compare predicted values to expected values. It uses
+    `wys_output` which contains the dot products of embeddings and expected random walks, and part of the adjacency
+    matrix `batch_adj` to calculate how well the node embeddings capture the graph structure in some sense.
 
     Args:
         batch_adj: tensor with shape (batch_rows, 1, num_nodes) containing rows of the adjacency matrix
@@ -39,11 +43,9 @@ def graph_log_likelihood(batch_adj, wys_output):
 
     adj_mask = tf.cast((batch_adj == 0), "float32")
 
-    loss = tf.math.reduce_sum(
-        tf.abs(
-            expected_walks * tf.math.log_sigmoid(scores)
-            - adj_mask * (tf.math.log_sigmoid(scores) - scores)
-        )
-    )
+    log_sigmoid = tf.math.log_sigmoid(scores)
+    log1m_sigmoid = log_sigmoid - scores  # log(1 - σ(scores)), simplified
+    matrix = expected_walks * log_sigmoid - adj_mask * log1m_sigmoid
+    loss = tf.math.reduce_sum(tf.abs(matrix))
 
     return tf.expand_dims(loss, 0)
