@@ -106,8 +106,22 @@ class ComplEx:
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
         self.embedding_dimension = embedding_dimension
-        self.embeddings_initializer = initializers.get(embeddings_initializer)
-        self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
+
+        def embed(count, name):
+            return Embedding(
+                count,
+                embedding_dimension,
+                name=name,
+                embeddings_initializer=embeddings_initializer,
+                embeddings_regularizer=embeddings_regularizer,
+            )
+
+        # ComplEx generates embeddings in C, which we model as separate real and imaginary
+        # embeddings
+        self._node_embeddings_real = embed(self.num_nodes, self._NODE_REAL)
+        self._node_embeddings_imag = embed(self.num_nodes, self._NODE_IMAG)
+        self._edge_type_embeddings_real = embed(self.num_edge_types, self._REL_REAL)
+        self._edge_type_embeddings_imag = embed(self.num_edge_types, self._REL_IMAG)
 
     # layer names
     _NODE_REAL = "COMPLEX_NODE_REAL"
@@ -226,15 +240,6 @@ class ComplEx:
 
         return raw
 
-    def _embed(self, count, name):
-        return Embedding(
-            count,
-            self.embedding_dimension,
-            name=name,
-            embeddings_initializer=self.embeddings_initializer,
-            embeddings_regularizer=self.embeddings_regularizer,
-        )
-
     def __call__(self, x):
         """
         Apply embedding layers to the source, relation and object input "ilocs" (sequential integer
@@ -246,21 +251,14 @@ class ComplEx:
         """
         s_iloc, r_iloc, o_iloc = x
 
-        # ComplEx generates embeddings in C, which we model as separate real and imaginary
-        # embeddings
-        node_embeddings_real = self._embed(self.num_nodes, self._NODE_REAL)
-        node_embeddings_imag = self._embed(self.num_nodes, self._NODE_IMAG)
-        edge_type_embeddings_real = self._embed(self.num_edge_types, self._REL_REAL)
-        edge_type_embeddings_imag = self._embed(self.num_edge_types, self._REL_IMAG)
+        s_re = self._node_embeddings_real(s_iloc)
+        s_im = self._node_embeddings_imag(s_iloc)
 
-        s_re = node_embeddings_real(s_iloc)
-        s_im = node_embeddings_imag(s_iloc)
+        r_re = self._edge_type_embeddings_real(r_iloc)
+        r_im = self._edge_type_embeddings_imag(r_iloc)
 
-        r_re = edge_type_embeddings_real(r_iloc)
-        r_im = edge_type_embeddings_imag(r_iloc)
-
-        o_re = node_embeddings_real(o_iloc)
-        o_im = node_embeddings_imag(o_iloc)
+        o_re = self._node_embeddings_real(o_iloc)
+        o_im = self._node_embeddings_imag(o_iloc)
 
         scoring = ComplExScore()
 
@@ -354,8 +352,22 @@ class DistMult:
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
         self.embedding_dimension = embedding_dimension
-        self.embeddings_initializer = initializers.get(embeddings_initializer)
-        self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
+
+        def embed(count, name):
+            # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
+            # constraints to be normalized: per section 4 in the paper, the embeddings should be
+            # normalised to have unit norm.
+            return Embedding(
+                count,
+                embedding_dimension,
+                name=name,
+                embeddings_initializer=embeddings_initializer,
+                embeddings_regularizer=embeddings_regularizer,
+            )
+
+        # DistMult generates embeddings in R
+        self.node_embeddings = embed(self.num_nodes, self._NODE)
+        self.edge_type_embeddings = embed(self.num_edge_types, self._REL)
 
     # layer names
     _NODE = "DISTMULT_NODE"
@@ -379,18 +391,6 @@ class DistMult:
 
         return node, rel
 
-    def _embed(self, count, name):
-        # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
-        # constraints to be normalized: per section 4 in the paper, the embeddings should be
-        # normalised to have unit norm.
-        return Embedding(
-            count,
-            self.embedding_dimension,
-            name=name,
-            embeddings_initializer=self.embeddings_initializer,
-            embeddings_regularizer=self.embeddings_regularizer,
-        )
-
     def __call__(self, x):
         """
         Apply embedding layers to the source, relation and object input "ilocs" (sequential integer
@@ -402,13 +402,9 @@ class DistMult:
         """
         e1_iloc, r_iloc, e2_iloc = x
 
-        # DistMult generates embeddings in R
-        node_embeddings = self._embed(self.num_nodes, self._NODE)
-        edge_type_embeddings = self._embed(self.num_edge_types, self._REL)
-
-        y_e1 = node_embeddings(e1_iloc)
-        m_r = edge_type_embeddings(r_iloc)
-        y_e2 = node_embeddings(e2_iloc)
+        y_e1 = self.node_embeddings(e1_iloc)
+        m_r = self.edge_type_embeddings(r_iloc)
+        y_e2 = self.node_embeddings(e2_iloc)
 
         scoring = DistMultScore()
 
