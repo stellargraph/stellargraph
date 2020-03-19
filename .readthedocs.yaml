@@ -5,7 +5,6 @@ version: 2
 python:
   version: 3.6
   install:
+    - requirements: docs/requirements.txt
     - method: pip
       path: .
-
-requirements_file: docs/requirements.txt
