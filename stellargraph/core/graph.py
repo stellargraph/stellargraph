@@ -821,7 +821,7 @@ class StellarGraph:
 
         return zip(*unique_ets)
 
-    def info(self, show_attributes=True, sample=None, truncate=20):
+    def info(self, show_attributes=None, sample=None, truncate=20):
         """
         Return an information string summarizing information on the current graph.
         This includes node and edge type information and their attributes.
@@ -830,14 +830,27 @@ class StellarGraph:
         time for a large graph.
 
         Args:
-            show_attributes (bool, default True): If True, include attributes information
-            sample (int): To speed up the graph analysis, use only a random sample of
-                          this many nodes and edges.
+            show_attributes: Deprecated, unused.
+            sample: Deprecated, unused.
             truncate (int, optional): If an integer, show only the ``truncate`` most common node and
                 edge type triples; if ``None``, list each one individually.
         Returns:
             An information string.
         """
+        if show_attributes is not None:
+            warnings.warn(
+                "'show_attributes' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if sample is not None:
+            warnings.warn(
+                "'sample' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # always truncate the edge types listed for each node type, since they're redundant with the
         # individual listing of edge types, and make for a single very long line
         truncate_edge_types_per_node = 5
