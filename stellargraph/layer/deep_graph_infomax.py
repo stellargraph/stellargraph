@@ -15,7 +15,6 @@
 # limitations under the License.
 
 from . import GCN, GAT, APPNP, PPNP
-from ..core.experimental import experimental
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
@@ -65,7 +64,6 @@ class DGIDiscriminator(Layer):
         return score
 
 
-@experimental(reason="lack of unit tests", issues=[1003])
 class DeepGraphInfomax:
     """
     A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
@@ -94,6 +92,8 @@ class DeepGraphInfomax:
         self._unique_id = f"DEEP_GRAPH_INFOMAX_{id(self)}"
         # specific to full batch models
         self._corruptible_inputs_idxs = [0]
+
+        self._discriminator = DGIDiscriminator()
 
     def build(self):
         """
@@ -128,9 +128,8 @@ class DeepGraphInfomax:
 
         summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(node_feats))
 
-        discriminator = DGIDiscriminator()
-        scores = discriminator([node_feats, summary])
-        scores_corrupted = discriminator([node_feats_corr, summary])
+        scores = self._discriminator([node_feats, summary])
+        scores_corrupted = self._discriminator([node_feats_corr, summary])
 
         x_out = tf.stack([scores, scores_corrupted], axis=2)
 

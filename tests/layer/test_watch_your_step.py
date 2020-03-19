@@ -51,9 +51,6 @@ def test_WatchYourStep_init(barbell):
     assert wys.n_nodes == len(barbell.nodes())
     assert wys.num_walks == 80
     assert wys.embedding_dimension == 64
-    assert wys.attention_initializer == "glorot_uniform"
-    assert wys.attention_constraint is None
-    assert wys.attention_regularizer is None
 
 
 def test_WatchYourStep_bad_init(barbell):
@@ -88,6 +85,9 @@ def test_WatchYourStep(barbell):
     embs = get_embeddings(model)
 
     assert embs.shape == (len(barbell.nodes()), wys.embedding_dimension)
+
+    model2 = Model(*wys.build())
+    assert np.array_equal(get_embeddings(model2), embs)
 
 
 def test_WatchYourStep_embeddings(barbell):

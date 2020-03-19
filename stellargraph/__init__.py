@@ -21,6 +21,7 @@ Stellar Machine Learning Library
 
 __all__ = [
     "data",
+    "datasets",
     "layer",
     "mapper",
     "utils",
@@ -35,6 +36,7 @@ from .version import __version__
 # Import modules
 from stellargraph import (
     calibration,
+    datasets,
     ensemble,
     interpretability,
     losses,
