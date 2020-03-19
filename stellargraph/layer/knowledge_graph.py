@@ -81,8 +81,8 @@ class ComplEx:
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
 
-        k (int): the dimension of the embedding (that is, a vector in C^k is learnt for each node
-            and each link type)
+        embedding_dimension (int): the dimension of the embedding (that is, a vector in
+            ``C^embedding_dimension`` is learnt for each node and each link type)
 
         embeddings_initializer (str or func, optional): The initialiser to use for the embeddings
             (the default of random normal values matches the paper's reference implementation).
@@ -93,7 +93,7 @@ class ComplEx:
     def __init__(
         self,
         generator,
-        k,
+        embedding_dimension,
         embeddings_initializer="normal",
         embeddings_regularizer=None,
     ):
@@ -105,7 +105,7 @@ class ComplEx:
         graph = generator.G
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
-        self.k = k
+        self.embedding_dimension = embedding_dimension
         self.embeddings_initializer = initializers.get(embeddings_initializer)
         self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
 
@@ -229,7 +229,7 @@ class ComplEx:
     def _embed(self, count, name):
         return Embedding(
             count,
-            self.k,
+            self.embedding_dimension,
             name=name,
             embeddings_initializer=self.embeddings_initializer,
             embeddings_regularizer=self.embeddings_regularizer,
