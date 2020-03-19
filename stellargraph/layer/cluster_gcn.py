@@ -63,6 +63,8 @@ class ClusterGraphConvolution(Layer):
         activity_regularizer (str): not used in the current implementation
         kernel_constraint (str): constraint applied to layer's kernel
         bias_constraint (str): constraint applied to layer's bias
+        input_dim (int, optional): the size of the input shape, if known.
+        kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
     def __init__(
@@ -78,10 +80,11 @@ class ClusterGraphConvolution(Layer):
         activity_regularizer=None,
         kernel_constraint=None,
         bias_constraint=None,
+        input_dim=None,
         **kwargs,
     ):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 
