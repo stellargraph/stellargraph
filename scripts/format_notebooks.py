@@ -125,7 +125,9 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
 
 
 class CloudRunnerPreprocessor(preprocessors.Preprocessor):
-    metadata_tag = "CloudRunner"  # special tag for added cells so that we can find them easily
+    metadata_tag = (
+        "CloudRunner"  # special tag for added cells so that we can find them easily
+    )
 
     colab_import_code = """\
 # install StellarGraph if running on Google Colab
@@ -137,16 +139,20 @@ if 'google.colab' in sys.modules:
 
     def preprocess(self, nb, resources):
         # remove any cells we added in a previous run
-        cell_ids_to_remove = [index for index, cell in enumerate(nb.cells) if self.metadata_tag in cell['metadata'].get('tags', [])]
+        cell_ids_to_remove = [
+            index
+            for index, cell in enumerate(nb.cells)
+            if self.metadata_tag in cell["metadata"].get("tags", [])
+        ]
         for index in sorted(cell_ids_to_remove, reverse=True):
             del nb.cells[index]
         # create a badge cell
         git_branch = "master"
         notebook_path = self.notebook_file_path
-        if not notebook_path.startswith('demos/'):
+        if not notebook_path.startswith("demos/"):
             print(f"Notebook file path of {notebook_path} didn't start with demo")
         # due to limited markdown support in Jupyter, place badges side-by-side with an html table
-        badge_markdown = f'''\
+        badge_markdown = f"""\
 <table><tr><td>
   <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{git_branch}?filepath={notebook_path}" alt="Open In Binder">
     <img src="https://mybinder.org/badge_logo.svg"/>
@@ -156,17 +162,18 @@ if 'google.colab' in sys.modules:
     <img src="https://colab.research.google.com/assets/colab-badge.svg"/>
   </a>
 </td></tr></table>\
-'''
+"""
         badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
-        badge_cell['metadata']['tags']=[self.metadata_tag]
+        badge_cell["metadata"]["tags"] = [self.metadata_tag]
         nb.cells.insert(0, badge_cell)
         # find first code cell
-        first_code_cell_id = next(index for index, cell in enumerate(nb.cells) if cell.cell_type == "code")
+        first_code_cell_id = next(
+            index for index, cell in enumerate(nb.cells) if cell.cell_type == "code"
+        )
         # create a Colab import statement
         import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
-        import_cell['metadata']['tags'] = [self.metadata_tag]
+        import_cell["metadata"]["tags"] = [self.metadata_tag]
         nb.cells.insert(first_code_cell_id, import_cell)
-
 
         return nb, resources
 
