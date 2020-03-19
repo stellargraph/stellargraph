@@ -841,12 +841,14 @@ class StellarGraph:
             warnings.warn(
                 "'show_attributes' is no longer used, remove it from the 'info()' call",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
         if sample is not None:
             warnings.warn(
                 "'sample' is no longer used, remove it from the 'info()' call",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
         # always truncate the edge types listed for each node type, since they're redundant with the
