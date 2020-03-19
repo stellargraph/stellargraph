@@ -164,8 +164,9 @@ if 'google.colab' in sys.modules:
         first_code_cell_id = next(index for index, cell in enumerate(nb.cells) if cell.cell_type == "code")
         # create a Colab import statement
         import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
+        import_cell['metadata']['tags'] = [self.metadata_tag]
         nb.cells.insert(first_code_cell_id, import_cell)
-        badge_cell['metadata']['tags'] = [self.metadata_tag]
+
 
         return nb, resources
 
