@@ -5,6 +5,7 @@ epochs: 2
 batch_size: 5
 # short random walks
 walk_length: 5
+context_window_size: 5
 # minimal ensembles:
 n_estimators: 2
 n_predictions: 2
@@ -16,3 +17,6 @@ val_size: 0.01
 metapaths: [["group", "group"], ["group", "user", "user", "group"]]
 # tiny embeddings for demos/link-prediction/knowledge-graphs/complex.ipynb
 embedding_dimension: 5
+# training of fewer models for demos/graph-classification/supervised-graph-classification.ipynb
+folds: 2
+num_restarts: 2

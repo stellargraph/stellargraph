@@ -78,6 +78,8 @@ class RelationalGraphConvolution(Layer):
                 defaults to None.
             bias_constraint (str or func): The constraint to use for the bias;
                 defaults to None.
+            input_dim (int, optional): the size of the input shape, if known.
+            kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
         """
 
     def __init__(
@@ -88,10 +90,11 @@ class RelationalGraphConvolution(Layer):
         activation=None,
         use_bias=True,
         final_layer=False,
+        input_dim=None,
         **kwargs
     ):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 
