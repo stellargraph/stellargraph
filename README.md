@@ -98,15 +98,15 @@ If you get stuck or have a problem, there's many ways to make progress and get h
 
 ## Example: GCN
 
-One of the earliest deep machine learning algorithms for graphs is a Graph Convolution Network (GCN) [6]. It's easy to apply with StellarGraph. The follow example shows classifying nodes into some number of ground-truth classes, based on node and edge data loaded from files, with Pandas.
+One of the earliest deep machine learning algorithms for graphs is a Graph Convolution Network (GCN) [6]. The following example uses it for node classification: predicting the class from which a node comes. It shows how easy it is to apply using StellarGraph, and shows how StellarGraph integrates smoothly with Pandas and TensorFlow and libraries built on them.
+
+#### Data preparation
+
+Data for StellarGraph can be prepared using common libraries like Pandas and scikit-learn.
 
 ``` python
-import tensorflow as tf
-import stellargraph as sg
 import pandas as pd
 from sklearn import model_selection
-
-#### Data preparation ####
 
 # load data into Pandas DataFrames, e.g. from CSV files or a database
 nodes, edges, targets = load_my_data()
@@ -114,9 +114,15 @@ nodes, edges, targets = load_my_data()
 # Use scikit-learn to compute training and test sets
 train_targets, test_targets = model_selection.train_test_split(targets, train_size=0.5)
 
-#### Graph machine learning model ####
+```
+#### Graph machine learning model
 
-# Use StellarGraph to create the graph machine learning model: graph, data generator, and GCN layers
+This is the only part that is specific to StellarGraph. The machine learning model consists of some graph convolution layers followed by a layer to compute the actual predictions as a TensorFlow tensor. StellarGraph makes it easy to construct all of these layers via the `GCN` model class. It also makes it easy to get input data in the right format via the `StellarGraph` graph data type and a data generator.
+
+```python
+import stellargraph as sg
+
+# convert the raw data into StellarGraph's graph format for faster operations
 graph = sg.StellarGraph(nodes, edges)
 
 generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
@@ -127,10 +133,15 @@ x_inp, x_out = gcn.build() # create the input and output TensorFlow tensors
 
 # use TensorFlow Keras to add a layer to compute the (one-hot) predictions
 predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), activation="softmax")(x_out)
+```
 
-#### Training and prediction ####
+#### Training and evaluation
 
-# Use TensorFlow Keras to create a model and work with it  (e.g. training and evaluation)
+These input and output tensors can be used to create a TensorFlow Keras model and work with it such as training and evaluation with the functions offered by Keras. StellarGraph's data generators make it simple to construct the required Keras Sequences for input data.
+
+```python
+import tensorflow as tf
+
 model = tf.keras.Model(inputs=x_inp, outputs=predictions)
 model.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
