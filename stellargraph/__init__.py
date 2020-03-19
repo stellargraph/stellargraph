@@ -74,11 +74,12 @@ custom_keras_layers = {
 
 
 def _top_level_deprecation_warning(name, path):
-    msg = (
+    warnings.warn(
         f"'{name}' is no longer available at the top-level. "
-        f"Please use 'stellargraph.{path}.{name}' instead."
+        f"Please use 'stellargraph.{path}.{name}' instead.",
+        DeprecationWarning,
+        stacklevel=3,
     )
-    warnings.warn(msg, DeprecationWarning)
 
 
 def expected_calibration_error(*args, **kwargs):
