@@ -53,11 +53,20 @@ class APPNPPropagationLayer(Layer):
                             if True it returns the subset specified by the indices passed to it.
         teleport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
         the paper (alpha in the paper)
+        input_dim (int, optional): the size of the input shape, if known.
+        kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
-    def __init__(self, units, teleport_probability=0.1, final_layer=False, **kwargs):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+    def __init__(
+        self,
+        units,
+        teleport_probability=0.1,
+        final_layer=False,
+        input_dim=None,
+        **kwargs
+    ):
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 

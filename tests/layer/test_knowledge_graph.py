@@ -50,7 +50,8 @@ def test_complex(knowledge_graph):
 
     # use a random initializer with a large positive range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    x_inp, x_out = ComplEx(gen, 5, embeddings_initializer=init).build()
+    complex_model = ComplEx(gen, 5, embeddings_initializer=init)
+    x_inp, x_out = complex_model.build()
 
     model = Model(x_inp, x_out)
     model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
@@ -86,6 +87,13 @@ def test_complex(knowledge_graph):
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+    # the model is stateful (i.e. it holds the weights permanently) so the embeddings with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*complex_model.build())
+    nodes2, edge_types2 = ComplEx.embeddings(model2)
+    assert np.array_equal(nodes, nodes2)
+    assert np.array_equal(edge_types, edge_types2)
 
 
 def test_complex_rankings():
@@ -133,7 +141,8 @@ def test_dismult(knowledge_graph):
 
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    x_inp, x_out = DistMult(gen, 5, embeddings_initializer=init).build()
+    distmult_model = DistMult(gen, 5, embeddings_initializer=init)
+    x_inp, x_out = distmult_model.build()
 
     model = Model(x_inp, x_out)
 
@@ -170,3 +179,10 @@ def test_dismult(knowledge_graph):
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+    # the model is stateful (i.e. it holds the weights permanently) so the embeddings with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*distmult_model.build())
+    nodes2, edge_types2 = DistMult.embeddings(model2)
+    assert np.array_equal(nodes, nodes2)
+    assert np.array_equal(edge_types, edge_types2)

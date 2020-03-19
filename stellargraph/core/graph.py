@@ -66,9 +66,8 @@ class StellarGraph:
     - every StellarGraph can be a *multigraph*, meaning there can be multiple edges between any two
       nodes
 
-    To create a StellarGraph object, at a minimum pass the nodes and edges as Pandas
-    DataFrames. Each row of the nodes DataFrame represents a node in the graph, where the index is
-    the ID of the node. Each row of the edges DataFrame represents an edge, where the index is the
+    To create a StellarGraph object, at a minimum pass the edges as a Pandas
+    DataFrame. Each row of the edges DataFrame represents an edge, where the index is the
     ID of the edge, and the ``source`` and ``target`` columns store the node ID of the source and
     target nodes.
 
@@ -79,9 +78,8 @@ class StellarGraph:
         |  \\ |
         d -- c
 
-    The DataFrames might look like::
+    The DataFrame might look like::
 
-        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
         edges = pd.DataFrame(
             {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"]}
         )
@@ -89,13 +87,19 @@ class StellarGraph:
     If this data represents an undirected graph (the ordering of each edge source/target doesn't
     matter)::
 
-        Gs = StellarGraph(nodes, edges)
-
+        Gs = StellarGraph(edges=edges)
 
     If this data represents a directed graph (the ordering does matter)::
 
-        Gs = StellarDiGraph(nodes, edges)
+        Gs = StellarDiGraph(edges=edges)
 
+    One can also pass a DataFrame of nodes. Each row of the nodes DataFrame represents a node in the
+    graph, where the index is the ID of the node. When this nodes DataFrame is not passed (the
+    argument is left as the default), the set of nodes is automatically inferred. This inference in
+    the example above is equivalent to::
+
+        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
+        Gs = StellarGraph(nodes, edges)
 
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
     above has two features ``x`` and ``y`` associated with each node::
@@ -163,7 +167,8 @@ class StellarGraph:
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs.
+            IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features
+            for each node.
 
         edges (DataFrame or dict of hashable to Pandas DataFrame, optional):
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
@@ -261,15 +266,10 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        if nodes is None:
-            nodes = {}
         if edges is None:
             edges = {}
 
         self._is_directed = is_directed
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
         self._edges = convert.convert_edges(
             edges,
             name="edges",
@@ -278,6 +278,40 @@ class StellarGraph:
             target_column=target_column,
             weight_column=edge_weight_column,
         )
+
+        nodes_from_edges = pd.unique(
+            np.concatenate([self._edges.targets, self._edges.sources])
+        )
+
+        if nodes is None:
+            nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
+        else:
+            nodes_after_inference = nodes
+
+        self._nodes = convert.convert_nodes(
+            nodes_after_inference,
+            name="nodes",
+            default_type=node_type_default,
+            dtype=dtype,
+        )
+
+        if nodes is not None:
+            # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
+            # node mentioned in the edges
+            try:
+                self._nodes.ids.to_iloc(
+                    nodes_from_edges, smaller_type=False, strict=True,
+                )
+            except KeyError as e:
+                missing_values = e.args[0]
+                if not is_real_iterable(missing_values):
+                    missing_values = [missing_values]
+                missing_values = pd.unique(missing_values)
+
+                raise ValueError(
+                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                    f"found some missing: {comma_sep(missing_values)}"
+                )
 
     @staticmethod
     def from_networkx(
