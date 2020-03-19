@@ -54,7 +54,7 @@ def test_dgi_sparse(model_type):
 @pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
 def test_dgi_dense(model_type):
     G = example_graph_random()
-    generator = FullBatchNodeGenerator(G, sparse=True)
+    generator = FullBatchNodeGenerator(G, sparse=False)
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
