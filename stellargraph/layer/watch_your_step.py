@@ -181,13 +181,29 @@ class WatchYourStep:
 
         self.embedding_dimension = embedding_dimension
 
-        self.attention_regularizer = attention_regularizer
-        self.attention_initializer = attention_initializer
-        self.attention_constraint = attention_constraint
-
-        self.embeddings_initializer = embeddings_initializer
-        self.embeddings_regularizer = embeddings_regularizer
-        self.embeddings_constraint = embeddings_constraint
+        self._left_embedding = Embedding(
+            self.n_nodes,
+            int(self.embedding_dimension / 2),
+            input_length=None,
+            name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
+            embeddings_initializer=embeddings_initializer,
+            embeddings_regularizer=embeddings_regularizer,
+            embeddings_constraint=embeddings_constraint,
+        )
+        self._right_embedding = Dense(
+            self.n_nodes,
+            use_bias=False,
+            kernel_initializer=embeddings_initializer,
+            kernel_regularizer=embeddings_regularizer,
+            kernel_constraint=embeddings_constraint,
+            name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
+        )
+        self._attentive_walk = AttentiveWalk(
+            walk_length=self.num_powers,
+            attention_constraint=attention_constraint,
+            attention_regularizer=attention_regularizer,
+            attention_initializer=attention_initializer,
+        )
 
     def build(self):
         """
@@ -200,38 +216,15 @@ class WatchYourStep:
         input_rows = Input(batch_shape=(None,), name="row_node_ids", dtype="int64")
         input_powers = Input(batch_shape=(None, self.num_powers, self.n_nodes))
 
-        left_embedding = Embedding(
-            self.n_nodes,
-            int(self.embedding_dimension / 2),
-            input_length=None,
-            name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
-            embeddings_initializer=self.embeddings_initializer,
-            embeddings_regularizer=self.embeddings_regularizer,
-            embeddings_constraint=self.embeddings_constraint,
-        )
-
-        vectors_left = left_embedding(input_rows)
+        vectors_left = self._left_embedding(input_rows)
 
         # all right embeddings are used in every batch. to avoid unnecessary lookups the right embeddings are stored
         # in a dense layer to enable efficient dot product between the left vectors in the current batch and all right
         # vectors
-        outer_product = Dense(
-            self.n_nodes,
-            use_bias=False,
-            kernel_initializer=self.embeddings_initializer,
-            kernel_regularizer=self.embeddings_regularizer,
-            kernel_constraint=self.embeddings_constraint,
-            name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
-        )(vectors_left)
+        outer_product = self._right_embedding(vectors_left)
 
         sigmoids = tf.keras.activations.sigmoid(outer_product)
-        attentive_walk_layer = AttentiveWalk(
-            walk_length=self.num_powers,
-            attention_constraint=self.attention_constraint,
-            attention_regularizer=self.attention_regularizer,
-            attention_initializer=self.attention_initializer,
-        )
-        expected_walk = self.num_walks * attentive_walk_layer(input_powers)
+        expected_walk = self.num_walks * self._attentive_walk(input_powers)
 
         # layer to add batch dimension of 1 to output
         expander = Lambda(lambda x: K.expand_dims(x, axis=1))
