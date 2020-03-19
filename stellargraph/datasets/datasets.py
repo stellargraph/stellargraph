@@ -34,7 +34,9 @@ from sklearn import preprocessing
 log = logging.getLogger(__name__)
 
 
-def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
+def _load_cora_or_citeseer(
+    dataset, directed, largest_connected_component_only, subject_as_feature
+):
     assert isinstance(dataset, (Cora, CiteSeer))
     dataset.download()
 
@@ -43,7 +45,12 @@ def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
 
     feature_names = ["w_{}".format(ii) for ii in range(dataset._NUM_FEATURES)]
     subject = "subject"
-    column_names = feature_names + [subject]
+    if subject_as_feature:
+        feature_names.append(subject)
+        column_names = feature_names
+    else:
+        column_names = feature_names + [subject]
+
     node_data = pd.read_csv(
         content,
         sep="\t",
@@ -65,7 +72,13 @@ def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
     edgelist = edgelist[valid_source & valid_target]
 
     cls = StellarDiGraph if directed else StellarGraph
-    graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+    features = node_data[feature_names]
+    if subject_as_feature:
+        # one-hot encode the subjects
+        features = pd.get_dummies(features, columns=[subject])
+
+    graph = cls({"paper": features}, {"cites": edgelist})
 
     if largest_connected_component_only:
         cc_ids = next(graph.connected_components())
@@ -90,7 +103,12 @@ class Cora(
     _NODES_DTYPE = int
     _NUM_FEATURES = 1433
 
-    def load(self, directed=False, largest_connected_component_only=False):
+    def load(
+        self,
+        directed=False,
+        largest_connected_component_only=False,
+        subject_as_feature=False,
+    ):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
         required.
@@ -102,13 +120,17 @@ class Cora(
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
             largest_connected_component_only (bool): if True, returns only the largest connected
                 component, not the whole graph.
+            subject_as_feature (bool): if True, the subject for each paper (node) is included in the
+                node features, one-hot encoded (the subjects are still also returned as a Series).
 
         Returns:
             A tuple where the first element is the :class:`StellarGraph` object (or
             :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
             and edges, and the second element is a pandas Series of the node subject class labels.
         """
-        return _load_cora_or_citeseer(self, directed, largest_connected_component_only)
+        return _load_cora_or_citeseer(
+            self, directed, largest_connected_component_only, subject_as_feature
+        )
 
 
 class CiteSeer(
@@ -145,7 +167,9 @@ class CiteSeer(
             feature vectors and edges, and the second element is a pandas Series of the node subject
             class labels.
         """
-        return _load_cora_or_citeseer(self, False, largest_connected_component_only)
+        return _load_cora_or_citeseer(
+            self, False, largest_connected_component_only, False
+        )
 
 
 class PubMedDiabetes(
