@@ -38,7 +38,7 @@
 </p>
 
 
-# Table of Contents
+## Table of Contents
    * [Introduction](#introduction)
    * [Guiding Principles](#guiding-principles)
    * [Getting Started](#getting-started)
