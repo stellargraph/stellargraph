@@ -33,153 +33,11 @@ import pytest
 import pandas as pd
 import scipy.sparse as sps
 
-
-def create_graph_features():
-    G = nx.Graph()
-    G.add_nodes_from(["a", "b", "c"])
-    G.add_edges_from([("a", "b"), ("b", "c"), ("a", "c")])
-    G = G.to_undirected()
-    return G, np.array([[1, 1], [1, 0], [0, 1]])
-
-
-def example_graph_1(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_nodes_from([1, 2, 3, 4], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_graph_2(feature_size=None):
-    G = nx.Graph()
-    elist = [(1, 2), (1, 3), (1, 4), (3, 2), (3, 5)]
-    G.add_nodes_from([1, 2, 3, 4, 5], label="default")
-    G.add_edges_from(elist, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_graph_3(feature_size=None, n_edges=20, n_nodes=6, n_isolates=1):
-    G = nx.Graph()
-    n_noniso = n_nodes - n_isolates
-    edges = [
-        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
-        for _ in range(n_edges)
-    ]
-    G.add_nodes_from(range(n_nodes))
-    G.add_edges_from(edges, label="default")
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = int(v) * np.ones(feature_size, dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_digraph_2(feature_size=None):
-    G = nx.DiGraph()
-    elist = [(1, 2), (2, 3), (1, 4), (3, 2)]
-    G.add_edges_from(elist)
-
-    # Add example features
-    if feature_size is not None:
-        for v in G.nodes():
-            G.nodes[v]["feature"] = np.ones(feature_size)
-        return StellarDiGraph(G, node_features="feature")
-
-    else:
-        return StellarDiGraph(G)
-
-
-def example_hin_1(feature_size_by_type=None):
-    G = nx.Graph()
-    G.add_nodes_from([0, 1, 2, 3], label="A")
-    G.add_nodes_from([4, 5, 6], label="B")
-    G.add_edges_from([(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)], label="R")
-    G.add_edges_from([(4, 5)], label="F")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-        return StellarGraph(G, node_features="feature")
-
-    else:
-        return StellarGraph(G)
-
-
-def example_hin_2(feature_size_by_type=None):
-    nodes_type_1 = [0, 1, 2, 3]
-    nodes_type_2 = [4, 5]
-
-    # Create isolated graphs
-    G = nx.Graph()
-    G.add_nodes_from(nodes_type_1, label="t1")
-    G.add_nodes_from(nodes_type_2, label="t2")
-    G.add_edges_from([(0, 4), (1, 4), (2, 5), (3, 5)], label="e1")
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = int(v) * np.ones(feature_size_by_type[nt], dtype="int")
-
-        G = StellarGraph(G, node_features="feature")
-
-    else:
-        G = StellarGraph(G)
-
-    return G, nodes_type_1, nodes_type_2
-
-
-def example_hin_3(feature_size_by_type=None):
-    nodes_type_1 = [0, 1, 2]
-    nodes_type_2 = [4, 5, 6]
-
-    # Create isolated graphs
-    G = nx.Graph()
-    G.add_nodes_from(nodes_type_1, label="t1")
-    G.add_nodes_from(nodes_type_2, label="t2")
-    G.add_edges_from([(0, 4), (1, 5)], label="e1")
-    G.add_edges_from([(0, 2)], label="e2")
-
-    # Node 2 has no edges of type 1
-    # Node 1 has no edges of type 2
-    # Node 6 has no edges
-
-    # Add example features
-    if feature_size_by_type is not None:
-        for v, vdata in G.nodes(data=True):
-            nt = vdata["label"]
-            vdata["feature"] = (int(v) + 10) * np.ones(
-                feature_size_by_type[nt], dtype="int"
-            )
-
-        G = StellarGraph(G, node_features="feature")
-
-    else:
-        G = StellarGraph(G)
-
-    return G, nodes_type_1, nodes_type_2
+from ..test_utils.graphs import (
+    create_graph_features,
+    example_graph_random,
+    example_hin_1,
+)
 
 
 class Test_FullBatchGenerator:
@@ -187,7 +45,7 @@ class Test_FullBatchGenerator:
     Tests of FullBatchGenerator class
     """
 
-    G = example_graph_3(feature_size=4, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=4, n_nodes=6, n_isolates=1, n_edges=20)
 
     def test_generator_constructor(self):
         # Test constructing abstract base class
@@ -203,7 +61,7 @@ class Test_FullBatchNodeGenerator:
     n_feat = 4
     target_dim = 5
 
-    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
     N = len(G.nodes())
 
     def test_generator_constructor(self):
@@ -216,8 +74,7 @@ class Test_FullBatchNodeGenerator:
             generator = FullBatchNodeGenerator(nx.Graph())
 
     def test_generator_constructor_hin(self):
-        feature_sizes = {"t1": 1, "t2": 1}
-        Ghin, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+        Ghin = example_hin_1({})
         with pytest.raises(TypeError):
             generator = FullBatchNodeGenerator(Ghin)
 
@@ -323,22 +180,12 @@ class Test_FullBatchNodeGenerator:
 
     def test_fullbatch_generator_init_1(self):
         G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
         generator = FullBatchNodeGenerator(G, method=None)
         assert np.array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
         G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
         func = "Not callable"
 
@@ -347,11 +194,6 @@ class Test_FullBatchNodeGenerator:
 
     def test_fullbatch_generator_transform(self):
         G, feats = create_graph_features()
-        nodes = G.nodes()
-        node_features = pd.DataFrame.from_dict(
-            {n: f for n, f in zip(nodes, feats)}, orient="index"
-        )
-        G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
         def func(features, A, **kwargs):
             return features, A.dot(A)
@@ -450,7 +292,7 @@ class Test_FullBatchLinkGenerator:
     n_feat = 4
     target_dim = 5
 
-    G = example_graph_3(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
     N = len(G.nodes())
 
     def test_generator_constructor(self):
@@ -463,8 +305,7 @@ class Test_FullBatchLinkGenerator:
             generator = FullBatchLinkGenerator(nx.Graph())
 
     def test_generator_constructor_hin(self):
-        feature_sizes = {"t1": 1, "t2": 1}
-        Ghin, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
+        Ghin = example_hin_1({})
         with pytest.raises(TypeError):
             generator = FullBatchLinkGenerator(Ghin)
 

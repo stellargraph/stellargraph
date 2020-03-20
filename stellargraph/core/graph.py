@@ -32,7 +32,7 @@ from .schema import GraphSchema, EdgeType
 from .experimental import experimental, ExperimentalWarning
 from .element_data import NodeData, EdgeData, ExternalIdIndex
 from .utils import is_real_iterable
-from .validation import comma_sep
+from .validation import comma_sep, separated
 from . import convert
 
 
@@ -66,9 +66,8 @@ class StellarGraph:
     - every StellarGraph can be a *multigraph*, meaning there can be multiple edges between any two
       nodes
 
-    To create a StellarGraph object, at a minimum pass the nodes and edges as Pandas
-    DataFrames. Each row of the nodes DataFrame represents a node in the graph, where the index is
-    the ID of the node. Each row of the edges DataFrame represents an edge, where the index is the
+    To create a StellarGraph object, at a minimum pass the edges as a Pandas
+    DataFrame. Each row of the edges DataFrame represents an edge, where the index is the
     ID of the edge, and the ``source`` and ``target`` columns store the node ID of the source and
     target nodes.
 
@@ -79,9 +78,8 @@ class StellarGraph:
         |  \\ |
         d -- c
 
-    The DataFrames might look like::
+    The DataFrame might look like::
 
-        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
         edges = pd.DataFrame(
             {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"]}
         )
@@ -89,13 +87,19 @@ class StellarGraph:
     If this data represents an undirected graph (the ordering of each edge source/target doesn't
     matter)::
 
-        Gs = StellarGraph(nodes, edges)
-
+        Gs = StellarGraph(edges=edges)
 
     If this data represents a directed graph (the ordering does matter)::
 
-        Gs = StellarDiGraph(nodes, edges)
+        Gs = StellarDiGraph(edges=edges)
 
+    One can also pass a DataFrame of nodes. Each row of the nodes DataFrame represents a node in the
+    graph, where the index is the ID of the node. When this nodes DataFrame is not passed (the
+    argument is left as the default), the set of nodes is automatically inferred. This inference in
+    the example above is equivalent to::
+
+        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
+        Gs = StellarGraph(nodes, edges)
 
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
     above has two features ``x`` and ``y`` associated with each node::
@@ -163,7 +167,8 @@ class StellarGraph:
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs.
+            IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features
+            for each node.
 
         edges (DataFrame or dict of hashable to Pandas DataFrame, optional):
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
@@ -203,8 +208,6 @@ class StellarGraph:
             Deprecated, use :meth:`from_networkx`.
         edge_type_name:
             Deprecated, use :meth:`from_networkx`.
-        edge_weight_label:
-            Deprecated, use :meth:`from_networkx`.
         node_features:
             Deprecated, use :meth:`from_networkx`.
     """
@@ -225,19 +228,9 @@ class StellarGraph:
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         import networkx
-
-        # support for legacy arguments, translate to the new form
-        if edge_weight_label is not None:
-            # `edge_weight_label` -> `edge_weight_column`
-            warnings.warn(
-                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_column'",
-                DeprecationWarning,
-            )
-            edge_weight_column = edge_weight_label
 
         if isinstance(nodes, networkx.Graph):
             # `StellarGraph(nx_graph)` -> `graph`
@@ -257,6 +250,11 @@ class StellarGraph:
                     "graph: expected no value when using 'nodes' and 'edges' parameters, found: {graph!r}"
                 )
 
+            warnings.warn(
+                "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
+                DeprecationWarning,
+            )
+
             nodes, edges = convert.from_networkx(
                 graph,
                 node_type_attr=node_type_name,
@@ -268,15 +266,10 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        if nodes is None:
-            nodes = {}
         if edges is None:
             edges = {}
 
         self._is_directed = is_directed
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
         self._edges = convert.convert_edges(
             edges,
             name="edges",
@@ -285,6 +278,40 @@ class StellarGraph:
             target_column=target_column,
             weight_column=edge_weight_column,
         )
+
+        nodes_from_edges = pd.unique(
+            np.concatenate([self._edges.targets, self._edges.sources])
+        )
+
+        if nodes is None:
+            nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
+        else:
+            nodes_after_inference = nodes
+
+        self._nodes = convert.convert_nodes(
+            nodes_after_inference,
+            name="nodes",
+            default_type=node_type_default,
+            dtype=dtype,
+        )
+
+        if nodes is not None:
+            # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
+            # node mentioned in the edges
+            try:
+                self._nodes.ids.to_iloc(
+                    nodes_from_edges, smaller_type=False, strict=True,
+                )
+            except KeyError as e:
+                missing_values = e.args[0]
+                if not is_real_iterable(missing_values):
+                    missing_values = [missing_values]
+                missing_values = pd.unique(missing_values)
+
+                raise ValueError(
+                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                    f"found some missing: {comma_sep(missing_values)}"
+                )
 
     @staticmethod
     def from_networkx(
@@ -297,9 +324,6 @@ class StellarGraph:
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         node_features=None,
         dtype="float32",
-        node_type_name=None,
-        edge_type_name=None,
-        edge_weight_label=None,
     ):
         """
         Construct a ``StellarGraph`` object from a NetworkX graph::
@@ -338,6 +362,9 @@ class StellarGraph:
             }
             Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
 
+        The dictionary only needs to include node types with features. If a node type isn't
+        mentioned in the dictionary (for example, if `nx_graph` above has a 3rd node type), each
+        node of that type will have a feature vector of length zero.
 
         You can also supply the node feature vectors as an iterator of `node_id`
         and feature vector pairs, for graphs with single and multiple node types::
@@ -377,33 +404,10 @@ class StellarGraph:
             edge_weight_attr (str, optional):
                 The name of the attribute to use as the weight of edges.
 
-            node_type_name: Deprecated, use ``node_type_attr``.
-            edge_type_name: Deprecated, use ``edge_type_attr``.
-            edge_weight_label: Deprecated, use ``edge_weight_attr``.
-
         Returns:
             A ``StellarGraph`` (if ``graph`` is undirected) or ``StellarDiGraph`` (if ``graph`` is
             directed) instance representing the data in ``graph`` and ``node_features``.
         """
-        if node_type_name is not None:
-            warnings.warn(
-                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
-                DeprecationWarning,
-            )
-            node_type_attr = node_type_name
-        if edge_type_name is not None:
-            warnings.warn(
-                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
-                DeprecationWarning,
-            )
-            edge_type_attr = edge_type_name
-        if edge_weight_label is not None:
-            warnings.warn(
-                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
-                DeprecationWarning,
-            )
-            edge_weight_attr = edge_weight_label
-
         nodes, edges = convert.from_networkx(
             graph,
             node_type_attr=node_type_attr,
@@ -469,14 +473,22 @@ class StellarGraph:
         """
         return len(self._edges)
 
-    def nodes(self) -> Iterable[Any]:
+    def nodes(self, node_type=None) -> Iterable[Any]:
         """
         Obtains the collection of nodes in the graph.
 
+        Args:
+            node_type (hashable, optional): a type of nodes that exist in the graph
+
         Returns:
-            The graph nodes.
+            All the nodes in the graph if ``node_type`` is ``None``, otherwise all the nodes in the
+            graph of type ``node_type``.
         """
-        return self._nodes.ids.pandas_index
+        if node_type is None:
+            return self._nodes.ids.pandas_index
+
+        ilocs = self._nodes.type_range(node_type)
+        return self._nodes.ids.from_iloc(ilocs)
 
     def edges(
         self, include_edge_type=False, include_edge_weight=False
@@ -636,16 +648,18 @@ class StellarGraph:
         Get the nodes of the graph with the specified node types.
 
         Args:
-            node_type (hashable, optional): a type of nodes that exist in the graph
+            node_type (hashable): a type of nodes that exist in the graph (this must be passed,
+                omitting it or passing ``None`` is deprecated)
 
         Returns:
             A list of node IDs with type node_type
         """
-        if node_type is None:
-            return self.nodes()
-
-        ilocs = self._nodes.type_range(node_type)
-        return list(self._nodes.ids.from_iloc(ilocs))
+        warnings.warn(
+            "'nodes_of_type' is deprecated and will be removed; use the 'nodes(type=...)' method instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return list(self.nodes(node_type=node_type))
 
     def node_type(self, node):
         """
@@ -685,14 +699,12 @@ class StellarGraph:
         Returns:
             A dictionary of node type and integer feature size.
         """
-        all_sizes = self._nodes.feature_sizes()
-        if node_types is None:
-            return all_sizes
+        all_sizes = self._nodes.feature_info()
 
-        node_types = set(node_types)
-        return {
-            type_name: size for type_name, size in all_sizes if type_name in node_types
-        }
+        if node_types is None:
+            node_types = all_sizes.keys()
+
+        return {type_name: all_sizes[type_name][0] for type_name in node_types}
 
     def check_graph_for_ml(self, features=True):
         """
@@ -819,7 +831,7 @@ class StellarGraph:
 
         return zip(*unique_ets)
 
-    def info(self, show_attributes=True, sample=None):
+    def info(self, show_attributes=None, sample=None, truncate=20):
         """
         Return an information string summarizing information on the current graph.
         This includes node and edge type information and their attributes.
@@ -828,56 +840,109 @@ class StellarGraph:
         time for a large graph.
 
         Args:
-            show_attributes (bool, default True): If True, include attributes information
-            sample (int): To speed up the graph analysis, use only a random sample of
-                          this many nodes and edges.
-
+            show_attributes: Deprecated, unused.
+            sample: Deprecated, unused.
+            truncate (int, optional): If an integer, show only the ``truncate`` most common node and
+                edge type triples; if ``None``, list each one individually.
         Returns:
             An information string.
         """
-        directed_str = "Directed" if self.is_directed() else "Undirected"
-        lines = [
-            f"{type(self).__name__}: {directed_str} multigraph",
-            f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
-        ]
+        if show_attributes is not None:
+            warnings.warn(
+                "'show_attributes' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if sample is not None:
+            warnings.warn(
+                "'sample' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        # always truncate the edge types listed for each node type, since they're redundant with the
+        # individual listing of edge types, and make for a single very long line
+        truncate_edge_types_per_node = 5
+        if truncate is not None:
+            truncate_edge_types_per_node = min(truncate_edge_types_per_node, truncate)
 
         # Numpy processing is much faster than NetworkX processing, so we don't bother sampling.
         gs = self.create_graph_schema()
+
+        feature_info = self._nodes.feature_info()
 
         def str_edge_type(et):
             n1, rel, n2 = et
             return f"{n1}-{rel}->{n2}"
 
-        lines.append("")
-        lines.append(" Node types:")
+        def str_node_type(count, nt):
+            feature_size, feature_dtype = feature_info[nt]
+            if feature_size > 0:
+                feature_text = f"{feature_dtype.name} vector, length {feature_size}"
+            else:
+                feature_text = "none"
 
-        for nt in gs.node_types:
-            nodes = self.nodes_of_type(nt)
-            lines.append(f"  {nt}: [{len(nodes)}]")
-            edge_types = ", ".join(str_edge_type(et) for et in gs.schema[nt])
-            lines.append(f"    Edge types: {edge_types}")
+            edges = gs.schema[nt]
+            if edges:
+                edge_types = comma_sep(
+                    [str_edge_type(et) for et in gs.schema[nt]],
+                    limit=truncate_edge_types_per_node,
+                    stringify=str,
+                )
+            else:
+                edge_types = "none"
+            return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
+
+        # sort the node types in decreasing order of frequency
+        node_types = sorted(
+            ((len(self.nodes(node_type=nt)), nt) for nt in gs.node_types), reverse=True
+        )
+        nodes = separated(
+            [str_node_type(count, nt) for count, nt in node_types],
+            limit=truncate,
+            stringify=str,
+            sep="\n  ",
+        )
+
+        # FIXME: it would be better for the schema to just include the counts directly
+        unique_ets = self._unique_type_triples(return_counts=True)
+        edge_types = sorted(
+            (
+                (count, EdgeType(src_ty, rel_ty, tgt_ty))
+                for src_ty, rel_ty, tgt_ty, count in unique_ets
+            ),
+            reverse=True,
+        )
+
+        edges = separated(
+            [f"{str_edge_type(et)}: [{count}]" for count, et in edge_types],
+            limit=truncate,
+            stringify=str,
+            sep="\n    ",
+        )
+
+        directed_str = "Directed" if self.is_directed() else "Undirected"
+        lines = [
+            f"{type(self).__name__}: {directed_str} multigraph",
+            f" Nodes: {self.number_of_nodes()}, Edges: {self.number_of_edges()}",
+            "",
+            " Node types:",
+        ]
+        if nodes:
+            lines.append("  " + nodes)
 
         lines.append("")
         lines.append(" Edge types:")
 
-        # FIXME: it would be better for the schema to just include the counts directly
-        for src_ty, rel_ty, tgt_ty, count in self._unique_type_triples(
-            return_counts=True
-        ):
-            et = EdgeType(src_ty, rel_ty, tgt_ty)
-            lines.append(f"    {str_edge_type(et)}: [{count}]")
+        if edges:
+            lines.append("    " + edges)
 
         return "\n".join(lines)
 
     def create_graph_schema(self, nodes=None):
         """
-        Create graph schema in dict of dict format from current graph.
-
-        Note the assumption we make that there is only one
-        edge of a particular edge type per node pair.
-
-        This means that specifying an edge by node0, node1 and edge type
-        is unique.
+        Create graph schema from the current graph.
 
         Arguments:
             nodes (list): A list of node IDs to use to build schema. This must
@@ -976,33 +1041,118 @@ class StellarGraph:
         if not self.is_directed():
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
-            backward = sps.csr_matrix((weights, (tgt_idx, src_idx)), shape=(n, n))
-            backward.setdiag(0)
+            backward = adj.transpose(copy=True)
+            # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
+            # matrix (https://github.com/scipy/scipy/issues/11600)
+            (nonzero,) = backward.diagonal().nonzero()
+            backward[nonzero, nonzero] = 0
+
             adj += backward
 
         # this is a multigraph, let's eliminate any duplicate entries
         adj.sum_duplicates()
         return adj
 
+    def subgraph(self, nodes):
+        """
+        Compute the node-induced subgraph implied by ``nodes``.
+
+        Args:
+            nodes (iterable): The nodes in the subgraph.
+
+        Returns:
+            A :class:`StellarGraph` or :class:`StellarDiGraph` instance containing only the nodes in
+            ``nodes``, and any edges between them in ``self``. It contains the same node & edge
+            types, node features and edge weights as in ``self``.
+        """
+
+        node_ilocs = self._nodes.ids.to_iloc(nodes, strict=True)
+        node_types = self._nodes.type_of_iloc(node_ilocs)
+        node_type_to_ilocs = pd.Series(node_ilocs, index=node_types).groupby(level=0)
+
+        node_frames = {
+            type_name: pd.DataFrame(
+                self._nodes.features(type_name, ilocs),
+                index=self._nodes.ids.from_iloc(ilocs),
+            )
+            for type_name, ilocs in node_type_to_ilocs
+        }
+
+        # FIXME(#985): this is O(edges in graph) but could potentially be optimised to O(edges in
+        # graph incident to `nodes`), which could be much fewer if `nodes` is small
+        edge_ilocs = np.where(
+            np.isin(self._edges.sources, nodes) & np.isin(self._edges.targets, nodes)
+        )
+        edge_frame = pd.DataFrame(
+            {
+                "id": self._edges.ids.from_iloc(edge_ilocs),
+                globalvar.SOURCE: self._edges.sources[edge_ilocs],
+                globalvar.TARGET: self._edges.targets[edge_ilocs],
+                globalvar.WEIGHT: self._edges.weights[edge_ilocs],
+            },
+            index=self._edges.type_of_iloc(edge_ilocs),
+        )
+        edge_frames = {
+            type_name: df.set_index("id")
+            for type_name, df in edge_frame.groupby(level=0)
+        }
+
+        cls = StellarDiGraph if self.is_directed() else StellarGraph
+        return cls(node_frames, edge_frames)
+
+    def connected_components(self):
+        """
+        Compute the connected components in this graph, ordered by size.
+
+        The nodes in the largest component can be computed with ``nodes =
+        next(graph.connected_components())``. The node IDs returned by this method can be used to
+        compute the corresponding subgraph with ``graph.subgraph(nodes)``.
+
+        For directed graphs, this computes the weakly connected components. This effectively
+        treating each edge as undirected.
+
+        Returns:
+            An iterator over sets of node IDs in each connected component, from the largest (most nodes)
+            to smallest (fewest nodes).
+        """
+
+        adj = self.to_adjacency_matrix()
+        count, cc_labels = sps.csgraph.connected_components(adj, directed=False)
+        cc_sizes = np.bincount(cc_labels, minlength=count)
+        cc_by_size = np.argsort(cc_sizes)[::-1]
+
+        return (
+            self._nodes.ids.from_iloc(cc_labels == cc_label) for cc_label in cc_by_size
+        )
+
     def to_networkx(
         self,
-        node_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=globalvar.WEIGHT,
-        feature_name=globalvar.FEATURE_ATTR_NAME,
+        node_type_attr=globalvar.TYPE_ATTR_NAME,
+        edge_type_attr=globalvar.TYPE_ATTR_NAME,
+        edge_weight_attr=globalvar.WEIGHT,
+        feature_attr=globalvar.FEATURE_ATTR_NAME,
+        node_type_name=None,
+        edge_type_name=None,
+        edge_weight_label=None,
+        feature_name=None,
     ):
         """
         Create a NetworkX MultiGraph or MultiDiGraph instance representing this graph.
 
         Args:
-            node_type_name (str): the name of the attribute to use to store a node's type (or label).
+            node_type_attr (str): the name of the attribute to use to store a node's type (or label).
 
-            edge_type_name (str): the name of the attribute to use to store a edge's type (or label).
+            edge_type_attr (str): the name of the attribute to use to store a edge's type (or label).
 
-            edge_weight_label (str): the name of the attribute to use to store a edge's weight.
+            edge_weight_attr (str): the name of the attribute to use to store a edge's weight.
 
-            feature_name (str, optional): the name of the attribute to use to store a node's feature
+            feature_attr (str, optional): the name of the attribute to use to store a node's feature
                 vector; if ``None``, feature vectors are not stored within each node.
+
+            node_type_name (str): Deprecated, use ``node_type_attr``.
+            edge_type_name (str): Deprecated, use ``edge_type_attr``.
+            edge_weight_label (str): Deprecated, use ``edge_weight_attr``.
+            feature_name (str, optional): Deprecated, use ``feature_attr``.
 
         Returns:
              An instance of `networkx.MultiDiGraph` (if directed) or `networkx.MultiGraph` (if
@@ -1010,21 +1160,49 @@ class StellarGraph:
         """
         import networkx
 
+        if node_type_name is not None:
+            warnings.warn(
+                "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
+                DeprecationWarning,
+            )
+            node_type_attr = node_type_name
+
+        if edge_type_name is not None:
+            warnings.warn(
+                "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
+                DeprecationWarning,
+            )
+            edge_type_attr = edge_type_name
+
+        if edge_weight_label is not None:
+            warnings.warn(
+                "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
+                DeprecationWarning,
+            )
+            edge_weight_attr = edge_weight_label
+
+        if feature_name is not None:
+            warnings.warn(
+                "the 'feature_name' parameter has been replaced by 'feature_attr'",
+                DeprecationWarning,
+            )
+            feature_attr = feature_name
+
         if self.is_directed():
             graph = networkx.MultiDiGraph()
         else:
             graph = networkx.MultiGraph()
 
         for ty in self.node_types:
-            node_ids = self.nodes_of_type(ty)
-            ty_dict = {node_type_name: ty}
+            node_ids = self.nodes(node_type=ty)
+            ty_dict = {node_type_attr: ty}
 
-            if feature_name is not None:
+            if feature_attr is not None:
                 features = self.node_features(node_ids, node_type=ty)
 
                 for node_id, node_features in zip(node_ids, features):
                     graph.add_node(
-                        node_id, **ty_dict, **{feature_name: node_features},
+                        node_id, **ty_dict, **{feature_attr: node_features},
                     )
             else:
                 graph.add_nodes_from(node_ids, **ty_dict)
@@ -1036,7 +1214,7 @@ class StellarGraph:
             self._edges.weights,
         )
         graph.add_edges_from(
-            (src, dst, {edge_type_name: type_, edge_weight_label: weight})
+            (src, dst, {edge_type_attr: type_, edge_weight_attr: weight})
             for src, dst, type_, weight in iterator
         )
 
@@ -1141,7 +1319,6 @@ class StellarDiGraph(StellarGraph):
         graph=None,
         node_type_name=globalvar.TYPE_ATTR_NAME,
         edge_type_name=globalvar.TYPE_ATTR_NAME,
-        edge_weight_label=None,
         node_features=None,
     ):
         super().__init__(
@@ -1158,6 +1335,5 @@ class StellarDiGraph(StellarGraph):
             graph=graph,
             node_type_name=node_type_name,
             edge_type_name=edge_type_name,
-            edge_weight_label=edge_weight_label,
             node_features=node_features,
         )

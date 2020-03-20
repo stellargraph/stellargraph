@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import pytest
-from stellargraph.utils.saliency_maps import IntegratedGradientsGAT
+from stellargraph.interpretability.saliency_maps import IntegratedGradientsGAT
 import numpy as np
 from stellargraph.layer import GAT
 from stellargraph.mapper import FullBatchNodeGenerator

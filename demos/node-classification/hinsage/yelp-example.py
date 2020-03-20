@@ -124,12 +124,10 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(
-        train_gen, epochs=num_epochs, verbose=2, shuffle=False
-    )
+    history = model.fit(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
 
     # Evaluate on test set and print metrics
-    predictions = model.predict_generator(test_gen)
+    predictions = model.predict(test_gen)
     binary_predictions = predictions[:, 1] > 0.5
     print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
 
@@ -142,7 +140,7 @@ def train(
     precision = sk_metrics.precision_score(test_targets.iloc[:, 1], binary_predictions)
     recall = sk_metrics.recall_score(test_targets.iloc[:, 1], binary_predictions)
     f1 = sk_metrics.f1_score(test_targets.iloc[:, 1], binary_predictions)
-    roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], binary_predictions)
+    roc_auc = sk_metrics.roc_auc_score(test_targets.iloc[:, 1], predictions[:, 1])
 
     print(
         "accuracy = {:0.3}, precision = {:0.3}, recall = {:0.3}, f1 = {:0.3}".format(
@@ -249,8 +247,8 @@ if __name__ == "__main__":
     features = {"user": user_features, "business": business_features}
 
     # Create stellar Graph object
-    G = StellarGraph(
-        Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features
+    G = StellarGraph.from_networkx(
+        Gnx, node_type_attr="ntype", edge_type_attr="etype", node_features=features
     )
 
     train(

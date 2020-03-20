@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import SampledBreadthFirstWalk
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph
+from ..test_utils.graphs import create_test_graph, tree_graph
 
 
 def expected_bfw_size(n_size):
@@ -165,20 +165,7 @@ class TestBreadthFirstWalk(object):
             assert len(subgraph) == expected_bfw_size(n_size)
             assert subgraph[0] == "loner"
 
-    def test_directed_walk_generation_single_root_node(self):
-
-        g = nx.DiGraph()
-        edges = [
-            ("root", 2),
-            ("root", 1),
-            ("root", "0"),
-            (2, "c2.1"),
-            (2, "c2.2"),
-            (1, "c1.1"),
-        ]
-        g.add_edges_from(edges)
-        g = StellarDiGraph(g)
-
+    def test_directed_walk_generation_single_root_node(self, tree_graph):
         def _check_directed_walk(walk, n_size):
             if len(n_size) > 1 and n_size[0] > 0 and n_size[1] > 0:
                 for child_pos in range(n_size[0]):
@@ -201,7 +188,7 @@ class TestBreadthFirstWalk(object):
                     else:
                         assert 1 == 0
 
-        bfw = SampledBreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(tree_graph)
 
         nodes = ["root"]
         n = 1

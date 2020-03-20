@@ -29,14 +29,8 @@ from ..test_utils.graphs import create_graph_features
 
 def test_PPNP_edge_cases():
     G, features = create_graph_features()
-    adj = nx.to_scipy_sparse_matrix(G)
+    adj = G.to_adjacency_matrix()
     features, adj = PPNP_Aadj_feats_op(features, adj)
-
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
 
     ppnp_sparse_failed = False
     try:
@@ -62,15 +56,9 @@ def test_PPNP_edge_cases():
 
 def test_PPNP_apply_dense():
     G, features = create_graph_features()
-    adj = nx.to_scipy_sparse_matrix(G)
+    adj = G.to_adjacency_matrix()
     features, adj = PPNP_Aadj_feats_op(features, adj)
     adj = adj[None, :, :]
-
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_features=node_features)
 
     generator = FullBatchNodeGenerator(G, sparse=False, method="ppnp")
     ppnpModel = PPNP([2], generator=generator, activations=["relu"], dropout=0.5)
@@ -83,8 +71,8 @@ def test_PPNP_apply_dense():
     preds_1 = model.predict([features[None, :, :], out_indices, adj])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)

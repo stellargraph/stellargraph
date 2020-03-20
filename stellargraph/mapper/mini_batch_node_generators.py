@@ -28,7 +28,7 @@ from tensorflow.keras.utils import Sequence
 
 from scipy import sparse
 from ..core.graph import StellarGraph
-from ..core.utils import is_real_iterable
+from ..core.utils import is_real_iterable, normalize_adj
 
 
 class ClusterNodeGenerator:
@@ -46,8 +46,7 @@ class ClusterNodeGenerator:
 
     [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
 
-    For more information, please see the ClusterGCN demo:
-        `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see the ClusterGCN demo: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -161,7 +160,7 @@ class ClusterNodeGenerator:
 
         Returns:
             A ClusterNodeSequence object to use with ClusterGCN in Keras
-            methods :meth:`fit_generator`, :meth:`evaluate_generator`, and :meth:`predict_generator`
+            methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
@@ -195,9 +194,9 @@ class ClusterNodeGenerator:
 class ClusterNodeSequence(Sequence):
     """
     A Keras-compatible data generator for node inference using ClusterGCN model.
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
     :class:`ClusterNodeGenerator`.
@@ -277,25 +276,40 @@ class ClusterNodeSequence(Sequence):
         num_batches = len(self.clusters_original) // self.q
         return num_batches
 
+    def _diagonal_enhanced_normalization(self, adj_cluster):
+        # Cluster-GCN normalization is:
+        #     A~ + λdiag(A~) where A~ = N(A + I) with normalization factor N = (D + I)^(-1)
+        #
+        # Expands to:
+        #     NA + NI + λN(diag(A) + I) =
+        #     NA + N(I + λ(diag(A) + I)) =
+        #     NA + λN(diag(A) + (1 + 1/λ)I))
+        #
+        # (This could potentially become a layer, to benefit from a GPU.)
+        degrees = np.asarray(adj_cluster.sum(axis=1)).ravel()
+        normalization = 1 / (degrees + 1)
+
+        # NA: multiply rows manually
+        norm_adj = adj_cluster.multiply(normalization[:, None]).toarray()
+
+        # λN(diag(A) + (1 + 1/λ)I): work with the diagonals directly
+        diag = np.diag(norm_adj)
+        diag_addition = (
+            normalization * self.lam * (adj_cluster.diagonal() + (1 + 1 / self.lam))
+        )
+        np.fill_diagonal(norm_adj, diag + diag_addition)
+        return norm_adj
+
     def __getitem__(self, index):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
         adj_cluster = self.graph.to_adjacency_matrix(cluster)
 
-        # The operations to normalize the adjacency matrix are too slow.
-        # Either optimize this or implement as a layer(?)
         if self.normalize_adj:
-            # add self loops
-            adj_cluster.setdiag(1)  # add self loops
-            degree_matrix_diag = 1.0 / (adj_cluster.sum(axis=1) + 1)
-            degree_matrix_diag = np.squeeze(np.asarray(degree_matrix_diag))
-            degree_matrix = sparse.lil_matrix(adj_cluster.shape)
-            degree_matrix.setdiag(degree_matrix_diag)
-            adj_cluster = degree_matrix.tocsr() @ adj_cluster
-            adj_cluster.setdiag((1.0 + self.lam) * adj_cluster.diagonal())
-
-        adj_cluster = adj_cluster.toarray()
+            adj_cluster = self._diagonal_enhanced_normalization(adj_cluster)
+        else:
+            adj_cluster = adj_cluster.toarray()
 
         g_node_list = list(cluster)
 

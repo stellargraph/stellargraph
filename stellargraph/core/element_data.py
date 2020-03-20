@@ -284,14 +284,14 @@ class NodeData(ElementData):
             # some of the indices were too large (from a later type)
             raise ValueError("unknown IDs")
 
-    def feature_sizes(self):
+    def feature_info(self):
         """
         Returns:
-             A dictionary of type_name to an integer representing the size of the features of
-             that type.
+             A dictionary of type_name to a tuple of an integer representing the size of the
+             features of that type, and the dtype of the features.
         """
         return {
-            type_name: type_features.shape[1]
+            type_name: (type_features.shape[1], type_features.dtype)
             for type_name, type_features in self._features.items()
         }
 

@@ -15,6 +15,9 @@ services:
       - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
     environment:
       - PYTHONDONTWRITEBYTECODE=1
+      # make sure that no new uses of the legacy constructor are added (see also: test in
+      # test_graph.py, filterwarnings in pytest.ini)
+      - "PYTHONWARNINGS=error:Constructing a StellarGraph:DeprecationWarning"
       - GIT_BRANCH=$BUILDKITE_BRANCH
       - BUILDKITE_AGENT_ACCESS_TOKEN
       - BUILDKITE_BUILD_NUMBER
@@ -34,6 +37,8 @@ services:
       - BUILDKITE_COMMIT
       - BUILDKITE_TAG
       - CODECOV_TOKEN
+    depends_on:
+      - neo4j
 
   runner-3_7:
     <<: *runner-config
@@ -41,3 +46,9 @@ services:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
+
+  neo4j:
+    build: docker/stellargraph-neo4j
+    environment:
+      # this is running entirely locally on a CI machine, so authentication is unnecessary
+      NEO4J_AUTH: "none"

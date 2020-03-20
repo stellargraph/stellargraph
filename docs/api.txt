@@ -5,7 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph.core
-  :members: StellarGraph, GraphSchema
+  :members: StellarGraph, StellarDiGraph, GraphSchema
 
 
 Data
@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, GraphGenerator
 
 
 GraphSAGE model
@@ -98,7 +98,21 @@ Knowledge Graph models
   :members: KGTripleGenerator
 
 .. automodule:: stellargraph.layer.knowledge_graph
-  :members: ComplEx, ComplExScore
+  :members: ComplEx, ComplExScore, DistMult, DistMultScore
+
+
+GCN Supervised Graph Classification model
+-----------------------------------------
+
+.. automodule:: stellargraph.layer.graph_classification
+  :members: GCNSupervisedGraphClassification, GraphClassificationConvolution
+
+
+Deep Graph Infomax Models
+-------------------------
+
+.. automodule:: stellargraph.layer.deep_graph_infomax
+  :members: DeepGraphInfomax, DGIDiscriminator
 
 Link prediction layers
 ------------------------
@@ -109,14 +123,14 @@ Link prediction layers
 Ensembles
 ------------------------
 
-.. automodule:: stellargraph.utils.ensemble
+.. automodule:: stellargraph.ensemble
   :members: Ensemble, BaggingEnsemble
 
 
 Calibration
 ------------------------
 
-.. automodule:: stellargraph.utils.calibration
+.. automodule:: stellargraph.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
 
 Utilities
