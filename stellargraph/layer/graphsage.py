@@ -768,16 +768,16 @@ class GraphSAGE:
             defaults to ['relu', ..., 'relu', 'linear'].
         kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
             defaults to None.
-
-    Note::
-        If a generator is not specified, then additional keyword arguments must be supplied:
-
-        * n_samples (list): The number of samples per layer in the model.
-
-        * input_dim (int): The dimensions of the node features used as input to the model.
-
-        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
+        n_samples (list, optional): The number of samples per layer in the model.
+        input_dim (int, optional): The dimensions of the node features used as input to the model.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node inference
           and 2 for link inference (currently no others are supported).
+
+    .. note::
+        The values for ``n_samples``, ``input_dim``, and ``multiplicity`` are obtained from the provided
+        ``generator`` by default. The additional keyword arguments for these parameters provide an
+        alternative way to specify them if a generator cannot be supplied.
+
     """
 
     def __init__(

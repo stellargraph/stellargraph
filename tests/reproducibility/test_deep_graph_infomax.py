@@ -41,20 +41,15 @@ def dgi(generator, gen, model_type):
     return model
 
 
-@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT])
-def test_dgi_sparse(model_type):
-    G = example_graph_random()
-    generator = FullBatchNodeGenerator(G, sparse=True)
-    corrupted_generator = CorruptedGenerator(generator)
-    gen = corrupted_generator.flow(G.nodes())
-
-    assert_reproducible(lambda: dgi(generator, gen, model_type), num_iter=3)
-
-
 @pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
-def test_dgi_dense(model_type):
+@pytest.mark.parametrize("sparse", [False, True])
+def test_dgi(model_type, sparse):
+
+    if sparse and model_type is PPNP:
+        pytest.skip("PPNP doesn't support sparse=True")
+
     G = example_graph_random()
-    generator = FullBatchNodeGenerator(G, sparse=True)
+    generator = FullBatchNodeGenerator(G, sparse=sparse)
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 

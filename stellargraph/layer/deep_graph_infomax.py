@@ -131,6 +131,8 @@ class DeepGraphInfomax:
         self._node_feats = None
         self._unique_id = f"DEEP_GRAPH_INFOMAX_{id(self)}"
 
+        self._discriminator = DGIDiscriminator()
+
     def build(self):
         """
         A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
@@ -165,9 +167,8 @@ class DeepGraphInfomax:
 
         summary = Readout()(node_feats)
 
-        discriminator = DGIDiscriminator()
-        scores = discriminator([node_feats, summary])
-        scores_corrupted = discriminator([node_feats_corr, summary])
+        scores = self._discriminator([node_feats, summary])
+        scores_corrupted = self._discriminator([node_feats_corr, summary])
 
         x_out = tf.stack([scores, scores_corrupted], axis=1)
 
