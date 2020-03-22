@@ -66,9 +66,8 @@ class StellarGraph:
     - every StellarGraph can be a *multigraph*, meaning there can be multiple edges between any two
       nodes
 
-    To create a StellarGraph object, at a minimum pass the nodes and edges as Pandas
-    DataFrames. Each row of the nodes DataFrame represents a node in the graph, where the index is
-    the ID of the node. Each row of the edges DataFrame represents an edge, where the index is the
+    To create a StellarGraph object, at a minimum pass the edges as a Pandas
+    DataFrame. Each row of the edges DataFrame represents an edge, where the index is the
     ID of the edge, and the ``source`` and ``target`` columns store the node ID of the source and
     target nodes.
 
@@ -79,9 +78,8 @@ class StellarGraph:
         |  \\ |
         d -- c
 
-    The DataFrames might look like::
+    The DataFrame might look like::
 
-        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
         edges = pd.DataFrame(
             {"source": ["a", "b", "c", "d", "a"], "target": ["b", "c", "d", "a", "c"]}
         )
@@ -89,13 +87,19 @@ class StellarGraph:
     If this data represents an undirected graph (the ordering of each edge source/target doesn't
     matter)::
 
-        Gs = StellarGraph(nodes, edges)
-
+        Gs = StellarGraph(edges=edges)
 
     If this data represents a directed graph (the ordering does matter)::
 
-        Gs = StellarDiGraph(nodes, edges)
+        Gs = StellarDiGraph(edges=edges)
 
+    One can also pass a DataFrame of nodes. Each row of the nodes DataFrame represents a node in the
+    graph, where the index is the ID of the node. When this nodes DataFrame is not passed (the
+    argument is left as the default), the set of nodes is automatically inferred. This inference in
+    the example above is equivalent to::
+
+        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
+        Gs = StellarGraph(nodes, edges)
 
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
     above has two features ``x`` and ``y`` associated with each node::
@@ -163,7 +167,8 @@ class StellarGraph:
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate DataFrame can be created with
             ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
-            IDs.
+            IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features
+            for each node.
 
         edges (DataFrame or dict of hashable to Pandas DataFrame, optional):
             An edge list for each type of edges as a Pandas DataFrame containing a source, target
@@ -261,15 +266,10 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        if nodes is None:
-            nodes = {}
         if edges is None:
             edges = {}
 
         self._is_directed = is_directed
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
         self._edges = convert.convert_edges(
             edges,
             name="edges",
@@ -278,6 +278,40 @@ class StellarGraph:
             target_column=target_column,
             weight_column=edge_weight_column,
         )
+
+        nodes_from_edges = pd.unique(
+            np.concatenate([self._edges.targets, self._edges.sources])
+        )
+
+        if nodes is None:
+            nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
+        else:
+            nodes_after_inference = nodes
+
+        self._nodes = convert.convert_nodes(
+            nodes_after_inference,
+            name="nodes",
+            default_type=node_type_default,
+            dtype=dtype,
+        )
+
+        if nodes is not None:
+            # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
+            # node mentioned in the edges
+            try:
+                self._nodes.ids.to_iloc(
+                    nodes_from_edges, smaller_type=False, strict=True,
+                )
+            except KeyError as e:
+                missing_values = e.args[0]
+                if not is_real_iterable(missing_values):
+                    missing_values = [missing_values]
+                missing_values = pd.unique(missing_values)
+
+                raise ValueError(
+                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                    f"found some missing: {comma_sep(missing_values)}"
+                )
 
     @staticmethod
     def from_networkx(
@@ -439,14 +473,22 @@ class StellarGraph:
         """
         return len(self._edges)
 
-    def nodes(self) -> Iterable[Any]:
+    def nodes(self, node_type=None) -> Iterable[Any]:
         """
         Obtains the collection of nodes in the graph.
 
+        Args:
+            node_type (hashable, optional): a type of nodes that exist in the graph
+
         Returns:
-            The graph nodes.
+            All the nodes in the graph if ``node_type`` is ``None``, otherwise all the nodes in the
+            graph of type ``node_type``.
         """
-        return self._nodes.ids.pandas_index
+        if node_type is None:
+            return self._nodes.ids.pandas_index
+
+        ilocs = self._nodes.type_range(node_type)
+        return self._nodes.ids.from_iloc(ilocs)
 
     def edges(
         self, include_edge_type=False, include_edge_weight=False
@@ -606,16 +648,18 @@ class StellarGraph:
         Get the nodes of the graph with the specified node types.
 
         Args:
-            node_type (hashable, optional): a type of nodes that exist in the graph
+            node_type (hashable): a type of nodes that exist in the graph (this must be passed,
+                omitting it or passing ``None`` is deprecated)
 
         Returns:
             A list of node IDs with type node_type
         """
-        if node_type is None:
-            return self.nodes()
-
-        ilocs = self._nodes.type_range(node_type)
-        return list(self._nodes.ids.from_iloc(ilocs))
+        warnings.warn(
+            "'nodes_of_type' is deprecated and will be removed; use the 'nodes(type=...)' method instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return list(self.nodes(node_type=node_type))
 
     def node_type(self, node):
         """
@@ -787,7 +831,7 @@ class StellarGraph:
 
         return zip(*unique_ets)
 
-    def info(self, show_attributes=True, sample=None, truncate=20):
+    def info(self, show_attributes=None, sample=None, truncate=20):
         """
         Return an information string summarizing information on the current graph.
         This includes node and edge type information and their attributes.
@@ -796,14 +840,27 @@ class StellarGraph:
         time for a large graph.
 
         Args:
-            show_attributes (bool, default True): If True, include attributes information
-            sample (int): To speed up the graph analysis, use only a random sample of
-                          this many nodes and edges.
+            show_attributes: Deprecated, unused.
+            sample: Deprecated, unused.
             truncate (int, optional): If an integer, show only the ``truncate`` most common node and
                 edge type triples; if ``None``, list each one individually.
         Returns:
             An information string.
         """
+        if show_attributes is not None:
+            warnings.warn(
+                "'show_attributes' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if sample is not None:
+            warnings.warn(
+                "'sample' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # always truncate the edge types listed for each node type, since they're redundant with the
         # individual listing of edge types, and make for a single very long line
         truncate_edge_types_per_node = 5
@@ -839,7 +896,7 @@ class StellarGraph:
 
         # sort the node types in decreasing order of frequency
         node_types = sorted(
-            ((len(self.nodes_of_type(nt)), nt) for nt in gs.node_types), reverse=True
+            ((len(self.nodes(node_type=nt)), nt) for nt in gs.node_types), reverse=True
         )
         nodes = separated(
             [str_node_type(count, nt) for count, nt in node_types],
@@ -1137,7 +1194,7 @@ class StellarGraph:
             graph = networkx.MultiGraph()
 
         for ty in self.node_types:
-            node_ids = self.nodes_of_type(ty)
+            node_ids = self.nodes(node_type=ty)
             ty_dict = {node_type_attr: ty}
 
             if feature_attr is not None:

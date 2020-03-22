@@ -14,7 +14,11 @@ pip freeze
 exitCode=0
 
 echo "+++ running tests"
-py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" || exitCode=$?
+# benchmarks on shared infrastructure like the CI machines are usually unreliable (high variance),
+# so there's no point spending too much time, hence --benchmark-disable which just runs them
+# once (as a test)
+
+py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="./${junit_file}" --benchmark-disable || exitCode=$?
 
 echo "--- :coverage::codecov::arrow_up: uploading coverage to codecov.io"
 bash <(curl https://codecov.io/bash)

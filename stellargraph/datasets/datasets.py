@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 
 
 def _load_cora_or_citeseer(
-    dataset, directed, largest_connected_component_only, edge_weights, nodes_dtype
+    dataset, directed, largest_connected_component_only, subject_as_feature, edge_weights, nodes_dtype
 ):
     assert isinstance(dataset, (Cora, CiteSeer))
 
@@ -49,7 +49,12 @@ def _load_cora_or_citeseer(
 
     feature_names = ["w_{}".format(ii) for ii in range(dataset._NUM_FEATURES)]
     subject = "subject"
-    column_names = feature_names + [subject]
+    if subject_as_feature:
+        feature_names.append(subject)
+        column_names = feature_names
+    else:
+        column_names = feature_names + [subject]
+
     node_data = pd.read_csv(
         content, sep="\t", header=None, names=column_names, dtype={0: nodes_dtype},
     )
@@ -65,7 +70,13 @@ def _load_cora_or_citeseer(
     subjects = node_data[subject]
 
     cls = StellarDiGraph if directed else StellarGraph
-    graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+    features = node_data[feature_names]
+    if subject_as_feature:
+        # one-hot encode the subjects
+        features = pd.get_dummies(features, columns=[subject])
+
+    graph = cls({"paper": features}, {"cites": edgelist})
 
     if edge_weights is not None:
         # A weighted graph means computing a second StellarGraph after using the unweighted one to
@@ -99,6 +110,7 @@ class Cora(
         self,
         directed=False,
         largest_connected_component_only=False,
+        subject_as_feature=False,
         edge_weights=None,
         str_node_ids=False,
     ):
@@ -119,6 +131,8 @@ class Cora(
                 should return a sequence of numbers (e.g. a 1D NumPy array) of edge weights for each
                 edge in the DataFrame.
             str_node_ids (bool): if True, load the node IDs as strings, rather than integers.
+            subject_as_feature (bool): if True, the subject for each paper (node) is included in the
+                node features, one-hot encoded (the subjects are still also returned as a Series).
 
         Returns:
             A tuple where the first element is the :class:`StellarGraph` object (or
@@ -128,9 +142,8 @@ class Cora(
         nodes_dtype = str if str_node_ids else int
 
         return _load_cora_or_citeseer(
-            self, directed, largest_connected_component_only, edge_weights, nodes_dtype
+            self, directed, largest_connected_component_only, subject_as_feature, edge_weights, nodes_dtype
         )
-
 
 class CiteSeer(
     DatasetLoader,
@@ -168,7 +181,7 @@ class CiteSeer(
         nodes_dtype = str
 
         return _load_cora_or_citeseer(
-            self, False, largest_connected_component_only, None, nodes_dtype
+            self, False, largest_connected_component_only, False, None, nodes_dtype
         )
 
 
@@ -602,12 +615,9 @@ def _load_tsv_knowledge_graph(dataset):
 
     all_data = pd.concat([train, test, valid], ignore_index=True)
 
-    node_ids = pd.unique(pd.concat([all_data.source, all_data.target]))
-    nodes = pd.DataFrame(index=node_ids)
-
     edges = {name: df.drop(columns="label") for name, df in all_data.groupby("label")}
 
-    return StellarDiGraph(nodes=nodes, edges=edges), train, test, valid
+    return StellarDiGraph(edges=edges), train, test, valid
 
 
 class WN18(

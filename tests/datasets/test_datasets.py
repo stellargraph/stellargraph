@@ -96,8 +96,8 @@ def test_blogcatalog3_load() -> None:
     assert g.number_of_nodes() == n_users + n_groups
     assert g.number_of_edges() == n_friendships + n_belongs_to
 
-    assert g.nodes_of_type("user") == [f"u{x}" for x in range(1, n_users + 1)]
-    assert g.nodes_of_type("group") == [f"g{x}" for x in range(1, n_groups + 1)]
+    assert g.nodes(node_type="user") == [f"u{x}" for x in range(1, n_users + 1)]
+    assert g.nodes(node_type="group") == [f"g{x}" for x in range(1, n_groups + 1)]
 
 
 def test_mutag_load() -> None:
@@ -132,8 +132,8 @@ def test_movielens_load() -> None:
     assert g.number_of_nodes() == n_users + n_movies
     assert g.number_of_edges() == n_ratings
 
-    assert len(g.nodes_of_type("user")) == n_users
-    assert len(g.nodes_of_type("movie")) == n_movies
+    assert len(g.nodes(node_type="user")) == n_users
+    assert len(g.nodes(node_type="movie")) == n_movies
 
     assert len(edges_with_ratings) == n_ratings
     assert list(edges_with_ratings.columns) == ["user_id", "movie_id", "rating"]
@@ -141,8 +141,9 @@ def test_movielens_load() -> None:
 
 @pytest.mark.parametrize("is_directed", [False, True])
 @pytest.mark.parametrize("largest_cc_only", [False, True])
-def test_cora_load(is_directed, largest_cc_only) -> None:
-    g, subjects = Cora().load(is_directed, largest_cc_only)
+@pytest.mark.parametrize("subject_as_feature", [False, True])
+def test_cora_load(is_directed, largest_cc_only, subject_as_feature) -> None:
+    g, subjects = Cora().load(is_directed, largest_cc_only, subject_as_feature)
 
     if largest_cc_only:
         expected_nodes = 2485
@@ -151,11 +152,18 @@ def test_cora_load(is_directed, largest_cc_only) -> None:
         expected_nodes = 2708
         expected_edges = 5429
 
+    base_feature_size = 1433
+    if subject_as_feature:
+        feature_size = base_feature_size + 7
+    else:
+        feature_size = base_feature_size
+
     assert g.nodes().dtype == int
     assert g.is_directed() == is_directed
 
     assert g.number_of_nodes() == expected_nodes
     assert g.number_of_edges() == expected_edges
+    assert g.node_feature_sizes() == {"paper": feature_size}
 
     assert len(subjects) == g.number_of_nodes()
     assert set(subjects.index) == set(g.nodes())
