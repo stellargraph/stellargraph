@@ -170,7 +170,7 @@ class DeepGraphInfomax:
         scores = self._discriminator([node_feats, summary])
         scores_corrupted = self._discriminator([node_feats_corr, summary])
 
-        x_out = tf.stack([scores, scores_corrupted], axis=1)
+        x_out = tf.stack([scores, scores_corrupted], axis=-1)
 
         return x_corr + x_inp, x_out
 
@@ -195,6 +195,7 @@ class DeepGraphInfomax:
 
         x_emb_in = model.inputs[len(self._corruptible_inputs_idxs) :]
 
+        # squeeze out batch dim of full batch models
         if len(x_emb_out.shape) == 3:
             squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
             x_emb_out = squeeze_layer(x_emb_out)

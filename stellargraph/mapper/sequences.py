@@ -697,4 +697,4 @@ class CorruptedNodeSequence(Sequence):
                 shuffled_feats, np.cumsum([y.shape[1] for y in features])[:-1], axis=1
             )
 
-            return shuffled_feats + features, self.targets
+            return shuffled_feats + features, self.targets[:stacked_feats.shape[0], :]
