@@ -125,9 +125,9 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
 
 
 class CloudRunnerPreprocessor(preprocessors.Preprocessor):
-    metadata_tag = (
-        "CloudRunner"  # special tag for added cells so that we can find them easily
-    )
+    path_resource_name = "cloud_runner_path"
+    metadata_tag = "CloudRunner"  # tag for added cells so that we can find them easily
+    git_branch = "master"
 
     colab_import_code = """\
 # install StellarGraph if running on Google Colab
@@ -135,46 +135,46 @@ import sys
 if 'google.colab' in sys.modules:
   !pip install -q stellargraph[demos]"""
 
-    notebook_file_path = ""
+    def _binder_url(self, notebook_path):
+        return f"https://mybinder.org/v2/gh/stellargraph/stellargraph/{self.git_branch}?filepath={notebook_path}"
+
+    def _colab_url(self, notebook_path):
+        return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
+
+    def _binder_badge(self, notebook_path):
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/>'
+
+    def _colab_badge(self, notebook_path):
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/>'
 
     def preprocess(self, nb, resources):
-        # remove any cells we added in a previous run
-        cell_ids_to_remove = [
-            index
-            for index, cell in enumerate(nb.cells)
-            if self.metadata_tag in cell["metadata"].get("tags", [])
-        ]
-        for index in sorted(cell_ids_to_remove, reverse=True):
-            del nb.cells[index]
-        # create a badge cell
-        git_branch = "master"
-        notebook_path = self.notebook_file_path
+        notebook_path = resources[self.path_resource_name]
         if not notebook_path.startswith("demos/"):
             print(f"Notebook file path of {notebook_path} didn't start with demo")
-        # due to limited markdown support in Jupyter, place badges side-by-side with an html table
-        badge_markdown = f"""\
-<table><tr><td>
-  <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{git_branch}?filepath={notebook_path}" alt="Open In Binder">
-    <img src="https://mybinder.org/badge_logo.svg"/>
-  </a>
-</td><td>
-  <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{git_branch}/{notebook_path}" alt="Open In Colab">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg"/>
-  </a>
-</td></tr></table>\
-"""
+        # remove any cells we added in a previous run
+        nb.cells = [
+            cell
+            for cell in nb.cells
+            if self.metadata_tag not in cell["metadata"].get("tags", [])
+        ]
+        # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
+        badge_markdown = f"<table><tr><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
         badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
         badge_cell["metadata"]["tags"] = [self.metadata_tag]
-        nb.cells.insert(0, badge_cell)
-        # find first code cell
+        # the badges go after the first cell, unless the first cell is code
+        if nb.cells[0].cell_type == "code":
+            nb.cells.insert(0, badge_cell)
+        else:
+            nb.cells.insert(1, badge_cell)
+        # find first code cell and insert a Colab import statement before it
         first_code_cell_id = next(
             index for index, cell in enumerate(nb.cells) if cell.cell_type == "code"
         )
-        # create a Colab import statement
         import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
         import_cell["metadata"]["tags"] = [self.metadata_tag]
         nb.cells.insert(first_code_cell_id, import_cell)
 
+        nb.cells.append(badge_cell)  # add a badge to the bottom of notebook
         return nb, resources
 
 
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         "-d",
         "--default",
         action="store_true",
-        help="Perform default formatting, equivalent to -wcnks",
+        help="Perform default formatting, equivalent to -wcnksr",
     )
     parser.add_argument(
         "-r",
@@ -291,7 +291,7 @@ if __name__ == "__main__":
     set_kernel = args.set_kernel or args.default
     execute_code = args.execute
     cell_timeout = args.cell_timeout
-    run_cloud = args.run_cloud
+    run_cloud = args.run_cloud or args.default
 
     # Add preprocessors
     preprocessor_list = []
@@ -355,14 +355,16 @@ if __name__ == "__main__":
         print(f"{YELLOW_BOLD} \nProcessing file {file_loc}{RESET}")
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
-        # the CloudRunnerPreprocessor needs to know the filename of this notebook - warning: class variable is modified
-        CloudRunnerPreprocessor.notebook_file_path = str(file_loc)
+        # the CloudRunnerPreprocessor needs to know the filename of this notebook
+        resources = {CloudRunnerPreprocessor.path_resource_name: str(file_loc)}
 
         writer = writers.FilesWriter()
 
         if write_notebook:
             # Process the notebook to a new notebook
-            (body, resources) = nb_exporter.from_notebook_node(in_notebook)
+            (body, resources) = nb_exporter.from_notebook_node(
+                in_notebook, resources=resources
+            )
 
             temporary_file = None
 
@@ -392,7 +394,9 @@ if __name__ == "__main__":
 
         if write_html:
             # Process the notebook to HTML
-            (body, resources) = html_exporter.from_notebook_node(in_notebook)
+            (body, resources) = html_exporter.from_notebook_node(
+                in_notebook, resources=resources
+            )
 
             html_file_loc = str(file_loc.with_suffix(""))
             print(f"Writing HTML to {html_file_loc}.html")
