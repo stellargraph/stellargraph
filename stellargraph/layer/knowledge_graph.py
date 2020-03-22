@@ -104,52 +104,39 @@ class ComplEx:
         self.num_edge_types = len(graph._edges.types)
         self.embedding_dimension = embedding_dimension
 
-        def embed(count, name):
+        def embed(count):
             return Embedding(
                 count,
                 embedding_dimension,
-                name=name,
                 embeddings_initializer=embeddings_initializer,
                 embeddings_regularizer=embeddings_regularizer,
             )
 
         # ComplEx generates embeddings in C, which we model as separate real and imaginary
         # embeddings
-        self._node_embeddings_real = embed(self.num_nodes, self._NODE_REAL)
-        self._node_embeddings_imag = embed(self.num_nodes, self._NODE_IMAG)
-        self._edge_type_embeddings_real = embed(self.num_edge_types, self._REL_REAL)
-        self._edge_type_embeddings_imag = embed(self.num_edge_types, self._REL_IMAG)
+        self._node_embeddings_real = embed(self.num_nodes)
+        self._node_embeddings_imag = embed(self.num_nodes)
+        self._edge_type_embeddings_real = embed(self.num_edge_types)
+        self._edge_type_embeddings_imag = embed(self.num_edge_types)
 
-    # layer names
-    _NODE_REAL = "COMPLEX_NODE_REAL"
-    _NODE_IMAG = "COMPLEX_NODE_IMAG"
-
-    _REL_REAL = "COMPLEX_EDGE_TYPE_REAL"
-    _REL_IMAG = "COMPLEX_EDGE_TYPE_IMAG"
-
-    @staticmethod
-    def embeddings(model):
+    def embeddings(self):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in the given model.
-
-        Args:
-            model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
+        Retrieve the embeddings for nodes/entities and edge types/relations in this ComplEx model.
 
         Returns:
             A tuple of numpy complex arrays: the first element is the embeddings for nodes/entities
             (``shape = number of nodes × k``), the second element is the embeddings for edge
             types/relations (``shape = number of edge types x k``).
         """
-        node = 1j * model.get_layer(ComplEx._NODE_IMAG).embeddings.numpy()
-        node += model.get_layer(ComplEx._NODE_REAL).embeddings.numpy()
+        node = 1j * self._node_embeddings_imag.embeddings.numpy()
+        node += self._node_embeddings_real.embeddings.numpy()
 
-        rel = 1j * model.get_layer(ComplEx._REL_IMAG).embeddings.numpy()
-        rel += model.get_layer(ComplEx._REL_REAL).embeddings.numpy()
+        rel = 1j * self._edge_type_embeddings_imag.embeddings.numpy()
+        rel += self._edge_type_embeddings_real.embeddings.numpy()
 
         return node, rel
 
-    @staticmethod
-    def rank_edges_against_all_nodes(model, test_data, known_edges_graph):
+    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -177,8 +164,6 @@ class ComplEx:
           filtered modified-object rank would be 2.)
 
         Args:
-            model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
-
             test_data: the output of :meth:`KGTripleGenerator.flow` on some test triples
 
             known_edges_graph (StellarGraph):
@@ -198,7 +183,7 @@ class ComplEx:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
-        all_node_embs, all_rel_embs = ComplEx.embeddings(model)
+        all_node_embs, all_rel_embs = self.embeddings()
         all_node_embs_conj = all_node_embs.conj()
 
         raws = []
@@ -362,43 +347,34 @@ class DistMult:
         self.num_edge_types = len(graph._edges.types)
         self.embedding_dimension = embedding_dimension
 
-        def embed(count, name):
+        def embed(count):
             # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
             # constraints to be normalized: per section 4 in the paper, the embeddings should be
             # normalised to have unit norm.
             return Embedding(
                 count,
                 embedding_dimension,
-                name=name,
                 embeddings_initializer=embeddings_initializer,
                 embeddings_regularizer=embeddings_regularizer,
             )
 
         # DistMult generates embeddings in R
-        self.node_embeddings = embed(self.num_nodes, self._NODE)
-        self.edge_type_embeddings = embed(self.num_edge_types, self._REL)
+        self._node_embeddings = embed(self.num_nodes)
+        self._edge_type_embeddings = embed(self.num_edge_types)
 
-    # layer names
-    _NODE = "DISTMULT_NODE"
-    _REL = "DISTMULT_EDGE_TYPE"
-
-    @staticmethod
-    def embeddings(model):
+    def embeddings(self):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in the given model.
-
-        Args:
-            model (tensorflow.keras.Model): a Keras model created using a ``DistMult`` instance.
+        Retrieve the embeddings for nodes/entities and edge types/relations in this DistMult model.
 
         Returns:
             A tuple of numpy arrays: the first element is the embeddings for nodes/entities
             (``shape = number of nodes × k``), the second element is the embeddings for edge
             types/relations (``shape = number of edge types x k``).
         """
-        node = model.get_layer(DistMult._NODE).embeddings.numpy()
-        rel = model.get_layer(DistMult._REL).embeddings.numpy()
-
-        return node, rel
+        return (
+            self._node_embeddings.embeddings.numpy(),
+            self._edge_type_embeddings.embeddings.numpy(),
+        )
 
     def __call__(self, x):
         """
@@ -411,9 +387,9 @@ class DistMult:
         """
         e1_iloc, r_iloc, e2_iloc = x
 
-        y_e1 = self.node_embeddings(e1_iloc)
-        m_r = self.edge_type_embeddings(r_iloc)
-        y_e2 = self.node_embeddings(e2_iloc)
+        y_e1 = self._node_embeddings(e1_iloc)
+        m_r = self._edge_type_embeddings(r_iloc)
+        y_e2 = self._node_embeddings(e2_iloc)
 
         scoring = DistMultScore()
 

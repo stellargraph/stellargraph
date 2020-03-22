@@ -786,9 +786,6 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             )
 
 
-@experimental(
-    reason="requires more thorough testing and documentation", issues=[827, 828, 832]
-)
 class TemporalRandomWalk(GraphWalk):
     """
     Performs temporal random walks on the given graph. The graph should contain numerical edge
