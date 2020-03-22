@@ -39,7 +39,7 @@ class IntegratedGradientsGAT(GradientSaliencyGAT):
     """
 
     def __init__(self, model, generator, node_list):
-        self.node_list = node_list
+        self.node_list = list(node_list)
         super().__init__(model, generator)
 
     def get_integrated_node_masks(
