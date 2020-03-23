@@ -327,6 +327,8 @@ class ClusterNodeSequence(Sequence):
         target_node_indices = np.array(
             [node_lookup[n] for n in target_nodes_in_cluster]
         )
+        mask = np.zeros(len(g_node_list), dtype=bool)
+        mask[target_node_indices] = True
 
         if index == (len(self.clusters_original) // self.q) - 1:
             # last batch
@@ -347,7 +349,7 @@ class ClusterNodeSequence(Sequence):
 
         features = np.reshape(features, (1,) + features.shape)
         adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
-        target_node_indices = target_node_indices[np.newaxis, :]
+        target_node_indices = mask[np.newaxis, :]
 
         return [features, target_node_indices, adj_cluster], cluster_targets
 

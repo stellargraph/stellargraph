@@ -22,6 +22,20 @@ from .gcn import GraphConvolution
 from ..mapper import ClusterNodeGenerator
 
 
+class Mask(Layer):
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def compute_mask(self, inputs):
+        return inputs[1]
+
+    def call(self, inputs):
+        values, mask = inputs
+        outputs = values * K.cast(mask, values.dtype)
+        outputs._keras_mask = mask
+        return outputs
+
+
 class ClusterGraphConvolution(Layer):
 
     """
@@ -273,10 +287,11 @@ class ClusterGCN:
                     l,
                     activation=a,
                     use_bias=self.bias,
-                    final_layer=ii == (n_layers - 1),
+                    #final_layer=ii == (n_layers - 1),
                     **self._regularisers,
                 )
             )
+        self._layers.append(Mask())
 
     def _get_regularisers_from_keywords(self, kwargs):
         regularisers = {}
@@ -323,6 +338,8 @@ class ClusterGCN:
                 # For a GCN layer add the matrix and output indices
                 # Note that the output indices are only used if `final_layer=True`
                 h_layer = layer([h_layer, out_indices] + Ainput)
+            elif isinstance(layer, Mask):
+                h_layer = layer([h_layer, out_indices])
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
