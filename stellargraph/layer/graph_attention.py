@@ -423,24 +423,15 @@ class GraphAttentionSparse(GraphAttention):
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_initializer (str or func): The initialiser to use for the head weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the head weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the head bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the head bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the head bias;
-            defaults to None.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
-            defaults to 'glorot_uniform'.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the head weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the head weights.
+        kernel_constraint (str or func, optional): The constraint to use for the head weights.
+        bias_initializer (str or func, optional): The initialiser to use for the head bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the head bias.
+        bias_constraint (str or func, optional): The constraint to use for the head bias.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention weights.
     """
 
     def call(self, inputs, **kwargs):
