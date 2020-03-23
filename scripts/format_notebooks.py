@@ -143,10 +143,10 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_blank"><img src="https://mybinder.org/badge_logo.svg"/>'
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
 
     def _colab_badge(self, notebook_path):
-        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg"/>'
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
