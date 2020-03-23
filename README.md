@@ -94,6 +94,7 @@ If you get stuck or have a problem, there's many ways to make progress and get h
 - Contact us:
   - [Ask questions and discuss problems on the StellarGraph Discourse forum](https://community.stellargraph.io)
   - [File an issue](https://github.com/stellargraph/stellargraph/issues/new/choose)
+  - Send us an email at [stellar.admin@csiro.au](mailto:stellar.admin@csiro.au)
 
 
 ## Example: GCN
