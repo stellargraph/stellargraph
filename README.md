@@ -138,15 +138,16 @@ x_inp, x_out = gcn.build() # create the input and output TensorFlow tensors
 
 # use TensorFlow Keras to add a layer to compute the (one-hot) predictions
 predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), activation="softmax")(x_out)
+
+# use the input and output tensors to create a TensorFlow Keras model
+model = tf.keras.Model(inputs=x_inp, outputs=predictions)
 ```
 
 #### Training and evaluation
 
-These input and output tensors can be used to create a TensorFlow Keras model and work with it such as training and evaluation with the functions offered by Keras. StellarGraph's data generators make it simple to construct the required Keras Sequences for input data.
+The model is a conventional TensorFlow Keras model, and so tasks such as training and evaluation can use the functions offered by Keras. StellarGraph's data generators make it simple to construct the required Keras Sequences for input data.
 
 ```python
-model = tf.keras.Model(inputs=x_inp, outputs=predictions)
-
 # prepare the model for training with the Adam optimiser and an appropriate loss function
 model.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
