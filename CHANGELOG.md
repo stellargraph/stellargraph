@@ -10,6 +10,7 @@
 - New algorithms:
   - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750).
   - Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978).
+  - Temporal Random Walks (Continuous-Time Dynamic Network Embeddings): random walks that respect the time that each edge occurred (stored as edge weights) [\#1120](https://github.com/stellargraph/stellargraph/issues/1120).
 
 ### Breaking changes
 

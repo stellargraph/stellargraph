@@ -202,6 +202,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Supervised Graph Classification | A model for supervised graph classification based on GCN [6] layers and mean pooling readout. |
 | Watch Your Step [14] | The Watch Your Step algorithm computes node embeddings by using adjacency powers to simulate expected random walks. |
 | Deep Graph Infomax [15] | Deep Graph Infomax trains unsupervised GNNs to maximize the shared information between node level and graph level features. |
+| Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 
 
 ## Getting Help
@@ -271,3 +272,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arxiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
 
 15. Deep Graph Infomax. P. Velickovic, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arxiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
+
+16. Continuous-Time Dynamic Network Embeddings. Giang Hoang Nguyen, John Boaz Lee, Ryan A. Rossi, Nesreen K. Ahmed, Eunyee Koh, and Sungchul Kim. Proceedings of the 3rd International Workshop on Learning Representations for Big Networks (WWW BigNet) 2018. ([link](https://dl.acm.org/doi/10.1145/3184558.3191526))
