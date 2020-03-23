@@ -93,8 +93,6 @@ class DeepGraphInfomax:
         self._corruptible_inputs_idxs = [0]
 
         self._discriminator = DGIDiscriminator()
-        self._base_input = None
-        self._base_output = None
 
     def build(self):
         """
