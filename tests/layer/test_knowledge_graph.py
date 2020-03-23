@@ -57,7 +57,9 @@ def _model_rankings_test(model_maker):
     # the filtering is most interesting when there's a smattering of edges, somewhere between none
     # and all; this does a stratified sample by label, to make sure there's at least one edge from
     # each label.
-    one_per_label_df = every_edge_df.groupby("label").apply(lambda df: df.sample(n=1)).droplevel(0)
+    one_per_label_df = (
+        every_edge_df.groupby("label").apply(lambda df: df.sample(n=1)).droplevel(0)
+    )
     others_df = every_edge_df.sample(frac=0.25)
     some_edges_df = pd.concat([one_per_label_df, others_df], ignore_index=True)
 
@@ -68,7 +70,10 @@ def _model_rankings_test(model_maker):
 
     all_edges = StellarDiGraph(
         nodes=nodes,
-        edges={name: df.drop(columns="label") for name, df in every_edge_df.groupby("label")},
+        edges={
+            name: df.drop(columns="label")
+            for name, df in every_edge_df.groupby("label")
+        },
     )
 
     gen = KGTripleGenerator(all_edges, 3)
