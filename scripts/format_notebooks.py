@@ -128,12 +128,13 @@ class CloudRunnerPreprocessor(preprocessors.Preprocessor):
     path_resource_name = "cloud_runner_path"
     metadata_tag = "CloudRunner"  # tag for added cells so that we can find them easily
     git_branch = "master"
+    demos_path_prefix = "demos/"
 
     colab_import_code = """\
 # install StellarGraph if running on Google Colab
 import sys
 if 'google.colab' in sys.modules:
-  !pip install -q stellargraph[demos]"""
+  %pip install -q stellargraph[demos]"""
 
     def _binder_url(self, notebook_path):
         return f"https://mybinder.org/v2/gh/stellargraph/stellargraph/{self.git_branch}?filepath={notebook_path}"
@@ -142,15 +143,17 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/>'
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_blank"><img src="https://mybinder.org/badge_logo.svg"/>'
 
     def _colab_badge(self, notebook_path):
-        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/>'
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg"/>'
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
-        if not notebook_path.startswith("demos/"):
-            print(f"Notebook file path of {notebook_path} didn't start with demo")
+        if not notebook_path.startswith(self.demos_path_prefix):
+            print(
+                f"WARNING: Notebook file path of {notebook_path} didn't start with {self.demos_path_prefix}, and may result in bad links to cloud runners."
+            )
         # remove any cells we added in a previous run
         nb.cells = [
             cell
@@ -158,7 +161,7 @@ if 'google.colab' in sys.modules:
             if self.metadata_tag not in cell["metadata"].get("tags", [])
         ]
         # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
-        badge_markdown = f"<table><tr><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
+        badge_markdown = f"<table><tr><td>Run this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
         badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
         badge_cell["metadata"]["tags"] = [self.metadata_tag]
         # the badges go after the first cell, unless the first cell is code
