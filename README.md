@@ -64,7 +64,7 @@ The StellarGraph library offers state-of-the-art algorithms for [graph machine l
 - Link prediction;
 - [Interpretation of node classification](https://medium.com/stellargraph/https-medium-com-stellargraph-saliency-maps-for-graph-machine-learning-5cca536974da) [8].
 
-Graph-structured data represent entities as nodes (or vertices) and relationships between them as edges (or links), along with associated data as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
+Graph-structured data represent entities as nodes (or vertices) and relationships between them as edges (or links), and can data include data associated with either as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
 
 - homogeneous (with nodes and links of one type),
 - heterogeneous (with more than one type of nodes and/or links)
@@ -72,7 +72,7 @@ Graph-structured data represent entities as nodes (or vertices) and relationship
 - graphs with or without data associated with nodes
 - graphs with edge weights
 
-StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras high-level API](https://www.tensorflow.org/guide/keras), as well as [Pandas](https://pandas.pydata.org) and [NumPy](https://www.numpy.org). It is thus user-friendly, modular and extensible. It interoperates smoothly with code that builds on these, such as the standard Keras layers and [scikit-learn](http://scikit-learn.github.io/stable), so it is easy to augment the core graph machine learning algorithms provided by StellarGraph.
+StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras high-level API](https://www.tensorflow.org/guide/keras), as well as [Pandas](https://pandas.pydata.org) and [NumPy](https://www.numpy.org). It is thus user-friendly, modular and extensible. It interoperates smoothly with code that builds on these, such as the standard Keras layers and [scikit-learn](http://scikit-learn.github.io/stable), so it is easy to augment the core graph machine learning algorithms provided by StellarGraph. It is thus also [easy to install with `pip` or Anaconda](#Installation).
 
 ## Getting Started
 
@@ -108,13 +108,16 @@ Data for StellarGraph can be prepared using common libraries like Pandas and sci
 import pandas as pd
 from sklearn import model_selection
 
-# load data into Pandas DataFrames, e.g. from CSV files or a database
+def load_my_data():
+    # your own code to load data into Pandas DataFrames, e.g. from CSV files or a database
+    ...
+
 nodes, edges, targets = load_my_data()
 
 # Use scikit-learn to compute training and test sets
 train_targets, test_targets = model_selection.train_test_split(targets, train_size=0.5)
-
 ```
+
 #### Graph machine learning model
 
 This is the only part that is specific to StellarGraph. The machine learning model consists of some graph convolution layers followed by a layer to compute the actual predictions as a TensorFlow tensor. StellarGraph makes it easy to construct all of these layers via the `GCN` model class. It also makes it easy to get input data in the right format via the `StellarGraph` graph data type and a data generator.
@@ -143,10 +146,14 @@ These input and output tensors can be used to create a TensorFlow Keras model an
 import tensorflow as tf
 
 model = tf.keras.Model(inputs=x_inp, outputs=predictions)
+
+# prepare the model for training with the Adam optimiser and an appropriate loss function
 model.compile("adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
+# train the model on the train set
 model.fit(generator.flow(train_targets.index, train_targets), epochs=5)
 
+# check model generalisation on the test set
 (loss, accuracy) = model.evaluate(generator.flow(test_targets.index, test_targets))
 print(f"Test set: loss = {loss}, accuracy = {accuracy}")
 ```
