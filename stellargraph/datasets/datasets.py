@@ -35,7 +35,12 @@ log = logging.getLogger(__name__)
 
 
 def _load_cora_or_citeseer(
-    dataset, directed, largest_connected_component_only, subject_as_feature, edge_weights, nodes_dtype
+    dataset,
+    directed,
+    largest_connected_component_only,
+    subject_as_feature,
+    edge_weights,
+    nodes_dtype,
 ):
     assert isinstance(dataset, (Cora, CiteSeer))
 
@@ -142,8 +147,14 @@ class Cora(
         nodes_dtype = str if str_node_ids else int
 
         return _load_cora_or_citeseer(
-            self, directed, largest_connected_component_only, subject_as_feature, edge_weights, nodes_dtype
+            self,
+            directed,
+            largest_connected_component_only,
+            subject_as_feature,
+            edge_weights,
+            nodes_dtype,
         )
+
 
 class CiteSeer(
     DatasetLoader,
