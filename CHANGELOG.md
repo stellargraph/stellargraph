@@ -6,7 +6,7 @@
 
 ### Major features and improvements
 
-- [Example Jupyter notebooks](https://github.com/stellargraph/stellargraph/tree/master/demos/) can now be run directly in Google Colab and Bindr, providing an easy way to get started with StellarGraph - simply click the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each notebook. 
+- [Example Jupyter notebooks](https://github.com/stellargraph/stellargraph/tree/master/demos/) can now be run directly in Google Colab and Bindr, providing an easy way to get started with StellarGraph - simply click the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each notebook. [\#1119](https://github.com/stellargraph/stellargraph/pull/1119).
 - New algorithms:
   - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750).
   - Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978).
