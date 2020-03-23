@@ -309,9 +309,6 @@ class DistMultScore(Layer):
         return score
 
 
-@experimental(
-    reason="results from the reference paper have not been reproduced yet", issues=[981]
-)
 class DistMult:
     """
     Embedding layers and a DistMult scoring layers that implement the DistMult knowledge graph
@@ -375,6 +372,103 @@ class DistMult:
             self._node_embeddings.embeddings.numpy(),
             self._edge_type_embeddings.embeddings.numpy(),
         )
+
+    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
+        """
+        Returns the ranks of the true edges in ``test_data``, when scored against all other similar
+        edges.
+
+        For each input edge ``E = (s, r, o)``, the score of the *modified-object* edge ``(s, r, n)``
+        is computed for every node ``n`` in the graph, and similarly the score of the
+        *modified-subject* edge ``(n, r, o)``.
+
+        This computes "raw" and "filtered" ranks:
+
+        raw
+          The score of each edge is ranked against all of the modified-object and modified-subject
+          ones, for instance, if ``E = ("a", "X", "b")`` has score 3.14, and only one
+          modified-object edge has a higher score (e.g. ``F = ("a", "X", "c")``), then the raw
+          modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges have score
+          less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+
+        filtered
+          The score of each edge is ranked against only the unknown modified-object and
+          modified-subject edges. An edge is considered known if it is in ``known_edges_graph``
+          which should typically hold every edge in the dataset (that is everything from the train,
+          test and validation sets, if the data has been split). For instance, continuing the raw
+          example, if the higher-scoring edge ``F`` is in the graph, then it will be ignored, giving
+          a filtered modified-object rank for ``E`` of 1. (If ``F`` was not in the graph, the
+          filtered modified-object rank would be 2.)
+
+        Args:
+            test_data: the output of :meth:`KGTripleGenerator.flow` on some test triples
+
+            known_edges_graph (StellarGraph):
+                a graph instance containing all known edges/triples
+
+        Returns:
+            A numpy array of integer raw ranks. It has shape ``N × 2``, where N is the number of
+            test triples in ``test_data``; the first column (``array[:, 0]``) holds the
+            modified-object ranks, and the second (``array[:, 1]``) holds the modified-subject
+            ranks.
+        """
+
+        if not isinstance(test_data, KGTripleSequence):
+            raise TypeError(
+                "test_data: expected KGTripleSequence; found {type(test_data).__name__}"
+            )
+
+        num_nodes = known_edges_graph.number_of_nodes()
+
+        all_node_embs, all_rel_embs = self.embeddings()
+
+        raws = []
+        filtereds = []
+
+        # run through the batches and compute the ranks for each one
+        num_tested = 0
+        for ((subjects, rels, objects),) in test_data:
+            num_tested += len(subjects)
+
+            # batch_size x k
+            ss = all_node_embs[subjects, :]
+            rs = all_rel_embs[rels, :]
+            os = all_node_embs[objects, :]
+
+            # reproduce the scoring function for ranking the given subject and relation against all
+            # other nodes (objects), and similarly given relation and object against all
+            # subjects. The bulk operations give speeeeeeeeed.
+            # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
+            mod_o_pred = np.inner(all_node_embs, ss * rs)
+            mod_s_pred = np.inner(all_node_embs, rs * os.conj())
+
+            mod_o_raw, mod_o_filt = _ranks_from_score_columns(
+                mod_o_pred,
+                true_modified_node_ilocs=objects,
+                unmodified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=True,
+                known_edges_graph=known_edges_graph,
+            )
+            mod_s_raw, mod_s_filt = _ranks_from_score_columns(
+                mod_s_pred,
+                true_modified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=False,
+                unmodified_node_ilocs=objects,
+                known_edges_graph=known_edges_graph,
+            )
+
+            raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
+            filtereds.append(np.column_stack((mod_o_filt, mod_s_filt)))
+
+        # make one big array
+        raw = np.concatenate(raws)
+        filtered = np.concatenate(filtereds)
+        # for each edge, there should be an pair of raw ranks
+        assert raw.shape == filtered.shape == (num_tested, 2)
+
+        return raw, filtered
 
     def __call__(self, x):
         """
