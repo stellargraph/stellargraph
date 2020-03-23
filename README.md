@@ -124,6 +124,7 @@ This is the only part that is specific to StellarGraph. The machine learning mod
 
 ```python
 import stellargraph as sg
+import tensorflow as tf
 
 # convert the raw data into StellarGraph's graph format for faster operations
 graph = sg.StellarGraph(nodes, edges)
@@ -143,8 +144,6 @@ predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), act
 These input and output tensors can be used to create a TensorFlow Keras model and work with it such as training and evaluation with the functions offered by Keras. StellarGraph's data generators make it simple to construct the required Keras Sequences for input data.
 
 ```python
-import tensorflow as tf
-
 model = tf.keras.Model(inputs=x_inp, outputs=predictions)
 
 # prepare the model for training with the Adam optimiser and an appropriate loss function
