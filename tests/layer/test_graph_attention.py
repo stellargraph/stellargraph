@@ -19,6 +19,7 @@ GAT tests
 """
 import pytest
 import scipy.sparse as sps
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
@@ -591,6 +592,31 @@ class Test_GAT:
             1.0 / G.number_of_nodes()
         )
         assert np.allclose(expected, actual[0])
+
+    def test_kernel_and_bias_defaults(self):
+        graph = example_graph(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(graph, sparse=self.sparse, method=self.method)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+        )
+        for layer in gat._layers:
+            if isinstance(layer, GraphAttention):
+                assert isinstance(
+                    layer.kernel_initializer, tf.initializers.GlorotUniform
+                )
+                assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+                assert isinstance(
+                    layer.attn_kernel_initializer, tf.initializers.GlorotUniform
+                )
+                assert layer.kernel_regularizer is None
+                assert layer.bias_regularizer is None
+                assert layer.attn_kernel_regularizer is None
+                assert layer.kernel_constraint is None
+                assert layer.bias_constraint is None
+                assert layer.attn_kernel_constraint is None
 
 
 def TestGATsparse(Test_GAT):
