@@ -264,11 +264,27 @@ class ClusterGCN:
         generator (ClusterNodeGenerator): an instance of ClusterNodeGenerator class constructed on the graph of interest
         bias (bool): toggles an optional bias in graph convolutional layers
         dropout (float): dropout rate applied to input features of each graph convolutional layer
-        kernel_regularizer (str): normalization applied to the kernels of graph convolutional layers
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
 
     def __init__(
-        self, layer_sizes, activations, generator, bias=True, dropout=0.0, **kwargs
+        self,
+        layer_sizes,
+        activations,
+        generator,
+        bias=True,
+        dropout=0.0,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
     ):
         if not isinstance(generator, ClusterNodeGenerator):
             raise TypeError("Generator should be a instance of ClusterNodeGenerator")
@@ -288,9 +304,6 @@ class ClusterGCN:
         self.generator = generator
         self.support = 1
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Initialize a stack of Cluster GCN layers
         n_layers = len(self.layer_sizes)
         self._layers = []
@@ -304,24 +317,14 @@ class ClusterGCN:
                     activation=a,
                     use_bias=self.bias,
                     final_layer=ii == (n_layers - 1),
-                    **self._regularisers,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, x):
         """
