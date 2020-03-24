@@ -161,7 +161,7 @@ if 'google.colab' in sys.modules:
             if self.metadata_tag not in cell["metadata"].get("tags", [])
         ]
         # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
-        badge_markdown = f"<table><tr><td>Run this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
+        badge_markdown = f"<table><tr><td>Run the master version of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
         badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
         badge_cell["metadata"]["tags"] = [self.metadata_tag]
         # the badges go after the first cell, unless the first cell is code
