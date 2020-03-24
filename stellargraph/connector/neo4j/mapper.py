@@ -115,6 +115,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.sampler = Neo4JSampledBreadthFirstWalk(
@@ -212,6 +213,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE

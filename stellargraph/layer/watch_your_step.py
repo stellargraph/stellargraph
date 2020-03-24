@@ -153,7 +153,8 @@ class WatchYourStep:
 
         if embedding_dimension % 2 != 0:
             warnings.warn(
-                f"embedding_dimension: expected even number, found odd number ({embedding_dimension}). It will be rounded down to {embedding_dimension - 1}."
+                f"embedding_dimension: expected even number, found odd number ({embedding_dimension}). It will be rounded down to {embedding_dimension - 1}.",
+                stacklevel=2,
             )
             embedding_dimension -= 1
 
