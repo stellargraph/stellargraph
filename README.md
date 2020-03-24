@@ -90,7 +90,8 @@ attributes for the entities represented as graph nodes.
 [NetworkX](https://networkx.github.io/) is used to represent the graph and [Pandas](https://pandas.pydata.org/)
 or [Numpy](https://www.numpy.org/) are used to store node attributes.
 
-Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of various machine learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, are given in the `demos` directory of this repository.
+Detailed and narrated [examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) of various machine learning workflows on network data, supported by StellarGraph, from data ingestion into graph structure to inference, are given in the `demos` directory of this repository.  You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
+
 
 <!--
 StellarGraph supports different machine learning use-cases, including:
