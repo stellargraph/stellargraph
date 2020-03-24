@@ -37,10 +37,10 @@ class EdgeSplitter(object):
     can be used and it must be in the format dd/mm/yyyy. A date to be used as a threshold value such that only
     edges that have date after the threshold must be given. This effects only the sampling of positive edges.
 
-    Negative edges are sampled at random by uniformly (for 'global' method) selecting two nodes in the graph and
+    Negative edges are sampled at random (for 'global' method) selecting two nodes in the graph and
     then checking if these edges are connected or not. If not, the pair of nodes is considered a negative sample.
     Otherwise, it is discarded and the process repeats. Alternatively, negative edges are sampled (for 'local' method)
-    using DFS search at a distance from the source node (selected uniformly at random from all nodes in the graph)
+    using DFS search at a distance from the source node (selected at random from all nodes in the graph)
     sampled according to a given set of probabilities.
 
     Positive edges can be sampled so that when they are subsequently removed from the graph, the reduced graph is either
@@ -299,8 +299,8 @@ class EdgeSplitter(object):
              in the original graph. If the graph is heterogeneous, the percentage is calculated
              as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
              edge_attribute_threshold values given.
-            method (str): How negative edges are sampled. If 'global', then nodes are selected uniformly at random.
-             If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is
+            method (str): How negative edges are sampled. If 'global', then nodes are selected at random.
+             If 'local' then the first nodes is sampled from all nodes in the graph, but the second node is
              chosen to be from the former's local neighbourhood.
             probs (list): list The probabilities for sampling a node that is k-hops from the source node,
              e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
