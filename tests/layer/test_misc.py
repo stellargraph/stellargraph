@@ -110,7 +110,9 @@ def test_squeezedsparseconversion_axis():
     assert np.allclose(z, A.sum(axis=1), atol=1e-7)
 
 
-@pytest.mark.parametrize("model_type", [APPNP]) #("model_type", [GCN, GAT, PPNP, APPNP])
+@pytest.mark.parametrize(
+    "model_type", [APPNP]
+)  # ("model_type", [GCN, GAT, PPNP, APPNP])
 def test_deprecated_model_function(model_type):
     G, _ = create_graph_features()
     generator = FullBatchNodeGenerator(G)
@@ -132,4 +134,3 @@ def test_deprecated_model_function(model_type):
             x_in, x_out = sg_model.link_model()
     except AttributeError:
         pass
-

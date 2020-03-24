@@ -103,10 +103,10 @@ def deprecated_model_function(function, old_name):
 
         warnings.warn(
             f"The '{old_name}' method is deprecated, use 'in_out_tensors' instead.",
-            DeprecationWarning, stacklevel=2,
+            DeprecationWarning,
+            stacklevel=2,
         )
 
         return function(*args, **kwargs)
 
     return _function_wrapper
-
