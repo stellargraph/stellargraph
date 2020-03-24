@@ -1081,6 +1081,7 @@ class GraphSAGE:
             "The .default_model() method will be deprecated in future versions. "
             "Please use .build() method instead.",
             PendingDeprecationWarning,
+            stacklevel=2,
         )
         return self.build()
 

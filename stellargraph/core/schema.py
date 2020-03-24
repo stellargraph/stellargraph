@@ -60,7 +60,7 @@ class GraphSchema:
         try:
             index = self.node_types.index(name)
         except ValueError:
-            warnings.warn("Node key '{}' not found.".format(name), RuntimeWarning)
+            warnings.warn("Node key '{}' not found.".format(name), RuntimeWarning, stacklevel=2)
             index = None
         return index
 

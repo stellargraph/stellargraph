@@ -83,7 +83,8 @@ class DeepGraphInfomax:
         if base_model.multiplicity != 1:
             warnings.warn(
                 f"multiplicity: expected the base_model to have a multiplicity of 1, found"
-                f" ({self.base_model.multiplicity}). A multiplicity of 1 will be used to construct the base model."
+                f" ({self.base_model.multiplicity}). A multiplicity of 1 will be used to construct the base model.",
+                stacklevel=2,
             )
 
         self.base_model = base_model

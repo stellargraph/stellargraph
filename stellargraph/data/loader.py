@@ -49,6 +49,7 @@ def from_epgm(epgm_location, dataset_name=None, directed=False):
                 dataset_name
             ),
             RuntimeWarning,
+            stacklevel=2,
         )
 
     # Select graph using dataset_name
