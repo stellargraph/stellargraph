@@ -124,6 +124,63 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
         return cell, resources
 
 
+class CloudRunnerPreprocessor(preprocessors.Preprocessor):
+    path_resource_name = "cloud_runner_path"
+    metadata_tag = "CloudRunner"  # tag for added cells so that we can find them easily
+    git_branch = "master"
+    demos_path_prefix = "demos/"
+
+    colab_import_code = """\
+# install StellarGraph if running on Google Colab
+import sys
+if 'google.colab' in sys.modules:
+  %pip install -q stellargraph[demos]"""
+
+    def _binder_url(self, notebook_path):
+        return f"https://mybinder.org/v2/gh/stellargraph/stellargraph/{self.git_branch}?urlpath=lab/tree/{notebook_path}"
+
+    def _colab_url(self, notebook_path):
+        return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
+
+    def _binder_badge(self, notebook_path):
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
+
+    def _colab_badge(self, notebook_path):
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
+
+    def preprocess(self, nb, resources):
+        notebook_path = resources[self.path_resource_name]
+        if not notebook_path.startswith(self.demos_path_prefix):
+            print(
+                f"WARNING: Notebook file path of {notebook_path} didn't start with {self.demos_path_prefix}, and may result in bad links to cloud runners."
+            )
+        # remove any cells we added in a previous run
+        nb.cells = [
+            cell
+            for cell in nb.cells
+            if self.metadata_tag not in cell["metadata"].get("tags", [])
+        ]
+        # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
+        badge_markdown = f"<table><tr><td>Run the master version of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
+        badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
+        badge_cell["metadata"]["tags"] = [self.metadata_tag]
+        # the badges go after the first cell, unless the first cell is code
+        if nb.cells[0].cell_type == "code":
+            nb.cells.insert(0, badge_cell)
+        else:
+            nb.cells.insert(1, badge_cell)
+        # find first code cell and insert a Colab import statement before it
+        first_code_cell_id = next(
+            index for index, cell in enumerate(nb.cells) if cell.cell_type == "code"
+        )
+        import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
+        import_cell["metadata"]["tags"] = [self.metadata_tag]
+        nb.cells.insert(first_code_cell_id, import_cell)
+
+        nb.cells.append(badge_cell)  # add a badge to the bottom of notebook
+        return nb, resources
+
+
 # ANSI terminal escape sequences
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
@@ -190,7 +247,13 @@ if __name__ == "__main__":
         "-d",
         "--default",
         action="store_true",
-        help="Perform default formatting, equivalent to -wcnks",
+        help="Perform default formatting, equivalent to -wcnksr",
+    )
+    parser.add_argument(
+        "-r",
+        "--run_cloud",
+        action="store_true",
+        help="Add or update cells that support running this notebook via cloud services",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -231,9 +294,12 @@ if __name__ == "__main__":
     set_kernel = args.set_kernel or args.default
     execute_code = args.execute
     cell_timeout = args.cell_timeout
+    run_cloud = args.run_cloud or args.default
 
     # Add preprocessors
     preprocessor_list = []
+    if run_cloud:
+        preprocessor_list.append(CloudRunnerPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
@@ -292,11 +358,16 @@ if __name__ == "__main__":
         print(f"{YELLOW_BOLD} \nProcessing file {file_loc}{RESET}")
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
+        # the CloudRunnerPreprocessor needs to know the filename of this notebook
+        resources = {CloudRunnerPreprocessor.path_resource_name: str(file_loc)}
+
         writer = writers.FilesWriter()
 
         if write_notebook:
             # Process the notebook to a new notebook
-            (body, resources) = nb_exporter.from_notebook_node(in_notebook)
+            (body, resources) = nb_exporter.from_notebook_node(
+                in_notebook, resources=resources
+            )
 
             temporary_file = None
 
@@ -326,7 +397,9 @@ if __name__ == "__main__":
 
         if write_html:
             # Process the notebook to HTML
-            (body, resources) = html_exporter.from_notebook_node(in_notebook)
+            (body, resources) = html_exporter.from_notebook_node(
+                in_notebook, resources=resources
+            )
 
             html_file_loc = str(file_loc.with_suffix(""))
             print(f"Writing HTML to {html_file_loc}.html")
