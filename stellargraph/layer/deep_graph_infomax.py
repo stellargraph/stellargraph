@@ -112,7 +112,7 @@ class DeepGraphInfomax:
             input and output layers for use with a keras model
         """
 
-        x_inp, node_feats = self.base_model.build(multiplicity=1)
+        x_inp, node_feats = self.base_model.in_out_tensors(multiplicity=1)
         # identity layer so we can attach a name to the tensor
         node_feats = Lambda(lambda x: x, name=self._unique_id)(node_feats)
         x_corr = [

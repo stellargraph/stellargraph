@@ -209,7 +209,7 @@ class Attri2Vec:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def in_out_tensors(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a Attri2Vec model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -220,9 +220,11 @@ class Attri2Vec:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.multiplicity == 1:
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+        if multiplicity == 1:
             return self._node_model()
-        elif self.multiplicity == 2:
+        elif multiplicity == 2:
             return self._link_model()
         else:
             raise RuntimeError(

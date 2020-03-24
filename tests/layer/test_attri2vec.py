@@ -113,7 +113,7 @@ def test_attri2vec_apply():
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = attri2vec.in_out_tensors()
+    xinp, xout = attri2vec.in_out_tensors(multiplicity=1)
     model2 = keras.Model(inputs=xinp, outputs=xout)
     assert pytest.approx(expected) == model2.predict(x)
 

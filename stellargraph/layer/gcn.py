@@ -463,11 +463,11 @@ class GCN:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
     def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
