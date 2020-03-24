@@ -21,6 +21,7 @@ GraphSAGE tests
 """
 from tensorflow import keras
 from tensorflow.keras import initializers, regularizers
+import tensorflow as tf
 
 import numpy as np
 import pytest
@@ -686,3 +687,14 @@ def test_graphsage_passing_regularisers():
             multiplicity=1,
             kernel_regularizer="wilma",
         )
+
+
+def test_kernel_and_bias_defaults():
+    gs = GraphSAGE(layer_sizes=[4, 4], n_samples=[2, 2], input_dim=2, multiplicity=1)
+    for layer in gs._aggs:
+        assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+        assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+        assert layer.kernel_regularizer is None
+        assert layer.bias_regularizer is None
+        assert layer.kernel_constraint is None
+        assert layer.bias_constraint is None
