@@ -209,7 +209,7 @@ def test_RGCN_apply_sparse():
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -233,7 +233,7 @@ def test_RGCN_apply_dense():
     generator = RelationalFullBatchNodeGenerator(G, sparse=False)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -262,7 +262,7 @@ def test_RGCN_apply_sparse_directed():
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -285,7 +285,7 @@ def test_RGCN_apply_dense_directed():
 
     generator = RelationalFullBatchNodeGenerator(G, sparse=False)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method

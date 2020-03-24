@@ -52,7 +52,7 @@ def test_complex(knowledge_graph):
     # use a random initializer with a large positive range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
     complex_model = ComplEx(gen, 5, embeddings_initializer=init)
-    x_inp, x_out = complex_model.build()
+    x_inp, x_out = complex_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
     model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
@@ -91,7 +91,7 @@ def test_complex(knowledge_graph):
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
-    model2 = Model(*complex_model.build())
+    model2 = Model(*complex_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
     assert np.array_equal(prediction, prediction2)
 
@@ -125,7 +125,7 @@ def test_complex_rankings():
 
     gen = KGTripleGenerator(all_edges, 3)
     complex_model = ComplEx(gen, 5)
-    x_inp, x_out = complex_model.build()
+    x_inp, x_out = complex_model.in_out_tensors()
     model = Model(x_inp, x_out)
 
     raw_some, filtered_some = complex_model.rank_edges_against_all_nodes(
@@ -199,7 +199,7 @@ def test_dismult(knowledge_graph):
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
     distmult_model = DistMult(gen, 5, embeddings_initializer=init)
-    x_inp, x_out = distmult_model.build()
+    x_inp, x_out = distmult_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
 
@@ -239,6 +239,6 @@ def test_dismult(knowledge_graph):
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
-    model2 = Model(*distmult_model.build())
+    model2 = Model(*distmult_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
     assert np.array_equal(prediction, prediction2)

@@ -209,7 +209,7 @@ class Attri2Vec:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a Attri2Vec model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -233,7 +233,7 @@ class Attri2Vec:
     def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
+            "Please use .in_out_tensors() method instead.",
             PendingDeprecationWarning,
         )
-        return self.build()
+        return self.in_out_tensors()

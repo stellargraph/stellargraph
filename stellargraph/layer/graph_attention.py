@@ -577,7 +577,7 @@ class GAT:
                     in_dropout=0.5,
                     attn_dropout=0.5,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
     For more details, please see the GAT demo notebook:
     demos/node-classification/gat/gat-cora-node-classification-example.ipynb
@@ -901,7 +901,7 @@ class GAT:
 
         return self._normalization(h_layer)
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GAT model for node or link prediction
 

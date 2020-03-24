@@ -95,7 +95,7 @@ class DeepGraphInfomax:
 
         self._discriminator = DGIDiscriminator()
 
-    def build(self):
+    def in_out_tensors(self):
         """
         A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
 
@@ -104,7 +104,7 @@ class DeepGraphInfomax:
         Example::
 
             dg_infomax = DeepGraphInfoMax(...)
-            x_in, x_out = dg_infomax.build()
+            x_in, x_out = dg_infomax.in_out_tensors()
             model = Model(inputs=x_in, outputs=x_out)
             model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, ...)
 
@@ -141,7 +141,7 @@ class DeepGraphInfomax:
 
         Args:
             model (keras.Model): the base Deep Graph Infomax model with inputs and outputs created from
-                DeepGraphInfoMax.build()
+                DeepGraphInfoMax.in_out_tensors()
         Returns:
             input and output layers for use with a keras model
         """

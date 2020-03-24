@@ -256,7 +256,7 @@ class GCN:
                     generator=generator,
                     dropout=0.5
                 )
-            x_inp, predictions = gcn.build()
+            x_inp, predictions = gcn.in_out_tensors()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -412,7 +412,7 @@ class GCN:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GCN model for node or link prediction
 

@@ -197,7 +197,7 @@ class WatchYourStep:
 
         return embeddings
 
-    def build(self):
+    def in_out_tensors(self):
         """
         This function builds the layers for a keras model.
 

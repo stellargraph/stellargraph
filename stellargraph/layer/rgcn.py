@@ -392,7 +392,7 @@ class RGCN:
                     generator=generator,
                     dropout=0.5
                 )
-            x_inp, predictions = rgcn.build()
+            x_inp, predictions = rgcn.in_out_tensors()
 
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.
@@ -587,7 +587,7 @@ class RGCN:
 
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a RGCN model for node prediction. Link/node pair prediction will added in the future.
 

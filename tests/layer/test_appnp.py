@@ -99,7 +99,7 @@ def test_APPNP_apply_dense():
     generator = FullBatchNodeGenerator(G, sparse=False, method="gcn")
     appnpModel = APPNP([2], generator=generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = appnpModel.build()
+    x_in, x_out = appnpModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -126,7 +126,7 @@ def test_APPNP_apply_sparse():
     generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
     appnpnModel = APPNP([2], generator=generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = appnpnModel.build()
+    x_in, x_out = appnpnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -149,7 +149,7 @@ def test_APPNP_linkmodel_apply_dense():
     generator = FullBatchLinkGenerator(G, sparse=False, method="none")
     appnpnModel = APPNP([3], generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = appnpnModel.build()
+    x_in, x_out = appnpnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -178,7 +178,7 @@ def test_APPNP_linkmodel_apply_sparse():
         layer_sizes=[3], activations=["relu"], generator=generator, dropout=0.5
     )
 
-    x_in, x_out = appnpnModel.build()
+    x_in, x_out = appnpnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method

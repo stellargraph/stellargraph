@@ -194,7 +194,7 @@ class APPNP:
                 generator=generator,
                 dropout=0.5
             )
-            x_in, x_out = ppnp.build()
+            x_in, x_out = ppnp.in_out_tensors()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -362,7 +362,7 @@ class APPNP:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds an APPNP model for node or link prediction
 

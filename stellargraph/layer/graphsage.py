@@ -748,7 +748,7 @@ class GraphSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
@@ -1055,7 +1055,7 @@ class GraphSAGE:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -1079,10 +1079,10 @@ class GraphSAGE:
     def default_model(self, flatten_output=True):
         warnings.warn(
             "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
+            "Please use .in_out_tensors() method instead.",
             PendingDeprecationWarning,
         )
-        return self.build()
+        return self.in_out_tensors()
 
 
 class DirectedGraphSAGE(GraphSAGE):

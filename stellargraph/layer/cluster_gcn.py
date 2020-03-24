@@ -256,7 +256,7 @@ class ClusterGCN:
                              generator=generator,
                              dropout=0.5
                 )
-            x_inp, predictions = cluster_gcn.build()
+            x_inp, predictions = cluster_gcn.in_out_tensors()
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack
@@ -362,7 +362,7 @@ class ClusterGCN:
 
         return h_layer
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a Cluster-GCN model for node prediction.
 

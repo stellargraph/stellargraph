@@ -258,7 +258,7 @@ class ComplEx:
 
         return scoring([s_re, s_im, r_re, r_im, o_re, o_im])
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a ComplEx model.
 
@@ -395,7 +395,7 @@ class DistMult:
 
         return scoring([y_e1, m_r, y_e2])
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a DistMult model.
 

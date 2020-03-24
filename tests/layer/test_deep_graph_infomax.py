@@ -41,7 +41,7 @@ def test_dgi(model_type, sparse):
     )
     infomax = DeepGraphInfomax(base_model)
 
-    model = tf.keras.Model(*infomax.build())
+    model = tf.keras.Model(*infomax.in_out_tensors())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model.fit(gen)
 
@@ -64,14 +64,14 @@ def test_dgi_embedding_wrong_model():
         GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
     )
 
-    model_1 = tf.keras.Model(*infomax_1.build())
+    model_1 = tf.keras.Model(*infomax_1.in_out_tensors())
 
-    # check case when infomax_2.build() has not been called
+    # check case when infomax_2.in_out_tensors() has not been called
     with pytest.raises(ValueError, match="model: *."):
         infomax_2.embedding_model(model_1)
 
-    # check case when infomax_2.build() has been called
-    model_2 = tf.keras.Model(*infomax_2.build())
+    # check case when infomax_2.in_out_tensors() has been called
+    model_2 = tf.keras.Model(*infomax_2.in_out_tensors())
     with pytest.raises(ValueError, match="model: *."):
         infomax_2.embedding_model(model_1)
 
@@ -91,8 +91,8 @@ def test_dgi_stateful():
         GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
     )
 
-    model_1 = tf.keras.Model(*infomax.build())
-    model_2 = tf.keras.Model(*infomax.build())
+    model_1 = tf.keras.Model(*infomax.in_out_tensors())
+    model_2 = tf.keras.Model(*infomax.in_out_tensors())
 
     # check embeddings are equal before training
     embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(

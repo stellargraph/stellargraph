@@ -306,7 +306,7 @@ class PPNP:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a PPNP model for node or link prediction
 
