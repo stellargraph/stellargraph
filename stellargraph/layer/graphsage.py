@@ -836,9 +836,8 @@ class GraphSAGE:
             # Check the number of samples and the layer sizes are consistent
             if len(self.n_samples) != self.max_hops:
                 raise ValueError(
-                    "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
-                        self.n_samples, self.layer_sizes
-                    )
+                    f"n_samples: expected one sample size for each of the {self.max_hops} layers, "
+                    f"found {len(self.n_samples)} sample sizes"
                 )
 
         # Feature dimensions for each layer
