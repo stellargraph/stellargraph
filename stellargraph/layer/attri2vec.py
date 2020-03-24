@@ -29,6 +29,16 @@ import warnings
 from ..mapper import Attri2VecLinkGenerator, Attri2VecNodeGenerator
 
 
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'input_dim', 'node_num' and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
+        )
+
+
 class Attri2Vec:
     """
     Implementation of the attri2vec algorithm of Zhang et al. with Keras layers.
@@ -40,11 +50,18 @@ class Attri2Vec:
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence.
-        input_dim (int): The dimensions of the node features used as input to the model.
-        node_num (int): The number of nodes in the given graph.
         bias (bool): If True a bias vector is learnt for each layer in the attri2vec model, default to False.
         activation (str): The activation function of each layer in the attri2vec model, which takes values from "linear", "relu" and "sigmoid"(default).
         normalize ("l2" or None): The normalization used after each layer, default to None.
+        input_dim (int, optional): The dimensions of the node features used as input to the model.
+        node_num (int, optional): The number of nodes in the given graph.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
+            inference and 2 for link inference (currently no others are supported).
+
+    .. note::
+        The values for ``input_dim``, ``node_num``, and ``multiplicity`` are obtained from the
+        provided ``generator`` by default. The additional keyword arguments for these parameters
+        provide an alternative way to specify them if a generator cannot be supplied.
 
     """
 
@@ -55,7 +72,9 @@ class Attri2Vec:
         bias=False,
         activation="sigmoid",
         normalize=None,
-        **kwargs
+        input_dim=None,
+        node_num=None,
+        multiplicity=None,
     ):
 
         if activation == "linear" or activation == "relu" or activation == "sigmoid":
@@ -84,7 +103,9 @@ class Attri2Vec:
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
-            self._get_sizes_from_keywords(kwargs)
+            self.input_node_num = _require_without_generator(node_num, "node_num")
+            self.input_feature_size = _require_without_generator(input_dim, "input_dim")
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
 
         # Model parameters
         self.n_layers = len(layer_sizes)
@@ -129,22 +150,6 @@ class Attri2Vec:
                 "Attri2Vec called on graph with more than one node type."
             )
         self.input_feature_size = feature_sizes.popitem()[1]
-
-    def _get_sizes_from_keywords(self, kwargs):
-        """
-        Sets node_num and input_feature_size from the keywords.
-        Args:
-             kwargs: The additional keyword arguments.
-        """
-        try:
-            self.input_node_num = kwargs["node_num"]
-            self.input_feature_size = kwargs["input_dim"]
-            self.multiplicity = kwargs["multiplicity"]
-
-        except KeyError:
-            raise KeyError(
-                "Generator not provided; node_num, multiplicity, and input_dim must be specified."
-            )
 
     def __call__(self, xin):
         """
