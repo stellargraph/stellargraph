@@ -68,24 +68,15 @@ class GraphAttention(Layer):
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_initializer (str or func): The initialiser to use for the head weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the head weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the head bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the head bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the head bias;
-            defaults to None.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
-            defaults to 'glorot_uniform'.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the head weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the head weights.
+        kernel_constraint (str or func, optional): The constraint to use for the head weights.
+        bias_initializer (str or func, optional): The initialiser to use for the head bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the head bias.
+        bias_constraint (str or func, optional): The constraint to use for the head bias.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention weights.
     """
 
     def __init__(
@@ -99,6 +90,15 @@ class GraphAttention(Layer):
         use_bias=True,
         final_layer=False,
         saliency_map_support=False,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        attn_kernel_initializer="glorot_uniform",
+        attn_kernel_regularizer=None,
+        attn_kernel_constraint=None,
         **kwargs,
     ):
 
@@ -131,34 +131,17 @@ class GraphAttention(Layer):
             # Output will have shape (..., F')
             self.output_dim = self.units
 
-        self._get_regularisers_from_keywords(kwargs)
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+        self.attn_kernel_initializer = initializers.get(attn_kernel_initializer)
+        self.attn_kernel_regularizer = regularizers.get(attn_kernel_regularizer)
+        self.attn_kernel_constraint = constraints.get(attn_kernel_constraint)
 
         super().__init__(**kwargs)
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
-
-        self.attn_kernel_initializer = initializers.get(
-            kwargs.pop("attn_kernel_initializer", "glorot_uniform")
-        )
-        self.attn_kernel_regularizer = regularizers.get(
-            kwargs.pop("attn_kernel_regularizer", None)
-        )
-        self.attn_kernel_constraint = constraints.get(
-            kwargs.pop("attn_kernel_constraint", None)
-        )
 
     def get_config(self):
         """
@@ -440,24 +423,15 @@ class GraphAttentionSparse(GraphAttention):
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_initializer (str or func): The initialiser to use for the head weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the head weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the head bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the head bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the head bias;
-            defaults to None.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
-            defaults to 'glorot_uniform'.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the head weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the head weights.
+        kernel_constraint (str or func, optional): The constraint to use for the head weights.
+        bias_initializer (str or func, optional): The initialiser to use for the head bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the head bias.
+        bias_constraint (str or func, optional): The constraint to use for the head bias.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention weights.
     """
 
     def call(self, inputs, **kwargs):
@@ -569,6 +543,16 @@ class GraphAttentionSparse(GraphAttention):
         return output
 
 
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'input_dim', 'node_num' and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
+        )
+
+
 class GAT:
     """
     A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads,
@@ -631,10 +615,24 @@ class GAT:
         activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
+            inference and 2 for link inference (currently no others are supported).
+        num_nodes (int, optional): The number of nodes in the given graph.
+        num_features (int, optional): The dimensions of the node features used as input to the model.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention bias.
+
+    .. note::
+        The values for ``multiplicity``, ``num_nodes``, and ``num_features`` are obtained from the
+        provided ``generator`` by default. The additional keyword arguments for these parameters
+        provide an alternative way to specify them if a generator cannot be supplied.
     """
 
     def __init__(
@@ -649,7 +647,18 @@ class GAT:
         normalize=None,
         activations=None,
         saliency_map_support=False,
-        **kwargs,
+        multiplicity=1,
+        num_nodes=None,
+        num_features=None,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        attn_kernel_initializer="glorot_uniform",
+        attn_kernel_regularizer=None,
+        attn_kernel_constraint=None,
     ):
         self.bias = bias
         self.in_dropout = in_dropout
@@ -762,9 +771,9 @@ class GAT:
         # Check generator and configure sparse adjacency matrix
         if generator is None:
             self.use_sparse = False
-            self.multiplicity = kwargs.get("multiplicity", 1)
-            self.n_nodes = kwargs.get("num_nodes", None)
-            self.n_features = kwargs.get("num_features", None)
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
+            self.n_nodes = _require_without_generator(num_nodes, "num_nodes")
+            self.n_features = _require_without_generator(num_features, "num_features")
 
         else:
             if not isinstance(generator, FullBatchGenerator):
@@ -803,9 +812,6 @@ class GAT:
         else:
             self._gat_layer = GraphAttention
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Initialize a stack of GAT layers
         self._layers = []
         n_layers = len(self.layer_sizes)
@@ -825,27 +831,17 @@ class GAT:
                     use_bias=self.bias,
                     final_layer=ii == (n_layers - 1),
                     saliency_map_support=self.saliency_map_support,
-                    **self._regularisers,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
+                    attn_kernel_initializer=attn_kernel_initializer,
+                    attn_kernel_regularizer=attn_kernel_regularizer,
+                    attn_kernel_constraint=attn_kernel_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-            "attn_kernel_initializer",
-            "attn_kernel_regularizer",
-            "attn_kernel_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, inputs):
         """

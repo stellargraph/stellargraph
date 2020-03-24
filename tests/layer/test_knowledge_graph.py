@@ -21,8 +21,10 @@ import pytest
 import pandas as pd
 import numpy as np
 
+import tensorflow as tf
 from tensorflow.keras import Model, initializers, losses
 
+from stellargraph import StellarGraph, StellarDiGraph
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
 from stellargraph.layer.knowledge_graph import ComplEx, DistMult
 
@@ -49,7 +51,8 @@ def test_complex(knowledge_graph):
 
     # use a random initializer with a large positive range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    x_inp, x_out = ComplEx(gen, 5, embeddings_initializer=init).build()
+    complex_model = ComplEx(gen, 5, embeddings_initializer=init)
+    x_inp, x_out = complex_model.build()
 
     model = Model(x_inp, x_out)
     model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
@@ -73,7 +76,7 @@ def test_complex(knowledge_graph):
     r_idx = knowledge_graph._edges.types.to_iloc(df.label)
     o_idx = knowledge_graph._get_index_for_nodes(df.target)
 
-    nodes, edge_types = ComplEx.embeddings(model)
+    nodes, edge_types = complex_model.embeddings()
     # the rows correspond to the embeddings for the given edge, so we can do bulk operations
     e_s = nodes[s_idx, :]
     w_r = edge_types[r_idx, :]
@@ -86,15 +89,22 @@ def test_complex(knowledge_graph):
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
 
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*complex_model.build())
+    prediction2 = model2.predict(gen.flow(df))
+    assert np.array_equal(prediction, prediction2)
 
-def test_dismult(knowledge_graph):
+
+def test_distmult(knowledge_graph):
     # this test creates a random untrained model and predicts every possible edge in the graph, and
     # compares that to a direct implementation of the scoring method in the paper
     gen = KGTripleGenerator(knowledge_graph, 3)
 
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    x_inp, x_out = DistMult(gen, 5, embeddings_initializer=init).build()
+    distmult_model = DistMult(gen, 5, embeddings_initializer=init)
+    x_inp, x_out = distmult_model.build()
 
     model = Model(x_inp, x_out)
 
@@ -119,7 +129,7 @@ def test_dismult(knowledge_graph):
     r_idx = knowledge_graph._edges.types.to_iloc(df.label)
     o_idx = knowledge_graph._get_index_for_nodes(df.target)
 
-    nodes, edge_types = DistMult.embeddings(model)
+    nodes, edge_types = distmult_model.embeddings()
     # the rows correspond to the embeddings for the given edge, so we can do bulk operations
     e_s = nodes[s_idx, :]
     w_r = edge_types[r_idx, :]
@@ -131,3 +141,110 @@ def test_dismult(knowledge_graph):
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*distmult_model.build())
+    prediction2 = model2.predict(gen.flow(df))
+    assert np.array_equal(prediction, prediction2)
+
+
+@pytest.mark.parametrize("model_maker", [ComplEx, DistMult])
+def test_model_rankings(model_maker):
+    nodes = pd.DataFrame(index=["a", "b", "c", "d"])
+    rels = ["W", "X", "Y", "Z"]
+    empty = pd.DataFrame(columns=["source", "target"])
+
+    every_edge = itertools.product(nodes.index, rels, nodes.index)
+    every_edge_df = triple_df(*every_edge)
+
+    no_edges = StellarDiGraph(nodes, {name: empty for name in rels})
+
+    # the filtering is most interesting when there's a smattering of edges, somewhere between none
+    # and all; this does a stratified sample by label, to make sure there's at least one edge from
+    # each label.
+    one_per_label_df = (
+        every_edge_df.groupby("label").apply(lambda df: df.sample(n=1)).droplevel(0)
+    )
+    others_df = every_edge_df.sample(frac=0.25)
+    some_edges_df = pd.concat([one_per_label_df, others_df], ignore_index=True)
+
+    some_edges = StellarDiGraph(
+        nodes,
+        {name: df.drop(columns="label") for name, df in some_edges_df.groupby("label")},
+    )
+
+    all_edges = StellarDiGraph(
+        nodes=nodes,
+        edges={
+            name: df.drop(columns="label")
+            for name, df in every_edge_df.groupby("label")
+        },
+    )
+
+    gen = KGTripleGenerator(all_edges, 3)
+    sg_model = model_maker(gen, embedding_dimension=5)
+    x_inp, x_out = sg_model.build()
+    model = Model(x_inp, x_out)
+
+    raw_some, filtered_some = sg_model.rank_edges_against_all_nodes(
+        gen.flow(every_edge_df), some_edges
+    )
+    # basic check that the ranks are formed correctly
+    assert raw_some.dtype == int
+    assert np.all(raw_some >= 1)
+    # filtered ranks are never greater, and sometimes less
+    assert np.all(filtered_some <= raw_some)
+    assert np.any(filtered_some < raw_some)
+
+    raw_no, filtered_no = sg_model.rank_edges_against_all_nodes(
+        gen.flow(every_edge_df), no_edges
+    )
+    np.testing.assert_array_equal(raw_no, raw_some)
+    # with no edges, filtering does nothing
+    np.testing.assert_array_equal(raw_no, filtered_no)
+
+    raw_all, filtered_all = sg_model.rank_edges_against_all_nodes(
+        gen.flow(every_edge_df), all_edges
+    )
+    np.testing.assert_array_equal(raw_all, raw_some)
+    # when every edge is known, the filtering should eliminate every possibility
+    assert np.all(filtered_all == 1)
+
+    # check the ranks against computing them from the model predictions directly. That is, for each
+    # edge, compare the rank against one computed by counting the predictions. This computes the
+    # filtered ranks naively too.
+    predictions = model.predict(gen.flow(every_edge_df))
+
+    for (source, rel, target), score, raw, filtered in zip(
+        every_edge_df.itertuples(index=False), predictions, raw_some, filtered_some
+    ):
+        # rank for the subset specified by the given selector
+        def rank(compare_selector):
+            return 1 + (predictions[compare_selector] > score).sum()
+
+        same_r = every_edge_df.label == rel
+
+        same_s_r = (every_edge_df.source == source) & same_r
+
+        expected_raw_mod_o_rank = rank(same_s_r)
+        assert raw[0] == expected_raw_mod_o_rank
+
+        known_objects = some_edges_df[
+            (some_edges_df.source == source) & (some_edges_df.label == rel)
+        ]
+        object_is_unknown = ~every_edge_df.target.isin(known_objects.target)
+        expected_filt_mod_o_rank = rank(same_s_r & object_is_unknown)
+        assert filtered[0] == expected_filt_mod_o_rank
+
+        same_r_o = same_r & (every_edge_df.target == target)
+
+        expected_raw_mod_s_rank = rank(same_r_o)
+        assert raw[1] == expected_raw_mod_s_rank
+
+        known_subjects = some_edges_df[
+            (some_edges_df.label == rel) & (some_edges_df.target == target)
+        ]
+        subject_is_unknown = ~every_edge_df.source.isin(known_subjects.source)
+        expected_filt_mod_s_rank = rank(subject_is_unknown & same_r_o)
+        assert filtered[1] == expected_filt_mod_s_rank
