@@ -587,7 +587,7 @@ class RGCN:
 
         return x_inp, x_out
 
-    def in_out_tensors(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a RGCN model for node prediction. Link/node pair prediction will added in the future.
 
@@ -597,8 +597,10 @@ class RGCN:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
+        if multiplicity is None:
+            multiplicity = self.multiplicity
 
-        if self.multiplicity == 1:
+        if multiplicity == 1:
             return self._node_model()
 
         else:
