@@ -73,7 +73,7 @@ def test_attri2vec_constructor():
         )
 
     # Check requirement for generator or input_dim and node_num & multiplicity
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         Attri2Vec(layer_sizes=[4])
 
     # Construction from generator
