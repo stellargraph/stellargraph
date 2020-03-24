@@ -440,7 +440,7 @@ class DistMult:
             # subjects. The bulk operations give speeeeeeeeed.
             # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
             mod_o_pred = np.inner(all_node_embs, ss * rs)
-            mod_s_pred = np.inner(all_node_embs, rs * os.conj())
+            mod_s_pred = np.inner(all_node_embs, rs * os)
 
             mod_o_raw, mod_o_filt = _ranks_from_score_columns(
                 mod_o_pred,
