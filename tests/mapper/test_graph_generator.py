@@ -111,6 +111,9 @@ class Test_GraphGenerator:
         assert batch[0][1].shape[1] == 6
         assert batch[0][2].shape[1] == 6
 
+        for mask in batch[0][1]:
+            assert np.sum(mask) == 6 or np.sum(mask) == 3
+
     def test_generator_flow_with_targets(self):
 
         generator = GraphGenerator(graphs=self.graphs)
