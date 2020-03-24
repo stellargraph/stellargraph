@@ -38,7 +38,7 @@
 
 # StellarGraph Machine Learning Library
 
-**StellarGraph** is a Python library for machine learning on [graphs and networks](https://en.wikipedia.org/wiki/Graph_\(discrete_mathematics\)).
+**StellarGraph** is a Python library for machine learning on [graphs and networks](https://en.wikipedia.org/wiki/Graph_%28discrete_mathematics%29).
 
 ## Table of Contents
    * [Introduction](#introduction)
