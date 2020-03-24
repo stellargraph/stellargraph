@@ -72,12 +72,54 @@ class Test_GraphGenerator:
         with pytest.raises(TypeError):
             generator.flow(graph_ilocs=[0, 1], targets=1)
 
-    def test_generator_flow(self):
+    def test_generator_flow_no_targets(self):
 
         generator = GraphGenerator(graphs=self.graphs)
 
-        seq = generator.flow(graph_ilocs=[0, 1])
+        seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2)
         assert isinstance(seq, GraphSequence)
 
-        seq = generator.flow(graph_ilocs=[1, 2], targets=np.array([0, 1]))
+        assert len(seq) == 2  # two batches
+
+        # The first batch should be size 2 and the second batch size 1
+        batch_0 = seq[0]
+        assert batch_0[0][0].shape[0] == 2
+        assert batch_0[0][1].shape[0] == 2
+        assert batch_0[0][2].shape[0] == 2
+        assert batch_0[1] is None
+
+        batch_1 = seq[1]
+        assert batch_1[0][0].shape[0] == 1
+        assert batch_1[0][1].shape[0] == 1
+        assert batch_1[0][2].shape[0] == 1
+        assert batch_1[1] is None
+
+    def test_generator_flow_check_padding(self):
+
+        generator = GraphGenerator(graphs=self.graphs)
+
+        seq = generator.flow(graph_ilocs=[0, 2], batch_size=2)
         assert isinstance(seq, GraphSequence)
+
+        assert len(seq) == 1
+
+        # The largest graph has 6 nodes vs 3 for the smallest one.
+        # Check that the data matrices have the correct size 6
+        batch = seq[0]
+
+        assert batch[0][0].shape[1] == 6
+        assert batch[0][1].shape[1] == 6
+        assert batch[0][2].shape[1] == 6
+
+    def test_generator_flow_with_targets(self):
+
+        generator = GraphGenerator(graphs=self.graphs)
+
+        seq = generator.flow(graph_ilocs=[1, 2], targets=np.array([0, 1]), batch_size=1)
+        assert isinstance(seq, GraphSequence)
+
+        for batch in seq:
+            assert batch[0][0].shape[0] == 1
+            assert batch[0][1].shape[0] == 1
+            assert batch[0][2].shape[0] == 1
+            assert batch[1].shape[0] == 1
