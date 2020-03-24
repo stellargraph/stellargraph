@@ -392,7 +392,7 @@ class RGCN:
                     generator=generator,
                     dropout=0.5
                 )
-            x_inp, predictions = rgcn.node_model()
+            x_inp, predictions = rgcn.build()
 
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.

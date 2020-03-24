@@ -577,7 +577,7 @@ class GAT:
                     in_dropout=0.5,
                     attn_dropout=0.5,
                 )
-            x_inp, predictions = gat.node_model()
+            x_inp, predictions = gat.build()
 
     For more details, please see the GAT demo notebook:
     demos/node-classification/gat/gat-cora-node-classification-example.ipynb

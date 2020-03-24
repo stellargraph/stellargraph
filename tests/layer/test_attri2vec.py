@@ -113,7 +113,7 @@ def test_attri2vec_apply():
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = attri2vec.node_model()
+    xinp, xout = attri2vec.build()
     model2 = keras.Model(inputs=xinp, outputs=xout)
     assert pytest.approx(expected) == model2.predict(x)
 
@@ -130,7 +130,7 @@ def test_attri2vec_apply():
     assert pytest.approx(y2) == actual[1]
 
     # Use the link model:
-    xinp, xout = attri2vec.link_model()
+    xinp, xout = attri2vec.build()
     model4 = keras.Model(inputs=xinp, outputs=xout)
     actual = model4.predict([x1, x2])
     assert pytest.approx(y1) == actual[0]
