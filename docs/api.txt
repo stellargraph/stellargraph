@@ -22,103 +22,159 @@ Generators
   :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, GraphGenerator
 
 
-GraphSAGE model
-----------------
+Layer
+-----------
 
-.. automodule:: stellargraph.layer.graphsage
-  :members: GraphSAGE, DirectedGraphSAGE, MeanAggregator, MeanPoolingAggregator, MaxPoolingAggregator, AttentionalAggregator
+.. automodule:: stellargraph.layer
 
+GraphSAGE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HinSAGE model
-----------------
+.. autoclass:: GraphSAGE
+  :members:
 
-.. automodule:: stellargraph.layer.hinsage
-  :members: HinSAGE, MeanHinAggregator
+.. autoclass:: DirectedGraphSAGE
+  :members:
 
+.. autoclass:: MeanAggregator
+  :members:
 
-Attri2Vec model
-----------------
+.. autoclass:: MeanPoolingAggregator
+  :members:
 
-.. automodule:: stellargraph.layer.attri2vec
-  :members: Attri2Vec
+.. autoclass: MaxPoolingAggregator
+  :members:
 
-
-GCN model
--------------
-
-.. automodule:: stellargraph.layer.gcn
-  :members: GCN, GraphConvolution
-
-Cluster-GCN model
-------------------
-
-.. automodule:: stellargraph.layer.cluster_gcn
-  :members: ClusterGCN, ClusterGraphConvolution
+.. autoclass: AttentionalAggregator
+  :members:
 
 
-RGCN model
--------------
+HinSAGE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: stellargraph.layer.rgcn
-  :members: RGCN, RelationalGraphConvolution
+.. autoclass:: HinSAGE
+  :members:
 
-
-PPNP model
--------------
-
-.. automodule:: stellargraph.layer.ppnp
-  :members: PPNP, PPNPPropagationLayer
+.. autoclass:: MeanHinAggregator
+  :members:
 
 
-APPNP model
--------------
+Attri2Vec
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: stellargraph.layer.appnp
-  :members: APPNP, APPNPPropagationLayer
-
-
-GAT model
--------------
-
-.. automodule:: stellargraph.layer.graph_attention
-  :members: GAT, GraphAttention, GraphAttentionSparse
+.. autoclass:: Attri2Vec
+  :members:
 
 
-Watch Your Step model
--------------------------
+GCN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: stellargraph.layer.watch_your_step
-  :members: WatchYourStep
+.. autoclass:: GCN
+  :members:
 
+.. autoclass:: GraphConvolution
+  :members:
+
+Cluster-GCN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: ClusterGCN
+  :members:
+
+.. autoclass:: ClusterGraphConvolution
+  :members:
+
+RGCN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: RGCN
+  :members:
+
+.. autoclass:: RelationalGraphConvolution
+  :members:
+
+PPNP
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: PPNP
+  :members:
+
+.. autoclass:: PPNPPropagationLayer
+  :members:
+
+APPNP
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: APPNP
+  :members:
+
+.. autoclass:: APPNPPropagationLayer
+  :members:
+
+GAT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: GAT
+  :members:
+
+.. autoclass:: GraphAttention
+  :members:
+
+.. autoclass:: GraphAttentionSparse
+  :members:
+
+Watch Your Step
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass: WatchYourStep
+  :members:
 
 Knowledge Graph models
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: stellargraph.mapper.knowledge_graph
-  :members: KGTripleGenerator
+.. autoclass:: KGTripleGenerator
+  :members:
 
-.. automodule:: stellargraph.layer.knowledge_graph
-  :members: ComplEx, ComplExScore, DistMult, DistMultScore
+.. autoclass:: ComplEx
+  :members:
 
+.. autoclass:: ComplExScore
+  :members:
 
-GCN Supervised Graph Classification model
------------------------------------------
+.. autoclass:: DistMult
+  :members:
 
-.. automodule:: stellargraph.layer.graph_classification
-  :members: GCNSupervisedGraphClassification, GraphClassificationConvolution
+.. autoclass:: DistMultScore
+  :members:
 
+GCN Supervised Graph Classification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Deep Graph Infomax Models
--------------------------
+.. autoclass:: GCNSupervisedGraphClassification
+  :members:
 
-.. automodule:: stellargraph.layer.deep_graph_infomax
-  :members: DeepGraphInfomax, DGIDiscriminator
+.. autoclass:: GraphClassificationConvolution
+  :members:
 
-Link prediction layers
-------------------------
+Deep Graph Infomax
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: DeepGraphInfomax
+  :members:
 
-.. automodule:: stellargraph.layer.link_inference
-  :members: LinkEmbedding, link_classification, link_regression, link_inference
+.. autoclass:: DGIDiscriminator
+  :members:
+
+Link prediction
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: LinkEmbedding
+  :members:
+
+.. autofunction:: link_classification
+
+.. autofunction:: link_regression
+
+.. autofunction:: link_inference
 
 Ensembles
 ------------------------
