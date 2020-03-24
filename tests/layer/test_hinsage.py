@@ -614,3 +614,24 @@ def test_hinsage_from_generator():
 
         actual = model.predict(batch_feats[i][0])
         assert np.isclose(layer_2_out[0], actual).all()
+
+
+def test_kernel_and_bias_defaults():
+    G = example_hin_1({"A": 8, "B": 4})
+
+    gen = HinSAGENodeGenerator(G, 1, [2, 2], "A")
+
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        generator=gen,
+        normalize="none",
+        activations=["relu", "relu"],
+    )
+    for layer_dict in hs._aggs:
+        for layer in layer_dict.values():
+            assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+            assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+            assert layer.kernel_regularizer is None
+            assert layer.bias_regularizer is None
+            assert layer.kernel_constraint is None
+            assert layer.bias_constraint is None
