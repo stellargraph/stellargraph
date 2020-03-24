@@ -21,6 +21,7 @@ import pytest
 import random
 from stellargraph.core.graph import *
 from stellargraph.core.experimental import ExperimentalWarning
+from stellargraph.core.utils import VisibleDeprecationWarning
 from ..test_utils.alloc import snapshot, allocation_benchmark
 from ..test_utils.graphs import (
     example_graph_nx,
@@ -117,14 +118,14 @@ def test_digraph_constructor():
 def test_legacy_constructor_warning():
     for cls in [StellarGraph, StellarDiGraph]:
         with pytest.warns(
-            DeprecationWarning,
+            VisibleDeprecationWarning,
             match=r"Constructing a StellarGraph.*StellarGraph.from_networkx",
         ):
             cls(nx.Graph())
 
     # make sure that we're disabling new uses of the legacy constructor correctly in this repo (see
     # also: filterwarnings in pytest.ini, PYTHONWARNINGS in .buildkite/docker-compose.yml)
-    with pytest.raises(DeprecationWarning):
+    with pytest.raises(VisibleDeprecationWarning):
         StellarGraph(nx.Graph())
 
 
@@ -536,10 +537,10 @@ def test_to_networkx_deprecation(line_graph):
         )
 
     assert len(record) == 4
-    assert "node_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_type_name" in str(record.pop(DeprecationWarning).message)
-    assert "edge_weight_label" in str(record.pop(DeprecationWarning).message)
-    assert "feature_name" in str(record.pop(DeprecationWarning).message)
+    assert "node_type_name" in str(record.pop(VisibleDeprecationWarning).message)
+    assert "edge_type_name" in str(record.pop(VisibleDeprecationWarning).message)
+    assert "edge_weight_label" in str(record.pop(VisibleDeprecationWarning).message)
+    assert "feature_name" in str(record.pop(VisibleDeprecationWarning).message)
 
 
 def test_networkx_attribute_message():
@@ -1059,10 +1060,10 @@ StellarGraph: Undirected multigraph
 
 def test_info_deprecated():
     g = example_graph()
-    with pytest.warns(DeprecationWarning, match="'show_attributes' is no longer used"):
+    with pytest.warns(VisibleDeprecationWarning, match="'show_attributes' is no longer used"):
         g.info(show_attributes=True)
 
-    with pytest.warns(DeprecationWarning, match="'sample' is no longer used"):
+    with pytest.warns(VisibleDeprecationWarning, match="'sample' is no longer used"):
         g.info(sample=10)
 
 
@@ -1361,10 +1362,10 @@ def test_nodes_node_type_filter():
 
 def test_nodes_of_type_deprecation():
     g = example_hin_1()
-    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+    with pytest.warns(VisibleDeprecationWarning, match="'nodes_of_type' is deprecated"):
         empty = g.nodes_of_type()
     assert all(empty == g.nodes())
 
-    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+    with pytest.warns(VisibleDeprecationWarning, match="'nodes_of_type' is deprecated"):
         a = g.nodes_of_type("A")
     assert all(a == g.nodes(node_type="A"))

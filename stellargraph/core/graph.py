@@ -31,7 +31,7 @@ from .. import globalvar
 from .schema import GraphSchema, EdgeType
 from .experimental import experimental, ExperimentalWarning
 from .element_data import NodeData, EdgeData, ExternalIdIndex
-from .utils import is_real_iterable
+from .utils import is_real_iterable, VisibleDeprecationWarning
 from .validation import comma_sep, separated
 from . import convert
 
@@ -252,7 +252,7 @@ class StellarGraph:
 
             warnings.warn(
                 "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
 
             nodes, edges = convert.from_networkx(
@@ -656,7 +656,7 @@ class StellarGraph:
         """
         warnings.warn(
             "'nodes_of_type' is deprecated and will be removed; use the 'nodes(type=...)' method instead",
-            DeprecationWarning,
+            VisibleDeprecationWarning,
             stacklevel=2,
         )
         return list(self.nodes(node_type=node_type))
@@ -850,14 +850,14 @@ class StellarGraph:
         if show_attributes is not None:
             warnings.warn(
                 "'show_attributes' is no longer used, remove it from the 'info()' call",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
                 stacklevel=2,
             )
 
         if sample is not None:
             warnings.warn(
                 "'sample' is no longer used, remove it from the 'info()' call",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
                 stacklevel=2,
             )
 
@@ -1163,28 +1163,28 @@ class StellarGraph:
         if node_type_name is not None:
             warnings.warn(
                 "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
             node_type_attr = node_type_name
 
         if edge_type_name is not None:
             warnings.warn(
                 "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
             edge_type_attr = edge_type_name
 
         if edge_weight_label is not None:
             warnings.warn(
                 "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
             edge_weight_attr = edge_weight_label
 
         if feature_name is not None:
             warnings.warn(
                 "the 'feature_name' parameter has been replaced by 'feature_attr'",
-                DeprecationWarning,
+                VisibleDeprecationWarning,
             )
             feature_attr = feature_name
 

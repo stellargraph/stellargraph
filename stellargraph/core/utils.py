@@ -176,3 +176,23 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
             )
 
     return features, A
+
+
+class VisibleDeprecationWarning(Warning):
+    """
+    A warning about a deprecated feature, that should always be visible.
+
+    Python suppresses display of DeprecationWarning by default, in all cases for versions <= 3.6,
+    and for all code outside __main__ for versions >= 3.7 (`PEP 565
+    <https://www.python.org/dev/peps/pep-0565/>`_). This partially assumes that there are tests that
+    will catch the warnings, for code in modules (i.e. outside ``__main__``). This doesn't entirely
+    hold for StellarGraph: it's awkward to write tests for machine learning models, and so many
+    people won't. If they've packaged their models up into a module, they will thus never see any
+    deprecation warnings from StellarGraph. This category of warnings is shown by default.
+
+    It is modeled after :class:`numpy.VisibleDeprecationWarning`.
+    """
+    pass
+
+# make sure it displays like "stellargraph.VisibleDeprecationWarning"
+VisibleDeprecationWarning.__module__ = 'stellargraph'

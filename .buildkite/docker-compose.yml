@@ -17,7 +17,7 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       # make sure that no new uses of the legacy constructor are added (see also: test in
       # test_graph.py, filterwarnings in pytest.ini)
-      - "PYTHONWARNINGS=error:Constructing a StellarGraph:DeprecationWarning"
+      - "PYTHONWARNINGS=error:Constructing a StellarGraph:VisibleDeprecationWarning"
       - GIT_BRANCH=$BUILDKITE_BRANCH
       - BUILDKITE_AGENT_ACCESS_TOKEN
       - BUILDKITE_BUILD_NUMBER

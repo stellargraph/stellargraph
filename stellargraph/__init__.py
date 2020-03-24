@@ -33,6 +33,7 @@ __all__ = [
     "StellarDiGraph",
     "StellarGraph",
     "GraphSchema",
+    "VisibleDeprecationWarning"
     "__version__",
 ]
 
@@ -55,6 +56,7 @@ from stellargraph import (
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
 from stellargraph.core.schema import GraphSchema
+from stellargraph.core.utils import VisibleDeprecationWarning
 import warnings
 
 # Custom layers for keras deserialization:
@@ -79,7 +81,7 @@ def _top_level_deprecation_warning(name, path):
     warnings.warn(
         f"'{name}' is no longer available at the top-level. "
         f"Please use 'stellargraph.{path}.{name}' instead.",
-        DeprecationWarning,
+        VisibleDeprecationWarning,
         stacklevel=3,
     )
 

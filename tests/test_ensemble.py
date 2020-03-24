@@ -18,7 +18,7 @@ import pandas as pd
 import pytest
 import numpy as np
 import tensorflow as tf
-from stellargraph import StellarGraph
+from stellargraph import StellarGraph, VisibleDeprecationWarning
 from stellargraph.layer import (
     GraphSAGE,
     GCN,
@@ -836,12 +836,12 @@ def test_deprecated_methods():
 
     # check that each of the generator methods gives a warning, and also seems to behave like the
     # non-deprecated method
-    with pytest.warns(DeprecationWarning, match="'fit_generator' .* 'fit'"):
+    with pytest.warns(VisibleDeprecationWarning, match="'fit_generator' .* 'fit'"):
         ens_history = ensemble.fit_generator(train_gen, epochs=2, verbose=0)
     assert len(ens_history) == 1
     assert len(ens_history[0].history["loss"]) == 2
 
-    with pytest.warns(DeprecationWarning, match="'fit_generator' .* 'fit'"):
+    with pytest.warns(VisibleDeprecationWarning, match="'fit_generator' .* 'fit'"):
         bag_history = bagging.fit_generator(
             gen, train_data, train_targets, epochs=2, verbose=0
         )
@@ -850,11 +850,11 @@ def test_deprecated_methods():
 
     for model in models:
         with pytest.warns(
-            DeprecationWarning, match="'evaluate_generator' .* 'evaluate'"
+            VisibleDeprecationWarning, match="'evaluate_generator' .* 'evaluate'"
         ):
             eval_result = model.evaluate_generator(train_gen, verbose=0)
         np.testing.assert_array_equal(eval_result, model.evaluate(train_gen, verbose=0))
 
-        with pytest.warns(DeprecationWarning, match="'predict_generator' .* 'predict'"):
+        with pytest.warns(VisibleDeprecationWarning, match="'predict_generator' .* 'predict'"):
             pred_result = model.predict_generator(train_gen, verbose=0)
         np.testing.assert_array_equal(pred_result, model.predict(train_gen, verbose=0))
