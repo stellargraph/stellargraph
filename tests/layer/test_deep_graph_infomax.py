@@ -15,7 +15,11 @@
 # limitations under the License.
 
 from stellargraph.layer import DeepGraphInfomax, GCN, APPNP, GAT, PPNP
-from stellargraph.mapper import FullBatchNodeGenerator, CorruptedGenerator
+from stellargraph.mapper import (
+    FullBatchLinkGenerator,
+    FullBatchNodeGenerator,
+    CorruptedGenerator,
+)
 from ..test_utils.graphs import example_graph_random
 import tensorflow as tf
 import pytest
@@ -101,3 +105,22 @@ def test_dgi_stateful():
     )
 
     assert np.array_equal(embeddings_1, embeddings_2)
+
+
+@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT])
+def test_dgi_link_model(model_type):
+    G = example_graph_random()
+    emb_dim = 16
+
+    generator = FullBatchLinkGenerator(G)
+
+    with pytest.warns(
+        UserWarning,
+        match=r"base_model: expected a node model .* found a link model \(multiplicity = 2\)",
+    ):
+        infomax = DeepGraphInfomax(
+            model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+        )
+
+    # build should work
+    _ = infomax.build()
