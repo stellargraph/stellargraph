@@ -27,6 +27,7 @@ from stellargraph.core.graph import StellarGraph
 import pandas as pd
 import numpy as np
 from tensorflow import keras
+import tensorflow as tf
 import pytest
 from ..test_utils.graphs import create_graph_features
 
@@ -204,3 +205,19 @@ def test_ClusterGCN_regularisers():
             generator=generator,
             bias_initializer="barney",
         )
+
+
+def test_kernel_and_bias_defaults():
+    graph, _ = create_graph_features()
+    generator = ClusterNodeGenerator(graph)
+    cluster_gcn = ClusterGCN(
+        layer_sizes=[2, 2], activations=["relu", "relu"], generator=generator
+    )
+    for layer in cluster_gcn._layers:
+        if isinstance(layer, ClusterGraphConvolution):
+            assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+            assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+            assert layer.kernel_regularizer is None
+            assert layer.bias_regularizer is None
+            assert layer.kernel_constraint is None
+            assert layer.bias_constraint is None
