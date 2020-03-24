@@ -37,7 +37,7 @@ class EdgeSplitter(object):
     can be used and it must be in the format dd/mm/yyyy. A date to be used as a threshold value such that only
     edges that have date after the threshold must be given. This effects only the sampling of positive edges.
 
-    Negative edges are sampled at random (for 'global' method) selecting two nodes in the graph and
+    Negative edges are sampled at random by (for 'global' method) selecting two nodes in the graph and
     then checking if these edges are connected or not. If not, the pair of nodes is considered a negative sample.
     Otherwise, it is discarded and the process repeats. Alternatively, negative edges are sampled (for 'local' method)
     using DFS search at a distance from the source node (selected at random from all nodes in the graph)
