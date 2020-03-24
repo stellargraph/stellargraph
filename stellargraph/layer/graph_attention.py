@@ -548,8 +548,8 @@ def _require_without_generator(value, name):
         return value
     else:
         raise ValueError(
-            f"'{name}' is None. 'multiplicity', 'num_nodes' and 'num_features' must be specified "
-            f"when a Generator is not provided."
+            f"{name}: expected a value for 'input_dim', 'node_num' and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
         )
 
 
