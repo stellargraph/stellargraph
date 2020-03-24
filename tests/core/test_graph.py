@@ -1057,6 +1057,15 @@ StellarGraph: Undirected multigraph
     )
 
 
+def test_info_deprecated():
+    g = example_graph()
+    with pytest.warns(DeprecationWarning, match="'show_attributes' is no longer used"):
+        g.info(show_attributes=True)
+
+    with pytest.warns(DeprecationWarning, match="'sample' is no longer used"):
+        g.info(sample=10)
+
+
 def test_edges_include_weights():
     g = example_weighted_hin()
     edges, weights = g.edges(include_edge_weight=True)
@@ -1339,3 +1348,23 @@ def test_connected_components(is_directed):
 
     # check that `connected_components` works with `subgraph`
     assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
+
+
+def test_nodes_node_type_filter():
+    g = example_hin_1()
+    assert sorted(g.nodes(node_type="A")) == [0, 1, 2, 3]
+    assert sorted(g.nodes(node_type="B")) == [4, 5, 6]
+
+    with pytest.raises(KeyError, match="'C'"):
+        g.nodes(node_type="C")
+
+
+def test_nodes_of_type_deprecation():
+    g = example_hin_1()
+    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+        empty = g.nodes_of_type()
+    assert all(empty == g.nodes())
+
+    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+        a = g.nodes_of_type("A")
+    assert all(a == g.nodes(node_type="A"))

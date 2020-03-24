@@ -253,6 +253,7 @@ class StellarGraph:
             warnings.warn(
                 "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
             nodes, edges = convert.from_networkx(
@@ -473,14 +474,22 @@ class StellarGraph:
         """
         return len(self._edges)
 
-    def nodes(self) -> Iterable[Any]:
+    def nodes(self, node_type=None) -> Iterable[Any]:
         """
         Obtains the collection of nodes in the graph.
 
+        Args:
+            node_type (hashable, optional): a type of nodes that exist in the graph
+
         Returns:
-            The graph nodes.
+            All the nodes in the graph if ``node_type`` is ``None``, otherwise all the nodes in the
+            graph of type ``node_type``.
         """
-        return self._nodes.ids.pandas_index
+        if node_type is None:
+            return self._nodes.ids.pandas_index
+
+        ilocs = self._nodes.type_range(node_type)
+        return self._nodes.ids.from_iloc(ilocs)
 
     def edges(
         self, include_edge_type=False, include_edge_weight=False
@@ -640,16 +649,18 @@ class StellarGraph:
         Get the nodes of the graph with the specified node types.
 
         Args:
-            node_type (hashable, optional): a type of nodes that exist in the graph
+            node_type (hashable): a type of nodes that exist in the graph (this must be passed,
+                omitting it or passing ``None`` is deprecated)
 
         Returns:
             A list of node IDs with type node_type
         """
-        if node_type is None:
-            return self.nodes()
-
-        ilocs = self._nodes.type_range(node_type)
-        return list(self._nodes.ids.from_iloc(ilocs))
+        warnings.warn(
+            "'nodes_of_type' is deprecated and will be removed; use the 'nodes(type=...)' method instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return list(self.nodes(node_type=node_type))
 
     def node_type(self, node):
         """
@@ -821,7 +832,7 @@ class StellarGraph:
 
         return zip(*unique_ets)
 
-    def info(self, show_attributes=True, sample=None, truncate=20):
+    def info(self, show_attributes=None, sample=None, truncate=20):
         """
         Return an information string summarizing information on the current graph.
         This includes node and edge type information and their attributes.
@@ -830,14 +841,27 @@ class StellarGraph:
         time for a large graph.
 
         Args:
-            show_attributes (bool, default True): If True, include attributes information
-            sample (int): To speed up the graph analysis, use only a random sample of
-                          this many nodes and edges.
+            show_attributes: Deprecated, unused.
+            sample: Deprecated, unused.
             truncate (int, optional): If an integer, show only the ``truncate`` most common node and
                 edge type triples; if ``None``, list each one individually.
         Returns:
             An information string.
         """
+        if show_attributes is not None:
+            warnings.warn(
+                "'show_attributes' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if sample is not None:
+            warnings.warn(
+                "'sample' is no longer used, remove it from the 'info()' call",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # always truncate the edge types listed for each node type, since they're redundant with the
         # individual listing of edge types, and make for a single very long line
         truncate_edge_types_per_node = 5
@@ -873,7 +897,7 @@ class StellarGraph:
 
         # sort the node types in decreasing order of frequency
         node_types = sorted(
-            ((len(self.nodes_of_type(nt)), nt) for nt in gs.node_types), reverse=True
+            ((len(self.nodes(node_type=nt)), nt) for nt in gs.node_types), reverse=True
         )
         nodes = separated(
             [str_node_type(count, nt) for count, nt in node_types],
@@ -1141,6 +1165,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             node_type_attr = node_type_name
 
@@ -1148,6 +1173,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             edge_type_attr = edge_type_name
 
@@ -1155,6 +1181,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             edge_weight_attr = edge_weight_label
 
@@ -1162,6 +1189,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'feature_name' parameter has been replaced by 'feature_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             feature_attr = feature_name
 
@@ -1171,7 +1199,7 @@ class StellarGraph:
             graph = networkx.MultiGraph()
 
         for ty in self.node_types:
-            node_ids = self.nodes_of_type(ty)
+            node_ids = self.nodes(node_type=ty)
             ty_dict = {node_type_attr: ty}
 
             if feature_attr is not None:
