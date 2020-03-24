@@ -105,28 +105,6 @@ class AttentiveWalk(Layer):
         return expected_walk
 
 
-def get_embeddings(model):
-    """
-    This function returns the embeddings from a model with Watch Your Step embeddings.
-
-    Args:
-        model (keras Model): a keras model that contains Watch Your Step embeddings.
-
-    Returns:
-        embeddings (np.array): a numpy array of the model's embeddings.
-    """
-    embeddings = np.hstack(
-        [
-            model.get_layer("WATCH_YOUR_STEP_LEFT_EMBEDDINGS").embeddings.numpy(),
-            model.get_layer("WATCH_YOUR_STEP_RIGHT_EMBEDDINGS")
-            .kernel.numpy()
-            .transpose(),
-        ]
-    )
-
-    return embeddings
-
-
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -185,7 +163,6 @@ class WatchYourStep:
             self.n_nodes,
             int(self.embedding_dimension / 2),
             input_length=None,
-            name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
             embeddings_constraint=embeddings_constraint,
@@ -196,7 +173,6 @@ class WatchYourStep:
             kernel_initializer=embeddings_initializer,
             kernel_regularizer=embeddings_regularizer,
             kernel_constraint=embeddings_constraint,
-            name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
         )
         self._attentive_walk = AttentiveWalk(
             walk_length=self.num_powers,
@@ -204,6 +180,22 @@ class WatchYourStep:
             attention_regularizer=attention_regularizer,
             attention_initializer=attention_initializer,
         )
+
+    def embeddings(self):
+        """
+        This function returns the embeddings from a model with Watch Your Step embeddings.
+
+        Returns:
+            embeddings (np.array): a numpy array of the model's embeddings.
+        """
+        embeddings = np.hstack(
+            [
+                self._left_embedding.embeddings.numpy(),
+                self._right_embedding.kernel.numpy().transpose(),
+            ]
+        )
+
+        return embeddings
 
     def build(self):
         """
@@ -223,12 +215,11 @@ class WatchYourStep:
         # vectors
         outer_product = self._right_embedding(vectors_left)
 
-        sigmoids = tf.keras.activations.sigmoid(outer_product)
         expected_walk = self.num_walks * self._attentive_walk(input_powers)
 
         # layer to add batch dimension of 1 to output
         expander = Lambda(lambda x: K.expand_dims(x, axis=1))
 
-        output = Concatenate(axis=1)([expander(expected_walk), expander(sigmoids)])
+        output = Concatenate(axis=1)([expander(expected_walk), expander(outer_product)])
 
         return [input_rows, input_powers], output

@@ -76,7 +76,7 @@ def test_complex(knowledge_graph):
     r_idx = knowledge_graph._edges.types.to_iloc(df.label)
     o_idx = knowledge_graph._get_index_for_nodes(df.target)
 
-    nodes, edge_types = ComplEx.embeddings(model)
+    nodes, edge_types = complex_model.embeddings()
     # the rows correspond to the embeddings for the given edge, so we can do bulk operations
     e_s = nodes[s_idx, :]
     w_r = edge_types[r_idx, :]
@@ -89,12 +89,11 @@ def test_complex(knowledge_graph):
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
 
-    # the model is stateful (i.e. it holds the weights permanently) so the embeddings with a second
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
     model2 = Model(*complex_model.build())
-    nodes2, edge_types2 = ComplEx.embeddings(model2)
-    assert np.array_equal(nodes, nodes2)
-    assert np.array_equal(edge_types, edge_types2)
+    prediction2 = model2.predict(gen.flow(df))
+    assert np.array_equal(prediction, prediction2)
 
 
 def test_complex_rankings():
@@ -125,11 +124,12 @@ def test_complex_rankings():
     )
 
     gen = KGTripleGenerator(all_edges, 3)
-    x_inp, x_out = ComplEx(gen, 5).build()
+    complex_model = ComplEx(gen, 5)
+    x_inp, x_out = complex_model.build()
     model = Model(x_inp, x_out)
 
-    raw_some, filtered_some = ComplEx.rank_edges_against_all_nodes(
-        model, gen.flow(df), some_edges
+    raw_some, filtered_some = complex_model.rank_edges_against_all_nodes(
+        gen.flow(df), some_edges
     )
     # basic check that the ranks are formed correctly
     assert raw_some.dtype == int
@@ -138,15 +138,15 @@ def test_complex_rankings():
     assert np.all(filtered_some <= raw_some)
     assert np.any(filtered_some < raw_some)
 
-    raw_no, filtered_no = ComplEx.rank_edges_against_all_nodes(
-        model, gen.flow(df), no_edges
+    raw_no, filtered_no = complex_model.rank_edges_against_all_nodes(
+        gen.flow(df), no_edges
     )
     np.testing.assert_array_equal(raw_no, raw_some)
     # with no edges, filtering does nothing
     np.testing.assert_array_equal(raw_no, filtered_no)
 
-    raw_all, filtered_all = ComplEx.rank_edges_against_all_nodes(
-        model, gen.flow(df), all_edges
+    raw_all, filtered_all = complex_model.rank_edges_against_all_nodes(
+        gen.flow(df), all_edges
     )
     np.testing.assert_array_equal(raw_all, raw_some)
     # when every edge is known, the filtering should eliminate every possibility
@@ -224,7 +224,7 @@ def test_dismult(knowledge_graph):
     r_idx = knowledge_graph._edges.types.to_iloc(df.label)
     o_idx = knowledge_graph._get_index_for_nodes(df.target)
 
-    nodes, edge_types = DistMult.embeddings(model)
+    nodes, edge_types = distmult_model.embeddings()
     # the rows correspond to the embeddings for the given edge, so we can do bulk operations
     e_s = nodes[s_idx, :]
     w_r = edge_types[r_idx, :]
@@ -237,9 +237,8 @@ def test_dismult(knowledge_graph):
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
     assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
 
-    # the model is stateful (i.e. it holds the weights permanently) so the embeddings with a second
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
     model2 = Model(*distmult_model.build())
-    nodes2, edge_types2 = DistMult.embeddings(model2)
-    assert np.array_equal(nodes, nodes2)
-    assert np.array_equal(edge_types, edge_types2)
+    prediction2 = model2.predict(gen.flow(df))
+    assert np.array_equal(prediction, prediction2)
