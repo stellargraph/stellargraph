@@ -432,7 +432,7 @@ def test_graphsage_constructor():
         )
 
     # Check requirement for generator or n_samples
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         GraphSAGE(layer_sizes=[4])
 
     # Construction from generator
