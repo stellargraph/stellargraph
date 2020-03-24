@@ -19,4 +19,19 @@ The datasets package contains classes to download sample datasets
 
 """
 
+__all__ = [
+    "Cora",
+    "CiteSeer",
+    "PubMedDiabetes",
+    "BlogCatalog3",
+    "MovieLens",
+    "AIFB",
+    "MUTAG",
+    "WN18",
+    "WN18RR",
+    "FB15k",
+    "FB15k_237",
+    "IAEnronEmployees",
+]
+
 from .datasets import *
