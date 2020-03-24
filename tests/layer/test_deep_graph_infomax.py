@@ -45,38 +45,10 @@ def test_dgi(model_type, sparse):
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model.fit(gen)
 
-    emb_model = tf.keras.Model(*infomax.embedding_model(model))
+    emb_model = tf.keras.Model(*infomax.embedding_model())
     embeddings = emb_model.predict(generator.flow(G.nodes()))
 
     assert embeddings.shape == (len(G.nodes()), emb_dim)
-
-
-def test_dgi_embedding_wrong_model():
-    G = example_graph_random()
-    emb_dim = 16
-
-    generator = FullBatchNodeGenerator(G)
-
-    infomax_1 = DeepGraphInfomax(
-        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
-    )
-    infomax_2 = DeepGraphInfomax(
-        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
-    )
-
-    model_1 = tf.keras.Model(*infomax_1.build())
-
-    # check case when infomax_2.build() has not been called
-    with pytest.raises(ValueError, match="model: *."):
-        infomax_2.embedding_model(model_1)
-
-    # check case when infomax_2.build() has been called
-    model_2 = tf.keras.Model(*infomax_2.build())
-    with pytest.raises(ValueError, match="model: *."):
-        infomax_2.embedding_model(model_1)
-
-    with pytest.raises(ValueError, match="model: *."):
-        infomax_1.embedding_model(model_2)
 
 
 def test_dgi_stateful():
@@ -95,10 +67,10 @@ def test_dgi_stateful():
     model_2 = tf.keras.Model(*infomax.build())
 
     # check embeddings are equal before training
-    embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(
+    embeddings_1 = tf.keras.Model(*infomax.embedding_model()).predict(
         generator.flow(G.nodes())
     )
-    embeddings_2 = tf.keras.Model(*infomax.embedding_model(model_2)).predict(
+    embeddings_2 = tf.keras.Model(*infomax.embedding_model()).predict(
         generator.flow(G.nodes())
     )
 
@@ -108,10 +80,10 @@ def test_dgi_stateful():
     model_1.fit(gen)
 
     # check embeddings are still equal after training one model
-    embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(
+    embeddings_1 = tf.keras.Model(*infomax.embedding_model()).predict(
         generator.flow(G.nodes())
     )
-    embeddings_2 = tf.keras.Model(*infomax.embedding_model(model_2)).predict(
+    embeddings_2 = tf.keras.Model(*infomax.embedding_model()).predict(
         generator.flow(G.nodes())
     )
 
@@ -121,10 +93,10 @@ def test_dgi_stateful():
     model_2.fit(gen)
 
     # check embeddings are still equal after training both models
-    embeddings_1 = tf.keras.Model(*infomax.embedding_model(model_1)).predict(
+    embeddings_1 = tf.keras.Model(*infomax.embedding_model()).predict(
         generator.flow(G.nodes())
     )
-    embeddings_2 = tf.keras.Model(*infomax.embedding_model(model_2)).predict(
+    embeddings_2 = tf.keras.Model(*infomax.embedding_model()).predict(
         generator.flow(G.nodes())
     )
 
