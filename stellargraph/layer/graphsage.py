@@ -1078,9 +1078,8 @@ class GraphSAGE:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
-            PendingDeprecationWarning,
+            "The .default_model() method is deprecated. Please use .build() method instead.",
+            DeprecationWarning,
             stacklevel=2,
         )
         return self.build()
