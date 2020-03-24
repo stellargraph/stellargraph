@@ -137,7 +137,7 @@ if 'google.colab' in sys.modules:
   %pip install -q stellargraph[demos]"""
 
     def _binder_url(self, notebook_path):
-        return f"https://mybinder.org/v2/gh/stellargraph/stellargraph/{self.git_branch}?filepath={notebook_path}"
+        return f"https://mybinder.org/v2/gh/stellargraph/stellargraph/{self.git_branch}?urlpath=lab/tree/{notebook_path}"
 
     def _colab_url(self, notebook_path):
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
