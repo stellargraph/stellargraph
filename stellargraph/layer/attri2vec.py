@@ -168,7 +168,7 @@ class Attri2Vec:
 
         return h_layer
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a Attri2Vec model for node representation prediction.
 
@@ -186,7 +186,7 @@ class Attri2Vec:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a Attri2Vec model for context node prediction.
 
@@ -196,7 +196,7 @@ class Attri2Vec:
 
         """
         # Expose input and output sockets of the model, for source node:
-        x_inp_src, x_out_src = self.node_model()
+        x_inp_src, x_out_src = self._node_model()
 
         # Expose input and out sockets of the model, for target node:
         x_inp_dst = Input(shape=(1,))
@@ -221,9 +221,9 @@ class Attri2Vec:
 
         """
         if self.multiplicity == 1:
-            return self.node_model()
+            return self._node_model()
         elif self.multiplicity == 2:
-            return self.link_model()
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "

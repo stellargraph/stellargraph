@@ -408,14 +408,14 @@ class APPNP:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
         return self.build(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."

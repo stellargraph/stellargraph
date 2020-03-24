@@ -1015,7 +1015,7 @@ class GraphSAGE:
             else [self._normalization(xi) for xi in h_layer]
         )
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a GraphSAGE model for node prediction
 
@@ -1036,7 +1036,7 @@ class GraphSAGE:
         # Returns inputs and outputs
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a GraphSAGE model for link or node pair prediction
 
@@ -1047,8 +1047,8 @@ class GraphSAGE:
 
         """
         # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model()
-        x_inp_dst, x_out_dst = self.node_model()
+        x_inp_src, x_out_src = self._node_model()
+        x_inp_dst, x_out_dst = self._node_model()
         # re-pack into a list where (source, target) inputs alternate, for link inputs:
         x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
         # same for outputs:
@@ -1067,9 +1067,9 @@ class GraphSAGE:
 
         """
         if self.multiplicity == 1:
-            return self.node_model()
+            return self._node_model()
         elif self.multiplicity == 2:
-            return self.link_model()
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
