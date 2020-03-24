@@ -16,7 +16,7 @@
 
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import backend as K
-import tensorflow as tf
+import warnings
 
 
 class SqueezedSparseConversion(Layer):
@@ -94,3 +94,19 @@ class SqueezedSparseConversion(Layer):
             indices=indices, values=values, dense_shape=self.matrix_shape
         )
         return output
+
+
+def deprecated_model_function(function, old_name):
+    """Deprecated: use :meth:`in_out_tensors`."""
+
+    def _function_wrapper(*args, **kwargs):
+
+        warnings.warn(
+            f"The '{old_name}' method is deprecated, use 'in_out_tensors' instead.",
+            DeprecationWarning, stacklevel=2,
+        )
+
+        return function(*args, **kwargs)
+
+    return _function_wrapper
+

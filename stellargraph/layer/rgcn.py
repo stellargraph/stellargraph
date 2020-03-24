@@ -18,7 +18,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer, Lambda, Dropout, Input
 from tensorflow.keras import activations, initializers, constraints, regularizers
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 from ..mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 
 
@@ -468,6 +468,9 @@ class RGCN:
                     **self._regularisers
                 )
             )
+
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def _get_regularisers_from_keywords(self, kwargs):
         regularisers = {}

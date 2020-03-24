@@ -20,6 +20,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embedding
 
+from .misc import deprecated_model_function
 from ..mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
@@ -118,6 +119,7 @@ class ComplEx:
         self._node_embeddings_imag = embed(self.num_nodes)
         self._edge_type_embeddings_real = embed(self.num_edge_types)
         self._edge_type_embeddings_imag = embed(self.num_edge_types)
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def embeddings(self):
         """

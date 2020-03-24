@@ -22,6 +22,7 @@ import numpy as np
 
 from .misc import SqueezedSparseConversion
 from ..mapper import FullBatchNodeGenerator
+from .misc import deprecated_model_function
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -249,6 +250,10 @@ class PPNP:
         self._layers.append(
             PPNPPropagationLayer(self.layer_sizes[-1], final_layer=True)
         )
+
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.link_model = deprecated_model_function(self._link_model, "link_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def __call__(self, x):
         """

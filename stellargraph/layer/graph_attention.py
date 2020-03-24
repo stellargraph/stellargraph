@@ -26,7 +26,7 @@ from tensorflow.keras import activations, constraints, initializers, regularizer
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
 from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 
 
 class GraphAttention(Layer):
@@ -842,6 +842,10 @@ class GAT:
                     attn_kernel_constraint=attn_kernel_constraint,
                 )
             )
+
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.link_model = deprecated_model_function(self._link_model, "link_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def __call__(self, inputs):
         """

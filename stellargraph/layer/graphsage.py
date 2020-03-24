@@ -46,6 +46,7 @@ from ..mapper import (
     LinkSequence,
 )
 
+from .misc import deprecated_model_function
 from ..connector.neo4j.mapper import (
     Neo4JGraphSAGENodeGenerator,
     Neo4JDirectedGraphSAGENodeGenerator,
@@ -845,6 +846,9 @@ class GraphSAGE:
 
         # Aggregator functions for each layer
         self._build_aggregators()
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.link_model = deprecated_model_function(self._link_model, "link_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def _get_sizes_from_generator(self, generator):
         """

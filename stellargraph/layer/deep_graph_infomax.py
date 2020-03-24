@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from . import GCN, GAT, APPNP, PPNP
+from .misc import deprecated_model_function
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
@@ -94,6 +95,7 @@ class DeepGraphInfomax:
         self._corruptible_inputs_idxs = [0]
 
         self._discriminator = DGIDiscriminator()
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def in_out_tensors(self):
         """

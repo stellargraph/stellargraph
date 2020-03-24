@@ -20,7 +20,7 @@ from tensorflow.keras import activations, initializers, constraints, regularizer
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import FullBatchGenerator
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -349,6 +349,10 @@ class GCN:
                     bias_constraint=bias_constraint,
                 )
             )
+
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.link_model = deprecated_model_function(self._link_model, "link_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def __call__(self, x):
         """

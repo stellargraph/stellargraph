@@ -28,6 +28,7 @@ from tensorflow.keras.layers import (
     GlobalAveragePooling1D,
 )
 
+from .misc import deprecated_model_function
 from ..mapper import GraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
 from ..core.experimental import experimental
@@ -198,6 +199,8 @@ class GCNSupervisedGraphClassification:
                     bias_constraint=bias_constraint,
                 )
             )
+
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def __call__(self, x):
         """

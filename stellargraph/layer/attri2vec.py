@@ -25,7 +25,7 @@ from tensorflow.keras import Input
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda, Reshape, Embedding
 import warnings
-
+from .misc import deprecated_model_function
 from ..mapper import Attri2VecLinkGenerator, Attri2VecNodeGenerator
 
 
@@ -129,6 +129,10 @@ class Attri2Vec:
                 input_length=1,
                 name="output_embedding",
             )
+
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.link_model = deprecated_model_function(self._link_model, "link_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def _get_sizes_from_generator(self, generator):
         """

@@ -20,7 +20,7 @@ import tensorflow.keras.backend as K
 
 from ..mapper import FullBatchGenerator
 from .preprocessing_layer import GraphPreProcessingLayer
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 
 
 class APPNPPropagationLayer(Layer):
@@ -300,6 +300,10 @@ class APPNP:
                     final_layer=(ii == (self.approx_iter - 1)),
                 )
             )
+
+        self.node_model = deprecated_model_function(self._node_model, "node_model")
+        self.link_model = deprecated_model_function(self._link_model, "link_model")
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def __call__(self, x):
         """

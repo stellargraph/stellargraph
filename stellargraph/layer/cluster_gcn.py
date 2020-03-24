@@ -17,7 +17,7 @@
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
-
+from .misc import deprecated_model_function
 from ..mapper import ClusterNodeGenerator
 
 
@@ -99,6 +99,7 @@ class ClusterGraphConvolution(Layer):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         self.final_layer = final_layer
+        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def get_config(self):
         """

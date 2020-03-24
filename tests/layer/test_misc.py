@@ -25,6 +25,9 @@ import numpy as np
 import scipy.sparse as sps
 import pytest
 from stellargraph.layer.misc import *
+from ..test_utils.graphs import create_graph_features
+from stellargraph.mapper import *
+from stellargraph.layer import *
 
 
 def sparse_matrix_example(N=10, density=0.1):
@@ -105,3 +108,28 @@ def test_squeezedsparseconversion_axis():
     z = model.predict([A_indices, A_values])
 
     assert np.allclose(z, A.sum(axis=1), atol=1e-7)
+
+
+@pytest.mark.parametrize("model_type", [APPNP]) #("model_type", [GCN, GAT, PPNP, APPNP])
+def test_deprecated_model_function(model_type):
+    G, _ = create_graph_features()
+    generator = FullBatchNodeGenerator(G)
+    sg_model = model_type(generator=generator, layer_sizes=[4], activations=["relu"])
+
+    with pytest.raises(DeprecationWarning):
+        x_in, x_out = sg_model.build()
+
+    try:
+        x_in, x_out = sg_model._node_model()
+        with pytest.raises(DeprecationWarning):
+            x_in, x_out = sg_model.node_model()
+    except AttributeError:
+        pass
+
+    try:
+        x_in, x_out = sg_model._link_model()
+        with pytest.raises(DeprecationWarning):
+            x_in, x_out = sg_model.link_model()
+    except AttributeError:
+        pass
+
