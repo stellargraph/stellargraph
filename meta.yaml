@@ -16,38 +16,38 @@ requirements:
   host:
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2,<2.4
+    - networkx >=2.2
     - numpy >=1.14
     - pandas >=0.24
     - pip
     - python
-    - scikit-learn >=0.20
+    - scikit_learn >=0.20
     - scipy >=1.1.0
-    - tensorflow 1.14.*
-    - ipython
-    - ipykernel
+    - tensorflow >=2.1.0
   run:
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2,<2.4
+    - networkx >=2.2
     - numpy >=1.14
     - pandas >=0.24
     - python
-    - scikit-learn >=0.20
+    - scikit_learn >=0.20
     - scipy >=1.1.0
-    - tensorflow 1.14.*
-    - ipython
-    - ipykernel
+    - tensorflow >=2.1.0
 
 test:
   imports:
     - stellargraph
+    - stellargraph.connector
+    - stellargraph.connector.neo4j
     - stellargraph.core
     - stellargraph.data
+    - stellargraph.datasets
+    - stellargraph.interpretability
+    - stellargraph.interpretability.saliency_maps
     - stellargraph.layer
     - stellargraph.mapper
     - stellargraph.utils
-    - stellargraph.interpretability.saliency_maps
 
 about:
   home: "https://github.com/stellargraph/stellargraph"
