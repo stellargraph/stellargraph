@@ -16,6 +16,10 @@ representations by performing a mapping on node attributes.
 
 The examples folder structure is shown below.
 
+* [`/basics`](https://github.com/stellargraph/stellargraph/tree/master/demos/basics)
+
+    Examples and tutorials of loading data into a format that can be used with any of the algorithms.
+
 * [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
 
     Examples of unsupervised node representation learning for homogeneous networks, heterogeneous networks, and homogeneous networks with node features
@@ -52,6 +56,10 @@ The examples folder structure is shown below.
 * [`/use-cases`](https://github.com/stellargraph/stellargraph/tree/master/demos/use-cases)
 
     Example use-cases/applications for graph neural network algorithms.
+
+## Getting Started
+
+The demo notebooks can be run without any installation of Python by using Binder or Google Colab - these both provide a cloud-based notebook environment.  The whole set of demos can be opened in Binder here: [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos) or you can click the Binder and Colab badges within each notebook.
 
 ## References
 

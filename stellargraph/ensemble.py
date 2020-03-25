@@ -188,7 +188,7 @@ class Ensemble(object):
 
         self.metrics_names = self.models[0].metrics_names  # assumes all models are same
 
-    def fit_generator(
+    def fit(
         self,
         generator,
         steps_per_epoch=None,
@@ -277,8 +277,8 @@ class Ensemble(object):
 
         for model in self.models:
             self.history.append(
-                model.fit_generator(
-                    generator=generator,
+                model.fit(
+                    generator,
                     steps_per_epoch=steps_per_epoch,
                     epochs=epochs,
                     verbose=verbose,
@@ -296,7 +296,18 @@ class Ensemble(object):
 
         return self.history
 
-    def evaluate_generator(
+    def fit_generator(self, *args, **kwargs):
+        """
+        Deprecated: use :meth:`fit`.
+        """
+        warnings.warn(
+            "'fit_generator' has been replaced by 'fit', to match tensorflow.keras.Model",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.fit(*args, **kwargs)
+
+    def evaluate(
         self,
         generator,
         test_data=None,
@@ -376,8 +387,8 @@ class Ensemble(object):
             tm = []
             for _ in range(self.n_predictions):
                 tm.append(
-                    model.evaluate_generator(
-                        generator=data_generator,
+                    model.evaluate(
+                        data_generator,
                         max_queue_size=max_queue_size,
                         workers=workers,
                         use_multiprocessing=use_multiprocessing,
@@ -389,7 +400,18 @@ class Ensemble(object):
         # Return the mean and standard deviation of the metrics
         return np.mean(test_metrics, axis=0), np.std(test_metrics, axis=0)
 
-    def predict_generator(
+    def evaluate_generator(self, *args, **kwargs):
+        """
+        Deprecated: use :meth:`evaluate`.
+        """
+        warnings.warn(
+            "'evaluate_generator' has been replaced by 'evaluate', to match tensorflow.keras.Model",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.evaluate(*args, **kwargs)
+
+    def predict(
         self,
         generator,
         predict_data=None,
@@ -480,8 +502,8 @@ class Ensemble(object):
             model_predictions = []
             for _ in range(self.n_predictions):
                 model_predictions.append(
-                    model.predict_generator(
-                        generator=data_generator,
+                    model.predict(
+                        data_generator,
                         max_queue_size=max_queue_size,
                         workers=workers,
                         use_multiprocessing=use_multiprocessing,
@@ -501,6 +523,17 @@ class Ensemble(object):
         #     predictions = predictions.reshape(predictions.shape[0:3] + (-1,))
 
         return predictions
+
+    def predict_generator(self, *args, **kwargs):
+        """
+        Deprecated: use :meth:`predict`.
+        """
+        warnings.warn(
+            "'predict_generator' has been replaced by 'predict', to match tensorflow.keras.Model",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.predict(*args, **kwargs)
 
 
 #
@@ -532,7 +565,7 @@ class BaggingEnsemble(Ensemble):
             model=model, n_estimators=n_estimators, n_predictions=n_predictions
         )
 
-    def fit_generator(
+    def fit(
         self,
         generator,
         train_data,
@@ -662,8 +695,8 @@ class BaggingEnsemble(Ensemble):
                 ]
 
             self.history.append(
-                model.fit_generator(
-                    generator=di_gen,
+                model.fit(
+                    di_gen,
                     steps_per_epoch=steps_per_epoch,
                     epochs=epochs,
                     verbose=verbose,
@@ -680,3 +713,14 @@ class BaggingEnsemble(Ensemble):
             )
 
         return self.history
+
+    def fit_generator(self, *args, **kwargs):
+        """
+        Deprecated: use :meth:`fit`.
+        """
+        warnings.warn(
+            "'fit_generator' has been replaced by 'fit', to match tensorflow.keras.Model",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.fit(*args, **kwargs)

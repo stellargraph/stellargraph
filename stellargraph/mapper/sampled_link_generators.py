@@ -81,7 +81,7 @@ class BatchedLinkGenerator(abc.ABC):
     def sample_features(self, head_links, batch_num):
         pass
 
-    def flow(self, link_ids, targets=None, shuffle=False):
+    def flow(self, link_ids, targets=None, shuffle=False, seed=None):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -105,11 +105,12 @@ class BatchedLinkGenerator(abc.ABC):
                 `(len(link_ids), target_size)`
             shuffle (bool): If True the links will be shuffled at each
                 epoch, if False the links will be processed in order.
+            seed (int, optional): Random seed
 
         Returns:
             A NodeSequence object to use with with StellarGraph models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods ``fit``, ``evaluate``,
+            and ``predict``
 
         """
         if self.head_node_types is not None:
@@ -121,7 +122,7 @@ class BatchedLinkGenerator(abc.ABC):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
         # Otherwise pass iterable (check?) to standard LinkSequence
-        elif isinstance(link_ids, collections.Iterable):
+        elif isinstance(link_ids, collections.abc.Iterable):
             # Check all IDs are actually in the graph and are of expected type
             for link in link_ids:
                 if len(link) != 2:
@@ -150,7 +151,12 @@ class BatchedLinkGenerator(abc.ABC):
                     )
 
             return LinkSequence(
-                self.sample_features, self.batch_size, link_ids, targets, shuffle
+                self.sample_features,
+                self.batch_size,
+                link_ids,
+                targets=targets,
+                shuffle=shuffle,
+                seed=seed,
             )
 
         else:
@@ -173,8 +179,8 @@ class BatchedLinkGenerator(abc.ABC):
 
         Returns:
             A NodeSequence object to use with StellarGraph models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods ``fit``, ``evaluate``,
+            and ``predict``
 
         """
         return self.flow(
@@ -222,6 +228,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.head_node_types = self.schema.node_types * 2
@@ -535,6 +542,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.head_node_types = self.schema.node_types * 2

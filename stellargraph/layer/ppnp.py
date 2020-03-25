@@ -22,6 +22,7 @@ import numpy as np
 
 from .misc import SqueezedSparseConversion
 from ..mapper import FullBatchNodeGenerator
+from .misc import deprecated_model_function
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -54,11 +55,13 @@ class PPNPPropagationLayer(Layer):
         units (int): dimensionality of output feature vectors
         final_layer (bool): If False the layer returns output for all nodes,
                             if True it returns the subset specified by the indices passed to it.
+        input_dim (int, optional): the size of the input shape, if known.
+        kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
-    def __init__(self, units, final_layer=False, **kwargs):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+    def __init__(self, units, final_layer=False, input_dim=None, **kwargs):
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 
@@ -304,7 +307,7 @@ class PPNP:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a PPNP model for node or link prediction
 
@@ -350,16 +353,20 @@ class PPNP:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

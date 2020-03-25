@@ -23,6 +23,9 @@ import pandas as pd
 import numpy as np
 from math import isclose
 
+from ..core import StellarGraph
+from ..globalvar import FEATURE_ATTR_NAME
+
 
 class EdgeSplitter(object):
     """
@@ -50,14 +53,23 @@ class EdgeSplitter(object):
     (which is not calculated in this case).
 
     Args:
-        g: <StellarGraph or networkx object> The graph to sample edges from.
-        g_master: <StellarGraph or networkx object> The graph representing the original dataset and a superset of the
+        g (StellarGraph or networkx object): The graph to sample edges from.
+        g_master (StellarGraph or networkx object): The graph representing the original dataset and a superset of the
             graph g. If it is not None, then when positive and negative edges are sampled, care is taken to make sure
             that a true positive edge is not sampled as a negative edge.
 
     """
 
     def __init__(self, g, g_master=None):
+        # rather than rewrite this to use StellarGraph natively, this has the desired API (StellarGraphs in and
+        # StellarGraphs out) by converting to/from NetworkX at the boundaries
+        self._input_was_stellargraph = isinstance(g, StellarGraph)
+        if self._input_was_stellargraph:
+            g = g.to_networkx()
+
+        if isinstance(g_master, StellarGraph):
+            g_master = g_master.to_networkx()
+
         # the original graph copied over
         self.g = g.copy()
         self.g_master = g_master
@@ -81,14 +93,14 @@ class EdgeSplitter(object):
         Method for edge splitting applied to homogeneous graphs.
 
         Args:
-            p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
+            p (float): Percent of edges to be returned. It is calculated as a function of the total number of edges
              in the original graph. If the graph is heterogeneous, the percentage is calculated
              as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
              edge_attribute_threshold values given.
-            method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
-            probs: <list of floats> If method is 'local' then this vector of floats specifies the probabilities for
+            method (string): Should be 'global' or 'local'. Specifies the method for selecting negative examples.
+            probs (list of float, optional): If method is 'local' then this vector of floats specifies the probabilities for
              sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
-            keep_connected: <True or False> If True then when positive edges are removed care is taken that the reduced graph
+            keep_connected (bool): If True then when positive edges are removed care is taken that the reduced graph
              remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
 
         Returns:
@@ -166,18 +178,18 @@ class EdgeSplitter(object):
         sampling of negative examples.
 
         Args:
-            p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
+            p (float): Percent of edges to be returned. It is calculated as a function of the total number of edges
              in the original graph. If the graph is heterogeneous, the percentage is calculated
              as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
              edge_attribute_threshold values given.
-            method: <string> Should be 'global' or 'local'. Specifies the method for selecting negative examples.
-            edge_label: <str> The edge type to split on
-            probs: <list of floats> If method=='local' then this vector of floats specifies the probabilities for
+            method (str): Should be 'global' or 'local'. Specifies the method for selecting negative examples.
+            edge_label (str): The edge type to split on
+            probs (list of float, optional): If method=='local' then this vector of floats specifies the probabilities for
              sampling at each depth from the source node. The first value should be 0.0 and all values should sum to 1.0.
-            keep_connected: <True or False> If True then when positive edges are removed care is taken that the reduced graph
+            keep_connected (bool): If True then when positive edges are removed care is taken that the reduced graph
              remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
-            edge_attribute_label: <str> The label for the edge attribute to split on
-            edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
+            edge_attribute_label (str): The label for the edge attribute to split on
+            edge_attribute_threshold (str, optional): The threshold value applied to the edge attribute when sampling positive
              examples
 
         Returns:
@@ -283,31 +295,34 @@ class EdgeSplitter(object):
         edge type and edge property given a threshold value for the latter.
 
         Args:
-            p: <float> Percent of edges to be returned. It is calculated as a function of the total number of edges
+            p (float): Percent of edges to be returned. It is calculated as a function of the total number of edges
              in the original graph. If the graph is heterogeneous, the percentage is calculated
              as a function of the total number of edges that satisfy the edge_label, edge_attribute_label and
              edge_attribute_threshold values given.
-            method: <str> How negative edges are sampled. If 'global', then nodes are selected uniformly at random.
+            method (str): How negative edges are sampled. If 'global', then nodes are selected uniformly at random.
              If 'local' then the first nodes is sampled uniformly from all nodes in the graph, but the second node is
              chosen to be from the former's local neighbourhood.
-            probs: <list> list The probabilities for sampling a node that is k-hops from the source node,
+            probs (list): list The probabilities for sampling a node that is k-hops from the source node,
              e.g., [0.25, 0.75] means that there is a 0.25 probability that the target node will be 1-hope away from the
              source node and 0.75 that it will be 2 hops away from the source node. This only affects sampling of
              negative edges if method is set to 'local'.
-            keep_connected: <True or False> If True then when positive edges are removed care is taken that the reduced graph
+            keep_connected (bool): If True then when positive edges are removed care is taken that the reduced graph
              remains connected. If False, positive edges are removed without guaranteeing the connectivity of the reduced graph.
-            edge_label: <str> If splitting based on edge type, then this parameter specifies the key for the type
+            edge_label (str, optional) If splitting based on edge type, then this parameter specifies the key for the type
              of edges to split on.
-            edge_attribute_label: <str> The label for the edge attribute to split on.
-            edge_attribute_threshold: <str> The threshold value applied to the edge attribute when sampling positive
+            edge_attribute_label (str, optional): The label for the edge attribute to split on.
+            edge_attribute_threshold (str, optional): The threshold value applied to the edge attribute when sampling positive
              examples.
-            attribute_is_datetime: <boolean> Specifies if edge attribute is datetime or not.
-            seed: <int> seed for random number generator, positive int or 0
+            attribute_is_datetime (bool, optional): Specifies if edge attribute is datetime or not.
+            seed (int, optional): seed for random number generator, positive int or 0
 
         Returns:
             The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first array of
             dimensionality Nx2 (where N is the number of edges) holding the node ids for the edges and the second of
-            dimensionality Nx1 holding the edge labels, 0 for negative and 1 for positive examples.
+            dimensionality Nx1 holding the edge labels, 0 for negative and 1 for positive examples. The graph
+            matches the input graph passed to the :class:`EdgeSplitter` constructor: the returned graph is a
+            :class:`StellarGraph` instance if the input graph was one, and, similarly, a NetworkX graph if the input
+            graph was one.
         """
         if p <= 0 or p >= 1:
             raise ValueError("The value of p must be in the interval (0,1)")
@@ -363,7 +378,15 @@ class EdgeSplitter(object):
                 p=p, method=method, probs=probs, keep_connected=keep_connected
             )
 
-        return self.g_train, edge_data_ids, edge_data_labels
+        if self._input_was_stellargraph:
+            # if the graphs came in as a StellarGraph, return one too
+            result_graph = StellarGraph.from_networkx(
+                self.g_train, node_features=FEATURE_ATTR_NAME
+            )
+        else:
+            result_graph = self.g_train
+
+        return result_graph, edge_data_ids, edge_data_labels
 
     def _get_edges(
         self, edge_label, edge_attribute_label=None, edge_attribute_threshold=None
@@ -374,12 +397,12 @@ class EdgeSplitter(object):
         the value of the latter property is larger than the edge_attribute_threshold.
 
         Args:
-            edge_label: <str> The type of edges to filter
-            edge_attribute_label: <str> The edge attribute to use for filtering graph edges
-            edge_attribute_threshold: <str> The threshold applied to the edge attribute for filtering edges.
+            edge_label (str): The type of edges to filter
+            edge_attribute_label (str, optional): The edge attribute to use for filtering graph edges
+            edge_attribute_threshold (str, optional): The threshold applied to the edge attribute for filtering edges.
 
         Returns:
-            <list> List of edges that satisfy the filtering criteria.
+            (list) List of edges that satisfy the filtering criteria.
 
         """
         # the graph in networkx format is stored in self.g_train
@@ -422,9 +445,9 @@ class EdgeSplitter(object):
         given an edge.
 
         Args:
-            edges: <list> List of edges as returned by networkx graph method edges().
+            edges (list): List of edges as returned by networkx graph method edges().
 
-        Returns: <list> Returns a list of 2-tuples such that each value in the tuple holds the type (as str) of the
+        Returns: (list) Returns a list of 2-tuples such that each value in the tuple holds the type (as str) of the
         source and target nodes for each element in edges.
 
         """
@@ -457,11 +480,11 @@ class EdgeSplitter(object):
         attribute and a threshold applied to the latter.
 
         Args:
-            minedges: <list> Spanning tree edges that cannot be removed.
-            p: <float> Factor by which to reduce the size of the graph.
-            edge_label: <str> The edge type to consider.
-            edge_attribute_label: <str> The edge attribute to consider.
-            edge_attribute_threshold: <str> The threshold value; only edges with attribute value larger than the
+            minedges (list): Spanning tree edges that cannot be removed.
+            p (float): Factor by which to reduce the size of the graph.
+            edge_label (str): The edge type to consider.
+            edge_attribute_label (str): The edge attribute to consider.
+            edge_attribute_threshold (str): The threshold value; only edges with attribute value larger than the
              threshold can be removed.
 
         Returns:
@@ -533,12 +556,12 @@ class EdgeSplitter(object):
         the reduced tree remains connected. Edges are removed based on the edge type.
 
         Args:
-            minedges: <list> Minimum spanning tree edges that cannot be removed.
-            p: <float> Factor by which to reduce the size of the graph.
-            edge_label: <str> The edge type to consider.
+            minedges (list): Minimum spanning tree edges that cannot be removed.
+            p (float): Factor by which to reduce the size of the graph.
+            edge_label (str): The edge type to consider.
 
         Returns:
-            <list> Returns the list of edges removed from self.g_train (also modifies self.g_train by removing said
+            (list) Returns the list of edges removed from self.g_train (also modifies self.g_train by removing said
             edges)
         """
         if edge_label is None:
@@ -588,11 +611,11 @@ class EdgeSplitter(object):
         the reduced tree remains connected. Edge type is ignored and all edges are treated equally.
 
         Args:
-            minedges: <list> Minimum spanning tree edges that cannot be removed.
-            p: <float> Factor by which to reduce the size of the graph.
+            minedges (list): Minimum spanning tree edges that cannot be removed.
+            p (float): Factor by which to reduce the size of the graph.
 
         Returns:
-            <list> Returns the list of edges removed from self.g_train (also modifies self.g_train by removing the
+            (list) Returns the list of edges removed from self.g_train (also modifies self.g_train by removing the
             said edges)
         """
         # copy the original graph and start over in case this is not the first time
@@ -659,15 +682,15 @@ class EdgeSplitter(object):
         The source graph is not modified.
 
         Args:
-            p: <float> Factor that multiplies the number of edges in the graph and determines the number of negative
+            p (float): Factor that multiplies the number of edges in the graph and determines the number of negative
             edges to be sampled.
-            probs: <list> Probability distribution for the distance between source and target nodes.
-            edges_positive: <list> The positive edge examples that have previously been removed from the graph
-            edge_label: <str> The edge type to sample negative examples of
-            limit_samples: <int or None> It limits the maximum number of samples to the given number, if not None
+            probs (list): Probability distribution for the distance between source and target nodes.
+            edges_positive (list): The positive edge examples that have previously been removed from the graph
+            edge_label (str): The edge type to sample negative examples of
+            limit_samples (int, optional): It limits the maximum number of samples to the given number, if not None
 
         Returns:
-            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+            (list) A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
@@ -795,13 +818,13 @@ class EdgeSplitter(object):
         The source graph is not modified.
 
         Args:
-            p: <float> Factor that multiplies the number of edges in the graph and determines the number of no-edges to
+            p (float): Factor that multiplies the number of edges in the graph and determines the number of no-edges to
             be sampled.
-            probs: <list> Probability distribution for the distance between source and target nodes.
-            limit_samples: <int or None> It limits the maximum number of samples to the given number, if not None
+            probs (list): Probability distribution for the distance between source and target nodes.
+            limit_samples (int, optional): It limits the maximum number of samples to the given number, if not None
 
         Returns:
-            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+            (list) A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         if probs is None:
             probs = [0.0, 0.25, 0.50, 0.25]
@@ -902,12 +925,12 @@ class EdgeSplitter(object):
         it records the pair as a negative edge.
 
         Args:
-            p: <float> factor that multiplies the number of edges in the graph and determines the number of negative
+            p: (float) factor that multiplies the number of edges in the graph and determines the number of negative
             edges to be sampled.
-            limit_samples: <int or None> it limits the maximum number of samples to the given number, if not None
+            limit_samples: (int, optional) it limits the maximum number of samples to the given number, if not None
 
         Returns:
-            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+            (list) A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         self.negative_edge_node_distances = []
 
@@ -974,14 +997,14 @@ class EdgeSplitter(object):
         The source graph is not modified.
 
         Args:
-            edges: <list> The positive edge examples that have previously been removed from the graph
-            edge_label: <str> The edge type to sample negative examples of
-            p: <float> Factor that multiplies the number of edges in the graph and determines the number of negative
+            edges (list): The positive edge examples that have previously been removed from the graph
+            edge_label (str): The edge type to sample negative examples of
+            p (float): Factor that multiplies the number of edges in the graph and determines the number of negative
             edges to be sampled.
-            limit_samples: <int or None> It limits the maximum number of samples to the given number, if not None
+            limit_samples (int, optional): It limits the maximum number of samples to the given number, if not None
 
         Returns:
-            <list> A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
+            (list) A list of 2-tuples that are pairs of node IDs that don't have an edge between them in the graph.
         """
         self.negative_edge_node_distances = []
         # determine the number of edges in the graph that have edge_label type
@@ -1048,7 +1071,7 @@ class EdgeSplitter(object):
         Given an undirected graph, it calculates the minimum set of edges such that graph connectivity is preserved.
 
         Returns:
-            <list> The minimum spanning edges of the undirected graph self.g
+            (list) The minimum spanning edges of the undirected graph self.g
 
         """
         mst = nx.minimum_spanning_edges(self.g, data=False)
