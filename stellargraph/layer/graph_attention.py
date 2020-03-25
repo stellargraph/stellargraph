@@ -26,7 +26,7 @@ from tensorflow.keras import activations, constraints, initializers, regularizer
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
 from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 
 
 class GraphAttention(Layer):
@@ -577,7 +577,7 @@ class GAT:
                     in_dropout=0.5,
                     attn_dropout=0.5,
                 )
-            x_inp, predictions = gat.node_model()
+            x_inp, predictions = gat.in_out_tensors()
 
     For more details, please see the GAT demo notebook:
     demos/node-classification/gat/gat-cora-node-classification-example.ipynb
@@ -901,7 +901,7 @@ class GAT:
 
         return self._normalization(h_layer)
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GAT model for node or link prediction
 
@@ -947,16 +947,20 @@ class GAT:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

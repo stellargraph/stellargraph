@@ -20,7 +20,7 @@ import tensorflow.keras.backend as K
 
 from ..mapper import FullBatchGenerator
 from .preprocessing_layer import GraphPreProcessingLayer
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 
 
 class APPNPPropagationLayer(Layer):
@@ -194,7 +194,7 @@ class APPNP:
                 generator=generator,
                 dropout=0.5
             )
-            x_in, x_out = ppnp.build()
+            x_in, x_out = ppnp.in_out_tensors()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -362,7 +362,7 @@ class APPNP:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds an APPNP model for node or link prediction
 
@@ -408,19 +408,19 @@ class APPNP:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
 
     def propagate_model(self, base_model):
         """
@@ -482,3 +482,7 @@ class APPNP:
 
         x_out = h_layer
         return x_inp, x_out
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

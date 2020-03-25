@@ -25,7 +25,7 @@ from tensorflow.keras import Input
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda, Reshape, Embedding
 import warnings
-
+from .misc import deprecated_model_function
 from ..mapper import Attri2VecLinkGenerator, Attri2VecNodeGenerator
 
 
@@ -168,7 +168,7 @@ class Attri2Vec:
 
         return h_layer
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a Attri2Vec model for node representation prediction.
 
@@ -186,7 +186,7 @@ class Attri2Vec:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a Attri2Vec model for context node prediction.
 
@@ -196,7 +196,7 @@ class Attri2Vec:
 
         """
         # Expose input and output sockets of the model, for source node:
-        x_inp_src, x_out_src = self.node_model()
+        x_inp_src, x_out_src = self._node_model()
 
         # Expose input and out sockets of the model, for target node:
         x_inp_dst = Input(shape=(1,))
@@ -209,7 +209,7 @@ class Attri2Vec:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a Attri2Vec model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -220,10 +220,12 @@ class Attri2Vec:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.multiplicity == 1:
-            return self.node_model()
-        elif self.multiplicity == 2:
-            return self.link_model()
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+        if multiplicity == 1:
+            return self._node_model()
+        elif multiplicity == 2:
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
@@ -232,8 +234,12 @@ class Attri2Vec:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method is deprecated. Please use .build() method instead.",
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.build()
+        return self.in_out_tensors()
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

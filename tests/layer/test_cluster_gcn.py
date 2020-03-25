@@ -120,7 +120,7 @@ def test_ClusterGCN_apply():
         layer_sizes=[2], generator=generator, activations=["relu"], dropout=0.0
     )
 
-    x_in, x_out = cluster_gcn_model.build()
+    x_in, x_out = cluster_gcn_model.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method

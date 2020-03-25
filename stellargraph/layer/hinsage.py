@@ -32,6 +32,7 @@ import itertools as it
 import operator as op
 import warnings
 
+from .misc import deprecated_model_function
 from ..mapper import HinSAGENodeGenerator, HinSAGELinkGenerator
 
 HinSAGEAggregator = Layer
@@ -231,7 +232,7 @@ class HinSAGE:
 
     To use this class as a Keras model, the features and graph should be supplied using the
     :class:`HinSAGENodeGenerator` class for node inference models or the
-    :class:`HinSAGELinkGenerator` class for link inference models.  The `.build` method should
+    :class:`HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Currently the class supports node or link prediction models which are built depending on whether
@@ -256,7 +257,7 @@ class HinSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
         Creating a two-level GrapSAGE link classification model on nodes pairs of type ('A', 'B')
         with hidden node sizes of 8 and 4 and 5 neighbours sampled at each layer::
@@ -269,7 +270,7 @@ class HinSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
@@ -569,7 +570,7 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -590,8 +591,10 @@ class HinSAGE:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method is deprecated. Please use .build() method instead.",
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.build()
+        return self.in_out_tensors()
+
+    build = deprecated_model_function(in_out_tensors, "build")

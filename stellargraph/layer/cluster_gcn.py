@@ -17,7 +17,7 @@
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
-
+from .misc import deprecated_model_function
 from ..mapper import ClusterNodeGenerator
 
 
@@ -256,7 +256,7 @@ class ClusterGCN:
                              generator=generator,
                              dropout=0.5
                 )
-            x_inp, predictions = cluster_gcn.build()
+            x_inp, predictions = cluster_gcn.in_out_tensors()
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack
@@ -362,7 +362,7 @@ class ClusterGCN:
 
         return h_layer
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a Cluster-GCN model for node prediction.
 
@@ -386,3 +386,5 @@ class ClusterGCN:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")

@@ -28,6 +28,7 @@ from tensorflow.keras.layers import (
     GlobalAveragePooling1D,
 )
 
+from .misc import deprecated_model_function
 from ..mapper import GraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
 from ..core.experimental import experimental
@@ -121,7 +122,7 @@ class GCNSupervisedGraphClassification:
                              generator=generator,
                              dropout=0.5
                 )
-            x_inp, x_out = model.build()
+            x_inp, x_out = model.in_out_tensors()
             predictions = Dense(units=8, activation='relu')(x_out)
             predictions = Dense(units=2, activation='softmax')(predictions)
 
@@ -233,7 +234,7 @@ class GCNSupervisedGraphClassification:
 
         return h_layer
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a Graph Classification model.
 
@@ -250,3 +251,5 @@ class GCNSupervisedGraphClassification:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")

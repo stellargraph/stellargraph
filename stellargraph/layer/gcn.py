@@ -20,7 +20,7 @@ from tensorflow.keras import activations, initializers, constraints, regularizer
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import FullBatchGenerator
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -256,7 +256,7 @@ class GCN:
                     generator=generator,
                     dropout=0.5
                 )
-            x_inp, predictions = gcn.build()
+            x_inp, predictions = gcn.in_out_tensors()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -412,7 +412,7 @@ class GCN:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GCN model for node or link prediction
 
@@ -458,16 +458,20 @@ class GCN:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

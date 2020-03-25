@@ -22,6 +22,7 @@ import numpy as np
 import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 from ..core.validation import require_integer_in_range
+from .misc import deprecated_model_function
 
 
 class AttentiveWalk(Layer):
@@ -198,7 +199,7 @@ class WatchYourStep:
 
         return embeddings
 
-    def build(self):
+    def in_out_tensors(self):
         """
         This function builds the layers for a keras model.
 
@@ -224,3 +225,5 @@ class WatchYourStep:
         output = Concatenate(axis=1)([expander(expected_walk), expander(outer_product)])
 
         return [input_rows, input_powers], output
+
+    build = deprecated_model_function(in_out_tensors, "build")

@@ -100,7 +100,7 @@ def test_attri2vec_apply():
 
     # the rest of the test assumes the weights are 1, to get the predictions to be easily computed,
     # so let's build a basic model to set those weights (which are stored statefully in Attri2vec)
-    model = keras.Model(*attri2vec.build())
+    model = keras.Model(*attri2vec.in_out_tensors())
     model.set_weights([np.ones_like(w) for w in model.get_weights()])
 
     x = np.array([[1, 2]])
@@ -113,7 +113,7 @@ def test_attri2vec_apply():
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = attri2vec.node_model()
+    xinp, xout = attri2vec.in_out_tensors(multiplicity=1)
     model2 = keras.Model(inputs=xinp, outputs=xout)
     assert pytest.approx(expected) == model2.predict(x)
 
@@ -123,14 +123,14 @@ def test_attri2vec_apply():
     y2 = np.array([[1, 1]])
 
     # Test the build function:
-    xinp, xout = attri2vec.build()
+    xinp, xout = attri2vec.in_out_tensors()
     model3 = keras.Model(inputs=xinp, outputs=xout)
     actual = model3.predict([x1, x2])
     assert pytest.approx(y1) == actual[0]
     assert pytest.approx(y2) == actual[1]
 
     # Use the link model:
-    xinp, xout = attri2vec.link_model()
+    xinp, xout = attri2vec.in_out_tensors()
     model4 = keras.Model(inputs=xinp, outputs=xout)
     actual = model4.predict([x1, x2])
     assert pytest.approx(y1) == actual[0]

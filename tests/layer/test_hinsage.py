@@ -270,7 +270,7 @@ def test_hinsage_apply():
     assert actual == pytest.approx(expected)
 
 
-def test_hinsage_default_model():
+def test_hinsage_in_out_tensors():
     hs = HinSAGE(
         layer_sizes=[2, 2],
         n_samples=[2, 2],
@@ -288,7 +288,7 @@ def test_hinsage_default_model():
         kernel_initializer="ones",
     )
 
-    xin, xout = hs.build()
+    xin, xout = hs.in_out_tensors()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -322,7 +322,7 @@ def test_hinsage_serialize():
         normalize="none",
         bias=False,
     )
-    xin, xout = hs.build()
+    xin, xout = hs.in_out_tensors()
     model = keras.Model(inputs=xin, outputs=xout)
 
     # Save model
@@ -369,7 +369,7 @@ def test_hinsage_zero_neighbours():
         kernel_initializer="ones",
     )
 
-    xin, xout = hs.build()
+    xin, xout = hs.in_out_tensors()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -405,7 +405,7 @@ def test_hinsage_aggregators():
         kernel_initializer="ones",
     )
 
-    xin, xout = hs.build()
+    xin, xout = hs.in_out_tensors()
     model = keras.Model(inputs=xin, outputs=xout)
 
     x = [
@@ -563,7 +563,7 @@ def test_hinsage_from_generator():
         activations=["relu", "relu"],
     )
 
-    xin, xout = hs.build()
+    xin, xout = hs.in_out_tensors()
     model = keras.Model(inputs=xin, outputs=xout)
 
     batch_feats = list(gen.flow([1, 2]))

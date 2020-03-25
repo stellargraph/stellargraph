@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from . import GCN, GAT, APPNP, PPNP
+from .misc import deprecated_model_function
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
@@ -94,7 +95,7 @@ class DeepGraphInfomax:
 
         self._discriminator = DGIDiscriminator()
 
-    def build(self):
+    def in_out_tensors(self):
         """
         A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
 
@@ -103,7 +104,7 @@ class DeepGraphInfomax:
         Example::
 
             dg_infomax = DeepGraphInfoMax(...)
-            x_in, x_out = dg_infomax.build()
+            x_in, x_out = dg_infomax.in_out_tensors()
             model = Model(inputs=x_in, outputs=x_out)
             model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, ...)
 
@@ -111,7 +112,7 @@ class DeepGraphInfomax:
             input and output layers for use with a keras model
         """
 
-        x_inp, node_feats = self.base_model.build(multiplicity=1)
+        x_inp, node_feats = self.base_model.in_out_tensors(multiplicity=1)
 
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
@@ -142,9 +143,11 @@ class DeepGraphInfomax:
         """
 
         # these tensors should link into the weights that get trained by `build`
-        x_emb_in, x_emb_out = self.base_model.build(multiplicity=1)
+        x_emb_in, x_emb_out = self.base_model.in_out_tensors(multiplicity=1)
 
         squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
         x_emb_out = squeeze_layer(x_emb_out)
 
         return x_emb_in, x_emb_out
+
+    build = deprecated_model_function(in_out_tensors, "build")

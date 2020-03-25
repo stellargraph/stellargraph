@@ -134,7 +134,7 @@ generator = sg.mapper.FullBatchNodeGenerator(graph, method="gcn")
 
 # two layers of GCN, each with hidden dimension 16
 gcn = sg.layer.GCN(layer_sizes=[16, 16], generator=generator)
-x_inp, x_out = gcn.build() # create the input and output TensorFlow tensors
+x_inp, x_out = gcn.in_out_tensors() # create the input and output TensorFlow tensors
 
 # use TensorFlow Keras to add a layer to compute the (one-hot) predictions
 predictions = tf.keras.layers.Dense(units=len(ground_truth_targets.columns), activation="softmax")(x_out)

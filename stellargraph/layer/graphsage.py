@@ -46,6 +46,7 @@ from ..mapper import (
     LinkSequence,
 )
 
+from .misc import deprecated_model_function
 from ..connector.neo4j.mapper import (
     Neo4JGraphSAGENodeGenerator,
     Neo4JDirectedGraphSAGENodeGenerator,
@@ -737,7 +738,7 @@ class GraphSAGE:
 
     To use this class as a Keras model, the features and graph should be supplied using the
     :class:`GraphSAGENodeGenerator` class for node inference models or the
-    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.build` method should
+    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Examples:
@@ -751,7 +752,7 @@ class GraphSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
@@ -998,7 +999,7 @@ class GraphSAGE:
             else [self._normalization(xi) for xi in h_layer]
         )
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a GraphSAGE model for node prediction
 
@@ -1019,7 +1020,7 @@ class GraphSAGE:
         # Returns inputs and outputs
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a GraphSAGE model for link or node pair prediction
 
@@ -1030,15 +1031,15 @@ class GraphSAGE:
 
         """
         # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model()
-        x_inp_dst, x_out_dst = self.node_model()
+        x_inp_src, x_out_src = self._node_model()
+        x_inp_dst, x_out_dst = self._node_model()
         # re-pack into a list where (source, target) inputs alternate, for link inputs:
         x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
         # same for outputs:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -1049,10 +1050,13 @@ class GraphSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.multiplicity == 1:
-            return self.node_model()
-        elif self.multiplicity == 2:
-            return self.link_model()
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        if multiplicity == 1:
+            return self._node_model()
+        elif multiplicity == 2:
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
@@ -1061,11 +1065,15 @@ class GraphSAGE:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method is deprecated. Please use .build() method instead.",
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.build()
+        return self.in_out_tensors()
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 class DirectedGraphSAGE(GraphSAGE):

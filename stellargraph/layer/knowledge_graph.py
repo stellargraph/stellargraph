@@ -20,6 +20,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embedding
 
+from .misc import deprecated_model_function
 from ..mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
@@ -258,7 +259,7 @@ class ComplEx:
 
         return scoring([s_re, s_im, r_re, r_im, o_re, o_im])
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a ComplEx model.
 
@@ -273,6 +274,8 @@ class ComplEx:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 class DistMultScore(Layer):
@@ -489,7 +492,7 @@ class DistMult:
 
         return scoring([y_e1, m_r, y_e2])
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a DistMult model.
 
@@ -504,6 +507,8 @@ class DistMult:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 def _ranks_from_score_columns(

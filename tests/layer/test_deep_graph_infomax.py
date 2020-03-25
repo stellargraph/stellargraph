@@ -45,7 +45,7 @@ def test_dgi(model_type, sparse):
     )
     infomax = DeepGraphInfomax(base_model)
 
-    model = tf.keras.Model(*infomax.build())
+    model = tf.keras.Model(*infomax.in_out_tensors())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model.fit(gen)
 
@@ -67,8 +67,8 @@ def test_dgi_stateful():
         GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
     )
 
-    model_1 = tf.keras.Model(*infomax.build())
-    model_2 = tf.keras.Model(*infomax.build())
+    model_1 = tf.keras.Model(*infomax.in_out_tensors())
+    model_2 = tf.keras.Model(*infomax.in_out_tensors())
 
     # check embeddings are equal before training
     embeddings_1 = tf.keras.Model(*infomax.embedding_model()).predict(
@@ -123,4 +123,4 @@ def test_dgi_link_model(model_type):
         )
 
     # build should work
-    _ = infomax.build()
+    _ = infomax.in_out_tensors()

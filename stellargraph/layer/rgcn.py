@@ -18,7 +18,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer, Lambda, Dropout, Input
 from tensorflow.keras import activations, initializers, constraints, regularizers
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 from ..mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 
 
@@ -374,7 +374,7 @@ class RGCN:
                     generator=generator,
                     dropout=0.5
                 )
-            x_inp, predictions = rgcn.node_model()
+            x_inp, predictions = rgcn.in_out_tensors()
 
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.
@@ -565,7 +565,7 @@ class RGCN:
 
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a RGCN model for node prediction. Link/node pair prediction will added in the future.
 
@@ -575,11 +575,15 @@ class RGCN:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
+        if multiplicity is None:
+            multiplicity = self.multiplicity
 
-        if self.multiplicity == 1:
+        if multiplicity == 1:
             return self._node_model()
 
         else:
             raise NotImplementedError(
                 "Currently only node prediction if supported for RGCN."
             )
+
+    build = deprecated_model_function(in_out_tensors, "build")

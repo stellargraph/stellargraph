@@ -146,7 +146,7 @@ def test_GCN_apply_dense():
     generator = FullBatchNodeGenerator(G, sparse=False, method="none")
     gcnModel = GCN([2], generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -175,7 +175,7 @@ def test_GCN_apply_sparse():
         layer_sizes=[2], activations=["relu"], generator=generator, dropout=0.5
     )
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -198,7 +198,7 @@ def test_GCN_linkmodel_apply_dense():
     generator = FullBatchLinkGenerator(G, sparse=False, method="none")
     gcnModel = GCN([3], generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -227,7 +227,7 @@ def test_GCN_linkmodel_apply_sparse():
         layer_sizes=[3], activations=["relu"], generator=generator, dropout=0.5
     )
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method

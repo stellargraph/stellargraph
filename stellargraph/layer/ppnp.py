@@ -22,6 +22,7 @@ import numpy as np
 
 from .misc import SqueezedSparseConversion
 from ..mapper import FullBatchNodeGenerator
+from .misc import deprecated_model_function
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -306,7 +307,7 @@ class PPNP:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a PPNP model for node or link prediction
 
@@ -352,16 +353,20 @@ class PPNP:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")
