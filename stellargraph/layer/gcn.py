@@ -293,10 +293,10 @@ class GCN:
         bias=True,
         dropout=0.0,
         activations=None,
-        kernel_initializer=None,
+        kernel_initializer="glorot_uniform",
         kernel_regularizer=None,
         kernel_constraint=None,
-        bias_initializer=None,
+        bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
     ):

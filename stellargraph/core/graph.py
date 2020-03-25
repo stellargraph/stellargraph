@@ -253,6 +253,7 @@ class StellarGraph:
             warnings.warn(
                 "Constructing a StellarGraph directly from a NetworkX graph has been replaced by the `StellarGraph.from_networkx` function",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
             nodes, edges = convert.from_networkx(
@@ -1164,6 +1165,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'node_type_name' parameter has been replaced by 'node_type_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             node_type_attr = node_type_name
 
@@ -1171,6 +1173,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'edge_type_name' parameter has been replaced by 'edge_type_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             edge_type_attr = edge_type_name
 
@@ -1178,6 +1181,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'edge_weight_label' parameter has been replaced by 'edge_weight_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             edge_weight_attr = edge_weight_label
 
@@ -1185,6 +1189,7 @@ class StellarGraph:
             warnings.warn(
                 "the 'feature_name' parameter has been replaced by 'feature_attr'",
                 DeprecationWarning,
+                stacklevel=2,
             )
             feature_attr = feature_name
 
