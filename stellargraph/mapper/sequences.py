@@ -659,7 +659,7 @@ class CorruptedNodeSequence(Sequence):
             self.targets = np.zeros((1, len(base_generator.target_indices), 2))
             self.targets[0, :, 0] = 1.0
         elif isinstance(base_generator, NodeSequence):
-            self.targets = self.targets = np.zeros((base_generator.batch_size, 2))
+            self.targets = np.zeros((base_generator.batch_size, 2))
             self.targets[:, 0] = 1.0
         else:
             raise TypeError(
