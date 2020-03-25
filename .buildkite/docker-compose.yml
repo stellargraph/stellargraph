@@ -51,18 +51,11 @@ services:
   empty-service:
     image: alpine-3.10
 
-  neo4j-3.5: &neo4j-config
+  neo4j: &neo4j-config
     build: &neo4j-build
       context: docker/stellargraph-neo4j
       args:
-        NEO4J_VERSION: 3.5
+        - NEO4J_VERSION
     environment:
       # this is running entirely locally on a CI machine, so authentication is unnecessary
       NEO4J_AUTH: "none"
-
-  neo4j-4.0:
-    <<: *neo4j-config
-    build:
-      <<: *neo4j-build
-      args:
-        NEO4J_VERSION: 4.0
