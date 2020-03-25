@@ -97,9 +97,8 @@ class SqueezedSparseConversion(Layer):
 
 
 def deprecated_model_function(function, old_name):
-    """Deprecated: use :meth:`in_out_tensors`."""
-
     def _function_wrapper(*args, **kwargs):
+        """Deprecated: use :meth:`in_out_tensors`."""
 
         warnings.warn(
             f"The '{old_name}' method is deprecated, use 'in_out_tensors' instead.",

@@ -130,10 +130,6 @@ class Attri2Vec:
                 name="output_embedding",
             )
 
-        self.node_model = deprecated_model_function(self._node_model, "node_model")
-        self.link_model = deprecated_model_function(self._link_model, "link_model")
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
-
     def _get_sizes_from_generator(self, generator):
         """
         Sets node_num and input_feature_size from the generator.
@@ -243,3 +239,7 @@ class Attri2Vec:
             DeprecationWarning,
         )
         return self.in_out_tensors()
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

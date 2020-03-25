@@ -469,9 +469,6 @@ class RGCN:
                 )
             )
 
-        self.node_model = deprecated_model_function(self._node_model, "node_model")
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
-
     def _get_regularisers_from_keywords(self, kwargs):
         regularisers = {}
         for param_name in [
@@ -610,3 +607,6 @@ class RGCN:
             raise NotImplementedError(
                 "Currently only node prediction if supported for RGCN."
             )
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    build = deprecated_model_function(in_out_tensors, "build")

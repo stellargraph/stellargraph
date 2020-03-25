@@ -95,7 +95,6 @@ class DeepGraphInfomax:
         self._corruptible_inputs_idxs = [0]
 
         self._discriminator = DGIDiscriminator()
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def in_out_tensors(self):
         """
@@ -162,3 +161,5 @@ class DeepGraphInfomax:
         x_emb_out = squeeze_layer(x_emb_out)
 
         return x_emb_in, x_emb_out
+
+    build = deprecated_model_function(in_out_tensors, "build")

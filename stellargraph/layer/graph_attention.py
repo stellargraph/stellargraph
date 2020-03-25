@@ -843,10 +843,6 @@ class GAT:
                 )
             )
 
-        self.node_model = deprecated_model_function(self._node_model, "node_model")
-        self.link_model = deprecated_model_function(self._link_model, "link_model")
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
-
     def __call__(self, inputs):
         """
         Apply a stack of GAT layers to the input x_inp
@@ -964,3 +960,7 @@ class GAT:
                 "Node model requested but a generator not supporting nodes was supplied."
             )
         return self.in_out_tensors(multiplicity=1)
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

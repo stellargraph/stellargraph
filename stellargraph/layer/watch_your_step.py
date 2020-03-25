@@ -181,7 +181,6 @@ class WatchYourStep:
             attention_regularizer=attention_regularizer,
             attention_initializer=attention_initializer,
         )
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def embeddings(self):
         """
@@ -225,3 +224,5 @@ class WatchYourStep:
         output = Concatenate(axis=1)([expander(expected_walk), expander(outer_product)])
 
         return [input_rows, input_powers], output
+
+    build = deprecated_model_function(in_out_tensors, "build")

@@ -99,7 +99,6 @@ class ClusterGraphConvolution(Layer):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         self.final_layer = final_layer
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def get_config(self):
         """
@@ -387,3 +386,5 @@ class ClusterGCN:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")

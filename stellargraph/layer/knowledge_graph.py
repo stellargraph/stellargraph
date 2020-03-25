@@ -119,7 +119,6 @@ class ComplEx:
         self._node_embeddings_imag = embed(self.num_nodes)
         self._edge_type_embeddings_real = embed(self.num_edge_types)
         self._edge_type_embeddings_imag = embed(self.num_edge_types)
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def embeddings(self):
         """
@@ -412,6 +411,8 @@ class DistMult:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 def _ranks_from_score_columns(

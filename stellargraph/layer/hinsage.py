@@ -404,7 +404,6 @@ class HinSAGE:
         )
         self.input_dims = generator.graph.node_feature_sizes()
         self.multiplicity = generator.multiplicity
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def _get_sizes_from_keywords(self, kwargs):
         """
@@ -611,3 +610,5 @@ class HinSAGE:
             DeprecationWarning,
         )
         return self.in_out_tensors()
+
+    build = deprecated_model_function(in_out_tensors, "build")

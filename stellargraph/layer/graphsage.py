@@ -846,9 +846,6 @@ class GraphSAGE:
 
         # Aggregator functions for each layer
         self._build_aggregators()
-        self.node_model = deprecated_model_function(self._node_model, "node_model")
-        self.link_model = deprecated_model_function(self._link_model, "link_model")
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
 
     def _get_sizes_from_generator(self, generator):
         """
@@ -1090,6 +1087,10 @@ class GraphSAGE:
             DeprecationWarning,
         )
         return self.in_out_tensors()
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 class DirectedGraphSAGE(GraphSAGE):

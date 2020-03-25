@@ -301,10 +301,6 @@ class APPNP:
                 )
             )
 
-        self.node_model = deprecated_model_function(self._node_model, "node_model")
-        self.link_model = deprecated_model_function(self._link_model, "link_model")
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
-
     def __call__(self, x):
         """
         Apply APPNP to the inputs.
@@ -486,3 +482,7 @@ class APPNP:
 
         x_out = h_layer
         return x_inp, x_out
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

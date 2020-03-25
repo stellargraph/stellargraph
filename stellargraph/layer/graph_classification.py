@@ -200,8 +200,6 @@ class GCNSupervisedGraphClassification:
                 )
             )
 
-        self.build = deprecated_model_function(self.in_out_tensors, "build")
-
     def __call__(self, x):
         """
         Apply a stack of :class:`GraphClassificationConvolution` layers to the inputs.
@@ -253,3 +251,5 @@ class GCNSupervisedGraphClassification:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")
