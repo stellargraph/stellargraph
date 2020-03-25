@@ -586,5 +586,4 @@ class RGCN:
                 "Currently only node prediction if supported for RGCN."
             )
 
-    node_model = deprecated_model_function(_node_model, "node_model")
     build = deprecated_model_function(in_out_tensors, "build")

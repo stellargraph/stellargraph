@@ -116,9 +116,10 @@ def _deprecated_test(sg_model):
         x_in, x_out = sg_model.build()
 
     try:
-        x_in, x_out = sg_model._node_model()
-        with pytest.warns(DeprecationWarning):
-            x_in, x_out = sg_model.node_model()
+        if type(sg_model) is not RGCN:
+            x_in, x_out = sg_model._node_model()
+            with pytest.warns(DeprecationWarning):
+                x_in, x_out = sg_model.node_model()
     except AttributeError:
         pass
 
