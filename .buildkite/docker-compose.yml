@@ -49,7 +49,7 @@ services:
 
   # a service that does nothing to use as a default depends_on for the runners
   empty-service:
-    image: alpine-3.10
+    image: alpine:3.10
 
   neo4j: &neo4j-config
     build: &neo4j-build
