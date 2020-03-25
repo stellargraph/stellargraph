@@ -153,8 +153,16 @@ def test_deprecated_model_functions():
         ),
         GraphSAGENodeGenerator(G, batch_size=1, num_samples=[2]),
         RelationalFullBatchNodeGenerator(G),
+        GraphGenerator([G]),
     ]
-    model_types = [ClusterGCN, HinSAGE, GraphSAGE, RGCN]
+
+    model_types = [
+        ClusterGCN,
+        HinSAGE,
+        GraphSAGE,
+        RGCN,
+        GCNSupervisedGraphClassification,
+    ]
 
     for generator, model_type in zip(generators, model_types):
         sg_model = model_type(
