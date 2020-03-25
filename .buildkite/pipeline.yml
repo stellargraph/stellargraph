@@ -109,7 +109,7 @@ steps:
           - STELLARGRAPH_NEO4J_HOST=neo4j
     env:
       RUNNER_DEPENDS_ON: neo4j
-      NEO4J_VERSION: 3.5
+      NEO4J_VERSION: "3.5"
     agents:
       queue: "t2large"
 
@@ -127,7 +127,7 @@ steps:
           - STELLARGRAPH_NEO4J_HOST=neo4j
     env:
       RUNNER_DEPENDS_ON: neo4j
-      NEO4J_VERSION: 4.0
+      NEO4J_VERSION: "4.0"
     agents:
       queue: "t2large"
 
