@@ -270,6 +270,41 @@ def test_hinsage_apply():
     assert actual == pytest.approx(expected)
 
 
+def test_hinsage_in_out_tensors():
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        n_samples=[2, 2],
+        input_neighbor_tree=[
+            ("1", [1, 2]),
+            ("1", [3, 4]),
+            ("2", [5]),
+            ("1", []),
+            ("2", []),
+            ("2", []),
+        ],
+        multiplicity=1,
+        input_dim={"1": 2, "2": 4},
+        normalize="none",
+        kernel_initializer="ones",
+    )
+
+    xin, xout = hs.in_out_tensors()
+    model = keras.Model(inputs=xin, outputs=xout)
+
+    x = [
+        np.array([[[1, 1]]]),
+        np.array([[[2, 2], [2, 2]]]),
+        np.array([[[4, 4, 4, 4], [4, 4, 4, 4]]]),
+        np.array([[[3, 3], [3, 3], [3, 3], [3, 3]]]),
+        np.array([[[6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6]]]),
+        np.array([[[9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9], [9, 9, 9, 9]]]),
+    ]
+
+    actual = model.predict(x)
+    expected = np.array([[12, 35.5]])
+    assert actual == pytest.approx(expected)
+
+
 def test_hinsage_serialize():
     hs = HinSAGE(
         layer_sizes=[2, 2],
