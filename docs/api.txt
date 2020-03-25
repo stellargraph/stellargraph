@@ -196,7 +196,7 @@ Utilities
 Datasets
 ----------------
 
-.. automodule:: stellargraph.datasets.datasets
+.. automodule:: stellargraph.datasets
   :members:
   :inherited-members:
 
