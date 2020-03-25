@@ -47,7 +47,7 @@ test:
     - stellargraph.layer
     - stellargraph.mapper
     - stellargraph.utils
-    - stellargraph.utils.saliency_maps
+    - stellargraph.interpretability.saliency_maps
 
 about:
   home: "https://github.com/stellargraph/stellargraph"
