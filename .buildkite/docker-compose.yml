@@ -37,7 +37,8 @@ services:
       - BUILDKITE_COMMIT
       - BUILDKITE_TAG
       - CODECOV_TOKEN
-    depends_on: ${RUNNER_DEPENDS_ON:-[]}
+    depends_on:
+      - ${RUNNER_DEPENDS_ON:-empty-service}
 
   runner-3_7:
     <<: *runner-config
@@ -45,6 +46,10 @@ services:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
+
+  # a service that does nothing to use as a default depends_on for the runners
+  empty-service:
+    image: alpine-3.10
 
   neo4j-3.5: &neo4j-config
     build: &neo4j-build

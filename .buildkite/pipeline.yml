@@ -107,7 +107,7 @@ steps:
         run: runner-3_6
         env:
           - STELLARGRAPH_NEO4J_HOST=neo4j
-          - RUNNER_DEPENDS_ON=["neo4j-4.0"]
+          - RUNNER_DEPENDS_ON=neo4j-3.5
     agents:
       queue: "t2large"
 
@@ -123,7 +123,7 @@ steps:
         run: runner-3_6
         env:
           - STELLARGRAPH_NEO4J_HOST=neo4j
-          - RUNNER_DEPENDS_ON=["neo4j-4.0"]
+          - RUNNER_DEPENDS_ON=neo4j-4.0
     agents:
       queue: "t2large"
 
