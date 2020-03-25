@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-
 echo "--- downloading apoc jar for neo4j ${NEO4J_VERSION}"
 
 case "$NEO4J_VERSION" in
@@ -16,6 +15,7 @@ case "$NEO4J_VERSION" in
     ;;
   *)
     echo "NEO4J_VERSION: unsupported version '${NEO4J_VERSION}'"
+    ;;
 esac
 
 echo "APOC version ${apoc_version} (sha512 ${apoc_sha})"
