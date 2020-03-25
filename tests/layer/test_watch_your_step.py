@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.layer import AttentiveWalk, WatchYourStep, get_embeddings
+from stellargraph.layer import AttentiveWalk, WatchYourStep
 import numpy as np
 from ..test_utils.graphs import barbell
 from stellargraph.mapper import AdjacencyPowerGenerator
@@ -76,27 +76,29 @@ def test_WatchYourStep(barbell):
     gen = generator.flow(batch_size=4)
     wys = WatchYourStep(generator)
 
-    x_in, x_out = wys.build()
+    x_in, x_out = wys.in_out_tensors()
 
     model = Model(inputs=x_in, outputs=x_out)
     model.compile(optimizer="adam", loss=graph_log_likelihood)
     model.fit(gen, epochs=1, steps_per_epoch=int(len(barbell.nodes()) // 4))
 
-    embs = get_embeddings(model)
-
+    embs = wys.embeddings()
     assert embs.shape == (len(barbell.nodes()), wys.embedding_dimension)
 
-    model2 = Model(*wys.build())
-    assert np.array_equal(get_embeddings(model2), embs)
+    # build() should always return tensors backed by the same trainable weights, and thus give the
+    # same predictions
+    preds1 = model.predict(gen, steps=8)
+    preds2 = Model(*wys.in_out_tensors()).predict(gen, steps=8)
+    assert np.array_equal(preds1, preds2)
 
 
 def test_WatchYourStep_embeddings(barbell):
     generator = AdjacencyPowerGenerator(barbell, num_powers=5)
     wys = WatchYourStep(generator, embeddings_initializer="ones")
-    x_in, x_out = wys.build()
+    x_in, x_out = wys.in_out_tensors()
 
     model = Model(inputs=x_in, outputs=x_out)
     model.compile(optimizer="adam", loss=graph_log_likelihood)
-    embs = get_embeddings(model)
+    embs = wys.embeddings()
 
     assert (embs == 1).all()

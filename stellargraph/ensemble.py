@@ -303,6 +303,7 @@ class Ensemble(object):
         warnings.warn(
             "'fit_generator' has been replaced by 'fit', to match tensorflow.keras.Model",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.fit(*args, **kwargs)
 
@@ -406,6 +407,7 @@ class Ensemble(object):
         warnings.warn(
             "'evaluate_generator' has been replaced by 'evaluate', to match tensorflow.keras.Model",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.evaluate(*args, **kwargs)
 
@@ -529,6 +531,7 @@ class Ensemble(object):
         warnings.warn(
             "'predict_generator' has been replaced by 'predict', to match tensorflow.keras.Model",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.predict(*args, **kwargs)
 
@@ -718,5 +721,6 @@ class BaggingEnsemble(Ensemble):
         warnings.warn(
             "'fit_generator' has been replaced by 'fit', to match tensorflow.keras.Model",
             DeprecationWarning,
+            stacklevel=2,
         )
         return self.fit(*args, **kwargs)

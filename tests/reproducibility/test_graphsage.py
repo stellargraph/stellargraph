@@ -39,7 +39,7 @@ def unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize):
         normalize=normalize,
     )
     # Build the model and expose input and output sockets of graphsage, for node pair inputs:
-    x_inp, x_out = graphsage.build()
+    x_inp, x_out = graphsage.in_out_tensors()
     prediction = link_classification(
         output_dim=1, output_act="sigmoid", edge_embedding_method="ip"
     )(x_out)
@@ -99,7 +99,7 @@ def gs_nai_model(num_samples, generator, targets, optimizer, bias, dropout, norm
         normalize=normalize,
     )
     # Build the model and expose input and output sockets of graphsage, for node pair inputs:
-    x_inp, x_out = graphsage.build()
+    x_inp, x_out = graphsage.in_out_tensors()
     pred = tf.keras.layers.Dense(units=targets.shape[1], activation="softmax")(x_out)
     model = tf.keras.Model(inputs=x_inp, outputs=pred)
 
@@ -155,7 +155,7 @@ def gs_link_pred_model(num_samples, generator, optimizer, bias, dropout, normali
         normalize=normalize,
     )
     # Build the model and expose input and output sockets of graphsage, for node pair inputs:
-    x_inp, x_out = graphsage.build()
+    x_inp, x_out = graphsage.in_out_tensors()
     pred = link_classification(
         output_dim=1, output_act="relu", edge_embedding_method="ip"
     )(x_out)

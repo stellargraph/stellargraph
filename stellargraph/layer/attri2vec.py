@@ -25,8 +25,18 @@ from tensorflow.keras import Input
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Dense, Lambda, Reshape, Embedding
 import warnings
-
+from .misc import deprecated_model_function
 from ..mapper import Attri2VecLinkGenerator, Attri2VecNodeGenerator
+
+
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'input_dim', 'node_num' and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
+        )
 
 
 class Attri2Vec:
@@ -40,11 +50,18 @@ class Attri2Vec:
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence.
-        input_dim (int): The dimensions of the node features used as input to the model.
-        node_num (int): The number of nodes in the given graph.
         bias (bool): If True a bias vector is learnt for each layer in the attri2vec model, default to False.
         activation (str): The activation function of each layer in the attri2vec model, which takes values from "linear", "relu" and "sigmoid"(default).
         normalize ("l2" or None): The normalization used after each layer, default to None.
+        input_dim (int, optional): The dimensions of the node features used as input to the model.
+        node_num (int, optional): The number of nodes in the given graph.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
+            inference and 2 for link inference (currently no others are supported).
+
+    .. note::
+        The values for ``input_dim``, ``node_num``, and ``multiplicity`` are obtained from the
+        provided ``generator`` by default. The additional keyword arguments for these parameters
+        provide an alternative way to specify them if a generator cannot be supplied.
 
     """
 
@@ -55,7 +72,9 @@ class Attri2Vec:
         bias=False,
         activation="sigmoid",
         normalize=None,
-        **kwargs
+        input_dim=None,
+        node_num=None,
+        multiplicity=None,
     ):
 
         if activation == "linear" or activation == "relu" or activation == "sigmoid":
@@ -84,7 +103,9 @@ class Attri2Vec:
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
-            self._get_sizes_from_keywords(kwargs)
+            self.input_node_num = _require_without_generator(node_num, "node_num")
+            self.input_feature_size = _require_without_generator(input_dim, "input_dim")
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
 
         # Model parameters
         self.n_layers = len(layer_sizes)
@@ -130,22 +151,6 @@ class Attri2Vec:
             )
         self.input_feature_size = feature_sizes.popitem()[1]
 
-    def _get_sizes_from_keywords(self, kwargs):
-        """
-        Sets node_num and input_feature_size from the keywords.
-        Args:
-             kwargs: The additional keyword arguments.
-        """
-        try:
-            self.input_node_num = kwargs["node_num"]
-            self.input_feature_size = kwargs["input_dim"]
-            self.multiplicity = kwargs["multiplicity"]
-
-        except KeyError:
-            raise KeyError(
-                "Generator not provided; node_num, multiplicity, and input_dim must be specified."
-            )
-
     def __call__(self, xin):
         """
         Construct node representations from node attributes through deep neural network
@@ -163,7 +168,7 @@ class Attri2Vec:
 
         return h_layer
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a Attri2Vec model for node representation prediction.
 
@@ -181,7 +186,7 @@ class Attri2Vec:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a Attri2Vec model for context node prediction.
 
@@ -191,7 +196,7 @@ class Attri2Vec:
 
         """
         # Expose input and output sockets of the model, for source node:
-        x_inp_src, x_out_src = self.node_model()
+        x_inp_src, x_out_src = self._node_model()
 
         # Expose input and out sockets of the model, for target node:
         x_inp_dst = Input(shape=(1,))
@@ -204,7 +209,7 @@ class Attri2Vec:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a Attri2Vec model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -215,10 +220,12 @@ class Attri2Vec:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.multiplicity == 1:
-            return self.node_model()
-        elif self.multiplicity == 2:
-            return self.link_model()
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+        if multiplicity == 1:
+            return self._node_model()
+        elif multiplicity == 2:
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
@@ -227,8 +234,12 @@ class Attri2Vec:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
-            PendingDeprecationWarning,
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        return self.build()
+        return self.in_out_tensors()
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")
