@@ -104,7 +104,7 @@ def test_distmult(knowledge_graph):
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
     distmult_model = DistMult(gen, 5, embeddings_initializer=init)
-    x_inp, x_out = distmult_model.build()
+    x_inp, x_out = distmult_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
 
@@ -144,7 +144,7 @@ def test_distmult(knowledge_graph):
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
-    model2 = Model(*distmult_model.build())
+    model2 = Model(*distmult_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
     assert np.array_equal(prediction, prediction2)
 

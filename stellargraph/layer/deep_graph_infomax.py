@@ -143,7 +143,7 @@ class DeepGraphInfomax:
         """
 
         # these tensors should link into the weights that get trained by `build`
-        x_emb_in, x_emb_out = self.base_model.build(multiplicity=1)
+        x_emb_in, x_emb_out = self.base_model.in_out_tensors(multiplicity=1)
 
         squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
         x_emb_out = squeeze_layer(x_emb_out)

@@ -234,7 +234,7 @@ class Attri2Vec:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method is deprecated. Please use .build() method instead.",
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
