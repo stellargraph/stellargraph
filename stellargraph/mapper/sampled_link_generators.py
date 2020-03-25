@@ -228,6 +228,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.head_node_types = self.schema.node_types * 2
@@ -541,6 +542,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.head_node_types = self.schema.node_types * 2

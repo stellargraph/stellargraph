@@ -85,7 +85,7 @@ def experimental(*, reason, issues=None):
 
         @functools.wraps(func_to_wrap)
         def new_func(*args, **kwargs):
-            warnings.warn(direct_msg, ExperimentalWarning)
+            warnings.warn(direct_msg, ExperimentalWarning, stacklevel=2)
             return func_to_wrap(*args, **kwargs)
 
         if is_class:
