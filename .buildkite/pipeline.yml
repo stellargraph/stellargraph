@@ -97,7 +97,7 @@ steps:
 
   - label: ":python::book: test neo4j notebooks against neo4j 3.5"
     <<: *timeout
-    key: "test-neo4j-notebooks-3.5"
+    key: "test-neo4j-notebooks-3_5"
     depends_on: "runner-3_6"
     command: ".buildkite/steps/test-neo4j-notebooks.sh"
     plugins:
@@ -113,7 +113,7 @@ steps:
 
   - label: ":python::book: test neo4j notebooks against neo4j 4.0"
     <<: *timeout
-    key: "test-neo4j-notebooks-4.0"
+    key: "test-neo4j-notebooks-4_0"
     depends_on: "runner-3_6"
     command: ".buildkite/steps/test-neo4j-notebooks.sh"
     plugins:
