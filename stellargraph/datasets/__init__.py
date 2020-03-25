@@ -19,6 +19,7 @@ The datasets package contains classes to download sample datasets
 
 """
 
+# these are defined explicitly for autodoc to pick them up via :members:
 __all__ = [
     "Cora",
     "CiteSeer",
