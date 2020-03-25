@@ -83,16 +83,15 @@ class Readout(Layer):
         Applies the layer to the inputs.
 
         Args:
-            inputs:
+            node_feats: a tensor containing the batch node features from the base model. This has shape `(1, N, F)`
+                for full batch methods and shape `(B, F)` for sampled node methods. Where `N` is the number of nodes
+                in the graph, `F` is the feature dimension, and `B` is the batch size.
+
         Returns:
-            a Tensor with shape (1, N)
+            a Tensor with shape `(1, F)` for full batch methods and shape `(F,)` for sampled node methods.
         """
 
-        if len(node_feats.shape) == 3:
-            summary = tf.reduce_mean(node_feats, axis=1)
-        else:
-            summary = tf.reduce_mean(node_feats, axis=0)
-
+        summary = tf.reduce_mean(node_feats, axis=-2)
         summary = tf.math.sigmoid(summary)
 
         return summary
