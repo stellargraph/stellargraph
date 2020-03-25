@@ -16,24 +16,28 @@ requirements:
   host:
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2
+    - networkx >=2.2,<2.4
     - numpy >=1.14
     - pandas >=0.24
     - pip
     - python
-    - scikit_learn >=0.20
+    - scikit-learn >=0.20
     - scipy >=1.1.0
     - tensorflow >=2.1.0
+    - ipython
+    - ipykernel
   run:
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2
+    - networkx >=2.2,<2.4
     - numpy >=1.14
     - pandas >=0.24
     - python
-    - scikit_learn >=0.20
+    - scikit-learn >=0.20
     - scipy >=1.1.0
     - tensorflow >=2.1.0
+    - ipython
+    - ipykernel
 
 test:
   imports:
