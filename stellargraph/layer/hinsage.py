@@ -232,7 +232,7 @@ class HinSAGE:
 
     To use this class as a Keras model, the features and graph should be supplied using the
     :class:`HinSAGENodeGenerator` class for node inference models or the
-    :class:`HinSAGELinkGenerator` class for link inference models.  The `.build` method should
+    :class:`HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Currently the class supports node or link prediction models which are built depending on whether

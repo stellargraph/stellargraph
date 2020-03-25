@@ -738,7 +738,7 @@ class GraphSAGE:
 
     To use this class as a Keras model, the features and graph should be supplied using the
     :class:`GraphSAGENodeGenerator` class for node inference models or the
-    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.build` method should
+    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Examples:
