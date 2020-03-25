@@ -25,7 +25,7 @@ import numpy as np
 import scipy.sparse as sps
 import pytest
 from stellargraph.layer.misc import *
-from ..test_utils.graphs import create_graph_features
+from ..test_utils.graphs import create_graph_features, example_graph
 from stellargraph.mapper import *
 from stellargraph.layer import *
 
@@ -110,27 +110,81 @@ def test_squeezedsparseconversion_axis():
     assert np.allclose(z, A.sum(axis=1), atol=1e-7)
 
 
-@pytest.mark.parametrize(
-    "model_type", [APPNP]
-)  # ("model_type", [GCN, GAT, PPNP, APPNP])
-def test_deprecated_model_function(model_type):
-    G, _ = create_graph_features()
-    generator = FullBatchNodeGenerator(G)
-    sg_model = model_type(generator=generator, layer_sizes=[4], activations=["relu"])
+def _deprecated_test(sg_model):
 
-    with pytest.raises(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):
         x_in, x_out = sg_model.build()
 
     try:
         x_in, x_out = sg_model._node_model()
-        with pytest.raises(DeprecationWarning):
+        with pytest.warns(DeprecationWarning):
             x_in, x_out = sg_model.node_model()
     except AttributeError:
         pass
 
     try:
         x_in, x_out = sg_model._link_model()
-        with pytest.raises(DeprecationWarning):
+        with pytest.warns(DeprecationWarning):
             x_in, x_out = sg_model.link_model()
     except AttributeError:
         pass
+
+
+def test_deprecated_model_functions():
+    G, _ = create_graph_features()
+
+    # full batch models
+    generator = FullBatchNodeGenerator(G)
+    for model_type in [GCN, GAT, PPNP, APPNP]:
+        sg_model = model_type(
+            generator=generator, layer_sizes=[4], activations=["relu"]
+        )
+        _deprecated_test(sg_model)
+
+    # test DeepGraphInfomax here because it needs a fullbatch model
+    sg_model = DeepGraphInfomax(sg_model)
+    _deprecated_test(sg_model)
+
+    # models with layer_sizes and activations args
+    generators = [
+        ClusterNodeGenerator(G),
+        HinSAGENodeGenerator(
+            G, batch_size=1, num_samples=[2], head_node_type="default"
+        ),
+        GraphSAGENodeGenerator(G, batch_size=1, num_samples=[2]),
+        RelationalFullBatchNodeGenerator(G),
+    ]
+    model_types = [ClusterGCN, HinSAGE, GraphSAGE, RGCN]
+
+    for generator, model_type in zip(generators, model_types):
+        sg_model = model_type(
+            layer_sizes=[2], activations=["relu"], generator=generator
+        )
+        _deprecated_test(sg_model)
+
+    # models with embedding_dimension arg
+    model_types = [WatchYourStep, DistMult, ComplEx, Attri2Vec]
+    generators = [
+        AdjacencyPowerGenerator(G),
+        KGTripleGenerator(G, batch_size=1),
+        KGTripleGenerator(G, batch_size=1),
+    ]
+
+    for generator, model_type in zip(generators, model_types):
+        sg_model = model_type(generator=generator, embedding_dimension=2)
+        _deprecated_test(sg_model)
+
+    # outlier models that need to be treated separately
+
+    generator = Attri2VecLinkGenerator(G, batch_size=1)
+    sg_model = Attri2Vec(generator=generator, layer_sizes=[4], activation="sigmoid")
+    _deprecated_test(sg_model)
+
+    G = example_graph(feature_size=1, is_directed=True)
+    generator = DirectedGraphSAGENodeGenerator(
+        G, batch_size=1, in_samples=[2], out_samples=[2]
+    )
+    sg_model = DirectedGraphSAGE(
+        generator=generator, layer_sizes=[4], activations=["relu"]
+    )
+    _deprecated_test(sg_model)

@@ -275,6 +275,8 @@ class ComplEx:
 
         return x_inp, x_out
 
+    build = deprecated_model_function(in_out_tensors, "build")
+
 
 class DistMultScore(Layer):
     """
