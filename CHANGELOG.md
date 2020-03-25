@@ -6,18 +6,17 @@
 
 ### Major features and improvements
 
-- [Example Jupyter notebooks](https://github.com/stellargraph/stellargraph/tree/master/demos/) can now be run directly in Google Colab and Bindr, providing an easy way to get started with StellarGraph - simply click the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each notebook. [\#1119](https://github.com/stellargraph/stellargraph/pull/1119).
+- The onboarding/getting-started process has been optimised and improved:
+  - The README has been rewritten to highlight our numerous demos, and how to get help [\#1081](https://github.com/stellargraph/stellargraph/pull/1081)
+  - [Example Jupyter notebooks](https://github.com/stellargraph/stellargraph/tree/master/demos/) can now be run directly in Google Colab and Bindr, providing an easy way to get started with StellarGraph - simply click the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each notebook. [\#1119](https://github.com/stellargraph/stellargraph/pull/1119).
+  - The [new `demos/basics` directory](demos/basics) contains two notebooks demonstrating how to construct a `StellarGraph` object from Pandas, and from NetworkX [\#1074](https://github.com/stellargraph/stellargraph/pull/1074)
+  - The [GCN node classification demo](demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb) now has more explanation, to serve as an introduction to graph machine learning using StellarGraph [\#1125](https://github.com/stellargraph/stellargraph/pull/1125)
 - New algorithms:
   - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750).
   - Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978).
   - Temporal Random Walks (Continuous-Time Dynamic Network Embeddings): random walks that respect the time that each edge occurred (stored as edge weights) [\#1120](https://github.com/stellargraph/stellargraph/issues/1120).
   - ComplEx: computes multiplicative complex-number embeddings for entities and relationships (edge types) in knowledge graphs, which can be used for link prediction. [\#901](https://github.com/stellargraph/stellargraph/pull/901) [\#1080](https://github.com/stellargraph/stellargraph/pull/1080)
   - DistMult: computes multiplicative real-number embeddings for entities and relationships (edge types) in knowledge graphs, which can be used for link prediction. [\#755](https://github.com/stellargraph/stellargraph/issues/755) [\#865](https://github.com/stellargraph/stellargraph/pull/865) [\#1136](https://github.com/stellargraph/stellargraph/pull/1136)
-- The onboarding/getting-started process has been tweaked and improved:
-  - The README has been rewritten to highlight our numerous demos, and how to get help [\#1081](https://github.com/stellargraph/stellargraph/pull/1081)
-  - The [new `demos/basics` directory](demos/basics) contains two notebooks demonstrating how to construct a `StellarGraph` object from Pandas, and from NetworkX [\#1074](https://github.com/stellargraph/stellargraph/pull/1074)
-  - The [GCN node classification demo](demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb) now has more explanation, to serve as an introduction to graph machine learning using StellarGraph [\#1125](https://github.com/stellargraph/stellargraph/pull/1125)
-
 
 ### Breaking changes
 
