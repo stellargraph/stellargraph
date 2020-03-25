@@ -238,7 +238,8 @@ def link_inference(
 
     if edge_embedding_method in ["ip", "dot"] and output_dim != 1:
         warnings.warn(
-            "For inner product link method the output_dim will be ignored as it is fixed to be 1."
+            "For inner product link method the output_dim will be ignored as it is fixed to be 1.",
+            stacklevel=2,
         )
         output_dim = 1
 

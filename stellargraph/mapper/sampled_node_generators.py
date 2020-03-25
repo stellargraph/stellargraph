@@ -212,6 +212,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE
@@ -315,6 +316,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE

@@ -38,8 +38,6 @@ def graph_log_likelihood(batch_adj, wys_output):
         the graph log likelihood loss for the batch
     """
 
-    batch_adj = tf.squeeze(batch_adj, axis=1)
-
     expected_walks = tf.gather(wys_output, [0], axis=1)
     scores = tf.gather(wys_output, [1], axis=1)
 
@@ -47,7 +45,7 @@ def graph_log_likelihood(batch_adj, wys_output):
 
     log_sigmoid = tf.math.log_sigmoid(scores)
     log1m_sigmoid = log_sigmoid - scores  # log(1 - σ(scores)), simplified
-    matrix = expected_walks * log_sigmoid - adj_mask * log1m_sigmoid
+    matrix = -expected_walks * log_sigmoid - adj_mask * log1m_sigmoid
     loss = tf.math.reduce_sum(tf.abs(matrix))
 
     return tf.expand_dims(loss, 0)
