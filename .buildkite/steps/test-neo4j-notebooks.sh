@@ -16,5 +16,5 @@ directory="$PWD/demos/connector/neo4j"
 notebooks=('load-cora-into-neo4j.ipynb' 'directed-graphsage-on-cora-neo4j-example.ipynb' 'undirected-graphsage-on-cora-neo4j-example.ipynb')
 
 for name in "${notebooks[@]}"; do
-  .buildkite/steps/test-single-notebook.sh "$directory/$name"
+  .buildkite/steps/test-single-notebook.sh "$directory/$name" " using Neo4j ${NEO4J_VERSION}"
 done

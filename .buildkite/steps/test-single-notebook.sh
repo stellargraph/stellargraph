@@ -4,6 +4,7 @@ set -xeo pipefail
 
 stellargraph_dir="$PWD"
 f="$1"
+extra_info="${2-}"
 
 echo "+++ :python: running $f"
 cd "$(dirname "$f")"
@@ -36,8 +37,8 @@ echo "This notebook can be viewed at <$url>"
 
 if [ "$exitCode" -ne 0 ]; then
   # the notebook failed, so let's flag that more obviously, with helpful links
-  buildkite-agent annotate --style "error" --context "$filename" << EOF
-Notebook \`$filename\` had an error: [failed job](#${BUILDKITE_JOB_ID}), [rendered notebook]($url)
+  buildkite-agent annotate --style "error" --context "$filename-${BUILDKITE_JOB_ID}" << EOF
+Notebook \`$filename\` had an error${extra_info}: [failed job](#${BUILDKITE_JOB_ID}), [rendered notebook]($url)
 EOF
 fi
 
