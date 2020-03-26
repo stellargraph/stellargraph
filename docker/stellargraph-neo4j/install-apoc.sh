@@ -16,6 +16,7 @@ case "$NEO4J_VERSION" in
   3.4)
     apoc_version="3.4.0.4"
     apoc_sha="f84fd5d46d8d42a613e233635568e4e15b9abdabd872efb1963c6a4c8f7473744f1d345b9fdab398ac3f277f4fc2e2b4ddb84695ccdce05be4688c94075bf6ae"
+    ;;
   *)
     echo "NEO4J_VERSION: unsupported version '${NEO4J_VERSION}'"
     ;;
