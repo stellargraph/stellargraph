@@ -113,13 +113,13 @@ steps:
     agents:
       queue: "t2large"
 
-  - label: ":python::book: test neo4j notebooks against neo4j 3.5"
-    <<: *test-neo4j-notebooks
+  - <<: *test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 3.5"
     env:
       NEO4J_VERSION: "3.5"
 
-  - label: ":python::book: test neo4j notebooks against neo4j 3.4"
-    <<: *test-neo4j-notebooks
+  - <<: *test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 3.4"
     env:
       NEO4J_VERSION: "3.4"
 
