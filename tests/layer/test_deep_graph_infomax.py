@@ -29,7 +29,7 @@ from stellargraph.mapper import (
     CorruptedGenerator,
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
-    FullBatchLinkGenerator
+    FullBatchLinkGenerator,
 )
 from ..test_utils.graphs import example_graph_random
 import tensorflow as tf
