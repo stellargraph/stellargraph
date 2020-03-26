@@ -52,8 +52,8 @@ services:
   empty-service:
     image: alpine:3.10
 
-  neo4j: &neo4j-config
-    build: &neo4j-build
+  neo4j:
+    build:
       context: docker/stellargraph-neo4j
       args:
         - NEO4J_VERSION=${NEO4J_VERSION:-nonsense_default_value}
