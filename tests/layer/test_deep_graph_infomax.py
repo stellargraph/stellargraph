@@ -160,7 +160,7 @@ def test_dgi_graphsage(is_directed):
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model.fit(gen)
 
-    emb_model = tf.keras.Model(*infomax.embedding_model(model))
+    emb_model = tf.keras.Model(*infomax.embedding_model())
     embeddings = emb_model.predict(generator.flow(G.nodes()))
 
     assert embeddings.shape == (len(G.nodes()), 4)
