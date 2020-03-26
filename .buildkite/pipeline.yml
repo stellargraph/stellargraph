@@ -34,66 +34,66 @@ steps:
     agents:
       queue: "t2medium"
 
-  # - label: ":docker::python: build 3.7 runner"
-  #   <<: *timeout
-  #   key: "runner-3_7"
-  #   plugins:
-  #     <<: *plugins
-  #     docker-compose#v3.2.0:
-  #       <<: *compose-config
-  #       build: runner-3_7
-  #       image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
-  #       no-cache: ${REFRESH_BUILD-false}
-  #       cache-from:
-  #         - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
-  #         - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
+  - label: ":docker::python: build 3.7 runner"
+    <<: *timeout
+    key: "runner-3_7"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        build: runner-3_7
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
 
-  #       push:
-  #         - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
-  #   agents:
-  #     queue: "t2medium"
+        push:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
 
-  # - label: ":python: 3.6"
-  #   <<: *timeout
-  #   key: "python_3_6"
-  #   depends_on: "runner-3_6"
-  #   command: ".buildkite/steps/script.sh"
-  #   plugins:
-  #     <<: *plugins
-  #     docker-compose#v3.2.0:
-  #       <<: *compose-config
-  #       run: runner-3_6
-  #   agents:
-  #     queue: "t2medium"
+  - label: ":python: 3.6"
+    <<: *timeout
+    key: "python_3_6"
+    depends_on: "runner-3_6"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
 
-  # - label: ":python: 3.7"
-  #   <<: *timeout
-  #   key: "python_3_7"
-  #   depends_on: "runner-3_7"
-  #   command: ".buildkite/steps/script.sh"
-  #   plugins:
-  #     <<: *plugins
-  #     docker-compose#v3.2.0:
-  #       <<: *compose-config
-  #       run: runner-3_7
-  #   agents:
-  #     queue: "t2medium"
+  - label: ":python: 3.7"
+    <<: *timeout
+    key: "python_3_7"
+    depends_on: "runner-3_7"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_7
+    agents:
+      queue: "t2medium"
 
-  # - label: ":python::book: test notebooks %n"
-  #   <<: *timeout
-  #   key: "test-notebooks"
-  #   depends_on: "runner-3_6"
-  #   parallelism: 43
-  #   command: ".buildkite/steps/test-demo-notebooks.sh"
-  #   plugins:
-  #     <<: *plugins
-  #     docker-compose#v3.2.0:
-  #       <<: *compose-config
-  #       run: runner-3_6
-  #   agents:
-  #     queue: "t2large"
-  #   soft_fail:
-  #     - exit_status: 2
+  - label: ":python::book: test notebooks %n"
+    <<: *timeout
+    key: "test-notebooks"
+    depends_on: "runner-3_6"
+    parallelism: 43
+    command: ".buildkite/steps/test-demo-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2large"
+    soft_fail:
+      - exit_status: 2
 
   - &test-neo4j-notebooks
     label: ":python::book: test neo4j notebooks against neo4j 4.0"
