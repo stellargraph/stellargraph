@@ -22,6 +22,7 @@ import scipy.sparse as sps
 
 from ..globalvar import SOURCE, TARGET, WEIGHT
 from .validation import require_dataframe_has_columns, comma_sep
+import tensorflow as tf
 
 
 class ExternalIdIndex:
@@ -257,7 +258,10 @@ class NodeData(ElementData):
                     f"features[{key!r}]: expected one feature per ID, found {expected} IDs and {rows} feature rows"
                 )
 
-        self._features = features
+        self._features = dict(
+            (type_name, tf.convert_to_tensor(feats))
+            for type_name, feats in features.items()
+        )
 
     def features(self, type_name, id_ilocs) -> np.ndarray:
         """
@@ -279,7 +283,11 @@ class NodeData(ElementData):
             raise ValueError("unknown IDs")
 
         try:
-            return self._features[type_name][feature_ilocs, :]
+            return tf.nn.embedding_lookup(
+                self._features[type_name],
+                feature_ilocs.astype(int),
+            )
+
         except IndexError:
             # some of the indices were too large (from a later type)
             raise ValueError("unknown IDs")
