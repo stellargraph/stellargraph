@@ -284,8 +284,7 @@ class NodeData(ElementData):
 
         try:
             return tf.nn.embedding_lookup(
-                self._features[type_name],
-                feature_ilocs.astype(int),
+                self._features[type_name], feature_ilocs.astype(int),
             )
 
         except IndexError:
