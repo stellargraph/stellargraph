@@ -231,8 +231,8 @@ if __name__ == "__main__":
         metapaths = get_metapaths_from_str(args.metapaths)
 
         train_heterogeneous_graph(
-            g_train=StellarGraph(g_train),
-            g_test=StellarGraph(g_test),
+            g_train=StellarGraph.from_networkx(g_train),
+            g_test=StellarGraph.from_networkx(g_test),
             output_node_features=args.output_node_features,
             edge_data_ids_train=edge_data_ids_train,
             edge_data_labels_train=edge_data_labels_train,

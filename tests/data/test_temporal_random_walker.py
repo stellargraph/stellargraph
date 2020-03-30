@@ -16,6 +16,7 @@
 
 import pandas as pd
 import pytest
+import numpy as np
 import networkx as nx
 from stellargraph.data.explorer import TemporalRandomWalk
 from stellargraph.core.graph import StellarGraph
@@ -59,3 +60,46 @@ def test_not_progressing_enough(temporal_graph):
 
     with pytest.raises(RuntimeError, match=r".* discarded .*"):
         rw.run(num_cw=1, cw_size=cw_size, max_walk_length=cw_size, seed=None)
+
+
+def test_exp_biases(temporal_graph):
+    rw = TemporalRandomWalk(temporal_graph)
+    times = np.array([1, 2, 3])
+    t_0 = 1
+    expected = np.exp(t_0 - times) / sum(np.exp(t_0 - times))
+    biases = rw._exp_biases(times, t_0, decay=True)
+    assert np.allclose(biases, expected)
+
+
+def test_exp_biases_extreme(temporal_graph):
+    rw = TemporalRandomWalk(temporal_graph)
+
+    large_times = [100000, 100001]
+    biases = rw._exp_biases(large_times, t_0=0, decay=True)
+    assert sum(biases) == pytest.approx(1)
+
+    small_times = [0.000001, 0.000002]
+    biases = rw._exp_biases(small_times, t_0=0, decay=True)
+    assert sum(biases) == pytest.approx(1)
+
+
+@pytest.mark.parametrize("cw_size", [-1, 1, 2, 4])
+def test_cw_size_and_walk_length(temporal_graph, cw_size):
+    rw = TemporalRandomWalk(temporal_graph)
+    num_cw = 5
+    max_walk_length = 3
+
+    def run():
+        return rw.run(num_cw=num_cw, cw_size=cw_size, max_walk_length=max_walk_length)
+
+    if cw_size < 2:
+        with pytest.raises(ValueError, match=r".* context window size .*"):
+            run()
+    elif max_walk_length < cw_size:
+        with pytest.raises(ValueError, match=r".* maximum walk length .*"):
+            run()
+    else:
+        walks = run()
+        num_cw_obtained = sum([len(walk) - cw_size + 1 for walk in walks])
+        assert num_cw == num_cw_obtained
+        assert max(map(len, walks)) <= max_walk_length

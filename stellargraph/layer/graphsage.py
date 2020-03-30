@@ -46,6 +46,7 @@ from ..mapper import (
     LinkSequence,
 )
 
+from .misc import deprecated_model_function
 from ..connector.neo4j.mapper import (
     Neo4JGraphSAGENodeGenerator,
     Neo4JDirectedGraphSAGENodeGenerator,
@@ -62,18 +63,12 @@ class GraphSAGEAggregator(Layer):
             a bias term should be included.
         act (Callable or str): name of the activation function to use (must be a
             Keras activation function), or alternatively, a TensorFlow operation.
-        kernel_initializer (str or func): The initialiser to use for the weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the bias;
-            defaults to None.
+        kernel_initializer (str or func): The initialiser to use for the weights
+        kernel_regularizer (str or func): The regulariser to use for the weights
+        kernel_constraint (str or func): The constraint to use for the weights
+        bias_initializer (str or func): The initialiser to use for the bias
+        bias_regularizer (str or func): The regulariser to use for the bias
+        bias_constraint (str or func): The constraint to use for the bias
     """
 
     def __init__(
@@ -81,33 +76,32 @@ class GraphSAGEAggregator(Layer):
         output_dim: int = 0,
         bias: bool = False,
         act: Union[Callable, AnyStr] = "relu",
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
         **kwargs,
     ):
         self.output_dim = output_dim
         self.has_bias = bias
         self.act = activations.get(act)
-        self._get_regularisers_from_keywords(kwargs)
         super().__init__(**kwargs)
+
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+
         # These will be filled in at build time
         self.bias = None
         self.w_self = None
         self.w_group = None
         self.weight_dims = None
         self.included_weight_groups = None
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
 
     def get_config(self):
         """
@@ -719,6 +713,16 @@ class AttentionalAggregator(GraphSAGEAggregator):
         return self.act(h_out)
 
 
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'n_samples', 'input_dim', and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
+        )
+
+
 class GraphSAGE:
     """
     Implementation of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
@@ -734,7 +738,7 @@ class GraphSAGE:
 
     To use this class as a Keras model, the features and graph should be supplied using the
     :class:`GraphSAGENodeGenerator` class for node inference models or the
-    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.build` method should
+    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Examples:
@@ -748,7 +752,7 @@ class GraphSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
@@ -766,18 +770,22 @@ class GraphSAGE:
         normalize (str or None): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
-            defaults to None.
-
-    Note::
-        If a generator is not specified, then additional keyword arguments must be supplied:
-
-        * n_samples (list): The number of samples per layer in the model.
-
-        * input_dim (int): The dimensions of the node features used as input to the model.
-
-        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        n_samples (list, optional): The number of samples per layer in the model.
+        input_dim (int, optional): The dimensions of the node features used as input to the model.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node inference
           and 2 for link inference (currently no others are supported).
+
+    .. note::
+        The values for ``n_samples``, ``input_dim``, and ``multiplicity`` are obtained from the provided
+        ``generator`` by default. The additional keyword arguments for these parameters provide an
+        alternative way to specify them if a generator cannot be supplied.
+
     """
 
     def __init__(
@@ -789,7 +797,15 @@ class GraphSAGE:
         dropout=0.0,
         normalize="l2",
         activations=None,
-        **kwargs,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        n_samples=None,
+        input_dim=None,
+        multiplicity=None,
     ):
         # Model parameters
         self.layer_sizes = layer_sizes
@@ -815,7 +831,15 @@ class GraphSAGE:
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
-            self._get_sizes_from_keywords(kwargs)
+            self.n_samples = _require_without_generator(n_samples, "n_samples")
+            self.input_feature_size = _require_without_generator(input_dim, "input_dim")
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
+            # Check the number of samples and the layer sizes are consistent
+            if len(self.n_samples) != self.max_hops:
+                raise ValueError(
+                    f"n_samples: expected one sample size for each of the {self.max_hops} layers, "
+                    f"found {len(self.n_samples)} sample sizes"
+                )
 
         # Feature dimensions for each layer
         self.dims = [self.input_feature_size] + layer_sizes
@@ -840,11 +864,21 @@ class GraphSAGE:
             )
         self.activations = activations
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Aggregator functions for each layer
-        self._build_aggregators()
+        self._aggs = [
+            self._aggregator(
+                output_dim=self.layer_sizes[layer],
+                bias=self.bias,
+                act=self.activations[layer],
+                kernel_initializer=kernel_initializer,
+                kernel_regularizer=kernel_regularizer,
+                kernel_constraint=kernel_constraint,
+                bias_initializer=bias_initializer,
+                bias_regularizer=bias_regularizer,
+                bias_constraint=bias_constraint,
+            )
+            for layer in range(self.max_hops)
+        ]
 
     def _get_sizes_from_generator(self, generator):
         """
@@ -885,45 +919,6 @@ class GraphSAGE:
             )
         self.input_feature_size = feature_sizes.popitem()[1]
 
-    def _get_sizes_from_keywords(self, kwargs):
-        """
-        Sets n_samples and input_feature_size from the keywords.
-        Args:
-             kwargs: The additional keyword arguments.
-        """
-        try:
-            self.n_samples = kwargs["n_samples"]
-            self.input_feature_size = kwargs["input_dim"]
-            self.multiplicity = kwargs["multiplicity"]
-
-        except KeyError:
-            raise KeyError(
-                "Generator not provided; n_samples, multiplicity, and input_dim must be specified."
-            )
-
-        # Check the number of samples and the layer sizes are consistent
-        if len(self.n_samples) != self.max_hops:
-            raise ValueError(
-                "Mismatched lengths: neighbourhood sample sizes {} versus layer sizes {}".format(
-                    self.n_samples, self.layer_sizes
-                )
-            )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
-
     def _compute_neighbourhood_sizes(self):
         """
         Computes the total (cumulative product) number of nodes
@@ -936,17 +931,6 @@ class GraphSAGE:
             return np.product(self.n_samples[:i], dtype=int)
 
         self.neighbourhood_sizes = [size_at(i) for i in range(self.max_hops + 1)]
-
-    def _build_aggregators(self):
-        self._aggs = [
-            self._aggregator(
-                output_dim=self.layer_sizes[layer],
-                bias=self.bias,
-                act=self.activations[layer],
-                **self._regularisers,
-            )
-            for layer in range(self.max_hops)
-        ]
 
     def __call__(self, xin: List):
         """
@@ -1015,7 +999,7 @@ class GraphSAGE:
             else [self._normalization(xi) for xi in h_layer]
         )
 
-    def node_model(self):
+    def _node_model(self):
         """
         Builds a GraphSAGE model for node prediction
 
@@ -1036,7 +1020,7 @@ class GraphSAGE:
         # Returns inputs and outputs
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a GraphSAGE model for link or node pair prediction
 
@@ -1047,15 +1031,15 @@ class GraphSAGE:
 
         """
         # Expose input and output sockets of the model, for source and destination nodes:
-        x_inp_src, x_out_src = self.node_model()
-        x_inp_dst, x_out_dst = self.node_model()
+        x_inp_src, x_out_src = self._node_model()
+        x_inp_dst, x_out_dst = self._node_model()
         # re-pack into a list where (source, target) inputs alternate, for link inputs:
         x_inp = [x for ab in zip(x_inp_src, x_inp_dst) for x in ab]
         # same for outputs:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GraphSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -1066,10 +1050,13 @@ class GraphSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
-        if self.multiplicity == 1:
-            return self.node_model()
-        elif self.multiplicity == 2:
-            return self.link_model()
+        if multiplicity is None:
+            multiplicity = self.multiplicity
+
+        if multiplicity == 1:
+            return self._node_model()
+        elif multiplicity == 2:
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
@@ -1078,11 +1065,15 @@ class GraphSAGE:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
-            PendingDeprecationWarning,
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        return self.build()
+        return self.in_out_tensors()
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 class DirectedGraphSAGE(GraphSAGE):
@@ -1106,8 +1097,12 @@ class DirectedGraphSAGE(GraphSAGE):
         bias (bool, optional): If True (default), a bias vector is learnt for each layer.
         dropout (float, optional): The dropout supplied to each layer; defaults to no dropout.
         normalize (str, optional): The normalization used after each layer; defaults to L2 normalization.
-        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
 
     Notes::
         If a generator is not specified, then additional keyword arguments must be supplied:

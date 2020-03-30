@@ -29,6 +29,7 @@ import numpy as np
 import warnings
 from collections import defaultdict, deque
 from scipy import stats
+from scipy.special import softmax
 
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
@@ -506,13 +507,14 @@ class SampledBreadthFirstWalk(GraphWalk):
         Performs a sampled breadth-first walk starting from the root nodes.
 
         Args:
-            nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
-                given depth d.
-            n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
-            n (int, default 1): Number of walks per node id.
-            neighbours with replacement is always used regardless of the node degree and number of neighbours
-            requested.
-            seed (int, optional): Random number generator seed; default is None
+            nodes (list): A list of root node ids such that from each node a BFWs will be generated up to the
+                given depth. The depth of each of the walks is inferred from the length of the ``n_size``
+                list parameter.
+            n_size (list of int): The number of neighbouring nodes to expand at each depth of the walk.
+                Sampling of neighbours is always done with replacement regardless of the node degree and
+                number of neighbours requested.
+            n (int): Number of walks per node id.
+            seed (int, optional): Random number generator seed; Default is None.
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
@@ -784,9 +786,6 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             )
 
 
-@experimental(
-    reason="requires more thorough testing and documentation", issues=[827, 828, 832]
-)
 class TemporalRandomWalk(GraphWalk):
     """
     Performs temporal random walks on the given graph. The graph should contain numerical edge
@@ -805,7 +804,7 @@ class TemporalRandomWalk(GraphWalk):
         seed=None,
     ):
         """
-        Perform a time respecting random walk starting from the root nodes.
+        Perform a time respecting random walk starting from randomly selected temporal edges.
 
         Args:
             num_cw (int): Total number of context windows to generate. For comparable
@@ -815,15 +814,18 @@ class TemporalRandomWalk(GraphWalk):
                 since a walk must generate at least 1 context window for it to be useful.
             max_walk_length (int): Maximum length of each random walk. Should be greater
                 than or equal to the context window size.
-            initial_edge_bias (str, optional): distribution to use when choosing a random
+            initial_edge_bias (str, optional): Distribution to use when choosing a random
                 initial temporal edge to start from. Available options are:
-                * None (default) - the initial edge is picked from a uniform distribution
-                * "exponential" - heavily biased towards more recent edges.
-            walk_bias (str, optional): distribution to use when choosing a random
+
+                * None (default) - The initial edge is picked from a uniform distribution.
+                * "exponential" - Heavily biased towards more recent edges.
+
+            walk_bias (str, optional): Distribution to use when choosing a random
                 neighbour to walk through. Available options are:
-                * None (default) - neighbours are picked from a uniform distribution
-                * "exponential" - exponentially decaying probability, resulting in a bias
-                    towards shorter time gaps
+
+                * None (default) - Neighbours are picked from a uniform distribution.
+                * "exponential" - Exponentially decaying probability, resulting in a bias towards shorter time gaps.
+
             p_walk_success_threshold (float): Lower bound for the proportion of successful
                 (i.e. longer than minimum length) walks. If the 95% percentile of the
                 estimated proportion is less than the provided threshold, a RuntimeError
@@ -831,10 +833,10 @@ class TemporalRandomWalk(GraphWalk):
                 of the attempted random walks are successful. This parameter exists to catch any
                 potential situation where too many unsuccessful walks can cause an infinite or very
                 slow loop.
-            seed (int, optional): Random number generator seed; default is None
+            seed (int, optional): Random number generator seed; default is None.
 
         Returns:
-            List of lists of node ids for each of the random walks
+            List of lists of node ids for each of the random walks.
 
         """
         if cw_size < 2:
@@ -900,9 +902,7 @@ class TemporalRandomWalk(GraphWalk):
 
     def _exp_biases(self, times, t_0, decay):
         # t_0 assumed to be smaller than all time values
-        dist = np.exp(t_0 - np.array(times) if decay else np.array(times) - t_0)
-        sum_dist = np.sum(dist)
-        return dist / sum_dist
+        return softmax(t_0 - np.array(times) if decay else np.array(times) - t_0)
 
     def _temporal_biases(self, times, time, bias_type, is_forward):
         if bias_type is None:

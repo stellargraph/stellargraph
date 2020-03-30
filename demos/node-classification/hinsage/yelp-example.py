@@ -102,7 +102,7 @@ def train(
 
     # GraphSAGE model
     model = HinSAGE(layer_sizes=layer_size, generator=generator, dropout=dropout)
-    x_inp, x_out = model.build()
+    x_inp, x_out = model.in_out_tensors()
 
     # Final estimator layer
     prediction = layers.Dense(units=train_targets.shape[1], activation="softmax")(x_out)
@@ -124,12 +124,10 @@ def train(
     )
 
     # Train model
-    history = model.fit_generator(
-        train_gen, epochs=num_epochs, verbose=2, shuffle=False
-    )
+    history = model.fit(train_gen, epochs=num_epochs, verbose=2, shuffle=False)
 
     # Evaluate on test set and print metrics
-    predictions = model.predict_generator(test_gen)
+    predictions = model.predict(test_gen)
     binary_predictions = predictions[:, 1] > 0.5
     print("\nTest Set Metrics (on {} nodes)".format(len(predictions)))
 
@@ -249,8 +247,8 @@ if __name__ == "__main__":
     features = {"user": user_features, "business": business_features}
 
     # Create stellar Graph object
-    G = StellarGraph(
-        Gnx, node_type_name="ntype", edge_type_name="etype", node_features=features
+    G = StellarGraph.from_networkx(
+        Gnx, node_type_attr="ntype", edge_type_attr="etype", node_features=features
     )
 
     train(

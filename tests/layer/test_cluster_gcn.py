@@ -24,12 +24,12 @@ from stellargraph.layer.cluster_gcn import *
 from stellargraph.mapper import ClusterNodeGenerator
 from stellargraph.core.graph import StellarGraph
 
-import networkx as nx
 import pandas as pd
 import numpy as np
 from tensorflow import keras
+import tensorflow as tf
 import pytest
-from ..test_utils.graphs import create_graph_features, create_stellargraph
+from ..test_utils.graphs import create_graph_features
 
 
 def test_ClusterGraphConvolution_config():
@@ -64,7 +64,7 @@ def test_GraphConvolution():
     output_indices_t = Input(batch_shape=(1, None), dtype="int32", name="outind")
 
     # Note we add a batch dimension of 1 to model inputs
-    adj = nx.to_numpy_array(G)[None, :, :]
+    adj = G.to_adjacency_matrix().toarray()[None, :, :]
     out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
 
@@ -99,11 +99,6 @@ def test_GraphConvolution():
 
 def test_ClusterGCN_init():
     G, features = create_graph_features()
-    nodes = G.nodes()
-    node_features = pd.DataFrame.from_dict(
-        {n: f for n, f in zip(nodes, features)}, orient="index"
-    )
-    G = StellarGraph(G, node_type_name="node", node_features=node_features)
 
     generator = ClusterNodeGenerator(G)
     cluster_gcn_model = ClusterGCN(
@@ -117,7 +112,7 @@ def test_ClusterGCN_init():
 
 def test_ClusterGCN_apply():
 
-    G = create_stellargraph()
+    G, _ = create_graph_features()
 
     generator = ClusterNodeGenerator(G)
 
@@ -125,17 +120,17 @@ def test_ClusterGCN_apply():
         layer_sizes=[2], generator=generator, activations=["relu"], dropout=0.0
     )
 
-    x_in, x_out = cluster_gcn_model.build()
+    x_in, x_out = cluster_gcn_model.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b", "c"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b", "c"]))
     assert preds_2.shape == (1, 3, 2)
 
 
 def test_ClusterGCN_activations():
 
-    G = create_stellargraph()
+    G, _ = create_graph_features()
     generator = ClusterNodeGenerator(G)
 
     # Test activations are set correctly
@@ -170,7 +165,7 @@ def test_ClusterGCN_activations():
 
 
 def test_ClusterGCN_regularisers():
-    G = create_stellargraph()
+    G, _ = create_graph_features()
 
     generator = ClusterNodeGenerator(G)
 
@@ -210,3 +205,19 @@ def test_ClusterGCN_regularisers():
             generator=generator,
             bias_initializer="barney",
         )
+
+
+def test_kernel_and_bias_defaults():
+    graph, _ = create_graph_features()
+    generator = ClusterNodeGenerator(graph)
+    cluster_gcn = ClusterGCN(
+        layer_sizes=[2, 2], activations=["relu", "relu"], generator=generator
+    )
+    for layer in cluster_gcn._layers:
+        if isinstance(layer, ClusterGraphConvolution):
+            assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+            assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+            assert layer.kernel_regularizer is None
+            assert layer.bias_regularizer is None
+            assert layer.kernel_constraint is None
+            assert layer.bias_constraint is None

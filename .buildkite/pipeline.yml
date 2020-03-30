@@ -83,7 +83,7 @@ steps:
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 36
+    parallelism: 43
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -94,6 +94,30 @@ steps:
       queue: "t2large"
     soft_fail:
       - exit_status: 2
+
+  - &test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 4.0"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    command: ".buildkite/steps/test-neo4j-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+        env:
+          - STELLARGRAPH_NEO4J_HOST=neo4j
+    env:
+      RUNNER_DEPENDS_ON: neo4j
+      NEO4J_VERSION: "4.0"
+    agents:
+      queue: "t2large"
+
+  - <<: *test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 3.5"
+    env:
+      RUNNER_DEPENDS_ON: neo4j
+      NEO4J_VERSION: "3.5"
 
   - label: ":python-black: format"
     <<: *timeout

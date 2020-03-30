@@ -123,8 +123,8 @@ class BatchedNodeGenerator(abc.ABC):
 
         Returns:
             A NodeSequence object to use with with StellarGraph models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods ``fit``, ``evaluate``,
+            and ``predict``
 
         """
         if self.head_node_types is not None:
@@ -166,8 +166,8 @@ class BatchedNodeGenerator(abc.ABC):
 
         Returns:
             A NodeSequence object to use with with StellarGraph models
-            in Keras methods ``fit_generator``, ``evaluate_generator``,
-            and ``predict_generator``
+            in Keras methods ``fit``, ``evaluate``,
+            and ``predict``
 
         """
         return self.flow(node_targets.index, node_targets.values, shuffle=shuffle)
@@ -212,6 +212,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE
@@ -315,6 +316,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE
@@ -540,7 +542,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
         Returns:
             A NodeSequence object to use with the Attri2Vec model
-            in the Keras method ``predict_generator``.
+            in the Keras method ``predict``.
 
         """
         return NodeSequence(
@@ -557,7 +559,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
         Returns:
             A NodeSequence object to use with the Attri2Vec model
-            in the Keras method ``predict_generator``.
+            in the Keras method ``predict``.
 
         """
         return NodeSequence(self.sample_features, self.batch_size, node_ids.index)

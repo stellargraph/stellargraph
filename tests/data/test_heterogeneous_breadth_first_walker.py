@@ -14,59 +14,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 import pytest
-import networkx as nx
 from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
 from stellargraph.core.graph import StellarGraph
 
 
 # FIXME (#535): Consider using graph fixtures. These two test graphs are very similar, and should be combined
-def create_simple_test_graph():
+def create_test_graph(self_loop=False, multi=False):
     """
-    Creates a simple graph for testing the SampledHeterogeneousBreadthFirstWalk class. The node ids are string or integers.
+    Creates a graph for testing the SampledHeterogeneousBreadthFirstWalk class. The node ids are string or integers.
 
-    :return: A multi graph with 8 nodes and 9 edges (with no self loops but 1 with only a self loop and 1 isolated node)
-    in StellarGraph format.
-    """
-
-    g = nx.Graph()
-
-    g.add_nodes_from([0, 1, "5", 4, 7], label="user")
-    g.add_nodes_from([2, 3, 6], label="movie")
-
-    g.add_edges_from([(1, 2), (1, 3), ("5", 6), ("5", 3), (4, 2)], label="rating")
-    g.add_edges_from([("5", 4), (1, 4), (1, "5")], label="friend")
-    g.add_edges_from(
-        [(7, 7)], label="friend"
-    )  # isolated node with only a link back to itself
-
-    return StellarGraph(g)
-
-
-def create_multi_test_graph():
-    """
-    Creates a multi graph for testing the SampledHeterogeneousBreadthFirstWalk class. The node ids are string or
-    integers.
-
-    :return: A multi graph with 8 nodes and 9 edges (with no self loops but 1 with only a self loop and 1 isolated node)
-    in StellarGraph format.
+    :return: A multi graph with 8 nodes and 8 to 10 edges (one isolated node, a self-loop if
+    ``self_loop``, and a repeated edge if ``multi``) in StellarGraph format.
     """
 
-    g = nx.MultiGraph()
+    nodes = {
+        "user": pd.DataFrame(index=[0, 1, "5", 4, 7]),
+        "movie": pd.DataFrame(index=[2, 3, 6]),
+    }
+    friends = [("5", 4), (1, 4), (1, "5")]
+    friend_idx = [5, 6, 7]
+    if self_loop:
+        friends.append((7, 7))
+        friend_idx.append(8)
 
-    g.add_nodes_from([0, 1, "5", 4, 7], label="user")
-    g.add_nodes_from([2, 3, 6], label="movie")
+    edges = {
+        "rating": pd.DataFrame(
+            [(1, 2), (1, 3), ("5", 6), ("5", 3), (4, 2)], columns=["source", "target"]
+        ),
+        # 7 is an isolated node with a link back to itself
+        "friend": pd.DataFrame(friends, columns=["source", "target"], index=friend_idx),
+    }
 
-    g.add_edges_from([(1, 2), (1, 3), ("5", 6), ("5", 3), (4, 2)], label="rating")
-    g.add_edges_from([("5", 4), (1, 4), (1, "5")], label="friend")
-    g.add_edges_from([(1, 4)], label="colleague")
+    if multi:
+        edges["colleague"] = pd.DataFrame(
+            [(1, 4)], columns=["source", "target"], index=[123]
+        )
 
-    return StellarGraph(g)
+    return StellarGraph(nodes, edges)
 
 
 class TestSampledHeterogeneousBreadthFirstWalk(object):
     def test_parameter_checking(self):
-        g = create_simple_test_graph()
+        g = create_test_graph(self_loop=True)
 
         graph_schema = g.create_graph_schema()
         bfw = SampledHeterogeneousBreadthFirstWalk(g, graph_schema)
@@ -125,7 +116,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         Returns:
 
         """
-        g = create_simple_test_graph()
+        g = create_test_graph(self_loop=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [0]  # this is an isolated user node with no self loop
@@ -158,7 +149,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         assert all([x is None for x in subgraphs[0][2]])  # this should only be None
 
     def test_walk_generation_single_root_node_self_loner(self):
-        g = create_simple_test_graph()
+        g = create_test_graph(self_loop=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         root_node_id = 7
@@ -223,7 +214,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
     def test_walk_generation_single_root_node(self):
 
-        g = create_simple_test_graph()
+        g = create_test_graph(self_loop=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [3]
@@ -308,7 +299,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         #
         # Test with multi-graph
         #
-        g = create_multi_test_graph()
+        g = create_test_graph(multi=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [1]
@@ -401,7 +392,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
     def test_walk_generation_many_root_nodes(self):
 
-        g = create_simple_test_graph()
+        g = create_test_graph(self_loop=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [0, 7]  # both nodes are type user
@@ -481,7 +472,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         #
         # Test with multi-graph
         #
-        g = create_multi_test_graph()
+        g = create_test_graph(multi=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [1, 6]
@@ -512,7 +503,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
 
     def test_benchmark_sampledheterogeneousbreadthfirstwalk(self, benchmark):
 
-        g = create_simple_test_graph()
+        g = create_test_graph(self_loop=True)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [0]

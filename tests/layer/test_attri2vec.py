@@ -73,7 +73,7 @@ def test_attri2vec_constructor():
         )
 
     # Check requirement for generator or input_dim and node_num & multiplicity
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         Attri2Vec(layer_sizes=[4])
 
     # Construction from generator
@@ -98,22 +98,23 @@ def test_attri2vec_apply():
         normalize=None,
     )
 
+    # the rest of the test assumes the weights are 1, to get the predictions to be easily computed,
+    # so let's build a basic model to set those weights (which are stored statefully in Attri2vec)
+    model = keras.Model(*attri2vec.in_out_tensors())
+    model.set_weights([np.ones_like(w) for w in model.get_weights()])
+
     x = np.array([[1, 2]])
     expected = np.array([[12, 12]])
 
     inp = keras.Input(shape=(2,))
     out = attri2vec(inp)
     model1 = keras.Model(inputs=inp, outputs=out)
-    model_weights1 = [np.ones_like(w) for w in model1.get_weights()]
-    model1.set_weights(model_weights1)
     actual = model1.predict(x)
     assert expected == pytest.approx(actual)
 
     # Use the node model:
-    xinp, xout = attri2vec.node_model()
+    xinp, xout = attri2vec.in_out_tensors(multiplicity=1)
     model2 = keras.Model(inputs=xinp, outputs=xout)
-    model_weights2 = [np.ones_like(w) for w in model2.get_weights()]
-    model2.set_weights(model_weights2)
     assert pytest.approx(expected) == model2.predict(x)
 
     x1 = np.array([[3, 1]])
@@ -122,19 +123,15 @@ def test_attri2vec_apply():
     y2 = np.array([[1, 1]])
 
     # Test the build function:
-    xinp, xout = attri2vec.build()
+    xinp, xout = attri2vec.in_out_tensors()
     model3 = keras.Model(inputs=xinp, outputs=xout)
-    model_weights3 = [np.ones_like(w) for w in model3.get_weights()]
-    model3.set_weights(model_weights3)
     actual = model3.predict([x1, x2])
     assert pytest.approx(y1) == actual[0]
     assert pytest.approx(y2) == actual[1]
 
     # Use the link model:
-    xinp, xout = attri2vec.link_model()
+    xinp, xout = attri2vec.in_out_tensors()
     model4 = keras.Model(inputs=xinp, outputs=xout)
-    model_weights4 = [np.ones_like(w) for w in model4.get_weights()]
-    model4.set_weights(model_weights4)
     actual = model4.predict([x1, x2])
     assert pytest.approx(y1) == actual[0]
     assert pytest.approx(y2) == actual[1]

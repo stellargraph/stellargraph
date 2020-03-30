@@ -20,7 +20,6 @@ Utils tests:
 
 """
 import pytest
-import scipy as sp
 
 from stellargraph.core.utils import *
 from ..test_utils.graphs import example_graph_random
@@ -34,9 +33,10 @@ def example_graph():
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
-    csr = normalize_adj(Aadj)
+    csr = normalize_adj(Aadj, symmetric=True)
     dense = csr.todense()
-    assert 5 == pytest.approx(dense.sum(), 0.1)
+    eigen_vals, _ = np.linalg.eig(dense)
+    assert eigen_vals.max() == pytest.approx(1, abs=1e-7)
     assert csr.get_shape() == Aadj.get_shape()
 
     csr = normalize_adj(Aadj, symmetric=False)
@@ -69,18 +69,6 @@ def test_rescale_laplacian(example_graph):
     assert rl.get_shape() == Aadj.get_shape()
 
 
-def test_chebyshev_polynomial(example_graph):
-    node_list = list(example_graph.nodes())
-    Aadj = example_graph.to_adjacency_matrix()
-
-    k = 2
-    cp = chebyshev_polynomial(rescale_laplacian(normalized_laplacian(Aadj)), k)
-    assert len(cp) == k + 1
-    assert np.array_equal(cp[0].todense(), sp.eye(Aadj.shape[0]).todense())
-    assert cp[1].max() < 1
-    assert 5 == pytest.approx(cp[2].todense()[:5, :5].sum(), 0.1)
-
-
 def test_GCN_Aadj_feats_op(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
@@ -89,24 +77,6 @@ def test_GCN_Aadj_feats_op(example_graph):
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
     assert np.array_equal(features, features_)
     assert 6 == pytest.approx(Aadj_.todense().sum(), 0.1)
-
-    features_, Aadj_ = GCN_Aadj_feats_op(
-        features=features, A=Aadj, method="chebyshev", k=2
-    )
-    assert len(features_) == 4
-    assert np.array_equal(features_[0], features_[0])
-    assert np.array_equal(features_[1].todense(), sp.eye(Aadj.shape[0]).todense())
-    assert features_[2].max() < 1
-    assert 5 == pytest.approx(features_[3].todense()[:5, :5].sum(), 0.1)
-    assert Aadj.get_shape() == Aadj_.get_shape()
-
-    # k must an integer greater than or equal to 2
-    with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev", k=1)
-    with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev", k=2.0)
-    with pytest.raises(ValueError):
-        GCN_Aadj_feats_op(features=features, A=Aadj, method="chebyshev", k=None)
 
     # k must be positive integer
     with pytest.raises(ValueError):
