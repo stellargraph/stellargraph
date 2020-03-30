@@ -20,6 +20,7 @@ from stellargraph.mapper.full_batch_generators import RelationalFullBatchNodeGen
 import pytest
 from scipy import sparse as sps
 from stellargraph.core.utils import normalize_adj
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input, Lambda
@@ -209,7 +210,7 @@ def test_RGCN_apply_sparse():
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -233,7 +234,7 @@ def test_RGCN_apply_dense():
     generator = RelationalFullBatchNodeGenerator(G, sparse=False)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -262,7 +263,7 @@ def test_RGCN_apply_sparse_directed():
     generator = RelationalFullBatchNodeGenerator(G, sparse=True)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -285,7 +286,7 @@ def test_RGCN_apply_dense_directed():
 
     generator = RelationalFullBatchNodeGenerator(G, sparse=False)
     rgcnModel = RGCN([2], generator, num_bases=10, activations=["relu"], dropout=0.5)
-    x_in, x_out = rgcnModel.build()
+    x_in, x_out = rgcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -382,3 +383,17 @@ def get_As(G):
         As.append(A)
 
     return As
+
+
+def test_kernel_and_bias_defaults():
+    graph, _ = create_graph_features()
+    generator = RelationalFullBatchNodeGenerator(graph, sparse=False)
+    rgcn = RGCN([2, 2], generator, num_bases=10)
+    for layer in rgcn._layers:
+        if isinstance(layer, RelationalGraphConvolution):
+            assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+            assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+            assert layer.kernel_regularizer is None
+            assert layer.bias_regularizer is None
+            assert layer.kernel_constraint is None
+            assert layer.bias_constraint is None

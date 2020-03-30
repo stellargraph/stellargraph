@@ -63,7 +63,7 @@ def test_PPNP_apply_dense():
     generator = FullBatchNodeGenerator(G, sparse=False, method="ppnp")
     ppnpModel = PPNP([2], generator=generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = ppnpModel.build()
+    x_in, x_out = ppnpModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method

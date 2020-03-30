@@ -29,6 +29,7 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 from tensorflow import keras
+import tensorflow as tf
 import pytest
 from ..test_utils.graphs import create_graph_features
 
@@ -145,7 +146,7 @@ def test_GCN_apply_dense():
     generator = FullBatchNodeGenerator(G, sparse=False, method="none")
     gcnModel = GCN([2], generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -174,7 +175,7 @@ def test_GCN_apply_sparse():
         layer_sizes=[2], activations=["relu"], generator=generator, dropout=0.5
     )
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -197,7 +198,7 @@ def test_GCN_linkmodel_apply_dense():
     generator = FullBatchLinkGenerator(G, sparse=False, method="none")
     gcnModel = GCN([3], generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -226,7 +227,7 @@ def test_GCN_linkmodel_apply_sparse():
         layer_sizes=[3], activations=["relu"], generator=generator, dropout=0.5
     )
 
-    x_in, x_out = gcnModel.build()
+    x_in, x_out = gcnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -292,3 +293,18 @@ def test_GCN_regularisers():
 
     with pytest.raises(ValueError):
         gcn = GCN([2], generator, bias_initializer="barney")
+
+
+def test_kernel_and_bias_defaults():
+    graph, _ = create_graph_features()
+    generator = FullBatchNodeGenerator(graph, sparse=False, method="none")
+    gcn = GCN([2, 2], generator)
+
+    for layer in gcn._layers:
+        if isinstance(layer, GraphConvolution):
+            assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+            assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+            assert layer.kernel_regularizer is None
+            assert layer.bias_regularizer is None
+            assert layer.kernel_constraint is None
+            assert layer.bias_constraint is None

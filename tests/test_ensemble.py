@@ -80,7 +80,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
         # Expose input and output sockets of graphsage, for source and destination nodes:
-        x_inp, x_out = base_model.build()
+        x_inp, x_out = base_model.in_out_tensors()
 
         prediction = link_classification(
             output_dim=1, output_act="relu", edge_embedding_method="ip"
@@ -88,7 +88,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
 
         keras_model = Model(inputs=x_inp, outputs=prediction)
     else:
-        x_inp, x_out = base_model.build()
+        x_inp, x_out = base_model.in_out_tensors()
         prediction = layers.Dense(units=2, activation="softmax")(x_out)
 
         keras_model = Model(inputs=x_inp, outputs=prediction)
@@ -119,12 +119,12 @@ def create_HinSAGE_model(graph, link_prediction=False):
 
     if link_prediction:
         # Define input and output sockets of hinsage:
-        x_inp, x_out = base_model.build()
+        x_inp, x_out = base_model.in_out_tensors()
 
         # Final estimator layer
         prediction = link_regression(edge_embedding_method="ip")(x_out)
     else:
-        x_inp, x_out = base_model.build()
+        x_inp, x_out = base_model.in_out_tensors()
         prediction = layers.Dense(units=2, activation="softmax")(x_out)
 
     keras_model = Model(inputs=x_inp, outputs=prediction)
@@ -145,7 +145,7 @@ def create_GCN_model(graph):
         activations=["elu", "softmax"],
     )
 
-    x_inp, x_out = base_model.build()
+    x_inp, x_out = base_model.in_out_tensors()
 
     keras_model = Model(inputs=x_inp, outputs=x_out)
 
@@ -167,7 +167,7 @@ def create_GAT_model(graph):
         normalize=None,
     )
 
-    x_inp, x_out = base_model.build()
+    x_inp, x_out = base_model.in_out_tensors()
 
     keras_model = Model(inputs=x_inp, outputs=x_out)
 
