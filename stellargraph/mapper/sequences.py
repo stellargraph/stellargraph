@@ -688,13 +688,17 @@ class CorruptedNodeSequence(Sequence):
         else:
 
             features = inputs
-            stacked_feats = np.concatenate(features, axis=1)
-            shuffled_feats = stacked_feats.reshape(-1, features[0].shape[-1])
-            shuffled_idxs = np.random.permutation(shuffled_feats.shape[0])
-            shuffled_feats = shuffled_feats[shuffled_idxs, :]
-            shuffled_feats = shuffled_feats.reshape(stacked_feats.shape)
+            feature_dim = features[0].shape[-1]
+            head_nodes = features[0].shape[0]
+
+            shuffled_feats = np.concatenate(
+                [x.reshape(-1, feature_dim) for x in features], axis=0,
+            )
+
+            np.random.shuffle(shuffled_feats)
+            shuffled_feats = shuffled_feats.reshape((head_nodes, -1, feature_dim))
             shuffled_feats = np.split(
                 shuffled_feats, np.cumsum([y.shape[1] for y in features])[:-1], axis=1
             )
 
-            return shuffled_feats + features, self.targets[: stacked_feats.shape[0], :]
+            return shuffled_feats + features, self.targets[:head_nodes, :]
