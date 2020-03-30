@@ -62,6 +62,16 @@ class Test_GraphGenerator:
         with pytest.raises(ValueError):
             generator = GraphGenerator(graphs=self.graphs_mixed)
 
+    def test_generator_flow_invalid_batch_size(self):
+        with pytest.raises(ValueError):
+            GraphGenerator(graphs=self.graphs).flow(graph_ilocs=[0], batch_size=-1)
+
+        with pytest.raises(TypeError):
+            GraphGenerator(graphs=self.graphs).flow(graph_ilocs=[0], batch_size=2.0)
+
+        with pytest.raises(ValueError):
+            GraphGenerator(graphs=self.graphs).flow(graph_ilocs=[0], batch_size=0)
+
     def test_generator_flow_incorrect_targets(self):
 
         generator = GraphGenerator(graphs=self.graphs)

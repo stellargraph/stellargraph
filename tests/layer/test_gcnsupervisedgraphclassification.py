@@ -14,13 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from stellargraph.layer.graph_classification import *
-from stellargraph.mapper import GraphGenerator
-from stellargraph.core.graph import StellarGraph
-
-import pandas as pd
-import numpy as np
-from tensorflow import keras
-import tensorflow as tf
+from stellargraph.mapper import GraphGenerator, FullBatchNodeGenerator
 import pytest
 from ..test_utils.graphs import example_graph_random
 
@@ -51,6 +45,13 @@ class Test_GCNSupervisedGraphConvolution:
                 layer_sizes=[16], activations=["relu"], generator=None
             )
 
+        with pytest.raises(TypeError):
+            GCNSupervisedGraphClassification(
+                layer_sizes=[16],
+                activations=["relu"],
+                generator=FullBatchNodeGenerator(self.graphs[0]),
+            )
+
         with pytest.raises(ValueError):
             GCNSupervisedGraphClassification(
                 layer_sizes=[16, 32], activations=["relu"], generator=self.generator
@@ -76,3 +77,42 @@ class Test_GCNSupervisedGraphConvolution:
         assert x_in[0].shape[-1] == 4  # the node feature dimensionality
         assert len(x_out.shape) == 2
         assert x_out.shape[-1] == layer_sizes[-1]
+
+    def test_stateful(self):
+        layer_sizes = [16, 2]
+        activations = ["elu", "elu"]
+        targets = np.array([[0, 1], [0, 1], [1, 0]])
+        train_graphs = [0, 1, 2]
+
+        gcn_graph_model = GCNSupervisedGraphClassification(
+            generator=self.generator, activations=activations, layer_sizes=layer_sizes
+        )
+
+        train_gen = self.generator.flow(graph_ilocs=train_graphs, targets=targets)
+
+        model_1 = tf.keras.Model(*gcn_graph_model.in_out_tensors())
+        model_2 = tf.keras.Model(*gcn_graph_model.in_out_tensors())
+
+        # check embeddings are equal before training
+        embeddings_1 = model_1.predict(train_gen)
+        embeddings_2 = model_2.predict(train_gen)
+
+        assert np.array_equal(embeddings_1, embeddings_2)
+
+        model_1.compile(loss=tf.nn.softmax_cross_entropy_with_logits, optimizer="Adam")
+        model_1.fit(train_gen)
+
+        # check embeddings are still equal after training one model
+        embeddings_1 = model_1.predict(train_gen)
+        embeddings_2 = model_2.predict(train_gen)
+
+        assert np.array_equal(embeddings_1, embeddings_2)
+
+        model_2.compile(loss=tf.nn.softmax_cross_entropy_with_logits, optimizer="Adam")
+        model_2.fit(train_gen)
+
+        # check embeddings are still equal after training both models
+        embeddings_1 = model_1.predict(train_gen)
+        embeddings_2 = model_2.predict(train_gen)
+
+        assert np.array_equal(embeddings_1, embeddings_2)
