@@ -735,7 +735,7 @@ class StellarGraph:
             node_type (hashable): the type of the nodes.
 
         Returns:
-            Numpy array containing the node features for the requested nodes.
+            tensorflow Tensor containing the node features for the requested nodes.
         """
         nodes = np.asarray(nodes)
 
@@ -757,7 +757,7 @@ class StellarGraph:
             node_type = types[0]
         elif node_type != types[0]:
             raise ValueError(
-                f"node_type: expected the `node_type` to type of `nodes`, "
+                f"node_type: expected `node_type` to match the input `nodes` type, "
                 f"found {node_type} and {types[0]} respectively."
             )
 
