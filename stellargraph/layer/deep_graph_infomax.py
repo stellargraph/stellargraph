@@ -66,7 +66,7 @@ class DGIDiscriminator(Layer):
         return score
 
 
-class Readout(Layer):
+class DGIReadout(Layer):
     """
     This Layer computes the Readout function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
     """
@@ -161,7 +161,7 @@ class DeepGraphInfomax:
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        summary = Readout()(node_feats)
+        summary = DGIReadout()(node_feats)
 
         scores = self._discriminator([node_feats, summary])
         scores_corrupted = self._discriminator([node_feats_corr, summary])
