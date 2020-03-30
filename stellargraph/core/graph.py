@@ -748,9 +748,7 @@ class StellarGraph:
         types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
 
         if len(types) == 0:
-            raise ValueError(
-                "must have at least one node for inference"
-            )
+            raise ValueError("must have at least one node for inference")
         if len(types) > 1:
             raise ValueError("all nodes must have the same type")
 
