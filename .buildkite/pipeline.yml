@@ -216,6 +216,19 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":python: test Conda build"
+    <<: *timeout
+    depends_on: "conda"
+    parallelism: 43
+    command: ".buildkite/steps/test-demo-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: conda
+    agents:
+      queue: "t2medium"
+
   - wait
 
   - label: ":docker: publish image"
