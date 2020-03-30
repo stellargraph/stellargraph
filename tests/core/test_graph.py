@@ -257,7 +257,7 @@ def test_get_index_for_nodes():
 def test_feature_conversion_from_nodes():
     sg = example_graph(feature_size=8)
     aa = sg.node_features([1, 2, 3, 4])
-    assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
+    assert aa[:, 0].numpy() == pytest.approx([1, 2, 3, 4])
 
     assert aa.shape == (4, 8)
     assert sg.node_feature_sizes()["default"] == 8
@@ -273,19 +273,19 @@ def test_null_node_feature():
     sg = example_graph(feature_size=6)
     aa = sg.node_features([1, None, 2, None])
     assert aa.shape == (4, 6)
-    assert aa[:, 0] == pytest.approx([1, 0, 2, 0])
+    assert aa[:, 0].numpy() == pytest.approx([1, 0, 2, 0])
 
     sg = example_hin_1(feature_sizes={"A": 4, "B": 2})
 
     # Test feature for null node, without node type
     ab = sg.node_features([None, 5, None])
     assert ab.shape == (3, 2)
-    assert ab[:, 0] == pytest.approx([0, 5, 0])
+    assert ab[:, 0].numpy() == pytest.approx([0, 5, 0])
 
     # Test feature for null node, node type
     ab = sg.node_features([None, 6, None], "B")
     assert ab.shape == (3, 2)
-    assert ab[:, 0] == pytest.approx([0, 6, 0])
+    assert ab[:, 0].numpy() == pytest.approx([0, 6, 0])
 
     # Test feature for null node, wrong type
     with pytest.raises(ValueError):
@@ -315,11 +315,11 @@ def test_feature_conversion_from_dataframe():
     gs = StellarGraph.from_networkx(g, node_features=df)
 
     aa = gs.node_features([1, 2, 3, 4])
-    assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
+    assert aa[:, 0].numpy() == pytest.approx([1, 2, 3, 4])
 
     # Check None identifier
     aa = gs.node_features([1, 2, None, None])
-    assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
+    assert aa[:, 0].numpy() == pytest.approx([1, 2, 0, 0])
 
     g = example_hin_1_nx()
 
@@ -336,12 +336,12 @@ def test_feature_conversion_from_dataframe():
     gs = StellarGraph.from_networkx(g, node_features=df)
 
     aa = gs.node_features([0, 1, 2, 3], "A")
-    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
+    assert aa[:, 0].numpy() == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 10)
 
     ab = gs.node_features([4, 5], "B")
     assert ab.shape == (2, 10)
-    assert ab[:, 0] == pytest.approx([4, 5])
+    assert ab[:, 0].numpy() == pytest.approx([4, 5])
 
     # Test mixed types
     with pytest.raises(ValueError):
@@ -354,7 +354,7 @@ def test_feature_conversion_from_dataframe():
     # Test feature for node with no set attributes
     ab = gs.node_features([4, None, None], "B")
     assert ab.shape == (3, 10)
-    assert ab[:, 0] == pytest.approx([4, 0, 0])
+    assert ab[:, 0].numpy() == pytest.approx([4, 0, 0])
 
 
 def test_feature_conversion_from_iterator():
@@ -365,11 +365,11 @@ def test_feature_conversion_from_iterator():
     gs = StellarGraph.from_networkx(g, node_features=node_features)
 
     aa = gs.node_features([1, 2, 3, 4])
-    assert aa[:, 0] == pytest.approx([1, 2, 3, 4])
+    assert aa[:, 0].numpy() == pytest.approx([1, 2, 3, 4])
 
     # Check None identifier
     aa = gs.node_features([1, 2, None, None])
-    assert aa[:, 0] == pytest.approx([1, 2, 0, 0])
+    assert aa[:, 0].numpy() == pytest.approx([1, 2, 0, 0])
 
     # Test adjacency matrix
     adj_expected = np.array([[0, 1, 0, 1], [1, 0, 1, 1], [0, 1, 0, 0], [1, 1, 0, 0]])
@@ -395,12 +395,12 @@ def test_feature_conversion_from_iterator():
     gs = StellarGraph.from_networkx(g, node_features=nf)
 
     aa = gs.node_features([0, 1, 2, 3], "A")
-    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
+    assert aa[:, 0].numpy() == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 10)
 
     ab = gs.node_features([4, 5], "B")
     assert ab.shape == (2, 10)
-    assert ab[:, 0] == pytest.approx([4, 5])
+    assert ab[:, 0].numpy() == pytest.approx([4, 5])
 
     # Test mixed types
     with pytest.raises(ValueError):
@@ -413,7 +413,7 @@ def test_feature_conversion_from_iterator():
     # Test feature for node with no set attributes
     ab = gs.node_features([4, None, None], "B")
     assert ab.shape == (3, 10)
-    assert ab[:, 0] == pytest.approx([4, 0, 0])
+    assert ab[:, 0].numpy() == pytest.approx([4, 0, 0])
 
     # Test an iterator over all types
     g = example_hin_1_nx()
@@ -424,12 +424,12 @@ def test_feature_conversion_from_iterator():
     gs = StellarGraph.from_networkx(g, node_features=nf)
 
     aa = gs.node_features([0, 1, 2, 3], "A")
-    assert aa[:, 0] == pytest.approx([0, 1, 2, 3])
+    assert aa[:, 0].numpy() == pytest.approx([0, 1, 2, 3])
     assert aa.shape == (4, 5)
 
     ab = gs.node_features([4, 5], "B")
     assert ab.shape == (2, 10)
-    assert ab[:, 0] == pytest.approx([4, 5])
+    assert ab[:, 0].numpy() == pytest.approx([4, 5])
 
 
 def test_edges_include_edge_type():

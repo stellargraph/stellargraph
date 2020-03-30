@@ -26,6 +26,7 @@ import pandas as pd
 import numpy as np
 import scipy.sparse as sps
 import warnings
+import tensorflow as tf
 
 from .. import globalvar
 from .schema import GraphSchema, EdgeType
@@ -743,18 +744,24 @@ class StellarGraph:
         all_valid = valid.all()
         valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
 
+        # check the types of the input nodes
+        types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
+
+        if len(types) == 0:
+            raise ValueError(
+                "must have at least one node for inference"
+            )
+        if len(types) > 1:
+            raise ValueError("all nodes must have the same type")
+
         if node_type is None:
             # infer the type based on the valid nodes
-            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
-
-            if len(types) == 0:
-                raise ValueError(
-                    "must have at least one node for inference, if `node_type` is not specified"
-                )
-            if len(types) > 1:
-                raise ValueError("all nodes must have the same type")
-
             node_type = types[0]
+        elif node_type != types[0]:
+            raise ValueError(
+                f"node_type: expected the `node_type` to type of `nodes`, "
+                f"found {node_type} and {types[0]} respectively."
+            )
 
         if all_valid:
             return self._nodes.features(node_type, valid_ilocs)
@@ -771,8 +778,10 @@ class StellarGraph:
         self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
         sampled = self._nodes.features(node_type, valid_ilocs)
+
         features = np.zeros((len(nodes), sampled.shape[1]))
         features[valid] = sampled
+        features = tf.convert_to_tensor(features)
 
         return features
 
@@ -1203,7 +1212,7 @@ class StellarGraph:
             ty_dict = {node_type_attr: ty}
 
             if feature_attr is not None:
-                features = self.node_features(node_ids, node_type=ty)
+                features = self.node_features(node_ids, node_type=ty).numpy()
 
                 for node_id, node_features in zip(node_ids, features):
                     graph.add_node(
