@@ -219,7 +219,6 @@ steps:
   - label: ":python: test Conda build"
     <<: *timeout
     depends_on: "conda"
-    parallelism: 43
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
