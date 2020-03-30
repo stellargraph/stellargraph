@@ -64,7 +64,7 @@ The StellarGraph library offers state-of-the-art algorithms for [graph machine l
 - Link prediction;
 - [Interpretation of node classification](https://medium.com/stellargraph/https-medium-com-stellargraph-saliency-maps-for-graph-machine-learning-5cca536974da) [8].
 
-Graph-structured data represent entities as nodes (or vertices) and relationships between them as edges (or links), and can data include data associated with either as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
+Graph-structured data represent entities as nodes (or vertices) and relationships between them as edges (or links), and can include data associated with either as attributes. For example, a graph can contain people as nodes and friendships between them as links, with data like a person's age and the date a friendship was established. StellarGraph supports analysis of many kinds of graphs:
 
 - homogeneous (with nodes and links of one type),
 - heterogeneous (with more than one type of nodes and/or links)
