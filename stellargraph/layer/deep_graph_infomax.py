@@ -178,6 +178,12 @@ class DeepGraphInfomax:
             input and output layers for use with a keras model
         """
 
+        warnings.warn(
+            f"The 'embedding_model' method is deprecated, use 'base_model.in_out_tensors' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         # these tensors should link into the weights that get trained by `build`
         x_emb_in, x_emb_out = self.base_model.in_out_tensors(multiplicity=1)
 
