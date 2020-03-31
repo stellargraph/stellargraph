@@ -680,9 +680,8 @@ class CorruptedNodeSequence(Sequence):
 
             features = inputs[0]
             shuffled_idxs = np.random.permutation(features.shape[1])
-            shuffled_feats = features[:, shuffled_idxs, :]
-
-            return [shuffled_feats] + inputs, self.targets
+            shuffled_feats = [features[:, shuffled_idxs, :]]
+            targets = self.targets
 
         else:
 
@@ -700,4 +699,6 @@ class CorruptedNodeSequence(Sequence):
                 shuffled_feats, np.cumsum([y.shape[1] for y in features])[:-1], axis=1
             )
 
-            return shuffled_feats + features, self.targets[:head_nodes, :]
+            targets = self.targets[:head_nodes, :]
+
+        return shuffled_feats + inputs, targets
