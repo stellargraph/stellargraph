@@ -41,7 +41,9 @@ from ..random import random_state
 def _default_if_none(value, default, name, ensure_not_none=True):
     value = value if value is not None else default
     if ensure_not_none and value is None:
-        raise ValueError(f"{name}: expected a value, found: None.")
+        raise ValueError(
+            f"{name}: expected a value to be specified in either `__init__` or `run`, found: None."
+        )
     return value
 
 
