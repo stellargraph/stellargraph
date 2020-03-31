@@ -757,6 +757,68 @@ class StellarGraph:
 
             node_type = types[0]
 
+        sampled = self._nodes.features(node_type, valid_ilocs)
+
+        # make sure this handles eager execution
+        if tf.executing_eagerly:
+            sampled = sampled.numpy()
+        else:
+            with tf.compat.v1.Session() as sess:
+                sampled = sess.run(sampled)
+
+        if all_valid:
+            return sampled
+
+        # If there's some invalid values, they get replaced by zeros; this is designed to allow
+        # models that build fixed-size structures (e.g. GraphSAGE) based on neighbours to fill out
+        # missing neighbours with zeros automatically, using None as a sentinel.
+
+        # FIXME: None as a sentinel forces nodes to have dtype=object even with integer IDs, could
+        # instead use an impossible integer (e.g. 2**64 - 1)
+
+        # everything that's not the sentinel should be valid
+        non_nones = nodes != None
+        self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
+
+        features = np.zeros((len(nodes), sampled.shape[1]))
+        features[valid] = sampled
+
+        return features
+
+    def node_features_tensors(self, nodes, node_type=None):
+        """
+        Get the numeric feature vectors for the specified node or nodes.
+        If the node type is not specified the node types will be found
+        for all nodes. It is therefore important to supply the ``node_type``
+        for this method to be fast.
+
+        Args:
+            nodes (list or hashable): Node ID or list of node IDs
+            node_type (hashable): the type of the nodes.
+
+        Returns:
+            tensorflow Tensor containing the node features for the requested nodes.
+        """
+        nodes = np.asarray(nodes)
+
+        node_ilocs = self._nodes.ids.to_iloc(nodes)
+        valid = self._nodes.ids.is_valid(node_ilocs)
+        all_valid = valid.all()
+        valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
+
+        if node_type is None:
+            # infer the type based on the valid nodes
+            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
+
+            if len(types) == 0:
+                raise ValueError(
+                    "must have at least one node for inference, if `node_type` is not specified"
+                )
+            if len(types) > 1:
+                raise ValueError("all nodes must have the same type")
+
+            node_type = types[0]
+
         if all_valid:
             return self._nodes.features(node_type, valid_ilocs)
 
@@ -1075,7 +1137,7 @@ class StellarGraph:
 
         node_frames = {
             type_name: pd.DataFrame(
-                self._nodes.features(type_name, ilocs).numpy(),
+                self._nodes.features(type_name, ilocs),
                 index=self._nodes.ids.from_iloc(ilocs),
             )
             for type_name, ilocs in node_type_to_ilocs
@@ -1205,7 +1267,7 @@ class StellarGraph:
             ty_dict = {node_type_attr: ty}
 
             if feature_attr is not None:
-                features = self.node_features(node_ids, node_type=ty).numpy()
+                features = self.node_features(node_ids, node_type=ty)
 
                 for node_id, node_features in zip(node_ids, features):
                     graph.add_node(
