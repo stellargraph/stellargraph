@@ -98,7 +98,7 @@ class GraphGenerator:
 
         if not isinstance(batch_size, int):
             raise TypeError(
-                f"expected batch_size to be integer type, found {type(batch_size)}"
+                f"expected batch_size to be integer type, found {type(batch_size).__name__}"
             )
 
         if batch_size <= 0:
