@@ -241,9 +241,9 @@ class NodeData(ElementData):
             raise TypeError(f"features: expected dict, found {type(features)}")
 
         for key, data in features.items():
-            if not isinstance(data, (np.ndarray, sps.spmatrix)):
+            if not isinstance(data, tf.Tensor):
                 raise TypeError(
-                    f"features[{key!r}]: expected numpy or scipy array, found {type(data)}"
+                    f"features[{key!r}]: expected tensorflow Tensor, found {type(data)}"
                 )
 
             if len(data.shape) != 2:
@@ -258,10 +258,7 @@ class NodeData(ElementData):
                     f"features[{key!r}]: expected one feature per ID, found {expected} IDs and {rows} feature rows"
                 )
 
-        self._features = dict(
-            (type_name, tf.convert_to_tensor(feats))
-            for type_name, feats in features.items()
-        )
+        self._features = features
 
     def features(self, type_name, id_ilocs) -> tf.Tensor:
         """
