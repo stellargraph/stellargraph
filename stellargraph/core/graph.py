@@ -755,7 +755,7 @@ class StellarGraph:
 
             if len(types) == 0:
                 raise ValueError(
-                    "must have at least one node for inference, , if `node_type` is not specified"
+                    "must have at least one node for inference, if `node_type` is not specified"
                 )
             node_type = types[0]
 
@@ -780,7 +780,6 @@ class StellarGraph:
         self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
         sampled = self._nodes.features(node_type, valid_ilocs)
-
         features = np.zeros((len(nodes), sampled.shape[1]))
         features[valid] = sampled
         features = tf.convert_to_tensor(features)

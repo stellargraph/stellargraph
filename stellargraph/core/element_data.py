@@ -283,7 +283,6 @@ class NodeData(ElementData):
             return tf.nn.embedding_lookup(
                 self._features[type_name], feature_ilocs.astype(int),
             )
-
         except IndexError:
             # some of the indices were too large (from a later type)
             raise ValueError("unknown IDs")
