@@ -45,7 +45,7 @@ REQUIRES = [
 #
 # Other demos do not have specific requirements
 EXTRAS_REQUIRES = {
-    "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5", "ogb"],
     "igraph": ["python-igraph"],
     "neo4j": ["py2neo"],
     "test": [

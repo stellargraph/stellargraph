@@ -33,6 +33,10 @@ __all__ = [
     "FB15k",
     "FB15k_237",
     "IAEnronEmployees",
+    "OgbGMolHIV",
+    "OgbNProducts",
+    "OgbNProteins",
 ]
 
 from .datasets import *
+from .ogb import *

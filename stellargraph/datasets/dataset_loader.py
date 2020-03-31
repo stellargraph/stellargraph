@@ -29,64 +29,32 @@ from urllib.error import URLError
 log = logging.getLogger(__name__)
 
 
-class DatasetLoader:
+class Dataset:
     """
-    Base class for downloading sample datasets.
+    Base class for sample datasets.
 
-    This class is used by inherited classes for each specific dataset, providing basic functionality to
-    download a dataset from a URL.
-
-    The default download path of ~/stellargraph-datasets can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable,
-    and each dataset will be downloaded to a subdirectory within this path.
+    This class is used by inherited classes for each specific dataset, providing basic functionality to load/parse a dataset.
     """
 
     # define these for mypy benefit (will be set for derived classes in __init_subclass__ below)
     name = ""
-    directory_name = ""
-    url = ""
-    url_archive_format: Optional[str] = None
-    url_archive_contains_directory: bool = True
-    expected_files: List[str] = []
     description = ""
     source = ""
-    data_subdirectory_name: Optional[str] = None
 
     @classmethod
     def __init_subclass__(
-        cls,
-        *,
-        name: str,
-        directory_name: str,
-        url: str,
-        url_archive_format: Optional[str],
-        url_archive_contains_directory: bool = True,
-        expected_files: List[str],
-        description: str,
-        source: str,
-        data_subdirectory_name: Optional[str] = None,
-        **kwargs: Any,
+        cls, *, name: str, description: str, source: str, **kwargs: Any,
     ) -> None:
         """Used to set class variables during the class definition of derived classes and generate customised docs.
         NOTE: this is not compatible with python's ABC abstract base class, so this class derives from object."""
         cls.name = name
-        cls.directory_name = directory_name
-        cls.url = url
-        cls.url_archive_format = url_archive_format
-        cls.url_archive_contains_directory = url_archive_contains_directory
-        cls.expected_files = expected_files
         cls.description = description
         cls.source = source
-        cls.data_subdirectory_name = data_subdirectory_name
-
-        if url_archive_format is None and len(expected_files) != 1:
-            raise ValueError(
-                "url_archive_format is None, which requires a single expected_file, found: {expected_files!r}"
-            )
 
         # auto generate documentation
         if cls.__doc__ is not None:
             raise ValueError(
-                "DatasetLoader docs are automatically generated and should be empty"
+                "{cls.__name__} docs are automatically generated and should be empty"
             )
         cls.__doc__ = f"{cls.description}\n\nFurther details at: {cls.source}"
 
@@ -98,6 +66,54 @@ class DatasetLoader:
             raise ValueError(
                 f"{self.__class__.__name__} can't be instantiated directly, please use a derived class"
             )
+
+
+class DatasetLoader:
+    """
+    Base class for downloading sample datasets. This must be used with :class:`Dataset`.
+
+    This class is used by inherited classes for each specific dataset, providing basic functionality to
+    download a dataset from a URL.
+
+    The default download path of ~/stellargraph-datasets can be changed by setting the STELLARGRAPH_DATASETS_PATH environment variable,
+    and each dataset will be downloaded to a subdirectory within this path.
+    """
+
+    # define these for mypy benefit (will be set for derived classes in __init_subclass__ below)
+    directory_name = ""
+    url = ""
+    url_archive_format: Optional[str] = None
+    url_archive_contains_directory: bool = True
+    expected_files: List[str] = []
+    data_subdirectory_name: Optional[str] = None
+
+    @classmethod
+    def __init_subclass__(
+        cls,
+        *,
+        directory_name: str,
+        url: str,
+        url_archive_format: Optional[str],
+        url_archive_contains_directory: bool = True,
+        expected_files: List[str],
+        data_subdirectory_name: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Used to set class variables during the class definition of derived classes and generate customised docs.
+        NOTE: this is not compatible with python's ABC abstract base class, so this class derives from object."""
+        cls.directory_name = directory_name
+        cls.url = url
+        cls.url_archive_format = url_archive_format
+        cls.url_archive_contains_directory = url_archive_contains_directory
+        cls.expected_files = expected_files
+        cls.data_subdirectory_name = data_subdirectory_name
+
+        if url_archive_format is None and len(expected_files) != 1:
+            raise ValueError(
+                "url_archive_format is None, which requires a single expected_file, found: {expected_files!r}"
+            )
+
+        super().__init_subclass__(**kwargs)  # type: ignore
 
     @property
     def base_directory(self) -> str:

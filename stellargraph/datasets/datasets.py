@@ -21,7 +21,7 @@ The default download path of ``stellargraph-datasets`` within the user's home di
 ``STELLARGRAPH_DATASETS_PATH`` environment variable, and each dataset will be downloaded to a subdirectory within this path.
 """
 
-from .dataset_loader import DatasetLoader
+from .dataset_loader import Dataset, DatasetLoader
 from ..core.graph import StellarGraph, StellarDiGraph
 import itertools
 import logging
@@ -97,6 +97,7 @@ def _load_cora_or_citeseer(
 
 
 class Cora(
+    Dataset,
     DatasetLoader,
     name="Cora",
     directory_name="cora",
@@ -157,6 +158,7 @@ class Cora(
 
 
 class CiteSeer(
+    Dataset,
     DatasetLoader,
     name="CiteSeer",
     directory_name="citeseer",
@@ -197,6 +199,7 @@ class CiteSeer(
 
 
 class PubMedDiabetes(
+    Dataset,
     DatasetLoader,
     name="PubMed Diabetes",
     directory_name="Pubmed-Diabetes",
@@ -262,6 +265,7 @@ class PubMedDiabetes(
 
 
 class BlogCatalog3(
+    Dataset,
     DatasetLoader,
     name="BlogCatalog3",
     directory_name="BlogCatalog-dataset",
@@ -341,6 +345,7 @@ class BlogCatalog3(
 
 
 class MovieLens(
+    Dataset,
     DatasetLoader,
     name="MovieLens",
     directory_name="ml-100k",
@@ -455,6 +460,7 @@ class MovieLens(
 
 
 class AIFB(
+    Dataset,
     DatasetLoader,
     name="AIFB",
     directory_name="aifb",
@@ -527,6 +533,7 @@ class AIFB(
 
 
 class MUTAG(
+    Dataset,
     DatasetLoader,
     name="MUTAG",
     directory_name="MUTAG",
@@ -632,6 +639,7 @@ def _load_tsv_knowledge_graph(dataset):
 
 
 class WN18(
+    Dataset,
     DatasetLoader,
     name="WN18",
     directory_name="wordnet-mlj12",
@@ -666,6 +674,7 @@ class WN18(
 
 
 class WN18RR(
+    Dataset,
     DatasetLoader,
     name="WN18RR",
     directory_name="WN18RR",
@@ -693,6 +702,7 @@ class WN18RR(
 
 
 class FB15k(
+    Dataset,
     DatasetLoader,
     name="FB15k",
     directory_name="FB15k",
@@ -727,6 +737,7 @@ class FB15k(
 
 
 class FB15k_237(
+    Dataset,
     DatasetLoader,
     name="FB15k-237",
     directory_name="FB15k-237",
@@ -755,6 +766,7 @@ class FB15k_237(
 
 
 class IAEnronEmployees(
+    Dataset,
     DatasetLoader,
     name="ia-enron-employees",
     directory_name="ia-enron-employees",
