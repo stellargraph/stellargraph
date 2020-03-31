@@ -19,7 +19,7 @@ import pytest
 from ..test_utils.graphs import example_graph_random
 
 
-class Test_GCNSupervisedGraphConvolution:
+class Test_GCNSupervisedGraphClassification:
 
     graphs = [
         example_graph_random(feature_size=4, n_nodes=6),
