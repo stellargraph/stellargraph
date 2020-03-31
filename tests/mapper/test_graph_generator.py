@@ -26,21 +26,6 @@ graphs = [
     example_graph_random(feature_size=4, n_nodes=3),
 ]
 
-graphs_nx = [
-    example_graph_random(feature_size=4, n_nodes=3, is_directed=False),
-    example_graph_random(feature_size=4, n_nodes=2, is_directed=False).to_networkx(),
-]
-
-graphs_diff_num_features = [
-    example_graph_random(feature_size=2, n_nodes=6),
-    example_graph_random(feature_size=4, n_nodes=5),
-]
-
-graphs_mixed = [
-    example_graph_random(feature_size=2, n_nodes=6),
-    example_hin_1(is_directed=False),
-]
-
 
 def test_generator_init():
     generator = GraphGenerator(graphs=graphs)
@@ -48,28 +33,59 @@ def test_generator_init():
 
 
 def test_generator_init_different_feature_numbers():
-    with pytest.raises(ValueError):
+    graphs_diff_num_features = [
+        example_graph_random(feature_size=2, n_nodes=6),
+        example_graph_random(feature_size=4, n_nodes=5),
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match="graphs: expected node features for all graph to have same dimensions,.*2.*4",
+    ):
         generator = GraphGenerator(graphs=graphs_diff_num_features)
 
 
 def test_generator_init_nx_graph():
-    with pytest.raises(TypeError):
+    graphs_nx = [
+        example_graph_random(feature_size=4, n_nodes=3, is_directed=False),
+        example_graph_random(
+            feature_size=4, n_nodes=2, is_directed=False
+        ).to_networkx(),
+    ]
+
+    with pytest.raises(
+        TypeError, match="graphs: expected.*StellarGraph.*found MultiGraph."
+    ):
         generator = GraphGenerator(graphs=graphs_nx)
 
 
 def test_generator_init_hin():
-    with pytest.raises(ValueError):
+    graphs_mixed = [
+        example_graph_random(feature_size=2, n_nodes=6),
+        example_hin_1(is_directed=False),
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match="graphs: node generator requires graphs with single node type.*found.*2",
+    ):
         generator = GraphGenerator(graphs=graphs_mixed)
 
 
 def test_generator_flow_invalid_batch_size():
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="expected batch_size.*strictly positive integer, found -1"
+    ):
         GraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=-1)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        TypeError, match="expected batch_size.*integer type, found float"
+    ):
         GraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=2.0)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="expected batch_size.*strictly positive integer, found 0"
+    ):
         GraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=0)
 
 
@@ -77,10 +93,14 @@ def test_generator_flow_incorrect_targets():
 
     generator = GraphGenerator(graphs=graphs)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="expected targets to be the same length as node_ids,.*1 vs 2"
+    ):
         generator.flow(graph_ilocs=[0, 1], targets=np.array([0]))
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        TypeError, match="targets: expected an iterable or None object, found int"
+    ):
         generator.flow(graph_ilocs=[0, 1], targets=1)
 
 

@@ -39,24 +39,35 @@ def test_init():
     assert model.layer_sizes[0] == 16
     assert model.activations[0] == "relu"
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        TypeError, match="generator: expected.*GraphGenerator, found NoneType"
+    ):
         GCNSupervisedGraphClassification(
             layer_sizes=[16], activations=["relu"], generator=None
         )
 
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        TypeError,
+        match="generator: expected.*GraphGenerator, found FullBatchNodeGenerator",
+    ):
         GCNSupervisedGraphClassification(
             layer_sizes=[16],
             activations=["relu"],
             generator=FullBatchNodeGenerator(graphs[0]),
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="expected.*number of layers.*same as.*number of activations,found 2.*vs.*1",
+    ):
         GCNSupervisedGraphClassification(
             layer_sizes=[16, 32], activations=["relu"], generator=generator
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="expected.*number of layers.*same as.*number of activations,found 1.*vs.*2",
+    ):
         GCNSupervisedGraphClassification(
             layer_sizes=[32], activations=["relu", "elu"], generator=generator
         )
