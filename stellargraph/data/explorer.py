@@ -458,7 +458,8 @@ class BiasedRandomWalk(GraphWalk):
 
 class UniformRandomMetaPathWalk(GraphWalk):
     """
-    For heterogeneous graphs, it performs uniform random walks based on given metapaths.
+    For heterogeneous graphs, it performs uniform random walks based on given metapaths. Optional
+    parameters default to using the values passed in during construction.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -932,6 +933,7 @@ class TemporalRandomWalk(GraphWalk):
     ):
         """
         Perform a time respecting random walk starting from randomly selected temporal edges.
+        Optional parameters default to using the values passed in during construction.
 
         Args:
             num_cw (int): Total number of context windows to generate. For comparable
