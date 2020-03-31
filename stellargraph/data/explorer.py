@@ -186,9 +186,17 @@ class GraphWalk(object):
 class UniformRandomWalk(GraphWalk):
     """
     Performs uniform random walks on the given graph
+
+    Args:
+        graph (StellarGraph): Graph to traverse
+        graph_schema (GraphSchema, optional): Graph schema
+        n (int, optional): Total number of random walks per root node
+        length (int, optional): Maximum length of each random walk
+        seed (int, optional): Random number generator seed
+
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None, n=None, length=None):
+    def __init__(self, graph, graph_schema=None, n=None, length=None, seed=None):
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
         self.n = n
         self.length = length
@@ -271,18 +279,29 @@ class BiasedRandomWalk(GraphWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
+
+    Args:
+        graph (StellarGraph): Graph to traverse
+        graph_schema (GraphSchema, optional): Graph schema
+        n (int, optional): Total number of random walks per root node
+        length (int, optional): Maximum length of each random walk
+        p (float, optional): Defines probability, 1/p, of returning to source node
+        q (float, optional): Defines probability, 1/q, for moving to a node away from the source node
+        weighted (bool, optional): Indicates whether the walk is unweighted or weighted
+        seed (int, optional): Random number generator seed
+
     """
 
     def __init__(
         self,
         graph,
         graph_schema=None,
-        seed=None,
         n=None,
         length=None,
         p=1.0,
         q=1.0,
         weighted=False,
+        seed=None,
     ):
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
         self.n = n
@@ -440,10 +459,21 @@ class BiasedRandomWalk(GraphWalk):
 class UniformRandomMetaPathWalk(GraphWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths.
+
+    Args:
+        graph (StellarGraph): Graph to traverse
+        graph_schema (GraphSchema, optional): Graph schema
+        n (int, optional): Total number of random walks per root node
+        length (int, optional): Maximum length of each random walk
+        metapaths (list of list, optional): List of lists of node labels that specify a metapath schema, e.g.,
+            [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+            schemas of length 3 and 5 respectively.
+        seed (int, optional): Random number generator seed
+
     """
 
     def __init__(
-        self, graph, graph_schema=None, seed=None, n=None, length=None, metapaths=None,
+        self, graph, graph_schema=None, n=None, length=None, metapaths=None, seed=None,
     ):
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
         self.n = n
@@ -841,18 +871,47 @@ class TemporalRandomWalk(GraphWalk):
     Performs temporal random walks on the given graph. The graph should contain numerical edge
     weights that correspond to the time at which the edge was created. Exact units are not relevant
     for the algorithm, only the relative differences (e.g. seconds, days, etc).
+
+    Args:
+        graph (StellarGraph): Graph to traverse
+        graph_schema (GraphSchema, optional): Graph schema
+        cw_size (int, optional): Size of context window. Also used as the minimum walk length,
+            since a walk must generate at least 1 context window for it to be useful.
+        max_walk_length (int, optional): Maximum length of each random walk. Should be greater
+            than or equal to the context window size.
+        initial_edge_bias (str, optional): Distribution to use when choosing a random
+            initial temporal edge to start from. Available options are:
+
+            * None (default) - The initial edge is picked from a uniform distribution.
+            * "exponential" - Heavily biased towards more recent edges.
+
+        walk_bias (str, optional): Distribution to use when choosing a random
+            neighbour to walk through. Available options are:
+
+            * None (default) - Neighbours are picked from a uniform distribution.
+            * "exponential" - Exponentially decaying probability, resulting in a bias towards shorter time gaps.
+
+        p_walk_success_threshold (float, optional): Lower bound for the proportion of successful
+            (i.e. longer than minimum length) walks. If the 95% percentile of the
+            estimated proportion is less than the provided threshold, a RuntimeError
+            will be raised. The default value of 0.01 means an error is raised if less than 1%
+            of the attempted random walks are successful. This parameter exists to catch any
+            potential situation where too many unsuccessful walks can cause an infinite or very
+            slow loop.
+        seed (int, optional): Random number generator seed.
+
     """
 
     def __init__(
         self,
         graph,
         graph_schema=None,
-        seed=None,
         cw_size=None,
         max_walk_length=80,
         initial_edge_bias=None,
         walk_bias=None,
         p_walk_success_threshold=0.01,
+        seed=None,
     ):
         super().__init__(graph, graph_schema=graph_schema, seed=seed)
         self.cw_size = cw_size
