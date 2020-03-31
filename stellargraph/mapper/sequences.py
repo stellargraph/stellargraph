@@ -657,10 +657,10 @@ class CorruptedNodeSequence(Sequence):
 
         if isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
             self.targets = np.tile(
-                [1, 0], reps=(1, len(base_generator.target_indices), 1)
+                [1.0, 0.0], reps=(1, len(base_generator.target_indices), 1),
             )
         elif isinstance(base_generator, NodeSequence):
-            self.targets = np.tile([1, 0], reps=(base_generator.batch_size, 1))
+            self.targets = np.tile([1.0, 0.0], reps=(base_generator.batch_size, 1))
         else:
             raise TypeError(
                 f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
