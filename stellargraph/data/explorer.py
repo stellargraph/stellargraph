@@ -38,6 +38,13 @@ from ..core.experimental import experimental
 from ..random import random_state
 
 
+def _default_if_none(value, default, name, ensure_not_none=True):
+    value = value if value is not None else default
+    if ensure_not_none and value is None:
+        raise ValueError(f"{name}: expected a value, found: None.")
+    return value
+
+
 class GraphWalk(object):
     """
     Base class for exploring graphs.
@@ -181,20 +188,28 @@ class UniformRandomWalk(GraphWalk):
     Performs uniform random walks on the given graph
     """
 
-    def run(self, nodes, n, length, seed=None):
+    def __init__(self, graph, graph_schema=None, seed=None, n=None, length=None):
+        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        self.n = n
+        self.length = length
+
+    def run(self, nodes, n=None, length=None, seed=None):
         """
-        Perform a random walk starting from the root nodes.
+        Perform a random walk starting from the root nodes. Optional parameters default to using the
+        values passed in during construction.
 
         Args:
             nodes (list): The root nodes as a list of node IDs
-            n (int): Total number of random walks per root node
-            length (int): Maximum length of each random walk
-            seed (int, optional): Random number generator seed; default is None
+            n (int, optional): Total number of random walks per root node
+            length (int, optional): Maximum length of each random walk
+            seed (int, optional): Random number generator seed
 
         Returns:
             List of lists of nodes ids for each of the random walks
 
         """
+        n = _default_if_none(n, self.n, "n")
+        length = _default_if_none(length, self.length, "length")
         self._check_common_parameters(nodes, n, length, seed)
         rs = self._get_random_state(seed)
 
@@ -258,24 +273,48 @@ class BiasedRandomWalk(GraphWalk):
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
     """
 
-    def run(self, nodes, n, length, p=1.0, q=1.0, seed=None, weighted=False):
+    def __init__(
+        self,
+        graph,
+        graph_schema=None,
+        seed=None,
+        n=None,
+        length=None,
+        p=1.0,
+        q=1.0,
+        weighted=False,
+    ):
+        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        self.n = n
+        self.length = length
+        self.p = p
+        self.q = q
+        self.weighted = weighted
+
+    def run(self, nodes, n=None, length=None, p=None, q=None, seed=None, weighted=None):
 
         """
-        Perform a random walk starting from the root nodes.
+        Perform a random walk starting from the root nodes. Optional parameters default to using the
+        values passed in during construction.
 
         Args:
             nodes (list): The root nodes as a list of node IDs
-            n (int): Total number of random walks per root node
-            length (int): Maximum length of each random walk
-            p (float, default 1.0): Defines probability, 1/p, of returning to source node
-            q (float, default 1.0): Defines probability, 1/q, for moving to a node away from the source node
+            n (int, optional): Total number of random walks per root node
+            length (int, optional): Maximum length of each random walk
+            p (float, optional): Defines probability, 1/p, of returning to source node
+            q (float, optional): Defines probability, 1/q, for moving to a node away from the source node
             seed (int, optional): Random number generator seed; default is None
-            weighted (bool, default False): Indicates whether the walk is unweighted or weighted
+            weighted (bool, optional): Indicates whether the walk is unweighted or weighted
 
         Returns:
             List of lists of nodes ids for each of the random walks
 
         """
+        n = _default_if_none(n, self.n, "n")
+        length = _default_if_none(length, self.length, "length")
+        p = _default_if_none(p, self.p, "p")
+        q = _default_if_none(q, self.q, "q")
+        weighted = _default_if_none(weighted, self.weighted, "weighted")
         self._check_common_parameters(nodes, n, length, seed)
         self._check_weights(p, q, weighted)
         rs = self._get_random_state(seed)
@@ -403,15 +442,23 @@ class UniformRandomMetaPathWalk(GraphWalk):
     For heterogeneous graphs, it performs uniform random walks based on given metapaths.
     """
 
-    def run(self, nodes, n, length, metapaths, seed=None):
+    def __init__(
+        self, graph, graph_schema=None, seed=None, n=None, length=None, metapaths=None,
+    ):
+        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        self.n = n
+        self.length = length
+        self.metapaths = metapaths
+
+    def run(self, nodes, n=None, length=None, metapaths=None, seed=None):
         """
         Performs metapath-driven uniform random walks on heterogeneous graphs.
 
         Args:
             nodes (list): The root nodes as a list of node IDs
-            n (int): Total number of random walks per root node
-            length (int): Maximum length of each random walk
-            metapaths (list of list): List of lists of node labels that specify a metapath schema, e.g.,
+            n (int, optional): Total number of random walks per root node
+            length (int, optional): Maximum length of each random walk
+            metapaths (list of list, optional): List of lists of node labels that specify a metapath schema, e.g.,
                 [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
                 schemas of length 3 and 5 respectively.
             seed (int, optional): Random number generator seed; default is None
@@ -419,6 +466,9 @@ class UniformRandomMetaPathWalk(GraphWalk):
         Returns:
             List of lists of nodes ids for each of the random walks generated
         """
+        n = _default_if_none(n, self.n, "n")
+        length = _default_if_none(length, self.length, "length")
+        metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
         self._check_common_parameters(nodes, n, length, seed)
         self._check_metapath_values(metapaths)
         rs = self._get_random_state(seed)
@@ -793,14 +843,32 @@ class TemporalRandomWalk(GraphWalk):
     for the algorithm, only the relative differences (e.g. seconds, days, etc).
     """
 
-    def run(
+    def __init__(
         self,
-        num_cw,
-        cw_size,
+        graph,
+        graph_schema=None,
+        seed=None,
+        cw_size=None,
         max_walk_length=80,
         initial_edge_bias=None,
         walk_bias=None,
         p_walk_success_threshold=0.01,
+    ):
+        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        self.cw_size = cw_size
+        self.max_walk_length = max_walk_length
+        self.initial_edge_bias = initial_edge_bias
+        self.walk_bias = walk_bias
+        self.p_walk_success_threshold = p_walk_success_threshold
+
+    def run(
+        self,
+        num_cw,
+        cw_size=None,
+        max_walk_length=None,
+        initial_edge_bias=None,
+        walk_bias=None,
+        p_walk_success_threshold=None,
         seed=None,
     ):
         """
@@ -810,9 +878,9 @@ class TemporalRandomWalk(GraphWalk):
             num_cw (int): Total number of context windows to generate. For comparable
                 results to most other random walks, this should be a multiple of the number
                 of nodes in the graph.
-            cw_size (int): Size of context window. Also used as the minimum walk length,
+            cw_size (int, optional): Size of context window. Also used as the minimum walk length,
                 since a walk must generate at least 1 context window for it to be useful.
-            max_walk_length (int): Maximum length of each random walk. Should be greater
+            max_walk_length (int, optional): Maximum length of each random walk. Should be greater
                 than or equal to the context window size.
             initial_edge_bias (str, optional): Distribution to use when choosing a random
                 initial temporal edge to start from. Available options are:
@@ -826,7 +894,7 @@ class TemporalRandomWalk(GraphWalk):
                 * None (default) - Neighbours are picked from a uniform distribution.
                 * "exponential" - Exponentially decaying probability, resulting in a bias towards shorter time gaps.
 
-            p_walk_success_threshold (float): Lower bound for the proportion of successful
+            p_walk_success_threshold (float, optional): Lower bound for the proportion of successful
                 (i.e. longer than minimum length) walks. If the 95% percentile of the
                 estimated proportion is less than the provided threshold, a RuntimeError
                 will be raised. The default value of 0.01 means an error is raised if less than 1%
@@ -839,6 +907,25 @@ class TemporalRandomWalk(GraphWalk):
             List of lists of node ids for each of the random walks.
 
         """
+        cw_size = _default_if_none(cw_size, self.cw_size, "cw_size")
+        max_walk_length = _default_if_none(
+            max_walk_length, self.max_walk_length, "max_walk_length"
+        )
+        initial_edge_bias = _default_if_none(
+            initial_edge_bias,
+            self.initial_edge_bias,
+            "initial_edge_bias",
+            ensure_not_none=False,
+        )
+        walk_bias = _default_if_none(
+            walk_bias, self.walk_bias, "walk_bias", ensure_not_none=False
+        )
+        p_walk_success_threshold = _default_if_none(
+            p_walk_success_threshold,
+            self.p_walk_success_threshold,
+            "p_walk_success_threshold",
+        )
+
         if cw_size < 2:
             raise ValueError(
                 f"cw_size: context window size should be greater than 1, found {cw_size}"
