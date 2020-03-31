@@ -89,7 +89,7 @@ class ColumnarConverter:
         )
 
         if self.allow_features:
-            features = tf.convert_to_tensor(other.to_numpy())
+            features = tf.convert_to_tensor(other.to_numpy(dtype=self.dtype))
         elif len(other.columns) == 0:
             features = None
         else:
