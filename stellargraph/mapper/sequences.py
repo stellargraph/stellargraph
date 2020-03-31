@@ -668,7 +668,6 @@ class CorruptedNodeSequence(Sequence):
             )
 
     def __len__(self):
-
         return len(self.base_generator)
 
     def __getitem__(self, index):
