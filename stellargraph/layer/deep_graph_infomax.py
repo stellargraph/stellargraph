@@ -173,10 +173,8 @@ class DeepGraphInfomax:
 
     def embedding_model(self):
         """
-        A function to create the the inputs and outputs for an embedding model.
-
-        Returns:
-            input and output layers for use with a keras model
+        Deprecated: use ``base_model.in_out_tensors`` instead. Deep Graph Infomax just trains the base model,
+        and the model behaves as usual after training.
         """
 
         warnings.warn(
