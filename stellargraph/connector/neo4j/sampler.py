@@ -42,12 +42,12 @@ def _bfs_neighbor_query(sampling_direction):
 
     return f"""
         // expand the list of node id in seperate rows of ids.
-        UNWIND {{node_id_list}} AS node_id
+        UNWIND $node_id_list AS node_id
 
         // for each node id in every row, collect the random list of its neighbors.
         CALL apoc.cypher.run(
 
-            'MATCH(cur_node) WHERE id(cur_node) = {{node_id}}
+            'MATCH(cur_node) WHERE id(cur_node) = $node_id
 
             // find the neighbors
             MATCH (cur_node){direction_arrow}(neighbors)
@@ -56,10 +56,10 @@ def _bfs_neighbor_query(sampling_direction):
             WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
 
             // pick random nodes with replacement
-            WITH apoc.coll.randomItems(in_neighbors_list, {{num_samples}}, True) AS in_samples_list
+            WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS in_samples_list
 
             RETURN in_samples_list',
-            {{ node_id: node_id, num_samples: {{num_samples}}  }}) YIELD value
+            {{ node_id: node_id, num_samples: $num_samples  }}) YIELD value
 
         RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
         """

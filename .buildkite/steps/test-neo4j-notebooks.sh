@@ -21,5 +21,5 @@ notebooks=(
 )
 
 for name in "${notebooks[@]}"; do
-  .buildkite/steps/test-single-notebook.sh "$directory/$name"
+  .buildkite/steps/test-single-notebook.sh "$directory/$name" " using Neo4j ${NEO4J_VERSION}"
 done
