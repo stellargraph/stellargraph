@@ -19,6 +19,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from ..globalvar import SOURCE, TARGET, WEIGHT
 from .validation import require_dataframe_has_columns, comma_sep
@@ -283,7 +284,7 @@ class NodeData(ElementData):
             return tf.nn.embedding_lookup(
                 self._features[type_name], feature_ilocs.astype(int),
             )
-        except IndexError:
+        except InvalidArgumentError:
             # some of the indices were too large (from a later type)
             raise ValueError("unknown IDs")
 

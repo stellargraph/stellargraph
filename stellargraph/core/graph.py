@@ -744,26 +744,18 @@ class StellarGraph:
         all_valid = valid.all()
         valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
 
-        # check the types of the input nodes
-        types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
-
-        if len(types) > 1:
-            raise ValueError("all nodes must have the same type")
-
-        # infer the type based on the valid nodes
         if node_type is None:
+            # infer the type based on the valid nodes
+            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
 
             if len(types) == 0:
                 raise ValueError(
                     "must have at least one node for inference, if `node_type` is not specified"
                 )
-            node_type = types[0]
+            if len(types) > 1:
+                raise ValueError("all nodes must have the same type")
 
-        if len(types) > 0 and node_type != types[0]:
-            raise ValueError(
-                f"node_type: expected `node_type` to match the input `nodes` type, "
-                f"found {node_type} and {types[0]} respectively."
-            )
+            node_type = types[0]
 
         if all_valid:
             return self._nodes.features(node_type, valid_ilocs)
