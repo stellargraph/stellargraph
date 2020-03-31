@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.11.1](https://github.com/stellargraph/stellargraph/tree/v0.11.1)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.11.0...v0.11.1)
+
+This bugfix release contains the same code as 0.11.0, and just fixes the metadata in the Anaconda package so that it can be installed successfully.
+
+### Bug fixes and other changes
+
+- The [Conda package for StellarGraph](https://anaconda.org/stellargraph/stellargraph) has been updated to require TensorFlow 2.1, as TensorFlow 2.0 is no longer supported.  As a result, StellarGraph will currently install via Conda on Linux and Windows - Mac support is waiting on the [Tensorflow 2.1 osx-64 release to Conda](https://github.com/ContinuumIO/anaconda-issues/issues/11697). [\#1165](https://github.com/stellargraph/stellargraph/pull/1165)
+
 ## [0.11.0](https://github.com/stellargraph/stellargraph/tree/v0.11.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.10.0...v0.11.0)
