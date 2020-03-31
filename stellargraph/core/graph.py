@@ -1080,7 +1080,7 @@ class StellarGraph:
 
         node_frames = {
             type_name: pd.DataFrame(
-                self._nodes.features(type_name, ilocs),
+                self._nodes.features(type_name, ilocs).numpy(),
                 index=self._nodes.ids.from_iloc(ilocs),
             )
             for type_name, ilocs in node_type_to_ilocs
