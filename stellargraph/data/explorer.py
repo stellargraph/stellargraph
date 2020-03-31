@@ -42,7 +42,7 @@ def _default_if_none(value, default, name, ensure_not_none=True):
     value = value if value is not None else default
     if ensure_not_none and value is None:
         raise ValueError(
-            f"{name}: expected a value to be specified in either `__init__` or `run`, found: None."
+            f"{name}: expected a value to be specified in either `__init__` or `run`, found None in both"
         )
     return value
 
@@ -191,15 +191,14 @@ class UniformRandomWalk(GraphWalk):
 
     Args:
         graph (StellarGraph): Graph to traverse
-        graph_schema (GraphSchema, optional): Graph schema
         n (int, optional): Total number of random walks per root node
         length (int, optional): Maximum length of each random walk
         seed (int, optional): Random number generator seed
 
     """
 
-    def __init__(self, graph, graph_schema=None, n=None, length=None, seed=None):
-        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+    def __init__(self, graph, n=None, length=None, seed=None):
+        super().__init__(graph, graph_schema=None, seed=seed)
         self.n = n
         self.length = length
 
@@ -284,7 +283,6 @@ class BiasedRandomWalk(GraphWalk):
 
     Args:
         graph (StellarGraph): Graph to traverse
-        graph_schema (GraphSchema, optional): Graph schema
         n (int, optional): Total number of random walks per root node
         length (int, optional): Maximum length of each random walk
         p (float, optional): Defines probability, 1/p, of returning to source node
@@ -295,17 +293,9 @@ class BiasedRandomWalk(GraphWalk):
     """
 
     def __init__(
-        self,
-        graph,
-        graph_schema=None,
-        n=None,
-        length=None,
-        p=1.0,
-        q=1.0,
-        weighted=False,
-        seed=None,
+        self, graph, n=None, length=None, p=1.0, q=1.0, weighted=False, seed=None,
     ):
-        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        super().__init__(graph, graph_schema=None, seed=seed)
         self.n = n
         self.length = length
         self.p = p
@@ -465,7 +455,6 @@ class UniformRandomMetaPathWalk(GraphWalk):
 
     Args:
         graph (StellarGraph): Graph to traverse
-        graph_schema (GraphSchema, optional): Graph schema
         n (int, optional): Total number of random walks per root node
         length (int, optional): Maximum length of each random walk
         metapaths (list of list, optional): List of lists of node labels that specify a metapath schema, e.g.,
@@ -476,9 +465,9 @@ class UniformRandomMetaPathWalk(GraphWalk):
     """
 
     def __init__(
-        self, graph, graph_schema=None, n=None, length=None, metapaths=None, seed=None,
+        self, graph, n=None, length=None, metapaths=None, seed=None,
     ):
-        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        super().__init__(graph, graph_schema=None, seed=seed)
         self.n = n
         self.length = length
         self.metapaths = metapaths
@@ -877,7 +866,6 @@ class TemporalRandomWalk(GraphWalk):
 
     Args:
         graph (StellarGraph): Graph to traverse
-        graph_schema (GraphSchema, optional): Graph schema
         cw_size (int, optional): Size of context window. Also used as the minimum walk length,
             since a walk must generate at least 1 context window for it to be useful.
         max_walk_length (int, optional): Maximum length of each random walk. Should be greater
@@ -908,7 +896,6 @@ class TemporalRandomWalk(GraphWalk):
     def __init__(
         self,
         graph,
-        graph_schema=None,
         cw_size=None,
         max_walk_length=80,
         initial_edge_bias=None,
@@ -916,7 +903,7 @@ class TemporalRandomWalk(GraphWalk):
         p_walk_success_threshold=0.01,
         seed=None,
     ):
-        super().__init__(graph, graph_schema=graph_schema, seed=seed)
+        super().__init__(graph, graph_schema=None, seed=seed)
         self.cw_size = cw_size
         self.max_walk_length = max_walk_length
         self.initial_edge_bias = initial_edge_bias
