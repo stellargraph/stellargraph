@@ -23,7 +23,7 @@ requirements:
     - python
     - scikit-learn >=0.20
     - scipy >=1.1.0
-    - tensorflow 1.14.*
+    - tensorflow >=2.1.0
     - ipython
     - ipykernel
   run:
@@ -35,19 +35,23 @@ requirements:
     - python
     - scikit-learn >=0.20
     - scipy >=1.1.0
-    - tensorflow 1.14.*
+    - tensorflow >=2.1.0
     - ipython
     - ipykernel
 
 test:
   imports:
     - stellargraph
+    - stellargraph.connector
+    - stellargraph.connector.neo4j
     - stellargraph.core
     - stellargraph.data
+    - stellargraph.datasets
+    - stellargraph.interpretability
+    - stellargraph.interpretability.saliency_maps
     - stellargraph.layer
     - stellargraph.mapper
     - stellargraph.utils
-    - stellargraph.utils.saliency_maps
 
 about:
   home: "https://github.com/stellargraph/stellargraph"
