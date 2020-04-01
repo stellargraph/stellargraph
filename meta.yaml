@@ -52,7 +52,10 @@ test:
     - stellargraph.layer
     - stellargraph.mapper
     - stellargraph.utils
-
+  requires:
+    - pytest
+  commands:
+    - py.test --pyargs stellargraph
 about:
   home: "https://github.com/stellargraph/stellargraph"
   license: Apache Software
