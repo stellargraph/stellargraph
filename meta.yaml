@@ -58,6 +58,3 @@ about:
   doc_url: https://stellargraph.readthedocs.io/
   dev_url: https://github.com/stellargraph/stellargraph
 
-extra:
-  recipe-maintainers:
-    - adocherty
