@@ -45,6 +45,7 @@ from ..data import (
     DirectedBreadthFirstNeighbours,
 )
 from ..core.utils import is_real_iterable
+import tensorflow as tf
 from . import LinkSequence, OnDemandLinkSequence
 from ..random import SeededPerBatch
 
@@ -296,7 +297,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         # and re-pack features into a list where source, target feats alternate
         # This matches the GraphSAGE link model with (node_src, node_dst) input sockets:
         batch_feats = [
-            np.reshape(feats, (head_size, -1, feats.shape[1]))
+            tf.reshape(feats, (head_size, -1, feats.shape[1]))
             for ab in zip(*batch_feats)
             for feats in ab
         ]
@@ -390,7 +391,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         ]
 
         # Resize features to (batch_size, n_neighbours, feature_size)
-        batch_feats = [np.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats]
+        batch_feats = [tf.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats]
 
         return batch_feats
 
@@ -599,7 +600,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
                     nodes_in_slot, node_type
                 )
 
-                features[slot] = np.reshape(
+                features[slot] = tf.reshape(
                     features_for_slot, (len(hns), -1, features_for_slot.shape[1])
                 )
 

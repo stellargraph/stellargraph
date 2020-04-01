@@ -758,14 +758,14 @@ class StellarGraph:
 
             node_type = types[0]
 
-        sampled = self._nodes.features(node_type, valid_ilocs)
 
-        # make sure this handles eager execution
+        # handles eager execution and non-eager execution
         if tf.executing_eagerly():
-            sampled = sampled.numpy()
+            sampled = self._nodes.features(node_type, valid_ilocs).numpy()
         else:
             with tf.compat.v1.Session() as sess:
                 try:
+                    sampled = self._nodes.features(node_type, valid_ilocs)
                     sampled = sess.run(sampled)
                 except InvalidArgumentError:
                     raise ValueError("unknown IDs")

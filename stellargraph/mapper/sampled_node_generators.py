@@ -37,6 +37,7 @@ import scipy.sparse as sps
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
+import tensorflow as tf
 
 from ..data import (
     SampledBreadthFirstWalk,
@@ -266,7 +267,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Resize features to (batch_size, n_neighbours, feature_size)
         batch_feats = [
-            np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
+            tf.reshape(a, (len(head_nodes), -1, a.shape[1]))
             for a in batch_feats
         ]
         return batch_feats
@@ -361,9 +362,8 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             features_for_slot = self.graph.node_features_tensors(
                 nodes_in_slot, node_type
             )
-            resize = -1 if np.size(features_for_slot) > 0 else 0
-            features[slot] = np.reshape(
-                features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
+            features[slot] = tf.reshape(
+                features_for_slot, (len(head_nodes), -1, features_for_slot.shape[1])
             )
 
         return features
@@ -477,7 +477,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # Resize features to (batch_size, n_neighbours, feature_size)
         batch_feats = [
-            np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
+            tf.reshape(a, (len(head_nodes), -1, a.shape[1]))
             for a in batch_feats
         ]
 
