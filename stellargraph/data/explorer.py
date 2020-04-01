@@ -36,6 +36,7 @@ from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.experimental import experimental
 from ..random import random_state
+from abc import ABC, abstractmethod
 
 
 def _default_if_none(value, default, name, ensure_not_none=True):
@@ -45,6 +46,56 @@ def _default_if_none(value, default, name, ensure_not_none=True):
             f"{name}: expected a value to be specified in either `__init__` or `run`, found None in both"
         )
     return value
+
+
+def _ensure_int(value, name, min_value):
+    if not isinstance(value, int) or value < min_value:
+        raise ValueError(
+            f"{name}: expected an integer greater than or equal to {min_value}, found: {value}"
+        )
+
+
+class RandomWalk(ABC):
+    def __init__(self, graph, seed=None):
+        if not isinstance(graph, StellarGraph):
+            raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
+
+        self.graph = graph
+        self._random_state, self._np_random_state = random_state(seed)
+
+    def _get_random_state(self, seed):
+        """
+        Args:
+            seed: The optional seed value for a given run.
+
+        Returns:
+            The random state as determined by the seed.
+        """
+        if seed is None:
+            # Restore the random state
+            return self._random_state
+        # seed the random number generator
+        _ensure_int(seed, "seed", min_value=0)
+        rs, _ = random_state(seed)
+        return rs
+
+    @staticmethod
+    def _validate_walk_params(nodes, n, length):
+        if not is_real_iterable(nodes):
+            raise ValueError(f"nodes: expected an iterable, found: {nodes}")
+        if len(nodes) == 0:
+            warnings.warn(
+                "No root node IDs given. An empty list will be returned as a result.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+
+        _ensure_int(n, "n", min_value=1)
+        _ensure_int(length, "length", min_value=1)
+
+    @abstractmethod
+    def run(self, nodes, **kwargs):
+        pass
 
 
 class GraphWalk(object):
@@ -185,7 +236,7 @@ class GraphWalk(object):
                 self._raise_error(err_msg)
 
 
-class UniformRandomWalk(GraphWalk):
+class UniformRandomWalk(RandomWalk):
     """
     Performs uniform random walks on the given graph
 
@@ -198,7 +249,7 @@ class UniformRandomWalk(GraphWalk):
     """
 
     def __init__(self, graph, n=None, length=None, seed=None):
-        super().__init__(graph, graph_schema=None, seed=seed)
+        super().__init__(graph, seed=seed)
         self.n = n
         self.length = length
 
@@ -219,7 +270,7 @@ class UniformRandomWalk(GraphWalk):
         """
         n = _default_if_none(n, self.n, "n")
         length = _default_if_none(length, self.length, "length")
-        self._check_common_parameters(nodes, n, length, seed)
+        self._validate_walk_params(nodes, n, length)
         rs = self._get_random_state(seed)
 
         # for each root node, do n walks
@@ -229,7 +280,7 @@ class UniformRandomWalk(GraphWalk):
         walk = [start_node]
         current_node = start_node
         for _ in range(length - 1):
-            neighbours = self.neighbors(current_node)
+            neighbours = self.graph.neighbors(current_node)
             if not neighbours:
                 # dead end, so stop
                 break
@@ -276,7 +327,7 @@ def naive_weighted_choices(rs, weights):
     return idx
 
 
-class BiasedRandomWalk(GraphWalk):
+class BiasedRandomWalk(RandomWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
@@ -295,7 +346,7 @@ class BiasedRandomWalk(GraphWalk):
     def __init__(
         self, graph, n=None, length=None, p=1.0, q=1.0, weighted=False, seed=None,
     ):
-        super().__init__(graph, graph_schema=None, seed=seed)
+        super().__init__(graph, seed=seed)
         self.n = n
         self.length = length
         self.p = p
@@ -326,46 +377,36 @@ class BiasedRandomWalk(GraphWalk):
         p = _default_if_none(p, self.p, "p")
         q = _default_if_none(q, self.q, "q")
         weighted = _default_if_none(weighted, self.weighted, "weighted")
-        self._check_common_parameters(nodes, n, length, seed)
+        self._validate_walk_params(nodes, n, length)
         self._check_weights(p, q, weighted)
         rs = self._get_random_state(seed)
 
         if weighted:
+
             # Check that all edge weights are greater than or equal to 0.
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 # TODO Encapsulate edge weights
                 for neighbor in self.graph.neighbors(node):
-
                     wts = set()
+                    name = f"Edge weight between ({node}) and ({neighbor})"
                     for weight in self.graph._edge_weights(node, neighbor):
-                        if weight is None or np.isnan(weight) or weight == np.inf:
-                            self._raise_error(
-                                "Missing or invalid edge weight ({}) between ({}) and ({}).".format(
-                                    weight, node, neighbor
-                                )
+                        weight_is_valid = (
+                            isinstance(weight, (float, int))
+                            and np.isfinite(weight)
+                            and weight >= 0
+                        )
+                        if not weight_is_valid:
+                            raise ValueError(
+                                f"{name}: expected numeric value greater than or equal to 0, found {weight}"
                             )
-                        if not isinstance(weight, (int, float)):
-                            self._raise_error(
-                                "Edge weight between nodes ({}) and ({}) is not numeric ({}).".format(
-                                    node, neighbor, weight
-                                )
-                            )
-                        if weight < 0:  # check if edge has a negative weight
-                            self._raise_error(
-                                "An edge weight between nodes ({}) and ({}) is negative ({}).".format(
-                                    node, neighbor, weight
-                                )
-                            )
-
                         wts.add(weight)
                     if len(wts) > 1:
                         # multigraph with different weights on edges between same pair of nodes
-                        self._raise_error(
-                            "({}) and ({}) have multiple edges with weights ({}). Ambiguous to choose an edge for the random walk.".format(
-                                node, neighbor, list(wts)
-                            )
+                        raise ValueError(
+                            f"{name}: expected all edges between two particular nodes to have the "
+                            f"same weight value, found {list(wts)}"
                         )
 
         ip = 1.0 / p
@@ -377,7 +418,7 @@ class BiasedRandomWalk(GraphWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.neighbors(node)
+                neighbours = self.graph.neighbors(node)
 
                 previous_node = node
                 previous_node_neighbours = neighbours
@@ -403,7 +444,7 @@ class BiasedRandomWalk(GraphWalk):
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
-                        neighbours = self.neighbors(current_node)
+                        neighbours = self.graph.neighbors(current_node)
 
                         if not neighbours:
                             break
@@ -437,18 +478,16 @@ class BiasedRandomWalk(GraphWalk):
             weighted: <False or True> Indicates whether the walk is unweighted or weighted.
        """
         if p <= 0.0:
-            self._raise_error("Parameter p should be greater than 0.")
+            raise ValueError(f"p: expected positive numeric value, found {p}")
 
         if q <= 0.0:
-            self._raise_error("Parameter q should be greater than 0.")
+            raise ValueError(f"q: expected positive numeric value, found {q}")
 
         if type(weighted) != bool:
-            self._raise_error(
-                "Parameter weighted has to be either False (unweighted random walks) or True (weighted random walks)."
-            )
+            raise ValueError(f"weighted: expected boolean value, found {weighted}")
 
 
-class UniformRandomMetaPathWalk(GraphWalk):
+class UniformRandomMetaPathWalk(RandomWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths. Optional
     parameters default to using the values passed in during construction.
@@ -467,7 +506,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
     def __init__(
         self, graph, n=None, length=None, metapaths=None, seed=None,
     ):
-        super().__init__(graph, graph_schema=None, seed=seed)
+        super().__init__(graph, seed=seed)
         self.n = n
         self.length = length
         self.metapaths = metapaths
@@ -491,7 +530,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
         n = _default_if_none(n, self.n, "n")
         length = _default_if_none(length, self.length, "length")
         metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
-        self._check_common_parameters(nodes, n, length, seed)
+        self._validate_walk_params(nodes, n, length)
         self._check_metapath_values(metapaths)
         rs = self._get_random_state(seed)
 
@@ -522,7 +561,7 @@ class UniformRandomMetaPathWalk(GraphWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.neighbors(current_node)
+                        neighbours = self.graph.neighbors(current_node)
                         # filter these by node type
                         neighbours = [
                             n_node
@@ -551,20 +590,24 @@ class UniformRandomMetaPathWalk(GraphWalk):
                 [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
                 schemas of length 3 and 5 respectively.
         """
+
+        def raise_error(msg):
+            raise ValueError(f"metapaths: {msg}, found {metapaths}")
+
         if type(metapaths) != list:
-            self._raise_error("The metapaths parameter must be a list of lists.")
+            raise_error("expected list of lists.")
         for metapath in metapaths:
             if type(metapath) != list:
-                self._raise_error("Each metapath must be list type of node labels")
+                raise_error("expected each metapath to be a list of node labels")
             if len(metapath) < 2:
-                self._raise_error("Each metapath must specify at least two node types")
+                raise_error("expected each metapath to specify at least two node types")
 
             for node_label in metapath:
                 if type(node_label) != str:
-                    self._raise_error("Node labels in metapaths must be string type.")
+                    raise_error("expected each node type in metapaths to be a string")
             if metapath[0] != metapath[-1]:
-                self._raise_error(
-                    "The first and last node type in a metapath should be the same."
+                raise_error(
+                    "expected the first and last node type in a metapath to be the same"
                 )
 
 
