@@ -838,9 +838,10 @@ class StellarGraph:
         self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
         sampled = self._nodes.features(node_type, valid_ilocs)
-        features = np.zeros((len(nodes), sampled.shape[1]))
-        features[valid] = sampled
-        features = tf.convert_to_tensor(features)
+
+        indices = tf.cast(tf.where(valid), tf.int32)
+        shape = (len(nodes), sampled.shape[1])
+        features = tf.scatter_nd(indices, sampled, shape)
 
         return features
 
