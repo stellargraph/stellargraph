@@ -144,8 +144,6 @@ class ClusterNodeGenerator:
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
 
     def flow(self, node_ids, targets=None, name=None):
         """
