@@ -153,8 +153,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
         # Resize features for sampled nodes
         batch_feats = [
-            tf.reshape(a, (len(head_nodes), -1, a.shape[1]))
-            for a in batch_feats
+            tf.reshape(a, (len(head_nodes), -1, a.shape[1])) for a in batch_feats
         ]
         return batch_feats
 
@@ -259,7 +258,9 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = node_samples[slot]
-            features_for_slot = self.graph.node_features_tensors(nodes_in_slot, node_type)
+            features_for_slot = self.graph.node_features_tensors(
+                nodes_in_slot, node_type
+            )
             features[slot] = tf.reshape(
                 features_for_slot, (len(head_nodes), -1, features_for_slot.shape[1])
             )

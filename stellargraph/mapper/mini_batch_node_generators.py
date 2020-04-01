@@ -144,7 +144,6 @@ class ClusterNodeGenerator:
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
 
-
     def flow(self, node_ids, targets=None, name=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
