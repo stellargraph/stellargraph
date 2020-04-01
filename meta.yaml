@@ -54,6 +54,7 @@ test:
     - stellargraph.utils
   requires:
     - pytest
+    - pytest-benchmark >= 3.1
   source_files:
     - tests
   commands:
