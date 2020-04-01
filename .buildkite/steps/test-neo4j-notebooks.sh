@@ -14,7 +14,7 @@ pip freeze
 
 directory="$PWD/demos/connector/neo4j"
 notebooks=(
-  "../../basics/loading-neo4j.ipynb"
+  "../../basics/loading-saving-neo4j.ipynb"
   "load-cora-into-neo4j.ipynb"
   "directed-graphsage-on-cora-neo4j-example.ipynb"
   "undirected-graphsage-on-cora-neo4j-example.ipynb"

@@ -44,7 +44,7 @@ case $(basename "$f") in
     exit 2 # this will be a soft-fail for buildkite
     ;;
 
-  'loading-neo4j.ipynb' | 'directed-graphsage-on-cora-neo4j-example.ipynb' | 'undirected-graphsage-on-cora-neo4j-example.ipynb' | 'load-cora-into-neo4j.ipynb')
+  'loading-saving-neo4j.ipynb' | 'directed-graphsage-on-cora-neo4j-example.ipynb' | 'undirected-graphsage-on-cora-neo4j-example.ipynb' | 'load-cora-into-neo4j.ipynb')
     # these are tested separately (see test-neo4j-notebooks.sh)
     echo "+++ :python: skipping Neo4j notebook $f"
     exit 0
