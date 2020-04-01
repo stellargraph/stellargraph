@@ -3,6 +3,5 @@
 set -xeo pipefail
 
 echo "--- conda build"
-pip freeze
+conda build . --no-anaconda-upload
 
-conda build .
