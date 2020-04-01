@@ -17,7 +17,7 @@ plugins: &plugins
 steps:
   - label: ":python: test Conda build"
     <<: *timeout
-    command: ".buildkite/steps/test-demo-notebooks.sh"
+    command: ".buildkite/steps/conda-build.sh"
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:
