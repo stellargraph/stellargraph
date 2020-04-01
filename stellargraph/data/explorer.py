@@ -56,6 +56,12 @@ def _ensure_int(value, name, min_value):
 
 
 class RandomWalk(ABC):
+    """
+    Abstract base class for Random Walk classes. A Random Walk class must implement a ``run`` method
+    which takes an iterable of node IDs and returns a list of walks. Each walk is a list of node IDs
+    that contains the starting node as its first element.
+    """
+
     def __init__(self, graph, seed=None):
         if not isinstance(graph, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
