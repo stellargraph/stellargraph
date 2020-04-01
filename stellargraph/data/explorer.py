@@ -388,13 +388,13 @@ class BiasedRandomWalk(RandomWalk):
         rs = self._get_random_state(seed)
 
         if weighted:
-
             # Check that all edge weights are greater than or equal to 0.
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 # TODO Encapsulate edge weights
                 for neighbor in self.graph.neighbors(node):
+
                     wts = set()
                     name = f"Edge weight between ({node}) and ({neighbor})"
                     for weight in self.graph._edge_weights(node, neighbor):
