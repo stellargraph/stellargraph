@@ -20,7 +20,7 @@ requirements:
     - numpy >=1.14
     - pandas >=0.24
     - pip
-    - python
+    - python >=3.6
     - scikit-learn >=0.20
     - scipy >=1.1.0
     - tensorflow >=2.1.0
@@ -32,7 +32,7 @@ requirements:
     - networkx >=2.2,<2.4
     - numpy >=1.14
     - pandas >=0.24
-    - python
+    - python >=3.6
     - scikit-learn >=0.20
     - scipy >=1.1.0
     - tensorflow >=2.1.0
