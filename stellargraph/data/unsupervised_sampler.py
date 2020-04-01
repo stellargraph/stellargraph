@@ -44,9 +44,10 @@ class UnsupervisedSampler:
             length (int): An integer giving the length of the walks. Length must be at least 2.
             number_of_walks (int): Number of walks from each root node.
             seed (int, optional): Random seed
-            walker (RandomWalk, optional): The unsupervised sampler uses the other parameters to
-                instantiate a UniformRandomWalk by default. Using this parameter will override this,
-                and use the RandomWalk object provided by the user.
+            walker (RandomWalk, optional): By default, the unsupervised sampler instantiates a
+                UniformRandomWalk using the other provided parameters. However, if `walker` is
+                specified, this will override the default behaviour and use the RandomWalk object
+                provided by the user instead.
     """
 
     def __init__(
