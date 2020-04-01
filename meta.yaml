@@ -16,7 +16,7 @@ requirements:
   host:
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2,<2.4
+    - networkx >=2.2
     - numpy >=1.14
     - pandas >=0.24
     - pip
@@ -29,7 +29,7 @@ requirements:
   run:
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2,<2.4
+    - networkx >=2.2
     - numpy >=1.14
     - pandas >=0.24
     - python >=3.6
