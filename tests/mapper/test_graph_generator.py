@@ -140,9 +140,9 @@ def test_generator_flow_check_padding():
     # Check that the data matrices have the correct size 6
     batch = seq[0]
 
-    assert batch[0][0].shape[1] == 6
-    assert batch[0][1].shape[1] == 6
-    assert batch[0][2].shape[1] == 6
+    assert batch[0][0].shape == (2, 6, 4)
+    assert batch[0][1].shape == (2, 6)
+    assert batch[0][2].shape == (2, 6, 6)
 
     for mask in batch[0][1]:
         assert np.sum(mask) == 6 or np.sum(mask) == 3
