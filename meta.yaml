@@ -59,7 +59,7 @@ test:
     - tests
   commands:
     - pip install rdflib
-    - py.test -ra tests/ -p no:cacheprovider
+    - py.test -ra tests/ -p no:cacheprovider --benchmark-disable
 about:
   home: "https://github.com/stellargraph/stellargraph"
   license: Apache Software
