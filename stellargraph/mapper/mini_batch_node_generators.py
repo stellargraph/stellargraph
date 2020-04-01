@@ -124,6 +124,8 @@ class ClusterNodeGenerator:
                 )
             )
 
+        self.feature_size = next(iter(G.node_feature_sizes().values()))
+
         if isinstance(clusters, int):
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
