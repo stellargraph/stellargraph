@@ -573,13 +573,18 @@ def test_hinsage_from_generator():
     # neighbours.
 
     def transform_neighbours(neighs, dim):
-        return tf.reduce_mean(tf.expand_dims(
-            tf.reduce_sum(
-                tf.reshape(neighs, (1, dim, int(neighs.shape[1] / dim), neighs.shape[2])),
-                axis=-1,
+        return tf.reduce_mean(
+            tf.expand_dims(
+                tf.reduce_sum(
+                    tf.reshape(
+                        neighs, (1, dim, int(neighs.shape[1] / dim), neighs.shape[2])
+                    ),
+                    axis=-1,
+                ),
+                -1,
             ),
-            -1,
-        ), axis=2)
+            axis=2,
+        )
 
     def hinsage_layer(head, neighs_by_type):
         head_trans = tf.expand_dims(tf.reduce_sum(head, axis=-1), axis=-1)

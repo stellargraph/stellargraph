@@ -267,8 +267,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Resize features to (batch_size, n_neighbours, feature_size)
         batch_feats = [
-            tf.reshape(a, (len(head_nodes), -1, a.shape[1]))
-            for a in batch_feats
+            tf.reshape(a, (len(head_nodes), -1, a.shape[1])) for a in batch_feats
         ]
         return batch_feats
 
@@ -477,8 +476,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # Resize features to (batch_size, n_neighbours, feature_size)
         batch_feats = [
-            tf.reshape(a, (len(head_nodes), -1, a.shape[1]))
-            for a in batch_feats
+            tf.reshape(a, (len(head_nodes), -1, a.shape[1])) for a in batch_feats
         ]
 
         return batch_feats

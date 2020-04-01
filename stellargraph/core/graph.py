@@ -758,7 +758,6 @@ class StellarGraph:
 
             node_type = types[0]
 
-
         # handles eager execution and non-eager execution
         if tf.executing_eagerly():
             sampled = self._nodes.features(node_type, valid_ilocs).numpy()
