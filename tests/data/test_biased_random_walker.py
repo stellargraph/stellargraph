@@ -90,6 +90,21 @@ class TestBiasedWeightedRandomWalk(object):
                 nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted="unknown"
             )
 
+    def test_init_parameters(self):
+        g = weighted(1, 2, 3, 4)
+        nodes = list(g.nodes())
+        n = 4
+        length = 4
+        seed = 42
+        p = 1.0
+        q = 1.0
+
+        rw = BiasedRandomWalk(g, n=n, p=p, q=q, length=length, seed=seed, weighted=True)
+        rw_no_params = BiasedRandomWalk(g)
+        assert rw.run(nodes=nodes) == rw_no_params.run(
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+        )
+
     def test_identity_unweighted_weighted_1_walks(self):
 
         # graph with all edge weights = 1
