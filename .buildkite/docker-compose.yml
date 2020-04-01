@@ -63,10 +63,25 @@ services:
 
   conda:
     image: continuumio/anaconda3
+    working_dir: /workdir
     volumes:
       - $PWD:/workdir
       # We need to manually bring in buildkite-agent
       # (https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/issues/158)
       - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      # make sure that no new uses of the legacy constructor are added (see also: test in
+      # test_graph.py, filterwarnings in pytest.ini)
+      - "PYTHONWARNINGS=error:Constructing a StellarGraph:DeprecationWarning"
+      - GIT_BRANCH=$BUILDKITE_BRANCH
+      - BUILDKITE_AGENT_ACCESS_TOKEN
+      - BUILDKITE_BUILD_NUMBER
+      - BUILDKITE_BRANCH
+      - AWS_LOGS_BUCKET
+      - BUILDKITE_PARALLEL_JOB_COUNT
+      - BUILDKITE_PARALLEL_JOB
+      - BUILDKITE_ORGANIZATION_SLUG
+      - BUILDKITE_PIPELINE_SLUG
 
 
