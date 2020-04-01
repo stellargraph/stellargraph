@@ -54,10 +54,10 @@ test:
     - stellargraph.utils
   requires:
     - pytest
-    - conda-forge/rdflib
   source_files:
     - tests
   commands:
+    - pip install rdflib
     - py.test
 about:
   home: "https://github.com/stellargraph/stellargraph"
