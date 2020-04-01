@@ -34,7 +34,7 @@ from scipy.special import softmax
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from ..core.experimental import experimental
+from ..core.validation import require_integer_in_range
 from ..random import random_state
 from abc import ABC, abstractmethod
 
@@ -46,13 +46,6 @@ def _default_if_none(value, default, name, ensure_not_none=True):
             f"{name}: expected a value to be specified in either `__init__` or `run`, found None in both"
         )
     return value
-
-
-def _ensure_int(value, name, min_value):
-    if not isinstance(value, int) or value < min_value:
-        raise ValueError(
-            f"{name}: expected an integer greater than or equal to {min_value}, found: {value}"
-        )
 
 
 class RandomWalk(ABC):
@@ -81,7 +74,7 @@ class RandomWalk(ABC):
             # Restore the random state
             return self._random_state
         # seed the random number generator
-        _ensure_int(seed, "seed", min_value=0)
+        require_integer_in_range(seed, "seed", min_val=0)
         rs, _ = random_state(seed)
         return rs
 
@@ -96,8 +89,8 @@ class RandomWalk(ABC):
                 stacklevel=3,
             )
 
-        _ensure_int(n, "n", min_value=1)
-        _ensure_int(length, "length", min_value=1)
+        require_integer_in_range(n, "n", min_val=1)
+        require_integer_in_range(length, "length", min_val=1)
 
     @abstractmethod
     def run(self, nodes, **kwargs):
@@ -159,7 +152,7 @@ class GraphWalk(object):
             The random state as determined by the seed.
         """
         if seed is None:
-            # Restore the random state
+            # Use the class's random state
             return self._random_state
         # seed the random number generator
         rs, _ = random_state(seed)
@@ -259,7 +252,7 @@ class UniformRandomWalk(RandomWalk):
         self.n = n
         self.length = length
 
-    def run(self, nodes, n=None, length=None, seed=None):
+    def run(self, nodes, *, n=None, length=None, seed=None):
         """
         Perform a random walk starting from the root nodes. Optional parameters default to using the
         values passed in during construction.
@@ -359,7 +352,9 @@ class BiasedRandomWalk(RandomWalk):
         self.q = q
         self.weighted = weighted
 
-    def run(self, nodes, n=None, length=None, p=None, q=None, seed=None, weighted=None):
+    def run(
+        self, nodes, *, n=None, length=None, p=None, q=None, seed=None, weighted=None
+    ):
 
         """
         Perform a random walk starting from the root nodes. Optional parameters default to using the
@@ -517,7 +512,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
         self.length = length
         self.metapaths = metapaths
 
-    def run(self, nodes, n=None, length=None, metapaths=None, seed=None):
+    def run(self, nodes, *, n=None, length=None, metapaths=None, seed=None):
         """
         Performs metapath-driven uniform random walks on heterogeneous graphs.
 

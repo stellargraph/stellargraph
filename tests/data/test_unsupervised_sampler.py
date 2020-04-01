@@ -117,3 +117,15 @@ def test_walker_custom(line_graph):
     for context_pairs, labels in batches:
         for node, neighbour in context_pairs[labels == 1]:
             assert node == neighbour
+
+
+def test_ignored_param_warning(line_graph):
+    walker = UniformRandomWalk(line_graph, n=2, length=3)
+    with pytest.warns(UserWarning):
+        UnsupervisedSampler(line_graph, walker=walker, length=5)
+
+    with pytest.warns(UserWarning):
+        UnsupervisedSampler(line_graph, walker=walker, number_of_walks=5)
+
+    with pytest.warns(UserWarning):
+        UnsupervisedSampler(line_graph, walker=walker, seed=1)

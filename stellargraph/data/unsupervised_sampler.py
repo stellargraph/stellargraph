@@ -24,6 +24,15 @@ from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
 from stellargraph.random import random_state
+import warnings
+
+
+def _warn_if_ignored(value, default, name):
+    if value != default:
+        warnings.warn(
+            f"walker, {name}: 'walker' was provided so '{name}' parameter will be ignored",
+            stacklevel=3,
+        )
 
 
 class UnsupervisedSampler:
@@ -64,6 +73,9 @@ class UnsupervisedSampler:
 
         # Instantiate the walker class used to generate random walks in the graph
         if walker is not None:
+            _warn_if_ignored(length, 2, "length")
+            _warn_if_ignored(number_of_walks, 1, "number_of_walks")
+            _warn_if_ignored(seed, None, "seed")
             self.walker = walker
         else:
             self.walker = UniformRandomWalk(
