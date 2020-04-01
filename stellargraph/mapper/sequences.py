@@ -603,7 +603,7 @@ class GraphSequence(Sequence):
         # pad adjacency and feature matrices to equal the size of those from the largest graph
         features = [
             np.pad(
-                graph.node_features(graph.nodes()),
+                graph.node_features_tensors(graph.nodes()),
                 pad_width=((0, max_nodes - graph.number_of_nodes()), (0, 0)),
             )
             for graph in graphs

@@ -287,7 +287,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             # Get features for the sampled nodes
             batch_feats.append(
                 [
-                    self.graph.node_features(layer_nodes, node_type)
+                    self.graph.node_features_tensors(layer_nodes, node_type)
                     for layer_nodes in nodes_per_hop
                 ]
             )
@@ -385,7 +385,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         # Resize features to (batch_size, n_neighbours, feature_size)
         # for each node type (note that we can have different feature size for each node type)
         batch_feats = [
-            self.graph.node_features(layer_nodes, nt)
+            self.graph.node_features_tensors(layer_nodes, nt)
             for nt, layer_nodes in node_samples
         ]
 
@@ -494,7 +494,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         target_ids = [head_link[0] for head_link in head_links]
         context_ids = [head_link[1] for head_link in head_links]
-        target_feats = self.graph.node_features(target_ids)
+        target_feats = self.graph.node_features_tensors(target_ids)
         context_feats = self.graph._get_index_for_nodes(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 
@@ -595,7 +595,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
                 nodes_in_slot = [
                     element for sample in node_samples for element in sample[slot]
                 ]
-                features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
+                features_for_slot = self.graph.node_features_tensors(nodes_in_slot, node_type)
 
                 features[slot] = np.reshape(
                     features_for_slot, (len(hns), -1, features_for_slot.shape[1])

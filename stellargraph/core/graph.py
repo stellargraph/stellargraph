@@ -27,6 +27,7 @@ import numpy as np
 import scipy.sparse as sps
 import warnings
 import tensorflow as tf
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from .. import globalvar
 from .schema import GraphSchema, EdgeType
@@ -760,11 +761,14 @@ class StellarGraph:
         sampled = self._nodes.features(node_type, valid_ilocs)
 
         # make sure this handles eager execution
-        if tf.executing_eagerly:
+        if tf.executing_eagerly():
             sampled = sampled.numpy()
         else:
             with tf.compat.v1.Session() as sess:
-                sampled = sess.run(sampled)
+                try:
+                    sampled = sess.run(sampled)
+                except InvalidArgumentError:
+                    raise ValueError("unknown IDs")
 
         if all_valid:
             return sampled
@@ -1133,14 +1137,14 @@ class StellarGraph:
 
         node_ilocs = self._nodes.ids.to_iloc(nodes, strict=True)
         node_types = self._nodes.type_of_iloc(node_ilocs)
-        node_type_to_ilocs = pd.Series(node_ilocs, index=node_types).groupby(level=0)
+        node_type_to_ids = pd.Series(nodes, index=node_types).groupby(level=0)
 
         node_frames = {
             type_name: pd.DataFrame(
-                self._nodes.features(type_name, ilocs),
-                index=self._nodes.ids.from_iloc(ilocs),
+                self.node_features(type_node_ids, type_name),
+                index=type_node_ids,
             )
-            for type_name, ilocs in node_type_to_ilocs
+            for type_name, type_node_ids in node_type_to_ids
         }
 
         # FIXME(#985): this is O(edges in graph) but could potentially be optimised to O(edges in
