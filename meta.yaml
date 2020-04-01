@@ -54,6 +54,7 @@ test:
     - stellargraph.utils
   requires:
     - pytest
+    - conda-forge/rdflib
   source_files:
     - tests
   commands:
