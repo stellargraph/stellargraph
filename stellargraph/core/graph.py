@@ -724,7 +724,7 @@ class StellarGraph:
 
         # TODO: check the feature node_ids against the graph node ids?
 
-    def node_features(self, nodes, node_type=None):
+    def node_features(self, nodes, node_type=None) -> np.ndarray:
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -789,7 +789,7 @@ class StellarGraph:
 
         return features
 
-    def node_features_tensors(self, nodes, node_type=None):
+    def node_features_tensors(self, nodes, node_type=None) -> tf.Tensor:
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
