@@ -25,6 +25,7 @@ import copy
 import numpy as np
 import networkx as nx
 from tensorflow.keras.utils import Sequence
+import tensorflow as tf
 
 from scipy import sparse
 from ..core.graph import StellarGraph
@@ -343,9 +344,9 @@ class ClusterNodeSequence(Sequence):
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
 
-        features = self.graph.node_features(g_node_list)
+        features = self.graph.node_features_tensors(g_node_list)
 
-        features = np.reshape(features, (1,) + features.shape)
+        features = tf.reshape(features, (1,) + features.shape)
         adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
         target_node_indices = target_node_indices[np.newaxis, np.newaxis, :]
 
