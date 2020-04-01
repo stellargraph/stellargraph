@@ -2,6 +2,6 @@
 
 set -xeo pipefail
 
-echo "--- conda build"
+echo ":snake: conda build"
 conda build . --no-anaconda-upload
 

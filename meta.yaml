@@ -54,8 +54,10 @@ test:
     - stellargraph.utils
   requires:
     - pytest
+  source_files:
+    - tests
   commands:
-    - py.test --pyargs stellargraph
+    - py.test
 about:
   home: "https://github.com/stellargraph/stellargraph"
   license: Apache Software
