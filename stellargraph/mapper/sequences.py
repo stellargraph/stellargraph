@@ -45,6 +45,7 @@ from ..core.utils import is_real_iterable, normalize_adj
 from ..random import random_state
 from scipy import sparse
 from ..core.experimental import experimental
+import tensorflow as tf
 
 
 class NodeSequence(Sequence):
@@ -602,13 +603,13 @@ class GraphSequence(Sequence):
 
         # pad adjacency and feature matrices to equal the size of those from the largest graph
         features = [
-            np.pad(
-                graph.node_features(graph.nodes()),
-                pad_width=((0, max_nodes - graph.number_of_nodes()), (0, 0)),
+            tf.pad(
+                graph.node_features_tensors(graph.nodes()),
+                ((0, max_nodes - graph.number_of_nodes()), (0, 0)),
             )
             for graph in graphs
         ]
-        features = np.stack(features)
+        features = tf.stack(features)
 
         for adj in adj_graphs:
             adj.resize((max_nodes, max_nodes))
