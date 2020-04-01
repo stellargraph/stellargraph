@@ -736,7 +736,7 @@ class StellarGraph:
             node_type (hashable): the type of the nodes.
 
         Returns:
-            tensorflow Tensor containing the node features for the requested nodes.
+            Numpy array containing the node features for the requested nodes.
         """
         nodes = np.asarray(nodes)
 
@@ -1141,8 +1141,7 @@ class StellarGraph:
 
         node_frames = {
             type_name: pd.DataFrame(
-                self.node_features(type_node_ids, type_name),
-                index=type_node_ids,
+                self.node_features(type_node_ids, type_name), index=type_node_ids,
             )
             for type_name, type_node_ids in node_type_to_ids
         }

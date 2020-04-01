@@ -595,7 +595,9 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
                 nodes_in_slot = [
                     element for sample in node_samples for element in sample[slot]
                 ]
-                features_for_slot = self.graph.node_features_tensors(nodes_in_slot, node_type)
+                features_for_slot = self.graph.node_features_tensors(
+                    nodes_in_slot, node_type
+                )
 
                 features[slot] = np.reshape(
                     features_for_slot, (len(hns), -1, features_for_slot.shape[1])
