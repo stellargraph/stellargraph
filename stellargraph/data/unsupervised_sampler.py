@@ -24,14 +24,12 @@ from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
 from stellargraph.random import random_state
-import warnings
 
 
 def _warn_if_ignored(value, default, name):
     if value != default:
-        warnings.warn(
-            f"walker, {name}: 'walker' was provided so '{name}' parameter will be ignored",
-            stacklevel=3,
+        raise ValueError(
+            f"walker, {name}: cannot specify both 'walker' and '{name}'. Please use one or the other."
         )
 
 
@@ -43,20 +41,20 @@ class UnsupervisedSampler:
         The positive samples are all the (target, context) pairs from the walks and the negative
         samples are contexts generated for each target based on a sampling distribtution.
 
-        Currently only uniform random walks are performed, other walk strategies (such as
-        second order walks) will be enabled in the future.
+        By default, a UniformRandomWalk is used, but a custom `walker` can be specified instead. An
+        error will be raised if other parameters are specified along with a custom `walker`.
 
         Args:
             G (StellarGraph): A stellargraph with features.
             nodes (iterable, optional) The root nodes from which individual walks start.
                 If not provided, all nodes in the graph are used.
-            length (int): An integer giving the length of the walks. Length must be at least 2.
-            number_of_walks (int): Number of walks from each root node.
-            seed (int, optional): Random seed
-            walker (RandomWalk, optional): By default, the unsupervised sampler instantiates a
-                UniformRandomWalk using the other provided parameters. However, if `walker` is
-                specified, this will override the default behaviour and use the RandomWalk object
-                provided by the user instead.
+            length (int): Length of the walks for the default UniformRandomWalk walker. Length must
+                be at least 2.
+            number_of_walks (int): Number of walks from each root node for the default
+                UniformRandomWalk walker.
+            seed (int, optional): Random seed for the default UniformRandomWalk walker.
+            walker (RandomWalk, optional): A RandomWalk object to use instead of the default
+                UniformRandomWalk walker.
     """
 
     def __init__(

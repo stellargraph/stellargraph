@@ -123,11 +123,11 @@ def test_walker_custom(line_graph):
 
 def test_ignored_param_warning(line_graph):
     walker = UniformRandomWalk(line_graph, n=2, length=3)
-    with pytest.warns(UserWarning):
+    with pytest.raises(ValueError, match="cannot specify both 'walker' and 'length'"):
         UnsupervisedSampler(line_graph, walker=walker, length=5)
 
-    with pytest.warns(UserWarning):
-        UnsupervisedSampler(line_graph, walker=walker, number_of_walks=5)
+    with pytest.raises(ValueError, match="cannot specify both 'walker' and 'number_of_walks'"):
+            UnsupervisedSampler(line_graph, walker=walker, number_of_walks=5)
 
-    with pytest.warns(UserWarning):
+    with pytest.raises(ValueError, match="cannot specify both 'walker' and 'seed'"):
         UnsupervisedSampler(line_graph, walker=walker, seed=1)
