@@ -16,10 +16,8 @@
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from .sequences import GraphSequence
-from ..core.experimental import experimental
 
 
-@experimental(reason="Missing unit tests.", issues=[1042])
 class GraphGenerator:
     """
     A data generator for use with graph classification algorithms.
