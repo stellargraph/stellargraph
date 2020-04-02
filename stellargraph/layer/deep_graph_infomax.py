@@ -14,13 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import GCN, GAT, APPNP, PPNP
+from . import GCN, GAT, APPNP, PPNP, GraphSAGE, DirectedGraphSAGE
 from .misc import deprecated_model_function
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
 from tensorflow.keras import backend as K
 import warnings
+import numpy as np
 
 __all__ = ["DeepGraphInfomax", "DGIDiscriminator"]
 
@@ -52,10 +53,11 @@ class DGIDiscriminator(Layer):
         Applies the layer to the inputs.
 
         Args:
-            inputs: a list or tuple of tensors with shapes [(batch, N, F1), (batch, F2)] containing the node features and a
-                summary feature vector.
+            inputs: a list or tuple of tensors with shapes `[(1, N, F), (1, F)]` for full batch methods and shapes
+            `[(B, F), (F,)]` for sampled node methods, containing the node features and a summary feature vector.
+            Where `N` is the number of nodes in the graph, `F` is the feature dimension, and `B` is the batch size.
         Returns:
-            a Tensor with shape (1, N)
+            a Tensor with shape `(1, N)` for full batch methods and shape `(B,)` for sampled node methods.
         """
 
         features, summary = inputs
@@ -63,6 +65,37 @@ class DGIDiscriminator(Layer):
         score = tf.linalg.matvec(features, tf.linalg.matvec(self.kernel, summary),)
 
         return score
+
+
+class DGIReadout(Layer):
+    """
+    This Layer computes the Readout function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def build(self, input_shapes):
+
+        self.built = True
+
+    def call(self, node_feats):
+        """
+        Applies the layer to the inputs.
+
+        Args:
+            node_feats: a tensor containing the batch node features from the base model. This has shape `(1, N, F)`
+                for full batch methods and shape `(B, F)` for sampled node methods. Where `N` is the number of nodes
+                in the graph, `F` is the feature dimension, and `B` is the batch size.
+
+        Returns:
+            a Tensor with shape `(1, F)` for full batch methods and shape `(F,)` for sampled node methods.
+        """
+
+        summary = tf.reduce_mean(node_feats, axis=-2)
+        summary = tf.math.sigmoid(summary)
+
+        return summary
 
 
 class DeepGraphInfomax:
@@ -76,9 +109,16 @@ class DeepGraphInfomax:
 
     def __init__(self, base_model):
 
-        if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+        if isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+            self._corruptible_inputs_idxs = [0]
+        elif isinstance(base_model, DirectedGraphSAGE):
+            self._corruptible_inputs_idxs = np.arange(base_model.max_slots)
+        elif isinstance(base_model, GraphSAGE):
+            self._corruptible_inputs_idxs = np.arange(base_model.max_hops + 1)
+        else:
             raise TypeError(
-                f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+                f"base_model: expected GCN, GAT, APPNP, PPNP, GraphSAGE,"
+                f"or DirectedGraphSAGE, found {type(base_model).__name__}"
             )
 
         if base_model.multiplicity != 1:
@@ -90,9 +130,6 @@ class DeepGraphInfomax:
         self.base_model = base_model
 
         self._node_feats = None
-        # specific to full batch models
-        self._corruptible_inputs_idxs = [0]
-
         self._discriminator = DGIDiscriminator()
 
     def in_out_tensors(self):
@@ -125,28 +162,34 @@ class DeepGraphInfomax:
 
         node_feats_corr = self.base_model(x_in_corr)
 
-        summary = tf.keras.activations.sigmoid(GlobalAveragePooling1D()(node_feats))
+        summary = DGIReadout()(node_feats)
 
         scores = self._discriminator([node_feats, summary])
         scores_corrupted = self._discriminator([node_feats_corr, summary])
 
-        x_out = tf.stack([scores, scores_corrupted], axis=2)
+        x_out = tf.stack([scores, scores_corrupted], axis=-1)
 
         return x_corr + x_inp, x_out
 
     def embedding_model(self):
         """
-        A function to create the the inputs and outputs for an embedding model.
-
-        Returns:
-            input and output layers for use with a keras model
+        Deprecated: use ``base_model.in_out_tensors`` instead. Deep Graph Infomax just trains the base model,
+        and the model behaves as usual after training.
         """
+
+        warnings.warn(
+            f"The 'embedding_model' method is deprecated, use 'base_model.in_out_tensors' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         # these tensors should link into the weights that get trained by `build`
         x_emb_in, x_emb_out = self.base_model.in_out_tensors(multiplicity=1)
 
-        squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
-        x_emb_out = squeeze_layer(x_emb_out)
+        # squeeze out batch dim of full batch models
+        if len(x_emb_out.shape) == 3:
+            squeeze_layer = Lambda(lambda x: K.squeeze(x, axis=0), name="squeeze")
+            x_emb_out = squeeze_layer(x_emb_out)
 
         return x_emb_in, x_emb_out
 
