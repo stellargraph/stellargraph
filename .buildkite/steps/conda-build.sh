@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -xeo pipefail
+exitCode=0
 
 echo "+++ :snake: :construction_worker: conda build"
 conda build . --no-anaconda-upload || exitCode=$?
