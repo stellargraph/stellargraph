@@ -56,11 +56,10 @@ test:
     - pytest
     - pytest-benchmark >= 3.1
   source_files:
-    # we only bundle and run a subset of tests as a 'smoke test'
-    - tests/core
-    - tests/layer
+    - tests
   commands:
-    - py.test -ra tests/ -p no:cacheprovider --benchmark-disable --color=yes
+    # we only bundle and run a subset of tests as a 'smoke test'
+    - py.test -ra -p no:cacheprovider --benchmark-disable --color=yes tests/core tests/layer
 about:
   home: "https://github.com/stellargraph/stellargraph"
   license: Apache Software
