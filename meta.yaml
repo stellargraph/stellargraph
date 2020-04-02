@@ -58,7 +58,7 @@ test:
   source_files:
     - tests
   commands:
-    # we only bundle and run a subset of tests as a 'smoke test'
+    # we only run a subset of tests as a 'smoke test'
     - py.test -ra -p no:cacheprovider --benchmark-disable --color=yes tests/core tests/layer
 about:
   home: "https://github.com/stellargraph/stellargraph"
