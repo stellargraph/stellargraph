@@ -45,11 +45,11 @@ from ..data import (
 )
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
-from . import NodeSequence
+from . import NodeSequence, Generator
 from ..random import SeededPerBatch
 
 
-class BatchedNodeGenerator(abc.ABC):
+class BatchedNodeGenerator(abc.ABC, Generator):
     """
     Abstract base class for graph data generators.
 

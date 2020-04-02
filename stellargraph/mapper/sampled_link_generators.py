@@ -47,9 +47,10 @@ from ..data import (
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
 from ..random import SeededPerBatch
+from .base import Generator
 
 
-class BatchedLinkGenerator(abc.ABC):
+class BatchedLinkGenerator(abc.ABC, Generator):
     def __init__(self, G, batch_size, schema=None):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")

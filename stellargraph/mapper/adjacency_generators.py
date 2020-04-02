@@ -20,9 +20,10 @@ import numpy as np
 from ..core import StellarGraph
 from ..core.validation import require_integer_in_range
 from ..core.utils import normalize_adj
+from .base import Generator
 
 
-class AdjacencyPowerGenerator:
+class AdjacencyPowerGenerator(Generator):
     """
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first `num_powers`
     of the adjacency matrix row by row.

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2018-2020 Data61, CSIRO
+# Copyright 2020 Data61, CSIRO
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,22 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 
-"""
-The mapper package contains classes and functions to map graph data to neural network inputs
 
-"""
+class Generator(abc.ABC):
+    """
+    A generator supports creating sequences for input into graph machine learning algorithms via the `flow` method.
+    """
 
-# __all__ = ["link_mappers", "node_mappers"]
-
-# Expose the generators
-from .base import Generator
-from .sequences import *
-from .sampled_link_generators import *
-from .sampled_node_generators import *
-from .full_batch_generators import *
-from .mini_batch_node_generators import *
-from .graphwave_generator import *
-from .adjacency_generators import *
-from .knowledge_graph import *
-from .graph_generator import *
+    @abc.abstractmethod
+    def flow(self, *args, **kwargs):
+        """
+        Create a Keras Sequence or similar input, appropriate for a graph machine learning model.
+        """
+        ...
