@@ -222,6 +222,21 @@ class TestUniformRandomWalk(object):
             for node in subgraph:
                 assert node == "self loner"  # all nodes should be the same node
 
+    def test_init_parameters(self):
+        g = create_test_graph()
+
+        nodes = ["0", 2]
+        n = 1
+        length = 2
+        seed = 0
+
+        urw = UniformRandomWalk(g, n=n, length=length, seed=seed)
+        urw_no_params = UniformRandomWalk(g)
+
+        assert urw.run(nodes=nodes) == urw_no_params.run(
+            nodes=nodes, n=n, length=length, seed=seed
+        )
+
     def test_benchmark_uniformrandomwalk(self, benchmark):
 
         g = create_test_graph()
