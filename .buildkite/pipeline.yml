@@ -15,14 +15,14 @@ plugins: &plugins
     mode: checkout
 
 steps:
-  - label: ":python: test Conda build"
+  - label: ":snake: Conda build"
     <<: *timeout
-    command: ".buildkite/steps/conda-build.sh"
+    command: "conda build . --no-anaconda-upload"
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:
         <<: *compose-config
         run: conda
     agents:
-      queue: "t2large"
+      queue: "t2medium"
 

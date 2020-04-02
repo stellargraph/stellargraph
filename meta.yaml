@@ -56,9 +56,10 @@ test:
     - pytest
     - pytest-benchmark >= 3.1
   source_files:
-    - tests
+    # we only bundle and run a subset of tests as a 'smoke test'
+    - tests/core
+    - tests/layer
   commands:
-    - pip install rdflib
     - py.test -ra tests/ -p no:cacheprovider --benchmark-disable --color=yes
 about:
   home: "https://github.com/stellargraph/stellargraph"
