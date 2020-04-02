@@ -729,7 +729,7 @@ class Test_FullBatchNodeGenerator:
 
         else:
             [X, tind, A], y = gen[0]
-            A_dense = A[0]
+            A_dense = A[0].numpy()
 
         assert np.allclose(X, gen.features)  # X should be equal to gen.features
         assert tind.shape[1] == len(node_ids)
