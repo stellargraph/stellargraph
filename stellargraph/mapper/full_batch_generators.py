@@ -48,10 +48,8 @@ from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
-from abc import ABC
 
-
-class FullBatchGenerator(ABC, Generator):
+class FullBatchGenerator(Generator):
     multiplicity = None
 
     def __init__(

@@ -50,7 +50,7 @@ from ..random import SeededPerBatch
 from .base import Generator
 
 
-class BatchedLinkGenerator(abc.ABC, Generator):
+class BatchedLinkGenerator(Generator):
     def __init__(self, G, batch_size, schema=None):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")

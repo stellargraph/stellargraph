@@ -49,7 +49,7 @@ from . import NodeSequence, Generator
 from ..random import SeededPerBatch
 
 
-class BatchedNodeGenerator(abc.ABC, Generator):
+class BatchedNodeGenerator(Generator):
     """
     Abstract base class for graph data generators.
 
