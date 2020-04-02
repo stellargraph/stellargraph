@@ -58,6 +58,7 @@ test:
   source_files:
     # we only bundle and run a subset of tests as a 'smoke test'
     - tests/__init__.py
+    - tests/test_utils
     - tests/core
     - tests/layer
   commands:
