@@ -16,7 +16,6 @@ requirements:
   host:
     # requirements to build stellargraph
     - python
-    - pip
   run:
     # requirements to run stellargraph
     - gensim >=3.4.0
