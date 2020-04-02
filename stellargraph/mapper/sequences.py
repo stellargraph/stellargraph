@@ -664,7 +664,9 @@ class CorruptedNodeSequence(Sequence):
 
         self.base_generator = base_generator
         num_targets = base_generator.target_indices.shape[1]
-        self.targets = tf.tile(tf.constant([[[1, 0]]]), [1, num_targets, 1])
+
+        target = tf.constant([[[1.0, 0.0]]], dtype=tf.float32)
+        self.targets = tf.tile(target, [1, num_targets, 1])
 
     def __len__(self):
         return len(self.base_generator)
