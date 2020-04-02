@@ -80,14 +80,16 @@ class SortPooling(Layer):
             Keras Tensor that represents the output of the layer.
         """
         outputs = tf.map_fn(
-            lambda x: tf.sort(x, axis=-1, direction="DESCENDING"), inputs
+            lambda x: tf.gather(
+                x, tf.argsort(x[..., -1], axis=0, direction="DESCENDING")
+            ),
+            inputs,
         )
 
         # Truncate or pad to size self.k
-        if outputs.shape[1] > self.k:
-            # tf.pad() with zeros up to size k
-            pass
-        elif outputs.shape[1] < self.k:
-            outputs = outputs[:, self.k, :]
+        if outputs.shape[1] < self.k:
+            outputs = tf.pad(outputs, [[0, 0], [0, self.k - outputs.shape[1]], [0, 0]])
+        elif outputs.shape[1] > self.k:
+            outputs = outputs[:, : self.k, :]
 
         return outputs
