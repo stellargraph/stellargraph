@@ -199,7 +199,7 @@ steps:
 
   - label: ":snake: conda build"
     <<: *timeout
-    command: ".buildkite/steps/conda-build.sh
+    command: ".buildkite/steps/conda-build.sh"
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:
