@@ -14,6 +14,7 @@ build:
 
 requirements:
   host:
+    # requirements to build stellargraph
     - gensim >=3.4.0
     - matplotlib >=2.2
     - networkx >=2.2
@@ -27,6 +28,7 @@ requirements:
     - ipython
     - ipykernel
   run:
+    # requirements to run stellargraph
     - gensim >=3.4.0
     - matplotlib >=2.2
     - networkx >=2.2
