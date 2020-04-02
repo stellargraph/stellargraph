@@ -95,6 +95,8 @@ def test_walker_uniform_random(line_graph):
 
     batches = sampler.run(batch_size)
 
+    # batches should match the parameters used to create the walker object, instead of the defaults
+    # for UnsupervisedSampler
     expected_num_batches = np.ceil(
         line_graph.number_of_nodes() * number_of_walks * (length - 1) * 2 / batch_size
     )
