@@ -41,6 +41,7 @@ requirements:
 
 test:
   imports:
+    # this section tests imports of stellargraph and will need updating as our api evolves
     - stellargraph
     - stellargraph.connector
     - stellargraph.connector.neo4j
