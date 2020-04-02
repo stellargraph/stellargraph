@@ -15,7 +15,7 @@ build:
 requirements:
   host:
     # requirements to build stellargraph
-    - python >=3.6
+    - python >=3.6,<3.8.0
     - pip
   run:
     # requirements to run stellargraph
