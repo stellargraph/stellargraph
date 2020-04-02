@@ -43,7 +43,7 @@ def test_dgi(model_type, sparse):
     base_model = model_type(
         generator=generator, activations=["relu"], layer_sizes=[emb_dim]
     )
-    infomax = DeepGraphInfomax(base_model)
+    infomax = DeepGraphInfomax(base_model, generator)
 
     model = tf.keras.Model(*infomax.in_out_tensors())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
@@ -64,7 +64,8 @@ def test_dgi_stateful():
     gen = corrupted_generator.flow(G.nodes())
 
     infomax = DeepGraphInfomax(
-        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim]),
+        generator,
     )
 
     model_1 = tf.keras.Model(*infomax.in_out_tensors())
@@ -124,3 +125,19 @@ def test_dgi_link_model(model_type):
 
     # build should work
     _ = infomax.in_out_tensors()
+
+
+@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
+def test_dgi_deprecated_no_generator(model_type):
+    G = example_graph_random()
+    emb_dim = 16
+
+    generator = FullBatchNodeGenerator(G)
+
+    with pytest.warns(
+            DeprecationWarning,
+        match=r"'base_generator' parameter will be required",
+    ):
+        DeepGraphInfomax(
+            model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+        )

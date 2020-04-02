@@ -16,6 +16,7 @@
 
 from . import GCN, GAT, APPNP, PPNP
 from .misc import deprecated_model_function
+from ..mapper import Generator
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
@@ -72,26 +73,44 @@ class DeepGraphInfomax:
 
     Args:
         base_model: the base stellargraph model class
+        base_generator (Generator):
     """
 
-    def __init__(self, base_model):
+    def __init__(self, base_model, base_generator=None):
 
-        if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
-            raise TypeError(
-                f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
-            )
-
-        if base_model.multiplicity != 1:
+        if base_generator is None:
+            # legacy code path for the original implementation
             warnings.warn(
-                f"base_model: expected a node model (multiplicity = 1), found a link model (multiplicity = {base_model.multiplicity}). Base model tensors will be constructed as for a node model.",
+                f"the 'base_generator' parameter will be required in future; pass in the base model's generator, like `DeepGraphInfomax(base_model, base_generator)`",
+                DeprecationWarning,
                 stacklevel=2,
+            )
+            if not isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+                raise TypeError(
+                    f"base_model: expected GCN, GAT, APPNP or PPNP found {type(base_model).__name__}"
+                )
+
+            if base_model.multiplicity != 1:
+                warnings.warn(
+                    f"base_model: expected a node model (multiplicity = 1), found a link model (multiplicity = {base_model.multiplicity}). Base model tensors will be constructed as for a node model.",
+                    stacklevel=2,
+                )
+
+            # specific to full batch models
+            self._corruptible_inputs_idxs = [0]
+        elif isinstance(base_generator, Generator):
+            self._corruptible_inputs_idxs = base_generator.corruptible_input_indices()
+
+            if self._corruptible_inputs_idxs is None:
+                raise TypeError(
+                    "base_generator: expected a Generator that supports corruption, found {type(base_generator).__name__}"
+                )
+        else:
+            raise TypeError(
+                f"base_generator: expected a Generator, found {type(base_generator).__name__}"
             )
 
         self.base_model = base_model
-
-        self._node_feats = None
-        # specific to full batch models
-        self._corruptible_inputs_idxs = [0]
 
         self._discriminator = DGIDiscriminator()
 

@@ -28,3 +28,9 @@ class Generator(abc.ABC):
         Create a Keras Sequence or similar input, appropriate for a graph machine learning model.
         """
         ...
+
+    def corruptible_input_indices(self):
+        return None
+
+    def corrupt_inputs(self, inputs):
+        raise ValueError(f"calling 'corrupt_inputs' on {type(self).__name__} that does not support corrupting inputs")

@@ -648,17 +648,12 @@ class CorruptedNodeSequence(Sequence):
     data for training Deep Graph Infomax.
 
     Args:
+        corrupt_inputs: a callable that returns a list of corrupted input values
         base_generator: the uncorrupted Sequence object.
     """
 
-    def __init__(self, base_generator):
-
-        if not isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
-            raise TypeError(
-                f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
-                f"found {type(base_generator).__name__}"
-            )
-
+    def __init__(self, corrupt_inputs, base_generator):
+        self.corrupt_inputs = corrupt_inputs
         self.base_generator = base_generator
         self.targets = np.zeros((1, len(base_generator.target_indices), 2))
         self.targets[0, :, 0] = 1.0
@@ -669,9 +664,5 @@ class CorruptedNodeSequence(Sequence):
     def __getitem__(self, index):
 
         inputs, _ = self.base_generator[index]
-        features = inputs[0]
 
-        shuffled_idxs = np.random.permutation(features.shape[1])
-        shuffled_feats = features[:, shuffled_idxs, :]
-
-        return [shuffled_feats] + inputs, self.targets
+        return self.corrupt_inputs(inputs) + inputs, self.targets

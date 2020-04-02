@@ -276,6 +276,16 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         """
         return super().flow(node_ids, targets)
 
+    def corruptible_input_indices(self):
+        return [0]
+
+    def corrupt_inputs(self, inputs):
+        features = inputs[0]
+
+        shuffled_idxs = np.random.permutation(features.shape[1])
+        shuffled_feats = features[:, shuffled_idxs, :]
+        return [shuffled_feats]
+
 
 class FullBatchLinkGenerator(FullBatchGenerator):
     """
@@ -508,12 +518,14 @@ class CorruptedGenerator(Generator):
     """
 
     def __init__(self, base_generator):
-
-        if not isinstance(base_generator, FullBatchNodeGenerator,):
+        # check that this generator supports corruption
+        if base_generator.corruptible_input_indices() is None:
+            # this is a TypeError because most cases of this will be types that _statically_ don't
+            # support corruption, not ones that sometimes support corruption and sometimes don't
             raise TypeError(
-                f"base_generator: expected FullBatchNodeGenerator, "
-                f"found {type(base_generator).__name__}"
+                f"base_generator: expected a Generator that supports corruption, found {type(base_generator).__name__}"
             )
+
         self.base_generator = base_generator
 
     def flow(self, *args, **kwargs):
@@ -524,4 +536,7 @@ class CorruptedGenerator(Generator):
             args: the positional arguments for the self.base_generator.flow(...) method
             kwargs: the keyword arguments for the self.base_generator.flow(...) method
         """
-        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
+        return CorruptedNodeSequence(
+            self.base_generator.corrupt_inputs,
+            self.base_generator.flow(*args, **kwargs),
+        )
