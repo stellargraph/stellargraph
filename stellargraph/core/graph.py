@@ -738,55 +738,18 @@ class StellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        nodes = np.asarray(nodes)
+        feature_tensor = self.node_features_tensors(nodes, node_type)
 
-        node_ilocs = self._nodes.ids.to_iloc(nodes)
-        valid = self._nodes.ids.is_valid(node_ilocs)
-        all_valid = valid.all()
-        valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
-
-        if node_type is None:
-            # infer the type based on the valid nodes
-            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
-
-            if len(types) == 0:
-                raise ValueError(
-                    "must have at least one node for inference, if `node_type` is not specified"
-                )
-            if len(types) > 1:
-                raise ValueError("all nodes must have the same type")
-
-            node_type = types[0]
-
-        # handles eager execution and non-eager execution
         if tf.executing_eagerly():
-            sampled = self._nodes.features(node_type, valid_ilocs).numpy()
+            feature_arr = feature_tensor.numpy()
         else:
             with tf.compat.v1.Session() as sess:
                 try:
-                    sampled = self._nodes.features(node_type, valid_ilocs)
-                    sampled = sess.run(sampled)
+                    feature_arr = sess.run(feature_tensor)
                 except InvalidArgumentError:
                     raise ValueError("unknown IDs")
 
-        if all_valid:
-            return sampled
-
-        # If there's some invalid values, they get replaced by zeros; this is designed to allow
-        # models that build fixed-size structures (e.g. GraphSAGE) based on neighbours to fill out
-        # missing neighbours with zeros automatically, using None as a sentinel.
-
-        # FIXME: None as a sentinel forces nodes to have dtype=object even with integer IDs, could
-        # instead use an impossible integer (e.g. 2**64 - 1)
-
-        # everything that's not the sentinel should be valid
-        non_nones = nodes != None
-        self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
-
-        features = np.zeros((len(nodes), sampled.shape[1]))
-        features[valid] = sampled
-
-        return features
+        return feature_arr
 
     def node_features_tensors(self, nodes, node_type=None) -> tf.Tensor:
         """
