@@ -245,13 +245,13 @@ class TestBiasedRandomWalk(object):
             biasedrw.run(nodes=nodes, n=0, p=p, q=q, length=length, seed=seed)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=-121, p=p, q=q, length=length, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=21.4, p=p, q=q, length=length, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=-0.5, p=p, q=q, length=length, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=0.0001, p=p, q=q, length=length, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n="2", p=p, q=q, length=length, seed=seed)
 
         # p has to be > 0.
@@ -275,17 +275,17 @@ class TestBiasedRandomWalk(object):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=0, seed=seed)
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=-5, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=11.9, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=-9.9, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length="10", seed=seed)
 
         # seed has to be None, 0,  or positive integer
         with pytest.raises(ValueError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=1010.8)
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method

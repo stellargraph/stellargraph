@@ -14,41 +14,47 @@ build:
 
 requirements:
   host:
-    - gensim >=3.4.0
-    - matplotlib >=2.2
-    - networkx >=2.2,<2.4
-    - numpy >=1.14
-    - pandas >=0.24
-    - pip
+    # requirements to build stellargraph
     - python
-    - scikit-learn >=0.20
-    - scipy >=1.1.0
-    - tensorflow 1.14.*
-    - ipython
-    - ipykernel
   run:
+    # requirements to run stellargraph
     - gensim >=3.4.0
     - matplotlib >=2.2
-    - networkx >=2.2,<2.4
+    - networkx >=2.2
     - numpy >=1.14
     - pandas >=0.24
-    - python
+    - python >=3.6
     - scikit-learn >=0.20
     - scipy >=1.1.0
-    - tensorflow 1.14.*
+    - tensorflow >=2.1.0
     - ipython
     - ipykernel
 
 test:
   imports:
+    # this section tests imports of stellargraph and will need updating as our api evolves
     - stellargraph
+    - stellargraph.connector
+    - stellargraph.connector.neo4j
     - stellargraph.core
     - stellargraph.data
+    - stellargraph.datasets
+    - stellargraph.interpretability
+    - stellargraph.interpretability.saliency_maps
     - stellargraph.layer
     - stellargraph.mapper
     - stellargraph.utils
-    - stellargraph.utils.saliency_maps
-
+  requires:
+    - pytest
+    - pytest-benchmark >= 3.1
+  source_files:
+    # we only bundle and run a subset of tests as a 'smoke test'
+    - tests/__init__.py
+    - tests/test_utils
+    - tests/core
+    - tests/layer
+  commands:
+    - py.test -ra -p no:cacheprovider --benchmark-disable --color=yes tests/
 about:
   home: "https://github.com/stellargraph/stellargraph"
   license: Apache Software
@@ -57,7 +63,3 @@ about:
   summary: "Python library for machine learning on graphs"
   doc_url: https://stellargraph.readthedocs.io/
   dev_url: https://github.com/stellargraph/stellargraph
-
-extra:
-  recipe-maintainers:
-    - adocherty
