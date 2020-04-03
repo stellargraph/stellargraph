@@ -89,6 +89,7 @@ def rescale_laplacian(laplacian):
         warnings.warn(
             "Eigenvalue calculation did not converge! Using largest_eigval=2 instead.",
             RuntimeWarning,
+            stacklevel=2,
         )
         largest_eigval = 2
 

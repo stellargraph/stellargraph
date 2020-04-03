@@ -34,8 +34,19 @@ from sklearn import preprocessing
 log = logging.getLogger(__name__)
 
 
-def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
+def _load_cora_or_citeseer(
+    dataset,
+    directed,
+    largest_connected_component_only,
+    subject_as_feature,
+    edge_weights,
+    nodes_dtype,
+):
     assert isinstance(dataset, (Cora, CiteSeer))
+
+    if nodes_dtype is None:
+        nodes_dtype = dataset._NODES_DTYPE
+
     dataset.download()
 
     # expected_files should be in this order
@@ -43,35 +54,46 @@ def _load_cora_or_citeseer(dataset, directed, largest_connected_component_only):
 
     feature_names = ["w_{}".format(ii) for ii in range(dataset._NUM_FEATURES)]
     subject = "subject"
-    column_names = feature_names + [subject]
+    if subject_as_feature:
+        feature_names.append(subject)
+        column_names = feature_names
+    else:
+        column_names = feature_names + [subject]
+
     node_data = pd.read_csv(
-        content,
-        sep="\t",
-        header=None,
-        names=column_names,
-        dtype={0: dataset._NODES_DTYPE},
+        content, sep="\t", header=None, names=column_names, dtype={0: nodes_dtype},
     )
 
     edgelist = pd.read_csv(
-        cites,
-        sep="\t",
-        header=None,
-        names=["target", "source"],
-        dtype=dataset._NODES_DTYPE,
+        cites, sep="\t", header=None, names=["target", "source"], dtype=nodes_dtype,
     )
 
     valid_source = node_data.index.get_indexer(edgelist.source) >= 0
     valid_target = node_data.index.get_indexer(edgelist.target) >= 0
     edgelist = edgelist[valid_source & valid_target]
 
+    subjects = node_data[subject]
+
     cls = StellarDiGraph if directed else StellarGraph
-    graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
+
+    features = node_data[feature_names]
+    if subject_as_feature:
+        # one-hot encode the subjects
+        features = pd.get_dummies(features, columns=[subject])
+
+    graph = cls({"paper": features}, {"cites": edgelist})
+
+    if edge_weights is not None:
+        # A weighted graph means computing a second StellarGraph after using the unweighted one to
+        # compute the weights.
+        edgelist["weight"] = edge_weights(graph, subjects, edgelist)
+        graph = cls({"paper": node_data[feature_names]}, {"cites": edgelist})
 
     if largest_connected_component_only:
         cc_ids = next(graph.connected_components())
-        return graph.subgraph(cc_ids), node_data[subject][cc_ids]
+        return graph.subgraph(cc_ids), subjects[cc_ids]
 
-    return graph, node_data[subject]
+    return graph, subjects
 
 
 class Cora(
@@ -87,10 +109,16 @@ class Cora(
     source="https://linqs.soe.ucsc.edu/data",
 ):
 
-    _NODES_DTYPE = int
     _NUM_FEATURES = 1433
 
-    def load(self, directed=False, largest_connected_component_only=False):
+    def load(
+        self,
+        directed=False,
+        largest_connected_component_only=False,
+        subject_as_feature=False,
+        edge_weights=None,
+        str_node_ids=False,
+    ):
         """
         Load this dataset into a homogeneous graph that is directed or undirected, downloading it if
         required.
@@ -102,13 +130,30 @@ class Cora(
             directed (bool): if True, return a directed graph, otherwise return an undirected one.
             largest_connected_component_only (bool): if True, returns only the largest connected
                 component, not the whole graph.
+            edge_weights (callable, optional): a function that accepts three parameters: an
+                unweighted StellarGraph containing node features, a Pandas Series of the node
+                labels, a Pandas DataFrame of the edges (with `source` and `target` columns). It
+                should return a sequence of numbers (e.g. a 1D NumPy array) of edge weights for each
+                edge in the DataFrame.
+            str_node_ids (bool): if True, load the node IDs as strings, rather than integers.
+            subject_as_feature (bool): if True, the subject for each paper (node) is included in the
+                node features, one-hot encoded (the subjects are still also returned as a Series).
 
         Returns:
             A tuple where the first element is the :class:`StellarGraph` object (or
             :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
             and edges, and the second element is a pandas Series of the node subject class labels.
         """
-        return _load_cora_or_citeseer(self, directed, largest_connected_component_only)
+        nodes_dtype = str if str_node_ids else int
+
+        return _load_cora_or_citeseer(
+            self,
+            directed,
+            largest_connected_component_only,
+            subject_as_feature,
+            edge_weights,
+            nodes_dtype,
+        )
 
 
 class CiteSeer(
@@ -124,10 +169,6 @@ class CiteSeer(
     "indicating the absence/presence of the corresponding word from the dictionary. The dictionary consists of 3703 unique words.",
     source="https://linqs.soe.ucsc.edu/data",
 ):
-    # some node IDs are integers like 100157 and some are strings like
-    # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all to
-    # be treated as strings.
-    _NODES_DTYPE = str
     _NUM_FEATURES = 3703
 
     def load(self, largest_connected_component_only=False):
@@ -145,7 +186,14 @@ class CiteSeer(
             feature vectors and edges, and the second element is a pandas Series of the node subject
             class labels.
         """
-        return _load_cora_or_citeseer(self, False, largest_connected_component_only)
+        # some node IDs are integers like 100157 and some are strings like
+        # bradshaw97introduction. Pandas can get confused, so it's best to explicitly force them all
+        # to be treated as strings.
+        nodes_dtype = str
+
+        return _load_cora_or_citeseer(
+            self, False, largest_connected_component_only, False, None, nodes_dtype
+        )
 
 
 class PubMedDiabetes(

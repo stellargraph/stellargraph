@@ -22,6 +22,7 @@ import numpy as np
 import warnings
 from ..mapper.adjacency_generators import AdjacencyPowerGenerator
 from ..core.validation import require_integer_in_range
+from .misc import deprecated_model_function
 
 
 class AttentiveWalk(Layer):
@@ -105,28 +106,6 @@ class AttentiveWalk(Layer):
         return expected_walk
 
 
-def get_embeddings(model):
-    """
-    This function returns the embeddings from a model with Watch Your Step embeddings.
-
-    Args:
-        model (keras Model): a keras model that contains Watch Your Step embeddings.
-
-    Returns:
-        embeddings (np.array): a numpy array of the model's embeddings.
-    """
-    embeddings = np.hstack(
-        [
-            model.get_layer("WATCH_YOUR_STEP_LEFT_EMBEDDINGS").embeddings.numpy(),
-            model.get_layer("WATCH_YOUR_STEP_RIGHT_EMBEDDINGS")
-            .kernel.numpy()
-            .transpose(),
-        ]
-    )
-
-    return embeddings
-
-
 class WatchYourStep:
     """
     Implementation of the node embeddings as in Watch Your Step: Learning Node Embeddings via Graph Attention
@@ -175,21 +154,52 @@ class WatchYourStep:
 
         if embedding_dimension % 2 != 0:
             warnings.warn(
-                f"embedding_dimension: expected even number, found odd number ({embedding_dimension}). It will be rounded down to {embedding_dimension - 1}."
+                f"embedding_dimension: expected even number, found odd number ({embedding_dimension}). It will be rounded down to {embedding_dimension - 1}.",
+                stacklevel=2,
             )
             embedding_dimension -= 1
 
         self.embedding_dimension = embedding_dimension
 
-        self.attention_regularizer = attention_regularizer
-        self.attention_initializer = attention_initializer
-        self.attention_constraint = attention_constraint
+        self._left_embedding = Embedding(
+            self.n_nodes,
+            int(self.embedding_dimension / 2),
+            input_length=None,
+            embeddings_initializer=embeddings_initializer,
+            embeddings_regularizer=embeddings_regularizer,
+            embeddings_constraint=embeddings_constraint,
+        )
+        self._right_embedding = Dense(
+            self.n_nodes,
+            use_bias=False,
+            kernel_initializer=embeddings_initializer,
+            kernel_regularizer=embeddings_regularizer,
+            kernel_constraint=embeddings_constraint,
+        )
+        self._attentive_walk = AttentiveWalk(
+            walk_length=self.num_powers,
+            attention_constraint=attention_constraint,
+            attention_regularizer=attention_regularizer,
+            attention_initializer=attention_initializer,
+        )
 
-        self.embeddings_initializer = embeddings_initializer
-        self.embeddings_regularizer = embeddings_regularizer
-        self.embeddings_constraint = embeddings_constraint
+    def embeddings(self):
+        """
+        This function returns the embeddings from a model with Watch Your Step embeddings.
 
-    def build(self):
+        Returns:
+            embeddings (np.array): a numpy array of the model's embeddings.
+        """
+        embeddings = np.hstack(
+            [
+                self._left_embedding.embeddings.numpy(),
+                self._right_embedding.kernel.numpy().transpose(),
+            ]
+        )
+
+        return embeddings
+
+    def in_out_tensors(self):
         """
         This function builds the layers for a keras model.
 
@@ -200,42 +210,20 @@ class WatchYourStep:
         input_rows = Input(batch_shape=(None,), name="row_node_ids", dtype="int64")
         input_powers = Input(batch_shape=(None, self.num_powers, self.n_nodes))
 
-        left_embedding = Embedding(
-            self.n_nodes,
-            int(self.embedding_dimension / 2),
-            input_length=None,
-            name="WATCH_YOUR_STEP_LEFT_EMBEDDINGS",
-            embeddings_initializer=self.embeddings_initializer,
-            embeddings_regularizer=self.embeddings_regularizer,
-            embeddings_constraint=self.embeddings_constraint,
-        )
-
-        vectors_left = left_embedding(input_rows)
+        vectors_left = self._left_embedding(input_rows)
 
         # all right embeddings are used in every batch. to avoid unnecessary lookups the right embeddings are stored
         # in a dense layer to enable efficient dot product between the left vectors in the current batch and all right
         # vectors
-        outer_product = Dense(
-            self.n_nodes,
-            use_bias=False,
-            kernel_initializer=self.embeddings_initializer,
-            kernel_regularizer=self.embeddings_regularizer,
-            kernel_constraint=self.embeddings_constraint,
-            name="WATCH_YOUR_STEP_RIGHT_EMBEDDINGS",
-        )(vectors_left)
+        outer_product = self._right_embedding(vectors_left)
 
-        sigmoids = tf.keras.activations.sigmoid(outer_product)
-        attentive_walk_layer = AttentiveWalk(
-            walk_length=self.num_powers,
-            attention_constraint=self.attention_constraint,
-            attention_regularizer=self.attention_regularizer,
-            attention_initializer=self.attention_initializer,
-        )
-        expected_walk = self.num_walks * attentive_walk_layer(input_powers)
+        expected_walk = self.num_walks * self._attentive_walk(input_powers)
 
         # layer to add batch dimension of 1 to output
         expander = Lambda(lambda x: K.expand_dims(x, axis=1))
 
-        output = Concatenate(axis=1)([expander(expected_walk), expander(sigmoids)])
+        output = Concatenate(axis=1)([expander(expected_walk), expander(outer_product)])
 
         return [input_rows, input_powers], output
+
+    build = deprecated_model_function(in_out_tensors, "build")

@@ -19,6 +19,7 @@ GAT tests
 """
 import pytest
 import scipy.sparse as sps
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
@@ -432,8 +433,8 @@ class Test_GAT:
             bias=True,
         )
 
-        assert len(gat.build()) == 2
-        x_in, x_out = gat.build()
+        assert len(gat.in_out_tensors()) == 2
+        x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
@@ -450,8 +451,8 @@ class Test_GAT:
             bias=True,
         )
 
-        assert len(gat.build()) == 2
-        x_in, x_out = gat.build()
+        assert len(gat.in_out_tensors()) == 2
+        x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
@@ -469,7 +470,7 @@ class Test_GAT:
         )
         assert gat.use_sparse == False
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
@@ -502,7 +503,7 @@ class Test_GAT:
             attn_kernel_initializer="ones",
         )
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
@@ -528,7 +529,7 @@ class Test_GAT:
             attn_kernel_initializer="ones",
         )
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
@@ -568,7 +569,7 @@ class Test_GAT:
             normalize="l2",
         )
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
         model = keras.Model(inputs=x_in, outputs=x_out)
 
         ng = gen.flow(G.nodes())
@@ -591,6 +592,31 @@ class Test_GAT:
             1.0 / G.number_of_nodes()
         )
         assert np.allclose(expected, actual[0])
+
+    def test_kernel_and_bias_defaults(self):
+        graph = example_graph(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(graph, sparse=self.sparse, method=self.method)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+        )
+        for layer in gat._layers:
+            if isinstance(layer, GraphAttention):
+                assert isinstance(
+                    layer.kernel_initializer, tf.initializers.GlorotUniform
+                )
+                assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+                assert isinstance(
+                    layer.attn_kernel_initializer, tf.initializers.GlorotUniform
+                )
+                assert layer.kernel_regularizer is None
+                assert layer.bias_regularizer is None
+                assert layer.attn_kernel_regularizer is None
+                assert layer.kernel_constraint is None
+                assert layer.bias_constraint is None
+                assert layer.attn_kernel_constraint is None
 
 
 def TestGATsparse(Test_GAT):

@@ -1,29 +1,83 @@
 # Change Log
 
-## [HEAD](https://github.com/stellargraph/stellargraph/tree/HEAD)
+## [0.11.1](https://github.com/stellargraph/stellargraph/tree/v0.11.1)
 
-[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.10.0...HEAD)
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.11.0...v0.11.1)
+
+This bugfix release contains the same code as 0.11.0, and just fixes the metadata in the Anaconda package so that it can be installed successfully.
+
+### Bug fixes and other changes
+
+- The [Conda package for StellarGraph](https://anaconda.org/stellargraph/stellargraph) has been updated to require TensorFlow 2.1, as TensorFlow 2.0 is no longer supported.  As a result, StellarGraph will currently install via Conda on Linux and Windows - Mac support is waiting on the [Tensorflow 2.1 osx-64 release to Conda](https://github.com/ContinuumIO/anaconda-issues/issues/11697). [\#1165](https://github.com/stellargraph/stellargraph/pull/1165)
+
+## [0.11.0](https://github.com/stellargraph/stellargraph/tree/v0.11.0)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.10.0...v0.11.0)
 
 ### Major features and improvements
 
+- The onboarding/getting-started process has been optimised and improved:
+  - The README has been rewritten to highlight our numerous demos, and how to get help [\#1081](https://github.com/stellargraph/stellargraph/pull/1081)
+  - [Example Jupyter notebooks](https://github.com/stellargraph/stellargraph/tree/master/demos/) can now be run directly in [Google Colab](https://colab.research.google.com) and [Binder](https://mybinder.org), providing an easy way to get started with StellarGraph - simply click the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each notebook. [\#1119](https://github.com/stellargraph/stellargraph/pull/1119).
+  - The [new `demos/basics` directory](demos/basics) contains two notebooks demonstrating how to construct a `StellarGraph` object from Pandas, and from NetworkX [\#1074](https://github.com/stellargraph/stellargraph/pull/1074)
+  - The [GCN node classification demo](demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb) now has more explanation, to serve as an introduction to graph machine learning using StellarGraph [\#1125](https://github.com/stellargraph/stellargraph/pull/1125)
 - New algorithms:
   - Watch Your Step: computes node embeddings by simulating the effect of random walks, rather than doing them. [\#750](https://github.com/stellargraph/stellargraph/pull/750).
+  - Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978).
+  - Temporal Random Walks (Continuous-Time Dynamic Network Embeddings): random walks that respect the time that each edge occurred (stored as edge weights) [\#1120](https://github.com/stellargraph/stellargraph/issues/1120).
+  - ComplEx: computes multiplicative complex-number embeddings for entities and relationships (edge types) in knowledge graphs, which can be used for link prediction. [\#901](https://github.com/stellargraph/stellargraph/pull/901) [\#1080](https://github.com/stellargraph/stellargraph/pull/1080)
+  - DistMult: computes multiplicative real-number embeddings for entities and relationships (edge types) in knowledge graphs, which can be used for link prediction. [\#755](https://github.com/stellargraph/stellargraph/issues/755) [\#865](https://github.com/stellargraph/stellargraph/pull/865) [\#1136](https://github.com/stellargraph/stellargraph/pull/1136)
 
 ### Breaking changes
 
-- `StellarGraph.to_networkx` parameters now use `attr` to refer to NetworkX attributes, not `name` or `label` [\#973](http://github.com/stellargraph/stellargraph/pull/973). Migration: for any named parameters in `graph.to_networkx(...)`, change `node_type_name=...` to `node_type_attr=...` and similarly `edge_type_name` to `edge_type_attr`, `edge_weight_label` to `edge_weight_attr`, `feature_name` to `feature_attr`.
+- StellarGraph now requires TensorFlow 2.1 or greater, TensorFlow 2.0 is no longer supported [\#1008](https://github.com/stellargraph/stellargraph/pull/1008)
+- The legacy constructor using NetworkX graphs has been deprecated [\#1027](https://github.com/stellargraph/stellargraph/pull/1027). Migration: replace `StellarGraph(some_networkx_graph)` with `StellarGraph.from_networkx(some_networkx_graph)`, and similarly for `StellarDiGraph`.
+- The `build` method on model classes (such as `GCN`) has been renamed to `in_out_tensors` [\#1140](https://github.com/stellargraph/stellargraph/pull/1140). Migration: replace `model.build()` with `model.in_out_tensors()`.
+- The `node_model` and `link_model` methods on model classes has been replaced by `in_out_tensors` [\#1140](https://github.com/stellargraph/stellargraph/pull/1140) (see that PR for the exact list of types). Migration: replace `model.node_model()` with `model.in_out_tensors()` or `model.in_out_tensors(multiplicity=1)`, and `model.node_model()` with `model.in_out_tensors()` or `model.in_out_tensors(multiplicity=2)`.
+- Re-exports of calibration and ensembling functionality from the top-level of the `stellargraph` module were deprecated, in favour of importing from the `stellargraph.calibration` or `stellargraph.ensemble` submodules directly [\#1107](https://github.com/stellargraph/stellargraph/pull/1107). Migration: replace uses of `stellargraph.Ensemble` with `stellargraph.ensemble.Ensemble`, and similarly for the other names (see [\#1107](https://github.com/stellargraph/stellargraph/pull/1107) for all replacements).
+- `StellarGraph.to_networkx` parameters now use `attr` to refer to NetworkX attributes, not `name` or `label` [\#973](https://github.com/stellargraph/stellargraph/pull/973). Migration: for any named parameters in `graph.to_networkx(...)`, change `node_type_name=...` to `node_type_attr=...` and similarly `edge_type_name` to `edge_type_attr`, `edge_weight_label` to `edge_weight_attr`, `feature_name` to `feature_attr`.
+- `StellarGraph.nodes_of_type` is deprecated in favour of the `nodes` method [\#1111](https://github.com/stellargraph/stellargraph/pull/1111). Migration: replace `some_graph.nodes_of_type(some_type)` with `some_graph.nodes(node_type=some_type)`.
+- `StellarGraph.info` parameters `show_attributes` and `sample` were deprecated [\#1110](https://github.com/stellargraph/stellargraph/pull/1110)
+- Some more layers and models had many parameters move from `**kwargs` to real arguments: `Attri2Vec` ([\#1128](https://github.com/stellargraph/stellargraph/pull/1128)), `ClusterGCN` ([\#1129](https://github.com/stellargraph/stellargraph/pull/1129)), `GraphAttention` & `GAT` ([\#1130](https://github.com/stellargraph/stellargraph/pull/1130)), `GraphSAGE` & its aggregators ([\#1142](https://github.com/stellargraph/stellargraph/pull/1142)), `HinSAGE` & its aggregators ([\#1143](https://github.com/stellargraph/stellargraph/pull/1143)), `RelationalGraphConvolution` & `RGCN` ([\#1148](https://github.com/stellargraph/stellargraph/pull/1148)). Invalid (e.g. incorrectly spelled) arguments would have been ignored previously, but now may fail with a `TypeError`; to fix, remove or correct the arguments.
+- The `method="chebyshev"` option to `FullBatchNodeGenerator`, `FullBatchLinkGenerator` and `GCN_Aadj_feats_op` has been removed for now, because it needed significant revision to be correctly implemented [\#1028](https://github.com/stellargraph/stellargraph/pull/1028)
+- The `fit_generator`, `evaluate_generator` and `predict_generator` methods on `Ensemble` and `BaggingEnsemble` have been renamed to `fit`, `evaluate` and `predict`, to match the deprecation in TensorFlow 2.1 of the `tensorflow.keras.Model` methods of the same name [\#1065](https://github.com/stellargraph/stellargraph/pull/1065). Migration: remove the `_generator`  suffix on these methods.
+- The `default_model` method on `Attri2Vec`, `GraphSAGE` and `HinSAGE` has been deprecated, in favour of `in_out_tensors` [\#1145](https://github.com/stellargraph/stellargraph/pull/1145). Migration: replace `model.default_model()` with `model.in_out_tensors()`.
 
 ### Experimental features
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
-- DistMult: computes embeddings for nodes and edge types in knowledge graphs, and use these to perform link prediction [\#755](https://github.com/stellargraph/stellargraph/issues/755). The implementation hasn't been validated to match the paper.
-- Deep Graph Infomax: performs unsupervised node representation learning [\#978](https://github.com/stellargraph/stellargraph/issues/978) The implementation is not fully tested.
+- GCNSupervisedGraphClassification: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929).
 
 ### Bug fixes and other changes
 
-- `StellarGraph.to_adjacency_matrix` is at least 15× faster on undirected graphs [\#932](http://github.com/stellargraph/stellargraph/pull/932)
+- `StellarGraph.to_adjacency_matrix` is at least 15× faster on undirected graphs [\#932](https://github.com/stellargraph/stellargraph/pull/932)
+- `ClusterNodeGenerator` is now noticably faster, which makes training and predicting with a `ClusterGCN` model faster [\#1095](https://github.com/stellargraph/stellargraph/pull/1095). On a random graph with 1000 nodes and 5000 edges and 10 clusters, iterating over an epoch with `q=1` (each clusters individually) is 2× faster, and is even faster for larger `q`. The model in the Cluster-GCN demo notebook using Cora trains 2× faster overall.
+- The `node_features=...` parameter to `StellarGraph.from_networkx` now only needs to mention the node types that have features, when passing a dictionary of Pandas DataFrames. Node types that aren't mentioned will automatically have no features (zero-length feature vectors). [\#1082](https://github.com/stellargraph/stellargraph/pull/1082)
+- A `subgraph` method was added to `StellarGraph` for computing a node-induced subgraph [\#958](https://github.com/stellargraph/stellargraph/pull/958)
+- A `connected_components` method was added to `StellarGraph` for computing the nodes involved in each connected component in a `StellarGraph` [\#958](https://github.com/stellargraph/stellargraph/pull/958)
+- The `info` method on `StellarGraph` now shows only 20 node and edge types by default to be more useful for graphs with many types [\#993](https://github.com/stellargraph/stellargraph/pull/993). This behaviour can be customized with the `truncate=...` parameter.
+- The `info` method on `StellarGraph` now shows information about the size and type of each node type's feature vectors [\#979](https://github.com/stellargraph/stellargraph/pull/979)
+- The `EdgeSplitter` class supports `StellarGraph` input (and will output `StellarGraph`s in this case), in addition to NetworkX graphs [\#1032](https://github.com/stellargraph/stellargraph/pull/1032)
+- The `Attri2Vec` model class stores its weights statefully, so they are shared between all tensors computed by `build` [\#1101](https://github.com/stellargraph/stellargraph/pull/1101)
+- The `GCN` model defaults for some parameters now match the `GraphConvolution` layer's defaults: specifically `kernel_initializer` (`glorot_uniform`) and `bias_initializer` (`zeros`) [\#1147](https://github.com/stellargraph/stellargraph/pull/1147)
+- The `datasets` submodule is now accessible as `stellargraph.datasets`, after just `import stellargraph` [\#1113](https://github.com/stellargraph/stellargraph/pull/1113)
+- All datasets in `stellargraph.datasets` now support a `load` method to create a `StellarGraph` object (and other information): `AIFB` ([\#982](https://github.com/stellargraph/stellargraph/pull/982)), `CiteSeer` ([\#989](https://github.com/stellargraph/stellargraph/pull/989)), `Cora` ([\#913](https://github.com/stellargraph/stellargraph/pull/913)), `MovieLens` ([\#947](https://github.com/stellargraph/stellargraph/pull/947)), `PubMedDiabetes` ([\#986](https://github.com/stellargraph/stellargraph/pull/986)). The demo notebooks using these datasets are now cleaner.
+- Some new datasets were added to `stellargraph.datasets`:
+  - `MUTAG`: a collection of graphs representing chemical compounds [\#960](https://github.com/stellargraph/stellargraph/pull/960)
+  - `WN18`, `WN18RR`: knowledge graphs based on the WordNet linguistics data [\#977](https://github.com/stellargraph/stellargraph/pull/977)
+  - `FB15k`, `FB15k_237`: knowledge graphs based on the FreeBase knowledge base [\#977](https://github.com/stellargraph/stellargraph/pull/977)
+  - `IAEnronEmployees`: a small set of employees of Enron, and the many emails between them [\#1058](https://github.com/stellargraph/stellargraph/pull/1058)
+- Warnings now point to the call site of the function causing the warning, not the `warnings.warn` call inside StellarGraph; this means `DeprecationWarning`s will be visible in Jupyter notebooks and scripts run with Python 3.7 [\#1144](https://github.com/stellargraph/stellargraph/pull/1144)
+- Some code that triggered warnings from other libraries was fixed or removed [\#995](https://github.com/stellargraph/stellargraph/pull/995) [\#1008](https://github.com/stellargraph/stellargraph/pull/1008), [\#1051](https://github.com/stellargraph/stellargraph/pull/1051), [\#1064](https://github.com/stellargraph/stellargraph/pull/1064), [\#1066](https://github.com/stellargraph/stellargraph/pull/1066)
+- Some demo notebooks have been updated or fixed: `demos/use-cases/hateful-twitters.ipynb` ([\#1019](https://github.com/stellargraph/stellargraph/pull/1019)), `rgcn-aifb-node-classification-example.ipynb` ([\#983](https://github.com/stellargraph/stellargraph/pull/983))
+- The documentation "quick start" guide duplicated a lot of the information in the README, and so has been replaced with the latter [\#1096](https://github.com/stellargraph/stellargraph/pull/1096)
+- API documentation now lists items under their recommended import path, not their definition. For instance, `stellargraph.StellarGraph` instead of `stellargraph.core.StellarGraph` ([\#1127](https://github.com/stellargraph/stellargraph/pull/1127)), `stellargraph.layer.GCN` instead of `stellargraph.layer.gcn.GCN` ([\#1150](https://github.com/stellargraph/stellargraph/pull/1150)) and `stellargraph.datasets.Cora` instead of `stellargraph.datasets.datasets.Cora` ([\#1157](https://github.com/stellargraph/stellargraph/pull/1157))
+- Some API documentation is now formatted better [\#1061](https://github.com/stellargraph/stellargraph/pull/1061), [\#1068](https://github.com/stellargraph/stellargraph/pull/1068), [\#1070](https://github.com/stellargraph/stellargraph/pull/1070), [\#1071](https://github.com/stellargraph/stellargraph/pull/1071)
 - DevOps changes:
+  - Neo4j functionality is now tested on CI, and so will continue working [\#1046](https://github.com/stellargraph/stellargraph/pull/1046) [\#1050](https://github.com/stellargraph/stellargraph/pull/1050)
+  - CI: [\#967](https://github.com/stellargraph/stellargraph/pull/967), [\#968](https://github.com/stellargraph/stellargraph/pull/968), [\#1036](https://github.com/stellargraph/stellargraph/pull/1036), [\#1067](https://github.com/stellargraph/stellargraph/pull/1067), [\#1097](https://github.com/stellargraph/stellargraph/pull/1097)
+  - Other: [\#956](https://github.com/stellargraph/stellargraph/pull/956), [\#962](https://github.com/stellargraph/stellargraph/pull/962), [\#974](https://github.com/stellargraph/stellargraph/pull/974)
 
 ## [0.10.0](https://github.com/stellargraph/stellargraph/tree/v0.10.0)
 

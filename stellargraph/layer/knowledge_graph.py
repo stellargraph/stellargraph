@@ -20,6 +20,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape, Embedding
 
+from .misc import deprecated_model_function
 from ..mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
@@ -70,9 +71,6 @@ class ComplExScore(Layer):
         return score
 
 
-@experimental(
-    reason="results from the reference paper have not been reproduced yet", issues=[862]
-)
 class ComplEx:
     """
     Embedding layers and a ComplEx scoring layers that implement the ComplEx knowledge graph
@@ -81,8 +79,8 @@ class ComplEx:
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
 
-        k (int): the dimension of the embedding (that is, a vector in C^k is learnt for each node
-            and each link type)
+        embedding_dimension (int): the dimension of the embedding (that is, a vector in
+            ``C^embedding_dimension`` is learnt for each node and each link type)
 
         embeddings_initializer (str or func, optional): The initialiser to use for the embeddings
             (the default of random normal values matches the paper's reference implementation).
@@ -93,7 +91,7 @@ class ComplEx:
     def __init__(
         self,
         generator,
-        k,
+        embedding_dimension,
         embeddings_initializer="normal",
         embeddings_regularizer=None,
     ):
@@ -105,40 +103,41 @@ class ComplEx:
         graph = generator.G
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
-        self.k = k
-        self.embeddings_initializer = initializers.get(embeddings_initializer)
-        self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
+        self.embedding_dimension = embedding_dimension
 
-    # layer names
-    _NODE_REAL = "COMPLEX_NODE_REAL"
-    _NODE_IMAG = "COMPLEX_NODE_IMAG"
+        def embed(count):
+            return Embedding(
+                count,
+                embedding_dimension,
+                embeddings_initializer=embeddings_initializer,
+                embeddings_regularizer=embeddings_regularizer,
+            )
 
-    _REL_REAL = "COMPLEX_EDGE_TYPE_REAL"
-    _REL_IMAG = "COMPLEX_EDGE_TYPE_IMAG"
+        # ComplEx generates embeddings in C, which we model as separate real and imaginary
+        # embeddings
+        self._node_embeddings_real = embed(self.num_nodes)
+        self._node_embeddings_imag = embed(self.num_nodes)
+        self._edge_type_embeddings_real = embed(self.num_edge_types)
+        self._edge_type_embeddings_imag = embed(self.num_edge_types)
 
-    @staticmethod
-    def embeddings(model):
+    def embeddings(self):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in the given model.
-
-        Args:
-            model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
+        Retrieve the embeddings for nodes/entities and edge types/relations in this ComplEx model.
 
         Returns:
             A tuple of numpy complex arrays: the first element is the embeddings for nodes/entities
             (``shape = number of nodes × k``), the second element is the embeddings for edge
             types/relations (``shape = number of edge types x k``).
         """
-        node = 1j * model.get_layer(ComplEx._NODE_IMAG).embeddings.numpy()
-        node += model.get_layer(ComplEx._NODE_REAL).embeddings.numpy()
+        node = 1j * self._node_embeddings_imag.embeddings.numpy()
+        node += self._node_embeddings_real.embeddings.numpy()
 
-        rel = 1j * model.get_layer(ComplEx._REL_IMAG).embeddings.numpy()
-        rel += model.get_layer(ComplEx._REL_REAL).embeddings.numpy()
+        rel = 1j * self._edge_type_embeddings_imag.embeddings.numpy()
+        rel += self._edge_type_embeddings_real.embeddings.numpy()
 
         return node, rel
 
-    @staticmethod
-    def rank_edges_against_all_nodes(model, test_data, known_edges_graph):
+    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -147,15 +146,25 @@ class ComplEx:
         is computed for every node ``n`` in the graph, and similarly the score of the
         *modified-subject* edge ``(n, r, o)``.
 
-        This computes "raw" ranks: the score of each edge is ranked against all of the
-        modified-object and modified subject-ones, for instance, if ``E = ("a", "X", "b")`` has
-        score 3.14, and only one modified-object edge has a higher score (e.g. ``("a", "X", "c")``),
-        then the raw modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges
-        have score less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+        This computes "raw" and "filtered" ranks:
+
+        raw
+          The score of each edge is ranked against all of the modified-object and modified-subject
+          ones, for instance, if ``E = ("a", "X", "b")`` has score 3.14, and only one
+          modified-object edge has a higher score (e.g. ``F = ("a", "X", "c")``), then the raw
+          modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges have score
+          less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+
+        filtered
+          The score of each edge is ranked against only the unknown modified-object and
+          modified-subject edges. An edge is considered known if it is in ``known_edges_graph``
+          which should typically hold every edge in the dataset (that is everything from the train,
+          test and validation sets, if the data has been split). For instance, continuing the raw
+          example, if the higher-scoring edge ``F`` is in the graph, then it will be ignored, giving
+          a filtered modified-object rank for ``E`` of 1. (If ``F`` was not in the graph, the
+          filtered modified-object rank would be 2.)
 
         Args:
-            model (tensorflow.keras.Model): a Keras model created using a ``ComplEx`` instance.
-
             test_data: the output of :meth:`KGTripleGenerator.flow` on some test triples
 
             known_edges_graph (StellarGraph):
@@ -175,27 +184,11 @@ class ComplEx:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
-        def ranks(pred, true_ilocs):
-            batch_size = len(true_ilocs)
-            assert pred.shape == (num_nodes, batch_size)
-
-            # the score of the true edge, for each edge in the batch (this indexes in lock-step,
-            # i.e. [pred[true_ilocs[0], range(batch_size)[0]], ...])
-            true_scores = pred[true_ilocs, range(batch_size)]
-
-            # for each column, compare all the scores against the score of the true edge
-            greater = pred > true_scores
-
-            # the raw rank is the number of elements scored higher than the true edge
-            raw_rank = 1 + greater.sum(axis=0)
-            assert raw_rank.shape == (batch_size,)
-
-            return raw_rank
-
-        all_node_embs, all_rel_embs = ComplEx.embeddings(model)
+        all_node_embs, all_rel_embs = self.embeddings()
         all_node_embs_conj = all_node_embs.conj()
 
         raws = []
+        filtereds = []
 
         # run through the batches and compute the ranks for each one
         num_tested = 0
@@ -214,26 +207,33 @@ class ComplEx:
             mod_o_pred = np.inner(all_node_embs_conj, ss * rs).real
             mod_s_pred = np.inner(all_node_embs, rs * os.conj()).real
 
-            mod_o_raw = ranks(mod_o_pred, true_ilocs=objects)
-            mod_s_raw = ranks(mod_s_pred, true_ilocs=subjects)
+            mod_o_raw, mod_o_filt = _ranks_from_score_columns(
+                mod_o_pred,
+                true_modified_node_ilocs=objects,
+                unmodified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=True,
+                known_edges_graph=known_edges_graph,
+            )
+            mod_s_raw, mod_s_filt = _ranks_from_score_columns(
+                mod_s_pred,
+                true_modified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=False,
+                unmodified_node_ilocs=objects,
+                known_edges_graph=known_edges_graph,
+            )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
+            filtereds.append(np.column_stack((mod_o_filt, mod_s_filt)))
 
         # make one big array
         raw = np.concatenate(raws)
+        filtered = np.concatenate(filtereds)
         # for each edge, there should be an pair of raw ranks
-        assert raw.shape == (num_tested, 2)
+        assert raw.shape == filtered.shape == (num_tested, 2)
 
-        return raw
-
-    def _embed(self, count, name):
-        return Embedding(
-            count,
-            self.k,
-            name=name,
-            embeddings_initializer=self.embeddings_initializer,
-            embeddings_regularizer=self.embeddings_regularizer,
-        )
+        return raw, filtered
 
     def __call__(self, x):
         """
@@ -246,27 +246,20 @@ class ComplEx:
         """
         s_iloc, r_iloc, o_iloc = x
 
-        # ComplEx generates embeddings in C, which we model as separate real and imaginary
-        # embeddings
-        node_embeddings_real = self._embed(self.num_nodes, self._NODE_REAL)
-        node_embeddings_imag = self._embed(self.num_nodes, self._NODE_IMAG)
-        edge_type_embeddings_real = self._embed(self.num_edge_types, self._REL_REAL)
-        edge_type_embeddings_imag = self._embed(self.num_edge_types, self._REL_IMAG)
+        s_re = self._node_embeddings_real(s_iloc)
+        s_im = self._node_embeddings_imag(s_iloc)
 
-        s_re = node_embeddings_real(s_iloc)
-        s_im = node_embeddings_imag(s_iloc)
+        r_re = self._edge_type_embeddings_real(r_iloc)
+        r_im = self._edge_type_embeddings_imag(r_iloc)
 
-        r_re = edge_type_embeddings_real(r_iloc)
-        r_im = edge_type_embeddings_imag(r_iloc)
-
-        o_re = node_embeddings_real(o_iloc)
-        o_im = node_embeddings_imag(o_iloc)
+        o_re = self._node_embeddings_real(o_iloc)
+        o_im = self._node_embeddings_imag(o_iloc)
 
         scoring = ComplExScore()
 
         return scoring([s_re, s_im, r_re, r_im, o_re, o_im])
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a ComplEx model.
 
@@ -281,6 +274,8 @@ class ComplEx:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")
 
 
 class DistMultScore(Layer):
@@ -317,9 +312,6 @@ class DistMultScore(Layer):
         return score
 
 
-@experimental(
-    reason="results from the reference paper have not been reproduced yet", issues=[981]
-)
 class DistMult:
     """
     Embedding layers and a DistMult scoring layers that implement the DistMult knowledge graph
@@ -354,42 +346,132 @@ class DistMult:
         self.num_nodes = graph.number_of_nodes()
         self.num_edge_types = len(graph._edges.types)
         self.embedding_dimension = embedding_dimension
-        self.embeddings_initializer = initializers.get(embeddings_initializer)
-        self.embeddings_regularizer = regularizers.get(embeddings_regularizer)
 
-    # layer names
-    _NODE = "DISTMULT_NODE"
-    _REL = "DISTMULT_EDGE_TYPE"
+        def embed(count):
+            # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
+            # constraints to be normalized: per section 4 in the paper, the embeddings should be
+            # normalised to have unit norm.
+            return Embedding(
+                count,
+                embedding_dimension,
+                embeddings_initializer=embeddings_initializer,
+                embeddings_regularizer=embeddings_regularizer,
+            )
 
-    @staticmethod
-    def embeddings(model):
+        # DistMult generates embeddings in R
+        self._node_embeddings = embed(self.num_nodes)
+        self._edge_type_embeddings = embed(self.num_edge_types)
+
+    def embeddings(self):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in the given model.
-
-        Args:
-            model (tensorflow.keras.Model): a Keras model created using a ``DistMult`` instance.
+        Retrieve the embeddings for nodes/entities and edge types/relations in this DistMult model.
 
         Returns:
             A tuple of numpy arrays: the first element is the embeddings for nodes/entities
             (``shape = number of nodes × k``), the second element is the embeddings for edge
             types/relations (``shape = number of edge types x k``).
         """
-        node = model.get_layer(DistMult._NODE).embeddings.numpy()
-        rel = model.get_layer(DistMult._REL).embeddings.numpy()
-
-        return node, rel
-
-    def _embed(self, count, name):
-        # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't use
-        # constraints to be normalized: per section 4 in the paper, the embeddings should be
-        # normalised to have unit norm.
-        return Embedding(
-            count,
-            self.embedding_dimension,
-            name=name,
-            embeddings_initializer=self.embeddings_initializer,
-            embeddings_regularizer=self.embeddings_regularizer,
+        return (
+            self._node_embeddings.embeddings.numpy(),
+            self._edge_type_embeddings.embeddings.numpy(),
         )
+
+    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
+        """
+        Returns the ranks of the true edges in ``test_data``, when scored against all other similar
+        edges.
+
+        For each input edge ``E = (s, r, o)``, the score of the *modified-object* edge ``(s, r, n)``
+        is computed for every node ``n`` in the graph, and similarly the score of the
+        *modified-subject* edge ``(n, r, o)``.
+
+        This computes "raw" and "filtered" ranks:
+
+        raw
+          The score of each edge is ranked against all of the modified-object and modified-subject
+          ones, for instance, if ``E = ("a", "X", "b")`` has score 3.14, and only one
+          modified-object edge has a higher score (e.g. ``F = ("a", "X", "c")``), then the raw
+          modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges have score
+          less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
+
+        filtered
+          The score of each edge is ranked against only the unknown modified-object and
+          modified-subject edges. An edge is considered known if it is in ``known_edges_graph``
+          which should typically hold every edge in the dataset (that is everything from the train,
+          test and validation sets, if the data has been split). For instance, continuing the raw
+          example, if the higher-scoring edge ``F`` is in the graph, then it will be ignored, giving
+          a filtered modified-object rank for ``E`` of 1. (If ``F`` was not in the graph, the
+          filtered modified-object rank would be 2.)
+
+        Args:
+            test_data: the output of :meth:`KGTripleGenerator.flow` on some test triples
+
+            known_edges_graph (StellarGraph):
+                a graph instance containing all known edges/triples
+
+        Returns:
+            A numpy array of integer raw ranks. It has shape ``N × 2``, where N is the number of
+            test triples in ``test_data``; the first column (``array[:, 0]``) holds the
+            modified-object ranks, and the second (``array[:, 1]``) holds the modified-subject
+            ranks.
+        """
+
+        if not isinstance(test_data, KGTripleSequence):
+            raise TypeError(
+                "test_data: expected KGTripleSequence; found {type(test_data).__name__}"
+            )
+
+        num_nodes = known_edges_graph.number_of_nodes()
+
+        all_node_embs, all_rel_embs = self.embeddings()
+
+        raws = []
+        filtereds = []
+
+        # run through the batches and compute the ranks for each one
+        num_tested = 0
+        for ((subjects, rels, objects),) in test_data:
+            num_tested += len(subjects)
+
+            # batch_size x k
+            ss = all_node_embs[subjects, :]
+            rs = all_rel_embs[rels, :]
+            os = all_node_embs[objects, :]
+
+            # reproduce the scoring function for ranking the given subject and relation against all
+            # other nodes (objects), and similarly given relation and object against all
+            # subjects. The bulk operations give speeeeeeeeed.
+            # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
+            mod_o_pred = np.inner(all_node_embs, ss * rs)
+            mod_s_pred = np.inner(all_node_embs, rs * os)
+
+            mod_o_raw, mod_o_filt = _ranks_from_score_columns(
+                mod_o_pred,
+                true_modified_node_ilocs=objects,
+                unmodified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=True,
+                known_edges_graph=known_edges_graph,
+            )
+            mod_s_raw, mod_s_filt = _ranks_from_score_columns(
+                mod_s_pred,
+                true_modified_node_ilocs=subjects,
+                true_rel_ilocs=rels,
+                modified_object=False,
+                unmodified_node_ilocs=objects,
+                known_edges_graph=known_edges_graph,
+            )
+
+            raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
+            filtereds.append(np.column_stack((mod_o_filt, mod_s_filt)))
+
+        # make one big array
+        raw = np.concatenate(raws)
+        filtered = np.concatenate(filtereds)
+        # for each edge, there should be an pair of raw ranks
+        assert raw.shape == filtered.shape == (num_tested, 2)
+
+        return raw, filtered
 
     def __call__(self, x):
         """
@@ -402,19 +484,15 @@ class DistMult:
         """
         e1_iloc, r_iloc, e2_iloc = x
 
-        # DistMult generates embeddings in R
-        node_embeddings = self._embed(self.num_nodes, self._NODE)
-        edge_type_embeddings = self._embed(self.num_edge_types, self._REL)
-
-        y_e1 = node_embeddings(e1_iloc)
-        m_r = edge_type_embeddings(r_iloc)
-        y_e2 = node_embeddings(e2_iloc)
+        y_e1 = self._node_embeddings(e1_iloc)
+        m_r = self._edge_type_embeddings(r_iloc)
+        y_e2 = self._node_embeddings(e2_iloc)
 
         scoring = DistMultScore()
 
         return scoring([y_e1, m_r, y_e2])
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a DistMult model.
 
@@ -429,3 +507,86 @@ class DistMult:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")
+
+
+def _ranks_from_score_columns(
+    pred,
+    *,
+    true_modified_node_ilocs,
+    unmodified_node_ilocs,
+    true_rel_ilocs,
+    modified_object,
+    known_edges_graph,
+):
+    """
+    Compute the raw and filtered ranks of a set of true edges ``E = (s, r, o)`` against all
+    mutations of one end of them, e.g. ``E' = (s, r, n)`` for "modified-object".
+
+    The raw rank is the total number of edges scored higher than the true edge ``E``, and the
+    filtered rank is the total number of unknown edges (not in ``known_edges_graph``).
+
+    Args:
+
+        pred: a 2D array: each column represents the scores for a single true edge and its
+            mutations, where the row indicates the ``n`` in ``E'`` (e.g. row 0 corresponds to ``n``
+            = node with iloc 0)
+        true_modified_node_ilocs: an array of ilocs of the actual node that was modified, that is,
+            ``o`` for modified-object and ``s`` for modified subject``, index ``i`` corresponds to
+            the iloc for column ``pred[:, i]``.
+        unmodified_node_ilocs: similar to ``true_modified_node_ilocs``, except for the other end of
+            the edge: the node that was not modified.
+        true_rel_ilocs: similar to ``true_modified_node_ilocs``, except for the relationship type of
+            the edge (``r``).
+        modified_object (bool): whether the object was modified (``True``), or the subject
+            (``False``)
+        known_edges_graph (StellarGraph): a graph containing all the known edges that should be
+            ignored when computing filtered ranks
+
+    Returns:
+        a tuple of raw ranks and filtered ranks, each is an array of integers >= 1 where index ``i``
+        corresponds to the rank of the true edge among all of the scores in column ``pred[:, i]``.
+    """
+    batch_size = len(true_modified_node_ilocs)
+    assert pred.shape == (known_edges_graph.number_of_nodes(), batch_size)
+    assert unmodified_node_ilocs.shape == true_rel_ilocs.shape == (batch_size,)
+
+    # the score of the true edge, for each edge in the batch (this indexes in lock-step,
+    # i.e. [pred[true_modified_node_ilocs[0], range(batch_size)[0]], ...])
+    true_scores = pred[true_modified_node_ilocs, range(batch_size)]
+
+    # for each column, compare all the scores against the score of the true edge
+    greater = pred > true_scores
+
+    # the raw rank is the number of elements scored higher than the true edge
+    raw_rank = 1 + greater.sum(axis=0)
+
+    # the filtered rank is the number of unknown elements scored higher, where an element is
+    # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
+    # exists in known_edges_graph.
+
+    # FIXME(#870): this would be better without external IDs <-> ilocs translation
+    unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(unmodified_node_ilocs)
+    true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
+    if modified_object:
+        neigh_func = known_edges_graph.out_nodes
+    else:
+        neigh_func = known_edges_graph.in_nodes
+
+    # collect all the neighbours into a single array to do one _get_index_for_nodes call,
+    # which has relatively high constant cost
+    neighbours = []
+    columns = []
+    for batch_column, (unmodified, r) in enumerate(zip(unmodified_nodes, true_rels)):
+        this_neighs = neigh_func(unmodified, edge_types=[r])
+        neighbours.extend(this_neighs)
+        columns.extend(batch_column for _ in this_neighs)
+
+    neighbour_ilocs = known_edges_graph._get_index_for_nodes(neighbours)
+    greater[neighbour_ilocs, columns] = False
+
+    filtered_rank = 1 + greater.sum(axis=0)
+
+    assert raw_rank.shape == filtered_rank.shape == (batch_size,)
+    return raw_rank, filtered_rank

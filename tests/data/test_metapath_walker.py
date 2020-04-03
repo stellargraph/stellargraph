@@ -294,6 +294,23 @@ class TestMetaPathWalk(object):
         for walk in walks:
             assert len(walk) <= length  # test against maximum walk length
 
+    def test_init_parameters(self):
+        g = create_test_graph()
+        n = 2
+        length = 15
+        metapaths = [["s", "n", "n", "s"]]
+        seed = 42
+        nodes = ["0", "5"]
+
+        mrw = UniformRandomMetaPathWalk(
+            g, n=n, length=length, metapaths=metapaths, seed=seed
+        )
+        mrw_no_params = UniformRandomMetaPathWalk(g)
+
+        assert mrw.run(nodes=nodes) == mrw_no_params.run(
+            nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed
+        )
+
     def test_benchmark_uniformrandommetapathwalk(self, benchmark):
 
         g = create_test_graph()
