@@ -135,7 +135,6 @@ class UnsupervisedSampler:
         all_nodes = list(self.graph.nodes())
         # Use the sampling distribution as per node2vec
         degrees = self.graph.node_degrees()
-
         sampling_distribution = np.array([degrees[n] ** 0.75 for n in all_nodes])
         sampling_distribution_norm = sampling_distribution / np.sum(
             sampling_distribution
