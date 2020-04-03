@@ -21,43 +21,48 @@ The demo notebooks can be run without any installation of Python by using Binder
 
 ## Find a demo for an algorithm
 
-| algorithm                                                                 | *heter.*      | *EW* | *NF* | NC | I(NC)  | LP | RL        | ind.            | GC |
-|---------------------------------------------------------------------------|-------------|----|----|----|---|----|-----------|-----------------|----|
-| GCN (Graph Convolutional Network)                                         | see RGCN    |    | ✔️ | ✅ |   | ✅ | ✅ US DGI | see Cluster-GCN | ✅ |
-| Cluster-GCN                                                               |             |    | ✔️ | ✅ |   | ✅ |           | ✅              |    |
-| RGCN (Relational GCN)                                                     | ✔️         |    | ✔️ | ✅ |   | ✅ |           |                 |    |
-| GAT (Graph ATtention Network)                                             |             |    | ✔️ | ✅ |   | ✅ | ✅ US DGI |                 |    |
-| SGC (Simplified Graph Convolution)                                        |             |    | ✔️| ✅ |   | ✅ |           |                 |    |
-| APPNP/PPNP ((Approximate) Personalized Propagation of Neural Predictions) |             |    | ✔️ | ✅ |   | ✅ | ✅ US DGI |                 |    |
-| GraphWave                                                                 |             |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
-| Attri2Vec                                                                 |             |    | ✔️ | ☑️  |   | ☑️  | ✅        |                 |    |
-| **Sampling methods**                                                      |             |    |    |    |   |    |           |                 |    |
-| GraphSAGE                                                                 | see HinSAGE |    | ✔️ | ✅ |   | ✅ | ✅ US DGI | ✅              |    |
-| HinSAGE                                                                   | ✔️         |    | ✔️ | ✅ |   | ✅ |           | ✅              |    |
-| **Random walks**                                                          |             |    |    |    |   |    |           |                 |    |
-| Node2Vec                                                                  |             | ✔️ |    | ☑️  |   | ☑️  | ✅        |                 |    |
-| MetaPath2Vec                                                              | ✔️          |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
-| CTDNE (Continuous-Time Dynamic Network Embeddings)                        |             |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
-| Watch Your Step (simulated random walks)                                  |             |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
-| **Knowledge graphs**                                                      |             |    |    |    |   |    |           |                 |    |
-| ComplEx                                                                   | ✔️          |    |    | ☑️  |   | ✅ | ☑️         |                 |    |
-| DistMult                                                                  | ✔️          |    |    | ☑️  |   | ✅ | ☑️         |                 |    |
+| algorithm                                             | *heter.*    | *D* | *EW* | *NF* | NC | I(NC) | LP | RL                     | ind.            | GC |
+|-------------------------------------------------------|-------------|-----|------|------|----|-------|----|------------------------|-----------------|----|
+| GCN (Graph Convolutional Network)                     | see RGCN    |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  | see Cluster-GCN | ✅ |
+| Cluster-GCN                                           |             |     |      | ✔️    | ✅ |       | ✅ |                        | ☑️               |    |
+| RGCN (Relational GCN)                                 | ✔ (edges)️   |     |      | ✔️    | ✅ |       | ✅ |                        |                 |    |
+| GAT (Graph ATtention Network)                         |             |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  |                 |    |
+| SGC (Simplified Graph Convolution)                    |             |     |      | ✔️    | ✅ |       | ✅ |                        |                 |    |
+| PPNP (Personalized Propagation of Neural Predictions) |             |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  |                 |    |
+| APPNP (Approximate PPNP)                              |             |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  |                 |    |
+| GraphWave                                             |             |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
+| Attri2Vec                                             |             |     |      | ✔️    | ✅️ |       | ☑️  | ✅                     |                 |    |
+| **Sampling methods**                                  |             |     |      |      |    |       |    |                        |                 |    |
+| GraphSAGE                                             | see HinSAGE |     |      | ✔️    | ✅ |       | ✅ | ✅&nbsp;US ✅&nbsp;DGI | ✅              |    |
+| Directed GraphSAGE                                    |             | ✔   |      | ✔️    | ✅ |       | ✅ | ✅&nbsp;US ✅&nbsp;DGI | ✅              |    |
+| HinSAGE                                               | ✔️           |     |      | ✔️    | ✅ |       | ✅ |                        | ✅              |    |
+| **Random walks**                                      |             |     |      |      |    |       |    |                        |                 |    |
+| Node2Vec                                              |             |     | ✔️    |      | ✅️ |       | ☑️  | ✅                     |                 |    |
+| MetaPath2Vec                                          | ✔️           |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
+| CTDNE (Continuous-Time Dynamic Network Embeddings)    |             |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
+| Watch Your Step (simulated random walks)              |             |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
+| **Knowledge graphs**                                  |             |     |      |      |    |       |    |                        |                 |    |
+| ComplEx                                               | ✔️(edges)    | ✔   |      |      | ☑️  |       | ✅ | ☑️                      |                 |    |
+| DistMult                                              | ✔️(edges)    | ✔   |      |      | ☑️  |       | ✅ | ☑️                      |                 |    |
 
-| abbreviation | explanation                                                                                                                                                                                                             |
-|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| heter.       | Heterogeneous graphs. Algorithms without this support can still be used with heterogeneous graphs by ignoring the types.                                                                                                |
-| EW           | Edge weights. Algorithms without this support still work on weighted graphs, by ignoring the weights.                                                                                                                   |
-| NF           | Node feature vectors. Algorithms without this support still work on graphs with features, by ignoring the features.                                                                                                     |
-| ✔️            | Algorithm can use this information about a graph                                                                                                                                                                        |
-| NC           | Node classification, predicting attributes on nodes/vertices/entities.                                                                                                                                                  |
-| INC          | Interpretability for node classification, providing insight into which features and links influence the prediction of an attribute.                                                                                     |
-| LP           | Link prediction, predicting attributes on links/edges/connections.                                                                                                                                                      |
-| RL           | Representation learning, computing embedding vectors for nodes and links (by combining node embeddings), usually unsupervised. These embeddings can be used for downstream tasks like NC and LP, and GC (with pooling). |
-| GC           | Graph classification, predicting attributes                                                                                                                                                                             |
-| ind.         | Inductive, the algorithm generalises to new entities not seen during training.                                                                                                                                          |
-| DGI          | `DeepGraphInfomax`, a method for doing unsupervised training using mutual information.                                                                                                                                  |
-| US           | `UnsupervisedSampler`, a method for doing unsupervised training by creating a link prediction problem with random walks.                                                                                                |
-| ✅           | Demo available (and link).                                                                                                                                                                                              |
-| ☑️            | Supported without an explicit demo, such as training a logistic regression model on node embedding vectors (RL) to do node classification (NC).                                                                         |
+How to read this table:
+
+| abbreviation | explanation |
+|---|---|
+| heter. | Heterogeneous graphs. Algorithms without this support can still be used with heterogeneous graphs by ignoring the types. |
+| D | Directed graphs. Algorithms without this support still work on directed graphs, by ignoring the direction |
+| EW | Edge weights. Algorithms without this support still work on weighted graphs, by ignoring the weights. |
+| NF | Node feature vectors. Algorithms without this support still work on graphs with features, by ignoring the features. |
+| ✔️ | Algorithm can use this information about a graph |
+| NC | Node classification, predicting attributes on nodes/vertices/entities. |
+| INC | Interpretability for node classification, providing insight into which features and links influence the prediction of an attribute. |
+| LP | Link prediction, predicting attributes on links/edges/connections. |
+| RL | Representation learning, computing embedding vectors for nodes and links (by combining node embeddings), usually unsupervised. These embeddings can be used for downstream tasks like NC and LP, and GC (with pooling). |
+| GC | Graph classification, predicting attributes |
+| ind. | Inductive, the algorithm generalises to new entities not seen during training. |
+| DGI | `DeepGraphInfomax`, a method for doing unsupervised training using mutual information. |
+| US | `UnsupervisedSampler`, a method for doing unsupervised training by creating a link prediction problem with random walks. |
+| ✅ | Demo available, linked. |
+| ☑️ | Supported without an explicit demo, such as training a logistic regression model on node embedding vectors (RL) to do node classification (NC). |
 
 See [the root README](../README.md) or each algorithm's documentation for the relevant citation(s).
