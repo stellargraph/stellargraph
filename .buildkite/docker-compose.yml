@@ -8,12 +8,12 @@ services:
       args:
         PYTHON_VERSION: "3.6"
     working_dir: /workdir
-    volumes:
+    volumes: &runner-volumes
       - $PWD:/workdir
       # We need to manually bring in buildkite-agent
       # (https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/issues/158)
       - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
-    environment:
+    environment: &runner-environment
       - PYTHONDONTWRITEBYTECODE=1
       # make sure that no new uses of the legacy constructor are added (see also: test in
       # test_graph.py, filterwarnings in pytest.ini)
@@ -60,3 +60,9 @@ services:
     environment:
       # this is running entirely locally on a CI machine, so authentication is unnecessary
       NEO4J_AUTH: "none"
+
+  conda:
+    image: continuumio/anaconda3
+    working_dir: /workdir
+    volumes: *runner-volumes
+    environment: *runner-environment
