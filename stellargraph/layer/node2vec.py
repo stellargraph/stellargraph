@@ -26,7 +26,7 @@ from tensorflow.keras.layers import Reshape, Embedding
 import math
 from tensorflow import keras
 import warnings
-
+from .misc import deprecated_model_function
 from ..mapper import Node2VecLinkGenerator, Node2VecNodeGenerator
 
 
@@ -136,7 +136,7 @@ class Node2Vec:
 
         return h_layer
 
-    def node_model(self, embedding="input"):
+    def _node_model(self, embedding="input"):
         """
         Builds a Node2Vec model for node prediction.
 
@@ -157,7 +157,7 @@ class Node2Vec:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         """
         Builds a Node2Vec model for link or node pair prediction.
 
@@ -167,14 +167,14 @@ class Node2Vec:
 
         """
         # Expose input and output sockets of the model, for source node:
-        x_inp_src, x_out_src = self.node_model("input")
-        x_inp_dst, x_out_dst = self.node_model("output")
+        x_inp_src, x_out_src = self._node_model("input")
+        x_inp_dst, x_out_dst = self._node_model("output")
 
         x_inp = [x_inp_src, x_inp_dst]
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a Node2Vec model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -186,9 +186,9 @@ class Node2Vec:
 
         """
         if self.multiplicity == 1:
-            return self.node_model()
+            return self._node_model()
         elif self.multiplicity == 2:
-            return self.link_model()
+            return self._link_model()
         else:
             raise RuntimeError(
                 "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
@@ -197,8 +197,12 @@ class Node2Vec:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
-            PendingDeprecationWarning,
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
         return self.build()
+    
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

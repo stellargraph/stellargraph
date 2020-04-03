@@ -150,20 +150,8 @@ class UnsupervisedSampler:
             sampling_distribution
         )
 
-        if isinstance(self.walker, UniformRandomWalk):  # for uniform random walk
-            walks = self.walker.run(
-                nodes=self.nodes, length=self.length, n=self.number_of_walks
-            )
-        else:  # for biased random walk
-            walks = self.walker.run(
-                nodes=self.nodes,
-                length=self.length,
-                n=self.number_of_walks,
-                p=self.p,
-                q=self.q,
-                weighted=self.weighted,
-            )
-
+        walks = self.walker.run(nodes=self.nodes)
+        
         # first item in each walk is the target/head node
         targets = [walk[0] for walk in walks]
 
