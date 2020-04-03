@@ -65,7 +65,7 @@ class BatchedNodeGenerator(abc.ABC):
         schema (GraphSchema): [Optional] Schema for the graph, for heterogeneous graphs.
     """
 
-    def __init__(self, G, batch_size, schema=None):
+    def __init__(self, G, batch_size, schema=None, use_node_features=True):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -88,6 +88,10 @@ class BatchedNodeGenerator(abc.ABC):
 
         # Create sampler for GraphSAGE
         self.sampler = None
+
+        # Check if the graph has features
+        if use_node_features:
+            G.check_graph_for_ml()
 
     @abc.abstractmethod
     def sample_features(self, head_nodes, batch_num):
@@ -204,9 +208,6 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         self.head_node_types = self.schema.node_types
         self.name = name
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
             warnings.warn(
@@ -310,9 +311,6 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         self.out_samples = out_samples
         self.head_node_types = self.schema.node_types
         self.name = name
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
@@ -418,9 +416,6 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         self.num_samples = num_samples
         self.name = name
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
         # The head node type
         if head_node_type not in self.schema.node_types:
             raise KeyError("Supplied head node type must exist in the graph")
@@ -517,9 +512,6 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
         super().__init__(G, batch_size)
         self.name = name
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
     def sample_features(self, head_nodes, batch_num):
         """
         Sample content features of the head nodes, and return these as a list of feature
@@ -599,7 +591,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
     """
 
     def __init__(self, G, batch_size, name=None):
-        super().__init__(G, batch_size)
+        super().__init__(G, batch_size, use_node_features=False)
         self.name = name
 
     def sample_features(self, head_nodes, batch_num):
@@ -633,7 +625,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
 
         Returns:
             A NodeSequence object to use with the Node2Vec model
-            in the Keras method ``predict_generator``.
+            in the Keras method ``predict``.
         """
 
         return NodeSequence(
@@ -650,7 +642,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
 
         Returns:
             A NodeSequence object to use with the Node2Vec model
-            in the Keras method ``predict_generator``.
+            in the Keras method ``predict``.
         """
 
         return NodeSequence(self.sample_features, self.batch_size, node_ids.index)

@@ -51,7 +51,7 @@ from ..random import SeededPerBatch
 
 
 class BatchedLinkGenerator(abc.ABC):
-    def __init__(self, G, batch_size, schema=None):
+    def __init__(self, G, batch_size, schema=None, use_node_features=True):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -74,6 +74,10 @@ class BatchedLinkGenerator(abc.ABC):
 
         # Sampler (if required)
         self.sampler = None
+
+        # Check if the graph has features
+        if use_node_features:
+            G.check_graph_for_ml()
 
     @abc.abstractmethod
     def sample_features(self, head_links, batch_num):
@@ -221,9 +225,6 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self.num_samples = num_samples
         self.name = name
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
             warnings.warn(
@@ -350,9 +351,6 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         super().__init__(G, batch_size, schema)
         self.num_samples = num_samples
         self.name = name
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # This is a link generator and requires two nodes per query
         self.head_node_types = head_node_types
@@ -482,9 +480,6 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         self.name = name
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
     def sample_features(self, head_links, batch_num):
         """
         Sample content features of the target nodes and the ids of the context nodes
@@ -534,7 +529,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
     """
 
     def __init__(self, G, batch_size, name=None):
-        super().__init__(G, batch_size)
+        super().__init__(G, batch_size, use_node_features=False)
 
         self.name = name
 

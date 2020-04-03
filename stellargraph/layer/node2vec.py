@@ -174,7 +174,7 @@ class Node2Vec:
         x_out = [x_out_src, x_out_dst]
         return x_inp, x_out
 
-    def in_out_tensors(self):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a Node2Vec model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -185,6 +185,8 @@ class Node2Vec:
             model output tensor(s) of shape (batch_size, self.emb_size)
 
         """
+        if multiplicity is None:
+            multiplicity = self.multiplicity
         if self.multiplicity == 1:
             return self._node_model()
         elif self.multiplicity == 2:
@@ -202,7 +204,7 @@ class Node2Vec:
             stacklevel=2,
         )
         return self.build()
-    
+
     node_model = deprecated_model_function(_node_model, "node_model")
     link_model = deprecated_model_function(_link_model, "link_model")
     build = deprecated_model_function(in_out_tensors, "build")

@@ -19,7 +19,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, Node2VecNodeGenerator, Node2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, GraphGenerator, KGTripleGenerator
+  :members: FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Node2VecNodeGenerator, Node2VecLinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, GraphGenerator, KGTripleGenerator
 
 
 Layers and models
@@ -48,18 +48,6 @@ GraphSAGE
 .. autoclass: AttentionalAggregator
   :members:
 
-<<<<<<< HEAD
-Node2Vec model
-----------------
-
-.. automodule:: stellargraph.layer.node2vec
-  :members: Node2Vec
-
-
-GCN model
--------------
-=======
->>>>>>> develop
 
 HinSAGE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,6 +56,13 @@ HinSAGE
   :members:
 
 .. autoclass:: MeanHinAggregator
+  :members:
+
+
+Node2Vec
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: Node2Vec
   :members:
 
 

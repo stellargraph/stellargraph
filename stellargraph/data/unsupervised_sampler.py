@@ -23,7 +23,6 @@ import numpy as np
 from stellargraph.core.utils import is_real_iterable
 from stellargraph.core.graph import StellarGraph
 from stellargraph.data.explorer import UniformRandomWalk
-from stellargraph.data.explorer import BiasedRandomWalk
 from stellargraph.random import random_state
 
 
