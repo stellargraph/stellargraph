@@ -1,95 +1,63 @@
-## Table of Contents
+# StellarGraph demos
 
-This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
-data to solve several common problems including node attribute inference (inferring
-entity properties) and link prediction (predicting relations and/or their properties). The
-examples demonstrate using the `StellarGraph` library to build machine learning
-workflows on both homogeneous and heterogeneous networks.
 
-Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Cluster-GCN [10], PPNP/APPNP [9],
-Node2Vec [1], and Metapath2Vec [2].
-GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
-Metapath2Vec are methods based on graph random walks and representation learning using the
-Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks, and learns node
-representations by performing a mapping on node attributes.
+[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for graph machine learning. This folder contains demos of all of them to explain how they work and how to use them.
 
-The examples folder structure is shown below.
+The demo notebooks can be run without any installation of Python by using Binder or Google Colab - these both provide a cloud-based notebook environment.  The whole set of demos can be opened in Binder here: [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/README.md) or you can click the Binder and Colab badges within each notebook.
 
-* [`/basics`](https://github.com/stellargraph/stellargraph/tree/master/demos/basics)
+## Find algorithms for a task
 
-    Examples and tutorials of loading data into a format that can be used with any of the algorithms.
+- Predicting attributes, such as classifying as a class or label, or regressing to calculate a continuous number:
+  - For nodes/vertices/entities: [**node classification**](./node-classification)
+  - For edges/links/connections: [**link prediction**](./link-prediction) (includes knowledge graph completion)
+  - For graphs/networks: [**graph classification**](./graph-classification)
+  - Adjusting predictions scores to be probabilities (for any model): [**calibration**](./calibration)
+- Representation learning or computing embedding vectors (including unsupervised tasks):
+  - For nodes/vertices/entities and edges/links/connections: [**embeddings**](./embeddings) (and [**community detection**](./community_detection) for using these to cluster nodes)
+  - For graphs/networks: [**graph classification**](./graph-classification) (only supervised)
+- Ensembling models to reduce prediction variance: [**ensembles**](./ensembles)
+- Loading data into a `StellarGraph` object, with Pandas or NetworkX: [**basics**](./basics)
+- Experimental: running GraphSAGE on data stored in Neo4j: [**neo4j connector**](./connector/neo4j)
 
-* [`/embeddings`](https://github.com/stellargraph/stellargraph/tree/master/demos/embeddings)
+## Find a demo for an algorithm
 
-    Examples of unsupervised node representation learning for homogeneous networks, heterogeneous networks, and homogeneous networks with node features
-    using Node2Vec, Metapath2Vec, and Unsupervised GraphSAGE algorithm, respectively.
+| algorithm                                                                 | *heter.*      | *EW* | *NF* | NC | I(NC)  | LP | RL        | ind.            | GC |
+|---------------------------------------------------------------------------|-------------|----|----|----|---|----|-----------|-----------------|----|
+| GCN (Graph Convolutional Network)                                         | see RGCN    |    | ✔️ | ✅ |   | ✅ | ✅ US DGI | see Cluster-GCN | ✅ |
+| Cluster-GCN                                                               |             |    | ✔️ | ✅ |   | ✅ |           | ✅              |    |
+| RGCN (Relational GCN)                                                     | ✔️         |    | ✔️ | ✅ |   | ✅ |           |                 |    |
+| GAT (Graph ATtention Network)                                             |             |    | ✔️ | ✅ |   | ✅ | ✅ US DGI |                 |    |
+| SGC (Simplified Graph Convolution)                                        |             |    | ✔️| ✅ |   | ✅ |           |                 |    |
+| APPNP/PPNP ((Approximate) Personalized Propagation of Neural Predictions) |             |    | ✔️ | ✅ |   | ✅ | ✅ US DGI |                 |    |
+| GraphWave                                                                 |             |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
+| Attri2Vec                                                                 |             |    | ✔️ | ☑️  |   | ☑️  | ✅        |                 |    |
+| **Sampling methods**                                                      |             |    |    |    |   |    |           |                 |    |
+| GraphSAGE                                                                 | see HinSAGE |    | ✔️ | ✅ |   | ✅ | ✅ US DGI | ✅              |    |
+| HinSAGE                                                                   | ✔️         |    | ✔️ | ✅ |   | ✅ |           | ✅              |    |
+| **Random walks**                                                          |             |    |    |    |   |    |           |                 |    |
+| Node2Vec                                                                  |             | ✔️ |    | ☑️  |   | ☑️  | ✅        |                 |    |
+| MetaPath2Vec                                                              | ✔️          |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
+| CTDNE (Continuous-Time Dynamic Network Embeddings)                        |             |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
+| Watch Your Step (simulated random walks)                                  |             |    |    | ☑️  |   | ☑️  | ✅        |                 |    |
+| **Knowledge graphs**                                                      |             |    |    |    |   |    |           |                 |    |
+| ComplEx                                                                   | ✔️          |    |    | ☑️  |   | ✅ | ☑️         |                 |    |
+| DistMult                                                                  | ✔️          |    |    | ☑️  |   | ✅ | ☑️         |                 |    |
 
-* [`/link-prediction`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction)
+| abbreviation | explanation                                                                                                                                                                                                             |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| heter.       | Heterogeneous graphs. Algorithms without this support can still be used with heterogeneous graphs by ignoring the types.                                                                                                |
+| EW           | Edge weights. Algorithms without this support still work on weighted graphs, by ignoring the weights.                                                                                                                   |
+| NF           | Node feature vectors. Algorithms without this support still work on graphs with features, by ignoring the features.                                                                                                     |
+| ✔️            | Algorithm can use this information about a graph                                                                                                                                                                        |
+| NC           | Node classification, predicting attributes on nodes/vertices/entities.                                                                                                                                                  |
+| INC          | Interpretability for node classification, providing insight into which features and links influence the prediction of an attribute.                                                                                     |
+| LP           | Link prediction, predicting attributes on links/edges/connections.                                                                                                                                                      |
+| RL           | Representation learning, computing embedding vectors for nodes and links (by combining node embeddings), usually unsupervised. These embeddings can be used for downstream tasks like NC and LP, and GC (with pooling). |
+| GC           | Graph classification, predicting attributes                                                                                                                                                                             |
+| ind.         | Inductive, the algorithm generalises to new entities not seen during training.                                                                                                                                          |
+| DGI          | `DeepGraphInfomax`, a method for doing unsupervised training using mutual information.                                                                                                                                  |
+| US           | `UnsupervisedSampler`, a method for doing unsupervised training by creating a link prediction problem with random walks.                                                                                                |
+| ✅           | Demo available (and link).                                                                                                                                                                                              |
+| ☑️            | Supported without an explicit demo, such as training a logistic regression model on node embedding vectors (RL) to do node classification (NC).                                                                         |
 
-    Examples of using StellarGraph algorithms for link prediction on homogeneous and heterogeneous networks.
-
-* [`/node-classification`](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification)
-
-    Examples of using StellarGraph algorithms for node classification on homogeneous and heterogenous networks.
-
-* [`/ensembles`](https://github.com/stellargraph/stellargraph/tree/master/demos/ensembles)
-
-    Examples of using ensembles of graph convolutional neural networks, e.g., GraphSAGE, GCN, HinSAGE, etc., for
-    node classification and link prediction. Model ensembles usually yield better predictions than single models,
-    while also providing estimates of prediction uncertainty as a bonus.
-
-* [`/calibration`](https://github.com/stellargraph/stellargraph/tree/master/demos/calibration)
-
-    Examples of calibrating graph convolutional neural networks, e.g., GraphSAGE, for binary and
-    multi-class classification problems.
-
-* [`/community_detection`](https://github.com/stellargraph/stellargraph/tree/master/demos/community_detection)
-
-    Examples of using unsupervised GraphSAGE embeddings in a context of community detection. Community detection is demonstrated on a terrorist network, where groups of terrorist groups are found using dbscan on top of the graphSAGE embeddings.
-    Note that this demo requires the installation of `igraph-python`, see the `README.md` in this directory for more details.
-
-* [`/interpretability`](https://github.com/stellargraph/stellargraph/tree/master/demos/interpretability)
-
-    Examples of using saliency map based methods, such as integrated gradients [11], to provide interpretability to the graph neural networks, e.g., GCN. Saliency maps are used to approximate the importance of the nodes and links (in the ego network of a target node) while making the prediction.
-
-* [`/use-cases`](https://github.com/stellargraph/stellargraph/tree/master/demos/use-cases)
-
-    Example use-cases/applications for graph neural network algorithms.
-
-## Getting Started
-
-The demo notebooks can be run without any installation of Python by using Binder or Google Colab - these both provide a cloud-based notebook environment.  The whole set of demos can be opened in Binder here: [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos) or you can click the Binder and Colab badges within each notebook.
-
-## References
-
-1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on
-Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
-
-2. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
-Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
-([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
-
-3. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
-[cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
-
-4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095,
-[cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
-
-5. Distributed representations of words and phrases and their compositionality. T. Mikolov,
-I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Information Processing
- Systems (NIPS), pp. 3111-3119, 2013. ([link](https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf))
-
-6. Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling.
-ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
-
-7. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
-
-8. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger.
-ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
-
-9. Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
-
-10. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))
-
-11. Axiomatic Attribution for Deep Networks. Mukund Sundararajan, Ankur Taly and Qiqi Yan. ICML 2017. ([link](https://arxiv.org/pdf/1703.01365.pdf))
+See [the root README](../README.md) or each algorithm's documentation for the relevant citation(s).
