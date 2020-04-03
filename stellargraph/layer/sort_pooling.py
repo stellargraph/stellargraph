@@ -86,10 +86,14 @@ class SortPooling(Layer):
             inputs,
         )
 
-        # Truncate or pad to size self.k
-        if outputs.shape[1] < self.k:
-            outputs = tf.pad(outputs, [[0, 0], [0, self.k - outputs.shape[1]], [0, 0]])
-        elif outputs.shape[1] > self.k:
-            outputs = outputs[:, : self.k, :]
+        outputs_shape = tf.shape(outputs)
+
+        outputs = tf.cond(
+            tf.math.less(outputs_shape, self.k)[1],
+            true_fn=lambda: tf.pad(
+                outputs, [[0, 0], [0, (self.k - outputs_shape)[1]], [0, 0]]
+            ),
+            false_fn=lambda: outputs[:, : self.k, :],
+        )
 
         return outputs
