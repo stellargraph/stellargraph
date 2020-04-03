@@ -14,16 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+# import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
-from tensorflow.keras import activations, initializers, constraints, regularizers
-from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
+
+# from tensorflow.keras import activations, initializers, constraints, regularizers
 
 from .misc import deprecated_model_function
 from ..mapper import GraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
 from .sort_pooling import SortPooling
+
+from tensorflow.keras.layers import Input, Dropout, GlobalAveragePooling1D
 
 
 class GraphClassificationConvolution(ClusterGraphConvolution):
@@ -248,7 +250,7 @@ class GCNSupervisedGraphClassification:
 ###
 
 
-class DeepGraphConvolutionalNeuralNetwork:
+class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
     """
     A stack of :class:`GraphClassificationConvolution` layers together with a `SortPooling` layer
     that implement a supervised graph classification network (DGCNN) using the GCN convolution operator
@@ -320,16 +322,19 @@ class DeepGraphConvolutionalNeuralNetwork:
         bias_regularizer=None,
         bias_constraint=None,
     ):
-        if not isinstance(generator, GraphGenerator):
-            raise TypeError(
-                f"generator: expected instance of GraphGenerator, found {type(generator).__name__}"
-            )
-
-        if len(layer_sizes) != len(activations):
-            raise ValueError(
-                "expected the number of layers to be the same as the number of activations,"
-                f"found {len(layer_sizes)} layer sizes vs {len(activations)} activations"
-            )
+        super().__init__(
+            layer_sizes=layer_sizes,
+            activations=activations,
+            generator=generator,
+            bias=bias,
+            dropout=dropout,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            kernel_constraint=kernel_constraint,
+            bias_initializer=bias_initializer,
+            bias_regularizer=bias_regularizer,
+            bias_constraint=bias_constraint,
+        )
 
         if not isinstance(k, int):
             raise TypeError(
@@ -339,35 +344,9 @@ class DeepGraphConvolutionalNeuralNetwork:
         if k <= 0:
             raise ValueError(f"k: expected k to be strictly positive, found {k}")
 
-        self.layer_sizes = layer_sizes
-        self.activations = activations
         self.k = k
-        self.bias = bias
-        self.dropout = dropout
-        self.generator = generator
 
-        # Initialize a stack of GraphClassificationConvolution layers
-        n_layers = len(self.layer_sizes)
-        self._layers = []
-        for ii in range(n_layers):
-            l = self.layer_sizes[ii]
-            a = self.activations[ii]
-            self._layers.append(Dropout(self.dropout))
-            self._layers.append(
-                GraphClassificationConvolution(
-                    l,
-                    activation=a,
-                    use_bias=self.bias,
-                    kernel_initializer=kernel_initializer,
-                    kernel_regularizer=kernel_regularizer,
-                    kernel_constraint=kernel_constraint,
-                    bias_initializer=bias_initializer,
-                    bias_regularizer=bias_regularizer,
-                    bias_constraint=bias_constraint,
-                )
-            )
-
-        # And the SortPooling layer
+        # Add the SortPooling layer
         self._layers.append(SortPooling(k=self.k))
 
     def __call__(self, x):
@@ -416,13 +395,6 @@ class DeepGraphConvolutionalNeuralNetwork:
             Graph Classification model (containing node features and normalized adjacency matrix),
             and `x_out` is a tensor for the DGCNN Graph Classification model output.
         """
-        x_t = Input(shape=(None, self.generator.node_features_size))
-        mask = Input(shape=(None,), dtype=tf.bool)
-        A_m = Input(shape=(None, None))
-
-        x_inp = [x_t, mask, A_m]
-        x_out = self(x_inp)
-
-        return x_inp, x_out
+        return super().in_out_tensors()
 
     build = deprecated_model_function(in_out_tensors, "build")
