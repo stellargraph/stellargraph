@@ -27,6 +27,13 @@ from stellargraph.data.explorer import BiasedRandomWalk
 from stellargraph.random import random_state
 
 
+def _warn_if_ignored(value, default, name):
+    if value != default:
+        raise ValueError(
+            f"walker, {name}: cannot specify both 'walker' and '{name}'. Please use one or the other."
+        )
+
+
 class UnsupervisedSampler:
     """
         The UnsupervisedSampler is responsible for sampling walks in the given graph
@@ -35,30 +42,24 @@ class UnsupervisedSampler:
         The positive samples are all the (target, context) pairs from the walks and the negative
         samples are contexts generated for each target based on a sampling distribtution.
 
-        Currently uniform random walks and biased random walks are performed, other walk strategies
-        will be enabled in the future.
+        By default, a UniformRandomWalk is used, but a custom `walker` can be specified instead. An
+        error will be raised if other parameters are specified along with a custom `walker`.
 
         Args:
             G (StellarGraph): A stellargraph with features.
-            nodes (optional, iterable) The root nodes from which individual walks start.
+            nodes (iterable, optional) The root nodes from which individual walks start.
                 If not provided, all nodes in the graph are used.
-            length (int): An integer giving the length of the walks. Length must be at least 2.
-            number_of_walks (int): Number of walks from each root node.
-            seed(int): the seed used to generate the initial random state
-            walker: the walker used to generate random walks, which can be an instance of UniformRandomWalk or BiasedRandomWalk. If walker
-                is None, it will be set to an instance of UniformRandomWalk.
-            **kwargs: optional hyperparameters (p, q, weighted) for biased random walkers.
+            length (int): Length of the walks for the default UniformRandomWalk walker. Length must
+                be at least 2.
+            number_of_walks (int): Number of walks from each root node for the default
+                UniformRandomWalk walker.
+            seed (int, optional): Random seed for the default UniformRandomWalk walker.
+            walker (RandomWalk, optional): A RandomWalk object to use instead of the default
+                UniformRandomWalk walker.
     """
 
     def __init__(
-        self,
-        G,
-        nodes=None,
-        length=2,
-        number_of_walks=1,
-        seed=None,
-        walker=None,
-        **kwargs,
+        self, G, nodes=None, length=2, number_of_walks=1, seed=None, walker=None,
     ):
         if not isinstance(G, StellarGraph):
             raise ValueError(
@@ -69,25 +70,16 @@ class UnsupervisedSampler:
         else:
             self.graph = G
 
+        # Instantiate the walker class used to generate random walks in the graph
         if walker is not None:
-            # only work with UniformRandomWalker and BiasedRandomWalker at the moment
-            if not isinstance(walker, UniformRandomWalk) and not isinstance(
-                walker, BiasedRandomWalk
-            ):
-                raise TypeError(
-                    "({}) Only the UniformRandomWalks and BiasedRandomWalks are possible".format(
-                        type(self).__name__
-                    )
-                )
-            else:
-                self.walker = walker
+            _warn_if_ignored(length, 2, "length")
+            _warn_if_ignored(number_of_walks, 1, "number_of_walks")
+            _warn_if_ignored(seed, None, "seed")
+            self.walker = walker
         else:
-            self.walker = UniformRandomWalk(G, seed=seed)
-
-        if isinstance(self.walker, BiasedRandomWalk):
-            self.p = kwargs.get("p", 1.0)
-            self.q = kwargs.get("q", 1.0)
-            self.weighted = kwargs.get("weighted", False)
+            self.walker = UniformRandomWalk(
+                G, n=number_of_walks, length=length, seed=seed
+            )
 
         # Define the root nodes for the walks
         # if no root nodes are provided for sampling defaulting to using all nodes as root nodes.
@@ -151,7 +143,7 @@ class UnsupervisedSampler:
         )
 
         walks = self.walker.run(nodes=self.nodes)
-        
+
         # first item in each walk is the target/head node
         targets = [walk[0] for walk in walks]
 
