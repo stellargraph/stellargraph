@@ -85,6 +85,9 @@
      ```shell
      conda build .
      ```
+
+      NOTE: The Conda package is also built in CI, and uploaded to a Buildkite artifact in the "conda build" stage of the pipeline.  It's possible to download this artifact to be uploaded in the following step, rather than building the conda package locally.
+
    - Upload to Anaconda Cloud in the “stellargraph” organization
      ```shell
      conda build . --output # find the path to the package
