@@ -281,9 +281,10 @@ class NodeData(ElementData):
             raise ValueError("unknown IDs")
 
         try:
-            return tf.nn.embedding_lookup(
-                self._features[type_name], feature_ilocs.astype(int),
-            )
+            with tf.device("/CPU:0"):
+                return tf.nn.embedding_lookup(
+                    self._features[type_name], feature_ilocs.astype(int),
+                )
         except InvalidArgumentError:
             # some of the indices were too large (from a later type)
             raise ValueError("unknown IDs")

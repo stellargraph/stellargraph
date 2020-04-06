@@ -89,7 +89,8 @@ class ColumnarConverter:
         )
 
         if self.allow_features:
-            features = tf.constant(other.to_numpy(dtype=self.dtype))
+            with tf.device("/CPU:0"):
+                features = tf.constant(other.to_numpy(dtype=self.dtype))
         elif len(other.columns) == 0:
             features = None
         else:

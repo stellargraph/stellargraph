@@ -348,10 +348,11 @@ def _full_batch_tensor_and_reshape(x, propagate_none=False):
     if propagate_none and x is None:
         return None
 
-    if not isinstance(x, tf.Tensor):
+    with tf.device("/CPU:0"):
         x = tf.constant(x)
+        x = tf.expand_dims(x, axis=0)
 
-    return tf.expand_dims(x, axis=0)
+    return x
 
 
 class FullBatchSequence(Sequence):
@@ -604,14 +605,15 @@ class GraphSequence(Sequence):
             graph_targets = self.targets[batch_start:batch_end]
 
         # pad adjacency and feature matrices to equal the size of those from the largest graph
-        features = [
-            tf.pad(
-                graph.node_features_tensors(graph.nodes()),
-                ((0, max_nodes - graph.number_of_nodes()), (0, 0)),
-            )
-            for graph in graphs
-        ]
-        features = tf.stack(features)
+        with tf.device("/CPU:0"):
+            features = [
+                tf.pad(
+                    graph.node_features_tensors(graph.nodes()),
+                    ((0, max_nodes - graph.number_of_nodes()), (0, 0)),
+                )
+                for graph in graphs
+            ]
+            features = tf.stack(features)
 
         for adj in adj_graphs:
             adj.resize((max_nodes, max_nodes))
@@ -665,8 +667,9 @@ class CorruptedNodeSequence(Sequence):
         self.base_generator = base_generator
         num_targets = base_generator.target_indices.shape[1]
 
-        target = tf.constant([[[1.0, 0.0]]], dtype=tf.float32)
-        self.targets = tf.tile(target, [1, num_targets, 1])
+        with tf.device("/CPU:0"):
+            target = tf.constant([[[1.0, 0.0]]], dtype=tf.float32)
+            self.targets = tf.tile(target, [1, num_targets, 1])
 
     def __len__(self):
         return len(self.base_generator)
@@ -676,8 +679,9 @@ class CorruptedNodeSequence(Sequence):
         inputs, _ = self.base_generator[index]
         features = inputs[0]
 
-        shuffled_feats = tf.expand_dims(
-            tf.random.shuffle(tf.squeeze(features, axis=0)), axis=0
-        )
+        with tf.device("/CPU:0"):
+            shuffled_feats = tf.expand_dims(
+                tf.random.shuffle(tf.squeeze(features, axis=0)), axis=0
+            )
 
         return [shuffled_feats] + inputs, self.targets
