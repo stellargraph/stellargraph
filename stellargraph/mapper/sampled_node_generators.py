@@ -359,7 +359,9 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         with tf.device("/CPU:0"):
             for slot in range(max_slots):
-                nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
+                nodes_in_slot = list(
+                    it.chain(*[sample[slot] for sample in node_samples])
+                )
                 features_for_slot = self.graph.node_features_tensors(
                     nodes_in_slot, node_type
                 )

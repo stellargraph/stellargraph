@@ -394,7 +394,9 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
             ]
 
             # Resize features to (batch_size, n_neighbours, feature_size)
-            batch_feats = [tf.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats]
+            batch_feats = [
+                tf.reshape(a, (head_size, -1, a.shape[1])) for a in batch_feats
+            ]
 
         return batch_feats
 
