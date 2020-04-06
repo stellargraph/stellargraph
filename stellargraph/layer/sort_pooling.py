@@ -23,8 +23,7 @@ from ..core.experimental import experimental
 class SortPooling(Layer):
 
     """
-    Sort Pooling Keras layer. A stack of such layers together with Keras convolutional layers can be used to create
-    graph classification models.
+    Sort Pooling Keras layer.
 
     Original paper: An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
     Y. Chen, AAAI-18, https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17146
@@ -43,8 +42,7 @@ class SortPooling(Layer):
 
     def get_config(self):
         """
-        Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Gets class configuration for Keras serialization. Used by keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
