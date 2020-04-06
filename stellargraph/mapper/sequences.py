@@ -349,9 +349,10 @@ def _full_batch_tensor_and_reshape(x, propagate_none=False):
         return None
 
     with tf.device("/CPU:0"):
-        x = tf.constant(x)
-        x = tf.expand_dims(x, axis=0)
+        if not isinstance(x, tf.Tensor):
+            x = tf.constant(x)
 
+        x = tf.expand_dims(x, axis=0)
     return x
 
 
