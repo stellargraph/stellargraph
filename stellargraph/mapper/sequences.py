@@ -662,15 +662,17 @@ class CorruptedNodeSequence(Sequence):
 
         if isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
             batch_reps = (1, base_generator.target_indices.shape[1], 1)
+            target = tf.constant([[[1.0, 0.0]]], dtype=tf.float32)
         elif isinstance(base_generator, NodeSequence):
             batch_reps = (base_generator.batch_size, 1)
+            target = tf.constant([[1.0, 0.0]], dtype=tf.float32)
         else:
             raise TypeError(
                 f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
                 f"or NodeSequence, found {type(base_generator).__name__}"
             )
         with tf.device("/CPU:0"):
-            target = tf.constant([[[1.0, 0.0]]], dtype=tf.float32)
+
             self.targets = tf.tile(target, batch_reps)
 
     def __len__(self):
@@ -680,32 +682,46 @@ class CorruptedNodeSequence(Sequence):
 
         inputs, _ = self.base_generator[index]
 
-        if isinstance(
-            self.base_generator, (FullBatchSequence, SparseFullBatchSequence)
-        ):
+        with tf.device("/CPU:0"):
 
-            with tf.device("/CPU:0"):
-                shuffled_feats = tf.expand_dims(
-                    tf.random.shuffle(tf.squeeze(features, axis=0)), axis=0
-                )
+            if isinstance(
+                self.base_generator, (FullBatchSequence, SparseFullBatchSequence)
+            ):
+                features = inputs[0]
+
+                shuffled_feats = [
+                    tf.expand_dims(
+                        tf.random.shuffle(tf.squeeze(features, axis=0)), axis=0
+                    )
+                ]
                 targets = self.targets
 
-        else:
+            else:
 
-            features = inputs
-            feature_dim = features[0].shape[-1]
-            head_nodes = features[0].shape[0]
+                features = inputs
+                feature_dim = _get_tf_dim(features[0], axis=2)
+                head_nodes = _get_tf_dim(features[0], axis=0)
 
-            shuffled_feats = np.concatenate(
-                [x.reshape(-1, feature_dim) for x in features], axis=0,
-            )
+                stacked_feats = np.concatenate(
+                    [tf.reshape(x, (-1, feature_dim)) for x in features], axis=0,
+                )
 
-            np.random.shuffle(shuffled_feats)
-            shuffled_feats = shuffled_feats.reshape((head_nodes, -1, feature_dim))
-            shuffled_feats = np.split(
-                shuffled_feats, np.cumsum([y.shape[1] for y in features])[:-1], axis=1
-            )
+                shuffled_feats = tf.random.shuffle(stacked_feats)
+                shuffled_feats = tf.reshape(
+                    shuffled_feats, (head_nodes, -1, feature_dim)
+                )
+                size_of_splits = [_get_tf_dim(x, axis=1) for x in features]
+                shuffled_feats = list(tf.split(shuffled_feats, size_of_splits, axis=1))
 
-            targets = self.targets[:head_nodes, :]
+                targets = tf.squeeze(
+                    tf.gather(self.targets, indices=[tf.range(head_nodes)]), axis=0
+                )
 
         return shuffled_feats + inputs, targets
+
+
+def _get_tf_dim(tensor, axis):
+
+    dim = tf.gather(tf.shape(tensor), indices=[axis])
+    dim_as_scalar = tf.reshape(dim, shape=[])
+    return dim_as_scalar
