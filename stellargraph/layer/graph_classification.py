@@ -17,15 +17,13 @@
 # import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
-
-# from tensorflow.keras import activations, initializers, constraints, regularizers
-
 from .misc import deprecated_model_function
 from ..mapper import GraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
 from .sort_pooling import SortPooling
 
 from tensorflow.keras.layers import Input, Dropout, GlobalAveragePooling1D
+from ..core.experimental import experimental
 
 
 class GraphClassificationConvolution(ClusterGraphConvolution):
@@ -247,9 +245,7 @@ class GCNSupervisedGraphClassification:
     build = deprecated_model_function(in_out_tensors, "build")
 
 
-###
-
-
+@experimental(reason="Missing unit tests and generally untested.")
 class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
     """
     A stack of :class:`GraphClassificationConvolution` layers together with a `SortPooling` layer
@@ -265,24 +261,6 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
     should be supplied using the :class:`GraphGenerator` class.
-
-    Examples:
-        Creating a DGCNN model from a list of :class:`StellarGraph`
-        objects (``graphs``). We also add two fully connected dense layers using the last one for binary classification
-        with `softmax` activation::
-
-            generator = GraphGenerator(graphs)
-            model = DeepGraphConvolutionalNeuralNetwork(
-                             layer_sizes=[32, 32],
-                             activations=["elu","elu"],
-                             k=5,
-                             generator=generator,
-                             dropout=0.5
-                )
-            x_inp, x_out = model.in_out_tensors()
-            # Need 1-D CNN layer here
-            predictions = Dense(units=8, activation='relu')(x_out)
-            predictions = Dense(units=2, activation='softmax')(predictions)
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.
@@ -338,7 +316,7 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
 
         if not isinstance(k, int):
             raise TypeError(
-                f"k: expected k to be integer type, found {type(k).__name}."
+                f"k: expected k to be integer type, found {type(k).__name__}."
             )
 
         if k <= 0:
