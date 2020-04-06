@@ -16,10 +16,8 @@
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from .sequences import GraphSequence
-from ..core.experimental import experimental
 
 
-@experimental(reason="Missing unit tests.", issues=[1042])
 class GraphGenerator:
     """
     A data generator for use with graph classification algorithms.
@@ -95,6 +93,16 @@ class GraphGenerator:
                 raise ValueError(
                     f"expected targets to be the same length as node_ids, found {len(targets)} vs {len(graph_ilocs)}"
                 )
+
+        if not isinstance(batch_size, int):
+            raise TypeError(
+                f"expected batch_size to be integer type, found {type(batch_size).__name__}"
+            )
+
+        if batch_size <= 0:
+            raise ValueError(
+                f"expected batch_size to be strictly positive integer, found {batch_size}"
+            )
 
         return GraphSequence(
             graphs=[self.graphs[i] for i in graph_ilocs],
