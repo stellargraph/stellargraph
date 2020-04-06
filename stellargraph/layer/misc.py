@@ -98,6 +98,14 @@ class SqueezedSparseConversion(Layer):
 
 
 class GatherIndices(Layer):
+    """
+    Gathers slices from a data tensor, based on an indices tensors (``tf.gather`` in Layer form).
+
+    Args:
+        axis (int or Tensor): the data axis to gather from.
+        batch_dims (int): the number of batch dimensions in the data and indices.
+    """
+
     def __init__(self, axis=None, batch_dims=0, **kwargs):
         super().__init__(**kwargs)
         self._axis = axis
@@ -111,9 +119,19 @@ class GatherIndices(Layer):
     def compute_output_shape(self, input_shapes):
         data_shape, indices_shape = input_shapes
         axis = self._batch_dims if self._axis is None else self._axis
-        return data_shape[:axis] + indices_shape[self._batch_dims:] + data_shape[axis + 1:]
+        # per https://www.tensorflow.org/api_docs/python/tf/gather
+        return (
+            data_shape[:axis]
+            + indices_shape[self._batch_dims :]
+            + data_shape[axis + 1 :]
+        )
 
     def call(self, inputs):
+        """
+        Args:
+            inputs (list): a pair of tensors, corresponding to the ``params`` and ``indices``
+                parameters to ``tf.gather``.
+        """
         data, indices = inputs
         return tf.gather(data, indices, axis=self._axis, batch_dims=self._batch_dims)
 

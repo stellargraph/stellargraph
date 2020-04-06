@@ -65,7 +65,9 @@ class APPNPPropagationLayer(Layer):
         self.units = units
         self.teleport_probability = teleport_probability
         if final_layer is not None:
-            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
     def get_config(self):
         """
@@ -279,8 +281,7 @@ class APPNP:
             self._layers.append(Dropout(self.dropout))
             self._layers.append(
                 APPNPPropagationLayer(
-                    feature_dim,
-                    teleport_probability=self.teleport_probability,
+                    feature_dim, teleport_probability=self.teleport_probability,
                 )
             )
 

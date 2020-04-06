@@ -58,7 +58,9 @@ class PPNPPropagationLayer(Layer):
 
         self.units = units
         if final_layer is not None:
-            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
     def get_config(self):
         """
@@ -230,9 +232,7 @@ class PPNP:
             )
 
         self._layers.append(Dropout(self.dropout))
-        self._layers.append(
-            PPNPPropagationLayer(self.layer_sizes[-1])
-        )
+        self._layers.append(PPNPPropagationLayer(self.layer_sizes[-1]))
 
     def __call__(self, x):
         """

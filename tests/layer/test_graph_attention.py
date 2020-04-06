@@ -572,7 +572,11 @@ class Test_GAT:
 
         # Load model from json & set all weights
         model2 = keras.models.model_from_json(
-            model_json, custom_objects={"GraphAttention": GraphAttention, "GatherIndices": GatherIndices}
+            model_json,
+            custom_objects={
+                "GraphAttention": GraphAttention,
+                "GatherIndices": GatherIndices,
+            },
         )
         model2.set_weights(model_weights)
 

@@ -91,7 +91,9 @@ class ClusterGraphConvolution(Layer):
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
         if final_layer is not None:
-            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
     def get_config(self):
         """

@@ -79,7 +79,9 @@ class GraphConvolution(Layer):
         self.activation = activations.get(activation)
         self.use_bias = use_bias
         if final_layer is not None:
-            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)

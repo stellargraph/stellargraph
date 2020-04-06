@@ -109,7 +109,9 @@ class GraphAttention(Layer):
         self.activation = activations.get(activation)  # Eq. 4 in the paper
         self.use_bias = use_bias
         if final_layer is not None:
-            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
         self.saliency_map_support = saliency_map_support
         # Populated by build()

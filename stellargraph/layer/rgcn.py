@@ -125,7 +125,9 @@ class RelationalGraphConvolution(Layer):
         self.coefficient_constraint = constraints.get(coefficient_constraint)
 
         if final_layer is not None:
-            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
         super().__init__(**kwargs)
 
