@@ -362,14 +362,7 @@ class APPNP:
 
         return h_layer
 
-    def in_out_tensors(self, multiplicity=None):
-        """
-        Builds an APPNP model for node or link prediction
-
-        Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the model and `x_out` is a tensor of the model output.
-        """
+    def _tensors(self, multiplicity, extra_layers):
         # Inputs for features
         x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
 
@@ -400,6 +393,17 @@ class APPNP:
         x_inp = [x_t, out_indices_t] + A_placeholders
         x_out = self(x_inp)
 
+        return x_inp, x_out
+
+    def in_out_tensors(self, multiplicity=None):
+        """
+        Builds an APPNP model for node or link prediction
+
+        Returns:
+            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
+            input tensors for the model and `x_out` is a tensor of the model output.
+        """
+        x_inp, x_out = self._tensors(multiplicity=multiplicity, extra_layers=[])
         # Flatten output by removing singleton batch dimension
         if x_out.shape[0] == 1:
             self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
@@ -438,50 +442,7 @@ class APPNP:
                 "APPNP does not currently support propagating a link model"
             )
 
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
-
-        if self.use_sparse:
-            # Placeholders for the sparse adjacency matrix
-            A_indices_t = Input(batch_shape=(1, None, 2), dtype="int64")
-            A_values_t = Input(batch_shape=(1, None))
-            A_placeholders = [A_indices_t, A_values_t]
-
-        else:
-            # Placeholders for the dense adjacency matrix
-            A_m = Input(batch_shape=(1, self.n_nodes, self.n_nodes))
-            A_placeholders = [A_m]
-
-        if self.use_sparse:
-            A_indices, A_values = A_placeholders
-            Ainput = [
-                SqueezedSparseConversion(
-                    shape=(self.n_nodes, self.n_nodes), dtype=A_values.dtype
-                )([A_indices, A_values])
-            ]
-
-        # Otherwise, create dense matrix from input tensor
-        else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in A_placeholders]
-
-        # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
-        x_inp = [x_t, out_indices_t] + A_placeholders
-
-        # pass the node features through the base model
-        feature_layer = x_t
-        for layer in base_model.layers[1:]:
-            feature_layer = layer(feature_layer)
-
-        h_layer = feature_layer
-        # iterate through APPNPPropagation layers
-        for layer in self._layers[(2 * len(self.layer_sizes)) :]:
-            if isinstance(layer, APPNPPropagationLayer):
-                h_layer = layer([h_layer, feature_layer, out_indices_t] + Ainput)
-            else:
-                h_layer = layer(h_layer)
-
-        x_out = h_layer
-        return x_inp, x_out
+        return self._tensors(multiplicity=1, extra_layers=base_models.layers[1:])
 
     node_model = deprecated_model_function(_node_model, "node_model")
     link_model = deprecated_model_function(_link_model, "link_model")
