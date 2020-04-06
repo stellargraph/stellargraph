@@ -385,16 +385,3 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
                 h_layer = layer(h_layer)
 
         return h_layer
-
-    def in_out_tensors(self):
-        """
-        Builds a DGCNN Graph Classification model.
-
-        Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two input tensors for the
-            Graph Classification model (containing node features and normalized adjacency matrix),
-            and `x_out` is a tensor for the DGCNN Graph Classification model output.
-        """
-        return super().in_out_tensors()
-
-    build = deprecated_model_function(in_out_tensors, "build")
