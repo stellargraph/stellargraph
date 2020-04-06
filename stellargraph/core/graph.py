@@ -799,11 +799,12 @@ class StellarGraph:
         non_nones = nodes != None
         self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
-        sampled = self._nodes.features(node_type, valid_ilocs)
+        with tf.device("/CPU:0"):
+            sampled = self._nodes.features(node_type, valid_ilocs)
 
-        indices = tf.cast(tf.where(valid), tf.int32)
-        shape = (len(nodes), sampled.shape[1])
-        features = tf.scatter_nd(indices, sampled, shape)
+            indices = tf.cast(tf.where(valid), tf.int32)
+            shape = (len(nodes), sampled.shape[1])
+            features = tf.scatter_nd(indices, sampled, shape)
 
         return features
 
