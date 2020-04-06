@@ -132,7 +132,6 @@ class Node2Vec:
             )
 
         h_layer = Reshape((self.emb_size,))(h_layer)
-        # K.squeeze(h_layer, axis=0)
 
         return h_layer
 
