@@ -30,73 +30,13 @@ from tensorflow.keras.layers import (
 
 from .misc import deprecated_model_function
 from ..mapper import GraphGenerator
-from .cluster_gcn import ClusterGraphConvolution
-
-
-class GraphClassificationConvolution(ClusterGraphConvolution):
-
-    """
-    A graph convolutional Keras layer. A stack of such layers can be used to create a model for supervised graph
-    classification.
-
-    The implementation is based on the GCN Keras layer of keras-gcn github
-    repo https://github.com/tkipf/keras-gcn
-
-    Notes:
-      - The inputs are tensors with a batch dimension.
-
-      - There are 2 inputs required, the node features and the normalized graph adjacency matrices for each batch entry.
-
-      - This class assumes that the normalized graph adjacency matrices are passed as input to the Keras methods.
-
-    Args:
-        units (int): dimensionality of output feature vectors
-        activation (str): nonlinear activation applied to layer's output to obtain output features
-        use_bias (bool): toggles an optional bias
-
-        kernel_initializer (str or func, optional): The initialiser to use for the weights of each graph
-            convolutional layer.
-        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each graph
-            convolutional layer.
-        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer graph
-            convolutional.
-        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer graph
-            convolutional.
-        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer graph
-            convolutional.
-        bias_constraint (str or func, optional): The constraint to use for the bias of each layer graph
-            convolutional.
-     """
-
-    def call(self, inputs):
-        """
-        Applies the layer.
-
-        Args:
-            inputs (list or tuple): a list or tuple of 2 input tensors that includes
-                node features (size batch_size x N x F),
-                graph adjacency matrix (batch_size x N x N),
-                where N is the number of nodes in the graph, and F is the dimensionality of node features.
-
-        Returns:
-            Keras Tensor that represents the output of the layer.
-        """
-        features, A = inputs
-
-        h_graph = K.batch_dot(A, features)
-        output = K.dot(h_graph, self.kernel)
-
-        # Add optional bias & apply activation
-        if self.bias is not None:
-            output += self.bias
-        output = self.activation(output)
-
-        return output
+from .gcn import GraphConvolution
+from ..core.experimental import experimental
 
 
 class GCNSupervisedGraphClassification:
     """
-    A stack of :class:`GraphClassificationConvolution` layers together with a Keras `GlobalAveragePooling1D` layer
+    A stack of :class:`GraphConvolution` layers together with a Keras `GlobalAveragePooling1D` layer
     that implement a supervised graph classification network using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
@@ -176,7 +116,7 @@ class GCNSupervisedGraphClassification:
         self.dropout = dropout
         self.generator = generator
 
-        # Initialize a stack of GraphClassificationConvolution layers
+        # Initialize a stack of GraphConvolution layers
         n_layers = len(self.layer_sizes)
         self._layers = []
         for ii in range(n_layers):
@@ -184,7 +124,7 @@ class GCNSupervisedGraphClassification:
             a = self.activations[ii]
             self._layers.append(Dropout(self.dropout))
             self._layers.append(
-                GraphClassificationConvolution(
+                GraphConvolution(
                     l,
                     activation=a,
                     use_bias=self.bias,
@@ -199,7 +139,7 @@ class GCNSupervisedGraphClassification:
 
     def __call__(self, x):
         """
-        Apply a stack of :class:`GraphClassificationConvolution` layers to the inputs.
+        Apply a stack of :class:`GraphConvolution` layers to the inputs.
         The input tensors are expected to be a list of the following:
         [
             Node features shape (batch size, N, F),
@@ -218,7 +158,7 @@ class GCNSupervisedGraphClassification:
         h_layer = x_in
 
         for layer in self._layers:
-            if isinstance(layer, GraphClassificationConvolution):
+            if isinstance(layer, GraphConvolution):
                 h_layer = layer([h_layer, As])
             else:
                 # For other (non-graph) layers only supply the input tensor

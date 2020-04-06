@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import warnings
+import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
@@ -34,9 +35,14 @@ class GraphConvolution(Layer):
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
 
     Notes:
-      - The inputs are tensors with a batch dimension of 1:
-        Keras requires this batch dimension, and for full-batch methods
-        we only have a single "batch".
+      - The batch axis represents independent graphs to be convolved with this GCN kernel (for
+        instance, for full-batch node prediction on a single graph, its dimension should be 1).
+
+      - If the adjancency matrix is dense, both it and the features should have a batch axis, with
+        equal batch dimension.
+
+      - If the adjancency matrix is sparse, it should not have a batch axis, and the batch
+        dimension of the features must be 1.
 
       - There are two inputs required, the node features,
         and the normalized graph Laplacian matrix
@@ -70,7 +76,7 @@ class GraphConvolution(Layer):
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
@@ -143,8 +149,8 @@ class GraphConvolution(Layer):
             input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
-        feat_shape = input_shapes[0]
-        input_dim = int(feat_shape[-1])
+        feature_shape, *As_shapes = input_shapes
+        input_dim = int(feature_shape[-1])
 
         self.kernel = self.add_weight(
             shape=(input_dim, self.units),
@@ -181,29 +187,32 @@ class GraphConvolution(Layer):
             Keras Tensor that represents the output of the layer.
         """
         features, *As = inputs
-        batch_dim, n_nodes, _ = K.int_shape(features)
-        if batch_dim != 1:
-            raise ValueError(
-                "Currently full-batch methods only support a batch dimension of one"
-            )
-
-        # Remove singleton batch dimension
-        features = K.squeeze(features, 0)
 
         # Calculate the layer operation of GCN
         A = As[0]
-        h_graph = K.dot(A, features)
+        if K.is_sparse(A):
+            # batch_dot doesn't support sparse tensors, so we special case them to only work with a
+            # single batch element (and the adjacency matrix without a batch dimension)
+            if features.shape[0] != 1:
+                raise ValueError(
+                    f"features: expected batch dimension = 1 when using sparse adjacency matrix in GraphConvolution, found features batch dimension {features.shape[0]}"
+                )
+            if len(A.shape) != 2:
+                raise ValueError(
+                    f"adjacency: expected a single adjacency matrix when using sparse adjacency matrix in GraphConvolution (tensor of rank 2), found adjacency tensor of rank {len(A.shape)}"
+                )
+
+            features_sq = K.squeeze(features, axis=0)
+            h_graph = K.dot(A, features_sq)
+            h_graph = K.expand_dims(h_graph, axis=0)
+        else:
+            h_graph = K.batch_dot(A, features)
         output = K.dot(h_graph, self.kernel)
 
         # Add optional bias & apply activation
         if self.bias is not None:
             output += self.bias
         output = self.activation(output)
-
-        # Add batch dimension back if we removed it
-        # print("BATCH DIM:", batch_dim)
-        if batch_dim == 1:
-            output = K.expand_dims(output, 0)
 
         return output
 
@@ -370,10 +379,8 @@ class GCN:
                     shape=(n_nodes, n_nodes), dtype=A_values.dtype
                 )([A_indices, A_values])
             ]
-
-        # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
