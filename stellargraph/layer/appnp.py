@@ -442,7 +442,7 @@ class APPNP:
                 "APPNP does not currently support propagating a link model"
             )
 
-        return self._tensors(multiplicity=1, extra_layers=base_models.layers[1:])
+        return self._tensors(multiplicity=1, extra_layers=base_model.layers[1:])
 
     node_model = deprecated_model_function(_node_model, "node_model")
     link_model = deprecated_model_function(_link_model, "link_model")
