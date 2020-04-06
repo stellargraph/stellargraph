@@ -18,7 +18,7 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer, Lambda, Dropout, Input
 from tensorflow.keras import activations, initializers, constraints, regularizers
-from .misc import SqueezedSparseConversion, deprecated_model_function
+from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 from ..mapper.full_batch_generators import RelationalFullBatchNodeGenerator
 
 
@@ -35,15 +35,8 @@ class RelationalGraphConvolution(Layer):
             Keras requires this batch dimension, and for full-batch methods
             we only have a single "batch".
 
-          - There are 2 + R inputs required (where R is the number of relationships): the node features, the output
-            indices (the nodes that are to be selected in the final layer)
+          - There are 1 + R inputs required (where R is the number of relationships): the node features,
             and a normalized adjacency matrix for each relationship
-
-          - The output indices are used when ``final_layer=True`` and the returned outputs
-            are the final-layer features for the nodes indexed by output indices.
-
-          - If ``final_layer=False`` all the node features are output in the same ordering as
-            given by the adjacency matrix.
 
         Args:
             units (int): dimensionality of output feature vectors
@@ -52,8 +45,7 @@ class RelationalGraphConvolution(Layer):
                 the paper; defaults to 0. num_bases < 0 triggers the default behaviour of num_bases = 0
             activation (str or func): nonlinear activation applied to layer's output to obtain output features
             use_bias (bool): toggles an optional bias
-            final_layer (bool): If False the layer returns output for all nodes,
-                                if True it returns the subset specified by the indices passed to it.
+            final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
             kernel_initializer (str or func): The initialiser to use for the self kernel and also relational kernels if num_bases=0.
             kernel_regularizer (str or func): The regulariser to use for the self kernel and also relational kernels if num_bases=0.
             kernel_constraint (str or func): The constraint to use for the self kernel and also relational kernels if num_bases=0.
@@ -77,7 +69,7 @@ class RelationalGraphConvolution(Layer):
         num_bases=0,
         activation=None,
         use_bias=True,
-        final_layer=False,
+        final_layer=None,
         input_dim=None,
         kernel_initializer="glorot_uniform",
         kernel_regularizer=None,
@@ -132,7 +124,9 @@ class RelationalGraphConvolution(Layer):
         self.coefficient_regularizer = regularizers.get(coefficient_regularizer)
         self.coefficient_constraint = constraints.get(coefficient_constraint)
 
-        self.final_layer = final_layer
+        if final_layer is not None:
+            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
+
         super().__init__(**kwargs)
 
     def get_config(self):
@@ -147,7 +141,6 @@ class RelationalGraphConvolution(Layer):
         config = {
             "units": self.units,
             "use_bias": self.use_bias,
-            "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "basis_initializer": initializers.serialize(self.basis_initializer),
@@ -185,13 +178,10 @@ class RelationalGraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, out_shape, A_shape = input_shapes
+        feature_shape, A_shape = input_shapes
 
         batch_dim = feature_shape[0]
-        if self.final_layer:
-            out_dim = out_shape[1]
-        else:
-            out_dim = feature_shape[1]
+        out_dim = feature_shape[1]
 
         return batch_dim, out_dim, self.units
 
@@ -280,7 +270,6 @@ class RelationalGraphConvolution(Layer):
         Args:
             inputs (list): a list of 2 + R input tensors that includes
                 node features (size 1 x N x F),
-                output indices (size 1 x M),
                 and a graph adjacency matrix (size N x N) for each relationship.
                 R is the number of relationships in the graph (edge type),
                 N is the number of nodes in the graph, and
@@ -289,7 +278,7 @@ class RelationalGraphConvolution(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features, out_indices, *As = inputs
+        features, *As = inputs
         batch_dim, n_nodes, _ = K.int_shape(features)
         if batch_dim != 1:
             raise ValueError(
@@ -298,7 +287,6 @@ class RelationalGraphConvolution(Layer):
 
         # Remove singleton batch dimension
         features = K.squeeze(features, 0)
-        out_indices = K.squeeze(out_indices, 0)
 
         # Calculate the layer operation of RGCN
         output = K.dot(features, self.self_kernel)
@@ -319,10 +307,6 @@ class RelationalGraphConvolution(Layer):
         if self.bias is not None:
             output += self.bias
         output = self.activation(output)
-
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
         if batch_dim == 1:
@@ -452,7 +436,6 @@ class RGCN:
                     num_bases=self.num_bases,
                     activation=self.activations[ii],
                     use_bias=self.bias,
-                    final_layer=ii == (n_layers - 1),
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer,
                     kernel_constraint=kernel_constraint,
@@ -511,12 +494,14 @@ class RGCN:
 
         for layer in self._layers:
             if isinstance(layer, RelationalGraphConvolution):
-                # For an RGCN layer add the adjacency matrices and output indices
-                # Note that the output indices are only used if `final_layer=True`
-                h_layer = layer([h_layer, out_indices] + Ainput)
+                # For an RGCN layer add the adjacency matrices
+                h_layer = layer([h_layer] + Ainput)
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
+
+        # only return data for the requested nodes
+        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
 
         return h_layer
 

@@ -51,13 +51,12 @@ class Test_GraphAttention:
     def get_inputs(self):
         x_inp = [
             Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
             Input(batch_shape=(1, self.N, self.N)),
         ]
 
         # For dense matrix, remove batch dimension
-        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[2])
-        layer_inp = x_inp[:2] + [A_mat]
+        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[1])
+        layer_inp = x_inp[:1] + [A_mat]
 
         return x_inp, layer_inp
 
@@ -118,10 +117,9 @@ class Test_GraphAttention:
 
         As = self.get_matrix()
         X = np.ones((1, self.N, self.F_in))  # features
-        all_indices = np.arange(self.N)[None, :]
 
         expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
-        actual = model.predict([X, all_indices] + As)
+        actual = model.predict([X] + As)
 
         assert np.allclose(actual.squeeze(), expected)
 
@@ -134,7 +132,6 @@ class Test_GraphAttention:
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
-            final_layer=False,
         )
         x_inp, layer_inp = self.get_inputs()
 
@@ -149,10 +146,9 @@ class Test_GraphAttention:
             X[:, i, :] = i + 1
 
         As = self.get_matrix()
-        all_indices = np.arange(self.N)[None, :]
 
         expected = (X * self.F_in)[..., : self.F_out]
-        actual = model.predict([X, all_indices] + As)
+        actual = model.predict([X] + As)
 
         assert np.allclose(actual.squeeze(), expected)
 
@@ -165,7 +161,6 @@ class Test_GraphAttention:
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
-            final_layer=False,
             saliency_map_support=True,
         )
 
@@ -177,7 +172,6 @@ class Test_GraphAttention:
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
-            final_layer=False,
             saliency_map_support=False,
         )
 
@@ -198,12 +192,10 @@ class Test_GraphAttention:
 
         As = self.get_matrix([((0, 1), 1), ((1, 0), 1)])
 
-        all_indices = np.arange(self.N)[None, :]
-
         expected = (X * self.F_in)[..., : self.F_out]
         expected[:, :2] = self.F_in / 2
-        actual_origin = model_origin.predict([X, all_indices] + As)
-        actual_saliency = model_saliency.predict([X, all_indices] + As)
+        actual_origin = model_origin.predict([X] + As)
+        actual_saliency = model_saliency.predict([X] + As)
         assert np.allclose(expected, actual_origin)
         assert np.allclose(expected, actual_saliency)
 
@@ -244,16 +236,14 @@ class Test_GraphAttentionSparse(Test_GraphAttention):
     def get_inputs(self):
         x_inp = [
             Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
             Input(batch_shape=(1, None, 2), dtype="int64"),
             Input(batch_shape=(1, None), dtype="float32"),
         ]
 
-        # Test with final_layer=False
-        A_mat = SqueezedSparseConversion(shape=(self.N, self.N))(x_inp[2:])
+        A_mat = SqueezedSparseConversion(shape=(self.N, self.N))(x_inp[1:])
 
         # For dense matrix, remove batch dimension
-        layer_inp = x_inp[:2] + [A_mat]
+        layer_inp = x_inp[:1] + [A_mat]
 
         return x_inp, layer_inp
 
@@ -582,7 +572,7 @@ class Test_GAT:
 
         # Load model from json & set all weights
         model2 = keras.models.model_from_json(
-            model_json, custom_objects={"GraphAttention": GraphAttention}
+            model_json, custom_objects={"GraphAttention": GraphAttention, "GatherIndices": GatherIndices}
         )
         model2.set_weights(model_weights)
 

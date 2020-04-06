@@ -20,7 +20,7 @@ from tensorflow.keras import activations, initializers, constraints, regularizer
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import FullBatchGenerator
-from .misc import SqueezedSparseConversion, deprecated_model_function
+from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -38,25 +38,17 @@ class GraphConvolution(Layer):
         Keras requires this batch dimension, and for full-batch methods
         we only have a single "batch".
 
-      - There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+      - There are two inputs required, the node features,
         and the normalized graph Laplacian matrix
 
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
-      - The output indices are used when ``final_layer=True`` and the returned outputs
-        are the final-layer features for the nodes indexed by output indices.
-
-      - If ``final_layer=False`` all the node features are output in the same ordering as
-        given by the adjacency matrix.
-
     Args:
         units (int): dimensionality of output feature vectors
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
         kernel_initializer (str or func, optional): The initialiser to use for the weights.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights.
         kernel_constraint (str or func, optional): The constraint to use for the weights.
@@ -70,7 +62,7 @@ class GraphConvolution(Layer):
         units,
         activation=None,
         use_bias=True,
-        final_layer=False,
+        final_layer=None,
         input_dim=None,
         kernel_initializer="glorot_uniform",
         kernel_regularizer=None,
@@ -86,7 +78,8 @@ class GraphConvolution(Layer):
         self.units = units
         self.activation = activations.get(activation)
         self.use_bias = use_bias
-        self.final_layer = final_layer
+        if final_layer is not None:
+            raise ValueError("'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately")
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -109,7 +102,6 @@ class GraphConvolution(Layer):
         config = {
             "units": self.units,
             "use_bias": self.use_bias,
-            "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
@@ -134,13 +126,10 @@ class GraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, out_shape, *As_shapes = input_shapes
+        feature_shape, *As_shapes = input_shapes
 
         batch_dim = feature_shape[0]
-        if self.final_layer:
-            out_dim = out_shape[1]
-        else:
-            out_dim = feature_shape[1]
+        out_dim = feature_shape[1]
 
         return batch_dim, out_dim, self.units
 
@@ -182,7 +171,6 @@ class GraphConvolution(Layer):
         Args:
             inputs (list): a list of 3 input tensors that includes
                 node features (size 1 x N x F),
-                output indices (size 1 x M)
                 graph adjacency matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
@@ -190,7 +178,7 @@ class GraphConvolution(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features, out_indices, *As = inputs
+        features, *As = inputs
         batch_dim, n_nodes, _ = K.int_shape(features)
         if batch_dim != 1:
             raise ValueError(
@@ -199,7 +187,6 @@ class GraphConvolution(Layer):
 
         # Remove singleton batch dimension
         features = K.squeeze(features, 0)
-        out_indices = K.squeeze(out_indices, 0)
 
         # Calculate the layer operation of GCN
         A = As[0]
@@ -210,10 +197,6 @@ class GraphConvolution(Layer):
         if self.bias is not None:
             output += self.bias
         output = self.activation(output)
-
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
         # print("BATCH DIM:", batch_dim)
@@ -340,7 +323,6 @@ class GCN:
                     self.layer_sizes[ii],
                     activation=self.activations[ii],
                     use_bias=self.bias,
-                    final_layer=ii == (n_layers - 1),
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer,
                     kernel_constraint=kernel_constraint,
@@ -403,12 +385,14 @@ class GCN:
             Ainput = [self.graph_norm_layer(Ainput[0])]
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
-                # For a GCN layer add the matrix and output indices
-                # Note that the output indices are only used if `final_layer=True`
-                h_layer = layer([h_layer, out_indices] + Ainput)
+                # For a GCN layer add the matrix
+                h_layer = layer([h_layer] + Ainput)
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
+
+        # only return data for the requested nodes
+        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
 
         return h_layer
 
