@@ -145,16 +145,17 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         )
         node_type = self.head_node_types[0]
 
-        # Get features for sampled nodes
-        batch_feats = [
-            self.graph.node_features_tensors(layer_nodes, node_type)
-            for layer_nodes in nodes_per_hop
-        ]
+        with tf.device("/CPU:0"):
+            # Get features for sampled nodes
+            batch_feats = [
+                self.graph.node_features_tensors(layer_nodes, node_type)
+                for layer_nodes in nodes_per_hop
+            ]
 
-        # Resize features for sampled nodes
-        batch_feats = [
-            tf.reshape(a, (len(head_nodes), -1, a.shape[1])) for a in batch_feats
-        ]
+            # Resize features for sampled nodes
+            batch_feats = [
+                tf.reshape(a, (len(head_nodes), -1, a.shape[1])) for a in batch_feats
+            ]
         return batch_feats
 
 
