@@ -154,7 +154,7 @@ def test_deprecated_model_functions():
         ),
         GraphSAGENodeGenerator(G, batch_size=1, num_samples=[2]),
         RelationalFullBatchNodeGenerator(G),
-        GraphGenerator([G]),
+        PaddedGraphGenerator([G]),
     ]
 
     model_types = [

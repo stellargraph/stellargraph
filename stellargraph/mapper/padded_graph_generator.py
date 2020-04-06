@@ -18,7 +18,7 @@ from ..core.utils import is_real_iterable
 from .sequences import GraphSequence
 
 
-class GraphGenerator:
+class PaddedGraphGenerator:
     """
     A data generator for use with graph classification algorithms.
 
@@ -27,8 +27,10 @@ class GraphGenerator:
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    This generator supplies the features arrays and the adjacency matrices to a
-    mini-batch Keras graph classification model.
+    This generator supplies the features arrays and the adjacency matrices to a mini-batch Keras
+    graph classification model. Differences in the number of nodes are resolved by padding each
+    batch of features and adjacency matrices, and supplying a boolean mask indicating which are
+    valid and which are padding.
 
     Args:
         graphs (list): a collection of ready for machine-learning StellarGraph-type objects

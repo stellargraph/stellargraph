@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from stellargraph.core.graph import *
-from stellargraph.mapper.graph_generator import GraphGenerator, GraphSequence
+from stellargraph.mapper.graph_generator import PaddedGraphGenerator, PaddedPaddedGraphSequence
 
 import numpy as np
 import pytest
@@ -28,7 +28,7 @@ graphs = [
 
 
 def test_generator_init():
-    generator = GraphGenerator(graphs=graphs)
+    generator = PaddedGraphGenerator(graphs=graphs)
     assert len(generator.graphs) == len(graphs)
 
 
@@ -42,7 +42,7 @@ def test_generator_init_different_feature_numbers():
         ValueError,
         match="graphs: expected node features for all graph to have same dimensions,.*2.*4",
     ):
-        generator = GraphGenerator(graphs=graphs_diff_num_features)
+        generator = PaddedGraphGenerator(graphs=graphs_diff_num_features)
 
 
 def test_generator_init_nx_graph():
@@ -56,7 +56,7 @@ def test_generator_init_nx_graph():
     with pytest.raises(
         TypeError, match="graphs: expected.*StellarGraph.*found MultiGraph."
     ):
-        generator = GraphGenerator(graphs=graphs_nx)
+        generator = PaddedGraphGenerator(graphs=graphs_nx)
 
 
 def test_generator_init_hin():
@@ -69,29 +69,29 @@ def test_generator_init_hin():
         ValueError,
         match="graphs: node generator requires graphs with single node type.*found.*2",
     ):
-        generator = GraphGenerator(graphs=graphs_mixed)
+        generator = PaddedGraphGenerator(graphs=graphs_mixed)
 
 
 def test_generator_flow_invalid_batch_size():
     with pytest.raises(
         ValueError, match="expected batch_size.*strictly positive integer, found -1"
     ):
-        GraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=-1)
+        PaddedGraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=-1)
 
     with pytest.raises(
         TypeError, match="expected batch_size.*integer type, found float"
     ):
-        GraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=2.0)
+        PaddedGraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=2.0)
 
     with pytest.raises(
         ValueError, match="expected batch_size.*strictly positive integer, found 0"
     ):
-        GraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=0)
+        PaddedGraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=0)
 
 
 def test_generator_flow_incorrect_targets():
 
-    generator = GraphGenerator(graphs=graphs)
+    generator = PaddedGraphGenerator(graphs=graphs)
 
     with pytest.raises(
         ValueError, match="expected targets to be the same length as node_ids,.*1 vs 2"
@@ -106,10 +106,10 @@ def test_generator_flow_incorrect_targets():
 
 def test_generator_flow_no_targets():
 
-    generator = GraphGenerator(graphs=graphs)
+    generator = PaddedGraphGenerator(graphs=graphs)
 
     seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2)
-    assert isinstance(seq, GraphSequence)
+    assert isinstance(seq, PaddedGraphSequence)
 
     assert len(seq) == 2  # two batches
 
@@ -129,10 +129,10 @@ def test_generator_flow_no_targets():
 
 def test_generator_flow_check_padding():
 
-    generator = GraphGenerator(graphs=graphs)
+    generator = PaddedGraphGenerator(graphs=graphs)
 
     seq = generator.flow(graph_ilocs=[0, 2], batch_size=2)
-    assert isinstance(seq, GraphSequence)
+    assert isinstance(seq, PaddedGraphSequence)
 
     assert len(seq) == 1
 
@@ -150,10 +150,10 @@ def test_generator_flow_check_padding():
 
 def test_generator_flow_with_targets():
 
-    generator = GraphGenerator(graphs=graphs)
+    generator = PaddedGraphGenerator(graphs=graphs)
 
     seq = generator.flow(graph_ilocs=[1, 2], targets=np.array([0, 1]), batch_size=1)
-    assert isinstance(seq, GraphSequence)
+    assert isinstance(seq, PaddedGraphSequence)
 
     for batch in seq:
         assert batch[0][0].shape[0] == 1
