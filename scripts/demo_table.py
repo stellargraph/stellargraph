@@ -95,15 +95,19 @@ class T:
 
         return T(inp)
 
-    def validate_link(self, base_dir):
+    def link_is_valid_relative(self, base_dir):
         if self.link is None:
-            # no link is valid
-            return
+            return True
 
-        if not os.path.exists(os.path.join(base_dir, self.link)):
-            raise ValueError(
-                f"expected links to be valid relative to {base_dir}, found '{self.link}' that doesn't exist"
-            )
+        if os.path.isabs(self.link):
+            # absolute links aren't allowed
+            return False
+
+        if self.link.lower().startswith("http"):
+            # github (and other website) links aren't allowed either
+            return False
+
+        return os.path.exists(os.path.join(base_dir, self.link))
 
     def to_html(self):
         html = HtmlBuilder()
@@ -117,6 +121,24 @@ class T:
                 html.add(self.text)
 
         return html.string()
+
+
+def validate_links(element, base_dir, invalid):
+    # traverse over the collection(s) to find the T's and check their links, collecting them in
+    # `invalid`.
+    if element is None:
+        pass
+    elif isinstance(element, T):
+        if not element.link_is_valid_relative(base_dir):
+            invalid.append(element.link)
+    elif isinstance(element, list):
+        for sub in element:
+            validate_links(sub, base_dir, invalid)
+    elif isinstance(element, Algorithm):
+        for sub in element.columns.values():
+            validate_links(sub, base_dir, invalid)
+    else:
+        raise ValueError(f"unsupported element in link validation {element!r}")
 
 
 def cell_html(html, cell):
@@ -410,8 +432,11 @@ def main():
     )
     args = parser.parse_args()
 
-    def error(message):
+    def error(message, edit_fixit=False):
         formatted = f"Error while generating algorithm table for `{args.readme.name}`: {message}"
+        if edit_fixit:
+            formatted += f"\n\nTo fix, edit `{__file__}` as appropriate and run it like `python {__file__} --action=overwrite` to overwrite existing table with new one."
+
         print(formatted, file=sys.stderr)
 
         try:
@@ -423,6 +448,17 @@ def main():
         sys.exit(1)
 
     base_dir = os.path.dirname(args.readme.name)
+
+    invalid_links = []
+    validate_links(COLUMNS, base_dir, invalid_links)
+    validate_links(ALGORITHMS, base_dir, invalid_links)
+
+    if invalid_links:
+        formatted = "\n".join(f"- `{link}`" for link in invalid_links)
+        error(
+            f"expected all links in algorithm specifications in `{__file__}` to be relative links that are valid starting at `{base_dir}`, but found {len(invalid_links)} invalid:\n\n{formatted}",
+            edit_fixit=True,
+        )
 
     new_table = build_html(COLUMNS, ALGORITHMS)
 
@@ -438,7 +474,8 @@ def main():
     if args.action == "compare":
         if new_table != current_table:
             error(
-                f"existing table in `{args.readme.name}` differs to generated table; was it edited manually?\n\nTo fix, consider editing `scripts/demo_table.py` as appropriate and run it like `python scripts/demo_table.py --action=overwrite`.",
+                f"existing table in `{args.readme.name}` differs to generated table; was it edited manually?",
+                edit_fixit=True,
             )
 
     elif args.action == "overwrite":
