@@ -219,6 +219,12 @@ def test_APPNP_apply_propagate_model_dense():
 
     assert preds_1 == pytest.approx(preds_2)
 
+    manual_inp = fully_connected_model.predict(features[None, :, :].astype("float32"))
+    manual_model = keras.Model(*appnpnModel.in_out_tensors())
+    manual_preds = manual_model.predict([manual_inp, out_indices, adj])
+
+    assert preds_1 == pytest.approx(manual_preds)
+
 
 def test_APPNP_apply_propagate_model_sparse():
 
@@ -248,3 +254,9 @@ def test_APPNP_apply_propagate_model_sparse():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+    manual_inp = fully_connected_model.predict(features[None, :, :].astype("float32"))
+    manual_model = keras.Model(*appnpnModel.in_out_tensors())
+    manual_preds = manual_model.predict([manual_inp, out_indices, A_indices, A_values])
+
+    assert preds_1 == pytest.approx(manual_preds)
