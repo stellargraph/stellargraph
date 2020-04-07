@@ -219,9 +219,44 @@ def test_APPNP_apply_propagate_model_dense():
 
     assert preds_1 == pytest.approx(preds_2)
 
+
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        pytest.param(
+            "sequential",
+            marks=pytest.mark.xfail(
+                reason="https://github.com/stellargraph/stellargraph/issues/1213"
+            ),
+        ),
+        "model",
+    ],
+)
+def test_APPNP_propagate_model_matches_manual(model_type):
+    G, features = create_graph_features()
+    adj = G.to_adjacency_matrix()
+    features, adj = GCN_Aadj_feats_op(features, adj)
+    adj = np.array(adj.todense()[None, :, :])
+    out_indices = np.array([[0, 1]], dtype="int32")
+
+    generator = FullBatchNodeGenerator(G, sparse=False, method="gcn")
+    appnpnModel = APPNP([2], generator=generator, activations=["relu"], dropout=0.5)
+
+    if model_type == "sequential":
+        fully_connected_model = keras.Sequential()
+        fully_connected_model.add(Dense(2))
+    else:
+        inp = keras.Input(shape=features.shape)
+        fully_connected_model = keras.Model(inp, Dense(2)(inp))
+
+    x_in, x_out = appnpnModel.propagate_model(fully_connected_model)
+    end_to_end_model = keras.Model(inputs=x_in, outputs=x_out)
+    preds_1 = end_to_end_model.predict([features[None, :, :], out_indices, adj])
+
+    # run the process manually: transform the features, and then propagate
     manual_inp = fully_connected_model.predict(features[None, :, :].astype("float32"))
-    manual_model = keras.Model(*appnpnModel.in_out_tensors())
-    manual_preds = manual_model.predict([manual_inp, out_indices, adj])
+    base_model = keras.Model(*appnpnModel.in_out_tensors())
+    manual_preds = base_model.predict([manual_inp, out_indices, adj])
 
     assert preds_1 == pytest.approx(manual_preds)
 
@@ -254,9 +289,3 @@ def test_APPNP_apply_propagate_model_sparse():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
-
-    manual_inp = fully_connected_model.predict(features[None, :, :].astype("float32"))
-    manual_model = keras.Model(*appnpnModel.in_out_tensors())
-    manual_preds = manual_model.predict([manual_inp, out_indices, A_indices, A_values])
-
-    assert preds_1 == pytest.approx(manual_preds)
