@@ -18,11 +18,14 @@ import pytest
 import os
 import numpy as np
 import networkx as nx
+from stellargraph import StellarGraph
 from stellargraph.data.edge_splitter import EdgeSplitter
 from stellargraph.data.epgm import EPGM
 import random
 import datetime
 from datetime import datetime, timedelta
+
+from ..test_utils.graphs import example_graph_random
 
 
 @pytest.fixture(scope="module")
@@ -244,6 +247,39 @@ class TestEdgeSplitterHomogeneous(object):
         sampling_probs = [0.2, 0.1, 0.2, 0.5, 0.2]  # values don't sum to 1
         with pytest.raises(ValueError):
             es_obj.train_test_split(p=p, method="local", probs=sampling_probs)
+
+    def test_stellargraph(self):
+        original_graph = example_graph_random(n_nodes=20, n_edges=50)
+
+        directed_edges = original_graph.edges()
+        true_edges = set(directed_edges) | {(tgt, src) for src, tgt in directed_edges}
+
+        def check(split_graph, ids, labels):
+            assert isinstance(split_graph, StellarGraph)
+
+            nodes = split_graph.nodes()
+
+            # the node features should be propagated correctly
+            np.testing.assert_array_equal(
+                split_graph.node_features(nodes), original_graph.node_features(nodes),
+            )
+
+            # the sampled edge labels should match the ground truth
+            for (src, dst), label in zip(ids, labels):
+                if label:
+                    assert (src, dst) in true_edges
+                else:
+                    assert (src, dst) not in true_edges
+
+        es = EdgeSplitter(original_graph)
+
+        split1, ids1, labels1 = es.train_test_split(p=0.5, method="global")
+        check(split1, ids1, labels1)
+
+        # validate passing a StellarGraph as g_master
+        es_master = EdgeSplitter(split1, original_graph)
+        split2, ids2, labels2 = es_master.train_test_split(p=0.5, method="global")
+        check(split2, ids2, labels2)
 
 
 class TestEdgeSplitterHeterogeneous(object):

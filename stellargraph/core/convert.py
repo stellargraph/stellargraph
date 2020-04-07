@@ -148,6 +148,13 @@ def convert_edges(
     edges, edge_features = converter.convert(data)
     assert all(features is None for features in edge_features.values())
 
+    for type_name, type_df in edges.items():
+        weight_col = type_df[WEIGHT]
+        if not pd.api.types.is_numeric_dtype(weight_col):
+            raise TypeError(
+                f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
+            )
+
     return EdgeData(edges)
 
 
@@ -206,7 +213,14 @@ def _features_from_node_data(nodes, data, dtype):
 
         def single(node_type):
             node_info = nodes[node_type]
-            this_data = data[node_type]
+            try:
+                this_data = data[node_type]
+            except KeyError:
+                # no data specified for this type, so len(feature vector) = 0 for each node (this
+                # uses a range index for columns, to match the behaviour of the other feature
+                # converters here, that build DataFrames from NumPy arrays even when there's no
+                # data, i.e. array.shape = (num nodes, 0))
+                this_data = pd.DataFrame(columns=range(0), index=node_info.ids)
 
             if isinstance(this_data, pd.DataFrame):
                 df = this_data.astype(dtype, copy=False)

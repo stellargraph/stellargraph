@@ -115,13 +115,14 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.sampler = Neo4JSampledBreadthFirstWalk(
             G, graph_schema=self.schema, seed=seed
         )
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Collect the features of the nodes sampled from Neo4J,
         and return these as a list of feature arrays for the GraphSAGE
@@ -129,6 +130,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
+            batch_num: Ignored, because this is not reproducible.
 
         Returns:
             A list of the same length as ``num_samples`` of collected features from
@@ -211,6 +213,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE
@@ -218,13 +221,14 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             G, graph_schema=self.schema, seed=seed
         )
 
-    def sample_features(self, head_nodes):
+    def sample_features(self, head_nodes, batch_num):
         """
         Collect the features of the sampled nodes from Neo4J,
         and return these as a list of feature arrays for the GraphSAGE algorithm.
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.
+            batch_num: Ignored, because this is not reproducible.
 
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:

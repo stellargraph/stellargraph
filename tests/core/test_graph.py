@@ -114,6 +114,57 @@ def test_digraph_constructor():
         assert sg.number_of_edges() == 0
 
 
+def test_legacy_constructor_warning():
+    for cls in [StellarGraph, StellarDiGraph]:
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"Constructing a StellarGraph.*StellarGraph.from_networkx",
+        ):
+            cls(nx.Graph())
+
+    # make sure that we're disabling new uses of the legacy constructor correctly in this repo (see
+    # also: filterwarnings in pytest.ini, PYTHONWARNINGS in .buildkite/docker-compose.yml)
+    with pytest.raises(DeprecationWarning):
+        StellarGraph(nx.Graph())
+
+
+def test_graph_constructor_extra_nodes_in_edges():
+    nodes = pd.DataFrame(np.ones((5, 1)), index=[0, 1, 2, 3, 4])
+    edges = {
+        "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
+        "b": pd.DataFrame({"source": [4, 5], "target": [0, 2]}, index=[1, 2]),
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="^edges: expected all source and target node IDs to be contained in `nodes`, found some missing: 5$",
+    ):
+        g = StellarGraph(nodes, edges)
+
+    # adding an extra node should fix things
+    nodes = pd.DataFrame(np.ones((6, 1)), index=[0, 1, 2, 3, 4, 5])
+    g = StellarGraph(nodes, edges)
+
+    # removing the bad edge should also fix
+    nodes = pd.DataFrame(np.ones((5, 1)), index=[0, 1, 2, 3, 4])
+    edges = {
+        "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
+        "b": pd.DataFrame({"source": [4], "target": [0]}, index=[1]),
+    }
+    g = StellarGraph(nodes, edges)
+
+
+def test_graph_constructor_nodes_from_edges():
+    edges = {
+        "a": pd.DataFrame({"source": [1], "target": [0]}, index=[0]),
+        "b": pd.DataFrame({"source": [4, 5], "target": [0, 2]}, index=[1, 2]),
+    }
+
+    g = StellarGraph(edges=edges, node_type_default="abc")
+    assert g.node_types == {"abc"}
+    assert sorted(g.nodes()) == [0, 1, 2, 4, 5]
+
+
 def test_info():
     sg = create_graph_1()
     info_str = sg.info()
@@ -1006,6 +1057,15 @@ StellarGraph: Undirected multigraph
     )
 
 
+def test_info_deprecated():
+    g = example_graph()
+    with pytest.warns(DeprecationWarning, match="'show_attributes' is no longer used"):
+        g.info(show_attributes=True)
+
+    with pytest.warns(DeprecationWarning, match="'sample' is no longer used"):
+        g.info(sample=10)
+
+
 def test_edges_include_weights():
     g = example_weighted_hin()
     edges, weights = g.edges(include_edge_weight=True)
@@ -1288,3 +1348,23 @@ def test_connected_components(is_directed):
 
     # check that `connected_components` works with `subgraph`
     assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
+
+
+def test_nodes_node_type_filter():
+    g = example_hin_1()
+    assert sorted(g.nodes(node_type="A")) == [0, 1, 2, 3]
+    assert sorted(g.nodes(node_type="B")) == [4, 5, 6]
+
+    with pytest.raises(KeyError, match="'C'"):
+        g.nodes(node_type="C")
+
+
+def test_nodes_of_type_deprecation():
+    g = example_hin_1()
+    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+        empty = g.nodes_of_type()
+    assert all(empty == g.nodes())
+
+    with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
+        a = g.nodes_of_type("A")
+    assert all(a == g.nodes(node_type="A"))

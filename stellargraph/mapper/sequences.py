@@ -25,6 +25,8 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
+    "GraphSequence",
+    "CorruptedNodeSequence",
 ]
 
 import warnings
@@ -39,14 +41,16 @@ from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
 from ..data.unsupervised_sampler import UnsupervisedSampler
-from ..core.utils import is_real_iterable
+from ..core.utils import is_real_iterable, normalize_adj
 from ..random import random_state
+from scipy import sparse
+from ..core.experimental import experimental
 
 
 class NodeSequence(Sequence):
     """Keras-compatible data generator to use with the Keras
-    methods :meth:`keras.Model.fit_generator`, :meth:`keras.Model.evaluate_generator`,
-    and :meth:`keras.Model.predict_generator`.
+    methods :meth:`keras.Model.fit`, :meth:`keras.Model.evaluate`,
+    and :meth:`keras.Model.predict`.
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
@@ -149,8 +153,8 @@ class NodeSequence(Sequence):
 
 class LinkSequence(Sequence):
     """
-    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
-    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit`,
+    :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
     :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
@@ -251,8 +255,8 @@ class LinkSequence(Sequence):
 
 class OnDemandLinkSequence(Sequence):
     """
-    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit_generator`,
-    :meth:`keras.Model.evaluate_generator`, and :meth:`keras.Model.predict_generator`
+    Keras-compatible data generator to use with Keras methods :meth:`keras.Model.fit`,
+    :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
@@ -351,9 +355,9 @@ class FullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
     :class:`FullBatchNodeGenerator`.
@@ -409,9 +413,9 @@ class SparseFullBatchSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models
     that require full-batch training (e.g., GCN, GAT).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class uses sparse matrix representations to send data to the models,
     and only works with the Keras tensorflow backend. For any other backends,
@@ -475,9 +479,9 @@ class RelationalFullBatchNodeSequence(Sequence):
     """
     Keras-compatible data generator for for node inference models on relational graphs
     that require full-batch training (e.g., RGCN).
-    Use this class with the Keras methods :meth:`keras.Model.fit_generator`,
-        :meth:`keras.Model.evaluate_generator`, and
-        :meth:`keras.Model.predict_generator`,
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
 
     This class uses either dense or sparse representations to send data to the models.
 
@@ -527,3 +531,174 @@ class RelationalFullBatchNodeSequence(Sequence):
 
     def __getitem__(self, index):
         return self.inputs, self.targets
+
+
+class GraphSequence(Sequence):
+    """
+    A Keras-compatible data generator for training and evaluating graph classification models.
+    Use this class with the Keras methods :meth:`keras.Model.fit`,
+        :meth:`keras.Model.evaluate`, and
+        :meth:`keras.Model.predict`,
+
+    This class should be created using the `.flow(...)` method of
+    :class:`GraphGenerator`.
+
+    Args:
+        graphs (list)): The graphs as StellarGraph objects.
+        targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
+            where N is the number of graphs and C is the target size (e.g., number of classes.)
+        normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
+            be normalized or not. The default is True.
+        batch_size (int, optional): The batch size. It defaults to 1.
+        name (str, optional): An optional name for this generator object.
+    """
+
+    def __init__(self, graphs, targets=None, normalize=True, batch_size=1, name=None):
+
+        self.name = name
+        self.graphs = np.asanyarray(graphs)
+        self.normalize_adj = normalize
+        self.targets = targets
+        self.batch_size = batch_size
+
+        if targets is not None:
+            if len(graphs) != len(targets):
+                raise ValueError(
+                    "expected the number of target values and the number of graphs to be the same length,"
+                    f"found {len(graphs)} graphs and {len(targets)} targets."
+                )
+
+            self.targets = np.asanyarray(targets)
+
+        if self.normalize_adj:
+            self.normalized_adjs = [
+                normalize_adj(graph.to_adjacency_matrix()) for graph in graphs
+            ]
+        else:
+            self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
+
+        self.normalized_adjs = np.asanyarray(self.normalized_adjs)
+
+        self.on_epoch_end()
+
+    def __len__(self):
+        return int(np.ceil(len(self.graphs) / self.batch_size))
+
+    def __getitem__(self, index):
+
+        batch_start, batch_end = index * self.batch_size, (index + 1) * self.batch_size
+
+        graphs = self.graphs[batch_start:batch_end]
+        adj_graphs = self.normalized_adjs[batch_start:batch_end]
+
+        # The number of nodes for the largest graph in the batch. We are going to pad with 0 rows and columns
+        # the adjacency and node feature matrices (only the rows in this case) to equal in size the adjacency and
+        # feature matrices of the largest graph.
+        max_nodes = max([graph.number_of_nodes() for graph in graphs])
+
+        graph_targets = None
+        if self.targets is not None:
+            graph_targets = self.targets[batch_start:batch_end]
+
+        # pad adjacency and feature matrices to equal the size of those from the largest graph
+        features = [
+            np.pad(
+                graph.node_features(graph.nodes()),
+                pad_width=((0, max_nodes - graph.number_of_nodes()), (0, 0)),
+            )
+            for graph in graphs
+        ]
+        features = np.stack(features)
+
+        for adj in adj_graphs:
+            adj.resize((max_nodes, max_nodes))
+        adj_graphs = np.stack([adj.toarray() for adj in adj_graphs])
+
+        masks = np.full((len(graphs), max_nodes), fill_value=False, dtype=np.bool)
+        for index, graph in enumerate(graphs):
+            masks[index, : graph.number_of_nodes()] = True
+
+        # features is array of dimensionality
+        #      batch size x N x F
+        # masks is array of dimensionality
+        #      batch size x N
+        # adj_graphs is array of dimensionality
+        #      batch size x N x N
+        # graph_targets is array of dimensionality
+        #      batch size x C
+        # where N is the maximum number of nodes for largest graph in the batch, F is
+        # the node feature dimensionality, and C is the number of target classes
+        return [features, masks, adj_graphs], graph_targets
+
+    def on_epoch_end(self):
+        """
+         Shuffle all graphs at the end of each epoch
+        """
+        indexes = list(range(len(self.graphs)))
+        random.shuffle(indexes)
+        self.graphs = self.graphs[indexes]
+        self.normalized_adjs = self.normalized_adjs[indexes]
+        if self.targets is not None:
+            self.targets = self.targets[indexes]
+
+
+class CorruptedNodeSequence(Sequence):
+    """
+    Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
+    data for training Deep Graph Infomax.
+
+    Args:
+        base_generator: the uncorrupted Sequence object.
+    """
+
+    def __init__(self, base_generator):
+
+        self.base_generator = base_generator
+
+        if isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
+            self.targets = np.tile(
+                [1.0, 0.0], reps=(1, len(base_generator.target_indices), 1),
+            )
+        elif isinstance(base_generator, NodeSequence):
+            self.targets = np.tile([1.0, 0.0], reps=(base_generator.batch_size, 1))
+        else:
+            raise TypeError(
+                f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
+                f"or NodeSequence, found {type(base_generator).__name__}"
+            )
+
+    def __len__(self):
+        return len(self.base_generator)
+
+    def __getitem__(self, index):
+
+        inputs, _ = self.base_generator[index]
+
+        if isinstance(
+            self.base_generator, (FullBatchSequence, SparseFullBatchSequence)
+        ):
+
+            features = inputs[0]
+            shuffled_idxs = np.random.permutation(features.shape[1])
+            shuffled_feats = [features[:, shuffled_idxs, :]]
+            targets = self.targets
+
+        else:
+
+            features = inputs
+            feature_dim = features[0].shape[-1]
+            head_nodes = features[0].shape[0]
+
+            shuffled_feats = np.concatenate(
+                [x.reshape(-1, feature_dim) for x in features], axis=0,
+            )
+
+            np.random.shuffle(shuffled_feats)
+            shuffled_feats = shuffled_feats.reshape((head_nodes, -1, feature_dim))
+            shuffled_feats = np.split(
+                shuffled_feats, np.cumsum([y.shape[1] for y in features])[:-1], axis=1
+            )
+
+            targets = self.targets[:head_nodes, :]
+
+        return shuffled_feats + inputs, targets

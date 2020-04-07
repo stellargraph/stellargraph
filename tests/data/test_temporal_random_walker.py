@@ -81,3 +81,42 @@ def test_exp_biases_extreme(temporal_graph):
     small_times = [0.000001, 0.000002]
     biases = rw._exp_biases(small_times, t_0=0, decay=True)
     assert sum(biases) == pytest.approx(1)
+
+
+@pytest.mark.parametrize("cw_size", [-1, 1, 2, 4])
+def test_cw_size_and_walk_length(temporal_graph, cw_size):
+    rw = TemporalRandomWalk(temporal_graph)
+    num_cw = 5
+    max_walk_length = 3
+
+    def run():
+        return rw.run(num_cw=num_cw, cw_size=cw_size, max_walk_length=max_walk_length)
+
+    if cw_size < 2:
+        with pytest.raises(ValueError, match=r".* context window size .*"):
+            run()
+    elif max_walk_length < cw_size:
+        with pytest.raises(ValueError, match=r".* maximum walk length .*"):
+            run()
+    else:
+        walks = run()
+        num_cw_obtained = sum([len(walk) - cw_size + 1 for walk in walks])
+        assert num_cw == num_cw_obtained
+        assert max(map(len, walks)) <= max_walk_length
+
+
+def test_init_parameters(temporal_graph):
+
+    num_cw = 5
+    cw_size = 3
+    max_walk_length = 3
+    seed = 0
+
+    rw = TemporalRandomWalk(
+        temporal_graph, cw_size=cw_size, max_walk_length=max_walk_length, seed=seed
+    )
+    rw_no_params = TemporalRandomWalk(temporal_graph)
+
+    assert rw.run(num_cw=num_cw) == rw_no_params.run(
+        num_cw=num_cw, cw_size=cw_size, max_walk_length=max_walk_length, seed=seed
+    )

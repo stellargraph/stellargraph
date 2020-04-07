@@ -121,6 +121,33 @@ def test_columnar_convert_invalid_input():
         converter.convert({"x": 1})
 
 
+def test_convert_edges_weights():
+    def run(ws):
+        dfs = {
+            name: pd.DataFrame({"s": [0], "t": [1], "w": [w]}, index=[i])
+            for i, (name, w) in enumerate(ws.items())
+        }
+        convert_edges(
+            dfs,
+            name="some_name",
+            default_type="d",
+            source_column="s",
+            target_column="t",
+            weight_column="w",
+        )
+
+    # various numbers are valid
+    run({"x": np.int8(1)})
+    run({"x": np.complex64(1)})
+    run({"x": np.complex128(1), "y": np.uint16(2), "z": np.float32(3.0)})
+    # non-numbers are not
+    with pytest.raises(
+        TypeError,
+        match=r"some_name\['x'\]: expected weight column 'w' to be numeric, found dtype 'object'",
+    ):
+        run({"x": "ab", "y": 1, "z": np.float32(2)})
+
+
 def from_networkx_for_testing(g, node_features=None, dtype="float32"):
     return from_networkx(
         g,
@@ -316,7 +343,7 @@ def test_from_networkx_heterogeneous_features(feature_type, dtype):
         node_features = {
             "a": pd.DataFrame(a_features, index=[0, 2]),
             "b": pd.DataFrame(b_features, index=[1]),
-            "c": pd.DataFrame(columns=range(0), index=[3]),
+            # c is implied
         }
     elif feature_type == "iterable no types":
         node_features = zip([0, 2, 1, 3], a_features + b_features + [[]])

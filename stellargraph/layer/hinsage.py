@@ -32,6 +32,7 @@ import itertools as it
 import operator as op
 import warnings
 
+from .misc import deprecated_model_function
 from ..mapper import HinSAGENodeGenerator, HinSAGELinkGenerator
 
 HinSAGEAggregator = Layer
@@ -45,18 +46,12 @@ class MeanHinAggregator(HinSAGEAggregator):
         bias (bool): Use bias in layer or not (Default False)
         act (Callable or str): name of the activation function to use (must be a Keras
             activation function), or alternatively, a TensorFlow operation.
-        kernel_initializer (str or func): The initialiser to use for the weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the bias;
-            defaults to None.
+        kernel_initializer (str or func): The initialiser to use for the weights
+        kernel_regularizer (str or func): The regulariser to use for the weights
+        kernel_constraint (str or func): The constraint to use for the weights
+        bias_initializer (str or func): The initialiser to use for the bias
+        bias_regularizer (str or func): The regulariser to use for the bias
+        bias_constraint (str or func): The constraint to use for the bias
     """
 
     def __init__(
@@ -64,7 +59,13 @@ class MeanHinAggregator(HinSAGEAggregator):
         output_dim: int = 0,
         bias: bool = False,
         act: Union[Callable, AnyStr] = "relu",
-        **kwargs
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        **kwargs,
     ):
         self.output_dim = output_dim
         if output_dim % 2 != 0:
@@ -76,22 +77,15 @@ class MeanHinAggregator(HinSAGEAggregator):
         self.w_neigh = []
         self.w_self = None
         self.bias = None
-        self._get_regularisers_from_keywords(kwargs)
-        super().__init__(**kwargs)
 
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+
+        super().__init__(**kwargs)
 
     def get_config(self):
         """
@@ -222,13 +216,23 @@ class MeanHinAggregator(HinSAGEAggregator):
         return input_shape[0][0], input_shape[0][1], self.output_dim
 
 
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'input_neighbor_tree', 'n_samples', 'input_dim', and "
+            f"'multiplicity' when 'generator' is not provided, found {name}=None."
+        )
+
+
 class HinSAGE:
     """
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
 
     To use this class as a Keras model, the features and graph should be supplied using the
     :class:`HinSAGENodeGenerator` class for node inference models or the
-    :class:`HinSAGELinkGenerator` class for link inference models.  The `.build` method should
+    :class:`HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Currently the class supports node or link prediction models which are built depending on whether
@@ -253,7 +257,7 @@ class HinSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
         Creating a two-level GrapSAGE link classification model on nodes pairs of type ('A', 'B')
         with hidden node sizes of 8 and 4 and 5 neighbours sampled at each layer::
@@ -266,7 +270,7 @@ class HinSAGE:
                     activations=["relu","softmax"],
                     generator=generator,
                 )
-            x_inp, predictions = gat.build()
+            x_inp, predictions = gat.in_out_tensors()
 
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
@@ -285,22 +289,24 @@ class HinSAGE:
         normalize (str): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
             defaults to ['relu', ..., 'relu', 'linear'].
-        kernel_regularizer (str or func): The regulariser to use for the weights of each layer;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        n_samples (list, optional): The number of samples per layer in the model.
+        input_neighbor_tree (list of tuple, optional): A list of (node_type, [children]) tuples that
+            specify the subtree to be created by the HinSAGE model.
+        input_dim (dict, optional): The input dimensions for each node type as a dictionary of the form
+            ``{node_type: feature_size}``.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
+            inference and 2 for link inference (currently no others are supported).
 
-    Note::
-        If a generator is not specified, then additional keyword arguments must be supplied:
-
-        * n_samples (list): The number of samples per layer in the model.
-
-        * input_neighbor_tree: A list of (node_type, [children]) tuples that specify the
-          subtree to be created by the HinSAGE model.
-
-        * input_dim (dict): The input dimensions for each node type as a dictionary of the form
-          `{node_type: feature_size}`.
-
-        * multiplicity (int): The number of nodes to process at a time. This is 1 for a node inference
-          and 2 for link inference (currently no others are supported).
+    .. note::
+        The values for ``n_samples``, ``input_neighbor_tree``, ``input_dim``, and ``multiplicity`` are
+        obtained from the provided ``generator`` by default. The additional keyword arguments for these
+        parameters provide an alternative way to specify them if a generator cannot be supplied.
     """
 
     def __init__(
@@ -312,7 +318,16 @@ class HinSAGE:
         dropout=0.0,
         normalize="l2",
         activations=None,
-        **kwargs
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        n_samples=None,
+        input_neighbor_tree=None,
+        input_dim=None,
+        multiplicity=None,
     ):
         # Set the aggregator layer used in the model
         if aggregator is None:
@@ -341,7 +356,12 @@ class HinSAGE:
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
-            self._get_sizes_from_keywords(kwargs)
+            self.subtree_schema = _require_without_generator(
+                input_neighbor_tree, "input_neighbor_tree"
+            )
+            self.n_samples = _require_without_generator(n_samples, "n_samples")
+            self.input_dims = _require_without_generator(input_dim, "input_dim")
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
 
         # Set parameters for the model
         self.n_layers = len(self.n_samples)
@@ -378,11 +398,24 @@ class HinSAGE:
             )
         self.activations = activations
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Aggregator functions for each layer
-        self._build_aggregators()
+        self._aggs = [
+            {
+                node_type: self._aggregator(
+                    output_dim,
+                    bias=self.bias,
+                    act=self.activations[layer],
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
+                )
+                for node_type, output_dim in self.dims[layer + 1].items()
+            }
+            for layer in range(self.n_layers)
+        ]
 
     def _get_sizes_from_generator(self, generator):
         """
@@ -405,24 +438,6 @@ class HinSAGE:
         )
         self.input_dims = generator.graph.node_feature_sizes()
         self.multiplicity = generator.multiplicity
-
-    def _get_sizes_from_keywords(self, kwargs):
-        """
-        Sets n_samples and input_feature_size from the keywords.
-        Args:
-             kwargs: The additional keyword arguments.
-        """
-        try:
-            self.n_samples = kwargs["n_samples"]
-            self.input_dims = kwargs["input_dim"]
-            self.multiplicity = kwargs["multiplicity"]
-            self.subtree_schema = kwargs["input_neighbor_tree"]
-
-        except KeyError:
-            raise ValueError(
-                "Generator not provided: "
-                "n_samples, input_dim, multiplicity, and input_neighbour_tree must be specified."
-            )
 
     @staticmethod
     def _eval_neigh_tree_per_layer(input_tree):
@@ -447,36 +462,6 @@ class HinSAGE:
             if len(reduced) == 0
             else [input_tree] + HinSAGE._eval_neigh_tree_per_layer(reduced)
         )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
-
-    def _build_aggregators(self):
-        # Dict of {node type: aggregator} per layer
-        self._aggs = [
-            {
-                node_type: self._aggregator(
-                    output_dim,
-                    bias=self.bias,
-                    act=self.activations[layer],
-                    **self._regularisers
-                )
-                for node_type, output_dim in self.dims[layer + 1].items()
-            }
-            for layer in range(self.n_layers)
-        ]
 
     def __call__(self, xin: List):
         """
@@ -585,7 +570,7 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -606,8 +591,10 @@ class HinSAGE:
 
     def default_model(self, flatten_output=True):
         warnings.warn(
-            "The .default_model() method will be deprecated in future versions. "
-            "Please use .build() method instead.",
-            PendingDeprecationWarning,
+            "The .default_model() method is deprecated. Please use .in_out_tensors() method instead.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        return self.build()
+        return self.in_out_tensors()
+
+    build = deprecated_model_function(in_out_tensors, "build")

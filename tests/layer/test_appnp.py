@@ -99,7 +99,7 @@ def test_APPNP_apply_dense():
     generator = FullBatchNodeGenerator(G, sparse=False, method="gcn")
     appnpModel = APPNP([2], generator=generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = appnpModel.build()
+    x_in, x_out = appnpModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -107,8 +107,8 @@ def test_APPNP_apply_dense():
     preds_1 = model.predict([features[None, :, :], out_indices, adj])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -126,7 +126,7 @@ def test_APPNP_apply_sparse():
     generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
     appnpnModel = APPNP([2], generator=generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = appnpnModel.build()
+    x_in, x_out = appnpnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -134,8 +134,8 @@ def test_APPNP_apply_sparse():
     preds_1 = model.predict([features[None, :, :], out_indices, A_indices, A_values])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -149,7 +149,7 @@ def test_APPNP_linkmodel_apply_dense():
     generator = FullBatchLinkGenerator(G, sparse=False, method="none")
     appnpnModel = APPNP([3], generator, activations=["relu"], dropout=0.5)
 
-    x_in, x_out = appnpnModel.build()
+    x_in, x_out = appnpnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -157,8 +157,8 @@ def test_APPNP_linkmodel_apply_dense():
     preds_1 = model.predict([features[None, :, :], out_indices, adj])
     assert preds_1.shape == (1, 2, 2, 3)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow([("a", "b"), ("b", "c")]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow([("a", "b"), ("b", "c")]))
     assert preds_2.shape == (1, 2, 2, 3)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -178,7 +178,7 @@ def test_APPNP_linkmodel_apply_sparse():
         layer_sizes=[3], activations=["relu"], generator=generator, dropout=0.5
     )
 
-    x_in, x_out = appnpnModel.build()
+    x_in, x_out = appnpnModel.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -186,8 +186,8 @@ def test_APPNP_linkmodel_apply_sparse():
     preds_1 = model.predict([features[None, :, :], out_indices, A_indices, A_values])
     assert preds_1.shape == (1, 2, 2, 3)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow([("a", "b"), ("b", "c")]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow([("a", "b"), ("b", "c")]))
     assert preds_2.shape == (1, 2, 2, 3)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -213,8 +213,8 @@ def test_APPNP_apply_propagate_model_dense():
     preds_1 = model.predict([features[None, :, :], out_indices, adj])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
@@ -243,8 +243,8 @@ def test_APPNP_apply_propagate_model_sparse():
     preds_1 = model.predict([features[None, :, :], out_indices, A_indices, A_values])
     assert preds_1.shape == (1, 2, 2)
 
-    # Check fit_generator method
-    preds_2 = model.predict_generator(generator.flow(["a", "b"]))
+    # Check fit method
+    preds_2 = model.predict(generator.flow(["a", "b"]))
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)

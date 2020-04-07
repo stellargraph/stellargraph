@@ -20,7 +20,7 @@ import tensorflow.keras.backend as K
 
 from ..mapper import FullBatchGenerator
 from .preprocessing_layer import GraphPreProcessingLayer
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function
 
 
 class APPNPPropagationLayer(Layer):
@@ -53,11 +53,20 @@ class APPNPPropagationLayer(Layer):
                             if True it returns the subset specified by the indices passed to it.
         teleport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
         the paper (alpha in the paper)
+        input_dim (int, optional): the size of the input shape, if known.
+        kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
-    def __init__(self, units, teleport_probability=0.1, final_layer=False, **kwargs):
-        if "input_shape" not in kwargs and "input_dim" in kwargs:
-            kwargs["input_shape"] = (kwargs.get("input_dim"),)
+    def __init__(
+        self,
+        units,
+        teleport_probability=0.1,
+        final_layer=False,
+        input_dim=None,
+        **kwargs
+    ):
+        if "input_shape" not in kwargs and input_dim is not None:
+            kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 
@@ -185,7 +194,7 @@ class APPNP:
                 generator=generator,
                 dropout=0.5
             )
-            x_in, x_out = ppnp.build()
+            x_in, x_out = ppnp.in_out_tensors()
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
@@ -353,7 +362,7 @@ class APPNP:
 
         return h_layer
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds an APPNP model for node or link prediction
 
@@ -399,19 +408,19 @@ class APPNP:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
 
     def propagate_model(self, base_model):
         """
@@ -473,3 +482,7 @@ class APPNP:
 
         x_out = h_layer
         return x_inp, x_out
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")
