@@ -197,6 +197,10 @@ steps:
     <<: *timeout
     command: "scripts/whitespace.sh --ci"
 
+  - label: ":book::table_tennis: check demo table"
+    <<: *timeout
+    command: "scripts/demo_table.py --action=compare"
+
   - label: ":docker: build image"
     <<: *timeout
     plugins:

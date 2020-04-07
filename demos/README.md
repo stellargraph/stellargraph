@@ -21,48 +21,246 @@ The demo notebooks can be run without any installation of Python by using Binder
 
 ## Find a demo for an algorithm
 
-| algorithm                                             | *heter.*    | *D* | *EW* | *NF* | NC | I(NC) | LP | RL                     | ind.            | GC |
-|-------------------------------------------------------|-------------|-----|------|------|----|-------|----|------------------------|-----------------|----|
-| GCN (Graph Convolutional Network)                     | see RGCN    |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  | see Cluster-GCN | ✅ |
-| Cluster-GCN                                           |             |     |      | ✔️    | ✅ |       | ✅ |                        | ☑️               |    |
-| RGCN (Relational GCN)                                 | ✔ (edges)️   |     |      | ✔️    | ✅ |       | ✅ |                        |                 |    |
-| GAT (Graph ATtention Network)                         |             |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  |                 |    |
-| SGC (Simplified Graph Convolution)                    |             |     |      | ✔️    | ✅ |       | ✅ |                        |                 |    |
-| PPNP (Personalized Propagation of Neural Predictions) |             |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  |                 |    |
-| APPNP (Approximate PPNP)                              |             |     |      | ✔️    | ✅ |       | ✅ | ☑&nbsp;US ✅&nbsp;DGI  |                 |    |
-| GraphWave                                             |             |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
-| Attri2Vec                                             |             |     |      | ✔️    | ✅️ |       | ☑️  | ✅                     |                 |    |
-| **Sampling methods**                                  |             |     |      |      |    |       |    |                        |                 |    |
-| GraphSAGE                                             | see HinSAGE |     |      | ✔️    | ✅ |       | ✅ | ✅&nbsp;US ✅&nbsp;DGI | ✅              |    |
-| Directed GraphSAGE                                    |             | ✔   |      | ✔️    | ✅ |       | ✅ | ✅&nbsp;US ✅&nbsp;DGI | ✅              |    |
-| HinSAGE                                               | ✔️           |     |      | ✔️    | ✅ |       | ✅ |                        | ✅              |    |
-| **Random walks**                                      |             |     |      |      |    |       |    |                        |                 |    |
-| Node2Vec                                              |             |     | ✔️    |      | ✅️ |       | ☑️  | ✅                     |                 |    |
-| MetaPath2Vec                                          | ✔️           |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
-| CTDNE (Continuous-Time Dynamic Network Embeddings)    |             |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
-| Watch Your Step (simulated random walks)              |             |     |      |      | ☑️  |       | ☑️  | ✅                     |                 |    |
-| **Knowledge graphs**                                  |             |     |      |      |    |       |    |                        |                 |    |
-| ComplEx                                               | ✔️(edges)    | ✔   |      |      | ☑️  |       | ✅ | ☑️                      |                 |    |
-| DistMult                                              | ✔️(edges)    | ✔   |      |      | ☑️  |       | ✅ | ☑️                      |                 |    |
+(Hover for explanation of abbreviations.)
 
-How to read this table:
-
-| abbreviation | explanation |
-|---|---|
-| heter. | Heterogeneous graphs. Algorithms without this support can still be used with heterogeneous graphs by ignoring the types. |
-| D | Directed graphs. Algorithms without this support still work on directed graphs, by ignoring the direction |
-| EW | Edge weights. Algorithms without this support still work on weighted graphs, by ignoring the weights. |
-| NF | Node feature vectors. Algorithms without this support still work on graphs with features, by ignoring the features. |
-| ✔️ | Algorithm can use this information about a graph |
-| NC | Node classification, predicting attributes on nodes/vertices/entities. |
-| INC | Interpretability for node classification, providing insight into which features and links influence the prediction of an attribute. |
-| LP | Link prediction, predicting attributes on links/edges/connections. |
-| RL | Representation learning, computing embedding vectors for nodes and links (by combining node embeddings), usually unsupervised. These embeddings can be used for downstream tasks like NC and LP, and GC (with pooling). |
-| GC | Graph classification, predicting attributes |
-| ind. | Inductive, the algorithm generalises to new entities not seen during training. |
-| DGI | `DeepGraphInfomax`, a method for doing unsupervised training using mutual information. |
-| US | `UnsupervisedSampler`, a method for doing unsupervised training by creating a link prediction problem with random walks. |
-| ✅ | Demo available, linked. |
-| ☑️ | Supported without an explicit demo, such as training a logistic regression model on node embedding vectors (RL) to do node classification (NC). |
+<!-- DEMO TABLE MARKER -->
+<!-- autogenerated by demo_table.py, do not edit directly -->
+<table>
+  <tr>
+    <th>Algorithm</th>
+    <th><span title='Heterogeneous graphs'>Heter.</span></th>
+    <th><span title='Directed'>Dir.</span></th>
+    <th><span title='Edge weights'>EW</span></th>
+    <th><span title='Time-varying or temporal graphs'>T</span></th>
+    <th><span title='Node features'>NF</span></th>
+    <th><span title='Node classification'><a href='node-classification/README.md'>NC</a></span></th>
+    <th><span title='Link prediction'><a href='link-prediction/README.md'>LP</a></span></th>
+    <th><span title='Representation learning'><a href='embeddings/README.md'>RL</a></span></th>
+    <th><span title='Inductive'>Ind.</span></th>
+    <th><span title='Graph classification'><a href='graph-classification/README.md'>GC</a></span></th>
+  </tr>
+  <tr>
+    <td><span title='Graph Convolutional Network'>GCN</span></td>
+    <td>see RGCN</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/gcn/gcn-cora-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='link-prediction/gcn/cora-gcn-links-example.ipynb'>demo</a></td>
+    <td><span title='UnsupervisedSampler, using link prediction'>US</span><span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
+    <td>see Cluster-GCN</td>
+    <td><a href='graph-classification/supervised-graph-classification.ipynb'>demo</a></td>
+  </tr>
+  <tr>
+    <td>Cluster-GCN</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/cluster-gcn/cluster-gcn-node-classification.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td></td>
+    <td>yes</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Relational GCN'>RGCN</span></td>
+    <td><span title='Multiple edges types and one node type'>yes, edges</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Graph ATtention Network'>GAT</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/gat/gat-cora-node-classification-example.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td><span title='UnsupervisedSampler, using link prediction'>US</span><span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Simplified Graph Convolution'>SGC</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/sgc/sgc-node-classification-example.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Personalized Propagation of Neural Predictions'>PPNP</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/ppnp/ppnp-cora-node-classification-example.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td><span title='UnsupervisedSampler, using link prediction'>US</span><span title='DeepGraphInfomax, using mutual information'>DGI</span></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Approximate PPNP'>APPNP</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/ppnp/ppnp-cora-node-classification-example.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td><span title='UnsupervisedSampler, using link prediction'>US</span><span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>GraphWave</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><a href='embeddings/graphwave-barbell.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Attri2Vec</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/attri2vec/attri2vec-citeseer-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='link-prediction/attri2vec/stellargraph-attri2vec-DBLP.ipynb'>demo</a></td>
+    <td><a href='embeddings/stellargraph-attri2vec-citeseer.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>GraphSAGE</td>
+    <td>see HinSAGE</td>
+    <td><a href='node-classification/graphsage/directed-graphsage-on-cora-example.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td><a href='node-classification/graphsage/graphsage-cora-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='link-prediction/graphsage/cora-links-example.ipynb'>demo</a></td>
+    <td><span title='UnsupervisedSampler, using link prediction'><a href='embeddings/embeddings-unsupervised-graphsage-cora.ipynb'>US</a></span><span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
+    <td><a href='node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.ipynb'>demo</a></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>HinSAGE</td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td>yes</td>
+    <td><a href='link-prediction/hinsage/movielens-recommender.ipynb'>demo</a></td>
+    <td></td>
+    <td>yes</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Node2Vec</td>
+    <td></td>
+    <td></td>
+    <td><a href='node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via RL</a></span></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via RL</a></span></td>
+    <td><a href='embeddings/stellargraph-node2vec.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Metapath2Vec</td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><a href='embeddings/stellargraph-metapath2vec.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Continuous-Time Dynamic Network Embeddings'>CTDNE</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via RL</a></span></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Watch Your Step</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via RL</a></span></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><a href='embeddings/watch-your-step-cora-demo.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>ComplEx</td>
+    <td><span title='Multiple edges types and one node type'>yes, edges</span></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><a href='link-prediction/knowledge-graphs/complex.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>DistMult</td>
+    <td><span title='Multiple edges types and one node type'>yes, edges</span></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><a href='link-prediction/knowledge-graphs/distmult.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
+<!-- DEMO TABLE MARKER -->
 
 See [the root README](../README.md) or each algorithm's documentation for the relevant citation(s).
