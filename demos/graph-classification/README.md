@@ -6,8 +6,12 @@ A graph classification task predicts an attribute of each graph in a collection 
 
 ## Find algorithms and demos for a collection of graphs
 
-| algorithm & demo | node features | inductive |
-|---|---|---|
-| [GCN Supervised Graph Classification][supervised-gcn] | yes | yes |
+This table lists all graph classification demos, including the algorithms trained and the types of graphs used.
+
+| demo | algorithm(s) | node features | inductive |
+|---|---|---|---|
+| [GCN Supervised Graph Classification][supervised-gcn] | GCN, mean pooling | yes | yes |
 
 [supervised-gcn]: supervised-graph-classification.ipynb
+
+See [the demo README](../README.md) for more tasks, and a summary of each algorithm.

@@ -8,21 +8,23 @@ Node classification can also be done as a downstream task from node representati
 
 ## Find algorithms and demos for a graph
 
-| demo | algorithm(s) | hetereogeneous | directed | edge weights | node features | inductive |
-|---|---|---|---|---|---|---|
-| [GCN][gcn] | GCN | | | | yes | |
-| [Cluster-GCN][cluster-gcn] | Cluster-GCN | | | | yes | |
-| [RGCN][rgcn] | RGCN | yes, multiple edge types | | | yes | |
-| [GAT][gat] | GAT | | | | yes | |
-| [SGC][sgc] | SGC | | | | yes | |
-| [PPNP & APPNP][ppnp] | PPNP, APPNP | | | | yes | |
-| [Attri2Vec][attri2vec] | Attri2Vec | | | | yes | |
-| [GraphSAGE on Cora][graphsage] | GraphSAGE | | | | yes | |
-| [Inductive GraphSAGE][graphsage-inductive] | GraphSAGE | | | | yes | yes |
-| [Directed GraphSAGE][graphsage-directed] | GraphSAGE | | yes | | yes | |
-| [HinSAGE][hinsage] | HinSAGE | yes | | | yes | |
-| [Node2Vec][node2vec] | Node2Vec | | | | | |
-| [Weighted Node2Vec][node2vec-weighted] | Node2Vec | | | yes | | |
+This table lists all node classification demos, including the algorithms trained, the types of graph used, and the tasks demonstrated.
+
+| Demo | Algorithm(s) | Node features | Hetereogeneous | Directed | Edge weights | Inductive | Node embeddings |
+|---|---|---|---|---|---|---|---|
+| [GCN][gcn] | GCN | yes | | | | | yes |
+| [Cluster-GCN][cluster-gcn] | Cluster-GCN | yes | | | | | yes |
+| [RGCN][rgcn] | RGCN | yes | yes, multiple edge types | | | | yes |
+| [GAT][gat] | GAT | yes | | | | | yes |
+| [SGC][sgc] | SGC | yes | | | | | yes |
+| [PPNP & APPNP][ppnp] | PPNP, APPNP | yes | | | | | |
+| [Attri2Vec][attri2vec] | Attri2Vec | yes | | | | | yes |
+| [GraphSAGE on Cora][graphsage] | GraphSAGE | yes | | | | | yes |
+| [Inductive GraphSAGE][graphsage-inductive] | GraphSAGE | yes | | | | yes | yes |
+| [Directed GraphSAGE][graphsage-directed] | GraphSAGE | yes | | yes | | | yes |
+| [HinSAGE][hinsage] | HinSAGE | yes | yes | | | | |
+| [Node2Vec][node2vec] | Node2Vec | | | | | | yes |
+| [Weighted Node2Vec][node2vec-weighted] | Node2Vec | | | | yes | | yes |
 
 [gcn]: gcn/gcn-cora-node-classification-example.ipynb
 [cluster-gcn]: cluster-gcn/cluster-gcn-node-classification.ipynb

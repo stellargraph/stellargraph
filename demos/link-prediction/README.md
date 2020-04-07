@@ -8,16 +8,18 @@ Link prediction can also be done as a downstream task from node representation l
 
 ## Find algorithms and demos for a graph
 
-| algorithm & demo | hetereogeneous | directed | edge weights | temporal | node features | inductive |
-|---|---|---|---|---|---|---|
-| [GCN][gcn] | | | | | yes | |
-| [Attri2Vec][attri2vec] | | | | | yes | |
-| [GraphSAGE][graphsage] | see HinSAGE | yes | | | yes | [demo][graphsage-inductive] |
-| [HinSAGE][hinsage] | yes | | | | yes | yes |
-| [Node2Vec][node2vec] | | | yes | | | |
-| [CTDNE][ctdne] | | | | yes | | |
-| [ComplEx][complex] | yes, multiple edge types | yes | | | | |
-| [DistMult][distmult] | yes, multiple edge types | yes | | | | |
+This table lists all node classification demos, including the algorithms trained and the types of graph used.
+
+| Demo | Algorithm | Node features | Heterogeneous | Temporal |
+|---|---|---|---|---|
+| [GCN][gcn] | GCN | yes | | |
+| [Attri2Vec][attri2vec] | Attri2Vec | yes | | |
+| [GraphSAGE][graphsage] | GraphSAGE | yes | | |
+| [HinSAGE][hinsage] | HinSAGE | yes | yes | |
+| [Node2Vec][node2vec] | Node2Vec | | | |
+| [CTDNE][ctdne] | CTDNE | | | yes |
+| [ComplEx][complex] | ComplEx | | yes, multiple edge types | |
+| [DistMult][distmult] | DistMult | | yes, multiple edge types | |
 
 [gcn]: gcn/cora-gcn-links-example.ipynb
 [attri2vec]: attri2vec/stellargraph-attri2vec-DBLP.ipynb

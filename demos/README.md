@@ -9,16 +9,15 @@ The demo notebooks can be run without any installation of Python by using Binder
 
 - Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): [**GCN on Cora**](node-classification/gcn/gcn-cora-node-classification-example.ipynb)
 - Predicting attributes, such as classifying as a class or label, or regressing to calculate a continuous number:
-  - For nodes/vertices/entities: [**node classification**](./node-classification)
-  - For edges/links/connections: [**link prediction**](./link-prediction) (includes knowledge graph completion)
-  - For graphs/networks: [**graph classification**](./graph-classification)
-  - Adjusting predictions scores to be probabilities (for any model): [**calibration**](./calibration)
+  - For nodes/vertices/entities: [**node classification**](./node-classification/README.md)
+  - For edges/links/connections: [**link prediction**](./link-prediction/README.md) (includes knowledge graph completion)
+  - For graphs/networks: [**graph classification**](./graph-classification/README.md)
+  - Adjusting predictions scores to be probabilities (for any model): [**calibration**](./calibration/README.md)
 - Representation learning or computing embedding vectors (including unsupervised tasks):
-  - For nodes/vertices/entities and edges/links/connections: [**embeddings**](./embeddings) (and [**community detection**](./community_detection) for using these to cluster nodes)
-  - For graphs/networks: [**graph classification**](./graph-classification) (only supervised)
-- Ensembling models to reduce prediction variance: [**ensembles**](./ensembles)
-- Loading data into a `StellarGraph` object, with Pandas or NetworkX: [**basics**](./basics)
-- Experimental: running GraphSAGE on data stored in Neo4j: [**neo4j connector**](./connector/neo4j)
+  - For nodes/vertices/entities and edges/links/connections: [**embeddings**](./embeddings/README.md) (and [**community detection**](./community_detection/README.md) for using these to cluster nodes)
+- Ensembling models to reduce prediction variance: [**ensembles**](./ensembles/README.md)
+- Loading data into a `StellarGraph` object, with Pandas or NetworkX: [**basics**](./basics/README.md)
+- Experimental: running GraphSAGE on data stored in Neo4j: [**neo4j connector**](./connector/neo4j/README.md)
 
 ## Find a demo for an algorithm
 
