@@ -13,6 +13,7 @@ The demo notebooks can be run without any installation of Python by using Binder
   - For edges/links/connections: [**link prediction**](./link-prediction/README.md) (includes knowledge graph completion)
   - For graphs/networks: [**graph classification**](./graph-classification/README.md)
   - Adjusting predictions scores to be probabilities (for any model): [**calibration**](./calibration/README.md)
+  - Interpreting/introspecting models, for node classification: [**interpretability**](./interpretability/README.md)
 - Representation learning or computing embedding vectors (including unsupervised tasks):
   - For nodes/vertices/entities and edges/links/connections: [**embeddings**](./embeddings/README.md) (and [**community detection**](./community_detection/README.md) for using these to cluster nodes)
 - Ensembling models to reduce prediction variance: [**ensembles**](./ensembles/README.md)

@@ -6,9 +6,13 @@ Interpreting a model involves training and making predictions for a model, and t
 
 ## Find algorithms and demos
 
-- [GCN (dense)][gcn-dense]
-- [GCN (sparse)][gcn-sparse]
-- [GAT][GAT]
+This table lists interpretability demos, including the algorithms used.
+
+| demo | algorithm(s) |
+|---|---|
+| [GCN (dense)][gcn] | GCN, Integrated Gradients |
+| [GCN (sparse)][gcn-sparse] | GCN, Integrated Gradients |
+| [GAT][gat] | GAT, Integrated Gradients |
 
 [gcn-dense]: gcn/node-link-importance-demo-gcn.ipynb
 [gcn-sparse]: gcn/node-link-importance-demo-gcn-sparse.ipynb
