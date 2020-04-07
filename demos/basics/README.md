@@ -4,7 +4,7 @@
 
 ## Find demos for a format
 
-- [`loading-pandas`](loading-pandas.ipynb) shows the recommend way to load data, using Pandas (supporting any input format that Pandas supports, including CSV files and SQL databases)
+- [`loading-pandas`](loading-pandas.ipynb) shows the recommended way to load data, using Pandas (supporting any input format that Pandas supports, including CSV files and SQL databases)
 - [`loading-networkx`](loading-networkx.ipynb) shows how to load data from a [NetworkX](https://networkx.github.io) graph
 
 See [all demos for machine learning algorithms](../README.md).
