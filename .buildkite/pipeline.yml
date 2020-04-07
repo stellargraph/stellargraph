@@ -198,8 +198,13 @@ steps:
     command: "scripts/whitespace.sh --ci"
 
   - label: ":book: check demo table"
-    <<: *timeout
     command: "python scripts/demo_table.py --action=compare"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "python:3.6"
+        propagate_environment: true
 
   - label: ":docker: build image"
     <<: *timeout
