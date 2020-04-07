@@ -125,7 +125,8 @@ def cell_html(html, cell):
 
     if isinstance(cell, list):
         for contents in cell:
-            cell_html(html, contents)
+            # multiple elements? space them out
+            html.add(contents.to_html(), one_line=False)
     else:
         html.add(cell.to_html(), one_line=True)
 
