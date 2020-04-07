@@ -1,7 +1,7 @@
 # StellarGraph demos
 
 
-[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for graph machine learning. This folder contains demos of all of them to explain how they work and how to use them.
+[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for graph machine learning. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
 The demo notebooks can be run without any installation of Python by using Binder or Google Colab - these both provide a cloud-based notebook environment.  The whole set of demos can be opened in Binder here: [![Open in Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/README.md) or you can click the Binder and Colab badges within each notebook.
 

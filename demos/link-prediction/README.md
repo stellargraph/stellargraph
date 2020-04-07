@@ -1,6 +1,6 @@
 # Link prediction using StellarGraph
 
-[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing link prediction on graphs. This folder contains demos of all of them to explain how they work and how to use them.
+[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing link prediction on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
 A link prediction task predicts an attribute of links/edges in a graph. For instance, predicting whether a link/edge that isn't already in the graph should exist (binary classification, or recommendation, or knowledge base completion, in a knowledge graph), or even labelling existing links with a categorical class (binary classification or multiclass classification), or predicting a continuous number (regression). It is supervised or semi-supervised, where the model is trained using a subset of links/edges that have ground-truth labels. For predicting edge existence, the ground-truth may just be whether the edge exists in the original data, rather than a separate label.
 

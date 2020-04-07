@@ -1,6 +1,6 @@
 # Node classification using StellarGraph
 
-[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing node classification on graphs. This folder contains demos of all of them to explain how they work and how to use them.
+[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing node classification on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
 A node classification task predicts an attribute of each node in a graph. For instance, labelling each node with a categorical class (binary classification or multiclass classification), or predicting a continuous number (regression). It is supervised or semi-supervised, where the model is trained using a subset of nodes that have ground-truth labels.
 
