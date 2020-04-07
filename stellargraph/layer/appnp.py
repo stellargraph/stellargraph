@@ -391,7 +391,12 @@ class APPNP:
         # TODO: Support multiple matrices
 
         x_inp = [x_t, out_indices_t] + A_placeholders
-        x_out = self(x_inp)
+
+        feature_layer = x_t
+        for layer in extra_layers:
+            feature_layer = layer(feature_layer)
+
+        x_out = self([feature_layer, out_indices_t] + A_placeholders)
 
         return x_inp, x_out
 
