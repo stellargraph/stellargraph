@@ -2,7 +2,7 @@
 
 [StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing node classification on graphs. This folder contains demos of all of them to explain how they work and how to use them.
 
-A node classification task predicts an attribute of about each node in a graph. For instance, labelling each node with a categorical class (binary classification or multiclass classification), or predicting a continuous number (regression). It is supervised or semi-supervised, where the model is trained using a subset of nodes that have ground-truth labels.
+A node classification task predicts an attribute of each node in a graph. For instance, labelling each node with a categorical class (binary classification or multiclass classification), or predicting a continuous number (regression). It is supervised or semi-supervised, where the model is trained using a subset of nodes that have ground-truth labels.
 
 Node classification can also be done as a downstream task from node representation learning/embeddings, by training a supervised or semi-supervised classifier against the embedding vectors. Unsupervised algorithms that can be used in this manner include random walk-based methods like Metapath2Vec. StellarGraph provides [demos of unsupervised algorithms](../embeddings), some of which include a node classification downstream task.
 
