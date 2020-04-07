@@ -267,22 +267,19 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        if edges is None:
-            edges = {}
-
-        self._is_directed = is_directed
-        self._edges = convert.convert_edges(
-            edges,
-            name="edges",
-            default_type=edge_type_default,
-            source_column=source_column,
-            target_column=target_column,
-            weight_column=edge_weight_column,
-        )
-
-        nodes_from_edges = pd.unique(
-            np.concatenate([self._edges.targets, self._edges.sources])
-        )
+        # repeated call unique to decrease memory usage
+        if isinstance(edges, dict):
+            if edges == {}:
+                nodes_from_edges = []
+            else:
+                nodes_from_edges = [pd.unique(type_edges[source_column]) for type_edges in edges.values()]
+                nodes_from_edges.extend(pd.unique(type_edges[target_column]) for type_edges in edges.values())
+                nodes_from_edges = pd.unique(np.concatenate(nodes_from_edges))
+        elif edges is not None:
+            print("############# ", type(edges))
+            nodes_from_edges = pd.unique(np.concatenate([edges[target_column], edges[source_column]]))
+        else:
+            nodes_from_edges = []
 
         if nodes is None:
             nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
@@ -296,23 +293,31 @@ class StellarGraph:
             dtype=dtype,
         )
 
-        if nodes is not None:
-            # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
-            # node mentioned in the edges
-            try:
-                self._nodes.ids.to_iloc(
-                    nodes_from_edges, smaller_type=False, strict=True,
-                )
-            except KeyError as e:
-                missing_values = e.args[0]
-                if not is_real_iterable(missing_values):
-                    missing_values = [missing_values]
-                missing_values = pd.unique(missing_values)
+        if edges is None:
+            edges = {}
 
-                raise ValueError(
-                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
-                    f"found some missing: {comma_sep(missing_values)}"
+        if isinstance(edges, dict):
+            for type_name in edges.keys():
+                edges[type_name][target_column] = self._nodes.ids.to_iloc(
+                    edges[type_name][target_column], strict=True
                 )
+
+                edges[type_name][source_column] = self._nodes.ids.to_iloc(
+                    edges[type_name][source_column], strict=True
+                )
+        else:
+            edges[target_column] = self._nodes.ids.to_iloc(edges[target_column], strict=True)
+            edges[source_column] = self._nodes.ids.to_iloc(edges[source_column], strict=True)
+
+        self._is_directed = is_directed
+        self._edges = convert.convert_edges(
+            edges,
+            name="edges",
+            default_type=edge_type_default,
+            source_column=source_column,
+            target_column=target_column,
+            weight_column=edge_weight_column,
+        )
 
     @staticmethod
     def from_networkx(
@@ -580,10 +585,12 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring nodes.
         """
-        ilocs = self._edges.edge_ilocs(node, ins=True, outs=True)
+        node_iloc = self._nodes.ids.to_iloc([node])[0]
+
+        ilocs = self._edges.edge_ilocs(node_iloc, ins=True, outs=True)
         source = self._edges.sources[ilocs]
         target = self._edges.targets[ilocs]
-        other_node_id = np.where(source == node, target, source)
+        other_node_id = self._nodes.ids.from_iloc(np.where(source == node_iloc, target, source))
         return self._transform_edges(
             other_node_id, ilocs, include_edge_weight, edge_types
         )
@@ -612,8 +619,9 @@ class StellarGraph:
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
-        ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
-        source = self._edges.sources[ilocs]
+        node_iloc = self._nodes.ids.to_iloc([node])[0]
+        ilocs = self._edges.edge_ilocs(node_iloc, ins=True, outs=False)
+        source = self._nodes.ids.from_iloc(self._edges.sources[ilocs])
         return self._transform_edges(source, ilocs, include_edge_weight, edge_types)
 
     def out_nodes(
@@ -640,8 +648,9 @@ class StellarGraph:
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
-        ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
-        target = self._edges.targets[ilocs]
+        node_iloc = self._nodes.ids.to_iloc([node])[0]
+        ilocs = self._edges.edge_ilocs(node_iloc, ins=False, outs=True)
+        target = self._nodes.ids.from_iloc(self._edges.targets[ilocs])
         return self._transform_edges(target, ilocs, include_edge_weight, edge_types)
 
     def nodes_of_type(self, node_type=None):
@@ -780,12 +789,12 @@ class StellarGraph:
     # Computationally intensive methods:
 
     def _edge_type_iloc_triples(self, selector=slice(None), stacked=False):
-        source_ilocs = self._nodes.ids.to_iloc(self._edges.sources[selector])
+        source_ilocs = self._edges.sources[selector]
         source_type_ilocs = self._nodes.type_ilocs[source_ilocs]
 
         rel_type_ilocs = self._edges.type_ilocs[selector]
 
-        target_ilocs = self._nodes.ids.to_iloc(self._edges.targets[selector])
+        target_ilocs = self._edges.targets[selector]
         target_type_ilocs = self._nodes.type_ilocs[target_ilocs]
 
         all_ilocs = source_type_ilocs, rel_type_ilocs, target_type_ilocs
@@ -960,8 +969,9 @@ class StellarGraph:
         if nodes is None:
             selector = slice(None)
         else:
-            selector = np.isin(self._edges.sources, nodes) & np.isin(
-                self._edges.targets, nodes
+            node_ilocs = self._nodes.ids.to_iloc(nodes)
+            selector = np.isin(self._edges.sources, node_ilocs) & np.isin(
+                self._edges.targets, node_ilocs
             )
 
         for n1, rel, n2 in self._unique_type_triples(
@@ -1021,16 +1031,16 @@ class StellarGraph:
             selector = slice(None)
         else:
             nodes = list(nodes)
-            index = ExternalIdIndex(nodes)
-            selector = np.isin(self._edges.sources, nodes) & np.isin(
-                self._edges.targets, nodes
+            node_ilocs = self._nodes.ids.to_iloc(nodes)
+            selector = np.isin(self._edges.sources, node_ilocs) & np.isin(
+                self._edges.targets, node_ilocs
             )
 
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
-        src_idx = index.to_iloc(self._edges.sources[selector])
-        tgt_idx = index.to_iloc(self._edges.targets[selector])
+        src_idx = self._edges.sources[selector]
+        tgt_idx = self._edges.targets[selector]
         if weighted:
             weights = self._edges.weights[selector]
         else:
@@ -1082,13 +1092,13 @@ class StellarGraph:
         # FIXME(#985): this is O(edges in graph) but could potentially be optimised to O(edges in
         # graph incident to `nodes`), which could be much fewer if `nodes` is small
         edge_ilocs = np.where(
-            np.isin(self._edges.sources, nodes) & np.isin(self._edges.targets, nodes)
+            np.isin(self._edges.sources, node_ilocs) & np.isin(self._edges.targets, node_ilocs)
         )
         edge_frame = pd.DataFrame(
             {
                 "id": self._edges.ids.from_iloc(edge_ilocs),
-                globalvar.SOURCE: self._edges.sources[edge_ilocs],
-                globalvar.TARGET: self._edges.targets[edge_ilocs],
+                globalvar.SOURCE: self._nodes.ids.from_iloc(self._edges.sources[edge_ilocs]),
+                globalvar.TARGET: self._nodes.ids.from_iloc(self._edges.targets[edge_ilocs]),
                 globalvar.WEIGHT: self._edges.weights[edge_ilocs],
             },
             index=self._edges.type_of_iloc(edge_ilocs),
@@ -1213,8 +1223,8 @@ class StellarGraph:
                 graph.add_nodes_from(node_ids, **ty_dict)
 
         iterator = zip(
-            self._edges.sources,
-            self._edges.targets,
+            self._nodes.ids.from_iloc(self._edges.sources),
+            self._nodes.ids.from_iloc(self._edges.targets),
             self._edges.type_of_iloc(slice(None)),
             self._edges.weights,
         )
@@ -1262,8 +1272,8 @@ class StellarGraph:
             source_types,
             rel_types,
             target_types,
-            self._edges.sources,
-            self._edges.targets,
+            self._nodes.ids.from_iloc(self._edges.sources),
+            self._nodes.ids.from_iloc(self._edges.targets),
         )
         for src_type, rel_type, tgt_type, src, tgt in iterator:
             triple = EdgeType(src_type, rel_type, tgt_type)
@@ -1299,10 +1309,13 @@ class StellarGraph:
         effectively_directed = self.is_directed() or source_node == target_node
         both_dirs = not effectively_directed
 
-        source_ilocs = self._edges.edge_ilocs(source_node, ins=both_dirs, outs=True)
-        target_ilocs = self._edges.edge_ilocs(target_node, ins=True, outs=both_dirs)
+        source_node_iloc = self._nodes.ids.to_iloc(source_node)
+        target_node_iloc = self._nodes.ids.to_iloc(target_node)
 
-        ilocs = np.intersect1d(source_ilocs, target_ilocs, assume_unique=True)
+        source_edge_ilocs = self._edges.edge_ilocs(source_node_iloc, ins=both_dirs, outs=True)
+        target_edge_ilocs = self._edges.edge_ilocs(target_node_iloc, ins=True, outs=both_dirs)
+
+        ilocs = np.intersect1d(source_edge_ilocs, target_edge_ilocs, assume_unique=True)
 
         return [float(x) for x in self._edges.weights[ilocs]]
 
