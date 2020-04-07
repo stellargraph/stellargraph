@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from stellargraph.core.graph import *
-from stellargraph.mapper.padded_graph_generator import PaddedGraphGenerator, PaddedGraphSequence
+from stellargraph.mapper.padded_graph_generator import (
+    PaddedGraphGenerator,
+    PaddedGraphSequence,
+)
 
 import numpy as np
 import pytest
