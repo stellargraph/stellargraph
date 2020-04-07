@@ -7,6 +7,7 @@ The demo notebooks can be run without any installation of Python by using Binder
 
 ## Find algorithms for a task
 
+- Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): [**GCN on Cora**](node-classification/gcn/gcn-cora-node-classification-example.ipynb)
 - Predicting attributes, such as classifying as a class or label, or regressing to calculate a continuous number:
   - For nodes/vertices/entities: [**node classification**](./node-classification)
   - For edges/links/connections: [**link prediction**](./link-prediction) (includes knowledge graph completion)

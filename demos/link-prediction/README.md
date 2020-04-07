@@ -1,62 +1,31 @@
-## Table of Contents
+# Link prediction using StellarGraph
 
-This folder contains several examples of applying graph machine learning (ML) algorithms on network-structured
-data to solve link prediction (predicting relations and/or their properties) problems. The
-examples demonstrate using the `StellarGraph` library to build machine learning
-workflows on both homogeneous and heterogeneous networks.
+[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing link prediction on graphs. This folder contains demos of all of them to explain how they work and how to use them.
 
-Each folder contains one or more examples of using the StellarGraph implementations of the
-state-of-the-art algorithms, attri2vec [4], GraphSAGE [3], HinSAGE, GCN [6], GAT [7], Node2Vec [1], and Metapath2Vec [2].
-GraphSAGE, HinSAGE, and GAT are variants of Graph Convolutional Neural networks [6]. Node2Vec and
-Metapath2Vec are methods based on graph random walks and representation learning using the
-Word2Vec [5] algorithm. attri2vec[4] is also based on graph random walks and learns node
-representations by performing a mapping on node attributes.
+A link prediction task predicts an attribute of about links/edges in a graph. For instance, predicting whether a link/edge that isn't already in the graph should exist (binary classification, or recommendation, or knowledge base completion, in a knowledge graph), or even labelling existing links with a categorical class (binary classification or multiclass classification), or predicting a continuous number (regression). It is supervised or semi-supervised, where the model is trained using a subset of links/edges that have ground-truth labels. For predicting edge existence, the ground-truth may just be whether the edge exists in the original data, rather than a separate label.
 
-The examples folder structure is shown below.
+Link prediction can also be done as a downstream task from node representation learning/embeddings, by combining node embedding vectors for the source and target nodes of the edge and training a supervised or semi-supervised classifier against the result. Unsupervised algorithms that can be used in this manner include random walk-based methods like Metapath2Vec. StellarGraph provides [demos of unsupervised algorithms](../embeddings).
 
-* [`/random-walks`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/random-walks)
+## Find algorithms and demos for a graph
 
-    Examples of semi-supervised link prediction for homogeneous and heterogeneous networks,
-    using the Node2Vec and Metapath2vec algorithms.
+| algorithm & demo | hetereogeneous | directed | edge weights | temporal | node features | inductive |
+|---|---|---|---|---|---|---|
+| [GCN][gcn] | | | | | yes | |
+| [Attri2Vec][attri2vec] | | | | | yes | |
+| [GraphSAGE][graphsage] | see HinSAGE | yes | | | yes | [demo][graphsage-inductive] |
+| [HinSAGE][hinsage] | yes | | | | yes | yes |
+| [Node2Vec][node2vec] | | | yes | | | |
+| [CTDNE][ctdne] | | | | yes | | |
+| [ComplEx][complex] | yes, multiple edge types | yes | | | | |
+| [DistMult][distmult] | yes, multiple edge types | yes | | | | |
 
-* [`/graphsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/graphsage)
+[gcn]: gcn/cora-gcn-links-example.ipynb
+[attri2vec]: attri2vec/stellargraph-attri2vec-DBLP.ipynb
+[graphsage]: graphsage/cora-links-example.ipynb
+[hinsage]: hinsage/movielens-recommender.ipynb
+[node2vec]: random-walks/cora-lp-demo.ipynb
+[ctdne]: random-walks/ctdne-link-prediction.ipynb
+[complex]: knowledge-graphs/complex.ipynb
+[distmult]: knowledge-graphs/distmult.ipynb
 
-    Example of semi-supervised link prediction for a homogeneous network with attributed nodes,
-    using the GraphSAGE algorithm.
-
-* [`/hinsage`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/hinsage)
-
-    Example of supervised link attribute prediction for a heterogeneous network with attributed nodes of different types,
-    using the HinSAGE algorithm.
-
-* [`/attri2vec`](https://github.com/stellargraph/stellargraph/tree/master/demos/link-prediction/attri2vec)
-
-    Example of link prediction for out-of-sample nodes for a homogeneous network with attributed nodes,
-    using the attri2vec algorithm.
-
-## References
-
-1. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on
-Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
-
-2. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
-Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
-([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
-
-3. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
-[cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
-
-4. Attributed Network Embedding via Subspace Discovery. D. Zhang, J, Yin, X. Zhu and C. Zhang, arXiv:1901.04095,
-[cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
-
-5. Distributed representations of words and phrases and their compositionality. T. Mikolov,
-I. Sutskever, K. Chen, G. S. Corrado, and J. Dean. In Advances in Neural Information Processing
- Systems (NIPS), pp. 3111-3119, 2013. ([link](https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf))
-
-6. Semi-Supervised Classification with Graph Convolutional Networks. T. Kipf, M. Welling.
-ICLR 2017. arXiv:1609.02907 ([link](https://arxiv.org/abs/1609.02907))
-
-7. Graph Attention Networks. P. Velickovic et al. ICLR 2018 ([link](https://arxiv.org/abs/1710.10903))
-
-8. On Calibration of Modern Neural Networks. C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger.
-ICML 2017. ([link](https://geoffpleiss.com/nn_calibration))
+See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s).
