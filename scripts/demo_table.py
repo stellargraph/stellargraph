@@ -440,7 +440,15 @@ def main():
         print(formatted, file=sys.stderr)
 
         try:
-            subprocess.run(["buildkite-agent", "annotate", "--style=error", formatted])
+            subprocess.run(
+                [
+                    "buildkite-agent",
+                    "annotate",
+                    "--style=error",
+                    "--context=demo_table",
+                    formatted,
+                ]
+            )
         except FileNotFoundError:
             # no agent, so probably on buildkite, and so silently no annotation
             pass
