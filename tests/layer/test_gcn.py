@@ -63,27 +63,18 @@ def test_GraphConvolution_dense():
     # We need to specify the batch shape as one for the GraphConvolutional logic to work
     x_t = Input(batch_shape=(1,) + features.shape, name="X")
     A_t = Input(batch_shape=(1, 3, 3), name="A")
-    output_indices_t = Input(batch_shape=(1, None), dtype="int32", name="outind")
 
     # Note we add a batch dimension of 1 to model inputs
     adj = G.to_adjacency_matrix().toarray()[None, :, :]
-    out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
 
     # For dense matrix, remove batch dimension
     A_mat = Lambda(lambda A: K.squeeze(A, 0))(A_t)
 
-    # Test with final_layer=False
-    out = GraphConvolution(2, final_layer=False)([x_t, output_indices_t, A_mat])
-    model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
-    preds = model.predict([x, adj, out_indices], batch_size=1)
+    out = GraphConvolution(2)([x_t, A_mat])
+    model = keras.Model(inputs=[x_t, A_t], outputs=out)
+    preds = model.predict([x, adj], batch_size=1)
     assert preds.shape == (1, 3, 2)
-
-    # Now try with final_layer=True
-    out = GraphConvolution(2, final_layer=True)([x_t, output_indices_t, A_mat])
-    model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
-    preds = model.predict([x, adj, out_indices], batch_size=1)
-    assert preds.shape == (1, 2, 2)
 
     # Check for errors with batch size != 1
     # We need to specify the batch shape as one for the GraphConvolutional logic to work
@@ -101,13 +92,11 @@ def test_GraphConvolution_sparse():
     x_t = Input(batch_shape=(1,) + features.shape)
     A_ind = Input(batch_shape=(1, None, 2), dtype="int64")
     A_val = Input(batch_shape=(1, None), dtype="float32")
-    output_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
-    # Test with final_layer=False
     A_mat = SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=A_val.dtype)(
         [A_ind, A_val]
     )
-    out = GraphConvolution(2, final_layer=False)([x_t, output_indices_t, A_mat])
+    out = GraphConvolution(2)([x_t, A_mat])
 
     # Note we add a batch dimension of 1 to model inputs
     adj = G.to_adjacency_matrix().tocoo()
@@ -116,15 +105,9 @@ def test_GraphConvolution_sparse():
     out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
 
-    model = keras.Model(inputs=[x_t, output_indices_t, A_ind, A_val], outputs=out)
-    preds = model.predict([x, out_indices, A_indices, A_values], batch_size=1)
+    model = keras.Model(inputs=[x_t, A_ind, A_val], outputs=out)
+    preds = model.predict([x, A_indices, A_values], batch_size=1)
     assert preds.shape == (1, 3, 2)
-
-    # Now try with final_layer=True
-    out = GraphConvolution(2, final_layer=True)([x_t, output_indices_t, A_mat])
-    model = keras.Model(inputs=[x_t, output_indices_t, A_ind, A_val], outputs=out)
-    preds = model.predict([x, out_indices, A_indices, A_values], batch_size=1)
-    assert preds.shape == (1, 2, 2)
 
 
 def test_GCN_init():
