@@ -17,7 +17,7 @@ The demo notebooks can be run without any installation of Python by using Binder
 - Representation learning or computing embedding vectors (including unsupervised tasks):
   - For nodes/vertices/entities and edges/links/connections: [**embeddings**](./embeddings/README.md) (and [**community detection**](./community_detection/README.md) for using these to cluster nodes)
 - Ensembling models to reduce prediction variance: [**ensembles**](./ensembles/README.md)
-- Loading data into a `StellarGraph` object, with Pandas or NetworkX: [**basics**](./basics/README.md)
+- Loading data into a `StellarGraph` object, with Pandas, Neo4j or NetworkX: [**basics**](./basics/README.md)
 - Experimental: running GraphSAGE on data stored in Neo4j: [**neo4j connector**](./connector/neo4j/README.md)
 
 ## Find a demo for an algorithm
