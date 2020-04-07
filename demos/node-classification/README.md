@@ -8,19 +8,21 @@ Node classification can also be done as a downstream task from node representati
 
 ## Find algorithms and demos for a graph
 
-| algorithm & demo | hetereogeneous | directed | edge weights | node features | inductive |
-|---|---|---|---|---|---|
-| [GCN][gcn] | see RGCN | | | yes | see Cluster-GCN |
-| [Cluster-GCN][cluster-gcn] | | | | yes | yes |
-| [RGCN][rgcn] | yes, multiple edge types | | | yes | |
-| [GAT][gat] | | | | yes | |
-| [SGC][sgc] | | | | yes | |
-| [PPNP][ppnp] | | | | yes | |
-| [APPNP][ppnp] | | | | yes | |
-| [Attri2Vec][attri2vec] | | | | yes | |
-| [GraphSAGE][graphsage] | see HinSAGE | [demo][graphsage-directed] | | yes | [demo][graphsage-inductive] |
-| [HinSAGE][hinsage] | yes | | | yes | yes |
-| [Node2Vec][node2vec] | | | [demo][node2vec-weighted] | | |
+| demo | algorithm(s) | hetereogeneous | directed | edge weights | node features | inductive |
+|---|---|---|---|---|---|---|
+| [GCN][gcn] | GCN | | | | yes | |
+| [Cluster-GCN][cluster-gcn] | Cluster-GCN | | | | yes | |
+| [RGCN][rgcn] | RGCN | yes, multiple edge types | | | yes | |
+| [GAT][gat] | GAT | | | | yes | |
+| [SGC][sgc] | SGC | | | | yes | |
+| [PPNP & APPNP][ppnp] | PPNP, APPNP | | | | yes | |
+| [Attri2Vec][attri2vec] | Attri2Vec | | | | yes | |
+| [GraphSAGE on Cora][graphsage] | GraphSAGE | | | | yes | |
+| [Inductive GraphSAGE][graphsage-inductive] | GraphSAGE | | | | yes | yes |
+| [Directed GraphSAGE][graphsage-directed] | GraphSAGE | | yes | | yes | |
+| [HinSAGE][hinsage] | HinSAGE | yes | | | yes | |
+| [Node2Vec][node2vec] | Node2Vec | | | | | |
+| [Weighted Node2Vec][node2vec-weighted] | Node2Vec | | | yes | | |
 
 [gcn]: gcn/gcn-cora-node-classification-example.ipynb
 [cluster-gcn]: cluster-gcn/cluster-gcn-node-classification.ipynb
@@ -36,6 +38,4 @@ Node classification can also be done as a downstream task from node representati
 [node2vec]: node2vec/stellargraph-node2vec-node-classification.ipynb
 [node2vec-weighted]: node2vec/stellargraph-node2vec-weighted-random-walks.ipynb
 
-Example: suppose graph `G` has node features and multiple edge types; the algorithms that can use all this information directly are RGCN and HinSAGE. One can use additional algorithms on `G` by ignoring the edge types, allowing the use of GCN, Cluster-GCN, etc.
-
-See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s).
+See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s). See [the demo README](../README.md) for more tasks, and a summary of each algorithm.

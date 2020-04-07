@@ -6,6 +6,10 @@ A node representation learning task computes a representation or embedding vecto
 
 Node representations can also be computed from (semi-)supervised models, using the output of a hidden layer as the embedding vector for nodes or edges. StellarGraph provides some [demonstrations of node classification][nc] and [link prediction][lp], some of which include computing and visualising node or edge embeddings.
 
+[nc]: ../node-classification/README.md
+[lp]: ../link-prediction/README.md
+[cd]: ../community_detection/README.md
+
 ## Find algorithms and demos for a graph
 
 | demo | algorithm(s) | training method | downstream tasks shown | node features |
@@ -25,3 +29,5 @@ Node representations can also be computed from (semi-)supervised models, using t
 [metapath2vec]: stellargraph-metapath2vec.ipynb
 [node2vec]: stellargraph-node2vec.ipynb
 [wys]: watch-your-step-cora-demo.ipynb
+
+See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s). See [the demo README](../README.md) for more tasks, and a summary of each algorithm.

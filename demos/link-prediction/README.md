@@ -28,4 +28,4 @@ Link prediction can also be done as a downstream task from node representation l
 [complex]: knowledge-graphs/complex.ipynb
 [distmult]: knowledge-graphs/distmult.ipynb
 
-See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s).
+See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s). See [the demo README](../README.md) for more tasks, and a summary of each algorithm.
