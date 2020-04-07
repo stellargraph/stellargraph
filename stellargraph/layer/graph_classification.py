@@ -31,10 +31,8 @@ from tensorflow.keras.layers import (
 from .misc import deprecated_model_function
 from ..mapper import GraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
-from ..core.experimental import experimental
 
 
-@experimental(reason="Missing unit tests.", issues=[1042])
 class GraphClassificationConvolution(ClusterGraphConvolution):
 
     """
@@ -96,7 +94,6 @@ class GraphClassificationConvolution(ClusterGraphConvolution):
         return output
 
 
-@experimental(reason="Missing unit tests")
 class GCNSupervisedGraphClassification:
     """
     A stack of :class:`GraphClassificationConvolution` layers together with a Keras `GlobalAveragePooling1D` layer
