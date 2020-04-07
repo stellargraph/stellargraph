@@ -392,11 +392,22 @@ ALGORITHMS = [
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""convert""")
-    parser.add_argument(
-        "readme", type=argparse.FileType("r+"), default="demos/README.md"
+    parser = argparse.ArgumentParser(
+        description="Edits or compares the table of all algorithms and their demos in `demos/README.md`."
     )
-    parser.add_argument("--action", choices=["compare", "overwrite"], default="compare")
+    parser.add_argument(
+        "readme",
+        type=argparse.FileType("r+"),
+        default="demos/README.md",
+        nargs="?",
+        help="the location of the readme file (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--action",
+        choices=["compare", "overwrite"],
+        default="compare",
+        help="whether to compare the table in 'readme' against what would be generated, or to overwrite the table with a new one (default: %(default)s)",
+    )
     args = parser.parse_args()
 
     def error(message):
