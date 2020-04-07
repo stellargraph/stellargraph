@@ -15,7 +15,7 @@
 # limitations under the License.
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from .sequences import GraphSequence
+from .sequences import PaddedGraphSequence
 
 
 class PaddedGraphGenerator:
@@ -80,7 +80,7 @@ class PaddedGraphGenerator:
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A :class:`GraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
+            A :class:`PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
@@ -106,7 +106,7 @@ class PaddedGraphGenerator:
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
-        return GraphSequence(
+        return PaddedGraphSequence(
             graphs=[self.graphs[i] for i in graph_ilocs],
             targets=targets,
             batch_size=batch_size,

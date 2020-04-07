@@ -25,7 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
-    "GraphSequence",
+    "PaddedGraphSequence",
     "CorruptedNodeSequence",
 ]
 
