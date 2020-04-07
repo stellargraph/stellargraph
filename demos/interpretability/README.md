@@ -16,7 +16,7 @@ This table lists interpretability demos, including the algorithms used.
 
 [gcn-dense]: gcn/node-link-importance-demo-gcn.ipynb
 [gcn-sparse]: gcn/node-link-importance-demo-gcn-sparse.ipynb
-[gat]: node-link-importance-demo-gat.ipynb
+[gat]: gat/node-link-importance-demo-gat.ipynb
 
 See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s). See [the demo README](../README.md) for more tasks, and a summary of each algorithm. See [the node classification demos][nc] for more details on the base task.
 
