@@ -10,7 +10,7 @@ This table lists interpretability demos, including the algorithms used.
 
 | demo | algorithm(s) |
 |---|---|
-| [GCN (dense)][gcn] | GCN, Integrated Gradients |
+| [GCN (dense)][gcn-dense] | GCN, Integrated Gradients |
 | [GCN (sparse)][gcn-sparse] | GCN, Integrated Gradients |
 | [GAT][gat] | GAT, Integrated Gradients |
 
