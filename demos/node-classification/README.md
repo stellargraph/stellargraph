@@ -10,7 +10,7 @@ Node classification can also be done as a downstream task from node representati
 
 This table lists all node classification demos, including the algorithms trained, the types of graph used, and the tasks demonstrated.
 
-| Demo | Algorithm(s) | Node features | Hetereogeneous | Directed | Edge weights | Inductive | Node embeddings |
+| Demo | Algorithm(s) | Node features | Heterogeneous | Directed | Edge weights | Inductive | Node embeddings |
 |---|---|---|---|---|---|---|---|
 | [GCN][gcn] | GCN | yes | | | | | yes |
 | [Cluster-GCN][cluster-gcn] | Cluster-GCN | yes | | | | | yes |
