@@ -170,7 +170,7 @@ def test_ClusterNodeSquence():
         assert len(batch) == 2
         # The first dimension is the batch dimension necessary to make this work with Keras
         assert batch[0][0].shape == (1, 1, 2)
-        assert batch[0][1].shape == (1, 1, 1)
+        assert batch[0][1].shape == (1, 1)
         # one node so that adjacency matrix is 1x1
         assert batch[0][2].shape == (1, 1, 1)
         # no targets given
@@ -188,7 +188,7 @@ def test_ClusterNodeSquence():
         assert len(batch) == 2
         # The first dimension is the batch dimension necessary to make this work with Keras
         assert batch[0][0].shape == (1, 2, 2)
-        assert batch[0][1].shape == (1, 1, 2)
+        assert batch[0][1].shape == (1, 2)
         # two nodes so that adjacency matrix is 2x2
         assert batch[0][2].shape == (1, 2, 2)
         # no targets given

@@ -206,6 +206,17 @@ steps:
         image: "python:3.6"
         propagate_environment: true
 
+  - label: ":snake: conda build"
+    <<: *timeout
+    command: ".buildkite/steps/conda-build.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: conda
+    agents:
+      queue: "t2medium"
+
   - label: ":docker: build image"
     <<: *timeout
     plugins:

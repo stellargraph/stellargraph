@@ -148,6 +148,13 @@ def convert_edges(
     edges, edge_features = converter.convert(data)
     assert all(features is None for features in edge_features.values())
 
+    for type_name, type_df in edges.items():
+        weight_col = type_df[WEIGHT]
+        if not pd.api.types.is_numeric_dtype(weight_col):
+            raise TypeError(
+                f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
+            )
+
     return EdgeData(edges)
 
 
