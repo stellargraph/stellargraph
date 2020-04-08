@@ -13,3 +13,5 @@ Required Installations:
 
 
 > :warning: All functionalities demonstrated in the above-mentioned notebooks are experimental. They have not been tested thoroughly and the implementation might be dramatically changed.
+
+There is also [a demonstration of loading data into memory from Neo4j](../../basics/loading-saving-neo4j.ipynb).  This allows using any StellarGraph algorithm on data from Neo4j.
