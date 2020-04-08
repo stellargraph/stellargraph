@@ -137,7 +137,7 @@ class ComplEx:
 
         return node, rel
 
-    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
+    def rank_edges_against_all_nodes(self, test_data, known_edges_graph, comparison_mode="random"):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -214,6 +214,7 @@ class ComplEx:
                 true_rel_ilocs=rels,
                 modified_object=True,
                 known_edges_graph=known_edges_graph,
+                comparison_mode=comparison_mode,
             )
             mod_s_raw, mod_s_filt = _ranks_from_score_columns(
                 mod_s_pred,
@@ -222,6 +223,7 @@ class ComplEx:
                 modified_object=False,
                 unmodified_node_ilocs=objects,
                 known_edges_graph=known_edges_graph,
+                comparison_mode=comparison_mode,
             )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
@@ -376,7 +378,7 @@ class DistMult:
             self._edge_type_embeddings.embeddings.numpy(),
         )
 
-    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
+    def rank_edges_against_all_nodes(self, test_data, known_edges_graph, comparison_mode="random"):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -452,6 +454,7 @@ class DistMult:
                 true_rel_ilocs=rels,
                 modified_object=True,
                 known_edges_graph=known_edges_graph,
+                comparison_mode=comparison_mode,
             )
             mod_s_raw, mod_s_filt = _ranks_from_score_columns(
                 mod_s_pred,
@@ -460,6 +463,7 @@ class DistMult:
                 modified_object=False,
                 unmodified_node_ilocs=objects,
                 known_edges_graph=known_edges_graph,
+                comparison_mode=comparison_mode,
             )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
@@ -511,6 +515,19 @@ class DistMult:
     build = deprecated_model_function(in_out_tensors, "build")
 
 
+def _ranks_from_comparisons(greater, greater_equal, comparison_mode):
+    low = 1 + greater.sum(axis=0)
+    high = greater_equal.sum(axis=0)
+
+    if comparison_mode == "top":
+        return low
+    elif comparison_mode == "bottom":
+        return high
+    elif comparison_mode == "random":
+        return np.random.random_integers(low, high)
+    else:
+        raise ValueError(f"comparison_mode: expected 'top', 'bottom' or 'random', found {comparison_mode!r}")
+
 def _ranks_from_score_columns(
     pred,
     *,
@@ -519,6 +536,7 @@ def _ranks_from_score_columns(
     true_rel_ilocs,
     modified_object,
     known_edges_graph,
+    comparison_mode,
 ):
     """
     Compute the raw and filtered ranks of a set of true edges ``E = (s, r, o)`` against all
@@ -558,9 +576,10 @@ def _ranks_from_score_columns(
 
     # for each column, compare all the scores against the score of the true edge
     greater = pred > true_scores
+    greater_equal = pred >= true_scores
 
     # the raw rank is the number of elements scored higher than the true edge
-    raw_rank = 1 + greater.sum(axis=0)
+    raw_rank = _ranks_from_comparisons(greater, greater_equal, comparison_mode)
 
     # the filtered rank is the number of unknown elements scored higher, where an element is
     # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
@@ -585,8 +604,9 @@ def _ranks_from_score_columns(
 
     neighbour_ilocs = known_edges_graph._get_index_for_nodes(neighbours)
     greater[neighbour_ilocs, columns] = False
+    greater_equal[neighbour_ilocs, columns] = False
 
-    filtered_rank = 1 + greater.sum(axis=0)
+    filtered_rank = _ranks_from_comparisons(greater, greater_equal, comparison_mode)
 
     assert raw_rank.shape == filtered_rank.shape == (batch_size,)
     return raw_rank, filtered_rank
