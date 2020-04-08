@@ -66,7 +66,7 @@ class GraphWaveGenerator:
         adj = G.to_adjacency_matrix().tocoo()
 
         # Function to map node IDs to indices for quicker node index lookups
-        self._node_lookup = G._get_index_for_nodes
+        self._node_lookup = G.get_index_for_nodes
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj

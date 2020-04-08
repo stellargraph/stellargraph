@@ -83,10 +83,10 @@ class KGTripleGenerator:
                     f"negative_samples: expected non-negative integer, found {negative_samples}"
                 )
 
-        source_ilocs = self.G._get_index_for_nodes(sources)
+        source_ilocs = self.G.get_index_for_nodes(sources)
         # FIXME(#870): this would be best expressed without poking into the _edges proprety of G
         rel_ilocs = self.G._edges.types.to_iloc(rels, strict=True)
-        target_ilocs = self.G._get_index_for_nodes(targets)
+        target_ilocs = self.G.get_index_for_nodes(targets)
 
         return KGTripleSequence(
             max_node_iloc=self.G.number_of_nodes(),

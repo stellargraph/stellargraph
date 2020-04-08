@@ -1268,7 +1268,7 @@ class StellarGraph:
 
     # FIXME: Experimental/special-case methods that need to be considered more; the underscores
     # denote "package private", not fully private, and so are ok to use in the rest of stellargraph
-    def _get_index_for_nodes(self, nodes, node_type=None):
+    def get_index_for_nodes(self, nodes, node_type=None):
         """
         Get the indices for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -1276,7 +1276,7 @@ class StellarGraph:
         for this method to be fast.
 
         Args:
-            n: (list or hashable) Node ID or list of node IDs
+            nodes: (list or hashable) Node ID or list of node IDs
             node_type: (hashable) the type of the nodes.
 
         Returns:

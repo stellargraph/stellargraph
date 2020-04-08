@@ -236,21 +236,21 @@ def test_benchmark_graph_schema(benchmark, num_types):
     benchmark(sg.create_graph_schema)
 
 
-def test_get_index_for_nodes():
+def testget_index_for_nodes():
     sg = example_graph(feature_size=8)
-    aa = sg._get_index_for_nodes([1, 2, 3, 4])
+    aa = sg.get_index_for_nodes([1, 2, 3, 4])
     assert list(aa) == [0, 1, 2, 3]
 
     sg = example_hin_1(feature_sizes={})
-    aa = sg._get_index_for_nodes([0, 1, 2, 3])
+    aa = sg.get_index_for_nodes([0, 1, 2, 3])
     assert list(aa) == [0, 1, 2, 3]
-    aa = sg._get_index_for_nodes([0, 1, 2, 3], "A")
+    aa = sg.get_index_for_nodes([0, 1, 2, 3], "A")
     assert list(aa) == [0, 1, 2, 3]
-    aa = sg._get_index_for_nodes([4, 5, 6])
+    aa = sg.get_index_for_nodes([4, 5, 6])
     assert list(aa) == [4, 5, 6]
-    aa = sg._get_index_for_nodes([4, 5, 6], "B")
+    aa = sg.get_index_for_nodes([4, 5, 6], "B")
     assert list(aa) == [4, 5, 6]
-    aa = sg._get_index_for_nodes([1, 2, 5])
+    aa = sg.get_index_for_nodes([1, 2, 5])
     assert list(aa) == [1, 2, 5]
 
 
@@ -441,7 +441,7 @@ def test_edges_include_edge_type(use_ilocs):
 
     expected = r | f
     if use_ilocs:
-        expected = {tuple(g._get_index_for_nodes(x[:2])) + (x[2],) for x in expected}
+        expected = {tuple(g.get_index_for_nodes(x[:2])) + (x[2],) for x in expected}
     expected = normalize_edges(expected, directed=False)
     assert (
         normalize_edges(
@@ -698,7 +698,7 @@ def example_unweighted_hom(is_directed=True):
 def test_neighbors_weighted_hin(is_directed, use_ilocs):
     graph = example_weighted_hin(is_directed=is_directed)
 
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
 
     assert_items_equal(graph.neighbors(node, use_ilocs=use_ilocs), [0, 0, 2, 3])
     assert_items_equal(
@@ -719,9 +719,9 @@ def assert_items_equal(l1, l2):
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_unweighted_hom(is_directed, use_ilocs):
     graph = example_unweighted_hom(is_directed=is_directed)
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
     expected_nodes = (
-        graph._get_index_for_nodes([0, 0, 2, 3]) if use_ilocs else [0, 0, 2, 3]
+        graph.get_index_for_nodes([0, 0, 2, 3]) if use_ilocs else [0, 0, 2, 3]
     )
     expected_weights = [1, 1, 1, 1]
 
@@ -738,7 +738,7 @@ def test_neighbors_unweighted_hom(is_directed, use_ilocs):
 @pytest.mark.parametrize("use_ilocs", [True, False])
 def test_undirected_hin_neighbor_methods(use_ilocs):
     graph = example_weighted_hin(is_directed=False)
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
     assert_items_equal(
         graph.neighbors(node, use_ilocs=use_ilocs),
         graph.in_nodes(1, use_ilocs=use_ilocs),
@@ -752,8 +752,8 @@ def test_undirected_hin_neighbor_methods(use_ilocs):
 @pytest.mark.parametrize("use_ilocs", [True, False])
 def test_in_nodes_weighted_hin(use_ilocs):
     graph = example_weighted_hin()
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
-    expected_nodes = graph._get_index_for_nodes([0, 0]) if use_ilocs else [0, 0]
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph.get_index_for_nodes([0, 0]) if use_ilocs else [0, 0]
     expected_weighted = zip(expected_nodes, [0.0, 1.0])
 
     assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
@@ -769,8 +769,8 @@ def test_in_nodes_weighted_hin(use_ilocs):
 @pytest.mark.parametrize("use_ilocs", [True, False])
 def test_in_nodes_unweighted_hom(use_ilocs):
     graph = example_unweighted_hom()
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
-    expected_nodes = graph._get_index_for_nodes([0, 0]) if use_ilocs else [0, 0]
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph.get_index_for_nodes([0, 0]) if use_ilocs else [0, 0]
     expected_weighted = zip(expected_nodes, [1, 1])
 
     assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
@@ -786,8 +786,8 @@ def test_in_nodes_unweighted_hom(use_ilocs):
 @pytest.mark.parametrize("use_ilocs", [True, False])
 def test_out_nodes_weighted_hin(use_ilocs):
     graph = example_weighted_hin()
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
-    expected_nodes = graph._get_index_for_nodes([2, 3]) if use_ilocs else [2, 3]
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph.get_index_for_nodes([2, 3]) if use_ilocs else [2, 3]
     expected_weighted = zip(expected_nodes, [10.0, 10.0])
 
     assert_items_equal(graph.out_nodes(node), expected_nodes)
@@ -806,8 +806,8 @@ def test_out_nodes_weighted_hin(use_ilocs):
 @pytest.mark.parametrize("use_ilocs", [True, False])
 def test_out_nodes_unweighted_hom(use_ilocs):
     graph = example_unweighted_hom()
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
-    expected_nodes = graph._get_index_for_nodes([2, 3]) if use_ilocs else [2, 3]
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph.get_index_for_nodes([2, 3]) if use_ilocs else [2, 3]
     expected_weighted = zip(expected_nodes, [1, 1])
 
     assert_items_equal(graph.out_nodes(node, use_ilocs=use_ilocs), expected_nodes)
@@ -830,7 +830,7 @@ def test_isolated_node_neighbor_methods(is_directed, use_ilocs):
     graph = cls(
         nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
     )
-    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
     assert graph.neighbors(1, use_ilocs=use_ilocs) == []
     assert graph.in_nodes(1, use_ilocs=use_ilocs) == []
     assert graph.out_nodes(1, use_ilocs=use_ilocs) == []
@@ -1165,8 +1165,8 @@ def test_adjacency_types_undirected(use_ilocs):
         for key in expected.keys():
             expected[key] = dict(
                 (
-                    g._get_index_for_nodes([subkey])[0],
-                    list(g._get_index_for_nodes(subvalue)),
+                    g.get_index_for_nodes([subkey])[0],
+                    list(g.get_index_for_nodes(subvalue)),
                 )
                 for subkey, subvalue in expected[key].items()
             )
@@ -1189,8 +1189,8 @@ def test_adjacency_types_directed(use_ilocs):
         for key in expected.keys():
             expected[key] = dict(
                 (
-                    g._get_index_for_nodes([subkey])[0],
-                    list(g._get_index_for_nodes(subvalue)),
+                    g.get_index_for_nodes([subkey])[0],
+                    list(g.get_index_for_nodes(subvalue)),
                 )
                 for subkey, subvalue in expected[key].items()
             )
@@ -1283,7 +1283,7 @@ def test_edge_weights_undirected(use_ilocs):
     weights = [[11.0, 12.0], [10.0], [10.0], [1], [1]]
 
     if use_ilocs:
-        edges = [g._get_index_for_nodes(edge) for edge in edges]
+        edges = [g.get_index_for_nodes(edge) for edge in edges]
 
     for edge, weight in zip(edges, weights):
         assert g._edge_weights(*edge, use_ilocs=use_ilocs) == weight
@@ -1297,7 +1297,7 @@ def test_edge_weights_directed(use_ilocs):
     weights = [[11.0, 12.0], [10.0], [], [], [1]]
 
     if use_ilocs:
-        edges = [g._get_index_for_nodes(edge) for edge in edges]
+        edges = [g.get_index_for_nodes(edge) for edge in edges]
 
     for edge, weight in zip(edges, weights):
         assert g._edge_weights(*edge, use_ilocs=use_ilocs) == weight
@@ -1456,10 +1456,10 @@ def test_nodes_node_type_filter(use_ilocs):
 
     if use_ilocs:
         assert sorted(g.nodes(node_type="A", use_ilocs=use_ilocs)) == sorted(
-            g._get_index_for_nodes([0, 1, 2, 3])
+            g.get_index_for_nodes([0, 1, 2, 3])
         )
         assert sorted(g.nodes(node_type="B", use_ilocs=use_ilocs)) == sorted(
-            g._get_index_for_nodes([4, 5, 6])
+            g.get_index_for_nodes([4, 5, 6])
         )
     else:
         assert sorted(g.nodes(node_type="A", use_ilocs=use_ilocs)) == [0, 1, 2, 3]
