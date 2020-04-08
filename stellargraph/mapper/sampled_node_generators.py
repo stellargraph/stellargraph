@@ -568,7 +568,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
 class Node2VecNodeGenerator(BatchedNodeGenerator):
     """
-    A data generator for node representation prediction with node2vec models.
+    A data generator for node representation prediction with Node2Vec models.
 
     At minimum, supply the StellarGraph and the batch size.
 
@@ -597,7 +597,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
     def sample_features(self, head_nodes, batch_num):
         """
         Get the ids of the head nodes, and return these as a list of feature
-        arrays for the node2vec algorithm.
+        arrays for the Node2Vec algorithm.
 
         Args:
             head_nodes: An iterable of head nodes to perform sampling on.

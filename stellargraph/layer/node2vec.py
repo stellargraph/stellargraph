@@ -32,7 +32,7 @@ from ..mapper import Node2VecLinkGenerator, Node2VecNodeGenerator
 
 class Node2Vec:
     """
-    Implementation of the node2vec algorithm of A. Grover and J. Leskovec with Keras layers.
+    Implementation of the Node2Vec algorithm of A. Grover and J. Leskovec with Keras layers.
     see: https://snap.stanford.edu/node2vec/
 
     The model minimally requires specification of the embedding size and a generator object.

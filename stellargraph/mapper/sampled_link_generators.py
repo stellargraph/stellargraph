@@ -505,7 +505,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
 class Node2VecLinkGenerator(BatchedLinkGenerator):
     """
-    A data generator for context node prediction with node2vec models.
+    A data generator for context node prediction with Node2Vec models.
 
     At minimum, supply the StellarGraph and the batch size.
 
@@ -520,7 +520,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
     Example::
 
         G_generator = Node2VecLinkGenerator(G, 50)
-        train_data_gen = G_generator.flow(edge_ids, edge_labels)
+        data_gen = G_generator.flow(edge_ids, edge_labels)
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
@@ -536,7 +536,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
     def sample_features(self, head_links, batch_num):
         """
         Sample the ids of the target and context nodes.
-        and return these as a list of feature arrays for the node2vec algorithm.
+        and return these as a list of feature arrays for the Node2Vec algorithm.
 
         Args:
             head_links: An iterable of edges to perform sampling for.
