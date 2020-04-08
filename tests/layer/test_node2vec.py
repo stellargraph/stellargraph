@@ -56,7 +56,7 @@ def test_node2vec_apply():
     expected = np.array([[1, 1, 1, 1]])
 
     inp = keras.Input(shape=(1,))
-    out = node2vec(inp, "input")
+    out = node2vec(inp, "target")
     model1 = keras.Model(inputs=inp, outputs=out)
     model_weights1 = [np.ones_like(w) for w in model1.get_weights()]
     model1.set_weights(model_weights1)
@@ -98,7 +98,7 @@ def test_node2vec_serialize():
     node2vec = Node2Vec(emb_size=4, node_num=4, multiplicity=2)
 
     inp = keras.Input(shape=(1,))
-    out = node2vec(inp, "input")
+    out = node2vec(inp, "target")
     model = keras.Model(inputs=inp, outputs=out)
 
     # Save model
