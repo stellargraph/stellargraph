@@ -306,25 +306,8 @@ class StellarGraph:
             source_column=source_column,
             target_column=target_column,
             weight_column=edge_weight_column,
+            nodes=self._nodes,
         )
-
-        try:
-            self._edges.targets = self._nodes.ids.to_iloc(
-                self._edges.targets, strict=True
-            )
-            self._edges.sources = self._nodes.ids.to_iloc(
-                self._edges.sources, strict=True
-            )
-        except KeyError as e:
-            missing_values = e.args[0]
-            if not is_real_iterable(missing_values):
-                missing_values = [missing_values]
-            missing_values = pd.unique(missing_values)
-
-            raise ValueError(
-                f"edges: expected all source and target node IDs to be contained in `nodes`, "
-                f"found some missing: {comma_sep(missing_values)}"
-            )
 
     @staticmethod
     def from_networkx(
