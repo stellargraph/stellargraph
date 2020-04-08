@@ -191,8 +191,9 @@ class GraphConvolution(Layer):
         # Calculate the layer operation of GCN
         A = As[0]
         if K.is_sparse(A):
-            # batch_dot doesn't support sparse tensors, so we special case them to only work with a
-            # single batch element (and the adjacency matrix without a batch dimension)
+            # FIXME(#1222): batch_dot doesn't support sparse tensors, so we special case them to
+            # only work with a single batch element (and the adjacency matrix without a batch
+            # dimension)
             if features.shape[0] != 1:
                 raise ValueError(
                     f"features: expected batch dimension = 1 when using sparse adjacency matrix in GraphConvolution, found features batch dimension {features.shape[0]}"
