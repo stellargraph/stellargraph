@@ -262,7 +262,7 @@ def test_APPNP_propagate_model_matches_manual(model_type):
     float_feats = features[None, :, :].astype("float32")
     manual_preds = manual_inp = fully_connected_model.predict(float_feats)
     propagate = APPNPPropagationLayer(dense_size, teleport_probability=0.1)
-    for _ in range(appnpnModel.approx_iter):
+    for _ in range(10):
         manual_preds = propagate([manual_preds, manual_inp, adj[0, ...]])
 
     # select the relevant pieces
