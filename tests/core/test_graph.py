@@ -432,13 +432,23 @@ def test_feature_conversion_from_iterator():
     assert ab[:, 0] == pytest.approx([4, 5])
 
 
-def test_edges_include_edge_type():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_edges_include_edge_type(use_ilocs):
     g = example_hin_1()
 
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
-    expected = normalize_edges(r | f, directed=False)
-    assert normalize_edges(g.edges(include_edge_type=True), directed=False) == expected
+
+    expected = r | f
+    if use_ilocs:
+        expected = {tuple(g._get_index_for_nodes(x[:2])) + (x[2],) for x in expected}
+    expected = normalize_edges(expected, directed=False)
+    assert (
+        normalize_edges(
+            g.edges(include_edge_type=True, use_ilocs=use_ilocs), directed=False
+        )
+        == expected
+    )
 
 
 def numpy_to_list(x):
@@ -664,7 +674,7 @@ def example_weighted_hin(is_directed=True):
     edge_cols = ["source", "target", "weight"]
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(
-        nodes={"A": pd.DataFrame(index=[0, 1]), "B": pd.DataFrame(index=[2, 3])},
+        nodes={"B": pd.DataFrame(index=[2, 3]), "A": pd.DataFrame(index=[0, 1])},
         edges={
             "AA": pd.DataFrame(
                 [(0, 1, 0.0), (0, 1, 1.0)], columns=edge_cols, index=[0, 1]
@@ -683,16 +693,20 @@ def example_unweighted_hom(is_directed=True):
     return StellarDiGraph(nodes, edges) if is_directed else StellarGraph(nodes, edges)
 
 
+@pytest.mark.parametrize("use_ilocs", [True, False])
 @pytest.mark.parametrize("is_directed", [True, False])
-def test_neighbors_weighted_hin(is_directed):
+def test_neighbors_weighted_hin(is_directed, use_ilocs):
     graph = example_weighted_hin(is_directed=is_directed)
-    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+
+    assert_items_equal(graph.neighbors(node, use_ilocs=use_ilocs), [0, 0, 2, 3])
     assert_items_equal(
-        graph.neighbors(1, include_edge_weight=True),
+        graph.neighbors(node, include_edge_weight=True, use_ilocs=use_ilocs),
         [(0, 0.0), (0, 1.0), (2, 10.0), (3, 10.0)],
     )
     assert_items_equal(
-        graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]),
+        graph.neighbors(node, include_edge_weight=True, edge_types=["AB"]),
         [(2, 10.0), (3, 10.0)],
     )
 
@@ -701,73 +715,125 @@ def assert_items_equal(l1, l2):
     assert sorted(l1) == sorted(l2)
 
 
+@pytest.mark.parametrize("use_ilocs", [True, False])
 @pytest.mark.parametrize("is_directed", [True, False])
-def test_neighbors_unweighted_hom(is_directed):
+def test_neighbors_unweighted_hom(is_directed, use_ilocs):
     graph = example_unweighted_hom(is_directed=is_directed)
-    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = (
+        graph._get_index_for_nodes([0, 0, 2, 3]) if use_ilocs else [0, 0, 2, 3]
+    )
+    expected_weights = [1, 1, 1, 1]
+
+    assert_items_equal(graph.neighbors(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
-        graph.neighbors(1, include_edge_weight=True), [(0, 1), (0, 1), (2, 1), (3, 1)],
+        graph.neighbors(node, include_edge_weight=True, use_ilocs=use_ilocs),
+        zip(expected_nodes, expected_weights),
     )
     assert_items_equal(
-        graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]), []
+        graph.neighbors(node, include_edge_weight=True, edge_types=["AB"]), []
     )
 
 
-def test_undirected_hin_neighbor_methods():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_undirected_hin_neighbor_methods(use_ilocs):
     graph = example_weighted_hin(is_directed=False)
-    assert_items_equal(graph.neighbors(1), graph.in_nodes(1))
-    assert_items_equal(graph.neighbors(1), graph.out_nodes(1))
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    assert_items_equal(
+        graph.neighbors(node, use_ilocs=use_ilocs),
+        graph.in_nodes(1, use_ilocs=use_ilocs),
+    )
+    assert_items_equal(
+        graph.neighbors(node, use_ilocs=use_ilocs),
+        graph.out_nodes(1, use_ilocs=use_ilocs),
+    )
 
 
-def test_in_nodes_weighted_hin():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_in_nodes_weighted_hin(use_ilocs):
     graph = example_weighted_hin()
-    assert_items_equal(graph.in_nodes(1), [0, 0])
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph._get_index_for_nodes([0, 0]) if use_ilocs else [0, 0]
+    expected_weighted = zip(expected_nodes, [0.0, 1.0])
+
+    assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
-        graph.in_nodes(1, include_edge_weight=True), [(0, 0.0), (0, 1.0)]
+        graph.in_nodes(node, include_edge_weight=True, use_ilocs=use_ilocs),
+        expected_weighted,
     )
     assert_items_equal(
-        graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+        graph.in_nodes(node, include_edge_weight=True, edge_types=["AB"]), []
     )
 
 
-def test_in_nodes_unweighted_hom():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_in_nodes_unweighted_hom(use_ilocs):
     graph = example_unweighted_hom()
-    assert_items_equal(graph.in_nodes(1), [0, 0])
-    assert_items_equal(graph.in_nodes(1, include_edge_weight=True), [(0, 1), (0, 1)])
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph._get_index_for_nodes([0, 0]) if use_ilocs else [0, 0]
+    expected_weighted = zip(expected_nodes, [1, 1])
+
+    assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
-        graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+        graph.in_nodes(node, include_edge_weight=True, use_ilocs=use_ilocs),
+        expected_weighted,
+    )
+    assert_items_equal(
+        graph.in_nodes(node, include_edge_weight=True, edge_types=["AA"]), []
     )
 
 
-def test_out_nodes_weighted_hin():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_out_nodes_weighted_hin(use_ilocs):
     graph = example_weighted_hin()
-    assert_items_equal(graph.out_nodes(1), [2, 3])
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph._get_index_for_nodes([2, 3]) if use_ilocs else [2, 3]
+    expected_weighted = zip(expected_nodes, [10.0, 10.0])
+
+    assert_items_equal(graph.out_nodes(node), expected_nodes)
     assert_items_equal(
-        graph.out_nodes(1, include_edge_weight=True), [(2, 10.0), (3, 10.0)]
+        graph.out_nodes(node, include_edge_weight=True, use_ilocs=use_ilocs),
+        expected_weighted,
     )
     assert_items_equal(
-        graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+        graph.out_nodes(
+            node, include_edge_weight=True, edge_types=["AA"], use_ilocs=use_ilocs
+        ),
+        [],
     )
 
 
-def test_out_nodes_unweighted_hom():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_out_nodes_unweighted_hom(use_ilocs):
     graph = example_unweighted_hom()
-    assert_items_equal(graph.out_nodes(1), [2, 3])
-    assert_items_equal(graph.out_nodes(1, include_edge_weight=True), [(2, 1), (3, 1)])
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    expected_nodes = graph._get_index_for_nodes([2, 3]) if use_ilocs else [2, 3]
+    expected_weighted = zip(expected_nodes, [1, 1])
+
+    assert_items_equal(graph.out_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
-        graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+        graph.out_nodes(node, include_edge_weight=True, use_ilocs=use_ilocs),
+        expected_weighted,
+    )
+    assert_items_equal(
+        graph.out_nodes(
+            node, include_edge_weight=True, edge_types=["AB"], use_ilocs=use_ilocs
+        ),
+        [],
     )
 
 
+@pytest.mark.parametrize("use_ilocs", [True, False])
 @pytest.mark.parametrize("is_directed", [False, True])
-def test_isolated_node_neighbor_methods(is_directed):
+def test_isolated_node_neighbor_methods(is_directed, use_ilocs):
     cls = StellarDiGraph if is_directed else StellarGraph
     graph = cls(
         nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
     )
-    assert graph.neighbors(1) == []
-    assert graph.in_nodes(1) == []
-    assert graph.out_nodes(1) == []
+    node = graph._get_index_for_nodes([1])[0] if use_ilocs else 1
+    assert graph.neighbors(1, use_ilocs=use_ilocs) == []
+    assert graph.in_nodes(1, use_ilocs=use_ilocs) == []
+    assert graph.out_nodes(1, use_ilocs=use_ilocs) == []
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
@@ -1350,11 +1416,20 @@ def test_connected_components(is_directed):
     assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
 
 
-def test_nodes_node_type_filter():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_nodes_node_type_filter(use_ilocs):
     g = example_hin_1()
-    assert sorted(g.nodes(node_type="A")) == [0, 1, 2, 3]
-    assert sorted(g.nodes(node_type="B")) == [4, 5, 6]
 
+    if use_ilocs:
+        assert sorted(g.nodes(node_type="A", use_ilocs=use_ilocs)) == sorted(
+            g._get_index_for_nodes([0, 1, 2, 3])
+        )
+        assert sorted(g.nodes(node_type="B", use_ilocs=use_ilocs)) == sorted(
+            g._get_index_for_nodes([4, 5, 6])
+        )
+    else:
+        assert sorted(g.nodes(node_type="A", use_ilocs=use_ilocs)) == [0, 1, 2, 3]
+        assert sorted(g.nodes(node_type="B", use_ilocs=use_ilocs)) == [4, 5, 6]
     with pytest.raises(KeyError, match="'C'"):
         g.nodes(node_type="C")
 
