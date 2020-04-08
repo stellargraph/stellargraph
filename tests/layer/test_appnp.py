@@ -233,6 +233,8 @@ def test_APPNP_apply_propagate_model_dense():
     ],
 )
 def test_APPNP_propagate_model_matches_manual(model_type):
+    dense_size = 5
+
     G, features = create_graph_features()
     adj = G.to_adjacency_matrix()
     features, adj = GCN_Aadj_feats_op(features, adj)
@@ -240,25 +242,33 @@ def test_APPNP_propagate_model_matches_manual(model_type):
     out_indices = np.array([[0, 1]], dtype="int32")
 
     generator = FullBatchNodeGenerator(G, sparse=False, method="gcn")
-    appnpnModel = APPNP([2], generator=generator, activations=["relu"], dropout=0.5)
+    appnpnModel = APPNP(
+        [dense_size], generator=generator, activations=["relu"], dropout=0.0
+    )
 
+    dense = Dense(dense_size)
     if model_type == "sequential":
         fully_connected_model = keras.Sequential()
-        fully_connected_model.add(Dense(2))
+        fully_connected_model.add(dense)
     else:
         inp = keras.Input(shape=features.shape)
-        fully_connected_model = keras.Model(inp, Dense(2)(inp))
+        fully_connected_model = keras.Model(inp, dense(inp))
 
     x_in, x_out = appnpnModel.propagate_model(fully_connected_model)
     end_to_end_model = keras.Model(inputs=x_in, outputs=x_out)
     preds_1 = end_to_end_model.predict([features[None, :, :], out_indices, adj])
 
     # run the process manually: transform the features, and then propagate
-    manual_inp = fully_connected_model.predict(features[None, :, :].astype("float32"))
-    base_model = keras.Model(*appnpnModel.in_out_tensors())
-    manual_preds = base_model.predict([manual_inp, out_indices, adj])
+    float_feats = features[None, :, :].astype("float32")
+    manual_preds = manual_inp = fully_connected_model.predict(float_feats)
+    propagate = APPNPPropagationLayer(dense_size, teleport_probability=0.1)
+    for _ in range(appnpnModel.approx_iter):
+        manual_preds = propagate([manual_preds, manual_inp, adj[0, ...]])
 
-    assert preds_1 == pytest.approx(manual_preds)
+    # select the relevant pieces
+    manual_preds = manual_preds.numpy()[:, out_indices.ravel(), :]
+
+    np.testing.assert_allclose(preds_1, manual_preds)
 
 
 def test_APPNP_apply_propagate_model_sparse():
