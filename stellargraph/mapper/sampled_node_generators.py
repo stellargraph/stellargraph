@@ -607,9 +607,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             head node.
         """
 
-        head_node_ids = self.graph._get_index_for_nodes(head_nodes)
-        batch_feats = np.array(head_node_ids)
-        return batch_feats
+        return self.graph._get_index_for_nodes(head_nodes)
 
     def flow(self, node_ids):
         """
@@ -635,7 +633,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
     def flow_from_dataframe(self, node_ids):
         """
         Creates a generator/sequence object for node representation prediction
-        with the supplied node ids.
+        by using the index of the supplied dataframe as the node ids.
 
         Args:
             node_ids: a Pandas DataFrame of node_ids.

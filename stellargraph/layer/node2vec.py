@@ -55,25 +55,28 @@ class Node2Vec:
         # Model parameters
         self.emb_size = emb_size
 
-        # Initialise the embedding layers: input-to-hidden and hidden-to-output
-        input_initializer = keras.initializers.RandomUniform(minval=-1.0, maxval=1.0)
-        self.input_embedding = Embedding(
+        # Initialise the target embedding layer: input-to-hidden
+        target_embedding_initializer = keras.initializers.RandomUniform(
+            minval=-1.0, maxval=1.0
+        )
+        self.target_embedding = Embedding(
             self.input_node_num,
             self.emb_size,
             input_length=1,
-            name="input_embedding",
-            embeddings_initializer=input_initializer,
+            name="target_embedding",
+            embeddings_initializer=target_embedding_initializer,
         )
 
-        output_initializer = keras.initializers.TruncatedNormal(
+        # Initialise the context embedding layer: hidden-to-output
+        context_embedding_initializer = keras.initializers.TruncatedNormal(
             stddev=1.0 / math.sqrt(self.emb_size * 1.0)
         )
-        self.output_embedding = Embedding(
+        self.context_embedding = Embedding(
             self.input_node_num,
             self.emb_size,
             input_length=1,
-            name="output_embedding",
-            embeddings_initializer=output_initializer,
+            name="context_embedding",
+            embeddings_initializer=context_embedding_initializer,
         )
 
     def _get_sizes_from_generator(self, generator):
@@ -114,19 +117,19 @@ class Node2Vec:
 
         Args:
             xin (Keras Tensor): Batch input node ids.
-            embedding (str): "input" for input_embedding matrix, "output" for output_embedding
+            embedding (str): "target" for target_embedding, "context" for context_embedding
 
         Returns:
             Output tensor.
         """
 
-        if embedding == "input":
-            h_layer = self.input_embedding(xin)
-        elif embedding == "output":
-            h_layer = self.output_embedding(xin)
+        if embedding == "target":
+            h_layer = self.target_embedding(xin)
+        elif embedding == "context":
+            h_layer = self.context_embedding(xin)
         else:
             raise ValueError(
-                'wrong embedding argument is supplied: {}, should be "input" or "output"'.format(
+                'wrong embedding argument is supplied: {}, should be "target" or "context"'.format(
                     embedding
                 )
             )
@@ -135,12 +138,12 @@ class Node2Vec:
 
         return h_layer
 
-    def _node_model(self, embedding="input"):
+    def _node_model(self, embedding="target"):
         """
         Builds a Node2Vec model for node prediction.
 
         Args:
-            embedding (str): "input" for input_embedding, "output" for output_embedding
+            embedding (str): "target" for target_embedding, "context" for context_embedding
 
         Returns:
             tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
@@ -166,8 +169,8 @@ class Node2Vec:
 
         """
         # Expose input and output sockets of the model, for source node:
-        x_inp_src, x_out_src = self._node_model("input")
-        x_inp_dst, x_out_dst = self._node_model("output")
+        x_inp_src, x_out_src = self._node_model("target")
+        x_inp_dst, x_out_dst = self._node_model("context")
 
         x_inp = [x_inp_src, x_inp_dst]
         x_out = [x_out_src, x_out_dst]
@@ -192,8 +195,7 @@ class Node2Vec:
             return self._link_model()
         else:
             raise RuntimeError(
-                "Currently only multiplicities of 1 and 2 are supported. Consider using node_model or "
-                "link_model method explicitly to build node or link prediction model, respectively."
+                "Currently only multiplicities of 1 and 2 are supported."
             )
 
     def default_model(self, flatten_output=True):
