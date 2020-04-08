@@ -21,7 +21,7 @@ This table lists all representation learning demos, including the algorithms tra
 | [Attri2Vec][attri2vec] | Attri2Vec | `UnsupervisedSampler` (link prediction) | yes | visualisation |
 | [Metapath2Vec][metapath2vec] | Metapath2Vec | natively unsupervised | | visualisation |
 | [Node2Vec][node2vec] | Node2Vec | natively unsupervised | | visualisation |
-| [Keras Node2Vec][node2vec] | Node2Vec | `UnsupervisedSampler` (link prediction) | | visualisation, node classification |
+| [Keras Node2Vec][keras-node2vec] | Node2Vec | `UnsupervisedSampler` (link prediction) | | visualisation, node classification |
 | [Watch Your Step][wys] | Watch Your Step | natively unsupervised | | visualisation, node classification |
 | [GraphWave][graphwave] | GraphWave | natively unsupervised | | visualisation, node classification |
 
