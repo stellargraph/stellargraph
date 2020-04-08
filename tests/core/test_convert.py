@@ -26,8 +26,6 @@ from stellargraph.core.convert import (
     from_networkx,
 )
 
-from stellargraph.core.element_data import NodeData
-
 _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 
