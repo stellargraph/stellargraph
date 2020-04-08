@@ -1150,26 +1150,52 @@ def test_edges_include_weights():
         )
 
 
-def test_adjacency_types_undirected():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_adjacency_types_undirected(use_ilocs):
     g = example_hin_1(is_directed=False)
-    adj = g._adjacency_types(g.create_graph_schema())
+    adj = g._adjacency_types(g.create_graph_schema(), use_ilocs=use_ilocs)
 
-    assert adj == {
+    expected = {
         ("A", "R", "B"): {0: [4], 1: [4, 5], 2: [4], 3: [5]},
         ("B", "R", "A"): {4: [0, 1, 2], 5: [1, 3]},
         ("B", "F", "B"): {4: [5], 5: [4]},
     }
 
+    if use_ilocs:
+        for key in expected.keys():
+            expected[key] = dict(
+                (
+                    g._get_index_for_nodes([subkey])[0],
+                    list(g._get_index_for_nodes(subvalue)),
+                )
+                for subkey, subvalue in expected[key].items()
+            )
 
-def test_adjacency_types_directed():
+    assert adj == expected
+
+
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_adjacency_types_directed(use_ilocs):
     g = example_hin_1(is_directed=True)
-    adj = g._adjacency_types(g.create_graph_schema())
+    adj = g._adjacency_types(g.create_graph_schema(), use_ilocs=use_ilocs)
 
-    assert adj == {
+    expected = {
         ("A", "R", "B"): {1: [4, 5], 2: [4]},
         ("B", "R", "A"): {4: [0], 5: [3]},
         ("B", "F", "B"): {4: [5]},
     }
+
+    if use_ilocs:
+        for key in expected.keys():
+            expected[key] = dict(
+                (
+                    g._get_index_for_nodes([subkey])[0],
+                    list(g._get_index_for_nodes(subvalue)),
+                )
+                for subkey, subvalue in expected[key].items()
+            )
+
+    assert adj == expected
 
 
 def test_to_adjacency_matrix_weighted_undirected():
