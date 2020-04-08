@@ -164,12 +164,7 @@ class ElementData:
 
         self._id_index = ExternalIdIndex(all_columns.index)
         self._columns = {
-            # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
-            # operations are more common (e.g. slicing out a couple of row, when sampling a few
-            # nodes) than column-level ones so having rows be contiguous (C order) is much more
-            # efficient.
-            name: np.ascontiguousarray(data.to_numpy())
-            for name, data in all_columns.iteritems()
+            name: data.to_numpy() for name, data in all_columns.iteritems()
         }
 
         # there's typically a small number of types, so we can map them down to a small integer type
