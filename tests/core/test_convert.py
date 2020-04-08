@@ -26,6 +26,8 @@ from stellargraph.core.convert import (
     from_networkx,
 )
 
+from stellargraph.core.element_data import NodeData
+
 _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 
@@ -127,6 +129,13 @@ def test_convert_edges_weights():
             name: pd.DataFrame({"s": [0], "t": [1], "w": [w]}, index=[i])
             for i, (name, w) in enumerate(ws.items())
         }
+        nodes = convert_nodes(
+            pd.DataFrame([], index=[0, 1]),
+            name="other_name",
+            default_type=np.int8,
+            dtype=np.int8,
+        )
+
         convert_edges(
             dfs,
             name="some_name",
@@ -134,6 +143,7 @@ def test_convert_edges_weights():
             source_column="s",
             target_column="t",
             weight_column="w",
+            nodes=nodes,
         )
 
     # various numbers are valid

@@ -1275,24 +1275,32 @@ def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
     benchmark(lambda: g.to_adjacency_matrix())
 
 
-def test_edge_weights_undirected():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_edge_weights_undirected(use_ilocs):
     g = example_hin_1(is_directed=False, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
-    assert g._edge_weights(4, 5) == [10.0]
-    assert g._edge_weights(5, 4) == [10.0]
-    assert g._edge_weights(0, 4) == [1]
-    assert g._edge_weights(4, 0) == [1]
+    edges = [(5, 5), (4, 5), (5, 4), (0, 4), (4, 0)]
+    weights = [[11.0, 12.0], [10.0], [10.0], [1], [1]]
+
+    if use_ilocs:
+        edges = [g._get_index_for_nodes(edge) for edge in edges]
+
+    for edge, weight in zip(edges, weights):
+        assert g._edge_weights(*edge, use_ilocs=use_ilocs) == weight
 
 
-def test_edge_weights_directed():
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_edge_weights_directed(use_ilocs):
     g = example_hin_1(is_directed=True, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
-    assert g._edge_weights(4, 5) == [10.0]
-    assert g._edge_weights(5, 4) == []
-    assert g._edge_weights(0, 4) == []
-    assert g._edge_weights(4, 0) == [1]
+    edges = [(5, 5), (4, 5), (5, 4), (0, 4), (4, 0)]
+    weights = [[11.0, 12.0], [10.0], [], [], [1]]
+
+    if use_ilocs:
+        edges = [g._get_index_for_nodes(edge) for edge in edges]
+
+    for edge, weight in zip(edges, weights):
+        assert g._edge_weights(*edge, use_ilocs=use_ilocs) == weight
 
 
 def test_node_type():
