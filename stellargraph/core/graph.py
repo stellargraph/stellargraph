@@ -626,7 +626,10 @@ class StellarGraph:
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
             return self.neighbors(
-                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+                node,
+                include_edge_weight=include_edge_weight,
+                edge_types=edge_types,
+                use_ilocs=use_ilocs,
             )
 
         if not use_ilocs:
@@ -662,7 +665,10 @@ class StellarGraph:
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
             return self.neighbors(
-                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+                node,
+                include_edge_weight=include_edge_weight,
+                edge_types=edge_types,
+                use_ilocs=use_ilocs,
             )
 
         if not use_ilocs:
