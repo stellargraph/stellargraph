@@ -18,7 +18,10 @@ from tests.test_utils.graphs import example_graph
 from stellargraph.core import StellarGraph
 from stellargraph.layer import GCN
 from stellargraph.mapper import FullBatchNodeGenerator
-from stellargraph.interpretability.saliency_maps.brute_force import node_importance
+from stellargraph.interpretability.saliency_maps.brute_force import (
+    BruteForce,
+    node_importance,
+)
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -58,9 +61,7 @@ def test_node_importance(nodes):
     assert np.allclose(importances, expected)
 
 
-def test_node_importance_gcn():
-    graph = example_graph(feature_size=4)
-    target_node = 1
+def gcn_model(graph):
     gen = FullBatchNodeGenerator(graph)
 
     # build gcn model
@@ -71,12 +72,10 @@ def test_node_importance_gcn():
     model = tf.keras.Model(inputs=inputs, outputs=pred)
     model.compile(optimizer="adam", loss=tf.keras.losses.binary_crossentropy)
 
-    def predict(graph):
-        seq = FullBatchNodeGenerator(graph).flow(node_ids=[target_node])
-        return model.predict(seq)[0, 0, 0]
+    return model
 
-    importances = node_importance(graph, predict=predict)
 
+def check_gcn_importances(graph, target_node, importances):
     # importance should be greater than zero for nodes connected to target node (inc. self)
     connected_ilocs = graph._nodes.ids.to_iloc(
         graph.neighbors(target_node) + [target_node]
@@ -88,3 +87,29 @@ def test_node_importance_gcn():
     disconnected = np.ones(graph.number_of_nodes(), np.bool)
     disconnected[connected_ilocs] = 0
     assert np.all(importances[disconnected] == 0)
+
+
+def test_node_importance_gcn():
+    graph = example_graph(feature_size=4)
+    target_node = 1
+
+    model = gcn_model(graph)
+
+    def predict(graph):
+        seq = FullBatchNodeGenerator(graph).flow(node_ids=[target_node])
+        return np.squeeze(model.predict(seq))
+
+    importances = node_importance(graph, predict=predict)
+
+    check_gcn_importances(graph, target_node, importances)
+
+
+def test_brute_force_class_node_importance_gcn():
+    graph = example_graph(feature_size=4)
+    target_node = 1
+
+    model = gcn_model(graph)
+    bf = BruteForce(graph, model, FullBatchNodeGenerator)
+    importances = bf.node_importance(target_node, 0)
+
+    check_gcn_importances(graph, target_node, importances)

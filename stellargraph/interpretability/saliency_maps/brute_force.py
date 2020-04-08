@@ -19,6 +19,9 @@ from stellargraph.core.graph import StellarGraph
 from stellargraph.core.element_data import ExternalIdIndex
 
 
+__all__ = ["BruteForce", "node_importance"]
+
+
 class _GraphWithNodeRemoved(StellarGraph):
     """
     A wrapper around StellarGraph to mimic a node being removed.
@@ -53,6 +56,74 @@ class _GraphWithNodeRemoved(StellarGraph):
         return features
 
 
+class BruteForce:
+    """
+    Helper class to calculate brute-force importance scores.
+
+    Args:
+        graph (StellarGraph): Graph to predict on
+        model (tensorflow.keras.Model): A trained Keras model
+        create_generator (callable): Function that takes a graph and returns a generator object
+            compatible with the model.
+    """
+
+    def __init__(self, graph, model, create_generator):
+        self._model = model
+        self._graph = graph
+        self._create_generator = create_generator
+
+    def node_importance(self, target_node, class_of_interest, nodes=None):
+        """
+        Calculate the importance of nodes on the prediction of the target node.
+
+        Args:
+            target_node (any): ID of target node
+            class_of_interest (int): The index in the prediction array that the importance scores
+                will be calculated for. If the model's prediction output is a single value, then
+                this value should be set to zero.
+            nodes (list of any, optional): IDs of nodes to calculate importance scores for. Defaults
+                to using all nodes in the provided graph.
+
+        Returns:
+            Numpy array containing the node importance scores in the same order as the provided
+            ``nodes`` parameter. If using all nodes, the scores are in the same order as
+            ``graph.nodes()``.
+        """
+        return node_importance(
+            self._graph,
+            self._get_predict_func(target_node, class_of_interest),
+            nodes=nodes,
+        )
+
+    def _sequence(self, graph, target_node):
+        return self._create_generator(graph).flow(node_ids=[target_node])
+
+    def _get_predict_func(self, target_node, class_of_interest):
+        def predict(graph):
+            prediction = np.squeeze(
+                self._model.predict(self._sequence(graph, target_node))
+            )
+            if len(prediction.shape) == 0:
+                if class_of_interest != 0:
+                    raise ValueError(
+                        f"class_of_interest: expected zero when prediction is a single value, but found: {class_of_interest}"
+                    )
+                return prediction
+            elif len(prediction.shape) == 1:
+                if class_of_interest >= prediction.size:
+                    raise ValueError(
+                        f"class_of_interest: expected to be less than the length of the prediction score array, "
+                        f"but found 'class_of_interest': {class_of_interest}, length of prediction: {prediction.size}"
+                    )
+                return prediction[class_of_interest]
+            else:
+                raise ValueError(
+                    f"expected model to produce a single row of prediction values, but found shape: {prediction.shape}"
+                )
+
+        return predict
+
+
 def node_importance(graph: StellarGraph, predict, nodes=None):
     """
     Calculate importance of nodes for the prediction output.
@@ -61,8 +132,8 @@ def node_importance(graph: StellarGraph, predict, nodes=None):
         graph (StellarGraph): Graph to predict on
         predict (callable): Function takes the graph as argument and returns a single numeric
             prediction value.
-        nodes (any, optional): IDs of nodes to calculate importance scores for. Defaults to using
-            all nodes in the provided graph.
+        nodes (list of any, optional): IDs of nodes to calculate importance scores for. Defaults to
+            using all nodes in the provided graph.
 
     Returns:
         Numpy array containing the node importance scores in the same order as the provided
