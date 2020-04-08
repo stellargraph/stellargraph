@@ -149,8 +149,8 @@ class GraphConvolution(Layer):
             input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
-        feature_shape, *As_shapes = input_shapes
-        input_dim = int(feature_shape[-1])
+        feat_shape = input_shapes[0]
+        input_dim = int(feat_shape[-1])
 
         self.kernel = self.add_weight(
             shape=(input_dim, self.units),

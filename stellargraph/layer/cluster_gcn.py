@@ -40,7 +40,53 @@ class ClusterGraphConvolution(GraphConvolution):
 
 class ClusterGCN:
     """
-    Deprecated: use :graph:`GraphConvolution`.
+    A stack of Cluster Graph Convolutional layers that implement a cluster graph convolution network
+    model as in https://arxiv.org/abs/1905.07953
+
+    The model minimally requires specification of the layer sizes as a list of ints
+    corresponding to the feature dimensions for each hidden layer,
+    activation functions for each hidden layers, and a generator object.
+
+    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    should be supplied using the :class:`ClusterNodeGenerator` class.
+
+    For more details, please see the Cluster-GCN demo notebook:
+    demos/node-classification/clustergcn/cluster-gcn-node-classification.ipynb
+
+    Notes:
+      - The inputs are tensors with a batch dimension of 1. These are provided by the \
+        :class:`ClusterNodeGenerator` object.
+
+      - The nodes provided to the :class:`ClusterNodeGenerator.flow` method are
+        used by the final layer to select the predictions for those nodes in order.
+        However, the intermediate layers before the final layer order the nodes
+        in the same way as the adjacency matrix.
+
+    Examples:
+        Creating a Cluster-GCN node classification model from an existing :class:`StellarGraph`
+        object ``G``::
+
+            generator = ClusterNodeGenerator(G, clusters=10, q=2)
+            cluster_gcn = ClusterGCN(
+                             layer_sizes=[32, 4],
+                             activations=["elu","softmax"],
+                             generator=generator,
+                             dropout=0.5
+                )
+            x_inp, predictions = cluster_gcn.in_out_tensors()
+
+    Args:
+        layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack
+        activations (list of str): list of activations applied to each layer's output
+        generator (ClusterNodeGenerator): an instance of ClusterNodeGenerator class constructed on the graph of interest
+        bias (bool): toggles an optional bias in graph convolutional layers
+        dropout (float): dropout rate applied to input features of each graph convolutional layer
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
 
     def __init__(
