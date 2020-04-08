@@ -267,7 +267,7 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        # repeated call unique to decrease memory usage
+        # repeatedly call unique to decrease memory usage
         if isinstance(edges, dict) and edges != {}:
             nodes_from_edges = [pd.unique(type_edges[source_column]) for type_edges in edges.values()]
             nodes_from_edges.extend(pd.unique(type_edges[target_column]) for type_edges in edges.values())
@@ -290,20 +290,19 @@ class StellarGraph:
             dtype=dtype,
         )
 
+        self._is_directed = is_directed
+        self._edges = convert.convert_edges(
+            edges,
+            name="edges",
+            default_type=edge_type_default,
+            source_column=source_column,
+            target_column=target_column,
+            weight_column=edge_weight_column,
+        )
+
         try:
-            if isinstance(edges, dict):
-                for type_name in edges.keys():
-                    edges[type_name][target_column] = self._nodes.ids.to_iloc(
-                        edges[type_name][target_column], strict=True
-                    )
-
-                    edges[type_name][source_column] = self._nodes.ids.to_iloc(
-                        edges[type_name][source_column], strict=True
-                    )
-            elif isinstance(edges, pd.DataFrame):
-                edges[target_column] = self._nodes.ids.to_iloc(edges[target_column], strict=True)
-                edges[source_column] = self._nodes.ids.to_iloc(edges[source_column], strict=True)
-
+            self._edges.targets = self._nodes.ids.to_iloc(self._edges.targets, strict=True)
+            self._edges.sources = self._nodes.ids.to_iloc(self._edges.sources, strict=True)
         except KeyError as e:
             missing_values = e.args[0]
             if not is_real_iterable(missing_values):
@@ -314,16 +313,6 @@ class StellarGraph:
                 f"edges: expected all source and target node IDs to be contained in `nodes`, "
                 f"found some missing: {comma_sep(missing_values)}"
             )
-
-        self._is_directed = is_directed
-        self._edges = convert.convert_edges(
-            edges,
-            name="edges",
-            default_type=edge_type_default,
-            source_column=source_column,
-            target_column=target_column,
-            weight_column=edge_weight_column,
-        )
 
     @staticmethod
     def from_networkx(
@@ -521,6 +510,7 @@ class StellarGraph:
             of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
             include_edge_weight (bool): A flag that indicates whether to return edge weights.
             Weights are returned in a separate list.
+            use_ilocs (bool): if True return node ilocs
 
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights)
@@ -1290,7 +1280,7 @@ class StellarGraph:
         """
         return self._nodes._id_index.to_iloc(nodes, strict=True)
 
-    def _adjacency_types(self, graph_schema: GraphSchema):
+    def _adjacency_types(self, graph_schema: GraphSchema, use_ilocs=False):
         """
         Obtains the edges in the form of the typed mapping:
 
@@ -1298,6 +1288,7 @@ class StellarGraph:
 
         Args:
             graph_schema: The graph schema.
+            use_ilocs (bool): if True return node ilocs
         Returns:
              The edge types mapping.
         """
@@ -1305,12 +1296,18 @@ class StellarGraph:
 
         triples = defaultdict(lambda: defaultdict(lambda: []))
 
+        sources = self._edges.sources
+        targets = self._edges.targets
+        if not use_ilocs:
+            sources = self._nodes.ids.from_iloc(sources)
+            targets = self._nodes.ids.from_iloc(targets)
+
         iterator = zip(
             source_types,
             rel_types,
             target_types,
-            self._nodes.ids.from_iloc(self._edges.sources),
-            self._nodes.ids.from_iloc(self._edges.targets),
+            sources,
+            targets,
         )
         for src_type, rel_type, tgt_type, src, tgt in iterator:
             triple = EdgeType(src_type, rel_type, tgt_type)
@@ -1327,13 +1324,14 @@ class StellarGraph:
 
         return triples
 
-    def _edge_weights(self, source_node: Any, target_node: Any) -> List[Any]:
+    def _edge_weights(self, source_node: Any, target_node: Any, use_ilocs=False) -> List[Any]:
         """
         Obtains the weights of edges between the given pair of nodes.
 
         Args:
-            source_node (any): The source node.
-            target_node (any): The target node.
+            source_node (int): The source node.
+            target_node (int): The target node.
+            use_ilocs (bool): if True source_node and target_node are treated as node ilocs.
 
         Returns:
             list: The edge weights.
@@ -1346,11 +1344,12 @@ class StellarGraph:
         effectively_directed = self.is_directed() or source_node == target_node
         both_dirs = not effectively_directed
 
-        source_node_iloc = self._nodes.ids.to_iloc([source_node])[0]
-        target_node_iloc = self._nodes.ids.to_iloc([target_node])[0]
+        if not use_ilocs:
+            source_node = self._nodes.ids.to_iloc([source_node])[0]
+            target_node = self._nodes.ids.to_iloc([target_node])[0]
 
-        source_edge_ilocs = self._edges.edge_ilocs(source_node_iloc, ins=both_dirs, outs=True)
-        target_edge_ilocs = self._edges.edge_ilocs(target_node_iloc, ins=True, outs=both_dirs)
+        source_edge_ilocs = self._edges.edge_ilocs(source_node, ins=both_dirs, outs=True)
+        target_edge_ilocs = self._edges.edge_ilocs(target_node, ins=True, outs=both_dirs)
 
         ilocs = np.intersect1d(source_edge_ilocs, target_edge_ilocs, assume_unique=True)
 
