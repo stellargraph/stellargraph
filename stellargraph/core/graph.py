@@ -26,8 +26,6 @@ import pandas as pd
 import numpy as np
 import scipy.sparse as sps
 import warnings
-import tensorflow as tf
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from .. import globalvar
 from .schema import GraphSchema, EdgeType
