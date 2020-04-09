@@ -257,13 +257,14 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         max_slots = 2 ** (max_hops + 1) - 1
         features = [None] * max_slots  # flattened binary tree
 
-        for slot in range(max_slots):
-            nodes_in_slot = node_samples[slot]
-            features_for_slot = self.graph.node_features_tensors(
-                nodes_in_slot, node_type
-            )
-            features[slot] = tf.reshape(
-                features_for_slot, (len(head_nodes), -1, features_for_slot.shape[1])
-            )
+        with tf.device("/CPU:0"):
+            for slot in range(max_slots):
+                nodes_in_slot = node_samples[slot]
+                features_for_slot = self.graph.node_features_tensors(
+                    nodes_in_slot, node_type
+                )
+                features[slot] = tf.reshape(
+                    features_for_slot, (len(head_nodes), -1, features_for_slot.shape[1])
+                )
 
         return features
