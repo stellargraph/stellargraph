@@ -673,7 +673,6 @@ class CorruptedNodeSequence(Sequence):
                 f"or NodeSequence, found {type(base_generator).__name__}"
             )
         with tf.device("/CPU:0"):
-
             self.targets = tf.tile(target, batch_reps)
 
     def __len__(self):
