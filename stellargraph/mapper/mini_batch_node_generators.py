@@ -25,7 +25,6 @@ import copy
 import numpy as np
 import networkx as nx
 from tensorflow.keras.utils import Sequence
-import tensorflow as tf
 
 from scipy import sparse
 from ..core.graph import StellarGraph
@@ -124,8 +123,6 @@ class ClusterNodeGenerator:
                 )
             )
 
-        self.feature_size = next(iter(G.node_feature_sizes().values()))
-
         if isinstance(clusters, int):
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
@@ -145,6 +142,9 @@ class ClusterNodeGenerator:
         print(f"Number of clusters {self.k}")
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
+
+        # Get the features for the nodes
+        self.features = G.node_features(self.node_list)
 
     def flow(self, node_ids, targets=None, name=None):
         """
@@ -343,10 +343,9 @@ class ClusterNodeSequence(Sequence):
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
 
-        with tf.device("/CPU:0"):
-            features = self.graph.node_features_tensors(g_node_list)
-            features = tf.reshape(features, (1,) + features.shape)
+        features = self.graph.node_features(g_node_list)
 
+        features = np.reshape(features, (1,) + features.shape)
         adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
         target_node_indices = target_node_indices[np.newaxis, :]
 
