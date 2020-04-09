@@ -89,7 +89,7 @@ class ColumnarConverter:
         )
 
         if self.allow_features:
-            other.to_numpy(dtype=self.dtype)
+            features = other.to_numpy(dtype=self.dtype)
         elif len(other.columns) == 0:
             features = None
         else:
