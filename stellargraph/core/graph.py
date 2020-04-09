@@ -741,15 +741,13 @@ class StellarGraph:
         feature_tensor = self.node_features_tensors(nodes, node_type)
 
         if tf.executing_eagerly():
-            feature_arr = feature_tensor.numpy()
-        else:
-            with tf.compat.v1.Session() as sess:
-                try:
-                    feature_arr = sess.run(feature_tensor)
-                except InvalidArgumentError:
-                    raise ValueError("unknown IDs")
+            return feature_tensor.numpy()
 
-        return feature_arr
+        with tf.compat.v1.Session() as sess:
+            try:
+                return sess.run(feature_tensor)
+            except InvalidArgumentError:
+                raise ValueError("unknown IDs")
 
     def node_features_tensors(self, nodes, node_type=None) -> tf.Tensor:
         """

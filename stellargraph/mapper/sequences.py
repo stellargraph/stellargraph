@@ -690,18 +690,17 @@ class CorruptedNodeSequence(Sequence):
             ):
                 features = inputs[0]
 
-                shuffled_feats = [
-                    tf.expand_dims(
-                        tf.random.shuffle(tf.squeeze(features, axis=0)), axis=0
-                    )
-                ]
+                swap_batch = [1, 0, 2]
+                nodes_first = tf.transpose(features, swap_batch)
+                shuffled_nodes_first = tf.random.shuffle(nodes_first)
+                shuffled_feats = [tf.transpose(shuffled_nodes_first, swap_batch)]
                 targets = self.targets
 
             else:
 
                 features = inputs
-                feature_dim = _get_tf_dim(features[0], axis=2)
-                head_nodes = _get_tf_dim(features[0], axis=0)
+                feature_dim = tf.shape(features[0])[2]
+                head_nodes = tf.shape(features[0])[0]
 
                 stacked_feats = np.concatenate(
                     [tf.reshape(x, (-1, feature_dim)) for x in features], axis=0,
@@ -711,7 +710,7 @@ class CorruptedNodeSequence(Sequence):
                 shuffled_feats = tf.reshape(
                     shuffled_feats, (head_nodes, -1, feature_dim)
                 )
-                size_of_splits = [_get_tf_dim(x, axis=1) for x in features]
+                size_of_splits = [tf.shape(x)[1] for x in features]
                 shuffled_feats = list(tf.split(shuffled_feats, size_of_splits, axis=1))
 
                 targets = tf.squeeze(
@@ -719,10 +718,3 @@ class CorruptedNodeSequence(Sequence):
                 )
 
         return shuffled_feats + inputs, targets
-
-
-def _get_tf_dim(tensor, axis):
-
-    dim = tf.gather(tf.shape(tensor), indices=[axis])
-    dim_as_scalar = tf.reshape(dim, shape=[])
-    return dim_as_scalar
