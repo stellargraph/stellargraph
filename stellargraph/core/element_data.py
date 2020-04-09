@@ -19,11 +19,9 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
-from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 from ..globalvar import SOURCE, TARGET, WEIGHT
 from .validation import require_dataframe_has_columns, comma_sep
-import tensorflow as tf
 
 
 class ExternalIdIndex:
@@ -242,9 +240,9 @@ class NodeData(ElementData):
             raise TypeError(f"features: expected dict, found {type(features)}")
 
         for key, data in features.items():
-            if not isinstance(data, tf.Tensor):
+            if not isinstance(data, (np.ndarray, sps.spmatrix)):
                 raise TypeError(
-                    f"features[{key!r}]: expected tensorflow Tensor, found {type(data)}"
+                    f"features[{key!r}]: expected numpy or scipy array, found {type(data)}"
                 )
 
             if len(data.shape) != 2:
@@ -261,7 +259,7 @@ class NodeData(ElementData):
 
         self._features = features
 
-    def features(self, type_name, id_ilocs) -> tf.Tensor:
+    def features(self, type_name, id_ilocs) -> np.ndarray:
         """
         Return features for a set of IDs within a given type.
 
@@ -270,7 +268,7 @@ class NodeData(ElementData):
             ids (iterable of IDs): a sequence of IDs of elements of type type_name
 
         Returns:
-            A 2D tensorflow Tensor, where the rows correspond to the ids
+            A 2D numpy array, where the rows correspond to the ids
         """
         start = self._type_element_ilocs[type_name].start
         feature_ilocs = id_ilocs - start
@@ -281,11 +279,8 @@ class NodeData(ElementData):
             raise ValueError("unknown IDs")
 
         try:
-            with tf.device("/CPU:0"):
-                return tf.nn.embedding_lookup(
-                    self._features[type_name], feature_ilocs.astype(int),
-                )
-        except InvalidArgumentError:
+            return self._features[type_name][feature_ilocs, :]
+        except IndexError:
             # some of the indices were too large (from a later type)
             raise ValueError("unknown IDs")
 

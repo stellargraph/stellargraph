@@ -797,46 +797,17 @@ class StellarGraph:
 
         # TODO: check the feature node_ids against the graph node ids?
 
-    def node_features(self, nodes, node_type=None) -> np.ndarray:
+    def node_features(self, nodes, node_type=None):
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
         for all nodes. It is therefore important to supply the ``node_type``
         for this method to be fast.
-
         Args:
             nodes (list or hashable): Node ID or list of node IDs
             node_type (hashable): the type of the nodes.
-
         Returns:
             Numpy array containing the node features for the requested nodes.
-        """
-        feature_tensor = self.node_features_tensors(nodes, node_type)
-
-        if tf.executing_eagerly():
-            feature_arr = feature_tensor.numpy()
-        else:
-            with tf.compat.v1.Session() as sess:
-                try:
-                    feature_arr = sess.run(feature_tensor)
-                except InvalidArgumentError:
-                    raise ValueError("unknown IDs")
-
-        return feature_arr
-
-    def node_features_tensors(self, nodes, node_type=None) -> tf.Tensor:
-        """
-        Get the numeric feature vectors for the specified node or nodes.
-        If the node type is not specified the node types will be found
-        for all nodes. It is therefore important to supply the ``node_type``
-        for this method to be fast.
-
-        Args:
-            nodes (list or hashable): Node ID or list of node IDs
-            node_type (hashable): the type of the nodes.
-
-        Returns:
-            tensorflow Tensor containing the node features for the requested nodes.
         """
         nodes = np.asarray(nodes)
 
@@ -872,12 +843,9 @@ class StellarGraph:
         non_nones = nodes != None
         self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
-        with tf.device("/CPU:0"):
-            sampled = self._nodes.features(node_type, valid_ilocs)
-
-            indices = tf.cast(tf.where(valid), tf.int32)
-            shape = (len(nodes), sampled.shape[1])
-            features = tf.scatter_nd(indices, sampled, shape)
+        sampled = self._nodes.features(node_type, valid_ilocs)
+        features = np.zeros((len(nodes), sampled.shape[1]))
+        features[valid] = sampled
 
         return features
 
