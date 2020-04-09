@@ -849,9 +849,11 @@ def test_isolated_node_neighbor_methods(is_directed, use_ilocs):
         nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
     )
     node = graph.get_index_for_nodes([1])[0] if use_ilocs else 1
-    assert graph.neighbors(node, use_ilocs=use_ilocs) == []
-    assert graph.in_nodes(node, use_ilocs=use_ilocs) == []
-    assert graph.out_nodes(node, use_ilocs=use_ilocs) == []
+
+    assert_items_equal(graph.neighbors(node, use_ilocs=use_ilocs), [])
+    assert_items_equal(graph.neighbors(node, use_ilocs=use_ilocs), [])
+    assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), [])
+    assert_items_equal(graph.out_nodes(node, use_ilocs=use_ilocs), [])
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
@@ -1303,34 +1305,6 @@ def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
     g = cls(nodes, edges)
 
     benchmark(lambda: g.to_adjacency_matrix())
-
-
-@pytest.mark.parametrize("use_ilocs", [True, False])
-def test_edge_weights_undirected(use_ilocs):
-    g = example_hin_1(is_directed=False, self_loop=True, reverse_order=True)
-
-    edges = [(5, 5), (4, 5), (5, 4), (0, 4), (4, 0)]
-    weights = [[11.0, 12.0], [10.0], [10.0], [1], [1]]
-
-    if use_ilocs:
-        edges = [g.get_index_for_nodes(edge) for edge in edges]
-
-    for edge, weight in zip(edges, weights):
-        assert g._edge_weights(*edge, use_ilocs=use_ilocs) == weight
-
-
-@pytest.mark.parametrize("use_ilocs", [True, False])
-def test_edge_weights_directed(use_ilocs):
-    g = example_hin_1(is_directed=True, self_loop=True, reverse_order=True)
-
-    edges = [(5, 5), (4, 5), (5, 4), (0, 4), (4, 0)]
-    weights = [[11.0, 12.0], [10.0], [], [], [1]]
-
-    if use_ilocs:
-        edges = [g.get_index_for_nodes(edge) for edge in edges]
-
-    for edge, weight in zip(edges, weights):
-        assert g._edge_weights(*edge, use_ilocs=use_ilocs) == weight
 
 
 def test_node_type():

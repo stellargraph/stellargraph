@@ -486,7 +486,7 @@ class StellarGraph:
         if node_type is None:
             all_ids = self._nodes.ids.pandas_index
             if use_ilocs:
-                self._nodes.ids.to_iloc(all_ids)
+                return self._nodes.ids.to_iloc(all_ids)
             else:
                 return all_ids
 
@@ -572,7 +572,13 @@ class StellarGraph:
         return list(other_node_id)
 
     def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
+        self,
+        node: Any,
+        include_edge_weight=False,
+        edge_types=None,
+        use_ilocs=False,
+        ins=True,
+        outs=True,
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
@@ -593,17 +599,66 @@ class StellarGraph:
         if not use_ilocs:
             node = self._nodes.ids.to_iloc([node])[0]
 
-        edge_ilocs = self._edges.edge_ilocs(node, ins=True, outs=True)
-        source = self._edges.sources[edge_ilocs]
-        target = self._edges.targets[edge_ilocs]
-        other_node = np.where(source == node, target, source)
+        if edge_types is None:
+            edge_types = self._edges.all_type_names
+        else:
+            edge_types = [
+                edge_type
+                for edge_type in edge_types
+                if edge_type in self._edges.all_type_names
+            ]
+            if len(edge_types) == 0:
+                return np.empty(shape=(0,), dtype=self._edges.sources.dtype)
+
+        neighs = [
+            self._edges.neighbour_ilocs(node, type_name=edge_type, ins=ins, outs=outs)
+            for edge_type in edge_types
+        ]
+        neighs = np.concatenate(neighs)
 
         if not use_ilocs:
-            other_node = self._nodes.ids.from_iloc(other_node)
+            neighs = self._nodes.ids.from_iloc(neighs)
 
-        return self._transform_edges(
-            other_node, edge_ilocs, include_edge_weight, edge_types
-        )
+        if include_edge_weight:
+            weights = [
+                self._edges.neighbour_weights(
+                    node, type_name=edge_type, ins=ins, outs=outs
+                )
+                for edge_type in edge_types
+            ]
+            weights = np.concatenate(weights)
+            return list(zip(neighs, weights))
+
+        return neighs
+
+    def neighbor_weights(
+        self, node, edge_types=None, use_ilocs=False, ins=True, outs=True
+    ):
+
+        outs = outs or self.is_directed()
+        ins = ins or self.is_directed()
+
+        if not use_ilocs:
+            node = self._nodes.ids.to_iloc([node])[0]
+
+        if edge_types is None:
+            edge_types = self._edges.all_type_names
+        else:
+            edge_types = [
+                edge_type
+                for edge_type in edge_types
+                if edge_type in self._edges.all_type_names
+            ]
+            if len(edge_types) == 0:
+                return np.empty(shape=(0,), dtype=self._edges.sources.dtype)
+
+        weights = [
+            self._edges.neighbour_weights(node, type_name=edge_type, ins=ins, outs=outs)
+            for edge_type in edge_types
+        ]
+        weights = np.concatenate(weights)
+
+        return weights
 
     def in_nodes(
         self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
@@ -625,23 +680,13 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        if not self.is_directed():
-            # all edges are both incoming and outgoing for undirected graphs
-            return self.neighbors(
-                node,
-                include_edge_weight=include_edge_weight,
-                edge_types=edge_types,
-                use_ilocs=use_ilocs,
-            )
-
-        if not use_ilocs:
-            node = self._nodes.ids.to_iloc([node])[0]
-        edge_ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
-        source = self._edges.sources[edge_ilocs]
-        if not use_ilocs:
-            source = self._nodes.ids.from_iloc(source)
-        return self._transform_edges(
-            source, edge_ilocs, include_edge_weight, edge_types
+        return self.neighbors(
+            node,
+            include_edge_weight=include_edge_weight,
+            edge_types=edge_types,
+            use_ilocs=use_ilocs,
+            ins=True,
+            outs=(not self.is_directed()),
         )
 
     def out_nodes(
@@ -664,25 +709,14 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        if not self.is_directed():
-            # all edges are both incoming and outgoing for undirected graphs
-            return self.neighbors(
-                node,
-                include_edge_weight=include_edge_weight,
-                edge_types=edge_types,
-                use_ilocs=use_ilocs,
-            )
 
-        if not use_ilocs:
-            node = self._nodes.ids.to_iloc([node])[0]
-
-        edge_ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
-        target = self._edges.targets[edge_ilocs]
-
-        if not use_ilocs:
-            target = self._nodes.ids.from_iloc(target)
-        return self._transform_edges(
-            target, edge_ilocs, include_edge_weight, edge_types
+        return self.neighbors(
+            node,
+            include_edge_weight=include_edge_weight,
+            edge_types=edge_types,
+            use_ilocs=use_ilocs,
+            ins=(not self.is_directed()),
+            outs=True,
         )
 
     def nodes_of_type(self, node_type=None):
@@ -1061,14 +1095,35 @@ class StellarGraph:
             self.is_directed(), sorted(self.node_types), edge_types, schema
         )
 
-    def node_degrees(self) -> Mapping[Any, int]:
+    def node_degrees(self, use_ilocs=False) -> Mapping[Any, int]:
         """
         Obtains a map from node to node degree.
 
         Returns:
             The degree of each node.
         """
-        return self._edges.degrees()
+        type_names = self._edges.all_type_names
+
+        degrees_by_type = dict(
+            (type_name, self._edges.degrees(type_name=type_name))
+            for type_name in type_names
+        )
+
+        degrees = defaultdict(
+            int,
+            (
+                (key, sum(degrees_by_type[type_name][key] for type_name in type_names))
+                for key in self.nodes(use_ilocs=True, node_type=None)
+            ),
+        )
+
+        if not use_ilocs:
+            node_ilocs = np.array(list(degrees.keys()))
+            node_ids = self._nodes.ids.from_iloc(node_ilocs)
+
+            degrees = dict(zip(node_ids, degrees.values()))
+
+        return degrees
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
         """
@@ -1358,43 +1413,6 @@ class StellarGraph:
                 v.sort(key=str)
 
         return triples
-
-    def _edge_weights(
-        self, source_node: Any, target_node: Any, use_ilocs=False
-    ) -> List[Any]:
-        """
-        Obtains the weights of edges between the given pair of nodes.
-
-        Args:
-            source_node (int): The source node.
-            target_node (int): The target node.
-            use_ilocs (bool): if True source_node and target_node are treated as node ilocs.
-
-        Returns:
-            list: The edge weights.
-        """
-        # self loops should only be counted once, which means they're effectively always a directed
-        # edge at the storage level, unlikely other edges in an undirected graph. This is
-        # particularly important with the intersection1d call, where the source_ilocs and
-        # target_ilocs will be equal, when source_node == target_node, and thus the intersection
-        # will contain all incident edges.
-        effectively_directed = self.is_directed() or source_node == target_node
-        both_dirs = not effectively_directed
-
-        if not use_ilocs:
-            source_node = self._nodes.ids.to_iloc([source_node])[0]
-            target_node = self._nodes.ids.to_iloc([target_node])[0]
-
-        source_edge_ilocs = self._edges.edge_ilocs(
-            source_node, ins=both_dirs, outs=True
-        )
-        target_edge_ilocs = self._edges.edge_ilocs(
-            target_node, ins=True, outs=both_dirs
-        )
-
-        ilocs = np.intersect1d(source_edge_ilocs, target_edge_ilocs, assume_unique=True)
-
-        return [float(x) for x in self._edges.weights[ilocs]]
 
 
 # A convenience class that merely specifies that edges have direction.

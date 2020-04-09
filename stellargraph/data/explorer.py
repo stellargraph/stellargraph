@@ -280,7 +280,7 @@ class UniformRandomWalk(RandomWalk):
         current_node = start_node
         for _ in range(length - 1):
             neighbours = self.graph.neighbors(current_node)
-            if not neighbours:
+            if len(neighbours) == 0:
                 # dead end, so stop
                 break
             else:
@@ -388,27 +388,29 @@ class BiasedRandomWalk(RandomWalk):
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbors(node):
+                wts = dict()
 
-                    wts = set()
+                for neighbor, weight in self.graph.neighbors(
+                    node, include_edge_weight=True
+                ):
                     name = f"Edge weight between ({node}) and ({neighbor})"
-                    for weight in self.graph._edge_weights(node, neighbor):
-                        weight_is_valid = (
-                            isinstance(weight, (float, int))
-                            and np.isfinite(weight)
-                            and weight >= 0
-                        )
-                        if not weight_is_valid:
-                            raise ValueError(
-                                f"{name}: expected numeric value greater than or equal to 0, found {weight}"
-                            )
-                        wts.add(weight)
-                    if len(wts) > 1:
-                        # multigraph with different weights on edges between same pair of nodes
+                    weight_is_valid = np.isfinite(weight) and weight >= 0
+                    if not weight_is_valid:
                         raise ValueError(
-                            f"{name}: expected all edges between two particular nodes to have the "
-                            f"same weight value, found {list(wts)}"
+                            f"{name}: expected numeric value greater than or equal to 0, found {weight}"
                         )
+
+                    wts.get(neighbor, []).append(wts)
+
+                if not all(
+                    all(x == node_pair_weights[0] for x in node_pair_weights)
+                    for node_pair_weights in wts.values()
+                ):
+                    # multigraph with different weights on edges between same pair of nodes
+                    raise ValueError(
+                        f"{name}: expected all edges between two particular nodes to have the "
+                        f"same weight value, found {list(wts)}"
+                    )
 
         ip = 1.0 / p
         iq = 1.0 / q
@@ -426,39 +428,31 @@ class BiasedRandomWalk(RandomWalk):
 
                 # calculate the appropriate unnormalised transition
                 # probability, given the history of the walk
-                def transition_probability(nn, current_node, weighted):
 
-                    if weighted:
-                        # TODO Encapsulate edge weights
-                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
-                    else:
-                        weight_cn = 1.0
-
-                    if nn == previous_node:  # d_tx = 0
-                        return ip * weight_cn
-                    elif nn in previous_node_neighbours:  # d_tx = 1
-                        return 1.0 * weight_cn
-                    else:  # d_tx = 2
-                        return iq * weight_cn
-
-                if neighbours:
+                if len(neighbours) > 0:
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
                         neighbours = self.graph.neighbors(current_node)
 
-                        if not neighbours:
+                        if len(neighbours) == 0:
                             break
+
+                        # type cast to prevent overflows
+                        trans_proba = self.graph.neighbor_weights(current_node).astype(
+                            type(iq)
+                        )
+                        mask = ~np.isin(neighbours, previous_node_neighbours) & ~(
+                            neighbours == previous_node
+                        )
+                        trans_proba[mask] = trans_proba[mask] * iq
+                        trans_proba[neighbours == previous_node] = (
+                            trans_proba[neighbours == previous_node] * ip
+                        )
 
                         # select one of the neighbours using the
                         # appropriate transition probabilities
-                        choice = naive_weighted_choices(
-                            rs,
-                            (
-                                transition_probability(nn, current_node, weighted)
-                                for nn in neighbours
-                            ),
-                        )
+                        choice = naive_weighted_choices(rs, trans_proba)
 
                         previous_node = current_node
                         previous_node_neighbours = neighbours
@@ -1105,17 +1099,17 @@ class TemporalRandomWalk(GraphWalk):
 
         """
 
-        neighbours = [
-            (neighbour, t)
-            for neighbour, t in self.graph.neighbors(node, include_edge_weight=True)
-            if t > time
-        ]
+        times = self.graph.neighbor_weights(node)
+        neighbours = self.graph.neighbors(node)
+        neighbours = neighbours[times > time]
+        times = times[times > time]
 
-        if neighbours:
-            times = [t for _, t in neighbours]
+        if len(neighbours) != 0:
+
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
-            next_node, next_time = neighbours[chosen_neighbour_index]
+            next_node = neighbours[chosen_neighbour_index]
+            next_time = times[chosen_neighbour_index]
             return next_node, next_time
         else:
             return None

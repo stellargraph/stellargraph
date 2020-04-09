@@ -171,7 +171,7 @@ def convert_edges(
                 f"found some missing: {comma_sep(missing_values)}"
             )
 
-    return EdgeData(edges)
+    return EdgeData(edges, num_nodes=len(nodes))
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(
