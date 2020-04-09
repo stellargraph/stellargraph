@@ -516,15 +516,16 @@ class DistMult:
 
 
 def _ranks_from_comparisons(greater, greater_equal, comparison_mode):
-    low = 1 + greater.sum(axis=0)
-    high = greater_equal.sum(axis=0)
+    strict = 1 + greater.sum(axis=0)
+    # this includes the self score
+    all_ties = 1 + greater_equal.sum(axis=0)
 
     if comparison_mode == "top":
-        return low
+        return strict
     elif comparison_mode == "bottom":
-        return high
+        return all_ties - 1
     elif comparison_mode == "random":
-        return np.random.random_integers(low, high)
+        return np.random.randint(strict, all_ties)
     else:
         raise ValueError(f"comparison_mode: expected 'top', 'bottom' or 'random', found {comparison_mode!r}")
 
@@ -605,6 +606,8 @@ def _ranks_from_score_columns(
     neighbour_ilocs = known_edges_graph._get_index_for_nodes(neighbours)
     greater[neighbour_ilocs, columns] = False
     greater_equal[neighbour_ilocs, columns] = False
+    # the actual elements should be counted as equal, whether or not it was a known edge or not
+    greater_equal[true_modified_node_ilocs, range(batch_size)] = True
 
     filtered_rank = _ranks_from_comparisons(greater, greater_equal, comparison_mode)
 
