@@ -26,6 +26,7 @@ import tensorflow as tf
 from ..globalvar import SOURCE, TARGET, WEIGHT
 from .element_data import NodeData, EdgeData
 from .validation import comma_sep, require_dataframe_has_columns
+from .utils import is_real_iterable
 
 
 class ColumnarConverter:
@@ -134,7 +135,7 @@ DEFAULT_WEIGHT = np.float32(1)
 
 
 def convert_edges(
-    data, *, name, default_type, source_column, target_column, weight_column,
+    data, *, name, default_type, source_column, target_column, weight_column, nodes
 ):
     converter = ColumnarConverter(
         name,
@@ -155,6 +156,19 @@ def convert_edges(
         if not pd.api.types.is_numeric_dtype(weight_col):
             raise TypeError(
                 f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
+            )
+        try:
+            type_df[SOURCE] = nodes.ids.to_iloc(type_df[SOURCE], strict=True)
+            type_df[TARGET] = nodes.ids.to_iloc(type_df[TARGET], strict=True)
+        except KeyError as e:
+            missing_values = e.args[0]
+            if not is_real_iterable(missing_values):
+                missing_values = [missing_values]
+            missing_values = pd.unique(missing_values)
+
+            raise ValueError(
+                f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                f"found some missing: {comma_sep(missing_values)}"
             )
 
     return EdgeData(edges)

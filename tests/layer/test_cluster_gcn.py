@@ -61,33 +61,18 @@ def test_GraphConvolution():
     # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work
     x_t = Input(batch_shape=(1,) + features.shape, name="X")
     A_t = Input(batch_shape=(1, 3, 3), name="A")
-    output_indices_t = Input(batch_shape=(1, None), dtype="int32", name="outind")
 
     # Note we add a batch dimension of 1 to model inputs
     adj = G.to_adjacency_matrix().toarray()[None, :, :]
-    out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
 
     # Remove batch dimension
     A_mat = Lambda(lambda A: K.squeeze(A, 0))(A_t)
 
-    # Test with final_layer=False
-    out = ClusterGraphConvolution(2, final_layer=False)([x_t, output_indices_t, A_mat])
-    model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
-    preds = model.predict([x, adj, out_indices], batch_size=1)
+    out = ClusterGraphConvolution(2)([x_t, A_mat])
+    model = keras.Model(inputs=[x_t, A_t], outputs=out)
+    preds = model.predict([x, adj], batch_size=1)
     assert preds.shape == (1, 3, 2)
-
-    # Now try with final_layer=True
-    out = ClusterGraphConvolution(2, final_layer=True)([x_t, output_indices_t, A_mat])
-    # The final layer removes the batch dimension and causes the call to predict to fail.
-    # We are going to manually add the batch dimension before calling predict.
-    out = K.expand_dims(out, 0)
-    model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
-    print(
-        f"x_t: {x_t.shape} A_t: {A_t.shape} output_indices_t: {output_indices_t.shape}"
-    )
-    preds = model.predict([x, adj, out_indices], batch_size=1)
-    assert preds.shape == (1, 2, 2)
 
     # Check for errors with batch size != 1
     # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work
