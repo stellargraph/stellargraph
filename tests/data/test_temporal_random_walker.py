@@ -103,3 +103,20 @@ def test_cw_size_and_walk_length(temporal_graph, cw_size):
         num_cw_obtained = sum([len(walk) - cw_size + 1 for walk in walks])
         assert num_cw == num_cw_obtained
         assert max(map(len, walks)) <= max_walk_length
+
+
+def test_init_parameters(temporal_graph):
+
+    num_cw = 5
+    cw_size = 3
+    max_walk_length = 3
+    seed = 0
+
+    rw = TemporalRandomWalk(
+        temporal_graph, cw_size=cw_size, max_walk_length=max_walk_length, seed=seed
+    )
+    rw_no_params = TemporalRandomWalk(temporal_graph)
+
+    assert rw.run(num_cw=num_cw) == rw_no_params.run(
+        num_cw=num_cw, cw_size=cw_size, max_walk_length=max_walk_length, seed=seed
+    )
