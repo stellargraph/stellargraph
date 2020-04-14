@@ -484,7 +484,7 @@ class StellarGraph:
         if node_type is None:
             all_ids = self._nodes.ids.pandas_index
             if use_ilocs:
-                self._nodes.ids.to_iloc(all_ids)
+                return self._nodes.ids.to_iloc(all_ids)
             else:
                 return all_ids
 
@@ -1029,14 +1029,20 @@ class StellarGraph:
             self.is_directed(), sorted(self.node_types), edge_types, schema
         )
 
-    def node_degrees(self) -> Mapping[Any, int]:
+    def node_degrees(self, use_ilocs=False) -> Mapping[Any, int]:
         """
         Obtains a map from node to node degree.
 
         Returns:
             The degree of each node.
         """
-        return self._edges.degrees()
+        degrees = self._edges.degrees()
+        if use_ilocs:
+            return degrees
+        node_ids = self.get_index_for_nodes(degrees.keys())
+        return dict(
+            (node_id, degree) for node_id, degree in zip(node_ids, degrees.values())
+        )
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
         """

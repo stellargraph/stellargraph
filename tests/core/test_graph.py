@@ -1494,6 +1494,8 @@ def test_nodes_node_type_filter(use_ilocs):
     else:
         assert sorted(g.nodes(node_type="A", use_ilocs=use_ilocs)) == [0, 1, 2, 3]
         assert sorted(g.nodes(node_type="B", use_ilocs=use_ilocs)) == [4, 5, 6]
+
+    assert sorted(g.nodes(node_type=None, use_ilocs=use_ilocs)) == list(range(7))
     with pytest.raises(KeyError, match="'C'"):
         g.nodes(node_type="C")
 
@@ -1507,3 +1509,18 @@ def test_nodes_of_type_deprecation():
     with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
         a = g.nodes_of_type("A")
     assert all(a == g.nodes(node_type="A"))
+
+
+@pytest.mark.parametrize("use_ilocs", [True, False])
+def test_node_degrees(use_ilocs):
+    g = example_hin_1(reverse_order=True)
+    degrees = g.node_degrees(use_ilocs=use_ilocs)
+
+    # expected node degrees - keys are node ids
+    expected = {0: 1, 1: 2, 2: 1, 3: 1, 4: 4, 5: 3}
+    if use_ilocs:
+        for node_id in expected.keys():
+            node_iloc = g.get_index_for_nodes([node_id])[0]
+            assert expected[node_id] == degrees[node_iloc]
+    else:
+        assert expected == degrees
