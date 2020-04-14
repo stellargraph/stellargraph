@@ -40,6 +40,7 @@ class ColumnarConverter:
         selected_columns (dict of hashable to hashable): renamings for columns, mapping original name to new name
         allow_features (bool): if True, columns that aren't selected are returned as a numpy feature matrix
         dtype (str or numpy dtype): the data type to use for the feature matrices
+        transform_columns (dict of hashable to callable): column transformations, maps column name to transform
     """
 
     def __init__(

@@ -576,7 +576,7 @@ class StellarGraph:
                 output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
-            use_ilocs (bool): if True `node` is treated as a node iloc and the ilocs of each neighbour is
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>` and the ilocs of each neighbour is
                 returned.
 
         Returns:
@@ -608,7 +608,7 @@ class StellarGraph:
                 output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
-            use_ilocs (bool): if True `node` is treated as a node iloc and the ilocs of each neighbour is
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>` and the ilocs of each neighbour is
                 returned.
 
         Returns:
@@ -646,7 +646,7 @@ class StellarGraph:
                 output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
-            use_ilocs (bool): if True `node` is treated as a node iloc and the ilocs of each neighbour is
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>` and the ilocs of each neighbour is
                 returned.
 
         Returns:
@@ -1044,6 +1044,8 @@ class StellarGraph:
     def node_degrees(self, use_ilocs=False) -> Mapping[Any, int]:
         """
         Obtains a map from node to node degree.
+
+        use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>`
 
         Returns:
             The degree of each node.
