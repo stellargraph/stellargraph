@@ -1054,8 +1054,9 @@ class StellarGraph:
         if use_ilocs:
             return degrees
         node_ids = self.node_ilocs_to_ids(list(degrees.keys()))
-        return dict(
-            (node_id, degree) for node_id, degree in zip(node_ids, degrees.values())
+        return defaultdict(
+            int,
+            ((node_id, degree) for node_id, degree in zip(node_ids, degrees.values())),
         )
 
     def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
