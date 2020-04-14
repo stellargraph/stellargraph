@@ -267,35 +267,16 @@ class StellarGraph:
                 dtype=dtype,
             )
 
-        # repeatedly call unique to decrease memory usage
-        if isinstance(edges, dict) and edges != {}:
-            nodes_from_edges = [
-                pd.unique(type_edges[source_column]) for type_edges in edges.values()
-            ]
-            nodes_from_edges.extend(
-                pd.unique(type_edges[target_column]) for type_edges in edges.values()
-            )
-            nodes_from_edges = pd.unique(np.concatenate(nodes_from_edges))
-        elif isinstance(edges, pd.DataFrame) and len(edges) > 0:
-            nodes_from_edges = pd.unique(
-                np.concatenate([edges[target_column], edges[source_column]])
-            )
-        elif isinstance(edges, (pd.DataFrame, dict)) or edges is None:
-            nodes_from_edges = []
+        if nodes is None:
+            nodes = self._infer_nodes_from_edges(edges, source_column, target_column)
+
+        if edges is None or edges == {}:
             edges = pd.DataFrame(
                 columns=[source_column, target_column], index=[], dtype=np.uint8
             )
 
-        if nodes is None:
-            nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
-        else:
-            nodes_after_inference = nodes
-
         self._nodes = convert.convert_nodes(
-            nodes_after_inference,
-            name="nodes",
-            default_type=node_type_default,
-            dtype=dtype,
+            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
         )
 
         self._is_directed = is_directed
@@ -475,7 +456,7 @@ class StellarGraph:
 
         Args:
             node_type (hashable, optional): a type of nodes that exist in the graph
-            use_ilocs (bool): if True return node ilocs
+            use_ilocs (bool): if True return node ilocs as a ``range`` object
 
         Returns:
             All the nodes in the graph if ``node_type`` is ``None``, otherwise all the nodes in the
@@ -484,15 +465,13 @@ class StellarGraph:
         if node_type is None:
             all_ids = self._nodes.ids.pandas_index
             if use_ilocs:
-                return self._nodes.ids.to_iloc(all_ids)
-            else:
-                return all_ids
+                return range(self.number_of_nodes())
+            return all_ids
 
         ilocs = self._nodes.type_range(node_type)
         if use_ilocs:
             return ilocs
-        else:
-            return self._nodes.ids.from_iloc(ilocs)
+        return self._nodes.ids.from_iloc(ilocs)
 
     def edges(
         self, include_edge_type=False, include_edge_weight=False, use_ilocs=False
@@ -1370,6 +1349,25 @@ class StellarGraph:
         ilocs = np.intersect1d(source_edge_ilocs, target_edge_ilocs, assume_unique=True)
 
         return [float(x) for x in self._edges.weights[ilocs]]
+
+    @staticmethod
+    def _infer_nodes_from_edges(edges, source_column, target_column):
+        # repeatedly call unique to decrease memory usage
+        if isinstance(edges, dict) and edges != {}:
+            nodes_from_edges = [
+                type_edges[source_column] for type_edges in edges.values()
+            ]
+            nodes_from_edges.extend(
+                type_edges[target_column] for type_edges in edges.values()
+            )
+            nodes_from_edges = pd.unique(np.concatenate(nodes_from_edges))
+        elif isinstance(edges, pd.DataFrame) and len(edges) > 0:
+            nodes_from_edges = pd.unique(
+                np.concatenate([edges[target_column], edges[source_column]])
+            )
+        elif isinstance(edges, (pd.DataFrame, dict)) or edges is None:
+            nodes_from_edges = []
+        return nodes_from_edges
 
 
 # A convenience class that merely specifies that edges have direction.
