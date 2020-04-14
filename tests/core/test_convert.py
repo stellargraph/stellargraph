@@ -30,7 +30,7 @@ _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 
 def test_columnar_convert_type_default():
-    converter = ColumnarConverter("some_name", "foo", {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", {}, {}, False, {})
     shared, features = converter.convert(_EMPTY_DF)
     assert "foo" in shared
     assert "foo" in features
@@ -40,7 +40,7 @@ def test_columnar_convert_selected_columns():
     df = _EMPTY_DF.assign(before="abc", same=10)
 
     converter = ColumnarConverter(
-        "some_name", "foo", {}, {"before": "after", "same": "same"}, False
+        "some_name", "foo", {}, {"before": "after", "same": "same"}, False, {}
     )
     shared, features = converter.convert({"x": df, "y": df})
 
@@ -55,7 +55,7 @@ def test_columnar_convert_selected_columns():
 
 def test_columnar_convert_selected_columns_missing():
     converter = ColumnarConverter(
-        "some_name", "foo", {}, {"before": "after", "same": "same"}, False
+        "some_name", "foo", {}, {"before": "after", "same": "same"}, False, {}
     )
 
     with pytest.raises(
@@ -65,7 +65,7 @@ def test_columnar_convert_selected_columns_missing():
 
 
 def test_columnar_convert_column_default():
-    converter = ColumnarConverter("some_name", "foo", {"before": 123}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", {"before": 123}, {}, False, {})
     shared, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
     assert "x" in shared
@@ -78,7 +78,7 @@ def test_columnar_convert_column_default():
 def test_columnar_convert_column_default_selected_columns():
     # the defaulting happens before the renaming
     converter = ColumnarConverter(
-        "x", "foo", {"before": 123}, {"before": "after"}, False
+        "x", "foo", {"before": 123}, {"before": "after"}, False, {}
     )
     shared, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
@@ -91,7 +91,7 @@ def test_columnar_convert_column_default_selected_columns():
 
 
 def test_columnar_convert_features():
-    converter = ColumnarConverter("some_name", "foo", {}, {"x": "x"}, True)
+    converter = ColumnarConverter("some_name", "foo", {}, {"x": "x"}, True, {})
     df = _EMPTY_DF.assign(a=[1, 2], b=[100, 200], x=123)
     shared, features = converter.convert(df)
 
@@ -100,14 +100,14 @@ def test_columnar_convert_features():
 
 
 def test_columnar_convert_disallow_features():
-    converter = ColumnarConverter("some_name", "foo", {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", {}, {}, False, {})
     df = _EMPTY_DF.assign(a=1)
     with pytest.raises(ValueError, match="expected zero feature columns, found 'a'"):
         shared, features = converter.convert(df)
 
 
 def test_columnar_convert_invalid_input():
-    converter = ColumnarConverter("some_name", "foo", {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", {}, {}, False, {})
 
     with pytest.raises(
         TypeError, match="some_name: expected dict, found <class 'int'>"
