@@ -43,13 +43,10 @@ class FixedAdjacencyGraphConvolution(Layer):
     Notes:
       - The inputs are 3 dimensional tensors: batch size, sequence length, and number of nodes.
         
-
       - This class assumes that a simple unweighted or weighted adjacency matrix is passed to it,
           the normalized Laplacian matrix is calculated within the class.
 
-     
-
-    Args:
+     Args:
         units (int): dimensionality of output feature vectors
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
@@ -141,13 +138,6 @@ class FixedAdjacencyGraphConvolution(Layer):
 
         return feature_shape[0], feature_shape[1], self.units
 
-    def set_A(self, A):
-        """
-        Sets the adjacnency matrix provided as input.
-        
-        """
-        K.set_value(self.A, A)
-
     def build(self, input_shapes):
         """
         Builds the layer
@@ -231,7 +221,7 @@ class GraphConvolutionLSTM:
         The StellarGraph implementation is built as a stack of the following layers:
            1. 2-layer graph convolutional network (gcn) proposed by Kipf & Welling in  https://arxiv.org/abs/1609.02907 (ICLR 2017).
            2. 1 LSTM layer
-           3. 1 Dense layer 
+           3. 1 Dense layer
            4. 1 Dropout layer
            The last two layers consistently showed better performance and regularization experimentally.
         Notes:
@@ -243,7 +233,6 @@ class GraphConvolutionLSTM:
             
         Args:
             layer_sizes (list of int): Output sizes of GCN layers in the stack.
-            generator (FullBatchNodeGenerator): The generator instance.
             bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
             dropout (float): Dropout rate applied to input features of each GCN layer.
             activations (list of str or func): Activations applied to each layer's output;
