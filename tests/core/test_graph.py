@@ -254,6 +254,15 @@ def test_node_ids_to_ilocs():
     assert list(aa) == [2, 1, 5]
 
 
+def test_node_ilocs_to_ids():
+    sg = example_graph(feature_size=8)
+
+    node_ilocs = [0, 1, 2, 3]
+    expected_node_ids = [1, 2, 3, 4]
+    node_ids = sg.node_ilocs_to_ids(node_ilocs)
+    assert (node_ids == expected_node_ids).all()
+
+
 def test_feature_conversion_from_nodes():
     sg = example_graph(feature_size=8)
     aa = sg.node_features([1, 2, 3, 4])
