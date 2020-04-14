@@ -535,19 +535,22 @@ class StellarGraph:
         return node in self._nodes
 
     def _transform_edges(
-        self, other_node_id, ilocs, include_edge_weight, filter_edge_types
+        self, other_node, ilocs, include_edge_weight, filter_edge_types, use_ilocs
     ):
         if include_edge_weight:
             weights = self._edges.weights[ilocs]
         else:
             weights = None
 
+        if not use_ilocs:
+            other_node = self._nodes.ids.from_iloc(other_node)
+
         if filter_edge_types is not None:
             filter_edge_type_ilocs = self._edges.types.to_iloc(filter_edge_types)
             edge_type_ilocs = self._edges.type_ilocs[ilocs]
             correct_type = np.isin(edge_type_ilocs, filter_edge_type_ilocs)
 
-            other_node_id = other_node_id[correct_type]
+            other_node = other_node[correct_type]
             if weights is not None:
                 weights = weights[correct_type]
 
@@ -555,10 +558,10 @@ class StellarGraph:
         if weights is not None:
             return [
                 NeighbourWithWeight(node, weight)
-                for node, weight in zip(other_node_id, weights)
+                for node, weight in zip(other_node, weights)
             ]
 
-        return list(other_node_id)
+        return list(other_node)
 
     def neighbors(
         self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
@@ -587,11 +590,8 @@ class StellarGraph:
         target = self._edges.targets[edge_ilocs]
         other_node = np.where(source == node, target, source)
 
-        if not use_ilocs:
-            other_node = self._nodes.ids.from_iloc(other_node)
-
         return self._transform_edges(
-            other_node, edge_ilocs, include_edge_weight, edge_types
+            other_node, edge_ilocs, include_edge_weight, edge_types, use_ilocs
         )
 
     def in_nodes(
@@ -627,10 +627,9 @@ class StellarGraph:
             node = self._nodes.ids.to_iloc([node])[0]
         edge_ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
         source = self._edges.sources[edge_ilocs]
-        if not use_ilocs:
-            source = self._nodes.ids.from_iloc(source)
+
         return self._transform_edges(
-            source, edge_ilocs, include_edge_weight, edge_types
+            source, edge_ilocs, include_edge_weight, edge_types, use_ilocs
         )
 
     def out_nodes(
@@ -668,10 +667,8 @@ class StellarGraph:
         edge_ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
         target = self._edges.targets[edge_ilocs]
 
-        if not use_ilocs:
-            target = self._nodes.ids.from_iloc(target)
         return self._transform_edges(
-            target, edge_ilocs, include_edge_weight, edge_types
+            target, edge_ilocs, include_edge_weight, edge_types, use_ilocs
         )
 
     def nodes_of_type(self, node_type=None):
