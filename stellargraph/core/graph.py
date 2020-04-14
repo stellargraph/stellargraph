@@ -157,6 +157,15 @@ class StellarGraph:
         0 of type ``a``, and a node 0 of type ``b``. IDs of edges must also be unique across all
         types.
 
+    .. _iloc-explanation:
+
+        This type stores the external IDs for nodes and edges as *ilocs* (internal or integer locations,
+        similar to Pandas), which are sequential integers that allow for efficient storage and indexing.
+        For convenience, methods here will traffic in the external ID values and transparently convert to
+        and from ilocs as required internally. Many of these methods also have a ``use_ilocs`` parameter
+        that allows for explicitly switching the methods to consume and return ilocs directly, cutting out
+        the conversion overhead.
+
     .. seealso:: :meth:`from_networkx` for construction from a NetworkX graph.
 
     Args:
@@ -456,7 +465,7 @@ class StellarGraph:
 
         Args:
             node_type (hashable, optional): a type of nodes that exist in the graph
-            use_ilocs (bool): if True return node ilocs as a ``range`` object
+            use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>` as a ``range`` object
 
         Returns:
             All the nodes in the graph if ``node_type`` is ``None``, otherwise all the nodes in the
@@ -484,7 +493,7 @@ class StellarGraph:
             of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
             include_edge_weight (bool): A flag that indicates whether to return edge weights.
             Weights are returned in a separate list.
-            use_ilocs (bool): if True return node ilocs
+            use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>`
 
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights)
@@ -739,6 +748,30 @@ class StellarGraph:
         # TODO: check the schema
 
         # TODO: check the feature node_ids against the graph node ids?
+
+    def node_ids_to_ilocs(self, nodes):
+        """
+        Get the :ref:`node ilocs <iloc-explanation>` for the specified node or nodes.
+
+        Args:
+            nodes: (list or hashable) node IDs
+
+        Returns:
+            Numpy array containing the indices for the requested nodes.
+        """
+        return self._nodes.ids.to_iloc(nodes, strict=True)
+
+    def node_ilocs_to_ids(self, nodes):
+        """
+        Get the node ids for the specified :ref:`node ilocs <iloc-explanation>`.
+
+        Args:
+            nodes: (list or hashable) :ref:`node ilocs <iloc-explanation>`
+
+        Returns:
+            Numpy array containing the node ids for the requested nodes.
+        """
+        return self._nodes.ids.from_iloc(nodes)
 
     def node_features(self, nodes, node_type=None):
         """
@@ -1018,7 +1051,7 @@ class StellarGraph:
         degrees = self._edges.degrees()
         if use_ilocs:
             return degrees
-        node_ids = self.get_index_for_nodes(degrees.keys())
+        node_ids = self.node_ids_to_ilocs(degrees.keys())
         return dict(
             (node_id, degree) for node_id, degree in zip(node_ids, degrees.values())
         )
@@ -1257,24 +1290,6 @@ class StellarGraph:
 
         return graph
 
-    # FIXME: Experimental/special-case methods that need to be considered more; the underscores
-    # denote "package private", not fully private, and so are ok to use in the rest of stellargraph
-    def get_index_for_nodes(self, nodes, node_type=None):
-        """
-        Get the indices for the specified node or nodes.
-        If the node type is not specified the node types will be found
-        for all nodes. It is therefore important to supply the ``node_type``
-        for this method to be fast.
-
-        Args:
-            nodes: (list or hashable) Node ID or list of node IDs
-            node_type: (hashable) the type of the nodes.
-
-        Returns:
-            Numpy array containing the indices for the requested nodes.
-        """
-        return self._nodes._id_index.to_iloc(nodes, strict=True)
-
     def _adjacency_types(self, graph_schema: GraphSchema, use_ilocs=False):
         """
         Obtains the edges in the form of the typed mapping:
@@ -1283,7 +1298,7 @@ class StellarGraph:
 
         Args:
             graph_schema: The graph schema.
-            use_ilocs (bool): if True return node ilocs
+            use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>`
         Returns:
              The edge types mapping.
         """
@@ -1322,7 +1337,7 @@ class StellarGraph:
         Args:
             source_node (int): The source node.
             target_node (int): The target node.
-            use_ilocs (bool): if True source_node and target_node are treated as node ilocs.
+            use_ilocs (bool): if True source_node and target_node are treated as :ref:`node ilocs <iloc-explanation>`.
 
         Returns:
             list: The edge weights.

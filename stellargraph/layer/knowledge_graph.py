@@ -574,7 +574,7 @@ def _ranks_from_score_columns(
     else:
         neigh_func = known_edges_graph.in_nodes
 
-    # collect all the neighbours into a single array to do one get_index_for_nodes call,
+    # collect all the neighbours into a single array to do one node_ids_to_ilocs call,
     # which has relatively high constant cost
     neighbours = []
     columns = []
@@ -583,7 +583,7 @@ def _ranks_from_score_columns(
         neighbours.extend(this_neighs)
         columns.extend(batch_column for _ in this_neighs)
 
-    neighbour_ilocs = known_edges_graph.get_index_for_nodes(neighbours)
+    neighbour_ilocs = known_edges_graph.node_ids_to_ilocs(neighbours)
     greater[neighbour_ilocs, columns] = False
 
     filtered_rank = 1 + greater.sum(axis=0)
