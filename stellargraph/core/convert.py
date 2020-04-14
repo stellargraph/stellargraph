@@ -141,7 +141,6 @@ DEFAULT_WEIGHT = np.float32(1)
 def convert_edges(
     data, *, name, default_type, source_column, target_column, weight_column, nodes
 ):
-
     def _node_ids_to_iloc(node_ids):
         try:
             return nodes.ids.to_iloc(node_ids, strict=True)
