@@ -49,6 +49,7 @@ class ColumnarConverter:
         column_defaults,
         selected_columns,
         allow_features,
+        transform_columns,
         dtype=None,
     ):
         self._parent_name = name
@@ -56,6 +57,7 @@ class ColumnarConverter:
         self.selected_columns = selected_columns
         self.default_type = default_type
         self.allow_features = allow_features
+        self.transform_columns = transform_columns
         self.dtype = dtype
 
     def name(self, type_name=None):
@@ -87,6 +89,9 @@ class ColumnarConverter:
         require_dataframe_has_columns(
             self.name(type_name), known, self.selected_columns
         )
+
+        for column, transform in self.transform_columns.items():
+            known[column] = transform(known[column])
 
         if self.allow_features:
             features = other.to_numpy(dtype=self.dtype)
@@ -123,6 +128,7 @@ def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
         column_defaults={},
         selected_columns={},
         allow_features=True,
+        transform_columns={},
         dtype=dtype,
     )
     nodes, node_features = converter.convert(data)
@@ -135,29 +141,10 @@ DEFAULT_WEIGHT = np.float32(1)
 def convert_edges(
     data, *, name, default_type, source_column, target_column, weight_column, nodes
 ):
-    converter = ColumnarConverter(
-        name,
-        default_type,
-        column_defaults={weight_column: DEFAULT_WEIGHT},
-        selected_columns={
-            source_column: SOURCE,
-            target_column: TARGET,
-            weight_column: WEIGHT,
-        },
-        allow_features=False,
-    )
-    edges, edge_features = converter.convert(data)
-    assert all(features is None for features in edge_features.values())
 
-    for type_name, type_df in edges.items():
-        weight_col = type_df[WEIGHT]
-        if not pd.api.types.is_numeric_dtype(weight_col):
-            raise TypeError(
-                f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
-            )
+    def _node_ids_to_iloc(node_ids):
         try:
-            type_df[SOURCE] = nodes.ids.to_iloc(type_df[SOURCE], strict=True)
-            type_df[TARGET] = nodes.ids.to_iloc(type_df[TARGET], strict=True)
+            return nodes.ids.to_iloc(node_ids, strict=True)
         except KeyError as e:
             missing_values = e.args[0]
             if not is_real_iterable(missing_values):
@@ -169,6 +156,31 @@ def convert_edges(
                 f"found some missing: {comma_sep(missing_values)}"
             )
 
+    converter = ColumnarConverter(
+        name,
+        default_type,
+        column_defaults={weight_column: DEFAULT_WEIGHT},
+        selected_columns={
+            source_column: SOURCE,
+            target_column: TARGET,
+            weight_column: WEIGHT,
+        },
+        transform_columns={
+            source_column: _node_ids_to_iloc,
+            target_column: _node_ids_to_iloc,
+        },
+        allow_features=False,
+    )
+
+    edges, edge_features = converter.convert(data)
+    assert all(features is None for features in edge_features.values())
+
+    for type_name, type_df in edges.items():
+        weight_col = type_df[WEIGHT]
+        if not pd.api.types.is_numeric_dtype(weight_col):
+            raise TypeError(
+                f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
+            )
     return EdgeData(edges)
 
 
