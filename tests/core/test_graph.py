@@ -244,11 +244,11 @@ def test_node_ids_to_ilocs():
     sg = example_hin_1(feature_sizes={}, reverse_order=True)
     aa = sg.node_ids_to_ilocs([0, 1, 2, 3])
     assert list(aa) == [3, 2, 1, 0]
-    aa = sg.node_ids_to_ilocs([0, 1, 2, 3], "A")
+    aa = sg.node_ids_to_ilocs([0, 1, 2, 3])
     assert list(aa) == [3, 2, 1, 0]
     aa = sg.node_ids_to_ilocs([4, 5, 6])
     assert list(aa) == [6, 5, 4]
-    aa = sg.node_ids_to_ilocs([4, 5, 6], "B")
+    aa = sg.node_ids_to_ilocs([4, 5, 6])
     assert list(aa) == [6, 5, 4]
     aa = sg.node_ids_to_ilocs([1, 2, 5])
     assert list(aa) == [2, 1, 5]

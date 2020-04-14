@@ -277,9 +277,12 @@ class StellarGraph:
             )
 
         if nodes is None:
-            nodes = self._infer_nodes_from_edges(edges, source_column, target_column)
+            nodes_after_inference = self._infer_nodes_from_edges(
+                edges, source_column, target_column
+            )
+            nodes = pd.DataFrame([], index=nodes_after_inference)
 
-        if edges is None or edges == {}:
+        if edges is None or (isinstance(edges, dict) and edges == {}):
             edges = pd.DataFrame(
                 columns=[source_column, target_column], index=[], dtype=np.uint8
             )
