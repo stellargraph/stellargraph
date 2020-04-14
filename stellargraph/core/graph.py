@@ -1051,7 +1051,7 @@ class StellarGraph:
         degrees = self._edges.degrees()
         if use_ilocs:
             return degrees
-        node_ids = self.node_ids_to_ilocs(degrees.keys())
+        node_ids = self.node_ilocs_to_ids(list(degrees.keys()))
         return dict(
             (node_id, degree) for node_id, degree in zip(node_ids, degrees.values())
         )
