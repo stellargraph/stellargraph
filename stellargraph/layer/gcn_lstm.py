@@ -42,7 +42,6 @@ class FixedAdjacencyGraphConvolution(Layer):
 
     Notes:
       - The inputs are 3 dimensional tensors: batch size, sequence length, and number of nodes.
-        
       - This class assumes that a simple unweighted or weighted adjacency matrix is passed to it,
           the normalized Laplacian matrix is calculated within the class.
 
@@ -214,7 +213,6 @@ class GraphConvolutionLSTM:
 
     """
         A stack of 2 Graph Convolutional layers followed by an LSTM, Dropout and,  Dense layer.
-        
         This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction
                                           (https://arxiv.org/abs/1811.05320)
         The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
@@ -225,10 +223,7 @@ class GraphConvolutionLSTM:
            4. 1 Dropout layer
            The last two layers consistently showed better performance and regularization experimentally.
         Notes:
-          - The inputs are tensors with a batch dimension of 1. These are provided by the \
-            :class:`FullBatchNodeGenerator` object.
-    
-          - This assumes that the normalized Lapalacian matrix is provided as input to
+          - The normalized Lapalacian matrix is provided as input to
             Keras methods. 
             
         Args:
