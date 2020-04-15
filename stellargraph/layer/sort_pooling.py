@@ -40,7 +40,7 @@ class SortPooling(Layer):
 
         self.trainable = False
         self.k = k
-        self.flatten_output=flatten_output
+        self.flatten_output = flatten_output
 
     def get_config(self):
         """
@@ -64,7 +64,7 @@ class SortPooling(Layer):
             An input shape tuple.
         """
         if self.flatten_output:
-            return input_shapes[0], self.k*input_shapes[2]
+            return input_shapes[0], self.k * input_shapes[2]
         else:
             return input_shapes[0], self.k, input_shapes[2]
 
