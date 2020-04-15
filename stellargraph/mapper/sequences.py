@@ -25,7 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
-    "GraphSequence",
+    "PaddedGraphSequence",
     "CorruptedNodeSequence",
 ]
 
@@ -533,7 +533,7 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-class GraphSequence(Sequence):
+class PaddedGraphSequence(Sequence):
     """
     A Keras-compatible data generator for training and evaluating graph classification models.
     Use this class with the Keras methods :meth:`keras.Model.fit`,
@@ -541,7 +541,7 @@ class GraphSequence(Sequence):
         :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
-    :class:`GraphGenerator`.
+    :class:`PaddedGraphGenerator`.
 
     Args:
         graphs (list)): The graphs as StellarGraph objects.
