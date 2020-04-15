@@ -838,7 +838,11 @@ class StellarGraph:
         df = pd.DataFrame(
             self._edges.weights, index=[src_ty, rel_ty, tgt_ty], columns=["weight"]
         )
-        return df.groupby(level=[0, 1, 2]).agg(metrics)["weight"]
+
+        if len(df):
+            return df.groupby(level=[0, 1, 2]).agg(metrics)["weight"].to_dict("index")
+        else:
+            return dict()
 
     def info(self, show_attributes=None, sample=None, truncate=20):
         """
@@ -938,9 +942,7 @@ class StellarGraph:
                         metrics["min"], metrics["max"], metrics["mean"], metrics["std"]
                     ),
                 )
-                for (src_ty, rel_ty, tgt_ty), metrics in et_metrics.to_dict(
-                    "index"
-                ).items()
+                for (src_ty, rel_ty, tgt_ty), metrics in et_metrics.items()
             ),
             reverse=True,
         )

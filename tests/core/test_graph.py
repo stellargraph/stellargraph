@@ -861,6 +861,35 @@ StellarGraph: Undirected multigraph
     )
 
 
+def test_info_no_graph():
+    nodes = pd.DataFrame(np.ones((5, 1)), index=[0, 1, 2, 3, 4])
+    graph_nodes_only = StellarGraph(nodes=nodes)
+    assert (
+        graph_nodes_only.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 5, Edges: 0
+
+ Node types:
+  default: [5]
+    Features: float32 vector, length 1
+    Edge types: none
+
+ Edge types:"""
+    )
+    graph_nothing = StellarGraph(nodes={})
+    assert (
+        graph_nothing.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 0, Edges: 0
+
+ Node types:
+
+ Edge types:"""
+    )
+
+
 def test_info_truncate():
     max_node_type = 21
     max_node = (max_node_type + 1) * (max_node_type + 1) - 1
