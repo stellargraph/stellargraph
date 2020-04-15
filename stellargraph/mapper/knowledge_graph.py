@@ -23,9 +23,10 @@ from tensorflow.keras.utils import Sequence
 
 from ..globalvar import SOURCE, TARGET, TYPE_ATTR_NAME
 from ..random import random_state, SeededPerBatch
+from .base import Generator
 
 
-class KGTripleGenerator:
+class KGTripleGenerator(Generator):
     """
     A data generator for working with triple-based knowledge graph models, like ComplEx.
 

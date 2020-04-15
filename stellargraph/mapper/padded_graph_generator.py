@@ -16,9 +16,10 @@
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from .sequences import PaddedGraphSequence
+from .base import Generator
 
 
-class PaddedGraphGenerator:
+class PaddedGraphGenerator(Generator):
     """
     A data generator for use with graph classification algorithms.
 

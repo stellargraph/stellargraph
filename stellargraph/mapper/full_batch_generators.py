@@ -38,6 +38,7 @@ from functools import reduce
 from tensorflow.keras.utils import Sequence
 
 from . import (
+    Generator,
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
@@ -49,10 +50,8 @@ from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
-from abc import ABC
 
-
-class FullBatchGenerator(ABC):
+class FullBatchGenerator(Generator):
     multiplicity = None
 
     def __init__(
@@ -365,7 +364,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         return super().flow(link_ids, targets)
 
 
-class RelationalFullBatchNodeGenerator:
+class RelationalFullBatchNodeGenerator(Generator):
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
@@ -501,7 +500,7 @@ class RelationalFullBatchNodeGenerator:
         )
 
 
-class CorruptedGenerator:
+class CorruptedGenerator(Generator):
     """
     Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
     data for training Deep Graph Infomax.
