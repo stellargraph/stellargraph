@@ -27,6 +27,7 @@ from . import (
     NodeSequence,
 )
 
+
 class CorruptedGenerator(Generator):
     """
     Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
@@ -61,6 +62,7 @@ class CorruptedGenerator(Generator):
             kwargs: the keyword arguments for the self.base_generator.flow(...) method
         """
         return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
+
 
 class CorruptedNodeSequence(Sequence):
     """
@@ -122,4 +124,3 @@ class CorruptedNodeSequence(Sequence):
             targets = self.targets[:head_nodes, :]
 
         return shuffled_feats + inputs, targets
-    

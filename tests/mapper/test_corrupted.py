@@ -20,6 +20,7 @@ import numpy as np
 from stellargraph.mapper import *
 from ..test_utils.graphs import example_graph_random
 
+
 @pytest.mark.parametrize("sparse", [True, False])
 def test_corrupt_full_batch_generator(sparse):
 
