@@ -1104,15 +1104,11 @@ class TemporalRandomWalk(GraphWalk):
         Perform 1 temporal step from a node. Returns None if a dead-end is reached.
 
         """
-
-        neighbours = [
-            (neighbour, t)
-            for neighbour, t in self.graph.neighbors(node, include_edge_weight=True)
-            if t > time
-        ]
+        neighbours, times = self.graph.neighbors(node, include_edge_weight=True)
+        neighbours = neighbours[times > time]
+        times = times[times > time]
 
         if neighbours:
-            times = [t for _, t in neighbours]
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
             next_node, next_time = neighbours[chosen_neighbour_index]

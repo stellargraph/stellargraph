@@ -556,10 +556,7 @@ class StellarGraph:
 
         # FIXME(#718): it would be better to return these as ndarrays, instead of (zipped) lists
         if weights is not None:
-            return [
-                NeighbourWithWeight(node, weight)
-                for node, weight in zip(other_node_id, weights)
-            ]
+            return other_node_id, weights
 
         return list(other_node_id)
 
