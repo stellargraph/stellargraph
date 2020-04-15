@@ -798,7 +798,7 @@ def test_info_homogeneous(is_directed):
 
  Edge types:
     ABC-xyz->ABC: [4]
-        Weights: all 1.0 (default)"""
+        Weights: all 1 (default)"""
     )
 
 
@@ -821,11 +821,11 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     A-R->B: [3]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     B-R->A: [2]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     B-F->B: [1]
-        Weights: all 10.0"""
+        Weights: all 10"""
     )
 
 
@@ -847,17 +847,17 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     A-T->B: [3]
-        Weights: all 2.0
+        Weights: all 2
     A-U->B: [2]
-        Weights: range=[4.0, 5.0], mean=4.5, std=0.7071067811865476
+        Weights: range=[4, 5], mean=4.5, std=0.707107
     A-U->A: [2]
-        Weights: range=[2.0, 3.0], mean=2.5, std=0.7071067811865476
+        Weights: range=[2, 3], mean=2.5, std=0.707107
     A-S->A: [2]
-        Weights: all 2.0
+        Weights: all 2
     A-R->A: [2]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     B-U->A: [1]
-        Weights: all 5.0"""
+        Weights: all 5"""
     )
 
 
@@ -980,45 +980,45 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     n_21-e_22->n_21: [45]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_21->n_21: [43]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_20->n_21: [41]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_19->n_21: [39]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_18->n_21: [37]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_17->n_21: [35]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_16->n_21: [33]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_15->n_21: [31]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_14->n_21: [29]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_13->n_21: [27]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_12->n_21: [25]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_11->n_21: [23]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_10->n_21: [21]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_9->n_21: [19]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_8->n_21: [17]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_7->n_21: [15]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_6->n_21: [13]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_5->n_21: [11]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_4->n_21: [9]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_3->n_21: [7]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     ... (3 more)"""
     )
 
@@ -1039,9 +1039,9 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     n_21-e_22->n_21: [45]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_21->n_21: [43]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     ... (21 more)"""
     )
 
@@ -1121,51 +1121,51 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     n_21-e_22->n_21: [45]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_21->n_21: [43]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_20->n_21: [41]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_19->n_21: [39]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_18->n_21: [37]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_17->n_21: [35]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_16->n_21: [33]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_15->n_21: [31]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_14->n_21: [29]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_13->n_21: [27]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_12->n_21: [25]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_11->n_21: [23]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_10->n_21: [21]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_9->n_21: [19]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_8->n_21: [17]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_7->n_21: [15]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_6->n_21: [13]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_5->n_21: [11]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_4->n_21: [9]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_3->n_21: [7]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_2->n_21: [5]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_1->n_21: [3]
-        Weights: all 1.0 (default)
+        Weights: all 1 (default)
     n_21-e_0->n_21: [1]
-        Weights: all 1.0 (default)"""
+        Weights: all 1 (default)"""
     )
 
 

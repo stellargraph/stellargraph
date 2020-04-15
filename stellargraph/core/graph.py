@@ -900,17 +900,15 @@ class StellarGraph:
                 edge_types = "none"
             return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
 
-        def str_weight_info(metrics):
-            if metrics.min == metrics.max:
-                if metrics.min == 1:
-                    return f"Weights: all 1.0 (default)"
-                else:
-                    return f"Weights: all {metrics.min}"
-            else:
-                return f"Weights: range=[{metrics.min}, {metrics.max}], mean={metrics.mean}, std={metrics.std}"
-
         def edge_type_info(et, metrics):
-            return f"{str_edge_type(et)}: [{metrics.count}]\n        {str_weight_info(metrics)}"
+            if metrics.min == metrics.max:
+                weights_text = (
+                    "all 1 (default)" if metrics.min == 1 else f"all {metrics.min:.6g}"
+                )
+            else:
+                weights_text = f"range=[{metrics.min:.6g}, {metrics.max:.6g}], mean={metrics.mean:.6g}, std={metrics.std:.6g}"
+
+            return f"{str_edge_type(et)}: [{metrics.count}]\n        Weights: {weights_text}"
 
         # sort the node types in decreasing order of frequency
         node_types = sorted(
