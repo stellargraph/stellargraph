@@ -37,6 +37,7 @@ from . import convert
 
 
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
+_WeightInfo = namedtuple("_WeightInfo", ["min", "max", "mean", "std"])
 
 
 class StellarGraph:
@@ -832,6 +833,13 @@ class StellarGraph:
 
         return zip(*unique_ets)
 
+    def _edge_metrics_by_type_triple(self, *, selector=slice(None), metrics):
+        src_ty, rel_ty, tgt_ty = self._edge_type_triples(selector)
+        df = pd.DataFrame(
+            self._edges.weights, index=[src_ty, rel_ty, tgt_ty], columns=["weight"]
+        )
+        return df.groupby(level=[0, 1, 2]).agg(metrics)["weight"]
+
     def info(self, show_attributes=None, sample=None, truncate=20):
         """
         Return an information string summarizing information on the current graph.
@@ -895,6 +903,18 @@ class StellarGraph:
                 edge_types = "none"
             return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
 
+        def str_weight_info(w: _WeightInfo):
+            if w.min == w.max:
+                if w.min == 1:
+                    return f"Weights: all 1.0 (default)"
+                else:
+                    return f"Weights: all {w.min}"
+            else:
+                return f"Weights: range=[{w.min}, {w.max}], mean={w.mean}, std={w.std}"
+
+        def edge_type_info(et, count, weight_info):
+            return f"{str_edge_type(et)}: [{count}]\n        {str_weight_info(weight_info)}"
+
         # sort the node types in decreasing order of frequency
         node_types = sorted(
             ((len(self.nodes(node_type=nt)), nt) for nt in gs.node_types), reverse=True
@@ -906,18 +926,30 @@ class StellarGraph:
             sep="\n  ",
         )
 
-        # FIXME: it would be better for the schema to just include the counts directly
-        unique_ets = self._unique_type_triples(return_counts=True)
+        metric_names = ["count", "min", "max", "mean", "std"]
+        et_metrics = self._edge_metrics_by_type_triple(metrics=metric_names)
+
         edge_types = sorted(
             (
-                (count, EdgeType(src_ty, rel_ty, tgt_ty))
-                for src_ty, rel_ty, tgt_ty, count in unique_ets
+                (
+                    metrics["count"],
+                    EdgeType(src_ty, rel_ty, tgt_ty),
+                    _WeightInfo(
+                        metrics["min"], metrics["max"], metrics["mean"], metrics["std"]
+                    ),
+                )
+                for (src_ty, rel_ty, tgt_ty), metrics in et_metrics.to_dict(
+                    "index"
+                ).items()
             ),
             reverse=True,
         )
 
         edges = separated(
-            [f"{str_edge_type(et)}: [{count}]" for count, et in edge_types],
+            [
+                edge_type_info(et, count, weight_info)
+                for count, et, weight_info in edge_types
+            ],
             limit=truncate,
             stringify=str,
             sep="\n    ",
