@@ -137,7 +137,9 @@ class ComplEx:
 
         return node, rel
 
-    def rank_edges_against_all_nodes(self, test_data, known_edges_graph, comparison_mode="random"):
+    def rank_edges_against_all_nodes(
+        self, test_data, known_edges_graph, comparison_mode="random"
+    ):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -378,7 +380,9 @@ class DistMult:
             self._edge_type_embeddings.embeddings.numpy(),
         )
 
-    def rank_edges_against_all_nodes(self, test_data, known_edges_graph, comparison_mode="random"):
+    def rank_edges_against_all_nodes(
+        self, test_data, known_edges_graph, comparison_mode="random"
+    ):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -527,7 +531,10 @@ def _ranks_from_comparisons(greater, greater_equal, comparison_mode):
     elif comparison_mode == "random":
         return np.random.randint(strict, all_ties)
     else:
-        raise ValueError(f"comparison_mode: expected 'top', 'bottom' or 'random', found {comparison_mode!r}")
+        raise ValueError(
+            f"comparison_mode: expected 'top', 'bottom' or 'random', found {comparison_mode!r}"
+        )
+
 
 def _ranks_from_score_columns(
     pred,
