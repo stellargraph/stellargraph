@@ -63,13 +63,37 @@ class SortPooling(Layer):
         """
         return input_shapes[0], self.k, input_shapes[2]
 
+    def _sort_tensor_with_mask(self, inputs):
+
+        embeddings, mask = inputs[0], inputs[1]
+
+        masked_sorted_embeddings = tf.gather(
+            embeddings,
+            tf.argsort(
+                tf.boolean_mask(embeddings, mask)[..., -1],
+                axis=0,
+                direction="DESCENDING",
+            ),
+        )
+
+        embeddings = tf.pad(
+            masked_sorted_embeddings,
+            [
+                [0, (tf.shape(embeddings)[0] - tf.shape(masked_sorted_embeddings)[0])],
+                [0, 0],
+            ],
+        )
+
+        return embeddings
+
     def call(self, inputs, **kwargs):
         """
         Applies the layer.
 
         Args:
-            inputs (list): a list of 3 input tensors that includes
-                node features (size B x N x Sum F_i),
+            inputs (list): a list of 2 tensors that includes
+                the node features (size B x N x Sum F_i), and
+                a boolean mask (size B x N)
 
                 where B is the batch size, N is the number of nodes in the largest graph in the batch, and
                 F_i is the dimensionality of node features output from the i-th convolutional layer.
@@ -77,13 +101,15 @@ class SortPooling(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
+
+        embeddings, mask = inputs[0], inputs[1]
+
+        # sorting
         outputs = tf.map_fn(
-            lambda x: tf.gather(
-                x, tf.argsort(x[..., -1], axis=0, direction="DESCENDING")
-            ),
-            inputs,
+            self._sort_tensor_with_mask, (embeddings, mask), dtype=embeddings.dtype
         )
 
+        # padding or truncation based on the value of self.k and the graph size (number of nodes)
         outputs_shape = tf.shape(outputs)
 
         outputs = tf.cond(
