@@ -19,4 +19,20 @@ The datasets package contains classes to download sample datasets
 
 """
 
+# these are defined explicitly for autodoc to pick them up via :members:
+__all__ = [
+    "Cora",
+    "CiteSeer",
+    "PubMedDiabetes",
+    "BlogCatalog3",
+    "MovieLens",
+    "AIFB",
+    "MUTAG",
+    "WN18",
+    "WN18RR",
+    "FB15k",
+    "FB15k_237",
+    "IAEnronEmployees",
+]
+
 from .datasets import *

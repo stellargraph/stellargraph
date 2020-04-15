@@ -19,6 +19,7 @@ GAT tests
 """
 import pytest
 import scipy.sparse as sps
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
@@ -50,13 +51,12 @@ class Test_GraphAttention:
     def get_inputs(self):
         x_inp = [
             Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
             Input(batch_shape=(1, self.N, self.N)),
         ]
 
         # For dense matrix, remove batch dimension
-        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[2])
-        layer_inp = x_inp[:2] + [A_mat]
+        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[1])
+        layer_inp = x_inp[:1] + [A_mat]
 
         return x_inp, layer_inp
 
@@ -117,10 +117,9 @@ class Test_GraphAttention:
 
         As = self.get_matrix()
         X = np.ones((1, self.N, self.F_in))  # features
-        all_indices = np.arange(self.N)[None, :]
 
         expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
-        actual = model.predict([X, all_indices] + As)
+        actual = model.predict([X] + As)
 
         assert np.allclose(actual.squeeze(), expected)
 
@@ -133,7 +132,6 @@ class Test_GraphAttention:
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
-            final_layer=False,
         )
         x_inp, layer_inp = self.get_inputs()
 
@@ -148,10 +146,9 @@ class Test_GraphAttention:
             X[:, i, :] = i + 1
 
         As = self.get_matrix()
-        all_indices = np.arange(self.N)[None, :]
 
         expected = (X * self.F_in)[..., : self.F_out]
-        actual = model.predict([X, all_indices] + As)
+        actual = model.predict([X] + As)
 
         assert np.allclose(actual.squeeze(), expected)
 
@@ -164,7 +161,6 @@ class Test_GraphAttention:
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
-            final_layer=False,
             saliency_map_support=True,
         )
 
@@ -176,7 +172,6 @@ class Test_GraphAttention:
             kernel_initializer="ones",
             attn_kernel_initializer="zeros",
             bias_initializer="zeros",
-            final_layer=False,
             saliency_map_support=False,
         )
 
@@ -197,12 +192,10 @@ class Test_GraphAttention:
 
         As = self.get_matrix([((0, 1), 1), ((1, 0), 1)])
 
-        all_indices = np.arange(self.N)[None, :]
-
         expected = (X * self.F_in)[..., : self.F_out]
         expected[:, :2] = self.F_in / 2
-        actual_origin = model_origin.predict([X, all_indices] + As)
-        actual_saliency = model_saliency.predict([X, all_indices] + As)
+        actual_origin = model_origin.predict([X] + As)
+        actual_saliency = model_saliency.predict([X] + As)
         assert np.allclose(expected, actual_origin)
         assert np.allclose(expected, actual_saliency)
 
@@ -243,16 +236,14 @@ class Test_GraphAttentionSparse(Test_GraphAttention):
     def get_inputs(self):
         x_inp = [
             Input(batch_shape=(1, self.N, self.F_in)),
-            Input(batch_shape=(1, None), dtype="int32"),
             Input(batch_shape=(1, None, 2), dtype="int64"),
             Input(batch_shape=(1, None), dtype="float32"),
         ]
 
-        # Test with final_layer=False
-        A_mat = SqueezedSparseConversion(shape=(self.N, self.N))(x_inp[2:])
+        A_mat = SqueezedSparseConversion(shape=(self.N, self.N))(x_inp[1:])
 
         # For dense matrix, remove batch dimension
-        layer_inp = x_inp[:2] + [A_mat]
+        layer_inp = x_inp[:1] + [A_mat]
 
         return x_inp, layer_inp
 
@@ -432,8 +423,8 @@ class Test_GAT:
             bias=True,
         )
 
-        assert len(gat.build()) == 2
-        x_in, x_out = gat.build()
+        assert len(gat.in_out_tensors()) == 2
+        x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
@@ -450,8 +441,8 @@ class Test_GAT:
             bias=True,
         )
 
-        assert len(gat.build()) == 2
-        x_in, x_out = gat.build()
+        assert len(gat.in_out_tensors()) == 2
+        x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
@@ -469,7 +460,7 @@ class Test_GAT:
         )
         assert gat.use_sparse == False
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
@@ -502,7 +493,7 @@ class Test_GAT:
             attn_kernel_initializer="ones",
         )
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
@@ -528,7 +519,7 @@ class Test_GAT:
             attn_kernel_initializer="ones",
         )
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
 
         model = keras.Model(inputs=x_in, outputs=x_out)
 
@@ -568,7 +559,7 @@ class Test_GAT:
             normalize="l2",
         )
 
-        x_in, x_out = gat.build()
+        x_in, x_out = gat.in_out_tensors()
         model = keras.Model(inputs=x_in, outputs=x_out)
 
         ng = gen.flow(G.nodes())
@@ -581,7 +572,11 @@ class Test_GAT:
 
         # Load model from json & set all weights
         model2 = keras.models.model_from_json(
-            model_json, custom_objects={"GraphAttention": GraphAttention}
+            model_json,
+            custom_objects={
+                "GraphAttention": GraphAttention,
+                "GatherIndices": GatherIndices,
+            },
         )
         model2.set_weights(model_weights)
 
@@ -591,6 +586,31 @@ class Test_GAT:
             1.0 / G.number_of_nodes()
         )
         assert np.allclose(expected, actual[0])
+
+    def test_kernel_and_bias_defaults(self):
+        graph = example_graph(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(graph, sparse=self.sparse, method=self.method)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+        )
+        for layer in gat._layers:
+            if isinstance(layer, GraphAttention):
+                assert isinstance(
+                    layer.kernel_initializer, tf.initializers.GlorotUniform
+                )
+                assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+                assert isinstance(
+                    layer.attn_kernel_initializer, tf.initializers.GlorotUniform
+                )
+                assert layer.kernel_regularizer is None
+                assert layer.bias_regularizer is None
+                assert layer.attn_kernel_regularizer is None
+                assert layer.kernel_constraint is None
+                assert layer.bias_constraint is None
+                assert layer.attn_kernel_constraint is None
 
 
 def TestGATsparse(Test_GAT):

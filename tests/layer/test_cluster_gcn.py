@@ -27,6 +27,7 @@ from stellargraph.core.graph import StellarGraph
 import pandas as pd
 import numpy as np
 from tensorflow import keras
+import tensorflow as tf
 import pytest
 from ..test_utils.graphs import create_graph_features
 
@@ -60,33 +61,18 @@ def test_GraphConvolution():
     # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work
     x_t = Input(batch_shape=(1,) + features.shape, name="X")
     A_t = Input(batch_shape=(1, 3, 3), name="A")
-    output_indices_t = Input(batch_shape=(1, None), dtype="int32", name="outind")
 
     # Note we add a batch dimension of 1 to model inputs
     adj = G.to_adjacency_matrix().toarray()[None, :, :]
-    out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
 
     # Remove batch dimension
     A_mat = Lambda(lambda A: K.squeeze(A, 0))(A_t)
 
-    # Test with final_layer=False
-    out = ClusterGraphConvolution(2, final_layer=False)([x_t, output_indices_t, A_mat])
-    model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
-    preds = model.predict([x, adj, out_indices], batch_size=1)
+    out = ClusterGraphConvolution(2)([x_t, A_mat])
+    model = keras.Model(inputs=[x_t, A_t], outputs=out)
+    preds = model.predict([x, adj], batch_size=1)
     assert preds.shape == (1, 3, 2)
-
-    # Now try with final_layer=True
-    out = ClusterGraphConvolution(2, final_layer=True)([x_t, output_indices_t, A_mat])
-    # The final layer removes the batch dimension and causes the call to predict to fail.
-    # We are going to manually add the batch dimension before calling predict.
-    out = K.expand_dims(out, 0)
-    model = keras.Model(inputs=[x_t, A_t, output_indices_t], outputs=out)
-    print(
-        f"x_t: {x_t.shape} A_t: {A_t.shape} output_indices_t: {output_indices_t.shape}"
-    )
-    preds = model.predict([x, adj, out_indices], batch_size=1)
-    assert preds.shape == (1, 2, 2)
 
     # Check for errors with batch size != 1
     # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work
@@ -119,7 +105,7 @@ def test_ClusterGCN_apply():
         layer_sizes=[2], generator=generator, activations=["relu"], dropout=0.0
     )
 
-    x_in, x_out = cluster_gcn_model.build()
+    x_in, x_out = cluster_gcn_model.in_out_tensors()
     model = keras.Model(inputs=x_in, outputs=x_out)
 
     # Check fit method
@@ -204,3 +190,19 @@ def test_ClusterGCN_regularisers():
             generator=generator,
             bias_initializer="barney",
         )
+
+
+def test_kernel_and_bias_defaults():
+    graph, _ = create_graph_features()
+    generator = ClusterNodeGenerator(graph)
+    cluster_gcn = ClusterGCN(
+        layer_sizes=[2, 2], activations=["relu", "relu"], generator=generator
+    )
+    for layer in cluster_gcn._layers:
+        if isinstance(layer, ClusterGraphConvolution):
+            assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
+            assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
+            assert layer.kernel_regularizer is None
+            assert layer.bias_regularizer is None
+            assert layer.kernel_constraint is None
+            assert layer.bias_constraint is None

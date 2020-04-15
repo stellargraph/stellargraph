@@ -26,7 +26,7 @@ from tensorflow.keras import activations, constraints, initializers, regularizer
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
 from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 
 
 class GraphAttention(Layer):
@@ -42,18 +42,11 @@ class GraphAttention(Layer):
         Keras requires this batch dimension, and for full-batch methods
         we only have a single "batch".
 
-      - There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+      - There are two inputs required, the node features,
         and the graph adjacency matrix
 
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
-
-      - The output indices are used when ``final_layer=True`` and the returned outputs
-        are the final-layer features for the nodes indexed by output indices.
-
-      - If ``final_layer=False`` all the node features are output in the same ordering as
-        given by the adjacency matrix.
 
     Args:
         F_out (int): dimensionality of output feature vectors
@@ -63,29 +56,19 @@ class GraphAttention(Layer):
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_initializer (str or func): The initialiser to use for the head weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the head weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the head bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the head bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the head bias;
-            defaults to None.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
-            defaults to 'glorot_uniform'.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the head weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the head weights.
+        kernel_constraint (str or func, optional): The constraint to use for the head weights.
+        bias_initializer (str or func, optional): The initialiser to use for the head bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the head bias.
+        bias_constraint (str or func, optional): The constraint to use for the head bias.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention weights.
     """
 
     def __init__(
@@ -97,8 +80,17 @@ class GraphAttention(Layer):
         attn_dropout_rate=0.0,
         activation="relu",
         use_bias=True,
-        final_layer=False,
+        final_layer=None,
         saliency_map_support=False,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        attn_kernel_initializer="glorot_uniform",
+        attn_kernel_regularizer=None,
+        attn_kernel_constraint=None,
         **kwargs,
     ):
 
@@ -116,7 +108,10 @@ class GraphAttention(Layer):
         self.attn_dropout_rate = attn_dropout_rate  # dropout rate for attention coefs
         self.activation = activations.get(activation)  # Eq. 4 in the paper
         self.use_bias = use_bias
-        self.final_layer = final_layer
+        if final_layer is not None:
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
         self.saliency_map_support = saliency_map_support
         # Populated by build()
@@ -131,34 +126,17 @@ class GraphAttention(Layer):
             # Output will have shape (..., F')
             self.output_dim = self.units
 
-        self._get_regularisers_from_keywords(kwargs)
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.bias_constraint = constraints.get(bias_constraint)
+        self.attn_kernel_initializer = initializers.get(attn_kernel_initializer)
+        self.attn_kernel_regularizer = regularizers.get(attn_kernel_regularizer)
+        self.attn_kernel_constraint = constraints.get(attn_kernel_constraint)
 
         super().__init__(**kwargs)
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        self.kernel_initializer = initializers.get(
-            kwargs.pop("kernel_initializer", "glorot_uniform")
-        )
-        self.kernel_regularizer = regularizers.get(
-            kwargs.pop("kernel_regularizer", None)
-        )
-        self.kernel_constraint = constraints.get(kwargs.pop("kernel_constraint", None))
-
-        self.bias_initializer = initializers.get(
-            kwargs.pop("bias_initializer", "zeros")
-        )
-        self.bias_regularizer = regularizers.get(kwargs.pop("bias_regularizer", None))
-        self.bias_constraint = constraints.get(kwargs.pop("bias_constraint", None))
-
-        self.attn_kernel_initializer = initializers.get(
-            kwargs.pop("attn_kernel_initializer", "glorot_uniform")
-        )
-        self.attn_kernel_regularizer = regularizers.get(
-            kwargs.pop("attn_kernel_regularizer", None)
-        )
-        self.attn_kernel_constraint = constraints.get(
-            kwargs.pop("attn_kernel_constraint", None)
-        )
 
     def get_config(self):
         """
@@ -173,7 +151,6 @@ class GraphAttention(Layer):
             "attn_dropout_rate": self.attn_dropout_rate,
             "activation": activations.serialize(self.activation),
             "use_bias": self.use_bias,
-            "final_layer": self.final_layer,
             "saliency_map_support": self.saliency_map_support,
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
@@ -206,13 +183,10 @@ class GraphAttention(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, out_shape, *As_shapes = input_shapes
+        feature_shape, *As_shapes = input_shapes
 
         batch_dim = feature_shape[0]
-        if self.final_layer:
-            out_dim = out_shape[1]
-        else:
-            out_dim = feature_shape[1]
+        out_dim = feature_shape[1]
 
         return batch_dim, out_dim, self.output_dim
 
@@ -287,26 +261,22 @@ class GraphAttention(Layer):
         Keras requires this batch dimension, and for full-batch methods
         we only have a single "batch".
 
-        There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+        There are two inputs required, the node features,
         and the graph adjacency matrix
 
         Notes:
             This does not add self loops to the adjacency matrix.
-            The output indices are only used when ``final_layer=True``
 
         Args:
             inputs (list): list of inputs with 3 items:
             node features (size 1 x N x F),
-            output indices (size 1 x M),
             graph adjacency matrix (size N x N),
             where N is the number of nodes in the graph,
                   F is the dimensionality of node features
                   M is the number of output nodes
         """
         X = inputs[0]  # Node features (1 x N x F)
-        out_indices = inputs[1]  # output indices (1 x K)
-        A = inputs[2]  # Adjacency matrix (N x N)
+        A = inputs[1]  # Adjacency matrix (N x N)
         N = K.int_shape(A)[-1]
 
         batch_dim, n_nodes, _ = K.int_shape(X)
@@ -318,7 +288,6 @@ class GraphAttention(Layer):
         else:
             # Remove singleton batch dimension
             X = K.squeeze(X, 0)
-            out_indices = K.squeeze(out_indices, 0)
 
         outputs = []
         for head in range(self.attn_heads):
@@ -390,10 +359,6 @@ class GraphAttention(Layer):
         # Nonlinear activation function
         output = self.activation(output)
 
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            output = K.gather(output, out_indices)
-
         # Add batch dimension back if we removed it
         if batch_dim == 1:
             output = K.expand_dims(output, 0)
@@ -420,13 +385,6 @@ class GraphAttentionSparse(GraphAttention):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
-      - The output indices are used when `final_layer=True` and the returned outputs
-        are the final-layer features for the nodes indexed by output indices.
-
-      - If `final_layer=False` all the node features are output in the same ordering as
-        given by the adjacency matrix.
-
-
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
@@ -435,29 +393,19 @@ class GraphAttentionSparse(GraphAttention):
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_initializer (str or func): The initialiser to use for the head weights;
-            defaults to 'glorot_uniform'.
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        kernel_constraint (str or func): The constraint to use for the head weights;
-            defaults to None.
-        bias_initializer (str or func): The initialiser to use for the head bias;
-            defaults to 'zeros'.
-        bias_regularizer (str or func): The regulariser to use for the head bias;
-            defaults to None.
-        bias_constraint (str or func): The constraint to use for the head bias;
-            defaults to None.
-        attn_kernel_initializer (str or func): The initialiser to use for the attention weights;
-            defaults to 'glorot_uniform'.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
-        attn_kernel_constraint (str or func): The constraint to use for the attention weights;
-            defaults to None.
+        kernel_initializer (str or func, optional): The initialiser to use for the head weights.
+        kernel_regularizer (str or func, optional): The regulariser to use for the head weights.
+        kernel_constraint (str or func, optional): The constraint to use for the head weights.
+        bias_initializer (str or func, optional): The initialiser to use for the head bias.
+        bias_regularizer (str or func, optional): The regulariser to use for the head bias.
+        bias_constraint (str or func, optional): The constraint to use for the head bias.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention weights.
     """
 
     def call(self, inputs, **kwargs):
@@ -466,20 +414,17 @@ class GraphAttentionSparse(GraphAttention):
 
         Notes:
             This does not add self loops to the adjacency matrix.
-            The output indices are only used when `final_layer=True`
 
         Args:
             inputs (list): list of inputs with 4 items:
             node features (size b x N x F),
-            output indices (size b x M),
             sparse graph adjacency matrix (size N x N),
             where N is the number of nodes in the graph,
                   F is the dimensionality of node features
                   M is the number of output nodes
         """
         X = inputs[0]  # Node features (1 x N x F)
-        out_indices = inputs[1]  # output indices (1 x K)
-        A_sparse = inputs[2]  # Adjacency matrix (1 x N x N)
+        A_sparse = inputs[1]  # Adjacency matrix (1 x N x N)
 
         if not isinstance(A_sparse, tf.SparseTensor):
             raise TypeError("A is not sparse")
@@ -494,7 +439,6 @@ class GraphAttentionSparse(GraphAttention):
             )
         else:
             # Remove singleton batch dimension
-            out_indices = K.squeeze(out_indices, 0)
             X = K.squeeze(X, 0)
 
         outputs = []
@@ -559,14 +503,20 @@ class GraphAttentionSparse(GraphAttention):
 
         output = self.activation(output)
 
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            output = K.gather(output, out_indices)
-
         # Add batch dimension back if we removed it
         if batch_dim == 1:
             output = K.expand_dims(output, 0)
         return output
+
+
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'input_dim', 'node_num' and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
+        )
 
 
 class GAT:
@@ -593,7 +543,7 @@ class GAT:
                     in_dropout=0.5,
                     attn_dropout=0.5,
                 )
-            x_inp, predictions = gat.node_model()
+            x_inp, predictions = gat.in_out_tensors()
 
     For more details, please see the GAT demo notebook:
     demos/node-classification/gat/gat-cora-node-classification-example.ipynb
@@ -631,10 +581,24 @@ class GAT:
         activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
-        kernel_regularizer (str or func): The regulariser to use for the head weights;
-            defaults to None.
-        attn_kernel_regularizer (str or func): The regulariser to use for the attention weights;
-            defaults to None.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
+            inference and 2 for link inference (currently no others are supported).
+        num_nodes (int, optional): The number of nodes in the given graph.
+        num_features (int, optional): The dimensions of the node features used as input to the model.
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        attn_kernel_initializer (str or func, optional): The initialiser to use for the attention weights.
+        attn_kernel_regularizer (str or func, optional): The regulariser to use for the attention weights.
+        attn_kernel_constraint (str or func, optional): The constraint to use for the attention bias.
+
+    .. note::
+        The values for ``multiplicity``, ``num_nodes``, and ``num_features`` are obtained from the
+        provided ``generator`` by default. The additional keyword arguments for these parameters
+        provide an alternative way to specify them if a generator cannot be supplied.
     """
 
     def __init__(
@@ -649,7 +613,18 @@ class GAT:
         normalize=None,
         activations=None,
         saliency_map_support=False,
-        **kwargs,
+        multiplicity=1,
+        num_nodes=None,
+        num_features=None,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
+        attn_kernel_initializer="glorot_uniform",
+        attn_kernel_regularizer=None,
+        attn_kernel_constraint=None,
     ):
         self.bias = bias
         self.in_dropout = in_dropout
@@ -762,9 +737,9 @@ class GAT:
         # Check generator and configure sparse adjacency matrix
         if generator is None:
             self.use_sparse = False
-            self.multiplicity = kwargs.get("multiplicity", 1)
-            self.n_nodes = kwargs.get("num_nodes", None)
-            self.n_features = kwargs.get("num_features", None)
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
+            self.n_nodes = _require_without_generator(num_nodes, "num_nodes")
+            self.n_features = _require_without_generator(num_features, "num_features")
 
         else:
             if not isinstance(generator, FullBatchGenerator):
@@ -803,9 +778,6 @@ class GAT:
         else:
             self._gat_layer = GraphAttention
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Initialize a stack of GAT layers
         self._layers = []
         n_layers = len(self.layer_sizes)
@@ -823,29 +795,18 @@ class GAT:
                     attn_dropout_rate=self.attn_dropout,
                     activation=self.activations[ii],
                     use_bias=self.bias,
-                    final_layer=ii == (n_layers - 1),
                     saliency_map_support=self.saliency_map_support,
-                    **self._regularisers,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
+                    attn_kernel_initializer=attn_kernel_initializer,
+                    attn_kernel_regularizer=attn_kernel_regularizer,
+                    attn_kernel_constraint=attn_kernel_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-            "attn_kernel_initializer",
-            "attn_kernel_regularizer",
-            "attn_kernel_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, inputs):
         """
@@ -893,9 +854,8 @@ class GAT:
         h_layer = x_in
         for layer in self._layers:
             if isinstance(layer, self._gat_layer):
-                # For a GAT layer add the matrix and output indices
-                # Note that the output indices are only used if `final_layer=True`
-                h_layer = layer([h_layer, out_indices] + Ainput)
+                # For a GAT layer add the matrix
+                h_layer = layer([h_layer] + Ainput)
 
             else:
                 # For other (non-graph) layers only supply the input tensor
@@ -903,9 +863,12 @@ class GAT:
 
             # print("Hlayer:", h_layer)
 
+        # only return data for the requested nodes
+        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
+
         return self._normalization(h_layer)
 
-    def build(self, multiplicity=None):
+    def in_out_tensors(self, multiplicity=None):
         """
         Builds a GAT model for node or link prediction
 
@@ -951,16 +914,20 @@ class GAT:
 
         return x_inp, x_out
 
-    def link_model(self):
+    def _link_model(self):
         if self.multiplicity != 2:
             warnings.warn(
                 "Link model requested but a generator not supporting links was supplied."
             )
-        return self.build(multiplicity=2)
+        return self.in_out_tensors(multiplicity=2)
 
-    def node_model(self):
+    def _node_model(self):
         if self.multiplicity != 1:
             warnings.warn(
                 "Node model requested but a generator not supporting nodes was supplied."
             )
-        return self.build(multiplicity=1)
+        return self.in_out_tensors(multiplicity=1)
+
+    node_model = deprecated_model_function(_node_model, "node_model")
+    link_model = deprecated_model_function(_link_model, "link_model")
+    build = deprecated_model_function(in_out_tensors, "build")

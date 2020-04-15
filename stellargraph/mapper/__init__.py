@@ -23,6 +23,7 @@ The mapper package contains classes and functions to map graph data to neural ne
 # __all__ = ["link_mappers", "node_mappers"]
 
 # Expose the generators
+from .base import Generator
 from .sequences import *
 from .sampled_link_generators import *
 from .sampled_node_generators import *
@@ -31,4 +32,4 @@ from .mini_batch_node_generators import *
 from .graphwave_generator import *
 from .adjacency_generators import *
 from .knowledge_graph import *
-from .graph_generator import *
+from .padded_graph_generator import *

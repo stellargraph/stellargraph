@@ -47,9 +47,10 @@ from ..data import (
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
 from ..random import SeededPerBatch
+from .base import Generator
 
 
-class BatchedLinkGenerator(abc.ABC):
+class BatchedLinkGenerator(Generator):
     def __init__(self, G, batch_size, schema=None):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
@@ -228,6 +229,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.head_node_types = self.schema.node_types * 2
@@ -541,6 +543,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         self.head_node_types = self.schema.node_types * 2

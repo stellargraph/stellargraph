@@ -45,11 +45,11 @@ from ..data import (
 )
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
-from . import NodeSequence
+from . import NodeSequence, Generator
 from ..random import SeededPerBatch
 
 
-class BatchedNodeGenerator(abc.ABC):
+class BatchedNodeGenerator(Generator):
     """
     Abstract base class for graph data generators.
 
@@ -212,6 +212,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE
@@ -315,6 +316,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             warnings.warn(
                 "running homogeneous GraphSAGE on a graph with multiple node types",
                 RuntimeWarning,
+                stacklevel=2,
             )
 
         # Create sampler for GraphSAGE

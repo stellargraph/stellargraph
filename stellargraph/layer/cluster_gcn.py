@@ -17,7 +17,7 @@
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
-
+from .misc import deprecated_model_function, GatherIndices
 from ..mapper import ClusterNodeGenerator
 
 
@@ -37,25 +37,17 @@ class ClusterGraphConvolution(Layer):
       - The inputs are tensors with a batch dimension of 1:
         Keras requires this batch dimension.
 
-      - There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+      - There are two inputs required, the node features,
         and the normalized graph adjacency matrix.
 
       - This class assumes that the normalized graph adjacency matrix is passed as
         input to the Keras methods.
 
-      - The output indices are used when ``final_layer=True`` and the returned outputs
-        are the final-layer features for the nodes indexed by output indices.
-
-      - If ``final_layer=False`` all the node features are output in the same ordering as
-        given by the adjacency matrix.
-
     Args:
         units (int): dimensionality of output feature vectors
         activation (str): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
         kernel_initializer (str): name of layer bias f the initializer for kernel parameters (weights)
         bias_initializer (str): name of the initializer for bias
         kernel_regularizer (str): name of regularizer to be applied to layer kernel. Must be a Keras regularizer.
@@ -72,7 +64,7 @@ class ClusterGraphConvolution(Layer):
         units,
         activation=None,
         use_bias=True,
-        final_layer=False,
+        final_layer=None,
         kernel_initializer="glorot_uniform",
         bias_initializer="zeros",
         kernel_regularizer=None,
@@ -98,7 +90,10 @@ class ClusterGraphConvolution(Layer):
         self.activity_regularizer = regularizers.get(activity_regularizer)
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
-        self.final_layer = final_layer
+        if final_layer is not None:
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
     def get_config(self):
         """
@@ -112,7 +107,6 @@ class ClusterGraphConvolution(Layer):
         config = {
             "units": self.units,
             "use_bias": self.use_bias,
-            "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "bias_initializer": initializers.serialize(self.bias_initializer),
@@ -138,13 +132,10 @@ class ClusterGraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, out_shape, *As_shapes = input_shapes
+        feature_shape, *As_shapes = input_shapes
 
         batch_dim = feature_shape[0]
-        if self.final_layer:
-            out_dim = out_shape[1]
-        else:
-            out_dim = feature_shape[1]
+        out_dim = feature_shape[1]
 
         return batch_dim, out_dim, self.units
 
@@ -186,7 +177,6 @@ class ClusterGraphConvolution(Layer):
         Args:
             inputs (list): a list of 3 input tensors that includes
                 node features (size 1 x N x F),
-                output indices (size 1 x M)
                 graph adjacency matrix (size 1 x N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
@@ -194,11 +184,10 @@ class ClusterGraphConvolution(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features, out_indices, *As = inputs
+        features, *As = inputs
 
         # Remove singleton batch dimension
         features = K.squeeze(features, 0)
-        out_indices = K.squeeze(out_indices, 0)
 
         # Calculate the layer operation of GCN multiplying the normalized adjacency matrix
         # width the node features matrix.
@@ -210,14 +199,7 @@ class ClusterGraphConvolution(Layer):
         if self.bias is not None:
             output += self.bias
         output = self.activation(output)
-
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            # Select the indices that are non-zero
-            output = K.gather(output, out_indices)
-        else:
-            output = K.expand_dims(output, 0)
-
+        output = K.expand_dims(output, 0)
         return output
 
 
@@ -256,7 +238,7 @@ class ClusterGCN:
                              generator=generator,
                              dropout=0.5
                 )
-            x_inp, predictions = cluster_gcn.build()
+            x_inp, predictions = cluster_gcn.in_out_tensors()
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack
@@ -264,11 +246,27 @@ class ClusterGCN:
         generator (ClusterNodeGenerator): an instance of ClusterNodeGenerator class constructed on the graph of interest
         bias (bool): toggles an optional bias in graph convolutional layers
         dropout (float): dropout rate applied to input features of each graph convolutional layer
-        kernel_regularizer (str): normalization applied to the kernels of graph convolutional layers
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
 
     def __init__(
-        self, layer_sizes, activations, generator, bias=True, dropout=0.0, **kwargs
+        self,
+        layer_sizes,
+        activations,
+        generator,
+        bias=True,
+        dropout=0.0,
+        kernel_initializer="glorot_uniform",
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        bias_initializer="zeros",
+        bias_regularizer=None,
+        bias_constraint=None,
     ):
         if not isinstance(generator, ClusterNodeGenerator):
             raise TypeError("Generator should be a instance of ClusterNodeGenerator")
@@ -288,9 +286,6 @@ class ClusterGCN:
         self.generator = generator
         self.support = 1
 
-        # Optional regulariser, etc. for weights and biases
-        self._get_regularisers_from_keywords(kwargs)
-
         # Initialize a stack of Cluster GCN layers
         n_layers = len(self.layer_sizes)
         self._layers = []
@@ -303,25 +298,14 @@ class ClusterGCN:
                     l,
                     activation=a,
                     use_bias=self.bias,
-                    final_layer=ii == (n_layers - 1),
-                    **self._regularisers,
+                    kernel_initializer=kernel_initializer,
+                    kernel_regularizer=kernel_regularizer,
+                    kernel_constraint=kernel_constraint,
+                    bias_initializer=bias_initializer,
+                    bias_regularizer=bias_regularizer,
+                    bias_constraint=bias_constraint,
                 )
             )
-
-    def _get_regularisers_from_keywords(self, kwargs):
-        regularisers = {}
-        for param_name in [
-            "kernel_initializer",
-            "kernel_regularizer",
-            "kernel_constraint",
-            "bias_initializer",
-            "bias_regularizer",
-            "bias_constraint",
-        ]:
-            param_value = kwargs.pop(param_name, None)
-            if param_value is not None:
-                regularisers[param_name] = param_value
-        self._regularisers = regularisers
 
     def __call__(self, x):
         """
@@ -350,16 +334,18 @@ class ClusterGCN:
 
         for layer in self._layers:
             if isinstance(layer, ClusterGraphConvolution):
-                # For a GCN layer add the matrix and output indices
-                # Note that the output indices are only used if `final_layer=True`
-                h_layer = layer([h_layer, out_indices] + Ainput)
+                # For a GCN layer add the matrix
+                h_layer = layer([h_layer] + Ainput)
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
 
+        # only return data for the requested nodes
+        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
+
         return h_layer
 
-    def build(self):
+    def in_out_tensors(self):
         """
         Builds a Cluster-GCN model for node prediction.
 
@@ -373,7 +359,7 @@ class ClusterGCN:
 
         # Inputs for features & target indices
         x_t = Input(batch_shape=(1, None, N_feat))
-        out_indices_t = Input(batch_shape=(1, None, None), dtype="int32")
+        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
         # Placeholders for the dense adjacency matrix
         A_m = Input(batch_shape=(1, None, None))
@@ -383,3 +369,5 @@ class ClusterGCN:
         x_out = self(x_inp)
 
         return x_inp, x_out
+
+    build = deprecated_model_function(in_out_tensors, "build")

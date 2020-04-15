@@ -83,7 +83,7 @@ steps:
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 40
+    parallelism: 44
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -95,9 +95,9 @@ steps:
     soft_fail:
       - exit_status: 2
 
-  - label: ":python::book: test neo4j notebooks"
+  - &test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 4.0"
     <<: *timeout
-    key: "test-neo4j-notebooks"
     depends_on: "runner-3_6"
     command: ".buildkite/steps/test-neo4j-notebooks.sh"
     plugins:
@@ -107,8 +107,17 @@ steps:
         run: runner-3_6
         env:
           - STELLARGRAPH_NEO4J_HOST=neo4j
+    env:
+      RUNNER_DEPENDS_ON: neo4j
+      NEO4J_VERSION: "4.0"
     agents:
       queue: "t2large"
+
+  - <<: *test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 3.5"
+    env:
+      RUNNER_DEPENDS_ON: neo4j
+      NEO4J_VERSION: "3.5"
 
   - label: ":python-black: format"
     <<: *timeout
@@ -187,6 +196,26 @@ steps:
   - label: ":space_invader: check whitespace"
     <<: *timeout
     command: "scripts/whitespace.sh --ci"
+
+  - label: ":book: check demo table"
+    command: "python scripts/demo_table.py --action=compare"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "python:3.6"
+        propagate_environment: true
+
+  - label: ":snake: conda build"
+    <<: *timeout
+    command: ".buildkite/steps/conda-build.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: conda
+    agents:
+      queue: "t2medium"
 
   - label: ":docker: build image"
     <<: *timeout

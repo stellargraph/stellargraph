@@ -35,7 +35,7 @@ def dgi(generator, gen, model_type):
     )
     infomax = DeepGraphInfomax(base_model)
 
-    model = tf.keras.Model(*infomax.build())
+    model = tf.keras.Model(*infomax.in_out_tensors())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model.fit(gen)
     return model
