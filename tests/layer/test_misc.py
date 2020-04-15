@@ -43,7 +43,6 @@ def test_squeezedsparseconversion():
     A_ind = keras.Input(batch_shape=(1, None, 2), dtype="int64")
     A_val = keras.Input(batch_shape=(1, None), dtype="float32")
 
-    # Test with final_layer=False
     A_mat = SqueezedSparseConversion(shape=(N, N), dtype=A_val.dtype)([A_ind, A_val])
 
     x_out = keras.layers.Lambda(
@@ -66,7 +65,6 @@ def test_squeezedsparseconversion_dtype():
     A_ind = keras.Input(batch_shape=(1, None, 2), dtype="int64")
     A_val = keras.Input(batch_shape=(1, None), dtype="float32")
 
-    # Test with final_layer=False
     A_mat = SqueezedSparseConversion(shape=(N, N), dtype="float64")([A_ind, A_val])
 
     x_out = keras.layers.Lambda(
@@ -95,7 +93,6 @@ def test_squeezedsparseconversion_axis():
     # Keras reshapes everything to have ndim at least 2, we need to flatten values
     A_val_1 = keras.layers.Lambda(lambda A: K.reshape(A, (-1,)))(A_val)
 
-    # Test with final_layer=False
     A_mat = SqueezedSparseConversion(shape=(N, N), axis=None, dtype=A_val_1.dtype)(
         [A_ind, A_val_1]
     )
@@ -108,6 +105,33 @@ def test_squeezedsparseconversion_axis():
     z = model.predict([A_indices, A_values])
 
     assert np.allclose(z, A.sum(axis=1), atol=1e-7)
+
+
+def test_gather_indices():
+    batch_dim = 3
+    data_in = keras.Input(batch_shape=(batch_dim, 5, 7))
+    indices_in = keras.Input(batch_shape=(batch_dim, 11), dtype="int32")
+
+    data = np.arange(np.product(data_in.shape)).reshape(data_in.shape)
+    indices = np.random.choice(range(min(data_in.shape)), indices_in.shape)
+
+    # check that the layer acts the same as tf.gather
+    def run(**kwargs):
+        layer = GatherIndices(**kwargs)
+        expected = tf.gather(data, indices, **kwargs)
+
+        out = GatherIndices(**kwargs)([data_in, indices_in])
+        model = keras.Model(inputs=[data_in, indices_in], outputs=out)
+        pred = model.predict([data, indices])
+        np.testing.assert_array_equal(pred, expected)
+
+    # default settings
+    run()
+    # with a batch dimension
+    run(batch_dims=1)
+    # various other forms...
+    run(axis=1)
+    run(batch_dims=1, axis=2)
 
 
 def _deprecated_test(sg_model):
@@ -154,7 +178,7 @@ def test_deprecated_model_functions():
         ),
         GraphSAGENodeGenerator(G, batch_size=1, num_samples=[2]),
         RelationalFullBatchNodeGenerator(G),
-        GraphGenerator([G]),
+        PaddedGraphGenerator([G]),
     ]
 
     model_types = [

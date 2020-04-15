@@ -68,6 +68,7 @@ custom_keras_layers = {
     "RelationalGraphConvolution": layer.rgcn.RelationalGraphConvolution,
     "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
     "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer,
+    "GatherIndices": layer.misc.GatherIndices,
 }
 
 
