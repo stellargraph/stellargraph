@@ -88,7 +88,11 @@ class ColumnarConverter:
         )
 
         if self.allow_features:
-            features = other.to_numpy(dtype=self.dtype)
+            # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
+            # operations are more common (e.g. slicing out a couple of row, when sampling a few
+            # nodes) than column-level ones so having rows be contiguous (C order) is much more
+            # efficient.
+            features = np.ascontiguousarray(other.to_numpy(dtype=self.dtype))
         elif len(other.columns) == 0:
             features = None
         else:
@@ -147,6 +151,13 @@ def convert_edges(
     )
     edges, edge_features = converter.convert(data)
     assert all(features is None for features in edge_features.values())
+
+    for type_name, type_df in edges.items():
+        weight_col = type_df[WEIGHT]
+        if not pd.api.types.is_numeric_dtype(weight_col):
+            raise TypeError(
+                f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
+            )
 
     return EdgeData(edges)
 

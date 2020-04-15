@@ -20,7 +20,7 @@ import tensorflow.keras.backend as K
 import tensorflow as tf
 import numpy as np
 
-from .misc import SqueezedSparseConversion
+from .misc import SqueezedSparseConversion, GatherIndices
 from ..mapper import FullBatchNodeGenerator
 from .misc import deprecated_model_function
 from .preprocessing_layer import GraphPreProcessingLayer
@@ -37,36 +37,30 @@ class PPNPPropagationLayer(Layer):
         Keras requires this batch dimension, and for full-batch methods
         we only have a single "batch".
 
-      - There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+      - There are two inputs required, the node features,
         and the graph personalized page rank matrix
 
       - This class assumes that the personalized page rank matrix (specified in paper) matrix is passed as
         input to the Keras methods.
 
-      - The output indices are used when ``final_layer=True`` and the returned outputs
-        are the final-layer features for the nodes indexed by output indices.
-
-      - If ``final_layer=False`` all the node features are output in the same ordering as
-        given by the adjacency matrix.
-
-
     Args:
         units (int): dimensionality of output feature vectors
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
         input_dim (int, optional): the size of the input shape, if known.
         kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
 
-    def __init__(self, units, final_layer=False, input_dim=None, **kwargs):
+    def __init__(self, units, final_layer=None, input_dim=None, **kwargs):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
 
         super().__init__(**kwargs)
 
         self.units = units
-        self.final_layer = final_layer
+        if final_layer is not None:
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
     def get_config(self):
         """
@@ -77,7 +71,7 @@ class PPNPPropagationLayer(Layer):
             A dictionary that contains the config of the layer
         """
 
-        config = {"units": self.units, "final_layer": self.final_layer}
+        config = {"units": self.units}
 
         base_config = super().get_config()
         return {**base_config, **config}
@@ -94,13 +88,10 @@ class PPNPPropagationLayer(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, out_shape, *As_shapes = input_shapes
+        feature_shape, *As_shapes = input_shapes
 
         batch_dim = feature_shape[0]
-        if self.final_layer:
-            out_dim = out_shape[1]
-        else:
-            out_dim = feature_shape[1]
+        out_dim = feature_shape[1]
 
         return batch_dim, out_dim, self.units
 
@@ -120,7 +111,6 @@ class PPNPPropagationLayer(Layer):
         Args:
             inputs (list): a list of 3 input tensors that includes
                 node features (size 1 x N x F),
-                output indices (size 1 x M)
                 graph personalized page rank matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
@@ -128,7 +118,7 @@ class PPNPPropagationLayer(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features, out_indices, *As = inputs
+        features, *As = inputs
         batch_dim, n_nodes, _ = K.int_shape(features)
         if batch_dim != 1:
             raise ValueError(
@@ -137,15 +127,10 @@ class PPNPPropagationLayer(Layer):
 
         # Remove singleton batch dimension
         features = K.squeeze(features, 0)
-        out_indices = K.squeeze(out_indices, 0)
 
         # Propagate the features
         A = As[0]
         output = K.dot(A, features)
-
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            output = K.gather(output, out_indices)
 
         # Add batch dimension back if we removed it
         if batch_dim == 1:
@@ -247,9 +232,7 @@ class PPNP:
             )
 
         self._layers.append(Dropout(self.dropout))
-        self._layers.append(
-            PPNPPropagationLayer(self.layer_sizes[-1], final_layer=True)
-        )
+        self._layers.append(PPNPPropagationLayer(self.layer_sizes[-1]))
 
     def __call__(self, x):
         """
@@ -301,9 +284,12 @@ class PPNP:
         h_layer = x_in
         for layer in self._layers:
             if isinstance(layer, PPNPPropagationLayer):
-                h_layer = layer([h_layer, out_indices] + Ainput)
+                h_layer = layer([h_layer] + Ainput)
             else:
                 h_layer = layer(h_layer)
+
+        # only return data for the requested nodes
+        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
 
         return h_layer
 

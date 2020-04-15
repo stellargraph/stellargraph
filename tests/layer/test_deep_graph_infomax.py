@@ -14,11 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.layer import DeepGraphInfomax, GCN, APPNP, GAT, PPNP
+from stellargraph.layer import (
+    DeepGraphInfomax,
+    GCN,
+    APPNP,
+    GAT,
+    PPNP,
+    GraphSAGE,
+    DirectedGraphSAGE,
+)
+
 from stellargraph.mapper import (
-    FullBatchLinkGenerator,
     FullBatchNodeGenerator,
     CorruptedGenerator,
+    GraphSAGENodeGenerator,
+    DirectedGraphSAGENodeGenerator,
+    FullBatchLinkGenerator,
 )
 from ..test_utils.graphs import example_graph_random
 import tensorflow as tf
@@ -124,3 +135,32 @@ def test_dgi_link_model(model_type):
 
     # build should work
     _ = infomax.in_out_tensors()
+
+
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_dgi_graphsage(is_directed):
+
+    G = example_graph_random(is_directed=is_directed)
+
+    if is_directed:
+        generator = DirectedGraphSAGENodeGenerator(
+            G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1]
+        )
+        base_model = DirectedGraphSAGE(generator=generator, layer_sizes=[4, 4])
+    else:
+        generator = GraphSAGENodeGenerator(G, batch_size=5, num_samples=[2, 3])
+        base_model = GraphSAGE(generator=generator, layer_sizes=[4, 4])
+
+    corrupted_generator = CorruptedGenerator(generator)
+    gen = corrupted_generator.flow(G.nodes())
+
+    infomax = DeepGraphInfomax(base_model)
+
+    model = tf.keras.Model(*infomax.build())
+    model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
+    model.fit(gen)
+
+    emb_model = tf.keras.Model(*infomax.embedding_model())
+    embeddings = emb_model.predict(generator.flow(G.nodes()))
+
+    assert embeddings.shape == (len(G.nodes()), 4)

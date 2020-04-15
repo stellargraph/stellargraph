@@ -85,6 +85,9 @@
      ```shell
      conda build .
      ```
+
+      NOTE: The Conda package is also built in CI, and uploaded to a Buildkite artifact in the "conda build" stage of the pipeline.  It's possible to download this artifact to be uploaded in the following step, rather than building the conda package locally.
+
    - Upload to Anaconda Cloud in the “stellargraph” organization
      ```shell
      conda build . --output # find the path to the package
@@ -131,6 +134,13 @@
      ```
    - Turn branch protection back on.
 
+7. **Prompt Binder to generate the docker image**
+
+   [Binder](https://mybinder.org) uses a docker image to package up the state of a repository. It takes a long time to build, and is only built lazily, for the first user to click one of our "launch binder" buttons. It is your job to do this:
+
+   - Find [any demo notebook](https://github.com/stellargraph/stellargraph/blob/master/demos/basics/loading-pandas.ipynb) on the `master` branch
+   - Click [the "launch binder" button](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/basics/loading-pandas.ipynb) (or just click this link)
+   - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
 
 ## More Information
 
