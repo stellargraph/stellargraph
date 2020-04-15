@@ -438,7 +438,7 @@ def test_edges_include_edge_type():
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
     expected = normalize_edges(r | f, directed=False)
-    assert normalize_edges(g.edges(include_edge_type=True), directed=False) == expected
+    assert normalize_edges(list(zip(*g.edges(include_edge_type=True))), directed=False) == expected
 
 
 def numpy_to_list(x):
@@ -1069,13 +1069,13 @@ def test_info_deprecated():
 
 def test_edges_include_weights():
     g = example_weighted_hin()
-    edges, weights = g.edges(include_edge_weight=True)
+    sources, targets, weights = g.edges(include_edge_weight=True)
+
     nxg = g.to_networkx()
-    assert len(edges) == len(weights) == len(nxg.edges())
+    assert len(sources) == len(targets) == len(weights) == len(nxg.edges())
 
     grouped = (
-        pd.DataFrame(edges, columns=["source", "target"])
-        .assign(weight=weights)
+        pd.DataFrame({"source": sources, "target": targets, "weight": weights})
         .groupby(["source", "target"])
         .agg(list)
     )
@@ -1270,15 +1270,16 @@ def test_from_networkx_smoke():
             assert f(from_nx) == f(raw)
 
     both(lambda g: sorted(g.nodes()))
+    both(lambda g: sorted(g.edges()[0]))
+    both(lambda g: sorted(g.edges()[1]))
+    both(lambda g: sorted(g.edges(include_edge_type=True)[2]))
+    both(lambda g: sorted(g.edges(include_edge_weight=True)[2]))
+
     nodes = raw.nodes()
 
     for n in nodes:
         both(lambda g: g.node_type(n))
         both(lambda g: g.node_features([n]), numpy=True)
-
-    both(
-        lambda g: dict(zip(*g.edges(include_edge_type=True, include_edge_weight=True)))
-    )
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
@@ -1308,13 +1309,13 @@ def test_subgraph(is_directed, nodes):
 
     assert set(sub.nodes()) == set(expected.nodes())
 
-    sub_edges, sub_weights = sub.edges(include_edge_type=True, include_edge_weight=True)
-    exp_edges, exp_weights = expected.edges(
-        include_edge_type=True, include_edge_weight=True
-    )
-    assert normalize_edges(sub_edges, is_directed) == normalize_edges(
-        exp_edges, is_directed
-    )
+    sub_sources, sub_targets, _, sub_weights = sub.edges(include_edge_type=True, include_edge_weight=True)
+    exp_sources, exp_targets, _, exp_weights = expected.edges(include_edge_type=True, include_edge_weight=True)
+
+    sub_edges = normalize_edges(list(zip(sub_sources, sub_targets)), is_directed)
+    exp_edges = normalize_edges(list(zip(exp_sources, exp_targets)), is_directed)
+
+    assert np.array_equal(sub_edges, exp_edges)
     np.testing.assert_array_equal(sub_weights, exp_weights)
 
     for node in nodes:
@@ -1348,7 +1349,7 @@ def test_connected_components(is_directed):
     assert set(c) == {3}
 
     # check that `connected_components` works with `subgraph`
-    assert set(g.subgraph(a).edges()) == {(0, 2), (2, 5)}
+    assert set(list(zip(*g.subgraph(a).edges()))) == {(0, 2), (2, 5)}
 
 
 def test_nodes_node_type_filter():

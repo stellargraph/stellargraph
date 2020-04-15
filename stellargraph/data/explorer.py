@@ -1033,7 +1033,7 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         num_cw_curr = 0
 
-        edges, times = self.graph.edges(include_edge_weight=True)
+        sources, targets, times = self.graph.edges(include_edge_weight=True)
         edge_biases = self._temporal_biases(
             times, None, bias_type=initial_edge_bias, is_forward=False,
         )
@@ -1050,8 +1050,9 @@ class TemporalRandomWalk(GraphWalk):
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
-            first_edge_index = self._sample(len(edges), edge_biases, np_rs)
-            src, dst = edges[first_edge_index]
+            first_edge_index = self._sample(len(times), edge_biases, np_rs)
+            src = sources[first_edge_index]
+            dst = targets[first_edge_index]
             t = times[first_edge_index]
 
             remaining_length = num_cw - num_cw_curr + cw_size - 1

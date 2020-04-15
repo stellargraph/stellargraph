@@ -175,6 +175,9 @@ class FullBatchGenerator(ABC):
             and :meth:`predict`
 
         """
+        if self.multiplicity == 2:
+            node_ids = np.stack(node_ids, axis=1)
+
         if targets is not None:
             # Check targets is an iterable
             if not is_real_iterable(targets):
@@ -422,7 +425,8 @@ class RelationalFullBatchNodeGenerator:
 
         self.features = G.node_features(self.node_list)
 
-        edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
+        sources, targets, types = G.edges(include_edge_type=True)
+        edge_types = sorted(set(types))
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
         # create a list of adjacency matrices - one adj matrix for each edge type
@@ -431,16 +435,8 @@ class RelationalFullBatchNodeGenerator:
 
         for edge_type in edge_types:
 
-            col_index = [
-                self.node_index[n1]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            row_index = [
-                self.node_index[n2]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
+            col_index = [self.node_index[n] for n in sources[types == edge_type]]
+            row_index = [self.node_index[n] for n in targets[types == edge_type]]
             data = np.ones(len(col_index), np.float64)
 
             # note that A is the transpose of the standard adjacency matrix

@@ -201,8 +201,8 @@ class LinkSequence(Sequence):
             )
 
         self.batch_size = batch_size
-        self.ids = list(ids)
-        self.data_size = len(self.ids)
+        self.ids = np.stack(ids, axis=0)
+        self.data_size = self.ids.shape[0]
         self.shuffle = shuffle
         self._rs, _ = random_state(seed)
 
@@ -380,10 +380,6 @@ class FullBatchSequence(Sequence):
             raise ValueError(
                 "When passed together targets and indices should be the same length."
             )
-
-        # Store features and targets as np.ndarray
-        self.features = np.asanyarray(features)
-        self.target_indices = np.asanyarray(indices)
 
         # Convert sparse matrix to dense:
         if sps.issparse(A) and hasattr(A, "toarray"):

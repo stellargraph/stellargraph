@@ -506,21 +506,13 @@ class StellarGraph:
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights)
         """
-        # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
-        # (the same applies to all other instances of zip in this file)
+        edges = (self._edges.sources, self._edges.targets)
+
         if include_edge_type:
-            edges = list(
-                zip(
-                    self._edges.sources,
-                    self._edges.targets,
-                    self._edges.type_of_iloc(slice(None)),
-                )
-            )
-        else:
-            edges = list(zip(self._edges.sources, self._edges.targets))
+            edges = edges + (self._edges.type_of_iloc(slice(None)),)
 
         if include_edge_weight:
-            return edges, self._edges.weights
+            edges = edges + (self._edges.weights,)
 
         return edges
 

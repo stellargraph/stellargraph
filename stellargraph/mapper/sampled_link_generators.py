@@ -122,13 +122,10 @@ class BatchedLinkGenerator(abc.ABC):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
         # Otherwise pass iterable (check?) to standard LinkSequence
-        elif isinstance(link_ids, collections.abc.Iterable):
-            # Check all IDs are actually in the graph and are of expected type
-            for link in link_ids:
-                if len(link) != 2:
-                    raise KeyError("Expected link IDs to be a tuple of length 2")
-
-                src, dst = link
+        elif (len(link_ids) == 2) and is_real_iterable(link_ids[0]) and is_real_iterable(link_ids[1]):
+            link_ids = np.stack(link_ids, axis=1)
+            for ii in range(link_ids.shape[0]):
+                src, dst = link_ids[ii, 0], link_ids[ii, 1]
                 try:
                     node_type_src = self.graph.node_type(src)
                 except KeyError:

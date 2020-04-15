@@ -904,7 +904,6 @@ class Test_DirectedGraphSAGELinkGenerator:
             in_samples=in_samples,
             out_samples=out_samples,
         ).flow(G.edges(), edge_labels)
-
         assert len(mapper) == 2
         with pytest.raises(ValueError):
             nf, nl = mapper[0]
@@ -937,7 +936,7 @@ class Test_DirectedGraphSAGELinkGenerator:
 
         # get sizes with no isolated nodes
 
-        head_links = [(1, 2)]
+        head_links = (np.array([1]), np.array([2]))
         gen = DirectedGraphSAGELinkGenerator(
             G,
             batch_size=n_batch,
@@ -949,7 +948,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         expected_sizes = [x.shape[1] for x in ne]
 
         # Check sizes with one isolated node
-        head_links = [(1, 5)]
+        head_links = (np.array([1]), np.array([5]))
         gen = DirectedGraphSAGELinkGenerator(
             G,
             batch_size=n_batch,
@@ -961,7 +960,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         assert pytest.approx(expected_sizes) == [x.shape[1] for x in ne]
 
         # Check sizes with two isolated nodes
-        head_links = [(4, 5)]
+        head_links = (np.array([4]), np.array([5]))
         gen = DirectedGraphSAGELinkGenerator(
             G,
             batch_size=n_batch,
@@ -995,7 +994,7 @@ class Test_DirectedGraphSAGELinkGenerator:
         ).flow(unsupervisedSamples)
 
         # The flow method is not passed UnsupervisedSampler object or a list of samples is not passed
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             gen = DirectedGraphSAGELinkGenerator(
                 G,
                 batch_size=n_batch,
