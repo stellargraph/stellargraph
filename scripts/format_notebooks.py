@@ -27,13 +27,13 @@ import re
 import shlex
 import subprocess
 import sys
+import os
 import tempfile
 from itertools import chain
 from traitlets import Set, Integer, Bool
 from traitlets.config import Config
 from pathlib import Path
 from nbconvert import NotebookExporter, HTMLExporter, writers, preprocessors
-
 from black import format_str, FileMode, InvalidInput
 
 
@@ -181,6 +181,45 @@ if 'google.colab' in sys.modules:
         return nb, resources
 
 
+class VersionCheckPreprocessor(preprocessors.Preprocessor):
+    metadata_tag = "VersionCheck"  # tag for added cells so that we can find them easily
+
+    try:
+        # determine the current stellargraph version by importing the library's version file
+        sys.path.append((os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'stellargraph'))))
+        import version as sgversion
+        stellargraph_version = sgversion.__version__
+    except ImportError as error:
+        print(f"ERROR: unable to import StellarGraph version: {error.message}")
+        stellargraph_version = None
+
+    version_check_code = f"""\
+# verify that we're using the correct version of StellarGraph for this notebook
+import stellargraph as sg
+from packaging import version
+
+if version.parse(sg.__version__) < version.parse("{stellargraph_version}"):
+    raise ValueError(
+        f"The installed version {{sg.__version__}} of StellarGraph is older than the version {stellargraph_version} required for this notebook. Please update StellarGraph, eg: pip install --upgrade stellargraph"
+    )"""
+
+    def preprocess(self, nb, resources):
+        # remove any cells we added in a previous run
+        nb.cells = [
+            cell
+            for cell in nb.cells
+            if self.metadata_tag not in cell["metadata"].get("tags", [])
+        ]
+        # find first (non-CloudRunner) code cell and insert before it
+        first_code_cell_id = next(
+            index for index, cell in enumerate(nb.cells) if cell.cell_type == "code" and CloudRunnerPreprocessor.metadata_tag not in cell["metadata"].get("tags", [])
+        )
+        import_cell = nbformat.v4.new_code_cell(self.version_check_code)
+        import_cell["metadata"]["tags"] = [self.metadata_tag]
+        nb.cells.insert(first_code_cell_id, import_cell)
+        return nb, resources
+
+
 # ANSI terminal escape sequences
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
@@ -247,13 +286,19 @@ if __name__ == "__main__":
         "-d",
         "--default",
         action="store_true",
-        help="Perform default formatting, equivalent to -wcnksr",
+        help="Perform default formatting, equivalent to -wcnksrv",
     )
     parser.add_argument(
         "-r",
         "--run_cloud",
         action="store_true",
         help="Add or update cells that support running this notebook via cloud services",
+    )
+    parser.add_argument(
+        "-v",
+        "--check_version",
+        action="store_true",
+        help="Add or update cells that validate the version of StellarGraph",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -295,11 +340,14 @@ if __name__ == "__main__":
     execute_code = args.execute
     cell_timeout = args.cell_timeout
     run_cloud = args.run_cloud or args.default
+    check_version = args.check_version or args.default
 
     # Add preprocessors
     preprocessor_list = []
     if run_cloud:
         preprocessor_list.append(CloudRunnerPreprocessor)
+    if check_version:
+        preprocessor_list.append(VersionCheckPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
