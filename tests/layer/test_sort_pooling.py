@@ -109,3 +109,16 @@ def test_mask():
     data_out = layer([data, mask])
 
     assert np.array_equal(data_out, data_sorted)
+
+
+def test_flatten_output():
+    data = np.array([[3, 4, 0], [1, 2, -1], [5, 0, 1]], dtype=int).reshape((1, 3, 3))
+    mask = np.array([[True, True, True]])
+
+    data_sorted = np.array([[5, 0, 1, 3, 4, 0, 1, 2, -1]], dtype=int).reshape((1, 9))
+
+    layer = SortPooling(k=3, flatten_output=True)
+
+    data_out = layer([data, mask])
+
+    assert np.array_equal(data_out, data_sorted)
