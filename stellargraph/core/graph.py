@@ -37,7 +37,6 @@ from . import convert
 
 
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
-_WeightInfo = namedtuple("_WeightInfo", ["min", "max", "mean", "std"])
 
 
 class StellarGraph:
@@ -806,21 +805,16 @@ class StellarGraph:
             self._nodes.types.from_iloc(tgt_ilocs),
         )
 
-    def _unique_type_triples(self, *, return_counts, selector=slice(None)):
+    def _unique_type_triples(self, selector=slice(None)):
         all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
 
         if len(all_type_ilocs) == 0:
             # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
             # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
             # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
-            if return_counts:
-                ret = None, [], []
-            else:
-                ret = None, []
+            ret = None, []
         else:
-            ret = np.unique(
-                all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
-            )
+            ret = np.unique(all_type_ilocs, axis=0, return_index=True)
 
         edge_ilocs = ret[1]
         # we've now got the indices for an edge with each triple, along with the counts of them, so
@@ -828,21 +822,20 @@ class StellarGraph:
         # getting the actual type for each type iloc in the triples)
         unique_ets = self._edge_type_triples(edge_ilocs)
 
-        if return_counts:
-            return zip(*unique_ets, ret[2])
-
         return zip(*unique_ets)
 
-    def _edge_metrics_by_type_triple(self, *, selector=slice(None), metrics):
-        src_ty, rel_ty, tgt_ty = self._edge_type_triples(selector)
+    def _edge_metrics_by_type_triple(self, metrics):
+        src_ty, rel_ty, tgt_ty = self._edge_type_triples()
         df = pd.DataFrame(
-            self._edges.weights, index=[src_ty, rel_ty, tgt_ty], columns=["weight"]
+            {
+                "src_ty": src_ty,
+                "rel_ty": rel_ty,
+                "tgt_ty": tgt_ty,
+                "weight": self._edges.weights,
+            }
         )
-
-        if len(df):
-            return df.groupby(level=[0, 1, 2]).agg(metrics)["weight"].to_dict("index")
-        else:
-            return dict()
+        df["weight"] = pd.to_numeric(df["weight"])
+        return df.groupby(["src_ty", "rel_ty", "tgt_ty"]).agg(metrics)["weight"]
 
     def info(self, show_attributes=None, sample=None, truncate=20):
         """
@@ -907,17 +900,17 @@ class StellarGraph:
                 edge_types = "none"
             return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
 
-        def str_weight_info(w: _WeightInfo):
-            if w.min == w.max:
-                if w.min == 1:
+        def str_weight_info(metrics):
+            if metrics.min == metrics.max:
+                if metrics.min == 1:
                     return f"Weights: all 1.0 (default)"
                 else:
-                    return f"Weights: all {w.min}"
+                    return f"Weights: all {metrics.min}"
             else:
-                return f"Weights: range=[{w.min}, {w.max}], mean={w.mean}, std={w.std}"
+                return f"Weights: range=[{metrics.min}, {metrics.max}], mean={metrics.mean}, std={metrics.std}"
 
-        def edge_type_info(et, count, weight_info):
-            return f"{str_edge_type(et)}: [{count}]\n        {str_weight_info(weight_info)}"
+        def edge_type_info(et, metrics):
+            return f"{str_edge_type(et)}: [{metrics.count}]\n        {str_weight_info(metrics)}"
 
         # sort the node types in decreasing order of frequency
         node_types = sorted(
@@ -935,23 +928,14 @@ class StellarGraph:
 
         edge_types = sorted(
             (
-                (
-                    metrics["count"],
-                    EdgeType(src_ty, rel_ty, tgt_ty),
-                    _WeightInfo(
-                        metrics["min"], metrics["max"], metrics["mean"], metrics["std"]
-                    ),
-                )
-                for (src_ty, rel_ty, tgt_ty), metrics in et_metrics.items()
+                (metrics.count, EdgeType(*metrics.Index), metrics,)
+                for metrics in et_metrics.itertuples()
             ),
             reverse=True,
         )
 
         edges = separated(
-            [
-                edge_type_info(et, count, weight_info)
-                for count, et, weight_info in edge_types
-            ],
+            [edge_type_info(et, metrics) for _, et, metrics in edge_types],
             limit=truncate,
             stringify=str,
             sep="\n    ",
@@ -998,9 +982,7 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        for n1, rel, n2 in self._unique_type_triples(
-            selector=selector, return_counts=False
-        ):
+        for n1, rel, n2 in self._unique_type_triples(selector=selector):
             edge_type_tri = EdgeType(n1, rel, n2)
             edge_types.add(edge_type_tri)
             graph_schema[n1].add(edge_type_tri)
