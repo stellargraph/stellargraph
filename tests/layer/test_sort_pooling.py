@@ -69,3 +69,43 @@ def test_sorting_truncation():
     data_out = layer([data, mask])
 
     assert np.array_equal(data_out, data_sorted)
+
+
+def test_sorting_negative_values():
+
+    data = np.array([[3, 4, 0], [1, 2, -1], [5, 0, 1]], dtype=int).reshape((1, 3, 3))
+    mask = np.array([[True, True, True]])
+
+    data_sorted = np.array([[5, 0, 1], [3, 4, 0], [1, 2, -1]], dtype=int).reshape(
+        (1, 3, 3)
+    )
+
+    layer = SortPooling(k=3)
+
+    data_out = layer([data, mask])
+
+    assert np.array_equal(data_out, data_sorted)
+
+
+def test_mask():
+    data = np.array([[3, 4, 0], [1, 2, -1], [5, 0, 1]], dtype=int).reshape((1, 3, 3))
+    mask = np.array([[True, True, True]])
+
+    data_sorted = np.array([[5, 0, 1], [3, 4, 0]], dtype=int).reshape((1, 2, 3))
+
+    layer = SortPooling(k=2)
+
+    data_out = layer([data, mask])
+
+    assert np.array_equal(data_out, data_sorted)
+
+    mask = np.array([[True, True, False]])
+    data_sorted = np.array(
+        [[3, 4, 0], [1, 2, -1], [0, 0, 0], [0, 0, 0]], dtype=int
+    ).reshape((1, 4, 3))
+
+    layer = SortPooling(k=4)
+
+    data_out = layer([data, mask])
+
+    assert np.array_equal(data_out, data_sorted)
