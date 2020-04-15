@@ -592,12 +592,13 @@ def test_benchmark_get_neighbours(benchmark):
 @pytest.mark.benchmark(group="StellarGraph node features")
 @pytest.mark.parametrize("num_types", [1, 4])
 @pytest.mark.parametrize("type_arg", ["infer", "specify"])
-def test_benchmark_get_features(benchmark, num_types, type_arg):
-    SAMPLE_SIZE = 50
-    N_NODES = 500
-    N_EDGES = 1000
+@pytest.mark.parametrize("feature_size", [10, 1000])
+def test_benchmark_get_features(benchmark, num_types, type_arg, feature_size):
+    SAMPLE_SIZE = 10
+    N_NODES = 5000
+    N_EDGES = 10000
     nodes, edges = example_benchmark_graph(
-        feature_size=10, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
+        feature_size=feature_size, n_nodes=N_NODES, n_edges=N_EDGES, n_types=num_types
     )
 
     sg = StellarGraph(nodes=nodes, edges=edges)
@@ -617,7 +618,7 @@ def test_benchmark_get_features(benchmark, num_types, type_arg):
         # does sampling might ask for
         ty, all_ids = random.choice(ty_ids)
         selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
-        sg.node_features(selected_ids, node_type(ty))
+        sg.node_features_tensors(selected_ids, node_type(ty))
 
     benchmark(f)
 
