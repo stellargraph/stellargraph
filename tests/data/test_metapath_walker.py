@@ -88,7 +88,7 @@ class TestMetaPathWalk(object):
         # n has to be positive integer
         with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=-1, length=length, metapaths=metapaths, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             mrw.run(nodes=nodes, n=11.4, length=length, metapaths=metapaths, seed=seed)
         with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=0, length=length, metapaths=metapaths, seed=seed)
@@ -97,9 +97,9 @@ class TestMetaPathWalk(object):
             mrw.run(nodes=nodes, n=n, length=-3, metapaths=metapaths, seed=seed)
         with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=0, metapaths=metapaths, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             mrw.run(nodes=nodes, n=n, length=4.6, metapaths=metapaths, seed=seed)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             mrw.run(nodes=nodes, n=n, length=1.0000001, metapaths=metapaths, seed=seed)
         # metapaths have to start and end with the same node type
         with pytest.raises(ValueError):
@@ -145,7 +145,7 @@ class TestMetaPathWalk(object):
         # seed has to be integer or None
         with pytest.raises(ValueError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths, seed=1000.345)
 
         # If no root nodes are given, an empty list is returned which is not an error but I thought this method

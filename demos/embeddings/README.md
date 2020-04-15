@@ -1,39 +1,35 @@
-## Representation Learning Examples
+## Representation learning using StellarGraph
 
-This folder contains four [Jupyter](http://jupyter.org/) python notebooks demonstrating the use of unsupervised graph representation learning methods implemented in the `stellargraph` library for homogeneous and heterogenous graphs with or without node features. The original works are referenced below.
+[StellarGraph](https://github.com/stellargraph/stellargraph) provides numerous algorithms for doing node and edge representation learning on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
-**Node2Vec** and **Metapath2Vec** notebooks demonstrate the combined use of `stellargraph` and `Gensim` [4] libraries for representation learning on homogeneous and heterogeneous graphs.
-**Unsupervised GraphSAGE** notebook demonstrates the use of `Stellargraph` library's GraphSAGE implementation for unsupervised learning of node embeddings for homogeneous graphs with node features.
-**attri2vec** notebook demonstrates the implementation of attri2vec with the `Stellargraph` library for unsupervised inductive learning of node embeddings for homogeneous graphs with node features, and the evaluation for its ability to infer the representations of out-of-sample nodes with the out-of-sample node link prediction task.
+A node representation learning task computes a representation or embedding vector for each node in a graph. These vectors capture latent/hidden information about the nodes and edges, and can be used for (semi-)supervised downstream tasks like [node classification][nc] and [link prediction][lp], or unsupervised ones like [community detection][cd] or similarity searches. Representation learning is typically an unsupervised task, where the model is trained on data that does not have any ground-truth labels.
 
-The notebooks demonstrate the following algorithms.
-- `stellargraph-node2vec.ipynb` The **Node2Vec** algorithm [1] for representation learning on homogeneous graphs.
-- `stellargraph-metapath2vec.ipynb` The **Metapath2Vec** algorithm [2] for representation learning on heterogeneous graphs.
-- `embeddings-unsupervised-graphsage-cora.ipynb` The **Unsupervised GraphSAGE** algorithm [5] for representation learning on homogeneous graphs with node features.
-- `stellargraph-attri2vec-citeseer.ipynb` The **attri2vec** algorithm [6] for representation learning on the homogeneous graph with node features.
+Node representations can also be computed from (semi-)supervised models, using the output of a hidden layer as the embedding vector for nodes or edges. StellarGraph provides some [demonstrations of node classification][nc] and [link prediction][lp], some of which include computing and visualising node or edge embeddings.
 
-All examples demonstrate how to calculate embedding vectors for a graph's nodes in just a few lines of Python code.
-The learned node representations can be used in numerous downstream tasks such as node attribute inference, link
-prediction, and community detection.
+[nc]: ../node-classification/README.md
+[lp]: ../link-prediction/README.md
+[cd]: ../community_detection/README.md
 
+## Find algorithms and demos for a graph
 
-## References
+This table lists all representation learning demos, including the algorithms trained, how they are trained, the types of graph used, and the tasks demonstrated.
 
-**1.** Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference
-on Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
+| demo | algorithm(s) | training method | node features | downstream tasks shown |
+|---|---|---|---|---|
+| [Deep Graph Infomax][dgi] | GCN, GAT, PPNP, APPNP, GraphSAGE | `DeepGraphInfomax` (mutual information) | yes | visualisation, node classification |
+| [Unsupervised GraphSAGE][graphsage] | GraphSAGE | `UnsupervisedSampler` (link prediction) | yes | visualisation, node classification |
+| [Attri2Vec][attri2vec] | Attri2Vec | `UnsupervisedSampler` (link prediction) | yes | visualisation |
+| [Metapath2Vec][metapath2vec] | Metapath2Vec | natively unsupervised | | visualisation |
+| [Node2Vec][node2vec] | Node2Vec | natively unsupervised | | visualisation |
+| [Watch Your Step][wys] | Watch Your Step | natively unsupervised | | visualisation, node classification |
+| [GraphWave][graphwave] | GraphWave | natively unsupervised | | visualisation, node classification |
 
-**2.**  Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and
-Ananthram Swami. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017.
-([link](https://ericdongyx.github.io/papers/KDD17-dong-chawla-swami-metapath2vec.pdf))
+[dgi]: deep-graph-infomax-cora.ipynb
+[graphsage]: embeddings-unsupervised-graphsage-cora.ipynb
+[graphwave]: graphwave-barbell.ipynb
+[attri2vec]: stellargraph-attri2vec-citeseer.ipynb
+[metapath2vec]: stellargraph-metapath2vec.ipynb
+[node2vec]: stellargraph-node2vec.ipynb
+[wys]: watch-your-step-cora-demo.ipynb
 
-**3.** Distributed representations of words and phrases and their compositionality. T. Mikolov, I. Sutskever, K. Chen,
-G. S. Corrado, and J. Dean.  In Advances in Neural Information Processing Systems (NIPS), pp. 3111-3119, 2013.
-([link](https://papers.nips.cc/paper/5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf))
-
-**4.** Gensim: Topic modelling for humans. ([link](https://radimrehurek.com/gensim/))
-
-**5.** Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec arXiv:1706.02216
-[cs.SI], 2017. ([link](http://snap.stanford.edu/graphsage/))
-
-**6.** Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095,
-[cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
+See [the root README](../../README.md) or each algorithm's documentation for the relevant citation(s). See [the demo README](../README.md) for more tasks, and a summary of each algorithm.
