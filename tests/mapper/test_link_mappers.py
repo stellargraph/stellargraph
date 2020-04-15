@@ -843,8 +843,8 @@ class Test_DirectedGraphSAGELinkGenerator:
     def test_shuffle(self, shuffle):
 
         G = example_graph(feature_size=1, is_directed=True)
-        edges = list(G.edges())
-        edge_labels = list(range(len(edges)))
+        edges = G.edges()
+        edge_labels = list(range(len(edges[0])))
 
         mapper = DirectedGraphSAGELinkGenerator(
             G, batch_size=2, in_samples=[0], out_samples=[0]
@@ -854,8 +854,8 @@ class Test_DirectedGraphSAGELinkGenerator:
 
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
-            e1 = edges[nl[0]]
-            e2 = edges[nl[1]]
+            e1 = (edges[0][nl[0]], edges[1][nl[0]])
+            e2 = (edges[0][nl[1]], edges[1][nl[1]])
             assert nf[0][0, 0, 0] == e1[0]
             assert nf[1][0, 0, 0] == e1[1]
             assert nf[0][1, 0, 0] == e2[0]
