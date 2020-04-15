@@ -155,6 +155,9 @@ class FullBatchGenerator(Generator):
                 "Accepted: 'gcn' (default), 'sgc', and 'self_loops'."
             )
 
+    def num_batch_dims(self):
+        return 2
+
     def flow(self, node_ids, targets=None):
         """
         Creates a generator/sequence object for training or evaluation
@@ -275,6 +278,9 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
         """
         return super().flow(node_ids, targets)
+
+    def default_corrupt_input_index_groups(self):
+        return [[0]]
 
 
 class FullBatchLinkGenerator(FullBatchGenerator):
@@ -463,6 +469,9 @@ class RelationalFullBatchNodeGenerator(Generator):
 
         # Get the features for the nodes
         self.features = G.node_features(self.node_list)
+
+    def num_batch_dims(self):
+        return 2
 
     def flow(self, node_ids, targets=None):
         """

@@ -54,7 +54,7 @@ def test_dgi(model_type, sparse):
     base_model = model_type(
         generator=generator, activations=["relu"], layer_sizes=[emb_dim]
     )
-    infomax = DeepGraphInfomax(base_model)
+    infomax = DeepGraphInfomax(base_model, corrupted_generator)
 
     model = tf.keras.Model(*infomax.in_out_tensors())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
@@ -75,7 +75,8 @@ def test_dgi_stateful():
     gen = corrupted_generator.flow(G.nodes())
 
     infomax = DeepGraphInfomax(
-        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+        GCN(generator=generator, activations=["relu"], layer_sizes=[emb_dim]),
+        corrupted_generator,
     )
 
     model_1 = tf.keras.Model(*infomax.in_out_tensors())
@@ -123,14 +124,20 @@ def test_dgi_link_model(model_type):
     G = example_graph_random()
     emb_dim = 16
 
-    generator = FullBatchLinkGenerator(G)
+    link_generator = FullBatchLinkGenerator(G)
+
+    node_generator = FullBatchNodeGenerator(G)
+    corrupted_generator = CorruptedGenerator(node_generator)
 
     with pytest.warns(
         UserWarning,
         match=r"base_model: expected a node model .* found a link model \(multiplicity = 2\)",
     ):
         infomax = DeepGraphInfomax(
-            model_type(generator=generator, activations=["relu"], layer_sizes=[emb_dim])
+            model_type(
+                generator=link_generator, activations=["relu"], layer_sizes=[emb_dim]
+            ),
+            corrupted_generator,
         )
 
     # build should work
@@ -154,7 +161,7 @@ def test_dgi_graphsage(is_directed):
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
-    infomax = DeepGraphInfomax(base_model)
+    infomax = DeepGraphInfomax(base_model, corrupted_generator)
 
     model = tf.keras.Model(*infomax.build())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
@@ -164,3 +171,15 @@ def test_dgi_graphsage(is_directed):
     embeddings = emb_model.predict(generator.flow(G.nodes()))
 
     assert embeddings.shape == (len(G.nodes()), 4)
+
+
+def test_dgi_deprecated_no_generator():
+    G = example_graph_random()
+    generator = FullBatchNodeGenerator(G)
+
+    with pytest.warns(
+        DeprecationWarning, match="The 'corrupted_generator' parameter should be set"
+    ):
+        DeepGraphInfomax(
+            GCN(generator=generator, activations=["relu"], layer_sizes=[4]),
+        )

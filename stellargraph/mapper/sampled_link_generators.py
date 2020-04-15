@@ -82,6 +82,9 @@ class BatchedLinkGenerator(Generator):
     def sample_features(self, head_links, batch_num):
         pass
 
+    def num_batch_dims(self):
+        return 1
+
     def flow(self, link_ids, targets=None, shuffle=False, seed=None):
         """
         Creates a generator/sequence object for training or evaluation
