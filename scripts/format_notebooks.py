@@ -186,8 +186,17 @@ class VersionCheckPreprocessor(preprocessors.Preprocessor):
 
     try:
         # determine the current stellargraph version by importing the library's version file
-        sys.path.append((os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'stellargraph'))))
+        sys.path.append(
+            (
+                os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__), os.path.pardir, "stellargraph"
+                    )
+                )
+            )
+        )
         import version as sgversion
+
         stellargraph_version = sgversion.__version__
     except ImportError as error:
         print(f"ERROR: unable to import StellarGraph version: {error.message}")
@@ -212,7 +221,11 @@ if version.parse(sg.__version__) < version.parse("{stellargraph_version}"):
         ]
         # find first (non-CloudRunner) code cell and insert before it
         first_code_cell_id = next(
-            index for index, cell in enumerate(nb.cells) if cell.cell_type == "code" and CloudRunnerPreprocessor.metadata_tag not in cell["metadata"].get("tags", [])
+            index
+            for index, cell in enumerate(nb.cells)
+            if cell.cell_type == "code"
+            and CloudRunnerPreprocessor.metadata_tag
+            not in cell["metadata"].get("tags", [])
         )
         import_cell = nbformat.v4.new_code_cell(self.version_check_code)
         import_cell["metadata"]["tags"] = [self.metadata_tag]
