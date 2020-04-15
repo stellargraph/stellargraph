@@ -31,14 +31,16 @@ class SortPooling(Layer):
 
     Args:
         k (int): The number of rows of output tensor.
+        flatten_output (bool): Output tensor is reshaped to vector if True.
 
     """
 
-    def __init__(self, k):
+    def __init__(self, k, flatten_output=False):
         super().__init__()
 
         self.trainable = False
         self.k = k
+        self.flatten_output=flatten_output
 
     def get_config(self):
         """
@@ -61,7 +63,10 @@ class SortPooling(Layer):
         Returns:
             An input shape tuple.
         """
-        return input_shapes[0], self.k, input_shapes[2]
+        if self.flatten_output:
+            return input_shapes[0], self.k*input_shapes[2]
+        else:
+            return input_shapes[0], self.k, input_shapes[2]
 
     def _sort_tensor_with_mask(self, inputs):
 
@@ -119,5 +124,8 @@ class SortPooling(Layer):
             ),
             false_fn=lambda: outputs[:, : self.k, :],
         )
+
+        if self.flatten_output:
+            outputs = tf.reshape(outputs, [tf.shape(outputs)[0], -1])
 
         return outputs
