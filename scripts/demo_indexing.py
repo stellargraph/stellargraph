@@ -384,6 +384,7 @@ ALGORITHMS = [
         nc=T(link="node-classification/cluster-gcn-node-classification"),
         lp=True,
         inductive=True,
+        rl=rl_dgi(),
     ),
     Algorithm(
         T("RGCN", details="Relational GCN (RGCN)"),

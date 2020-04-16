@@ -198,6 +198,9 @@ class ClusterNodeGenerator(Generator):
             name=name,
         )
 
+    def default_corrupt_input_index_groups(self):
+        return [[0]]
+
 
 class ClusterNodeSequence(Sequence):
     """

@@ -51,7 +51,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>yes</td>
     <td><a href='node-classification/cluster-gcn-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
-    <td></td>
+    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span></td>
     <td>yes</td>
     <td></td>
   </tr>
