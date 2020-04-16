@@ -138,12 +138,6 @@ class DeepGraphInfomax:
                 for idx in group
             ]
 
-        if base_model.multiplicity != 1:
-            warnings.warn(
-                f"base_model: expected a node model (multiplicity = 1), found a link model (multiplicity = {base_model.multiplicity}). Base model tensors will be constructed as for a node model.",
-                stacklevel=2,
-            )
-
         self.base_model = base_model
 
         self._node_feats = None
@@ -166,7 +160,7 @@ class DeepGraphInfomax:
             input and output layers for use with a keras model
         """
 
-        x_inp, node_feats = self.base_model.in_out_tensors(multiplicity=1)
+        x_inp, node_feats = self.base_model.in_out_tensors()
 
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
@@ -201,7 +195,7 @@ class DeepGraphInfomax:
         )
 
         # these tensors should link into the weights that get trained by `build`
-        x_emb_in, x_emb_out = self.base_model.in_out_tensors(multiplicity=1)
+        x_emb_in, x_emb_out = self.base_model.in_out_tensors()
 
         # squeeze out batch dim of full batch models
         if len(x_emb_out.shape) == 3:
