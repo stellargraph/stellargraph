@@ -1370,7 +1370,6 @@ class StellarGraph:
 
     @staticmethod
     def _infer_nodes_from_edges(edges, source_column, target_column):
-        # repeatedly call unique to decrease memory usage
         if isinstance(edges, dict) and edges != {}:
             nodes_from_edges = [
                 type_edges[source_column] for type_edges in edges.values()
