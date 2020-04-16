@@ -157,7 +157,7 @@ class StellarGraph:
         0 of type ``a``, and a node 0 of type ``b``. IDs of edges must also be unique across all
         types.
 
-    .. _iloc-explanation::
+    .. _iloc-explanation:
 
     This type stores the external IDs for nodes and edges as *ilocs* (internal or integer locations,
     similar to Pandas), which are sequential integers that allow for efficient storage and indexing.
