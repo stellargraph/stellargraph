@@ -1368,21 +1368,24 @@ class StellarGraph:
 
     @staticmethod
     def _infer_nodes_from_edges(edges, source_column, target_column):
-        if isinstance(edges, dict) and edges != {}:
-            nodes_from_edges = [
-                type_edges[source_column] for type_edges in edges.values()
-            ]
-            nodes_from_edges.extend(
-                type_edges[target_column] for type_edges in edges.values()
-            )
-            nodes_from_edges = pd.unique(np.concatenate(nodes_from_edges))
-        elif isinstance(edges, pd.DataFrame) and len(edges) > 0:
-            nodes_from_edges = pd.unique(
-                np.concatenate([edges[target_column], edges[source_column]])
-            )
-        elif isinstance(edges, (pd.DataFrame, dict)) or edges is None:
-            nodes_from_edges = []
-        return nodes_from_edges
+
+        if isinstance(edges, dict):
+            dataframes = edges.values()
+        else:
+            dataframes = [edges]
+
+        found_columns = [
+            type_edges[column]
+            for type_edges in dataframes
+            if isinstance(type_edges, pd.DataFrame)
+            for column in [source_column, target_column]
+            if column in type_edges.columns
+        ]
+
+        if found_columns:
+            return pd.unique(np.concatenate(found_columns))
+
+        return []
 
 
 # A convenience class that merely specifies that edges have direction.

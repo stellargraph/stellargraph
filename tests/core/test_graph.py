@@ -164,6 +164,15 @@ def test_graph_constructor_nodes_from_edges():
     assert g.node_types == {"abc"}
     assert sorted(g.nodes()) == [0, 1, 2, 4, 5]
 
+    with pytest.raises(TypeError, match="edges: expected dict, found <class 'int'>"):
+        StellarGraph(edges=1)
+
+    with pytest.raises(TypeError, match="edges.*: expected pandas DataFrame, found <class 'int'>"):
+        StellarGraph(edges={"a": 1})
+
+    with pytest.raises(ValueError, match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'weight'"):
+        StellarGraph(edges=pd.DataFrame(columns=["x"]))
+
 
 def test_info():
     sg = create_graph_1()
