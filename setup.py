@@ -32,6 +32,7 @@ REQUIRES = [
     "matplotlib>=2.2",
     "gensim>=3.4.0",
     "pandas>=0.24",
+    "packaging",
 ]
 
 # The demos requirements are as follows:
@@ -45,14 +46,7 @@ REQUIRES = [
 #
 # Other demos do not have specific requirements
 EXTRAS_REQUIRES = {
-    "demos": [
-        "numba",
-        "jupyter",
-        "seaborn",
-        "rdflib",
-        "mplleaflet==0.0.5",
-        "packaging",
-    ],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
     "igraph": ["python-igraph"],
     "neo4j": ["py2neo"],
     "test": [

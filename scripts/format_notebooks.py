@@ -181,36 +181,23 @@ if 'google.colab' in sys.modules:
         return nb, resources
 
 
-class VersionCheckPreprocessor(preprocessors.Preprocessor):
+class VersionValidationPreprocessor(preprocessors.Preprocessor):
     metadata_tag = "VersionCheck"  # tag for added cells so that we can find them easily
 
-    try:
-        # determine the current stellargraph version by importing the library's version file
-        sys.path.append(
-            (
-                os.path.abspath(
-                    os.path.join(
-                        os.path.dirname(__file__), os.path.pardir, "stellargraph"
-                    )
-                )
-            )
-        )
-        import version as sgversion
-
-        stellargraph_version = sgversion.__version__
-    except ImportError as error:
-        print(f"ERROR: unable to import StellarGraph version: {error.message}")
-        stellargraph_version = None
+    # determine the current stellargraph version
+    version = {}
+    with open("stellargraph/version.py", "r") as fh:
+        exec(fh.read(), version)
+    VERSION = version["__version__"]
 
     version_check_code = f"""\
 # verify that we're using the correct version of StellarGraph for this notebook
 import stellargraph as sg
-from packaging import version
 
-if version.parse(sg.__version__) < version.parse("{stellargraph_version}"):
-    raise ValueError(
-        f"The installed version {{sg.__version__}} of StellarGraph is older than the version {stellargraph_version} required for this notebook. Please update StellarGraph, eg: pip install --upgrade stellargraph"
-    )"""
+try:
+    sg.utils.validate_notebook_version("{VERSION}")
+except AttributeError:
+    raise ValueError(f"This notebook requires StellarGraph version {VERSION}, but a different version {{sg.__version__}} is installed.  Please see <https://github.com/stellargraph/stellargraph/issues/1172>.") from None"""
 
     def preprocess(self, nb, resources):
         # remove any cells we added in a previous run
@@ -309,7 +296,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-v",
-        "--check_version",
+        "--version_validation",
         action="store_true",
         help="Add or update cells that validate the version of StellarGraph",
     )
@@ -353,14 +340,14 @@ if __name__ == "__main__":
     execute_code = args.execute
     cell_timeout = args.cell_timeout
     run_cloud = args.run_cloud or args.default
-    check_version = args.check_version or args.default
+    version_validation = args.version_validation or args.default
 
     # Add preprocessors
     preprocessor_list = []
     if run_cloud:
         preprocessor_list.append(CloudRunnerPreprocessor)
-    if check_version:
-        preprocessor_list.append(VersionCheckPreprocessor)
+    if version_validation:
+        preprocessor_list.append(VersionValidationPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
