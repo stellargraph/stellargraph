@@ -302,7 +302,7 @@ class StellarGraph:
 
     @staticmethod
     def _infer_nodes_from_edges(edges, source_column, target_column):
-
+        # `convert_edges` nicely flags any errors in edges; inference here is lax rather than duplicate that
         if isinstance(edges, dict):
             dataframes = edges.values()
         else:
