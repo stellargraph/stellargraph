@@ -301,6 +301,27 @@ class StellarGraph:
         )
 
     @staticmethod
+    def _infer_nodes_from_edges(edges, source_column, target_column):
+
+        if isinstance(edges, dict):
+            dataframes = edges.values()
+        else:
+            dataframes = [edges]
+
+        found_columns = [
+            type_edges[column]
+            for type_edges in dataframes
+            if isinstance(type_edges, pd.DataFrame)
+            for column in [source_column, target_column]
+            if column in type_edges.columns
+        ]
+
+        if found_columns:
+            return pd.unique(np.concatenate(found_columns))
+
+        return []
+
+    @staticmethod
     def from_networkx(
         graph,
         *,
@@ -1365,27 +1386,6 @@ class StellarGraph:
         ilocs = np.intersect1d(source_edge_ilocs, target_edge_ilocs, assume_unique=True)
 
         return [float(x) for x in self._edges.weights[ilocs]]
-
-    @staticmethod
-    def _infer_nodes_from_edges(edges, source_column, target_column):
-
-        if isinstance(edges, dict):
-            dataframes = edges.values()
-        else:
-            dataframes = [edges]
-
-        found_columns = [
-            type_edges[column]
-            for type_edges in dataframes
-            if isinstance(type_edges, pd.DataFrame)
-            for column in [source_column, target_column]
-            if column in type_edges.columns
-        ]
-
-        if found_columns:
-            return pd.unique(np.concatenate(found_columns))
-
-        return []
 
 
 # A convenience class that merely specifies that edges have direction.
