@@ -133,8 +133,7 @@ class CorruptedSequence(Sequence):
 
         inputs, _ = self.base_generator[index]
 
-        shuffled_feats = []
-        for group in self.corrupt_index_groups:
+        def corrupt_group(group):
             feats_orig = [inputs[idx] for idx in group]
 
             # this assumes that the input satisfies: last axis holds features for individual nodes;
@@ -151,10 +150,16 @@ class CorruptedSequence(Sequence):
 
             feats_rank_2_shuffled = np.split(all_feats_shuffled, sections[:-1])
 
-            shuffled_feats.extend(
+            return (
                 shuf.reshape(orig.shape)
                 for shuf, orig in zip(feats_rank_2_shuffled, feats_orig)
             )
+
+        shuffled_feats = [
+            corrupted
+            for group in self.corrupt_index_groups
+            for corrupted in corrupt_group(group)
+        ]
 
         # create the appropriate labels
         batch_size = inputs[0].shape[: self.num_batch_dims]
