@@ -167,10 +167,15 @@ def test_graph_constructor_nodes_from_edges():
     with pytest.raises(TypeError, match="edges: expected dict, found <class 'int'>"):
         StellarGraph(edges=1)
 
-    with pytest.raises(TypeError, match="edges.*: expected pandas DataFrame, found <class 'int'>"):
+    with pytest.raises(
+        TypeError, match="edges.*: expected pandas DataFrame, found <class 'int'>"
+    ):
         StellarGraph(edges={"a": 1})
 
-    with pytest.raises(ValueError, match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'weight'"):
+    with pytest.raises(
+        ValueError,
+        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'weight'",
+    ):
         StellarGraph(edges=pd.DataFrame(columns=["x"]))
 
 
