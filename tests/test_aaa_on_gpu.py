@@ -14,11 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# this test has to run first, because of the `tf.debugging.set_log_device_placement` call, hence the
+# file name is alphabetically early.
+
 import os
 import tensorflow as tf
 import pytest
 
-# When the environment variable is set, we are
+# When the environment variable is set, we need to be sure that we're running on a GPU
 def test_on_gpu_when_requested():
     if os.environ.get("STELLARGRAPH_MUST_USE_GPU") != "1":
         pytest.skip(
