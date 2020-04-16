@@ -121,6 +121,38 @@ def test_columnar_convert_invalid_input():
         converter.convert({"x": 1})
 
 
+def test_columnar_convert_transform_columns():
+
+    columns = {"x": np.complex128(1), "y": np.uint16(2), "z": np.float32(3.0)}
+
+    dfs = {
+        name: pd.DataFrame({"s": [0], "t": [1], "w": [w]}, index=[i])
+        for i, (name, w) in enumerate(columns.items())
+    }
+
+    converter = ColumnarConverter(
+        "some_name",
+        float,
+        column_defaults={},
+        selected_columns={"s": "ss", "t": "tt", "w": "ww",},
+        transform_columns={"w": lambda x: x + 1,},
+        allow_features=False,
+    )
+
+    converted, _ = converter.convert(dfs)
+    assert (converted["x"]["ww"] == 2).all()
+    assert (converted["y"]["ww"] == 3).all()
+    assert (converted["z"]["ww"] == 4).all()
+
+    assert (converted["x"]["ss"] == 0).all()
+    assert (converted["y"]["ss"] == 0).all()
+    assert (converted["z"]["ss"] == 0).all()
+
+    assert (converted["x"]["tt"] == 1).all()
+    assert (converted["y"]["tt"] == 1).all()
+    assert (converted["z"]["tt"] == 1).all()
+
+
 def test_convert_edges_weights():
     def run(ws):
         dfs = {
