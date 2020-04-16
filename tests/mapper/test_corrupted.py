@@ -106,16 +106,29 @@ def test_corrupted_generator_invalid():
         CorruptedGenerator(DummyGenerator([[123], [1, 123]]))
 
 
+def _data(num, shape=(3, 4, 5, 6)):
+    per_array = np.product(shape)
+    return np.arange(per_array * num, per_array * (num + 1)).reshape(shape)
+
+
+def test_corrupted_invalid_index():
+    batch = [_data(0), _data(1)]
+    corr_gen = CorruptedGenerator(DummyGenerator([[0], [2, 1, 3]], data=[batch]))
+
+    corr_seq = corr_gen.flow()
+
+    with pytest.raises(
+        ValueError,
+        match=r"corrupt_index_groups \(group number 1\): expected valid .* 2 input tensors, found some too large: 2, 3",
+    ):
+        corr_seq[0]
+
+
 def test_corrupted_flow_args():
     base_gen = DummyGenerator([[0]], check_flow_args=True)
     corr_gen = CorruptedGenerator(base_gen)
     # this hooks into the asserts in `DummyGenerator`
     corr_gen.flow("some", args=1)
-
-
-def _data(num, shape=(3, 4, 5, 6)):
-    per_array = np.product(shape)
-    return np.arange(per_array * num, per_array * (num + 1)).reshape(shape)
 
 
 def _rank2(array):

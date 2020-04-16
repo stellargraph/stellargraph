@@ -18,6 +18,7 @@ import numpy as np
 from tensorflow.keras.utils import Sequence
 
 from . import Generator
+from ..core.validation import comma_sep
 
 
 def _validate_indices(corrupt_index_groups):
@@ -133,8 +134,16 @@ class CorruptedSequence(Sequence):
 
         inputs, _ = self.base_generator[index]
 
-        def corrupt_group(group):
-            feats_orig = [inputs[idx] for idx in group]
+        def corrupt_group(group_idx, group):
+            try:
+                feats_orig = [inputs[idx] for idx in group]
+            except IndexError:
+                # Provide a better error for indices being out of bounds (doing it earlier/outside
+                # `__getitem__` would require evaluating the base generator beforehand/non-lazily)
+                invalid = [idx for idx in group if idx >= len(inputs)]
+                raise ValueError(
+                    f"corrupt_index_groups (group number {group_idx}): expected valid indices among the {len(inputs)} input tensors, found some too large: {comma_sep(invalid)}"
+                )
 
             # this assumes that the input satisfies: last axis holds features for individual nodes;
             # all earlier axes are just arranging those nodes. In particular, a node shouldn't have
@@ -157,8 +166,8 @@ class CorruptedSequence(Sequence):
 
         shuffled_feats = [
             corrupted
-            for group in self.corrupt_index_groups
-            for corrupted in corrupt_group(group)
+            for group_idx, group in enumerate(self.corrupt_index_groups)
+            for corrupted in corrupt_group(group_idx, group)
         ]
 
         # create the appropriate labels
