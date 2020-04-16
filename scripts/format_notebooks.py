@@ -201,16 +201,16 @@ class VersionValidationPreprocessor(InsertTaggedCellsPreprocessor):
     version = {}
     with open("stellargraph/version.py", "r") as fh:
         exec(fh.read(), version)
-    VERSION = version["__version__"]
+    SG_VERSION = version["__version__"]
 
     version_check_code = f"""\
 # verify that we're using the correct version of StellarGraph for this notebook
 import stellargraph as sg
 
 try:
-    sg.utils.validate_notebook_version("{VERSION}")
+    sg.utils.validate_notebook_version("{SG_VERSION}")
 except AttributeError:
-    raise ValueError(f"This notebook requires StellarGraph version {VERSION}, but a different version {{sg.__version__}} is installed.  Please see <https://github.com/stellargraph/stellargraph/issues/1172>.") from None"""
+    raise ValueError(f"This notebook requires StellarGraph version {SG_VERSION}, but a different version {{sg.__version__}} is installed.  Please see <https://github.com/stellargraph/stellargraph/issues/1172>.") from None"""
 
     def preprocess(self, nb, resources):
         self.remove_tagged_cells_from_notebook(nb)
