@@ -124,9 +124,27 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
         return cell, resources
 
 
-class CloudRunnerPreprocessor(preprocessors.Preprocessor):
+class InsertTaggedCellsPreprocessor(preprocessors.Preprocessor):
+    # abstract class working with tagged notebook cells
+    metadata_tag = ""  # tag for added cells so that we can find them easily; needs to be set in derived class
+
+    @staticmethod
+    def tags(cell):
+        return cell["metadata"].get("tags", [])
+
+    @classmethod
+    def remove_tagged_cells_from_notebook(cls, nb):
+        # remove any tagged cells we added in a previous run
+        nb.cells = [cell for cell in nb.cells if cls.metadata_tag not in cls.tags(cell)]
+
+    @classmethod
+    def tag_cell(cls, cell):
+        cell["metadata"]["tags"] = [cls.metadata_tag]
+
+
+class CloudRunnerPreprocessor(InsertTaggedCellsPreprocessor):
     path_resource_name = "cloud_runner_path"
-    metadata_tag = "CloudRunner"  # tag for added cells so that we can find them easily
+    metadata_tag = "CloudRunner"
     git_branch = "master"
     demos_path_prefix = "demos/"
 
@@ -154,16 +172,11 @@ if 'google.colab' in sys.modules:
             print(
                 f"WARNING: Notebook file path of {notebook_path} didn't start with {self.demos_path_prefix}, and may result in bad links to cloud runners."
             )
-        # remove any cells we added in a previous run
-        nb.cells = [
-            cell
-            for cell in nb.cells
-            if self.metadata_tag not in cell["metadata"].get("tags", [])
-        ]
+        self.remove_tagged_cells_from_notebook(nb)
         # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
         badge_markdown = f"<table><tr><td>Run the master version of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
         badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
-        badge_cell["metadata"]["tags"] = [self.metadata_tag]
+        self.tag_cell(badge_cell)
         # the badges go after the first cell, unless the first cell is code
         if nb.cells[0].cell_type == "code":
             nb.cells.insert(0, badge_cell)
@@ -174,15 +187,15 @@ if 'google.colab' in sys.modules:
             index for index, cell in enumerate(nb.cells) if cell.cell_type == "code"
         )
         import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
-        import_cell["metadata"]["tags"] = [self.metadata_tag]
+        self.tag_cell(import_cell)
         nb.cells.insert(first_code_cell_id, import_cell)
 
         nb.cells.append(badge_cell)  # add a badge to the bottom of notebook
         return nb, resources
 
 
-class VersionValidationPreprocessor(preprocessors.Preprocessor):
-    metadata_tag = "VersionCheck"  # tag for added cells so that we can find them easily
+class VersionValidationPreprocessor(InsertTaggedCellsPreprocessor):
+    metadata_tag = "VersionCheck"
 
     # determine the current stellargraph version
     version = {}
@@ -200,23 +213,17 @@ except AttributeError:
     raise ValueError(f"This notebook requires StellarGraph version {VERSION}, but a different version {{sg.__version__}} is installed.  Please see <https://github.com/stellargraph/stellargraph/issues/1172>.") from None"""
 
     def preprocess(self, nb, resources):
-        # remove any cells we added in a previous run
-        nb.cells = [
-            cell
-            for cell in nb.cells
-            if self.metadata_tag not in cell["metadata"].get("tags", [])
-        ]
+        self.remove_tagged_cells_from_notebook(nb)
         # find first (non-CloudRunner) code cell and insert before it
         first_code_cell_id = next(
             index
             for index, cell in enumerate(nb.cells)
             if cell.cell_type == "code"
-            and CloudRunnerPreprocessor.metadata_tag
-            not in cell["metadata"].get("tags", [])
+            and CloudRunnerPreprocessor.metadata_tag not in self.tags(cell)
         )
-        import_cell = nbformat.v4.new_code_cell(self.version_check_code)
-        import_cell["metadata"]["tags"] = [self.metadata_tag]
-        nb.cells.insert(first_code_cell_id, import_cell)
+        version_cell = nbformat.v4.new_code_cell(self.version_check_code)
+        self.tag_cell(version_cell)
+        nb.cells.insert(first_code_cell_id, version_cell)
         return nb, resources
 
 
