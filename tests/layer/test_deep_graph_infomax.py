@@ -119,31 +119,6 @@ def test_dgi_stateful():
     assert np.array_equal(embeddings_1, embeddings_2)
 
 
-@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT])
-def test_dgi_link_model(model_type):
-    G = example_graph_random()
-    emb_dim = 16
-
-    link_generator = FullBatchLinkGenerator(G)
-
-    node_generator = FullBatchNodeGenerator(G)
-    corrupted_generator = CorruptedGenerator(node_generator)
-
-    with pytest.warns(
-        UserWarning,
-        match=r"base_model: expected a node model .* found a link model \(multiplicity = 2\)",
-    ):
-        infomax = DeepGraphInfomax(
-            model_type(
-                generator=link_generator, activations=["relu"], layer_sizes=[emb_dim]
-            ),
-            corrupted_generator,
-        )
-
-    # build should work
-    _ = infomax.in_out_tensors()
-
-
 @pytest.mark.parametrize("is_directed", [False, True])
 def test_dgi_graphsage(is_directed):
 
