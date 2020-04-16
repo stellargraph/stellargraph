@@ -754,7 +754,7 @@ class StellarGraph:
         Get the :ref:`node ilocs <iloc-explanation>` for the specified node or nodes.
 
         Args:
-            nodes: (list or hashable) node IDs
+            nodes (list or hashable): node IDs
 
         Returns:
             Numpy array containing the indices for the requested nodes.
