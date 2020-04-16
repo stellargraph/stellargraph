@@ -53,7 +53,6 @@ def _validate_indices(corrupt_index_groups):
                 )
 
 
-
 class CorruptedGenerator(Generator):
     """
     Keras compatible data generator that wraps a :class:`Generator` and provides corrupted data for
