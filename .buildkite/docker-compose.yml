@@ -38,6 +38,7 @@ services:
       - BUILDKITE_TAG
       - CODECOV_TOKEN
       - NEO4J_VERSION
+      - STELLARGRAPH_MUST_USE_GPU
     depends_on:
       - ${RUNNER_DEPENDS_ON:-empty-service}
 
