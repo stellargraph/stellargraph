@@ -761,7 +761,7 @@ class StellarGraph:
         """
         return self._nodes.ids.to_iloc(nodes, strict=True)
 
-    def node_ilocs_to_ids(self, nodes):
+    def node_ilocs_to_ids(self, node_ilocs):
         """
         Get the node ids for the specified :ref:`node ilocs <iloc-explanation>`.
 
