@@ -589,6 +589,29 @@ def test_hinnodemapper_no_neighbors():
     assert np.all(batch_feats[3][:, 0, 0] == np.array([12, 0, 0]))
 
 
+def test_hinsage_corrupt_indices():
+    # prime and different feature sizes, so we can be more sure that things are lining up correctly.
+    feature_sizes = {"t1": 7, "t2": 11}
+    G, _, nodes_type_2 = example_hin_3(feature_sizes)
+
+    mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[3, 5], head_node_type="t2")
+
+    seq = mapper.flow(nodes_type_2)
+    tensors, _targets = seq[0]
+
+    groups = mapper.default_corrupt_input_index_groups()
+
+    # one group per type
+    assert len(groups) == 2
+    # every input tensor is included
+    assert {idx for g in groups for idx in g} == set(range(len(tensors)))
+
+    # check each group corresponds to nodes of a single type (i.e. the feature dimension for the
+    # tensors in each group are all the same), t2 is the head node so it should be first.
+    assert {tensors[idx].shape[-1] for idx in groups[0]} == {11}
+    assert {tensors[idx].shape[-1] for idx in groups[1]} == {7}
+
+
 def test_attri2vec_nodemapper_constructor_nx():
     """
     Attri2VecNodeGenerator requires a StellarGraph object
