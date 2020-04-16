@@ -165,6 +165,8 @@ def test_graph_constructor_nodes_from_edges():
     assert sorted(g.nodes()) == [0, 1, 2, 4, 5]
 
     # node inference shouldn't hide the real errors in an invalid 'edges' param
+    # these tests indirectly check that `_infer_nodes_from_edges` doesn't throw errors
+    # and allows errors to be picked up by ColumnarConverter
     with pytest.raises(TypeError, match="edges: expected dict, found <class 'int'>"):
         StellarGraph(edges=1)
 
