@@ -389,6 +389,7 @@ ALGORITHMS = [
         features=True,
         nc=T(link="node-classification/rgcn-node-classification"),
         lp=True,
+        rl=rl_dgi(),
     ),
     Algorithm(
         T("T-GCN", details="Temporal GCN (T-GCN), implemented as GCN-LSTM"),
