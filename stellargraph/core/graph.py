@@ -771,7 +771,7 @@ class StellarGraph:
         Returns:
             Numpy array containing the node ids for the requested nodes.
         """
-        return self._nodes.ids.from_iloc(nodes)
+        return self._nodes.ids.from_iloc(node_ilocs)
 
     def node_features(self, nodes, node_type=None):
         """
