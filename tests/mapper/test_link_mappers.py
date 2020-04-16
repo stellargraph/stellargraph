@@ -194,23 +194,21 @@ class Test_GraphSAGELinkGenerator:
     def test_GraphSAGELinkGenerator_shuffle(self):
         def test_edge_consistency(shuffle):
             G = example_graph(feature_size=1)
-            edges = list(G.edges())
-            edge_labels = list(range(len(edges)))
+            sources, targets = G.edges()
+            edge_labels = list(range(len(sources)))
 
             mapper = GraphSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
-                edges, edge_labels, shuffle=shuffle
+                (sources, targets), edge_labels, shuffle=shuffle
             )
 
             assert len(mapper) == 2
 
             for batch in range(len(mapper)):
                 nf, nl = mapper[batch]
-                e1 = edges[nl[0]]
-                e2 = edges[nl[1]]
-                assert nf[0][0, 0, 0] == e1[0]
-                assert nf[1][0, 0, 0] == e1[1]
-                assert nf[0][1, 0, 0] == e2[0]
-                assert nf[1][1, 0, 0] == e2[1]
+                assert nf[0][0, 0, 0] == sources[nl[0]]
+                assert nf[1][0, 0, 0] == targets[nl[0]]
+                assert nf[0][1, 0, 0] == sources[nl[1]]
+                assert nf[1][1, 0, 0] == targets[nl[1]]
 
         test_edge_consistency(True)
         test_edge_consistency(False)
@@ -319,7 +317,8 @@ class Test_GraphSAGELinkGenerator:
         )
 
         # Check sizes with one isolated node
-        head_links = [(1, 5)]
+
+        head_links = (np.array([1]), np.array([5]))
         gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
             head_links
         )
@@ -328,7 +327,7 @@ class Test_GraphSAGELinkGenerator:
         assert pytest.approx([1, 1, 2, 2, 4, 4]) == [x.shape[1] for x in ne]
 
         # Check sizes with two isolated nodes
-        head_links = [(4, 5)]
+        head_links = (np.array([4]), np.array([5]))
         gen = GraphSAGELinkGenerator(G, batch_size=n_batch, num_samples=n_samples).flow(
             head_links
         )
@@ -356,7 +355,7 @@ class Test_GraphSAGELinkGenerator:
         )
 
         # The flow method is not passed UnsupervisedSampler object or a list of samples is not passed
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             gen = GraphSAGELinkGenerator(
                 G, batch_size=n_batch, num_samples=n_samples
             ).flow("not_a_list_of_samples_or_a_sample_generator")
@@ -423,8 +422,9 @@ class Test_HinSAGELinkGenerator(object):
 
         # Constructor with a homogeneous graph:
         G = example_HIN_homo(self.n_feat)
-        links = [(1, 4), (1, 5), (0, 4), (5, 0)]  # ('user', 'user') links
-        link_labels = [0] * len(links)
+        sources = np.array([1, 2, 0, 5])
+        targets = np.array([4, 5, 4, 0])
+        link_labels = [0] * len(sources)
 
         gen = HinSAGELinkGenerator(
             G,
@@ -432,16 +432,17 @@ class Test_HinSAGELinkGenerator(object):
             num_samples=self.num_samples,
             head_node_types=["B", "B"],
         )
-        mapper = gen.flow(links, link_labels)
+        mapper = gen.flow((sources, targets), link_labels)
 
-        assert mapper.data_size == len(links)
-        assert len(mapper.ids) == len(links)
+        assert mapper.data_size == len(sources)
+        assert len(mapper.ids) == len(sources)
         assert tuple(gen.head_node_types) == ("B", "B")
 
         # Constructor with a heterogeneous graph:
         G = example_hin_1(self.n_feat)
-        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # ('movie', 'user') links
-        link_labels = [0] * len(links)
+        sources = np.array([1, 1, 0, 0])
+        targets = np.array([4, 5, 4, 5])
+        link_labels = [0] * len(sources)
 
         gen = HinSAGELinkGenerator(
             G,
@@ -449,10 +450,10 @@ class Test_HinSAGELinkGenerator(object):
             num_samples=self.num_samples,
             head_node_types=["A", "B"],
         )
-        mapper = gen.flow(links, link_labels)
+        mapper = gen.flow((sources, targets), link_labels)
 
-        assert mapper.data_size == len(links)
-        assert len(mapper.ids) == len(links)
+        assert mapper.data_size == len(sources)
+        assert len(mapper.ids) == len(sources)
         assert mapper.data_size == len(link_labels)
         assert tuple(gen.head_node_types) == ("A", "B")
 
@@ -460,8 +461,9 @@ class Test_HinSAGELinkGenerator(object):
         G = example_hin_1(self.n_feat)
 
         # first 3 are ('movie', 'user') links, the last is ('user', 'movie') link.
-        links = [(1, 4), (1, 5), (0, 4), (5, 0)]
-        link_labels = [0] * len(links)
+        sources = np.array([1, 1, 0, 5])
+        targets = np.array([4, 5, 4, 0])
+        link_labels = [0] * len(sources)
 
         with pytest.raises(ValueError):
             HinSAGELinkGenerator(
@@ -469,7 +471,7 @@ class Test_HinSAGELinkGenerator(object):
                 batch_size=self.batch_size,
                 num_samples=self.num_samples,
                 head_node_types=["A", "B"],
-            ).flow(links, link_labels)
+            ).flow((sources, targets), link_labels)
 
         # all edges in G, which have multiple link types
         links = G.edges()
@@ -485,8 +487,9 @@ class Test_HinSAGELinkGenerator(object):
 
     def test_HinSAGELinkGenerator_1(self):
         G = example_hin_1(self.n_feat)
-        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
-        data_size = len(links)
+        sources = np.array([1, 1, 0, 0])
+        targets = np.array([4, 5, 4, 5])
+        data_size = len(sources)
         link_labels = [0] * data_size
 
         mapper = HinSAGELinkGenerator(
@@ -494,7 +497,7 @@ class Test_HinSAGELinkGenerator(object):
             batch_size=self.batch_size,
             num_samples=self.num_samples,
             head_node_types=["A", "B"],
-        ).flow(links, link_labels)
+        ).flow((sources, targets), link_labels)
 
         assert len(mapper) == 2
 
@@ -550,23 +553,22 @@ class Test_HinSAGELinkGenerator(object):
     def test_HinSAGELinkGenerator_shuffle(self):
         def test_edge_consistency(shuffle):
             G = example_hin_1({"B": 1, "A": 1})
-            edges = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
-            data_size = len(edges)
+            sources = np.array([1, 1, 0, 0])
+            targets = np.array([4, 5, 4, 5])
+            data_size = len(sources)
             edge_labels = np.arange(data_size)
 
             mapper = HinSAGELinkGenerator(
                 G, batch_size=2, num_samples=[0], head_node_types=["A", "B"]
-            ).flow(edges, edge_labels, shuffle=shuffle)
+            ).flow((sources, targets), edge_labels, shuffle=shuffle)
 
             assert len(mapper) == 2
             for batch in range(len(mapper)):
                 nf, nl = mapper[batch]
-                e1 = edges[nl[0]]
-                e2 = edges[nl[1]]
-                assert nf[0][0, 0, 0] == e1[0]
-                assert nf[1][0, 0, 0] == e1[1]
-                assert nf[0][1, 0, 0] == e2[0]
-                assert nf[1][1, 0, 0] == e2[1]
+                assert nf[0][0, 0, 0] == sources[nl[0]]
+                assert nf[1][0, 0, 0] == targets[nl[0]]
+                assert nf[0][1, 0, 0] == sources[nl[1]]
+                assert nf[1][1, 0, 0] == targets[nl[1]]
 
         test_edge_consistency(True)
         test_edge_consistency(False)
@@ -576,15 +578,16 @@ class Test_HinSAGELinkGenerator(object):
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
         G = example_hin_1(self.n_feat)
-        links = [(1, 4), (1, 5), (0, 4), (0, 5)]  # selected ('movie', 'user') links
-        data_size = len(links)
+        sources = np.array([1, 1, 0, 0])
+        targets = np.array([4, 5, 4, 5])
+        data_size = len(sources)
 
         gen = HinSAGELinkGenerator(
             G,
             batch_size=self.batch_size,
             num_samples=self.num_samples,
             head_node_types=["A", "B"],
-        ).flow(links)
+        ).flow((sources, targets))
         for i in range(len(gen)):
             assert gen[i][1] is None
 
@@ -604,7 +607,7 @@ class Test_HinSAGELinkGenerator(object):
         )
 
         # Non-isolate + isolate
-        head_links = [(hnodes["A"][0], hnodes["B"][-1])]
+        head_links = (np.array([hnodes["A"][0]]), np.array([hnodes["B"][-1]]))
         gen = HinSAGELinkGenerator(
             Gh, batch_size=n_batch, num_samples=n_samples, head_node_types=["A", "B"]
         )
@@ -615,7 +618,7 @@ class Test_HinSAGELinkGenerator(object):
         assert pytest.approx([1, 1, 2, 2, 2, 4, 4, 4, 4, 4]) == [x.shape[1] for x in ne]
 
         # Two isolates
-        head_links = [(hnodes["B"][-2], hnodes["B"][-1])]
+        head_links = (np.array([hnodes["B"][-2]]), np.array([hnodes["B"][-1]]))
         gen = HinSAGELinkGenerator(
             Gh, batch_size=n_batch, num_samples=n_samples, head_node_types=["B", "B"]
         )
@@ -681,22 +684,24 @@ class Test_Attri2VecLinkGenerator:
 
     def test_edge_consistency(self):
         G = example_graph(feature_size=1)
-        edges = list(G.edges())
+        sources, targets = G.edges()
         nodes = list(G.nodes())
-        edge_labels = list(range(len(edges)))
+        edge_labels = list(range(len(sources)))
 
-        mapper = Attri2VecLinkGenerator(G, batch_size=2).flow(edges, edge_labels)
+        mapper = Attri2VecLinkGenerator(G, batch_size=2).flow((sources, targets), edge_labels)
 
         assert len(mapper) == 2
 
         for batch in range(len(mapper)):
             nf, nl = mapper[batch]
-            e1 = edges[nl[0]]
-            e2 = edges[nl[1]]
-            assert nf[0][0, 0] == e1[0]
-            assert nf[1][0] == nodes.index(e1[1])
-            assert nf[0][1, 0] == e2[0]
-            assert nf[1][1] == nodes.index(e2[1])
+            s1 = sources[nl[0]]
+            t1 = targets[nl[0]]
+            s2 = sources[nl[1]]
+            t2 = targets[nl[1]]
+            assert nf[0][0, 0] == s1
+            assert nf[1][0] == nodes.index(t1)
+            assert nf[0][1, 0] == s2
+            assert nf[1][1] == nodes.index(t2)
 
     def test_Attri2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
@@ -736,7 +741,7 @@ class Test_Attri2VecLinkGenerator:
         gen = Attri2VecLinkGenerator(G, batch_size=n_batch).flow(unsupervisedSamples)
 
         # The flow method is not passed UnsupervisedSampler object or a list of samples is not passed
-        with pytest.raises(KeyError):
+        with pytest.raises(TypeError):
             gen = Attri2VecLinkGenerator(G, batch_size=n_batch).flow(
                 "not_a_list_of_samples_or_a_sample_generator"
             )
