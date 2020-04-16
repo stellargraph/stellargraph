@@ -493,7 +493,7 @@ class StellarGraph:
 
     def edges(
         self, include_edge_type=False, include_edge_weight=False
-    ) -> Iterable[Any]:
+    ) -> Iterable[np.array]:
         """
         Obtains the collection of edges in the graph.
 
@@ -504,7 +504,8 @@ class StellarGraph:
             Weights are returned in a separate list.
 
         Returns:
-            The graph edges. If edge weights are included then a tuple of (edges, weights)
+            A tuple containing 1D arrays of the source and target nodes (sources, targets). Setting include_edge_type
+                and/or include_edge_weight to True will include arrays of edge types and/or edge weights in this tuple.
         """
         edges = (self._edges.sources, self._edges.targets)
 
@@ -552,17 +553,14 @@ class StellarGraph:
 
         return list(other_node_id)
 
-    def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
-    ) -> Iterable[Any]:
+    def neighbors(self, node: Any, include_edge_weight=False, edge_types=None):
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
 
         Args:
             node (any): The node in question.
-            include_edge_weight (bool, default False): If True, each neighbour in the
-                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
+            include_edge_weight (bool, default False): If True an array of edge weights is also returned.
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
 

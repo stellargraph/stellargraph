@@ -100,7 +100,7 @@ class BatchedLinkGenerator(abc.ABC):
         False for prediction.
 
         Args:
-            link_ids: an iterable of tuples of node IDs as (source, target)
+            link_ids: a tuple of 1D numpy arrays containing the source and target nodes (sources, targets)
             targets: a 2D array of numeric targets with shape
                 `(len(link_ids), target_size)`
             shuffle (bool): If True the links will be shuffled at each
