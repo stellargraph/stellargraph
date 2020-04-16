@@ -78,6 +78,7 @@ def test_benchmark_link_generator_small(benchmark):
     G = example_Graph_2(n_feat)
     nodes = list(G.nodes())
     edges_to_sample = np.reshape(random.choices(nodes, k=2 * n_edges), (n_edges, 2))
+    edges_to_sample = (edges_to_sample[:, 0], edges_to_sample[:, 1])
 
     generator = GraphSAGELinkGenerator(
         G, batch_size=batch_size, num_samples=num_samples
@@ -103,6 +104,7 @@ def test_benchmark_link_generator_large(benchmark):
     G = example_Graph_2(n_feat, 5000, 20000)
     nodes = list(G.nodes())
     edges_to_sample = np.reshape(random.choices(nodes, k=2 * n_edges), (n_edges, 2))
+    edges_to_sample = (edges_to_sample[:, 0], edges_to_sample[:, 1])
 
     generator = GraphSAGELinkGenerator(
         G, batch_size=batch_size, num_samples=num_samples
