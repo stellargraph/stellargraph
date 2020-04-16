@@ -122,7 +122,11 @@ class BatchedLinkGenerator(abc.ABC):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
         # Otherwise pass iterable (check?) to standard LinkSequence
-        elif (len(link_ids) == 2) and is_real_iterable(link_ids[0]) and is_real_iterable(link_ids[1]):
+        elif (
+            (len(link_ids) == 2)
+            and is_real_iterable(link_ids[0])
+            and is_real_iterable(link_ids[1])
+        ):
             link_ids = np.stack(link_ids, axis=1)
             for ii in range(link_ids.shape[0]):
                 src, dst = link_ids[ii, 0], link_ids[ii, 1]

@@ -438,7 +438,10 @@ def test_edges_include_edge_type():
     r = {(src, dst, "R") for src, dst in [(0, 4), (1, 4), (1, 5), (2, 4), (3, 5)]}
     f = {(4, 5, "F")}
     expected = normalize_edges(r | f, directed=False)
-    assert normalize_edges(list(zip(*g.edges(include_edge_type=True))), directed=False) == expected
+    assert (
+        normalize_edges(list(zip(*g.edges(include_edge_type=True))), directed=False)
+        == expected
+    )
 
 
 def numpy_to_list(x):
@@ -707,7 +710,8 @@ def test_neighbors_unweighted_hom(is_directed):
     graph = example_unweighted_hom(is_directed=is_directed)
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
-        list(zip(*graph.neighbors(1, include_edge_weight=True))), [(0, 1), (0, 1), (2, 1), (3, 1)],
+        list(zip(*graph.neighbors(1, include_edge_weight=True))),
+        [(0, 1), (0, 1), (2, 1), (3, 1)],
     )
     assert_items_equal(
         list(zip(*graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]))), []
@@ -734,7 +738,9 @@ def test_in_nodes_weighted_hin():
 def test_in_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.in_nodes(1), [0, 0])
-    assert_items_equal(list(zip(*graph.in_nodes(1, include_edge_weight=True))), [(0, 1), (0, 1)])
+    assert_items_equal(
+        list(zip(*graph.in_nodes(1, include_edge_weight=True))), [(0, 1), (0, 1)]
+    )
     assert_items_equal(
         list(zip(*graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]))), []
     )
@@ -754,7 +760,9 @@ def test_out_nodes_weighted_hin():
 def test_out_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.out_nodes(1), [2, 3])
-    assert_items_equal(list(zip(*graph.out_nodes(1, include_edge_weight=True))), [(2, 1), (3, 1)])
+    assert_items_equal(
+        list(zip(*graph.out_nodes(1, include_edge_weight=True))), [(2, 1), (3, 1)]
+    )
     assert_items_equal(
         list(zip(*graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]))), []
     )
@@ -1309,8 +1317,12 @@ def test_subgraph(is_directed, nodes):
 
     assert set(sub.nodes()) == set(expected.nodes())
 
-    sub_sources, sub_targets, _, sub_weights = sub.edges(include_edge_type=True, include_edge_weight=True)
-    exp_sources, exp_targets, _, exp_weights = expected.edges(include_edge_type=True, include_edge_weight=True)
+    sub_sources, sub_targets, _, sub_weights = sub.edges(
+        include_edge_type=True, include_edge_weight=True
+    )
+    exp_sources, exp_targets, _, exp_weights = expected.edges(
+        include_edge_type=True, include_edge_weight=True
+    )
 
     sub_edges = normalize_edges(list(zip(sub_sources, sub_targets)), is_directed)
     exp_edges = normalize_edges(list(zip(exp_sources, exp_targets)), is_directed)

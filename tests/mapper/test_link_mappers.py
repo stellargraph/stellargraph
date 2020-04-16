@@ -688,7 +688,9 @@ class Test_Attri2VecLinkGenerator:
         nodes = list(G.nodes())
         edge_labels = list(range(len(sources)))
 
-        mapper = Attri2VecLinkGenerator(G, batch_size=2).flow((sources, targets), edge_labels)
+        mapper = Attri2VecLinkGenerator(G, batch_size=2).flow(
+            (sources, targets), edge_labels
+        )
 
         assert len(mapper) == 2
 
