@@ -25,13 +25,16 @@ class SortPooling(Layer):
     """
     Sort Pooling Keras layer.
 
-    Original paper: An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
+    Note that sorting is performed using only the last column of the input tensor as stated in [1], "For convenience,
+    we set the last graph convolution to have one channel and only used this single channel for sorting."
+    
+    [1] An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
     Y. Chen, AAAI-18, https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17146
 
 
     Args:
         k (int): The number of rows of output tensor.
-        flatten_output (bool): Output tensor is reshaped to vector if True.
+        flatten_output (bool): If True then the output tensor is reshaped to vector for each tensor in the batch.
 
     """
 
@@ -49,7 +52,7 @@ class SortPooling(Layer):
         Returns:
             A dictionary that contains the config of the layer
         """
-        return {"k": self.k}
+        return {"k": self.k, "flatten_output": self.flatten_output}
 
     def compute_output_shape(self, input_shapes):
         """
@@ -109,7 +112,6 @@ class SortPooling(Layer):
 
         embeddings, mask = inputs[0], inputs[1]
 
-        # sorting
         outputs = tf.map_fn(
             self._sort_tensor_with_mask, (embeddings, mask), dtype=embeddings.dtype
         )
