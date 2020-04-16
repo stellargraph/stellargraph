@@ -9,7 +9,7 @@ services:
         PYTHON_VERSION: "3.6"
         # this can be set at the build level to have the whole build use pre-release versions of
         # dependencies
-        PRERELEASE_VERSIONS: "${PRERELEASE_VERSIONS:-0}"
+        PRERELEASE_VERSIONS: &prerelease "${PRERELEASE_VERSIONS:-0}"
     working_dir: /workdir
     volumes: &runner-volumes
       - $PWD:/workdir
@@ -50,6 +50,7 @@ services:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
+        PRERELEASE_VERSIONS: *prerelease
 
   # a service that does nothing to use as a default depends_on for the runners
   empty-service:
