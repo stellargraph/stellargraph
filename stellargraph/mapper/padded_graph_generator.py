@@ -67,7 +67,7 @@ class PaddedGraphGenerator(Generator):
         self.graphs = graphs
         self.name = name
 
-    def flow(self, graph_ilocs, targets=None, batch_size=1, name=None):
+    def flow(self, graph_ilocs, targets=None, symmetric_normalization=True, batch_size=1, name=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
         with the supplied graph indexes and targets.
@@ -77,6 +77,10 @@ class PaddedGraphGenerator(Generator):
                 (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
                 len(targets))`.
+            symmetric_normalization (bool, optional): The type of normalization to be applied on the graph adjacency
+                matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
+                degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
+                matrix.
             batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
 
@@ -110,6 +114,7 @@ class PaddedGraphGenerator(Generator):
         return PaddedGraphSequence(
             graphs=[self.graphs[i] for i in graph_ilocs],
             targets=targets,
+            symmetric_normalization=symmetric_normalization,
             batch_size=batch_size,
             name=name,
         )
