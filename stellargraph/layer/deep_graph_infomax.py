@@ -16,6 +16,7 @@
 
 from . import GCN, GAT, APPNP, PPNP, GraphSAGE, DirectedGraphSAGE
 from .misc import deprecated_model_function
+from ..mapper import CorruptedGenerator
 
 from tensorflow.keras.layers import Input, Lambda, Layer, GlobalAveragePooling1D
 import tensorflow as tf
@@ -107,25 +108,35 @@ class DeepGraphInfomax:
         base_model: the base stellargraph model class
     """
 
-    def __init__(self, base_model):
+    def __init__(self, base_model, corrupted_generator=None):
 
-        if isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
-            self._corruptible_inputs_idxs = [0]
-        elif isinstance(base_model, DirectedGraphSAGE):
-            self._corruptible_inputs_idxs = np.arange(base_model.max_slots)
-        elif isinstance(base_model, GraphSAGE):
-            self._corruptible_inputs_idxs = np.arange(base_model.max_hops + 1)
-        else:
-            raise TypeError(
-                f"base_model: expected GCN, GAT, APPNP, PPNP, GraphSAGE,"
-                f"or DirectedGraphSAGE, found {type(base_model).__name__}"
-            )
-
-        if base_model.multiplicity != 1:
+        if corrupted_generator is None:
             warnings.warn(
-                f"base_model: expected a node model (multiplicity = 1), found a link model (multiplicity = {base_model.multiplicity}). Base model tensors will be constructed as for a node model.",
+                "The 'corrupted_generator' parameter should be set to an instance of `CorruptedGenerator`, because the support for specific algorithms is being replaced by a more general form",
+                DeprecationWarning,
                 stacklevel=2,
             )
+            if isinstance(base_model, (GCN, GAT, APPNP, PPNP)):
+                self._corruptible_inputs_idxs = [0]
+            elif isinstance(base_model, DirectedGraphSAGE):
+                self._corruptible_inputs_idxs = np.arange(base_model.max_slots)
+            elif isinstance(base_model, GraphSAGE):
+                self._corruptible_inputs_idxs = np.arange(base_model.max_hops + 1)
+            else:
+                raise TypeError(
+                    f"base_model: expected GCN, GAT, APPNP, PPNP, GraphSAGE,"
+                    f"or DirectedGraphSAGE, found {type(base_model).__name__}"
+                )
+        elif not isinstance(corrupted_generator, CorruptedGenerator):
+            raise TypeError(
+                f"corrupted_generator: expected a CorruptedGenerator, found {type(corrupted_generator).__name__}"
+            )
+        else:
+            self._corruptible_inputs_idxs = [
+                idx
+                for group in corrupted_generator.corrupt_index_groups
+                for idx in group
+            ]
 
         self.base_model = base_model
 
@@ -149,7 +160,7 @@ class DeepGraphInfomax:
             input and output layers for use with a keras model
         """
 
-        x_inp, node_feats = self.base_model.in_out_tensors(multiplicity=1)
+        x_inp, node_feats = self.base_model.in_out_tensors()
 
         x_corr = [
             Input(batch_shape=x_inp[i].shape) for i in self._corruptible_inputs_idxs
@@ -184,7 +195,7 @@ class DeepGraphInfomax:
         )
 
         # these tensors should link into the weights that get trained by `build`
-        x_emb_in, x_emb_out = self.base_model.in_out_tensors(multiplicity=1)
+        x_emb_in, x_emb_out = self.base_model.in_out_tensors()
 
         # squeeze out batch dim of full batch models
         if len(x_emb_out.shape) == 3:

@@ -67,6 +67,9 @@ class PaddedGraphGenerator(Generator):
         self.graphs = graphs
         self.name = name
 
+    def num_batch_dims(self):
+        return 1
+
     def flow(self, graph_ilocs, targets=None, batch_size=1, name=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction

@@ -59,6 +59,9 @@ class AdjacencyPowerGenerator(Generator):
 
         self.num_powers = num_powers
 
+    def num_batch_dims(self):
+        return 1
+
     def flow(self, batch_size, num_parallel_calls=1):
         """
         Creates the `tensorflow.data.Dataset` object for training node embeddings from powers of the adjacency matrix.
