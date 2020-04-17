@@ -112,12 +112,12 @@ def test_mask():
 
 
 def test_flatten_output():
-    data = np.array([[3, 4, 0], [1, 2, -1], [5, 0, 1]], dtype=int).reshape((1, 3, 3))
-    mask = np.array([[True, True, True]])
+    data = np.array([[3, 1], [1, 2], [5, 0], [0, -4]], dtype=int).reshape((2, 2, 2))
+    mask = np.array([[True, True], [True, True]])
 
-    data_sorted = np.array([[5, 0, 1, 3, 4, 0, 1, 2, -1]], dtype=int).reshape((1, 9))
+    data_sorted = np.array([[1, 2, 3, 1], [5, 0, 0, -4]], dtype=int)
 
-    layer = SortPooling(k=3, flatten_output=True)
+    layer = SortPooling(k=2, flatten_output=True)
 
     data_out = layer([data, mask])
 
