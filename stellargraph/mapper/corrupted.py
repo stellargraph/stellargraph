@@ -117,22 +117,22 @@ class CorruptedSequence(Sequence):
     data for training Deep Graph Infomax.
 
     Args:
-        base_generator: the uncorrupted Sequence object.
+        base_sequence: the uncorrupted Sequence object.
         corrupt_index_groups: the groups among which nodes will be shuffled (see :class:`CorruptedGenerator` for more details)
         num_batch_dims: the number of axes that are "batch" dimensions
     """
 
-    def __init__(self, base_generator, corrupt_index_groups, num_batch_dims):
+    def __init__(self, base_sequence, corrupt_index_groups, num_batch_dims):
         self.corrupt_index_groups = corrupt_index_groups
-        self.base_generator = base_generator
+        self.base_sequence = base_sequence
         self.num_batch_dims = num_batch_dims
 
     def __len__(self):
-        return len(self.base_generator)
+        return len(self.base_sequence)
 
     def __getitem__(self, index):
 
-        inputs, _ = self.base_generator[index]
+        inputs, _ = self.base_sequence[index]
 
         def corrupt_group(group_idx, group):
             try:
