@@ -710,7 +710,7 @@ class StellarGraph:
         )
         return list(self.nodes(node_type=node_type))
 
-    def node_type(self, node):
+    def node_type(self, node, use_ilocs=False):
         """
         Get the type of the node
 
@@ -721,8 +721,9 @@ class StellarGraph:
             Node type
         """
         nodes = [node]
-        node_ilocs = self._nodes.ids.to_iloc(nodes, strict=True)
-        type_sequence = self._nodes.type_of_iloc(node_ilocs)
+        if not use_ilocs:
+            nodes = self._nodes.ids.to_iloc(nodes, strict=True)
+        type_sequence = self._nodes.type_of_iloc(nodes)
 
         assert len(type_sequence) == 1
         return type_sequence[0]
@@ -794,7 +795,7 @@ class StellarGraph:
         """
         return self._nodes.ids.from_iloc(node_ilocs)
 
-    def node_features(self, nodes, node_type=None):
+    def node_features(self, nodes, node_type=None, use_ilocs=False):
         """
         Get the numeric feature vectors for the specified node or nodes.
         If the node type is not specified the node types will be found
@@ -810,7 +811,13 @@ class StellarGraph:
         """
         nodes = np.asarray(nodes)
 
-        node_ilocs = self._nodes.ids.to_iloc(nodes)
+        if use_ilocs:
+            node_ilocs = nodes
+            node_ilocs[node_ilocs == None] = -1
+            node_ilocs = node_ilocs.astype(int)
+        else:
+            node_ilocs = self._nodes.ids.to_iloc(nodes)
+
         valid = self._nodes.ids.is_valid(node_ilocs)
         all_valid = valid.all()
         valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
@@ -839,8 +846,9 @@ class StellarGraph:
         # instead use an impossible integer (e.g. 2**64 - 1)
 
         # everything that's not the sentinel should be valid
-        non_nones = nodes != None
-        self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
+        if not use_ilocs:
+            non_nones = nodes != None
+            self._nodes.ids.require_valid(nodes[non_nones], node_ilocs[non_nones])
 
         sampled = self._nodes.features(node_type, valid_ilocs)
         features = np.zeros((len(nodes), sampled.shape[1]))

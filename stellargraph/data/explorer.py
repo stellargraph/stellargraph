@@ -102,12 +102,12 @@ class GraphWalk(object):
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None):
+    def __init__(self, graph, graph_schema=None, seed=None, use_ilocs=False):
         self.graph = graph
 
         # Initialize the random state
         self._check_seed(seed)
-
+        self.use_ilocs = use_ilocs
         self._random_state, self._np_random_state = random_state(seed)
 
         # We require a StellarGraph for this
@@ -159,9 +159,9 @@ class GraphWalk(object):
         return rs
 
     def neighbors(self, node):
-        if not self.graph.has_node(node):
+        if not self.use_ilocs and not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbors(node)
+        return self.graph.neighbors(node, use_ilocs=self.use_ilocs)
 
     def run(self, *args, **kwargs):
         """
@@ -659,6 +659,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     # consider the subgraph up to and including max_hops from root node
                     if depth > max_hops:
                         continue
+
                     neighbours = (
                         self.neighbors(cur_node) if cur_node is not None else []
                     )
@@ -715,7 +716,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph.node_type(node)
+                node_type = self.graph.node_type(node, use_ilocs=self.use_ilocs)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
@@ -765,9 +766,9 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None):
-        super().__init__(graph, graph_schema, seed)
-        if not graph.is_directed():
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.graph.is_directed():
             self._raise_error("Graph must be directed")
 
     def run(self, nodes, in_size, out_size, n=1, seed=None):
