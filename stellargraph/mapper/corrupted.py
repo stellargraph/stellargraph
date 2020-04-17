@@ -118,7 +118,7 @@ class CorruptedSequence(Sequence):
 
     Args:
         base_generator: the uncorrupted Sequence object.
-        corrupt_index_groups: the groups among which nodes will be shuffled (see :class:`CorruptGenerator` for more details)
+        corrupt_index_groups: the groups among which nodes will be shuffled (see :class:`CorruptedGenerator` for more details)
         num_batch_dims: the number of axes that are "batch" dimensions
     """
 
