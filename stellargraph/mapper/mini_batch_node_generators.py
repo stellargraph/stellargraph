@@ -147,6 +147,9 @@ class ClusterNodeGenerator(Generator):
         # Get the features for the nodes
         self.features = G.node_features(self.node_list)
 
+    def num_batch_dims(self):
+        return 2
+
     def flow(self, node_ids, targets=None, name=None):
         """
         Creates a generator/sequence object for training, evaluation, or prediction

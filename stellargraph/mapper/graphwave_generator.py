@@ -93,6 +93,9 @@ class GraphWaveGenerator(Generator):
             dense_shape=laplacian.shape,
         )
 
+    def num_batch_dims(self):
+        return 1
+
     def flow(
         self,
         node_ids,
