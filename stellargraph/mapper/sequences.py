@@ -548,14 +548,22 @@ class PaddedGraphSequence(Sequence):
             where N is the number of graphs and C is the target size (e.g., number of classes.)
         normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
             be normalized or not. The default is True.
-        symmetric_normalisation (bool, optional): Use symmetric normalization if True, that is left and right multiply
-            adjacency matrix by the inverse square root of the degree matrix; otherwise left multiply the adjacency
-            matrix by the inverse of the degree matrix. Used only if normalize=True otherwise ignored.
+        symmetric_normalization (bool, optional): Use symmetric normalization if True, that is left and right multiply
+            the adjacency matrix by the inverse square root of the degree matrix; otherwise left multiply the adjacency
+            matrix by the inverse of the degree matrix. This parameter is ignored if normalize=False.
         batch_size (int, optional): The batch size. It defaults to 1.
         name (str, optional): An optional name for this generator object.
     """
 
-    def __init__(self, graphs, targets=None, normalize=True, symmetric_normalization=True, batch_size=1, name=None):
+    def __init__(
+        self,
+        graphs,
+        targets=None,
+        normalize=True,
+        symmetric_normalization=True,
+        batch_size=1,
+        name=None,
+    ):
 
         self.name = name
         self.graphs = np.asanyarray(graphs)
@@ -574,7 +582,10 @@ class PaddedGraphSequence(Sequence):
 
         if self.normalize_adj:
             self.normalized_adjs = [
-                normalize_adj(graph.to_adjacency_matrix(), symmetric=symmetric_normalization) for graph in graphs
+                normalize_adj(
+                    graph.to_adjacency_matrix(), symmetric=symmetric_normalization
+                )
+                for graph in graphs
             ]
         else:
             self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]

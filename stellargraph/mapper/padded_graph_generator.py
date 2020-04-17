@@ -67,7 +67,14 @@ class PaddedGraphGenerator(Generator):
         self.graphs = graphs
         self.name = name
 
-    def flow(self, graph_ilocs, targets=None, symmetric_normalization=True, batch_size=1, name=None):
+    def flow(
+        self,
+        graph_ilocs,
+        targets=None,
+        symmetric_normalization=True,
+        batch_size=1,
+        name=None,
+    ):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
         with the supplied graph indexes and targets.
