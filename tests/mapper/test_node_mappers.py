@@ -654,8 +654,8 @@ def test_attri2vec_nodemapper_1():
     assert nf.shape == (1, n_feat)
 
     # This will fail as the nodes are not in the graph
-    #    with pytest.raises(KeyError):
-    Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
+    with pytest.raises(KeyError):
+        Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
 
 
 def test_attri2vec_nodemapper_2():
