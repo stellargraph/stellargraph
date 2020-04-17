@@ -26,7 +26,6 @@ __all__ = [
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
     "PaddedGraphSequence",
-    "CorruptedNodeSequence",
 ]
 
 import warnings
@@ -640,65 +639,3 @@ class PaddedGraphSequence(Sequence):
         self.normalized_adjs = self.normalized_adjs[indexes]
         if self.targets is not None:
             self.targets = self.targets[indexes]
-
-
-class CorruptedNodeSequence(Sequence):
-    """
-    Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
-    data for training Deep Graph Infomax.
-
-    Args:
-        base_generator: the uncorrupted Sequence object.
-    """
-
-    def __init__(self, base_generator):
-
-        self.base_generator = base_generator
-
-        if isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
-            self.targets = np.tile(
-                [1.0, 0.0], reps=(1, len(base_generator.target_indices), 1),
-            )
-        elif isinstance(base_generator, NodeSequence):
-            self.targets = np.tile([1.0, 0.0], reps=(base_generator.batch_size, 1))
-        else:
-            raise TypeError(
-                f"base_generator: expected FullBatchSequence, SparseFullBatchSequence, "
-                f"or NodeSequence, found {type(base_generator).__name__}"
-            )
-
-    def __len__(self):
-        return len(self.base_generator)
-
-    def __getitem__(self, index):
-
-        inputs, _ = self.base_generator[index]
-
-        if isinstance(
-            self.base_generator, (FullBatchSequence, SparseFullBatchSequence)
-        ):
-
-            features = inputs[0]
-            shuffled_idxs = np.random.permutation(features.shape[1])
-            shuffled_feats = [features[:, shuffled_idxs, :]]
-            targets = self.targets
-
-        else:
-
-            features = inputs
-            feature_dim = features[0].shape[-1]
-            head_nodes = features[0].shape[0]
-
-            shuffled_feats = np.concatenate(
-                [x.reshape(-1, feature_dim) for x in features], axis=0,
-            )
-
-            np.random.shuffle(shuffled_feats)
-            shuffled_feats = shuffled_feats.reshape((head_nodes, -1, feature_dim))
-            shuffled_feats = np.split(
-                shuffled_feats, np.cumsum([y.shape[1] for y in features])[:-1], axis=1
-            )
-
-            targets = self.targets[:head_nodes, :]
-
-        return shuffled_feats + inputs, targets

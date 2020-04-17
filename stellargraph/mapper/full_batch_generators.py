@@ -23,7 +23,6 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
-    "CorruptedGenerator",
 ]
 
 import warnings
@@ -42,7 +41,6 @@ from . import (
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
-    CorruptedNodeSequence,
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
 )
@@ -498,39 +496,3 @@ class RelationalFullBatchNodeGenerator(Generator):
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
-
-
-class CorruptedGenerator(Generator):
-    """
-    Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
-    data for training Deep Graph Infomax.
-
-    Args:
-        base_generator: the uncorrupted Sequence object.
-    """
-
-    def __init__(self, base_generator):
-
-        if not isinstance(
-            base_generator,
-            (
-                FullBatchNodeGenerator,
-                GraphSAGENodeGenerator,
-                DirectedGraphSAGENodeGenerator,
-            ),
-        ):
-            raise TypeError(
-                f"base_generator: expected FullBatchNodeGenerator, GraphSAGENodeGenerator, "
-                f"or DirectedGraphSAGENodeGenerator, found {type(base_generator).__name__}"
-            )
-        self.base_generator = base_generator
-
-    def flow(self, *args, **kwargs):
-        """
-        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
-
-        Args:
-            args: the positional arguments for the self.base_generator.flow(...) method
-            kwargs: the keyword arguments for the self.base_generator.flow(...) method
-        """
-        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
