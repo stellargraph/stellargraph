@@ -511,10 +511,12 @@ class StellarGraph:
         Obtains the collection of edges in the graph.
 
         Args:
-            include_edge_type (bool): A flag that indicates whether to return edge types
-            of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
-            include_edge_weight (bool): A flag that indicates whether to return edge weights.
-            Weights are returned in a separate list.
+            include_edge_type (bool):
+                A flag that indicates whether to return edge types of format (node 1, node 2, edge
+                type) or edge pairs of format (node 1, node 2).
+            include_edge_weight (bool):
+                A flag that indicates whether to return edge weights.  Weights are returned in a
+                separate list.
             use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>`
 
         Returns:

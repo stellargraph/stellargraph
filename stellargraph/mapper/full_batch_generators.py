@@ -23,7 +23,6 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
-    "CorruptedGenerator",
 ]
 
 import warnings
@@ -38,10 +37,10 @@ from functools import reduce
 from tensorflow.keras.utils import Sequence
 
 from . import (
+    Generator,
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
-    CorruptedNodeSequence,
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
 )
@@ -49,10 +48,8 @@ from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 
-from abc import ABC
 
-
-class FullBatchGenerator(ABC):
+class FullBatchGenerator(Generator):
     multiplicity = None
 
     def __init__(
@@ -365,7 +362,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         return super().flow(link_ids, targets)
 
 
-class RelationalFullBatchNodeGenerator:
+class RelationalFullBatchNodeGenerator(Generator):
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
@@ -499,39 +496,3 @@ class RelationalFullBatchNodeGenerator:
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
-
-
-class CorruptedGenerator:
-    """
-    Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
-    data for training Deep Graph Infomax.
-
-    Args:
-        base_generator: the uncorrupted Sequence object.
-    """
-
-    def __init__(self, base_generator):
-
-        if not isinstance(
-            base_generator,
-            (
-                FullBatchNodeGenerator,
-                GraphSAGENodeGenerator,
-                DirectedGraphSAGENodeGenerator,
-            ),
-        ):
-            raise TypeError(
-                f"base_generator: expected FullBatchNodeGenerator, GraphSAGENodeGenerator, "
-                f"or DirectedGraphSAGENodeGenerator, found {type(base_generator).__name__}"
-            )
-        self.base_generator = base_generator
-
-    def flow(self, *args, **kwargs):
-        """
-        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
-
-        Args:
-            args: the positional arguments for the self.base_generator.flow(...) method
-            kwargs: the keyword arguments for the self.base_generator.flow(...) method
-        """
-        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))

@@ -15,10 +15,11 @@
 # limitations under the License.
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from .sequences import GraphSequence
+from .sequences import PaddedGraphSequence
+from .base import Generator
 
 
-class GraphGenerator:
+class PaddedGraphGenerator(Generator):
     """
     A data generator for use with graph classification algorithms.
 
@@ -27,8 +28,10 @@ class GraphGenerator:
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    This generator supplies the features arrays and the adjacency matrices to a
-    mini-batch Keras graph classification model.
+    This generator supplies the features arrays and the adjacency matrices to a mini-batch Keras
+    graph classification model. Differences in the number of nodes are resolved by padding each
+    batch of features and adjacency matrices, and supplying a boolean mask indicating which are
+    valid and which are padding.
 
     Args:
         graphs (list): a collection of ready for machine-learning StellarGraph-type objects
@@ -78,7 +81,7 @@ class GraphGenerator:
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A :class:`GraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
+            A :class:`PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
@@ -104,7 +107,7 @@ class GraphGenerator:
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
-        return GraphSequence(
+        return PaddedGraphSequence(
             graphs=[self.graphs[i] for i in graph_ilocs],
             targets=targets,
             batch_size=batch_size,

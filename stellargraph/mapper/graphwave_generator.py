@@ -18,11 +18,12 @@ from tensorflow.keras import backend as K
 import numpy as np
 from ..core import StellarGraph
 from ..core.validation import require_integer_in_range
+from .base import Generator
 from scipy.sparse.linalg import eigs
 from scipy.sparse import diags
 
 
-class GraphWaveGenerator:
+class GraphWaveGenerator(Generator):
     """
     Implementation of the GraphWave structural embedding algorithm from the paper: "Learning Structural Node Embeddings
     via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)

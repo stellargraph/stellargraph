@@ -95,7 +95,11 @@ class ColumnarConverter:
             known[column] = transform(known[column])
 
         if self.allow_features:
-            features = other.to_numpy(dtype=self.dtype)
+            # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
+            # operations are more common (e.g. slicing out a couple of row, when sampling a few
+            # nodes) than column-level ones so having rows be contiguous (C order) is much more
+            # efficient.
+            features = np.ascontiguousarray(other.to_numpy(dtype=self.dtype))
         elif len(other.columns) == 0:
             features = None
         else:

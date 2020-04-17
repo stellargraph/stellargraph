@@ -29,9 +29,10 @@ from tensorflow.keras.utils import Sequence
 from scipy import sparse
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable, normalize_adj
+from .base import Generator
 
 
-class ClusterNodeGenerator:
+class ClusterNodeGenerator(Generator):
     """
     A data generator for use with ClusterGCN models on homogeneous graphs, [1].
 

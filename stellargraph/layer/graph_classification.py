@@ -29,7 +29,7 @@ from tensorflow.keras.layers import (
 )
 
 from .misc import deprecated_model_function
-from ..mapper import GraphGenerator
+from ..mapper import PaddedGraphGenerator
 from .cluster_gcn import ClusterGraphConvolution
 
 
@@ -105,14 +105,14 @@ class GCNSupervisedGraphClassification:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`GraphGenerator` class.
+    should be supplied using the :class:`PaddedGraphGenerator` class.
 
     Examples:
         Creating a graph classification model from a list of :class:`StellarGraph`
         objects (``graphs``). We also add two fully connected dense layers using the last one for binary classification
         with `softmax` activation::
 
-            generator = GraphGenerator(graphs)
+            generator = PaddedGraphGenerator(graphs)
             model = GCNSupervisedGraphClassification(
                              layer_sizes=[32, 32],
                              activations=["elu","elu"],
@@ -126,7 +126,7 @@ class GCNSupervisedGraphClassification:
     Args:
         layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.
         activations (list of str): list of activations applied to each GCN layer's output.
-        generator (GraphGenerator): an instance of :class:`GraphGenerator` class constructed on the graphs used for
+        generator (PaddedGraphGenerator): an instance of :class:`PaddedGraphGenerator` class constructed on the graphs used for
             training.
         bias (bool, optional): toggles an optional bias in graph convolutional layers.
         dropout (float, optional): dropout rate applied to input features of each GCN layer.
@@ -159,9 +159,9 @@ class GCNSupervisedGraphClassification:
         bias_regularizer=None,
         bias_constraint=None,
     ):
-        if not isinstance(generator, GraphGenerator):
+        if not isinstance(generator, PaddedGraphGenerator):
             raise TypeError(
-                f"generator: expected instance of GraphGenerator, found {type(generator).__name__}"
+                f"generator: expected instance of PaddedGraphGenerator, found {type(generator).__name__}"
             )
 
         if len(layer_sizes) != len(activations):
