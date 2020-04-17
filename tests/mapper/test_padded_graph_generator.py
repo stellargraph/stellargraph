@@ -21,7 +21,7 @@ from stellargraph.mapper.padded_graph_generator import (
 
 import numpy as np
 import pytest
-from ..test_utils.graphs import example_graph_random, example_hin_1
+from ..test_utils.graphs import example_graph_random, example_graph, example_hin_1
 
 graphs = [
     example_graph_random(feature_size=4, n_nodes=6),
@@ -163,3 +163,31 @@ def test_generator_flow_with_targets():
         assert batch[0][1].shape[0] == 1
         assert batch[0][2].shape[0] == 1
         assert batch[1].shape[0] == 1
+
+
+def test_generator_adj_normalisation():
+
+    graph = example_graph(feature_size=4)
+
+    generator = PaddedGraphGenerator(graphs=[graph])
+
+    seq = generator.flow(graph_ilocs=[0], symmetric_normalization=False)
+
+    adj_norm_seq = seq.normalized_adjs[0].todense()
+
+    adj = np.array(graph.to_adjacency_matrix().todense())
+    inv_deg = np.diag(1.0 / adj.sum(axis=1))
+    adj_norm = inv_deg.dot(adj)
+
+    assert np.allclose(adj_norm_seq, adj_norm)
+
+    seq = generator.flow(graph_ilocs=[0], symmetric_normalization=True)
+
+    adj_norm_seq = seq.normalized_adjs[0].todense()
+
+    adj = np.array(graph.to_adjacency_matrix().todense())
+    inv_deg = np.diag(np.sqrt(1.0 / adj.sum(axis=1)))
+
+    adj_norm = inv_deg.dot(adj).dot(inv_deg)
+
+    assert np.allclose(adj_norm_seq, adj_norm)
