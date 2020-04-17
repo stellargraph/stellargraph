@@ -274,7 +274,7 @@ def test_tie_breaking(tie_breaking):
                 ("b", "d"),
             ],
             columns=["source", "target"],
-        )
+        ),
     )
 
     copies = 100
