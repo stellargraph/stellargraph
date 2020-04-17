@@ -21,7 +21,6 @@ from ..core.experimental import experimental
 
 @experimental(reason="Missing unit tests and generally untested.", issues=[1044])
 class SortPooling(Layer):
-
     """
     Sort Pooling Keras layer.
 
@@ -35,6 +34,7 @@ class SortPooling(Layer):
         k (int): The number of rows of output tensor.
         flatten_output (bool): If True then the output tensor is reshaped to vector for each element in the batch.
     """
+
     def __init__(self, k, flatten_output=False):
         super().__init__()
 
