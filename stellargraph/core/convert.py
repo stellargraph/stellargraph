@@ -107,7 +107,9 @@ class ColumnarConverter:
             elements = {self.default_type: elements}
 
         if not isinstance(elements, dict):
-            raise TypeError(f"{self.name()}: expected dict, found {type(elements).__name__}")
+            raise TypeError(
+                f"{self.name()}: expected dict, found {type(elements).__name__}"
+            )
 
         singles = {
             type_name: self._convert_single(type_name, data)

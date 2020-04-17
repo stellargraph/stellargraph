@@ -206,7 +206,11 @@ class EPGM(object):
                     G_epgm[k].append(json.loads(l))
             else:
                 raise Exception(
-                    "type(G[", k, "]): unexpected type", type(G_epgm[k]).__name__, ", stopping."
+                    "type(G[",
+                    k,
+                    "]): unexpected type",
+                    type(G_epgm[k]).__name__,
+                    ", stopping.",
                 )
 
         G_epgm = self._reorder_keys(G=G_epgm)
