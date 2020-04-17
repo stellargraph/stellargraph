@@ -27,17 +27,14 @@ class SortPooling(Layer):
 
     Note that sorting is performed using only the last column of the input tensor as stated in [1], "For convenience,
     we set the last graph convolution to have one channel and only used this single channel for sorting."
-    
+
     [1] An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
     Y. Chen, AAAI-18, https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17146
-
 
     Args:
         k (int): The number of rows of output tensor.
         flatten_output (bool): If True then the output tensor is reshaped to vector for each element in the batch.
-
     """
-
     def __init__(self, k, flatten_output=False):
         super().__init__()
 
