@@ -34,7 +34,7 @@ class SortPooling(Layer):
 
     Args:
         k (int): The number of rows of output tensor.
-        flatten_output (bool): If True then the output tensor is reshaped to vector for each tensor in the batch.
+        flatten_output (bool): If True then the output tensor is reshaped to vector for each element in the batch.
 
     """
 
