@@ -594,7 +594,9 @@ def test_hinsage_corrupt_indices():
     feature_sizes = {"t1": 7, "t2": 11}
     G, _, nodes_type_2 = example_hin_3(feature_sizes)
 
-    mapper = HinSAGENodeGenerator(G, batch_size=2, num_samples=[3, 5], head_node_type="t2")
+    mapper = HinSAGENodeGenerator(
+        G, batch_size=2, num_samples=[3, 5], head_node_type="t2"
+    )
 
     seq = mapper.flow(nodes_type_2)
     tensors, _targets = seq[0]
