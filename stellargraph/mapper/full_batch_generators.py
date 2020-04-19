@@ -421,11 +421,7 @@ class RelationalFullBatchNodeGenerator(Generator):
         G.check_graph_for_ml()
 
         # extract node, feature, and edge type info from G
-        self.node_list = list(G.nodes())
-
-        self.features = G.node_features(self.node_list)
-
-        self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
+        self.features = G.node_features(G.nodes())
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
@@ -478,9 +474,7 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        # use dictionary for faster index look-up time
-        node_indices = np.array([self.node_index[n] for n in node_ids])
+        node_indices = self.graph._get_index_for_nodes(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
