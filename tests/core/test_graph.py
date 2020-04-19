@@ -1240,7 +1240,7 @@ def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
 def test_edge_weights_undirected():
     g = example_hin_1(is_directed=False, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(5, 5) == [11.0, 12.0, 1.0]
     assert g._edge_weights(4, 5) == [10.0]
     assert g._edge_weights(5, 4) == [10.0]
     assert g._edge_weights(0, 4) == [1]
@@ -1250,7 +1250,7 @@ def test_edge_weights_undirected():
 def test_edge_weights_directed():
     g = example_hin_1(is_directed=True, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(5, 5) == [11.0, 12.0, 1.0]
     assert g._edge_weights(4, 5) == [10.0]
     assert g._edge_weights(5, 4) == []
     assert g._edge_weights(0, 4) == []

@@ -425,14 +425,13 @@ class RelationalFullBatchNodeGenerator(Generator):
 
         self.features = G.node_features(self.node_list)
 
-        edge_types = G.edge_types
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
         self.As = []
 
-        for edge_type in edge_types:
+        for edge_type in G.edge_types:
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
             A = G.to_adjacency_matrix(edge_type=edge_type).transpose()

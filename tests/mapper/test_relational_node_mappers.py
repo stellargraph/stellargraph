@@ -150,7 +150,7 @@ class Test_RelationalFullBatchNodeGenerator:
             generator = RelationalFullBatchNodeGenerator(G, "test", transform=func)
 
     def test_fullbatch_generator_transform(self):
-        G, _ = create_graph_features()
+        G, _ = create_graph_features(is_directed=True)
 
         def func(features, A, **kwargs):
             return features, A.dot(A)
