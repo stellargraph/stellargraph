@@ -425,7 +425,7 @@ class RelationalFullBatchNodeGenerator(Generator):
 
         self.features = G.node_features(self.node_list)
 
-        edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
+        edge_types = G.edge_types
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
         # create a list of adjacency matrices - one adj matrix for each edge type
@@ -433,25 +433,9 @@ class RelationalFullBatchNodeGenerator(Generator):
         self.As = []
 
         for edge_type in edge_types:
-
-            col_index = [
-                self.node_index[n1]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            row_index = [
-                self.node_index[n2]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            data = np.ones(len(col_index), np.float64)
-
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
-            A = sps.coo_matrix(
-                (data, (row_index, col_index)),
-                shape=(len(self.node_list), len(self.node_list)),
-            )
+            A = G.to_adjacency_matrix(edge_type=edge_type).transpose()
 
             if transform is None:
                 # normalize here and replace zero row sums with 1

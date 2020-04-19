@@ -691,6 +691,14 @@ class StellarGraph:
         """
         return set(self._nodes.types.pandas_index)
 
+    @property
+    def edge_types(self):
+        """
+        Returns:
+            a sequence of all edge types in the graph
+        """
+        return self._edges.types.pandas_index
+
     def node_feature_sizes(self, node_types=None):
         """
         Get the feature sizes for the specified node types.
@@ -1000,7 +1008,9 @@ class StellarGraph:
         """
         return self._edges.degrees()
 
-    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
+    def to_adjacency_matrix(
+        self, nodes: Optional[Iterable] = None, weighted=False, edge_type=None
+    ):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
 
@@ -1014,27 +1024,35 @@ class StellarGraph:
                 otherwise, it is computed for the full graph.
             weighted (bool): If true, use the edge weight column from the graph instead
                 of edge counts (weights from multi-edges are summed).
+            edge_type (hashable, optional): If set (to an edge type), only includes edges of that
+                type, otherwise uses all edges.
 
         Returns:
              The weighted adjacency matrix.
         """
+        if edge_type is None:
+            type_selector = slice(None)
+        else:
+            type_selector = self._edges.type_range(edge_type)
+
+        sources = self._edges.sources[type_selector]
+        targets = self._edges.targets[type_selector]
+
         if nodes is None:
             index = self._nodes._id_index
             selector = slice(None)
         else:
             nodes = list(nodes)
             index = ExternalIdIndex(nodes)
-            selector = np.isin(self._edges.sources, nodes) & np.isin(
-                self._edges.targets, nodes
-            )
+            selector = np.isin(sources, nodes) & np.isin(targets, nodes)
 
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
-        src_idx = index.to_iloc(self._edges.sources[selector])
-        tgt_idx = index.to_iloc(self._edges.targets[selector])
+        src_idx = index.to_iloc(sources[selector])
+        tgt_idx = index.to_iloc(targets[selector])
         if weighted:
-            weights = self._edges.weights[selector]
+            weights = self._edges.weights[type_selector][selector]
         else:
             weights = np.ones(src_idx.shape, dtype=self._edges.weights.dtype)
 

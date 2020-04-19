@@ -126,14 +126,15 @@ def example_hin_1(
     b_ids = [4, 5, 6]
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
-    r = pd.DataFrame(
-        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
-    )
-    f_edges, f_index = [(4, 5)], [6]
+    r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
+    f_edges, f_index = [(4, 5)], [100]
     if self_loop:
-        # make it a multigraph
+        # make it a multigraph, across types and within a single one
+        r_edges.append((5, 5))
         f_edges.extend([(5, 5), (5, 5)])
-        f_index.extend([7, 8])
+        f_index.extend([101, 102])
+
+    r = pd.DataFrame(r_edges, columns=["source", "target"])
 
     # add some weights for the f edges, but not others
     f_columns = ["source", "target", "weight"]
