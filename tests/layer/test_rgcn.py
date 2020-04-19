@@ -86,9 +86,8 @@ def test_RelationalGraphConvolution_sparse():
     n_nodes = features.shape[0]
     n_feat = features.shape[1]
 
-    # Inputs for features & target indices
+    # Inputs for features
     x_t = Input(batch_shape=(1, n_nodes, n_feat))
-    out_indices_t = Input(batch_shape=(1, None), dtype="int32")
 
     # Create inputs for sparse or dense matrices
 
@@ -99,7 +98,6 @@ def test_RelationalGraphConvolution_sparse():
     As_values = [Input(batch_shape=(1, None)) for i in range(n_edge_types)]
     A_placeholders = As_indices + As_values
 
-    # Test with final_layer=False
     Ainput = [
         SqueezedSparseConversion(shape=(n_nodes, n_nodes), dtype=As_values[i].dtype)(
             [As_indices[i], As_values[i]]
@@ -107,12 +105,10 @@ def test_RelationalGraphConvolution_sparse():
         for i in range(n_edge_types)
     ]
 
-    x_inp_model = [x_t, out_indices_t] + A_placeholders
-    x_inp_conv = [x_t, out_indices_t] + Ainput
+    x_inp_model = [x_t] + A_placeholders
+    x_inp_conv = [x_t] + Ainput
 
-    out = RelationalGraphConvolution(
-        2, num_relationships=n_edge_types, final_layer=False
-    )(x_inp_conv)
+    out = RelationalGraphConvolution(2, num_relationships=n_edge_types)(x_inp_conv)
 
     # Note we add a batch dimension of 1 to model inputs
     As = [A.tocoo() for A in get_As(G)]
@@ -126,16 +122,8 @@ def test_RelationalGraphConvolution_sparse():
     x = features[None, :, :]
 
     model = keras.Model(inputs=x_inp_model, outputs=out)
-    preds = model.predict([x, out_indices] + A_indices + A_values, batch_size=1)
+    preds = model.predict([x] + A_indices + A_values, batch_size=1)
     assert preds.shape == (1, 3, 2)
-
-    # Now try with final_layer=True
-    out = RelationalGraphConvolution(
-        2, num_relationships=n_edge_types, final_layer=True
-    )(x_inp_conv)
-    model = keras.Model(inputs=x_inp_model, outputs=out)
-    preds = model.predict([x, out_indices] + A_indices + A_values, batch_size=1)
-    assert preds.shape == (1, 2, 2)
 
 
 def test_RelationalGraphConvolution_dense():
@@ -160,12 +148,10 @@ def test_RelationalGraphConvolution_dense():
 
     A_in = [Lambda(lambda A: K.squeeze(A, 0))(A_p) for A_p in A_placeholders]
 
-    x_inp_model = [x_t, out_indices_t] + A_placeholders
-    x_inp_conv = [x_t, out_indices_t] + A_in
+    x_inp_model = [x_t] + A_placeholders
+    x_inp_conv = [x_t] + A_in
 
-    out = RelationalGraphConvolution(
-        2, num_relationships=n_edge_types, final_layer=False
-    )(x_inp_conv)
+    out = RelationalGraphConvolution(2, num_relationships=n_edge_types)(x_inp_conv)
 
     As = [np.expand_dims(A.todense(), 0) for A in get_As(G)]
 
@@ -173,16 +159,8 @@ def test_RelationalGraphConvolution_dense():
     x = features[None, :, :]
 
     model = keras.Model(inputs=x_inp_model, outputs=out)
-    preds = model.predict([x, out_indices] + As, batch_size=1)
+    preds = model.predict([x] + As, batch_size=1)
     assert preds.shape == (1, 3, 2)
-
-    # Now try with final_layer=True
-    out = RelationalGraphConvolution(
-        2, num_relationships=n_edge_types, final_layer=True
-    )(x_inp_conv)
-    model = keras.Model(inputs=x_inp_model, outputs=out)
-    preds = model.predict([x, out_indices] + As, batch_size=1)
-    assert preds.shape == (1, 2, 2)
 
 
 def test_RGCN_init():

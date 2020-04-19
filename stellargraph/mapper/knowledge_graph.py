@@ -23,9 +23,10 @@ from tensorflow.keras.utils import Sequence
 
 from ..globalvar import SOURCE, TARGET, TYPE_ATTR_NAME
 from ..random import random_state, SeededPerBatch
+from .base import Generator
 
 
-class KGTripleGenerator:
+class KGTripleGenerator(Generator):
     """
     A data generator for working with triple-based knowledge graph models, like ComplEx.
 
@@ -48,6 +49,9 @@ class KGTripleGenerator:
             )
 
         self.batch_size = batch_size
+
+    def num_batch_dims(self):
+        return 1
 
     def flow(self, edges, negative_samples=None, shuffle=False, seed=None):
         """

@@ -21,35 +21,35 @@ from ..core.experimental import experimental
 
 @experimental(reason="Missing unit tests and generally untested.", issues=[1044])
 class SortPooling(Layer):
-
     """
-    Sort Pooling Keras layer. A stack of such layers together with Keras convolutional layers can be used to create
-    graph classification models.
+    Sort Pooling Keras layer.
 
-    Original paper: An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
+    Note that sorting is performed using only the last column of the input tensor as stated in [1], "For convenience,
+    we set the last graph convolution to have one channel and only used this single channel for sorting."
+
+    [1] An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
     Y. Chen, AAAI-18, https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17146
-
 
     Args:
         k (int): The number of rows of output tensor.
-
+        flatten_output (bool): If True then the output tensor is reshaped to vector for each element in the batch.
     """
 
-    def __init__(self, k):
+    def __init__(self, k, flatten_output=False):
         super().__init__()
 
         self.trainable = False
         self.k = k
+        self.flatten_output = flatten_output
 
     def get_config(self):
         """
-        Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Gets class configuration for Keras serialization. Used by keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
         """
-        return {"k": self.k}
+        return {"k": self.k, "flatten_output": self.flatten_output}
 
     def compute_output_shape(self, input_shapes):
         """
@@ -63,15 +63,42 @@ class SortPooling(Layer):
         Returns:
             An input shape tuple.
         """
-        return input_shapes[0], self.k, input_shapes[2]
+        if self.flatten_output:
+            return input_shapes[0], self.k * input_shapes[2]
+        else:
+            return input_shapes[0], self.k, input_shapes[2]
+
+    def _sort_tensor_with_mask(self, inputs):
+
+        embeddings, mask = inputs[0], inputs[1]
+
+        masked_sorted_embeddings = tf.gather(
+            embeddings,
+            tf.argsort(
+                tf.boolean_mask(embeddings, mask)[..., -1],
+                axis=0,
+                direction="DESCENDING",
+            ),
+        )
+
+        embeddings = tf.pad(
+            masked_sorted_embeddings,
+            [
+                [0, (tf.shape(embeddings)[0] - tf.shape(masked_sorted_embeddings)[0])],
+                [0, 0],
+            ],
+        )
+
+        return embeddings
 
     def call(self, inputs, **kwargs):
         """
         Applies the layer.
 
         Args:
-            inputs (list): a list of 3 input tensors that includes
-                node features (size B x N x Sum F_i),
+            inputs (list): a list of 2 tensors that includes
+                the node features (size B x N x Sum F_i), and
+                a boolean mask (size B x N)
 
                 where B is the batch size, N is the number of nodes in the largest graph in the batch, and
                 F_i is the dimensionality of node features output from the i-th convolutional layer.
@@ -79,13 +106,14 @@ class SortPooling(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
+
+        embeddings, mask = inputs[0], inputs[1]
+
         outputs = tf.map_fn(
-            lambda x: tf.gather(
-                x, tf.argsort(x[..., -1], axis=0, direction="DESCENDING")
-            ),
-            inputs,
+            self._sort_tensor_with_mask, (embeddings, mask), dtype=embeddings.dtype
         )
 
+        # padding or truncation based on the value of self.k and the graph size (number of nodes)
         outputs_shape = tf.shape(outputs)
 
         outputs = tf.cond(
@@ -95,5 +123,8 @@ class SortPooling(Layer):
             ),
             false_fn=lambda: outputs[:, : self.k, :],
         )
+
+        if self.flatten_output:
+            outputs = tf.reshape(outputs, [tf.shape(outputs)[0], -1])
 
         return outputs

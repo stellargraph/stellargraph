@@ -15,10 +15,11 @@
 # limitations under the License.
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from .sequences import GraphSequence
+from .sequences import PaddedGraphSequence
+from .base import Generator
 
 
-class GraphGenerator:
+class PaddedGraphGenerator(Generator):
     """
     A data generator for use with graph classification algorithms.
 
@@ -27,8 +28,10 @@ class GraphGenerator:
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    This generator supplies the features arrays and the adjacency matrices to a
-    mini-batch Keras graph classification model.
+    This generator supplies the features arrays and the adjacency matrices to a mini-batch Keras
+    graph classification model. Differences in the number of nodes are resolved by padding each
+    batch of features and adjacency matrices, and supplying a boolean mask indicating which are
+    valid and which are padding.
 
     Args:
         graphs (list): a collection of ready for machine-learning StellarGraph-type objects
@@ -64,7 +67,17 @@ class GraphGenerator:
         self.graphs = graphs
         self.name = name
 
-    def flow(self, graph_ilocs, targets=None, batch_size=1, name=None):
+    def num_batch_dims(self):
+        return 1
+
+    def flow(
+        self,
+        graph_ilocs,
+        targets=None,
+        symmetric_normalization=True,
+        batch_size=1,
+        name=None,
+    ):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
         with the supplied graph indexes and targets.
@@ -74,11 +87,15 @@ class GraphGenerator:
                 (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
                 len(targets))`.
+            symmetric_normalization (bool, optional): The type of normalization to be applied on the graph adjacency
+                matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
+                degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
+                matrix.
             batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A :class:`GraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
+            A :class:`PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
@@ -104,9 +121,10 @@ class GraphGenerator:
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
-        return GraphSequence(
+        return PaddedGraphSequence(
             graphs=[self.graphs[i] for i in graph_ilocs],
             targets=targets,
+            symmetric_normalization=symmetric_normalization,
             batch_size=batch_size,
             name=name,
         )

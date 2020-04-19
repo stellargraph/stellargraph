@@ -29,9 +29,10 @@ from tensorflow.keras.utils import Sequence
 from scipy import sparse
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable, normalize_adj
+from .base import Generator
 
 
-class ClusterNodeGenerator:
+class ClusterNodeGenerator(Generator):
     """
     A data generator for use with ClusterGCN models on homogeneous graphs, [1].
 
@@ -145,6 +146,9 @@ class ClusterNodeGenerator:
 
         # Get the features for the nodes
         self.features = G.node_features(self.node_list)
+
+    def num_batch_dims(self):
+        return 2
 
     def flow(self, node_ids, targets=None, name=None):
         """
@@ -347,7 +351,7 @@ class ClusterNodeSequence(Sequence):
 
         features = np.reshape(features, (1,) + features.shape)
         adj_cluster = adj_cluster.reshape((1,) + adj_cluster.shape)
-        target_node_indices = target_node_indices[np.newaxis, np.newaxis, :]
+        target_node_indices = target_node_indices[np.newaxis, :]
 
         return [features, target_node_indices, adj_cluster], cluster_targets
 
