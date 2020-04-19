@@ -467,9 +467,6 @@ class RelationalFullBatchNodeGenerator(Generator):
             A = A.tocoo()
             self.As.append(A)
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
-
     def num_batch_dims(self):
         return 2
 
