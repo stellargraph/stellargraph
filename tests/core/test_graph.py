@@ -263,6 +263,40 @@ def test_feature_conversion_from_nodes():
     assert sg.node_feature_sizes()["default"] == 8
 
 
+def test_node_features():
+    feature_sizes = {"A": 4, "B": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes)
+
+    one_zero = np.array([[1] * 4, [0] * 4])
+
+    # inference
+    np.testing.assert_array_equal(sg.node_features(nodes=[1, 0]), one_zero)
+    # specified
+    np.testing.assert_array_equal(
+        sg.node_features(nodes=[1, 0], node_type="A"), one_zero
+    )
+
+    # wrong type
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[1, 0], node_type="B")
+
+    # mixed types
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[0, 4])
+
+
+def test_node_features_node_type():
+    feature_sizes = {"A": 4, "B": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes)
+
+    np.testing.assert_array_equal(
+        sg.node_features(node_type="A"), [[0] * 4, [1] * 4, [2] * 4, [3] * 4],
+    )
+    np.testing.assert_array_equal(
+        sg.node_features(node_type="B"), [[4] * 6, [5] * 6, [6] * 6]
+    )
+
+
 def test_node_features_missing_id():
     sg = example_graph(feature_size=6)
     with pytest.raises(KeyError, match=r"\[1000, 2000\]"):

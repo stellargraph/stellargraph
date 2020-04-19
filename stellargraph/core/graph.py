@@ -732,20 +732,33 @@ class StellarGraph:
 
         # TODO: check the feature node_ids against the graph node ids?
 
-    def node_features(self, nodes, node_type=None):
+    def node_features(self, nodes=None, node_type=None):
         """
-        Get the numeric feature vectors for the specified node or nodes.
-        If the node type is not specified the node types will be found
-        for all nodes. It is therefore important to supply the ``node_type``
-        for this method to be fast.
+        Get the numeric feature vectors for the specified nodes or node type.
+
+        If ``nodes`` is not specified, this returns all features of the specified ``node_type``,
+        where the rows are ordered the same as ``self.nodes(node_type=node_type)``.
+
+        At least one of ``nodes`` and ``node_type`` must be passed. If ``nodes`` is passed without
+        specifying ``node_type``, the node type of ``nodes`` will be inferred (passing ``node_type``
+        in addition to ``nodes`` will therefore be faster).
+
 
         Args:
-            nodes (list or hashable): Node ID or list of node IDs
-            node_type (hashable): the type of the nodes.
+            nodes (list or hashable, optional): Node ID or list of node IDs, all of the same type
+            node_type (hashable, optional): the type of the nodes.
 
         Returns:
-            Numpy array containing the node features for the requested nodes.
+            Numpy array containing the node features for the requested nodes or node type.
         """
+        if nodes is None:
+            if node_type is None:
+                raise ValueError(
+                    "node_type: expected a node type to be specified when 'nodes' is not passed, found None"
+                )
+
+            return self._nodes.features_of_type(node_type)
+
         nodes = np.asarray(nodes)
 
         node_ilocs = self._nodes.ids.to_iloc(nodes)

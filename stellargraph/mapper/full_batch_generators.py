@@ -421,7 +421,13 @@ class RelationalFullBatchNodeGenerator(Generator):
         G.check_graph_for_ml()
 
         # extract node, feature, and edge type info from G
-        self.features = G.node_features(G.nodes())
+        node_types = list(G.node_types)
+        if len(node_types) != 1:
+            raise ValuError(
+                f"{type(self).__name__}: expected one node type, found {num_node_types} types",
+            )
+
+        self.features = G.node_features(node_type=node_types[0])
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
