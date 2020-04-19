@@ -9,10 +9,12 @@ Welcome to StellarGraph's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :glob:
 
    README
    api
    hinsage
+   demos/*
 
 
 Indices and tables

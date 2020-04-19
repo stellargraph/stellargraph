@@ -58,6 +58,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "recommonmark",
     "sphinx_markdown_tables",
+    "nbsphinx",
 ]
 
 # Add mappings
@@ -190,3 +191,9 @@ texinfo_documents = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# -- Options for nbsphinx extension ------------------------------------------
+
+# Our notebooks should always be pre-executed, but if they're not, let's not accidentally try
+# running them.
+nbsphinx_execute = "never"
