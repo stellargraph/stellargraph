@@ -280,9 +280,13 @@ def test_node_features():
     with pytest.raises(ValueError, match="unknown IDs"):
         sg.node_features(nodes=[1, 0], node_type="B")
 
-    # mixed types
-    with pytest.raises(ValueError, match="unknown IDs"):
+    # mixed types, inference
+    with pytest.raises(ValueError, match="all nodes must have the same type"):
         sg.node_features(nodes=[0, 4])
+
+    # mixed types, specified
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[0, 4], node_type="A")
 
 
 def test_node_features_node_type():
