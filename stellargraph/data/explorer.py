@@ -436,7 +436,9 @@ class BiasedRandomWalk(RandomWalk):
 
                     if weighted:
                         # TODO Encapsulate edge weights
-                        weight_cn = self.graph._edge_weights(current_node, nn, use_ilocs=True)[0]
+                        weight_cn = self.graph._edge_weights(
+                            current_node, nn, use_ilocs=True
+                        )[0]
                     else:
                         weight_cn = 1.0
 
@@ -575,7 +577,8 @@ class UniformRandomMetaPathWalk(RandomWalk):
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if self.graph.node_type(n_node, use_ilocs=True) == metapath[d]
+                            if self.graph.node_type(n_node, use_ilocs=True)
+                            == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
