@@ -1,4 +1,4 @@
-demos
+community_detection
 ====================================
 
 .. toctree::

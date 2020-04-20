@@ -1,4 +1,4 @@
-demos
+link-prediction
 ====================================
 
 .. toctree::
