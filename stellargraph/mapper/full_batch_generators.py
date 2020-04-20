@@ -96,11 +96,6 @@ class FullBatchGenerator(Generator):
         self.node_list = G.nodes()
         self.Aadj = G.to_adjacency_matrix()
 
-        # Function to map node IDs to indices for quicker node index lookups
-        # TODO: Move this to the graph class
-        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
-        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
-
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
         # If sparse is specified, check that the backend is tensorflow
@@ -186,7 +181,7 @@ class FullBatchGenerator(Generator):
                 raise TypeError("Targets must be the same length as node_ids")
 
         # The list of indices of the target nodes in self.node_list
-        node_indices = self._node_lookup(node_ids)
+        node_indices = self.graph._get_index_for_nodes(node_ids)
 
         if self.use_sparse:
             return SparseFullBatchSequence(
