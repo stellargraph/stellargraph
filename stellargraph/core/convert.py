@@ -133,7 +133,9 @@ class ColumnarConverter:
         if type_dfs:
             shared = pd.concat(type_dfs)
         else:
-            shared = pd.DataFrame(columns=self.selected_columns.values())
+            # there was no input types and thus no input elements, so create a dummy dataframe, that
+            # is maximally flexible by using a "minimal"/highly-promotable type
+            shared = pd.DataFrame(columns=self.selected_columns.values(), dtype=np.uint8)
 
         return shared, type_ranges
 

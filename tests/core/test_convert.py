@@ -31,8 +31,8 @@ _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 def test_columnar_convert_type_default():
     converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
-    shared, features = converter.convert(_EMPTY_DF)
-    assert "foo" in shared
+    shared, type_ranges, features = converter.convert(_EMPTY_DF)
+    assert "foo" in type_ranges
     assert "foo" in features
 
 
@@ -42,15 +42,14 @@ def test_columnar_convert_selected_columns():
     converter = ColumnarConverter(
         "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False
     )
-    shared, features = converter.convert({"x": df, "y": df})
+    shared, type_ranges, features = converter.convert({"x": df, "y": df})
 
-    assert "x" in shared
-    assert "y" in shared
+    assert "x" in type_ranges
+    assert "y" in type_ranges
 
-    for df in shared.values():
-        assert "before" not in df
-        assert all(df["after"] == "abc")
-        assert all(df["same"] == 10)
+    assert "before" not in shared
+    assert all(shared["after"] == "abc")
+    assert all(shared["same"] == 10)
 
 
 def test_columnar_convert_selected_columns_missing():
@@ -66,13 +65,12 @@ def test_columnar_convert_selected_columns_missing():
 
 def test_columnar_convert_column_default():
     converter = ColumnarConverter("some_name", "foo", None, {"before": 123}, {}, False)
-    shared, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    shared, type_ranges, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
-    assert "x" in shared
-    assert "y" in shared
+    assert "x" in type_ranges
+    assert "y" in type_ranges
 
-    for df in shared.values():
-        assert all(df["before"] == 123)
+    assert all(shared["before"] == 123)
 
 
 def test_columnar_convert_column_default_selected_columns():
@@ -80,22 +78,22 @@ def test_columnar_convert_column_default_selected_columns():
     converter = ColumnarConverter(
         "x", "foo", None, {"before": 123}, {"before": "after"}, False
     )
-    shared, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    shared, type_ranges, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
-    assert "x" in shared
-    assert "y" in shared
+    assert "x" in type_ranges
+    assert "y" in type_ranges
 
-    for df in shared.values():
-        assert "before" not in df
-        assert all(df["after"] == 123)
+    assert "before" not in shared
+    assert all(shared["after"] == 123)
 
 
 def test_columnar_convert_features():
     converter = ColumnarConverter("some_name", "foo", None, {}, {"x": "x"}, True)
     df = _EMPTY_DF.assign(a=[1, 2], b=[100, 200], x=123)
-    shared, features = converter.convert(df)
+    shared, type_ranges, features = converter.convert(df)
 
-    assert all(shared["foo"]["x"] == 123)
+    assert "foo" in type_ranges
+    assert all(shared["x"] == 123)
     assert np.array_equal(features["foo"], [[1, 100], [2, 200]])
 
 
@@ -170,7 +168,7 @@ def test_convert_edges_weights():
     # non-numbers are not
     with pytest.raises(
         TypeError,
-        match=r"some_name\['x'\]: expected weight column 'w' to be numeric, found dtype 'object'",
+        match=r"some_name: expected weight column 'w' to be numeric, found dtype 'object'",
     ):
         run({"x": "ab", "y": 1, "z": np.float32(2)})
 
