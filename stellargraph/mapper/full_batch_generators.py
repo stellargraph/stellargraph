@@ -94,7 +94,7 @@ class FullBatchGenerator(Generator):
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes()
-        self.Aadj = G.to_adjacency_matrix(self.node_list)
+        self.Aadj = G.to_adjacency_matrix()
 
         # Function to map node IDs to indices for quicker node index lookups
         # TODO: Move this to the graph class
