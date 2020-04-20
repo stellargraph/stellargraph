@@ -502,6 +502,8 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         for tensor_idx, (nt, _) in enumerate(self._sampling_schema[0]):
             indices_per_nt[nt].append(tensor_idx)
 
+        # ensure there's a consistent order both within each group, and across groups, ensure the
+        # shuffling is deterministic (at least with respect to the model)
         return sorted(sorted(idx) for idx in indices_per_nt.values())
 
 
