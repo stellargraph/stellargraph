@@ -16,7 +16,7 @@
 
 import warnings
 import re
-from ..version import __version__
+from .. import __version__
 
 
 __all__ = ["validate_notebook_version"]
