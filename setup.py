@@ -31,7 +31,7 @@ REQUIRES = [
     "scikit_learn>=0.20",
     "matplotlib>=2.2",
     "gensim>=3.4.0",
-    "pandas>=0.24"
+    "pandas>=0.24",
 ]
 
 # The demos requirements are as follows:
