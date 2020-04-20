@@ -33,7 +33,7 @@ f=${NOTEBOOKS[$INDEX]}
 
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
-    'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
+    'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | \
     'stellargraph-metapath2vec.ipynb')
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
