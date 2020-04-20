@@ -129,18 +129,24 @@ class ElementData:
 
     def __init__(self, shared, type_ranges):
         if not isinstance(shared, pd.DataFrame):
-            raise TypeError(f"shared: expected pandas DataFrame, found {type(shared).__name__}")
+            raise TypeError(
+                f"shared: expected pandas DataFrame, found {type(shared).__name__}"
+            )
 
         require_dataframe_has_columns("shared", shared, self._SHARED_REQUIRED_COLUMNS)
 
         if not isinstance(type_ranges, dict):
-            raise TypeError(f"type_ranges: expected dict, found {type(type_ranges).__name__}")
+            raise TypeError(
+                f"type_ranges: expected dict, found {type(type_ranges).__name__}"
+            )
 
         sorted_ranges = sorted(type_ranges.items(), key=lambda x: x[0])
         previous_end = 0
         for type_name, type_range in sorted_ranges:
             if not isinstance(type_range, range):
-                raise TypeError(f"type_ranges[{type_name!r}]: expected range, found {type(type_range).__name__}")
+                raise TypeError(
+                    f"type_ranges[{type_name!r}]: expected range, found {type(type_range).__name__}"
+                )
 
             if type_range.start != previous_end:
                 raise ValueError(
@@ -160,13 +166,11 @@ class ElementData:
             )
 
         self._id_index = ExternalIdIndex(shared.index)
-        self._columns = {
-            name: data.to_numpy() for name, data in shared.iteritems()
-        }
+        self._columns = {name: data.to_numpy() for name, data in shared.iteritems()}
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
-        all_types = [type_name for type_name, _  in sorted_ranges]
+        all_types = [type_name for type_name, _ in sorted_ranges]
         type_sizes = [len(type_range) for _, type_range in sorted_ranges]
 
         self._type_index = ExternalIdIndex(all_types)

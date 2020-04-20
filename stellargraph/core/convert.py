@@ -135,7 +135,9 @@ class ColumnarConverter:
         else:
             # there was no input types and thus no input elements, so create a dummy dataframe, that
             # is maximally flexible by using a "minimal"/highly-promotable type
-            shared = pd.DataFrame(columns=self.selected_columns.values(), dtype=np.uint8)
+            shared = pd.DataFrame(
+                columns=self.selected_columns.values(), dtype=np.uint8
+            )
 
         return shared, type_ranges
 
@@ -155,21 +157,23 @@ class ColumnarConverter:
         shared = known.drop(columns=selected_type_column)
 
         # deduce the type ranges based on the first index of each of the known values
-        types, first_occurance = np.unique(known[selected_type_column], return_index=True
+        types, first_occurance = np.unique(
+            known[selected_type_column], return_index=True
         )
         first_occurance = list(first_occurance)
         first_occurance.append(len(known))
 
         type_ranges = {
             type_name: range(start, end)
-            for type_name, start, end in zip(types, first_occurance, first_occurance[1:])
+            for type_name, start, end in zip(
+                types, first_occurance, first_occurance[1:]
+            )
         }
 
         # per the assert above, the features are None for every type
         features = {type_name: None for type_name in types}
 
         return shared, type_ranges, features
-
 
     def convert(self, elements):
         if self.type_column is not None:
@@ -209,7 +213,14 @@ DEFAULT_WEIGHT = np.float32(1)
 
 
 def convert_edges(
-    data, *, name, default_type, source_column, target_column, weight_column, type_column,
+    data,
+    *,
+    name,
+    default_type,
+    source_column,
+    target_column,
+    weight_column,
+    type_column,
 ):
     selected = {
         source_column: SOURCE,

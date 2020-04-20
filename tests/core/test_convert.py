@@ -118,10 +118,16 @@ def test_columnar_convert_invalid_input():
     ):
         converter.convert({"x": 1})
 
-def test_columnar_convert_type_column():
-    converter = ColumnarConverter("some_name", "foo", "type_column", {}, {"type_column": "TC", "data": "D"}, False)
 
-    df = pd.DataFrame({"type_column": ["c", "a", "a", "c", "b"], "data": [1, 2, 3, 4, 5]}, index=[1, 10, 100, 1000, 10000])
+def test_columnar_convert_type_column():
+    converter = ColumnarConverter(
+        "some_name", "foo", "type_column", {}, {"type_column": "TC", "data": "D"}, False
+    )
+
+    df = pd.DataFrame(
+        {"type_column": ["c", "a", "a", "c", "b"], "data": [1, 2, 3, 4, 5]},
+        index=[1, 10, 100, 1000, 10000],
+    )
     shared, type_ranges, features = converter.convert(df)
 
     assert set(shared.columns) == {"D"}
@@ -132,17 +138,24 @@ def test_columnar_convert_type_column():
 
     # invalid configurations
     with pytest.raises(
-        ValueError,
-        match=r"allow_features: expected no features .* \('type_column'\)"
+        ValueError, match=r"allow_features: expected no features .* \('type_column'\)"
     ):
-        ColumnarConverter("some_name", "foo", "type_column", {}, {"type_column": "TC"}, True)
+        ColumnarConverter(
+            "some_name", "foo", "type_column", {}, {"type_column": "TC"}, True
+        )
 
     with pytest.raises(
         ValueError,
-        match=r"selected_columns: expected type column \('type_column'\) .* found only 'TC', 'data'"
+        match=r"selected_columns: expected type column \('type_column'\) .* found only 'TC', 'data'",
     ):
-        ColumnarConverter("some_name", "foo", "type_column", {}, {"TC": "type_column", "data": "D"}, False)
-
+        ColumnarConverter(
+            "some_name",
+            "foo",
+            "type_column",
+            {},
+            {"TC": "type_column", "data": "D"},
+            False,
+        )
 
 
 def test_convert_edges_weights():
@@ -174,7 +187,13 @@ def test_convert_edges_weights():
 
 
 def test_convert_edges_type_column():
-    data = pd.DataFrame({"s": [10, 20, 30, 40, 50], "t": [20, 30, 40, 50, 60], "l": ["c", "a", "a", "c", "b"]})
+    data = pd.DataFrame(
+        {
+            "s": [10, 20, 30, 40, 50],
+            "t": [20, 30, 40, 50, 60],
+            "l": ["c", "a", "a", "c", "b"],
+        }
+    )
 
     edges = convert_edges(
         data,
@@ -188,7 +207,9 @@ def test_convert_edges_type_column():
 
     np.testing.assert_array_equal(edges.sources, [20, 30, 50, 10, 40])
     np.testing.assert_array_equal(edges.targets, [30, 40, 60, 20, 50])
-    np.testing.assert_array_equal(edges.type_of_iloc(slice(None)), ["a", "a", "b", "c", "c"])
+    np.testing.assert_array_equal(
+        edges.type_of_iloc(slice(None)), ["a", "a", "b", "c", "c"]
+    )
 
 
 def from_networkx_for_testing(g, node_features=None, dtype="float32"):
