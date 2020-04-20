@@ -274,6 +274,8 @@ class UniformRandomWalk(RandomWalk):
         self._validate_walk_params(nodes, n, length)
         rs = self._get_random_state(seed)
 
+        nodes = self.graph.node_ids_to_ilocs(nodes)
+
         # for each root node, do n walks
         return [self._walk(rs, node, length) for node in nodes for _ in range(n)]
 
@@ -281,7 +283,7 @@ class UniformRandomWalk(RandomWalk):
         walk = [start_node]
         current_node = start_node
         for _ in range(length - 1):
-            neighbours = self.graph.neighbors(current_node)
+            neighbours = self.graph.neighbors(current_node, use_ilocs=True)
             if not neighbours:
                 # dead end, so stop
                 break
@@ -384,13 +386,15 @@ class BiasedRandomWalk(RandomWalk):
         self._check_weights(p, q, weighted)
         rs = self._get_random_state(seed)
 
+        nodes = self.graph.node_ids_to_ilocs(nodes)
+
         if weighted:
             # Check that all edge weights are greater than or equal to 0.
             # Also, if the given graph is a MultiGraph, then check that there are no two edges between
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbors(node):
+                for neighbor in self.graph.neighbors(node, use_ilocs=True):
 
                     wts = set()
                     name = f"Edge weight between ({node}) and ({neighbor})"
@@ -421,7 +425,7 @@ class BiasedRandomWalk(RandomWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.graph.neighbors(node)
+                neighbours = self.graph.neighbors(node, use_ilocs=True)
 
                 previous_node = node
                 previous_node_neighbours = neighbours
@@ -432,7 +436,7 @@ class BiasedRandomWalk(RandomWalk):
 
                     if weighted:
                         # TODO Encapsulate edge weights
-                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
+                        weight_cn = self.graph._edge_weights(current_node, nn, use_ilocs=True)[0]
                     else:
                         weight_cn = 1.0
 
@@ -447,7 +451,7 @@ class BiasedRandomWalk(RandomWalk):
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
-                        neighbours = self.graph.neighbors(current_node)
+                        neighbours = self.graph.neighbors(current_node, use_ilocs=True)
 
                         if not neighbours:
                             break
@@ -537,11 +541,13 @@ class UniformRandomMetaPathWalk(RandomWalk):
         self._check_metapath_values(metapaths)
         rs = self._get_random_state(seed)
 
+        nodes = self.graph.node_ids_to_ilocs(nodes)
+
         walks = []
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.node_type(node)
+            label = self.graph.node_type(node, use_ilocs=True)
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -564,12 +570,12 @@ class UniformRandomMetaPathWalk(RandomWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.graph.neighbors(current_node)
+                        neighbours = self.graph.neighbors(current_node, use_ilocs=True)
                         # filter these by node type
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if self.graph.node_type(n_node) == metapath[d]
+                            if self.graph.node_type(n_node, use_ilocs=True) == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
