@@ -14,56 +14,80 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.layer import (
-    DeepGraphInfomax,
-    GCN,
-    APPNP,
-    GAT,
-    PPNP,
-    GraphSAGE,
-    DirectedGraphSAGE,
-)
+from stellargraph.layer import *
+from stellargraph.mapper import *
 
-from stellargraph.mapper import (
-    FullBatchNodeGenerator,
-    CorruptedGenerator,
-    GraphSAGENodeGenerator,
-    DirectedGraphSAGENodeGenerator,
-    FullBatchLinkGenerator,
-)
 from ..test_utils.graphs import example_graph_random
 import tensorflow as tf
 import pytest
 import numpy as np
 
 
-@pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
-@pytest.mark.parametrize("sparse", [False, True])
-def test_dgi(model_type, sparse):
-
-    if sparse and model_type is PPNP:
-        pytest.skip("PPNP doesn't support sparse=True")
-
-    G = example_graph_random()
+def _model_data(model_type, sparse):
     emb_dim = 16
 
-    generator = FullBatchNodeGenerator(G, sparse=sparse)
-    corrupted_generator = CorruptedGenerator(generator)
-    gen = corrupted_generator.flow(G.nodes())
+    sparse_support = (GCN, APPNP, GAT)
+    if sparse and model_type not in sparse_support:
+        pytest.skip(f"{model_type.__name__} doesn't support/use sparse=True")
 
-    base_model = model_type(
-        generator=generator, activations=["relu"], layer_sizes=[emb_dim]
-    )
+    if model_type in (GCN, APPNP, GAT, PPNP):
+        G = example_graph_random()
+        generator = FullBatchNodeGenerator(G, sparse=sparse)
+        model = model_type(
+            generator=generator, activations=["relu"], layer_sizes=[emb_dim]
+        )
+        nodes = G.nodes()
+    elif model_type is GraphSAGE:
+        G = example_graph_random()
+        generator = GraphSAGENodeGenerator(G, batch_size=5, num_samples=[2, 3])
+        model = GraphSAGE(generator=generator, layer_sizes=[4, emb_dim])
+        nodes = G.nodes()
+    elif model_type is DirectedGraphSAGE:
+        G = example_graph_random(is_directed=True)
+        generator = DirectedGraphSAGENodeGenerator(
+            G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1]
+        )
+        model = DirectedGraphSAGE(generator=generator, layer_sizes=[4, emb_dim])
+        nodes = G.nodes()
+    elif model_type is HinSAGE:
+        head_node_type = "n-1"
+        node_types = 2
+        G = example_graph_random(
+            {nt: nt + 3 for nt in range(node_types)},
+            node_types=node_types,
+            edge_types=2,
+        )
+        generator = HinSAGENodeGenerator(
+            G, batch_size=5, num_samples=[2, 2], head_node_type=head_node_type
+        )
+        model = HinSAGE(generator=generator, layer_sizes=[4, emb_dim])
+        nodes = G.nodes(node_type=head_node_type)
+
+    return generator, model, nodes
+
+
+@pytest.mark.parametrize(
+    "model_type", [GCN, APPNP, GAT, PPNP, GraphSAGE, DirectedGraphSAGE, HinSAGE]
+)
+@pytest.mark.parametrize("sparse", [False, True])
+def test_dgi(model_type, sparse):
+    base_generator, base_model, nodes = _model_data(model_type, sparse)
+    corrupted_generator = CorruptedGenerator(base_generator)
+    gen = corrupted_generator.flow(nodes)
+
     infomax = DeepGraphInfomax(base_model, corrupted_generator)
 
     model = tf.keras.Model(*infomax.in_out_tensors())
     model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model.fit(gen)
 
-    emb_model = tf.keras.Model(*infomax.embedding_model())
-    embeddings = emb_model.predict(generator.flow(G.nodes()))
+    emb_model = tf.keras.Model(*base_model.in_out_tensors())
+    embeddings = emb_model.predict(base_generator.flow(nodes))
 
-    assert embeddings.shape == (len(G.nodes()), emb_dim)
+    if isinstance(base_generator, FullBatchNodeGenerator):
+        assert embeddings.shape == (1, len(nodes), 16)
+    else:
+        assert embeddings.shape == (len(nodes), 16)
 
 
 def test_dgi_stateful():
@@ -117,35 +141,6 @@ def test_dgi_stateful():
     )
 
     assert np.array_equal(embeddings_1, embeddings_2)
-
-
-@pytest.mark.parametrize("is_directed", [False, True])
-def test_dgi_graphsage(is_directed):
-
-    G = example_graph_random(is_directed=is_directed)
-
-    if is_directed:
-        generator = DirectedGraphSAGENodeGenerator(
-            G, batch_size=5, in_samples=[2, 3], out_samples=[4, 1]
-        )
-        base_model = DirectedGraphSAGE(generator=generator, layer_sizes=[4, 4])
-    else:
-        generator = GraphSAGENodeGenerator(G, batch_size=5, num_samples=[2, 3])
-        base_model = GraphSAGE(generator=generator, layer_sizes=[4, 4])
-
-    corrupted_generator = CorruptedGenerator(generator)
-    gen = corrupted_generator.flow(G.nodes())
-
-    infomax = DeepGraphInfomax(base_model, corrupted_generator)
-
-    model = tf.keras.Model(*infomax.build())
-    model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
-    model.fit(gen)
-
-    emb_model = tf.keras.Model(*infomax.embedding_model())
-    embeddings = emb_model.predict(generator.flow(G.nodes()))
-
-    assert embeddings.shape == (len(G.nodes()), 4)
 
 
 def test_dgi_deprecated_no_generator():
