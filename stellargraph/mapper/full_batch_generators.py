@@ -47,6 +47,7 @@ from . import (
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
+from ..core.validation import comma_sep
 
 
 class FullBatchGenerator(Generator):
@@ -423,8 +424,8 @@ class RelationalFullBatchNodeGenerator(Generator):
         # extract node, feature, and edge type info from G
         node_types = list(G.node_types)
         if len(node_types) != 1:
-            raise ValuError(
-                f"{type(self).__name__}: expected one node type, found {num_node_types} types",
+            raise ValueError(
+                f"G: expected one node type, found {comma_sep(sorted(node_types))}",
             )
 
         self.features = G.node_features(node_type=node_types[0])
