@@ -29,7 +29,6 @@ requirements:
     - tensorflow >=2.1.0
     - ipython
     - ipykernel
-    - packaging
 
 test:
   imports:

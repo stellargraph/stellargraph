@@ -15,10 +15,46 @@
 # limitations under the License.
 
 import warnings
-from packaging import version
+import re
 from ..version import __version__
 
+
 __all__ = ["validate_notebook_version"]
+
+# regex version parsing to avoid dependency of packaging module
+_VERSION_RE = re.compile(
+    r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(?P<suffix>[-a-z].*)?$"
+)
+
+
+class _Suffix:
+    """The suffix of a version, to be able to control the sort order"""
+
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+    def __eq__(self, other):
+        return self.suffix == other.suffix
+
+    def __lt__(self, other):
+        # any suffix is less than no suffix (1.2.3b0 < 1.2.3)
+        if self.suffix is None:
+            return False
+        if other.suffix is None:
+            return True
+        return self.suffix < other.suffix
+
+
+def _parse(version):
+    match = _VERSION_RE.match(version)
+    if match is None:
+        raise ValueError(f"string: expected a valid version, found {version!r}")
+
+    major = int(match["major"])
+    minor = int(match["minor"])
+    patch = int(match["patch"])
+    suffix = _Suffix(match["suffix"])
+    return major, minor, patch, suffix
 
 
 def validate_notebook_version(notebook_version):
@@ -28,8 +64,8 @@ def validate_notebook_version(notebook_version):
     Args:
         notebook_version(str): the library version that the notebook was created for
     """
-    version_stellargraph = version.parse(__version__)
-    version_notebook = version.parse(notebook_version)
+    version_stellargraph = _parse(__version__)
+    version_notebook = _parse(notebook_version)
     extra_info = (
         "Please see <https://github.com/stellargraph/stellargraph/issues/1172>."
     )
