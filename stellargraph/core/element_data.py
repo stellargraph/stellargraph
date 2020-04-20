@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 
-from ..globalvar import SOURCE, TARGET, WEIGHT
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .validation import require_dataframe_has_columns, comma_sep
 
 
@@ -119,59 +119,59 @@ class ElementData:
     than indexing pandas dataframes, series or indices.
 
     Args:
-        shared (dict of type name to pandas DataFrame): information for the elements of each type
+        shared (pandas DataFrame): information for each element
+        type_ranges (dict of type name to range): the ranges of each type of node; contiguous from 0, when sorted by the type names
     """
 
     # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
     # overridden by subclasses as appropriate)
     _SHARED_REQUIRED_COLUMNS = []
 
-    def __init__(self, shared):
-        if not isinstance(shared, dict):
-            raise TypeError(f"shared: expected dict, found {type(shared)}")
+    def __init__(self, shared, type_ranges):
+        if not isinstance(shared, pd.DataFrame):
+            raise TypeError(f"shared: expected pandas DataFrame, found {type(shared).__name__}")
 
-        for key, value in shared.items():
-            if not isinstance(value, pd.DataFrame):
-                raise TypeError(
-                    f"shared[{key!r}]: expected pandas DataFrame', found {type(value)}"
+        require_dataframe_has_columns("shared", shared, self._SHARED_REQUIRED_COLUMNS)
+
+        if not isinstance(type_ranges, dict):
+            raise TypeError(f"type_ranges: expected dict, found {type(type_ranges).__name__}")
+
+        sorted_ranges = sorted(type_ranges.items(), key=lambda x: x[0])
+        previous_end = 0
+        for type_name, type_range in sorted_ranges:
+            if not isinstance(type_range, range):
+                raise TypeError(f"type_ranges[{type_name!r}]: expected range, found {type(type_range).__name__}")
+
+            if type_range.start != previous_end:
+                raise ValueError(
+                    f"type_ranges[{type_name!r}]: expected range to start at {previous_end} (to be contiguous from 0 when sorted by type name), found start {type_range.start}"
                 )
 
-            require_dataframe_has_columns(
-                f"features[{key!r}]", value, self._SHARED_REQUIRED_COLUMNS
+            if type_range.step != 1:
+                raise ValueError(
+                    f"type_ranges[{type_name!r}]: expected range step = 1, found {type_range.step}"
+                )
+
+            previous_end = type_range.stop
+
+        if previous_end != len(shared):
+            raise ValueError(
+                f"type_ranges: expected ranges to cover 0 (inclusive) to {len(shared)} (exclusive), found highest value {previous_end}"
             )
 
-        type_element_ilocs = {}
-        rows_so_far = 0
-        type_dfs = []
-
-        all_types = sorted(shared.keys())
-        type_sizes = []
-
-        for type_name in all_types:
-            type_data = shared[type_name]
-            size = len(type_data)
-
-            type_element_ilocs[type_name] = range(rows_so_far, rows_so_far + size)
-            rows_so_far += size
-
-            type_sizes.append(size)
-            type_dfs.append(type_data)
-
-        if type_dfs:
-            all_columns = pd.concat(type_dfs)
-        else:
-            all_columns = pd.DataFrame(columns=self._SHARED_REQUIRED_COLUMNS)
-
-        self._id_index = ExternalIdIndex(all_columns.index)
+        self._id_index = ExternalIdIndex(shared.index)
         self._columns = {
-            name: data.to_numpy() for name, data in all_columns.iteritems()
+            name: data.to_numpy() for name, data in shared.iteritems()
         }
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
+        all_types = [type_name for type_name, _  in sorted_ranges]
+        type_sizes = [len(type_range) for _, type_range in sorted_ranges]
+
         self._type_index = ExternalIdIndex(all_types)
         self._type_column = self._type_index.to_iloc(all_types).repeat(type_sizes)
-        self._type_element_ilocs = type_element_ilocs
+        self._type_element_ilocs = type_ranges
 
     def __len__(self) -> int:
         return len(self._id_index)
@@ -230,12 +230,13 @@ class ElementData:
 class NodeData(ElementData):
     """
     Args:
-        shared (dict of type name to pandas DataFrame): information for the nodes of each type
+        shared (pandas DataFrame): information for the nodes
+        type_ranges (dict of type name to range): the ranges of each type of node; contiguous from 0, when sorted by the type names
         features (dict of type name to numpy array): a 2D numpy or scipy array of feature vectors for the nodes of each type
     """
 
-    def __init__(self, shared, features):
-        super().__init__(shared)
+    def __init__(self, shared, type_ranges, features):
+        super().__init__(shared, type_ranges)
         if not isinstance(features, dict):
             raise TypeError(f"features: expected dict, found {type(features)}")
 
@@ -303,13 +304,14 @@ def _numpyise(d):
 class EdgeData(ElementData):
     """
     Args:
-        shared (dict of type name to pandas DataFrame): information for the edges of each type
+        shared (pandas DataFrame): information for the edges
+        type_ranges (dict of type name to range): the ranges of each type of edge; contiguous from 0, when sorted by the type names
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared):
-        super().__init__(shared)
+    def __init__(self, shared, type_ranges):
+        super().__init__(shared, type_ranges)
 
         # cache these columns to avoid having to do more method and dict look-ups
         self.sources = self._column(SOURCE)

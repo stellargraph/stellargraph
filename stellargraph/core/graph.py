@@ -193,6 +193,10 @@ class StellarGraph:
             The name of the column in each of the ``edges`` DataFrames to use as the weight of
             edges. If the column does not exist in any of them, it is defaulted to ``1``.
 
+        edge_type_column (str, optional):
+            The name of the column in the ``edges`` DataFrame to use as the edge type (if this is
+            set, ``edges`` must be a single DataFrame, not a dictionary).
+
         node_type_default (str, optional):
             The default node type to use, if ``nodes`` is passed as a DataFrame (not a ``dict``).
 
@@ -221,6 +225,7 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -278,6 +283,7 @@ class StellarGraph:
             source_column=source_column,
             target_column=target_column,
             weight_column=edge_weight_column,
+            type_column=edge_type_column,
         )
 
         nodes_from_edges = pd.unique(
@@ -1319,6 +1325,7 @@ class StellarDiGraph(StellarGraph):
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -1335,6 +1342,7 @@ class StellarDiGraph(StellarGraph):
             source_column=source_column,
             target_column=target_column,
             edge_weight_column=edge_weight_column,
+            edge_type_column=edge_type_column,
             node_type_default=node_type_default,
             edge_type_default=edge_type_default,
             dtype=dtype,

@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from ..globalvar import SOURCE, TARGET, WEIGHT
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
 from .validation import comma_sep, require_dataframe_has_columns
 
@@ -45,12 +45,24 @@ class ColumnarConverter:
         self,
         name,
         default_type,
+        type_column,
         column_defaults,
         selected_columns,
         allow_features,
         dtype=None,
     ):
+        if type_column is not None:
+            if allow_features:
+                raise ValueError(
+                    f"allow_features: expected no features when using a type column ({type_column!r}), found them to be allowed"
+                )
+            if type_column not in selected_columns:
+                raise ValueError(
+                    f"selected_columns: expected type column ({type_column!r}) to be included when using, found only {comma_sep(list(selected_columns.keys()))}"
+                )
+
         self._parent_name = name
+        self.type_column = type_column
         self.column_defaults = column_defaults
         self.selected_columns = selected_columns
         self.default_type = default_type
@@ -102,7 +114,65 @@ class ColumnarConverter:
 
         return known.rename(columns=self.selected_columns), features
 
+    def _shared_and_ranges_from_singles(self, singles):
+        rows_so_far = 0
+        type_ranges = {}
+        type_sizes = []
+        type_dfs = []
+
+        for type_name in sorted(singles.keys()):
+            type_data, _ = singles[type_name]
+            size = len(type_data)
+
+            type_ranges[type_name] = range(rows_so_far, rows_so_far + size)
+            rows_so_far += size
+
+            type_sizes.append(size)
+            type_dfs.append(type_data)
+
+        if type_dfs:
+            shared = pd.concat(type_dfs)
+        else:
+            shared = pd.DataFrame(columns=self.selected_columns.values())
+
+        return shared, type_ranges
+
+    def _convert_with_type_column(self, data):
+        # we've got a type column, so there's no dictionaries or separate dataframes. We just need
+        # to make sure things are arranged right, i.e. nodes of each type are contiguous, and
+        # 'range(...)' objects describing each one.
+        known, features = self._convert_single(None, data)
+        assert features is None
+
+        # the column we see in `known` is after being selected/renamed
+        selected_type_column = self.selected_columns[self.type_column]
+
+        known.sort_values(selected_type_column, inplace=True)
+
+        # the shared data doesn't use the type column; that info is encoded in `type_ranges` below
+        shared = known.drop(columns=selected_type_column)
+
+        # deduce the type ranges based on the first index of each of the known values
+        types, first_occurance = np.unique(known[selected_type_column], return_index=True
+        )
+        first_occurance = list(first_occurance)
+        first_occurance.append(len(known))
+
+        type_ranges = {
+            type_name: range(start, end)
+            for type_name, start, end in zip(types, first_occurance, first_occurance[1:])
+        }
+
+        # per the assert above, the features are None for every type
+        features = {type_name: None for type_name in types}
+
+        return shared, type_ranges, features
+
+
     def convert(self, elements):
+        if self.type_column is not None:
+            return self._convert_with_type_column(elements)
+
         if isinstance(elements, pd.DataFrame):
             elements = {self.default_type: elements}
 
@@ -113,53 +183,61 @@ class ColumnarConverter:
             type_name: self._convert_single(type_name, data)
             for type_name, data in elements.items()
         }
-        return (
-            {type_name: shared for type_name, (shared, _) in singles.items()},
-            {type_name: features for type_name, (_, features) in singles.items()},
-        )
+
+        shared, type_ranges = self._shared_and_ranges_from_singles(singles)
+        features = {type_name: features for type_name, (_, features) in singles.items()}
+        return (shared, type_ranges, features)
 
 
 def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
     converter = ColumnarConverter(
         name,
         default_type,
+        type_column=None,
         column_defaults={},
         selected_columns={},
         allow_features=True,
         dtype=dtype,
     )
-    nodes, node_features = converter.convert(data)
-    return NodeData(nodes, node_features)
+    nodes, type_ranges, node_features = converter.convert(data)
+    return NodeData(nodes, type_ranges, node_features)
 
 
 DEFAULT_WEIGHT = np.float32(1)
 
 
 def convert_edges(
-    data, *, name, default_type, source_column, target_column, weight_column,
+    data, *, name, default_type, source_column, target_column, weight_column, type_column,
 ):
+    selected = {
+        source_column: SOURCE,
+        target_column: TARGET,
+        weight_column: WEIGHT,
+    }
+
+    if type_column is not None:
+        selected[type_column] = TYPE_ATTR_NAME
+
     converter = ColumnarConverter(
         name,
         default_type,
+        type_column=type_column,
         column_defaults={weight_column: DEFAULT_WEIGHT},
-        selected_columns={
-            source_column: SOURCE,
-            target_column: TARGET,
-            weight_column: WEIGHT,
-        },
+        selected_columns=selected,
         allow_features=False,
     )
-    edges, edge_features = converter.convert(data)
+    edges, type_ranges, edge_features = converter.convert(data)
+
+    # validation:
     assert all(features is None for features in edge_features.values())
 
-    for type_name, type_df in edges.items():
-        weight_col = type_df[WEIGHT]
-        if not pd.api.types.is_numeric_dtype(weight_col):
-            raise TypeError(
-                f"{converter.name(type_name)}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
-            )
+    weight_col = edges[WEIGHT]
+    if not pd.api.types.is_numeric_dtype(weight_col):
+        raise TypeError(
+            f"{converter.name()}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
+        )
 
-    return EdgeData(edges)
+    return EdgeData(edges, type_ranges)
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(

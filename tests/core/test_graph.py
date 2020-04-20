@@ -165,6 +165,13 @@ def test_graph_constructor_nodes_from_edges():
     assert sorted(g.nodes()) == [0, 1, 2, 4, 5]
 
 
+def test_graph_constructor_edge_labels():
+    edges = pd.DataFrame({"source": [4, 1, 5], "target": [0, 0, 2], "ET": ["b", "a", "b"]})
+
+    g = StellarGraph(edges=edges, edge_type_column="ET")
+    assert sorted(g.edges(include_edge_type=True)) == [(1, 0, "a"), (4, 0, "b"), (5, 2, "b")]
+
+
 def test_info():
     sg = create_graph_1()
     info_str = sg.info()
