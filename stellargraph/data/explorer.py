@@ -887,7 +887,9 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [None] * size
         neighbours = list(
-            self.graph.in_nodes(node) if idx == 0 else self.graph.out_nodes(node)
+            self.graph.in_nodes(node, use_ilocs=self.use_ilocs)
+            if idx == 0
+            else self.graph.out_nodes(node, use_ilocs=self.use_ilocs)
         )
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
