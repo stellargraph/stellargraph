@@ -35,10 +35,10 @@ def test_current_version_newer():
         validate_notebook_version("0.0.0")
 
 
-@patch("stellargraph.__version__", new="1.0.0b0")
+@patch("stellargraph.utils.version_validation.__version__", new="2.0.0b0")
 def test_dev_library_with_release_notebook():
     with pytest.raises(
         ValueError,
-        match=".* requires StellarGraph version 1.0.0, but an older version .*/1172",
+        match=".* requires StellarGraph version 2.0.0, but an older version 2.0.0b0.*/1172",
     ):
-        validate_notebook_version("1.0.0")
+        validate_notebook_version("2.0.0")
