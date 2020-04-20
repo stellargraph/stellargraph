@@ -570,7 +570,7 @@ class HinSAGE:
 
         return [input_shapes[ii] for ii in range(len(self.subtree_schema))]
 
-    def in_out_tensors(self, multiplicity=None):
+    def in_out_tensors(self):
         """
         Builds a HinSAGE model for node or link/node pair prediction, depending on the generator used to construct
         the model (whether it is a node or link/node pair generator).
@@ -581,12 +581,6 @@ class HinSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1]).
 
         """
-
-        if multiplicity is not None and multiplicity != self.multiplicity:
-            mult_to_str = {1: "node", 2: "link"}
-            raise ValueError(
-                f"multiplicity: expected parameter to match the {mult_to_str[self.multiplicity]} model's multiplicity ({self.multiplicity}), found {multiplicity}"
-            )
 
         # Create tensor inputs
         x_inp = [Input(shape=s) for s in self._input_shapes()]
