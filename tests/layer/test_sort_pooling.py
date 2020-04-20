@@ -115,7 +115,7 @@ def test_flatten_output():
     data = np.array([[3, 1], [1, 2], [5, 0], [0, -4]], dtype=int).reshape((2, 2, 2))
     mask = np.array([[True, True], [True, True]])
 
-    data_sorted = np.array([[1, 2, 3, 1], [5, 0, 0, -4]], dtype=int)
+    data_sorted = np.array([[1, 2, 3, 1], [5, 0, 0, -4]], dtype=int).reshape((2, 4, 1))
 
     layer = SortPooling(k=2, flatten_output=True)
 
