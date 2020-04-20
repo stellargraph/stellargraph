@@ -115,7 +115,7 @@ class FullBatchGenerator(Generator):
             self.use_sparse = sparse
 
         # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        self.features = G.node_features(node_type=node_types[0])
 
         if transform is not None:
             if callable(transform):
