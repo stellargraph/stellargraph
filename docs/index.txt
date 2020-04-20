@@ -13,7 +13,7 @@ Welcome to StellarGraph's documentation!
    README
    api
    hinsage
-   loading-pandas.ipynb
+   demos/index
 
 
 Indices and tables

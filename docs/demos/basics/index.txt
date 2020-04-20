@@ -1,0 +1,10 @@
+Basics
+========================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    ./*
+
+

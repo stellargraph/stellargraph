@@ -59,6 +59,7 @@ extensions = [
     "recommonmark",
     "sphinx_markdown_tables",
     "nbsphinx",
+    "nbsphinx_link",
 ]
 
 # Add mappings

@@ -1,0 +1,8 @@
+Examples
+========================
+
+.. toctree::
+    :titlesonly:
+
+    basics/index
+

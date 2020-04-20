@@ -1,9 +1,0 @@
-Examples
-========================
-
-Basics
-----------------
-
-.. notebook:: ./loading-pandas.ipynb
-
-
