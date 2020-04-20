@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
+
+shopt -s globstar nullglob
 
 # get all notebooks
-for nb_path in $(find demos -name "*.ipynb"); do
+for nb_path in demos/**/*.ipynb; do
   nb_link="docs/${nb_path%.ipynb}.nblink"
 
   # recurse through parent directories and create index.txt
