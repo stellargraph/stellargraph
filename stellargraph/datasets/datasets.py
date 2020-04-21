@@ -861,6 +861,10 @@ class METR_LA(
     description="This traffic dataset contains traffic information collected from loop detectors in the highway of Los Angeles County (Jagadish et al., 2014).",
     source="https://github.com/lehaifeng/T-GCN/tree/master/data",
 ):
+    def download(self, ignore_cache=False):
+        # FIXME(#1303): downloading METR_LA isn't currently supported
+        pass
+
     def load(self):
         los_adj = pd.read_csv(r"data/los_adj.csv", header=None)
         adj = np.mat(los_adj)
