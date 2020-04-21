@@ -29,6 +29,7 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
+from ..core.experimental import experimental
 
 
 log = logging.getLogger(__name__)
@@ -805,6 +806,7 @@ class IAEnronEmployees(
         return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges
 
 
+@experimental(reason="the data isn't downloaded automatically", issues=[9999])
 class METR_LA(
     DatasetLoader,
     name="METR-LA",
