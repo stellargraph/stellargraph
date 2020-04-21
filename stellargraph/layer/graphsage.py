@@ -176,7 +176,7 @@ class GraphSAGEAggregator(Layer):
         """
         if not isinstance(input_shape, list):
             raise ValueError(
-                "Expected a list of inputs, not {}".format(type(input_shape))
+                "Expected a list of inputs, not {}".format(type(input_shape).__name__)
             )
 
         # Configure bias vector, if used.
