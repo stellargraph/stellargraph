@@ -31,8 +31,8 @@ _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 def test_columnar_convert_type_default():
     converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
-    shared, type_ranges, features = converter.convert(_EMPTY_DF)
-    assert "foo" in type_ranges
+    shared, type_starts, features = converter.convert(_EMPTY_DF)
+    assert type_starts == [("foo", 0)]
     assert "foo" in features
 
 
@@ -42,10 +42,9 @@ def test_columnar_convert_selected_columns():
     converter = ColumnarConverter(
         "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False
     )
-    shared, type_ranges, features = converter.convert({"x": df, "y": df})
+    shared, type_starts, features = converter.convert({"x": df, "y": df})
 
-    assert "x" in type_ranges
-    assert "y" in type_ranges
+    assert type_starts == [("x", 0), ("y", 2)]
 
     assert "before" not in shared
     assert all(shared["after"] == "abc")
@@ -65,10 +64,9 @@ def test_columnar_convert_selected_columns_missing():
 
 def test_columnar_convert_column_default():
     converter = ColumnarConverter("some_name", "foo", None, {"before": 123}, {}, False)
-    shared, type_ranges, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
-    assert "x" in type_ranges
-    assert "y" in type_ranges
+    assert type_starts == [("x", 0), ("y", 2)]
 
     assert all(shared["before"] == 123)
 
@@ -78,10 +76,9 @@ def test_columnar_convert_column_default_selected_columns():
     converter = ColumnarConverter(
         "x", "foo", None, {"before": 123}, {"before": "after"}, False
     )
-    shared, type_ranges, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
-    assert "x" in type_ranges
-    assert "y" in type_ranges
+    assert type_starts == [("x", 0), ("y", 2)]
 
     assert "before" not in shared
     assert all(shared["after"] == 123)
@@ -90,9 +87,9 @@ def test_columnar_convert_column_default_selected_columns():
 def test_columnar_convert_features():
     converter = ColumnarConverter("some_name", "foo", None, {}, {"x": "x"}, True)
     df = _EMPTY_DF.assign(a=[1, 2], b=[100, 200], x=123)
-    shared, type_ranges, features = converter.convert(df)
+    shared, type_starts, features = converter.convert(df)
 
-    assert "foo" in type_ranges
+    assert type_starts == [("foo", 0)]
     assert all(shared["x"] == 123)
     assert np.array_equal(features["foo"], [[1, 100], [2, 200]])
 
@@ -128,12 +125,12 @@ def test_columnar_convert_type_column():
         {"type_column": ["c", "a", "a", "c", "b"], "data": [1, 2, 3, 4, 5]},
         index=[1, 10, 100, 1000, 10000],
     )
-    shared, type_ranges, features = converter.convert(df)
+    shared, type_starts, features = converter.convert(df)
 
     assert set(shared.columns) == {"D"}
     assert list(shared.index) == [10, 100, 10000, 1, 1000]
     assert list(shared["D"]) == [2, 3, 5, 1, 4]
-    assert type_ranges == {"a": range(0, 2), "b": range(2, 3), "c": range(3, 5)}
+    assert type_starts == [("a", 0), ("b", 2), ("c", 3)]
     assert features == {"a": None, "b": None, "c": None}
 
     # invalid configurations

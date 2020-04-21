@@ -35,6 +35,7 @@ class ColumnarConverter:
     Args:
         name (str): the name of the argument for error messages
         default_type (hashable): the default type to use for data without a type
+        type_column (hashable, optional): the name of the type column, if one is being used
         column_defaults (dict of hashable to any): any default values for columns (using names before renaming!)
         selected_columns (dict of hashable to hashable): renamings for columns, mapping original name to new name
         allow_features (bool): if True, columns that aren't selected are returned as a numpy feature matrix
@@ -114,21 +115,18 @@ class ColumnarConverter:
 
         return known.rename(columns=self.selected_columns), features
 
-    def _shared_and_ranges_from_singles(self, singles):
+    def _shared_and_starts_from_singles(self, singles):
         rows_so_far = 0
-        type_ranges = {}
-        type_sizes = []
+        type_starts = []
         type_dfs = []
 
         for type_name in sorted(singles.keys()):
             type_data, _ = singles[type_name]
-            size = len(type_data)
 
-            type_ranges[type_name] = range(rows_so_far, rows_so_far + size)
-            rows_so_far += size
-
-            type_sizes.append(size)
+            type_starts.append((type_name, rows_so_far))
             type_dfs.append(type_data)
+
+            rows_so_far += len(type_data)
 
         if type_dfs:
             shared = pd.concat(type_dfs)
@@ -139,7 +137,7 @@ class ColumnarConverter:
                 columns=self.selected_columns.values(), dtype=np.uint8
             )
 
-        return shared, type_ranges
+        return shared, type_starts
 
     def _convert_with_type_column(self, data):
         # we've got a type column, so there's no dictionaries or separate dataframes. We just need
@@ -160,20 +158,15 @@ class ColumnarConverter:
         types, first_occurance = np.unique(
             known[selected_type_column], return_index=True
         )
-        first_occurance = list(first_occurance)
-        first_occurance.append(len(known))
 
-        type_ranges = {
-            type_name: range(start, end)
-            for type_name, start, end in zip(
-                types, first_occurance, first_occurance[1:]
-            )
-        }
+        type_starts = [
+            (type_name, start) for type_name, start in zip(types, first_occurance)
+        ]
 
         # per the assert above, the features are None for every type
         features = {type_name: None for type_name in types}
 
-        return shared, type_ranges, features
+        return shared, type_starts, features
 
     def convert(self, elements):
         if self.type_column is not None:
@@ -190,9 +183,9 @@ class ColumnarConverter:
             for type_name, data in elements.items()
         }
 
-        shared, type_ranges = self._shared_and_ranges_from_singles(singles)
+        shared, type_starts = self._shared_and_starts_from_singles(singles)
         features = {type_name: features for type_name, (_, features) in singles.items()}
-        return (shared, type_ranges, features)
+        return (shared, type_starts, features)
 
 
 def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
@@ -205,8 +198,8 @@ def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
         allow_features=True,
         dtype=dtype,
     )
-    nodes, type_ranges, node_features = converter.convert(data)
-    return NodeData(nodes, type_ranges, node_features)
+    nodes, type_starts, node_features = converter.convert(data)
+    return NodeData(nodes, type_starts, node_features)
 
 
 DEFAULT_WEIGHT = np.float32(1)
@@ -239,7 +232,7 @@ def convert_edges(
         selected_columns=selected,
         allow_features=False,
     )
-    edges, type_ranges, edge_features = converter.convert(data)
+    edges, type_starts, edge_features = converter.convert(data)
 
     # validation:
     assert all(features is None for features in edge_features.values())
@@ -250,7 +243,7 @@ def convert_edges(
             f"{converter.name()}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
         )
 
-    return EdgeData(edges, type_ranges)
+    return EdgeData(edges, type_starts)
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(
