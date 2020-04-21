@@ -316,6 +316,16 @@ class EdgeData(ElementData):
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
 
+        # These are lazily initialized, to only pay the (construction) time and memory cost when
+        # actually using them
+        self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
+
+        # when there's no neighbors for something, an empty array should be returned; this uses a
+        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
+        # array, the result will still be int32).
+        self._empty_ilocs = np.array([], dtype=np.uint8)
+
+    def _init_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
         out_dict = {}
@@ -334,12 +344,10 @@ class EdgeData(ElementData):
         self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
         self._edges_dict = _numpyise(undirected, dtype=dtype)
 
-        # when there's no neighbors for something, an empty array should be returned; this uses a
-        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
-        # array, the result will still be int32).
-        self._empty_ilocs = np.array([], dtype=np.uint8)
-
     def _adj_lookup(self, *, ins, outs):
+        if self._edges_dict is None:
+            self._init_adj_lists()
+
         if ins and outs:
             return self._edges_dict
         if ins:
