@@ -1,0 +1,8 @@
+Community Detection
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    ./*

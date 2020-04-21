@@ -1,0 +1,8 @@
+Embeddings
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    ./*
