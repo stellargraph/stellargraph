@@ -104,14 +104,11 @@ def test_columnar_convert_disallow_features():
 def test_columnar_convert_invalid_input():
     converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
 
-    with pytest.raises(
-        TypeError, match="some_name: expected dict, found <class 'int'>"
-    ):
+    with pytest.raises(TypeError, match="some_name: expected dict, found int"):
         converter.convert(1)
 
     with pytest.raises(
-        TypeError,
-        match=r"some_name\['x'\]: expected pandas DataFrame, found <class 'int'>",
+        TypeError, match=r"some_name\['x'\]: expected pandas DataFrame, found int",
     ):
         converter.convert({"x": 1})
 

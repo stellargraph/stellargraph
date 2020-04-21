@@ -37,6 +37,7 @@ import scipy.sparse as sps
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
+from collections import defaultdict
 
 from ..data import (
     SampledBreadthFirstWalk,
@@ -494,6 +495,16 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         ]
 
         return batch_feats
+
+    def default_corrupt_input_index_groups(self):
+        # every sample of a given node type can be grouped together
+        indices_per_nt = defaultdict(list)
+        for tensor_idx, (nt, _) in enumerate(self._sampling_schema[0]):
+            indices_per_nt[nt].append(tensor_idx)
+
+        # ensure there's a consistent order both within each group, and across groups, ensure the
+        # shuffling is deterministic (at least with respect to the model)
+        return sorted(sorted(idx) for idx in indices_per_nt.values())
 
 
 class Attri2VecNodeGenerator(BatchedNodeGenerator):

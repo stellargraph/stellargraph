@@ -78,7 +78,7 @@ class ColumnarConverter:
     def _convert_single(self, type_name, data):
         if not isinstance(data, pd.DataFrame):
             raise TypeError(
-                f"{self.name(type_name)}: expected pandas DataFrame, found {type(data)}"
+                f"{self.name(type_name)}: expected pandas DataFrame, found {type(data).__name__}"
             )
 
         existing = set(self.selected_columns).intersection(data.columns)
@@ -176,7 +176,9 @@ class ColumnarConverter:
             elements = {self.default_type: elements}
 
         if not isinstance(elements, dict):
-            raise TypeError(f"{self.name()}: expected dict, found {type(elements)}")
+            raise TypeError(
+                f"{self.name()}: expected dict, found {type(elements).__name__}"
+            )
 
         singles = {
             type_name: self._convert_single(type_name, data)
