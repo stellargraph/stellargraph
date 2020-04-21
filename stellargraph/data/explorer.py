@@ -280,7 +280,7 @@ class UniformRandomWalk(RandomWalk):
         current_node = start_node
         for _ in range(length - 1):
             neighbours = self.graph.neighbors(current_node)
-            if not neighbours:
+            if len(neighbours) == 0:
                 # dead end, so stop
                 break
             else:
@@ -441,13 +441,13 @@ class BiasedRandomWalk(RandomWalk):
                     else:  # d_tx = 2
                         return iq * weight_cn
 
-                if neighbours:
+                if len(neighbours) > 0:
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
                         neighbours = self.graph.neighbors(current_node)
 
-                        if not neighbours:
+                        if len(neighbours) == 0:
                             break
 
                         # select one of the neighbours using the

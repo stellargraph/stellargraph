@@ -558,7 +558,7 @@ class StellarGraph:
         if weights is not None:
             return other_node_id, weights
 
-        return list(other_node_id)
+        return other_node_id
 
     def neighbors(
         self, node: Any, include_edge_weight=False, edge_types=None
