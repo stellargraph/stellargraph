@@ -850,7 +850,7 @@ class IAEnronEmployees(
         return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges
 
 
-@experimental(reason="the data isn't downloaded automatically", issues=[9999])
+@experimental(reason="the data isn't downloaded automatically", issues=[1303])
 class METR_LA(
     DatasetLoader,
     name="METR-LA",
