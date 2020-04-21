@@ -578,7 +578,7 @@ def _load_graph_kernel_dataset(dataset):
 
     # graph information:
     df_graph_labels = _load_from_txt_file(
-        filename="graph_labels", dtype="category", names=["label"], index_increment=1,
+        filename="graph_labels", dtype="category", names=["label"], index_increment=1
     )
 
     # split the data into each of the graphs, based on the nodes in each one
