@@ -1108,7 +1108,7 @@ class TemporalRandomWalk(GraphWalk):
         neighbours = neighbours[times > time]
         times = times[times > time]
 
-        if neighbours:
+        if len(neighbours) > 0:
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
             next_node = neighbours[chosen_neighbour_index]
