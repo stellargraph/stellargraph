@@ -39,7 +39,6 @@ case $(basename "$f") in
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
     # FIXME #1303: METR_LA dataset can't be downloaded automatically
-  
     echo "+++ :python: :skull_and_crossbones: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
