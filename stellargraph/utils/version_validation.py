@@ -81,7 +81,7 @@ def validate_notebook_version(notebook_version):
         return f"{m} Please see: <{help_url}>."
 
     def _format_for_html(m):
-        return f'<div class="alert alert-block alert-danger">{m} Please see: <a href="{help_url}">{help_url}</a></div>'
+        return f'<div class="alert alert-block alert-danger">{m} Please see: <a href="{help_url}">{help_url}.</a></div>'
 
     if version_stellargraph < version_notebook:
         message = f"This notebook requires StellarGraph version {notebook_version}, but an older version {__version__} is installed."
