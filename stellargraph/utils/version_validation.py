@@ -78,17 +78,17 @@ def validate_notebook_version(notebook_version):
     help_url = "https://github.com/stellargraph/stellargraph/issues/1172"
 
     def _format_for_error(m):
-        return f"{m}.  Please see: <{help_url}>."
+        return f"{m} Please see: <{help_url}>."
 
     def _format_for_html(m):
-        return f'<div class="alert alert-block alert-danger">{m}. Please see: <a href="{help_url}">{help_url}</a></div>'
+        return f'<div class="alert alert-block alert-danger">{m} Please see: <a href="{help_url}">{help_url}</a></div>'
 
     if version_stellargraph < version_notebook:
-        message = f"This notebook requires StellarGraph version {notebook_version}, but an older version {__version__} is installed"
+        message = f"This notebook requires StellarGraph version {notebook_version}, but an older version {__version__} is installed."
         _display_in_notebook(_format_for_html(message))
         raise ValueError(_format_for_error(message)) from None
     elif version_stellargraph > version_notebook:
-        message = f"This notebook is designed for an older StellarGraph version {notebook_version} and may not function correctly with the newer installed version {__version__}"
+        message = f"This notebook is designed for an older StellarGraph version {notebook_version} and may not function correctly with the newer installed version {__version__}."
         _display_in_notebook(_format_for_html(message))
         warnings.warn(
             _format_for_error(message), DeprecationWarning, stacklevel=2,
