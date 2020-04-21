@@ -153,6 +153,15 @@ GCN Supervised Graph Classification
 .. autoclass:: GraphClassificationConvolution
   :members:
 
+Deep Graph Convolutional Neural Network
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: SortPooling
+  :members:
+
+.. autoclass:: DeepGraphConvolutionalNeuralNetwork
+  :members:
+
 Deep Graph Infomax
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: DeepGraphInfomax
