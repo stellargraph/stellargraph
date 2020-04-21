@@ -325,7 +325,7 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
         self.k = k
 
         # Add the SortPooling layer
-        self._layers.append(SortPooling(k=self.k))
+        self._layers.append(SortPooling(k=self.k, flatten_output=True))
 
     def __call__(self, x):
         """
@@ -357,7 +357,7 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
             elif isinstance(layer, SortPooling):
                 # concatenate the GCN output tensors and use as input to the SortPooling layer
                 h_layer = tf.concat(gcn_layers, axis=-1)
-                h_layer = layer(h_layer)
+                h_layer = layer([h_layer, mask])
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
