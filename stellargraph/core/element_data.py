@@ -140,9 +140,10 @@ class ElementData:
                 f"type_starts: expected list, found {type(type_starts).__name__}"
             )
 
-        type_stops = type_starts[1:] + [(None, len(shared))]
         type_ranges = {}
-        for idx, ((type_name, start), (_, stop)) in enumerate(zip(type_starts, type_stops)):
+        type_stops = type_starts[1:] + [(None, len(shared))]
+        consecutive_types = zip(type_starts, type_stops)
+        for idx, ((type_name, start), (_, stop)) in enumerate(consecutive_types):
             if idx == 0 and start != 0:
                 raise ValueError(
                     f"type_starts: expected first type ({type_name!r}) to start at index 0, found start {start}"
