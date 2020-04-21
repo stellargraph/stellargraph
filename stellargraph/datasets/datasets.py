@@ -265,7 +265,7 @@ class BlogCatalog3(
     DatasetLoader,
     name="BlogCatalog3",
     directory_name="BlogCatalog-dataset",
-    url="http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip",
+    url="https://ndownloader.figshare.com/files/22349970",
     url_archive_format="zip",
     expected_files=[
         "data/edges.csv",
@@ -275,7 +275,7 @@ class BlogCatalog3(
     ],
     description="This dataset is crawled from a social blog directory website BlogCatalog "
     "http://www.blogcatalog.com and contains the friendship network crawled and group memberships.",
-    source="http://socialcomputing.asu.edu/datasets/BlogCatalog3",
+    source="https://figshare.com/articles/BlogCatalog_dataset/11923611",
     data_subdirectory_name="data",
 ):
     def load(self):
