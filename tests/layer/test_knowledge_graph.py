@@ -26,7 +26,11 @@ from tensorflow.keras import Model, initializers, losses
 
 from stellargraph import StellarGraph, StellarDiGraph
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
-from stellargraph.layer.knowledge_graph import ComplEx, DistMult
+from stellargraph.layer.knowledge_graph import (
+    ComplEx,
+    DistMult,
+    _ranks_from_score_columns,
+)
 
 from .. import test_utils
 from ..test_utils.graphs import knowledge_graph
@@ -248,3 +252,64 @@ def test_model_rankings(model_maker):
         subject_is_unknown = ~every_edge_df.source.isin(known_subjects.source)
         expected_filt_mod_s_rank = rank(subject_is_unknown & same_r_o)
         assert filtered[1] == expected_filt_mod_s_rank
+
+
+@pytest.mark.parametrize("tie_breaking", ["top", "bottom", "random"])
+def test_tie_breaking(tie_breaking):
+    pred_scores = np.array(
+        [
+            [1, 5, 8],  # true_modified_node_ilocs:
+            [1, 3, 8],  # 1
+            [1, 2, 7],  # 2
+            [1, 2, 6],  # 3
+        ]
+    )
+    known_edges_graph = StellarDiGraph(
+        nodes=pd.DataFrame(index=["a", "b", "c", "d"]),
+        edges=pd.DataFrame(
+            [
+                # preds[0, :]: edge being predicted, checking it's counted properly for 'filtered'
+                ("a", "b"),
+                # preds[1, :]: the other tied edge, to see the 'bottom' score move up
+                ("b", "d"),
+            ],
+            columns=["source", "target"],
+        ),
+    )
+
+    copies = 100
+
+    rankings = [
+        _ranks_from_score_columns(
+            pred_scores,
+            true_modified_node_ilocs=np.array([1, 2, 3]),
+            unmodified_node_ilocs=np.array([0, 1, 2]),
+            true_rel_ilocs=np.array([0, 0, 0]),
+            modified_object=True,
+            known_edges_graph=known_edges_graph,
+            tie_breaking=tie_breaking,
+        )
+        for _ in range(copies)
+    ]
+
+    all_rankings = np.array(rankings)
+    assert all_rankings.shape == (copies, 2, 3)
+
+    top_expected = np.repeat([[[1, 3, 4], [1, 3, 4]]], copies, axis=0)
+    bottom_expected = np.repeat([[[4, 4, 4], [4, 3, 4]]], copies, axis=0)
+
+    if tie_breaking == "top":
+        np.testing.assert_array_equal(all_rankings, top_expected)
+
+    elif tie_breaking == "bottom":
+        np.testing.assert_array_equal(all_rankings, bottom_expected)
+
+    elif tie_breaking == "random":
+        assert (all_rankings >= top_expected).all()
+        assert (all_rankings <= bottom_expected).all()
+
+        # check both raw and filtered results (independently) have some variation in them
+        for i in range(all_rankings.shape[1]):
+            raw_or_filtered = all_rankings[:, i, :]
+            assert (raw_or_filtered != top_expected[:, i, :]).any()
+            assert (raw_or_filtered != bottom_expected[:, i, :]).any()
