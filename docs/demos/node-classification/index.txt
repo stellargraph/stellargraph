@@ -5,5 +5,4 @@ Node Classification
     :titlesonly:
     :glob:
 
-    */index
     ./*

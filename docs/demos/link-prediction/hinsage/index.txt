@@ -5,5 +5,4 @@ Hinsage
     :titlesonly:
     :glob:
 
-    */index
     ./*

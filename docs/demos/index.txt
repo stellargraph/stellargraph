@@ -5,5 +5,4 @@ Demos
     :titlesonly:
     :glob:
 
-    */index
     ./*

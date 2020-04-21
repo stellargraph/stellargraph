@@ -5,5 +5,4 @@ Embeddings
     :titlesonly:
     :glob:
 
-    */index
     ./*

@@ -5,5 +5,4 @@ Sgc
     :titlesonly:
     :glob:
 
-    */index
     ./*

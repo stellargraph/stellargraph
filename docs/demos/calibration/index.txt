@@ -5,5 +5,4 @@ Calibration
     :titlesonly:
     :glob:
 
-    */index
     ./*

@@ -5,5 +5,4 @@ Ensembles
     :titlesonly:
     :glob:
 
-    */index
     ./*

@@ -5,5 +5,4 @@ Interpretability
     :titlesonly:
     :glob:
 
-    */index
     ./*

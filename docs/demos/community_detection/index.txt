@@ -5,5 +5,4 @@ Community Detection
     :titlesonly:
     :glob:
 
-    */index
     ./*

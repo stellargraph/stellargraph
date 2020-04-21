@@ -5,5 +5,4 @@ Attri2vec
     :titlesonly:
     :glob:
 
-    */index
     ./*

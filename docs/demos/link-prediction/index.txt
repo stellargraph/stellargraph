@@ -5,5 +5,4 @@ Link Prediction
     :titlesonly:
     :glob:
 
-    */index
     ./*

@@ -5,5 +5,4 @@ Knowledge Graphs
     :titlesonly:
     :glob:
 
-    */index
     ./*

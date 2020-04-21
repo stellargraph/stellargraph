@@ -5,5 +5,4 @@ Ppnp
     :titlesonly:
     :glob:
 
-    */index
     ./*

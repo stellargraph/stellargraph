@@ -5,5 +5,4 @@ Graph Classification
     :titlesonly:
     :glob:
 
-    */index
     ./*

@@ -5,5 +5,4 @@ Basics
     :titlesonly:
     :glob:
 
-    */index
     ./*

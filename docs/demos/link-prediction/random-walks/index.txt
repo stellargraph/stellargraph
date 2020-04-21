@@ -5,5 +5,4 @@ Random Walks
     :titlesonly:
     :glob:
 
-    */index
     ./*

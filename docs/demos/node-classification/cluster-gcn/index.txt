@@ -5,5 +5,4 @@ Cluster Gcn
     :titlesonly:
     :glob:
 
-    */index
     ./*
