@@ -4,15 +4,20 @@
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.11.0...v1.0.0rc1)
 
+This is the first release candidate for StellarGraph 1.0. The 1.0 release will be the culmination of 2 years of activate development, and this release candidate is the first milestone for that release.
+
 ### Major features and improvements
 
-- Efforts to improve the getting-started process have continued, focusing on the demos:
+- Better demonstration notebooks and documentation to make the library more accessible to new and existing users:
   - The [demos READMEs](demos/) now contain more guidance and explanation to make it easier to find a relevant example [\#1200](https://github.com/stellargraph/stellargraph/pull/1200)
   - A [demo for loading data from Neo4j](demos/basics/loading-saving-neo4j.ipynb) has been added [\#1184](https://github.com/stellargraph/stellargraph/pull/1184)
   - The [demo for link prediction using Node2Vec](demos/link-prediction/random-walks/cora-lp-demo.ipynb) has been rewritten to be clearer [\#1190](https://github.com/stellargraph/stellargraph/pull/1190)
 - New algorithms:
-  - `GCNSupervisedGraphClassification`: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929).
-- `DeepGraphInfomax` can be used to train almost any model in an unsupervised way, via the `corrupt_index_groups` parameter to `CorruptedGenerator` [\#1243](https://github.com/stellargraph/stellargraph/pull/1243). Additionally, `GraphSAGE` ([\#1162](https://github.com/stellargraph/stellargraph/pull/1162)) and `HinSAGE` ([\#1254](https://github.com/stellargraph/stellargraph/pull/1254)) provide defaults and so can be trained without manually specifying this parameter (in addition to existing supported algorithms like `GCN` and `GAT`).
+  - `GCNSupervisedGraphClassification`: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929), [demo](demos/graph-classification/supervised-graph-classification.ipynb).
+- `DeepGraphInfomax` can be used to train almost any model in an unsupervised way, via the `corrupt_index_groups` parameter to `CorruptedGenerator` [\#1243](https://github.com/stellargraph/stellargraph/pull/1243), [demo](demos/embeddings/deep-graph-infomax-cora.ipynb). Additionally, many algorithms provide defaults and so can be used with `DeepGraphInfomax` without specifying this parameter:
+  - any model using `FullBatchNodeGenerator`, including models supported in StellarGraph 0.11: `GCN`, `GAT`, `PPNP` and `APPNP`
+  - `GraphSAGE` [\#1162](https://github.com/stellargraph/stellargraph/pull/1162)
+  - `HinSAGE` for heterogeneous graphs with node features [\#1254](https://github.com/stellargraph/stellargraph/pull/1254)
 - `UnsupervisedSampler` supports a `walker` parameter to use other random walking algorithms such as `BiasedRandomWalk`, in addition to the default `UniformRandomWalk`. [\#1187](https://github.com/stellargraph/stellargraph/pull/1187)
 
 ### Breaking changes
