@@ -131,7 +131,7 @@ class StellarGraph:
     Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
     ``z``. A heterogeneous graph can have different features for each type.
 
-    Edges of different types work in the same way. example instance, if edges have different types based
+    Edges of different types can work in the same way. For instance, if edges have different types based
     on their orientation::
 
         horizontal_edges = pd.DataFrame(
@@ -150,6 +150,19 @@ class StellarGraph:
             {"foo": foo_nodes, "bar": bar_nodes},
             {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
         )
+
+    Alternatively, a single DataFrame can be provided, with an additional column of the type. This
+    column is specified by passing the ``edge_type_column`` argument::
+
+        orientation_edges = pd.DataFrame(
+            {
+                "source": ["a", "b", "c", "d", "a"],
+                "target": ["b", "c", "d", "a", "c"],
+                "type": ["h", "v", "h", "v", "d"]
+            }
+        )
+
+        StellarGraph(nodes, orientation_edges, edge_type_column="type")
 
     .. note::
 
