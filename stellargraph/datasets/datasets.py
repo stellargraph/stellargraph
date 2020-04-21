@@ -889,13 +889,19 @@ class METR_LA(
         trainX, trainY, testX, testY = [], [], [], []
 
         for i in range(len(train_data) - int(seq_len + pre_len - 1)):
-            a = train_data[i : i + seq_len + pre_len,]
+            a = train_data[
+                i : i + seq_len + pre_len,
+            ]
             trainX.append(a[:seq_len])
             trainY.append(a[-1])
 
         for i in range(len(test_data) - int(seq_len + pre_len - 1)):
-            b = test_data[i : i + seq_len + pre_len,]
-            testX.append(b[:seq_len,])
+            b = test_data[
+                i : i + seq_len + pre_len,
+            ]
+            testX.append(
+                b[:seq_len,]
+            )
             testY.append(b[-1])
 
         trainX = np.array(trainX)
