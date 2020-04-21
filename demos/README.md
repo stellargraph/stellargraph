@@ -194,7 +194,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td>yes</td>
     <td>yes</td>
     <td><a href='link-prediction/hinsage/movielens-recommender.ipynb'>demo</a></td>
-    <td></td>
+    <td><span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
     <td>yes</td>
     <td></td>
   </tr>

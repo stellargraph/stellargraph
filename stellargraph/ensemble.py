@@ -54,7 +54,7 @@ class Ensemble(object):
         if not isinstance(model, K.Model):
             raise ValueError(
                 "({}) model must be a Keras model received object of type {}".format(
-                    type(self).__name__, type(model)
+                    type(self).__name__, type(model).__name__
                 )
             )
         if n_estimators <= 0 or not isinstance(n_estimators, int):
@@ -114,7 +114,7 @@ class Ensemble(object):
         if indx is not None and not isinstance(indx, (int,)):
             raise ValueError(
                 "({}) indx should be None or integer type but received type {}".format(
-                    type(self).__name__, type(indx)
+                    type(self).__name__, type(indx).__name__
                 )
             )
         if isinstance(indx, (int,)) and indx < 0:
@@ -259,7 +259,7 @@ class Ensemble(object):
             raise ValueError(
                 "({}) If train_data is None, generator must be one of type NodeSequence, LinkSequence, FullBatchSequence "
                 "but received object of type {}".format(
-                    type(self).__name__, type(generator)
+                    type(self).__name__, type(generator).__name__
                 )
             )
 
@@ -356,7 +356,7 @@ class Ensemble(object):
             raise ValueError(
                 "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator, "
                 "GraphSAGELinkGenerator, or HinSAGELinkGenerator. Received type {}".format(
-                    type(self).__name__, type(generator)
+                    type(self).__name__, type(generator).__name__
                 )
             )
         elif not isinstance(
@@ -372,7 +372,7 @@ class Ensemble(object):
                 "({}) If test_data is None, generator must be one of type NodeSequence, "
                 "LinkSequence, FullBatchSequence, or SparseFullBatchSequence "
                 "but received object of type {}".format(
-                    type(self).__name__, type(generator)
+                    type(self).__name__, type(generator).__name__
                 )
             )
         if test_data is not None and test_targets is None:
@@ -468,7 +468,7 @@ class Ensemble(object):
             ):
                 raise ValueError(
                     "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, or FullBatchNodeGenerator. Received type {}".format(
-                        type(self).__name__, type(generator)
+                        type(self).__name__, type(generator).__name__
                     )
                 )
             data_generator = generator.flow(predict_data)
@@ -653,7 +653,7 @@ class BaggingEnsemble(Ensemble):
             raise ValueError(
                 "({}) generator parameter must be of type GraphSAGENodeGenerator, HinSAGENodeGenerator, "
                 "FullBatchNodeGenerator, GraphSAGELinkGenerator, or HinSAGELinkGenerator if you want to use Bagging. "
-                "Received type {}".format(type(self).__name__, type(generator))
+                "Received type {}".format(type(self).__name__, type(generator).__name__)
             )
         if bag_size is not None and (bag_size > len(train_data) or bag_size <= 0):
             raise ValueError(
