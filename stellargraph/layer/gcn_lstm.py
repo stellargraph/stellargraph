@@ -41,8 +41,6 @@ class FixedAdjacencyGraphConvolution(Layer):
         A (N x N): weighted/unweighted adjacency matrix
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
         kernel_initializer (str or func, optional): The initialiser to use for the weights.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights.
         kernel_constraint (str or func, optional): The constraint to use for the weights.
@@ -195,7 +193,7 @@ class FixedAdjacencyGraphConvolution(Layer):
 class GraphConvolutionLSTM:
 
     """
-        A stack of N1 Graph Convolutional layers followed by N2 LSTM, Dropout and,  Dense layer.
+        A stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
         This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction
                                           (https://arxiv.org/abs/1811.05320)
         The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
@@ -229,7 +227,7 @@ class GraphConvolutionLSTM:
         seq_len,
         adj,
         gc_layers,
-        lstm_layer_sizes,
+        lstm_layer_size,
         bias=True,
         dropout=0.5,
         gc_activations=["relu", "relu"],
@@ -245,9 +243,9 @@ class GraphConvolutionLSTM:
         super(GraphConvolutionLSTM, self).__init__()
 
         n_gc_layers = gc_layers
-        n_lstm_layers = len(lstm_layer_sizes)
+        n_lstm_layers = len(lstm_layer_size)
 
-        self.lstm_layer_sizes = lstm_layer_sizes
+        self.lstm_layer_size = lstm_layer_size
         self.bias = bias
         self.dropout = dropout
         self.outputs = adj.shape[0]
