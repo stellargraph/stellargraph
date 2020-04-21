@@ -57,19 +57,19 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     if not isinstance(prediction_probabilities, np.ndarray):
         raise ValueError(
             "Parameter prediction_probabilities must be type numpy.ndarray but given object of type {}".format(
-                type(prediction_probabilities)
+                type(prediction_probabilities).__name__
             )
         )
     if not isinstance(accuracy, np.ndarray):
         raise ValueError(
             "Parameter accuracy must be type numpy.ndarray but given object of type {}".format(
-                type(accuracy)
+                type(accuracy).__name__
             )
         )
     if not isinstance(confidence, np.ndarray):
         raise ValueError(
             "Parameter confidence must be type numpy.ndarray but given object of type {}".format(
-                type(confidence)
+                type(confidence).__name__
             )
         )
 
@@ -107,26 +107,26 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
     if not isinstance(calibration_data, list):
         raise ValueError(
             "Parameter calibration_data should be list of 2-tuples but received type {}".format(
-                type(calibration_data)
+                type(calibration_data).__name__
             )
         )
 
     if not isinstance(predictions, np.ndarray):
         raise ValueError(
             "Parameter predictions should be of type numpy.ndarray but received type {}".format(
-                type(predictions)
+                type(predictions).__name__
             )
         )
     if ece is not None and not isinstance(ece, list):
         raise ValueError(
             "Parameter ece should be None or list of floating point numbers but received type {}".format(
-                type(ece)
+                type(ece).__name__
             )
         )
     if filename is not None and not isinstance(filename, str):
         raise ValueError(
             "Parameter filename should be None or str type but received type {}".format(
-                type(filename)
+                type(filename).__name__
             )
         )
 
@@ -335,7 +335,7 @@ class TemperatureCalibration(object):
         """
         if not isinstance(x, np.ndarray):
             raise ValueError(
-                "x should be numpy.ndarray but received {}".format(type(x))
+                "x should be numpy.ndarray but received {}".format(type(x).__name__)
             )
 
         if len(x.shape) > 1 and x.shape[1] != self.n_classes:
@@ -380,7 +380,7 @@ class IsotonicCalibration(object):
         if not isinstance(x_train, np.ndarray) or not isinstance(y_train, np.ndarray):
             raise ValueError(
                 "x_train and y_train should be type numpy.ndarray but received {} and {}".format(
-                    type(x_train), type(y_train)
+                    type(x_train).__name__, type(y_train).__name__
                 )
             )
 
@@ -419,7 +419,7 @@ class IsotonicCalibration(object):
         """
         if not isinstance(x, np.ndarray):
             raise ValueError(
-                "x should be numpy.ndarray but received {}".format(type(x))
+                "x should be numpy.ndarray but received {}".format(type(x).__name__)
             )
 
         if self.n_classes > 1 and x.shape[1] != self.n_classes:

@@ -361,6 +361,7 @@ ALGORITHMS = [
         features=True,
         nc=True,
         lp=T(link="link-prediction/hinsage/movielens-recommender.ipynb"),
+        rl=rl_dgi(),
         inductive=True,
     ),
     Algorithm(

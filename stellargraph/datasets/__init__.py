@@ -28,6 +28,7 @@ __all__ = [
     "MovieLens",
     "AIFB",
     "MUTAG",
+    "PROTEINS",
     "WN18",
     "WN18RR",
     "FB15k",
