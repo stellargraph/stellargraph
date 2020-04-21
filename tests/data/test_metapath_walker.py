@@ -194,7 +194,7 @@ class TestMetaPathWalk(object):
         assert len(walks) == n
         assert len(walks[0]) == length  # the node is repeated length times
         for node in walks[0]:
-            assert node == "self loner"
+            assert node == g.node_ids_to_ilocs(["self loner"])[0]
 
     def test_walk_generation_single_root_node(self):
 

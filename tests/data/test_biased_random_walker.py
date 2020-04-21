@@ -343,7 +343,9 @@ class TestBiasedRandomWalk(object):
         assert len(subgraphs) == n * len(nodes)
         for i, subgraph in enumerate(subgraphs):
             assert len(subgraph) == length  # should be 1
-            assert subgraph[0] == nodes[i]  # should equal the root node
+            assert (
+                subgraph[0] == g.node_ids_to_ilocs([nodes[i]])[0]
+            )  # should equal the root node
 
         length = 2
         subgraphs = biasedrw.run(nodes=nodes, n=n, p=p, q=q, length=length, seed=seed)
@@ -430,7 +432,9 @@ class TestBiasedRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert node == "self loner"  # all nodes should be the same node
+                assert (
+                    node == g.node_ids_to_ilocs(["self loner"])[0]
+                )  # all nodes should be the same node
 
         n = 1
         length = 99
@@ -439,7 +443,9 @@ class TestBiasedRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert node == "self loner"  # all nodes should be the same node
+                assert (
+                    node == g.node_ids_to_ilocs(["self loner"])[0]
+                )  # all nodes should be the same node
 
         n = 10
         length = 10
@@ -448,7 +454,9 @@ class TestBiasedRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert node == "self loner"  # all nodes should be the same node
+                assert (
+                    node == g.node_ids_to_ilocs(["self loner"])[0]
+                )  # all nodes should be the same node
 
     def test_walk_biases(self):
         # a square with a triangle:
