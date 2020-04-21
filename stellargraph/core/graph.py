@@ -834,7 +834,6 @@ class StellarGraph:
                 "weight": self._edges.weights,
             }
         )
-        df["weight"] = pd.to_numeric(df["weight"])
         return df.groupby(["src_ty", "rel_ty", "tgt_ty"]).agg(metrics)["weight"]
 
     def info(self, show_attributes=None, sample=None, truncate=20):

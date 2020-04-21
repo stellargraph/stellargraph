@@ -160,7 +160,9 @@ class ElementData:
         if type_dfs:
             all_columns = pd.concat(type_dfs)
         else:
-            all_columns = pd.DataFrame(columns=self._SHARED_REQUIRED_COLUMNS)
+            all_columns = pd.DataFrame(
+                columns=self._SHARED_REQUIRED_COLUMNS, dtype=np.uint8
+            )
 
         self._id_index = ExternalIdIndex(all_columns.index)
         self._columns = {
