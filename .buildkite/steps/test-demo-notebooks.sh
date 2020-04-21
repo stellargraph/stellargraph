@@ -40,7 +40,7 @@ case $(basename "$f") in
     # FIXME #819: out-of-memory
     # FIXME #849: CI does not have neo4j
     # FIXME #907: socialcomputing.asu.edu is down
-    # FIXME #9999: METR_LA dataset can't be downloaded automatically
+    # FIXME #1303: METR_LA dataset can't be downloaded automatically
     echo "+++ :python: :skull_and_crossbones: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
