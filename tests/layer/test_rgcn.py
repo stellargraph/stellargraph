@@ -340,7 +340,7 @@ def get_As(G):
     node_list = list(G.nodes())
     node_index = dict(zip(node_list, range(len(node_list))))
 
-    sources, targets, types = G.edges(include_edge_type=True)
+    sources, targets, types, _ = G.edges(include_edge_type=True)
     for edge_type in edge_types:
         col_index = [node_index[n] for n in sources[types == edge_type]]
         row_index = [node_index[n] for n in targets[types == edge_type]]

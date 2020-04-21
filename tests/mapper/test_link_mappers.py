@@ -194,7 +194,7 @@ class Test_GraphSAGELinkGenerator:
     def test_GraphSAGELinkGenerator_shuffle(self):
         def test_edge_consistency(shuffle):
             G = example_graph(feature_size=1)
-            sources, targets = G.edges()
+            sources, targets, _, _ = G.edges()
             edge_labels = list(range(len(sources)))
 
             mapper = GraphSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
@@ -475,7 +475,7 @@ class Test_HinSAGELinkGenerator(object):
 
         # all edges in G, which have multiple link types
         links = G.edges()
-        link_labels = [0] * len(links)
+        link_labels = [0] * len(links[0])
 
         with pytest.raises(ValueError):
             HinSAGELinkGenerator(
@@ -684,7 +684,7 @@ class Test_Attri2VecLinkGenerator:
 
     def test_edge_consistency(self):
         G = example_graph(feature_size=1)
-        sources, targets = G.edges()
+        sources, targets, _, _ = G.edges()
         nodes = list(G.nodes())
         edge_labels = list(range(len(sources)))
 

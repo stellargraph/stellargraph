@@ -236,7 +236,10 @@ def test_nai(petersen_graph, shuffle):
 @pytest.mark.parametrize("shuffle", [False])
 def test_link_prediction(petersen_graph, shuffle):
     num_examples = 10
-    edge_ids = np.random.choice(petersen_graph.nodes(), size=(num_examples, 2))
+    edge_ids = (
+        np.random.choice(petersen_graph.nodes(), size=num_examples),
+        np.random.choice(petersen_graph.nodes(), size=num_examples),
+    )
     edge_labels = np.random.choice([0, 1], size=num_examples)
     assert_reproducible(
         lambda: gs_link_prediction(

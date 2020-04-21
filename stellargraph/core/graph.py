@@ -18,7 +18,13 @@ The StellarGraph class that encapsulates information required for
 a machine-learning ready graph used by models.
 
 """
-__all__ = ["StellarGraph", "StellarDiGraph", "GraphSchema", "NeighbourWithWeight"]
+__all__ = [
+    "StellarGraph",
+    "StellarDiGraph",
+    "GraphSchema",
+    "NeighbourWithWeight",
+    "EdgeList",
+]
 
 from typing import Iterable, Any, Mapping, List, Optional, Set
 from collections import defaultdict, namedtuple
@@ -37,6 +43,7 @@ from . import convert
 
 
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
+EdgeList = namedtuple("EdgeList", ["source", "target", "type", "weight"])
 
 
 class StellarGraph:
@@ -507,15 +514,19 @@ class StellarGraph:
             A tuple containing 1D arrays of the source and target nodes (sources, targets). Setting include_edge_type
                 and/or include_edge_weight to True will include arrays of edge types and/or edge weights in this tuple.
         """
-        edges = (self._edges.sources, self._edges.targets)
+        # edges = (self._edges.sources, self._edges.targets)
 
         if include_edge_type:
-            edges = edges + (self._edges.type_of_iloc(slice(None)),)
+            types = self._edges.type_of_iloc(slice(None))
+        else:
+            types = np.array([], dtype=np.uint8)
 
         if include_edge_weight:
-            edges = edges + (self._edges.weights,)
+            weights = self._edges.weights
+        else:
+            weights = np.array([], dtype=np.uint8)
 
-        return edges
+        return EdgeList(self._edges.sources, self._edges.targets, types, weights)
 
     def has_node(self, node: Any) -> bool:
         """
@@ -547,11 +558,10 @@ class StellarGraph:
             if weights is not None:
                 weights = weights[correct_type]
 
-        # FIXME(#718): it would be better to return these as ndarrays, instead of (zipped) lists
         if weights is not None:
             return other_node_id, weights
 
-        return list(other_node_id)
+        return other_node_id
 
     def neighbors(self, node: Any, include_edge_weight=False, edge_types=None):
         """

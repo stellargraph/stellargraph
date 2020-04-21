@@ -280,7 +280,7 @@ class UniformRandomWalk(RandomWalk):
         current_node = start_node
         for _ in range(length - 1):
             neighbours = self.graph.neighbors(current_node)
-            if not neighbours:
+            if len(neighbours) == 0:
                 # dead end, so stop
                 break
             else:
@@ -441,13 +441,13 @@ class BiasedRandomWalk(RandomWalk):
                     else:  # d_tx = 2
                         return iq * weight_cn
 
-                if neighbours:
+                if len(neighbours) > 0:
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
                         neighbours = self.graph.neighbors(current_node)
 
-                        if not neighbours:
+                        if len(neighbours) == 0:
                             break
 
                         # select one of the neighbours using the
@@ -1033,7 +1033,7 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         num_cw_curr = 0
 
-        sources, targets, times = self.graph.edges(include_edge_weight=True)
+        sources, targets, _, times = self.graph.edges(include_edge_weight=True)
         edge_biases = self._temporal_biases(
             times, None, bias_type=initial_edge_bias, is_forward=False,
         )
@@ -1109,10 +1109,11 @@ class TemporalRandomWalk(GraphWalk):
         neighbours = neighbours[times > time]
         times = times[times > time]
 
-        if neighbours:
+        if len(neighbours) > 0:
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
-            next_node, next_time = neighbours[chosen_neighbour_index]
+            next_node = neighbours[chosen_neighbour_index]
+            next_time = times[chosen_neighbour_index]
             return next_node, next_time
         else:
             return None
