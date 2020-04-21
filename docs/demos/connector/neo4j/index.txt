@@ -5,4 +5,5 @@ Neo4j
     :titlesonly:
     :glob:
 
+    */index
     ./*

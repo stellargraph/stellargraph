@@ -5,4 +5,5 @@ Rgcn
     :titlesonly:
     :glob:
 
+    */index
     ./*

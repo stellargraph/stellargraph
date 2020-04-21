@@ -5,4 +5,5 @@ Connector
     :titlesonly:
     :glob:
 
+    */index
     ./*
