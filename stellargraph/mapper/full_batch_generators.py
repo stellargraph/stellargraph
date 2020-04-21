@@ -175,8 +175,8 @@ class FullBatchGenerator(ABC):
             and :meth:`predict`
 
         """
-        if self.multiplicity == 2:
-            node_ids = np.stack(node_ids, axis=1)
+        if (self.multiplicity == 2) and isinstance(node_ids, tuple):
+            node_ids = np.stack(node_ids[:2], axis=1)
 
         if targets is not None:
             # Check targets is an iterable
