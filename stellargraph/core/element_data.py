@@ -329,7 +329,7 @@ class EdgeData(ElementData):
             if src != tgt:
                 undirected.setdefault(src, []).append(i)
 
-        dtype = np.min_scalar_type(i)
+        dtype = np.min_scalar_type(len(self.sources))
         self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
         self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
         self._edges_dict = _numpyise(undirected, dtype=dtype)
