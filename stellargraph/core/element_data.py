@@ -300,6 +300,31 @@ def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
+class FlatAdjacencyList:
+
+    def __init__(self, adj_dict):
+
+        self.index = pd.Index(list(adj_dict.keys()))
+        self.splits = np.cumsum([0] + list(map(len, adj_dict.values())))
+
+        try:
+            self.flat = np.concatenate(list(adj_dict.values()))
+        except ValueError:
+            self.flat = np.array([], dtype=np.uint8)
+
+        self.empty = np.array([], dtype=np.uint8)
+
+    def __getitem__(self, item):
+        idx = self.index.get_indexer([item])[0]
+        if idx == -1:
+            return self.empty
+        start, stop = self.splits[idx], self.splits[idx + 1]
+        return self.flat[start:stop]
+
+    def keys(self):
+        return self.index
+
+
 class EdgeData(ElementData):
     """
     Args:
@@ -330,9 +355,9 @@ class EdgeData(ElementData):
                 undirected.setdefault(src, []).append(i)
 
         dtype = np.min_scalar_type(len(self.sources))
-        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
-        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
-        self._edges_dict = _numpyise(undirected, dtype=dtype)
+        self._edges_in_dict = FlatAdjacencyList(_numpyise(in_dict, dtype=dtype))
+        self._edges_out_dict = FlatAdjacencyList(_numpyise(out_dict, dtype=dtype))
+        self._edges_dict = FlatAdjacencyList(_numpyise(undirected, dtype=dtype))
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
@@ -364,7 +389,7 @@ class EdgeData(ElementData):
             ``ret`` is the return value, ``ret[i]`` is the degree of the node with iloc ``i``)
         """
         adj = self._adj_lookup(ins=ins, outs=outs)
-        return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
+        return defaultdict(int, ((key, len(adj[key])) for key in adj.keys()))
 
     def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
         """
@@ -378,4 +403,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)
+        return self._adj_lookup(ins=ins, outs=outs)[node_id]
