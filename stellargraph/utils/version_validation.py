@@ -57,6 +57,15 @@ def _parse(version):
     return major, minor, patch, suffix
 
 
+def _display_in_notebook(message):
+    try:
+        import IPython
+    except ImportError:
+        # IPython's not installed, so mustn't be running in a jupyter context
+        return
+    IPython.display.display(IPython.display.Markdown(message))
+
+
 def validate_notebook_version(notebook_version):
     """
     Validate a notebook created for a specific version of StellarGraph.
@@ -66,16 +75,21 @@ def validate_notebook_version(notebook_version):
     """
     version_stellargraph = _parse(__version__)
     version_notebook = _parse(notebook_version)
-    extra_info = (
-        "Please see <https://github.com/stellargraph/stellargraph/issues/1172>."
-    )
+    help_url = "https://github.com/stellargraph/stellargraph/issues/1172"
+
+    def _format_for_error(m):
+        return f"{m}.  Please see: <{help_url}>."
+
+    def _format_for_html(m):
+        return f'<div class="alert alert-block alert-danger">{m}. Please see: <a href="{help_url}">{help_url}</a></div>'
+
     if version_stellargraph < version_notebook:
-        raise ValueError(
-            f"This notebook requires StellarGraph version {notebook_version}, but an older version {__version__} is installed. {extra_info}"
-        ) from None
+        message = f"This notebook requires StellarGraph version {notebook_version}, but an older version {__version__} is installed"
+        _display_in_notebook(_format_for_html(message))
+        raise ValueError(_format_for_error(message)) from None
     elif version_stellargraph > version_notebook:
+        message = f"This notebook is designed for an older StellarGraph version {notebook_version} and may not function correctly with the newer installed version {__version__}"
+        _display_in_notebook(_format_for_html(message))
         warnings.warn(
-            f"This notebook is designed for an older StellarGraph version {notebook_version} and may not function correctly with the newer installed version {__version__}. {extra_info}",
-            DeprecationWarning,
-            stacklevel=2,
+            _format_for_error(message), DeprecationWarning, stacklevel=2,
         )
