@@ -22,7 +22,7 @@ This is the first release candidate for StellarGraph 1.0. The 1.0 release will b
   - `HinSAGE` for heterogeneous graphs with node features [\#1254](https://github.com/stellargraph/stellargraph/pull/1254)
 - `UnsupervisedSampler` supports a `walker` parameter to use other random walking algorithms such as `BiasedRandomWalk`, in addition to the default `UniformRandomWalk`. [\#1187](https://github.com/stellargraph/stellargraph/pull/1187)
 - The `StellarGraph` class is now smaller, faster and easier to construct:
-  - The `StellarGraph(..., edge_type_column=...)` parameter can be used to construct a heterogeneous graph from a single flat `DataFrame`, containing a column of the edge types [\#1284](https://github.com/stellargraph/stellargraph/pull/1284). This avoids the need to build separate `DataFrame`s for each type, and is significantly faster when there are many types. The `stellargraph.datasets.FB15k` dataset has almost 600 thousand edges across 1345 types; constructing a `StellarGraph` containing it sees a 2.6× speedup using `edge_type_column`.
+  - The `StellarGraph(..., edge_type_column=...)` parameter can be used to construct a heterogeneous graph from a single flat `DataFrame`, containing a column of the edge types [\#1284](https://github.com/stellargraph/stellargraph/pull/1284). This avoids the need to build separate `DataFrame`s for each type, and is significantly faster when there are many types. Using `edge_type_column` gives a 2.6× speedup for loading the `stellargraph.datasets.FB15k` dataset (with almost 600 thousand edges across 1345 types).
   - `StellarGraph`'s internal cache of node adjacencies now uses the smallest integer type it can [\#1289](https://github.com/stellargraph/stellargraph/pull/1289). This reduces memory use by 31% on the `FB15k` dataset, and 36% on a reddit dataset (with 11.6 million edges).
 
 ### Breaking changes
@@ -35,8 +35,8 @@ This is the first release candidate for StellarGraph 1.0. The 1.0 release will b
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
-- `DGCNN`: supervised graph classification based on GCN, the new `SortPooling` pooling layer and assymmetric adjacency normalisation [\#1210](https://github.com/stellargraph/stellargraph/pull/1210) [\#1212](https://github.com/stellargraph/stellargraph/pull/1212) [\#1265](https://github.com/stellargraph/stellargraph/pull/1265)
-- GCN-LSTM: time series prediction on spatio-temporal data, combining GCN with a [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) model to augment the conventional time-series model with information from nearby data points [\#1085](https://github.com/stellargraph/stellargraph/pull/1085)
+- `DeepGraphConvolutionalNeuralNetwork`: supervised graph classification based on GCN, the new `SortPooling` pooling layer and asymmetric adjacency normalisation [\#1210](https://github.com/stellargraph/stellargraph/pull/1210) [\#1212](https://github.com/stellargraph/stellargraph/pull/1212) [\#1265](https://github.com/stellargraph/stellargraph/pull/1265)
+- `GraphConvolutionLSTM`: time series prediction on spatio-temporal data, combining GCN with a [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) model to augment the conventional time-series model with information from nearby data points [\#1085](https://github.com/stellargraph/stellargraph/pull/1085), [demo](demos/spatio-temporal/gcn-lstm-LA.ipynb)
 
 ### Bug fixes and other changes
 
