@@ -128,12 +128,12 @@ class ElementData:
 
     def __init__(self, shared):
         if not isinstance(shared, dict):
-            raise TypeError(f"shared: expected dict, found {type(shared)}")
+            raise TypeError(f"shared: expected dict, found {type(shared).__name__}")
 
         for key, value in shared.items():
             if not isinstance(value, pd.DataFrame):
                 raise TypeError(
-                    f"shared[{key!r}]: expected pandas DataFrame', found {type(value)}"
+                    f"shared[{key!r}]: expected pandas DataFrame', found {type(value).__name__}"
                 )
 
             require_dataframe_has_columns(
@@ -237,12 +237,12 @@ class NodeData(ElementData):
     def __init__(self, shared, features):
         super().__init__(shared)
         if not isinstance(features, dict):
-            raise TypeError(f"features: expected dict, found {type(features)}")
+            raise TypeError(f"features: expected dict, found {type(features).__name__}")
 
         for key, data in features.items():
             if not isinstance(data, (np.ndarray, sps.spmatrix)):
                 raise TypeError(
-                    f"features[{key!r}]: expected numpy or scipy array, found {type(data)}"
+                    f"features[{key!r}]: expected numpy or scipy array, found {type(data).__name__}"
                 )
 
             if len(data.shape) != 2:

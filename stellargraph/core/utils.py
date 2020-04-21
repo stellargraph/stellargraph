@@ -172,7 +172,7 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
         else:
             raise ValueError(
                 "k should be positive integer for method='sgcn'; but received type {} with value {}.".format(
-                    type(k), k
+                    type(k).__name__, k
                 )
             )
 

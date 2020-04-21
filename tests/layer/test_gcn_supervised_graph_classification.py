@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from stellargraph.layer.graph_classification import *
-from stellargraph.mapper import GraphGenerator, FullBatchNodeGenerator
+from stellargraph.mapper import PaddedGraphGenerator, FullBatchNodeGenerator
 import pytest
 from ..test_utils.graphs import example_graph_random
 
@@ -25,7 +25,7 @@ graphs = [
     example_graph_random(feature_size=4, n_nodes=3),
 ]
 
-generator = GraphGenerator(graphs=graphs)
+generator = PaddedGraphGenerator(graphs=graphs)
 
 
 def test_init():
@@ -40,7 +40,7 @@ def test_init():
     assert model.activations[0] == "relu"
 
     with pytest.raises(
-        TypeError, match="generator: expected.*GraphGenerator, found NoneType"
+        TypeError, match="generator: expected.*PaddedGraphGenerator, found NoneType"
     ):
         GCNSupervisedGraphClassification(
             layer_sizes=[16], activations=["relu"], generator=None
@@ -48,7 +48,7 @@ def test_init():
 
     with pytest.raises(
         TypeError,
-        match="generator: expected.*GraphGenerator, found FullBatchNodeGenerator",
+        match="generator: expected.*PaddedGraphGenerator, found FullBatchNodeGenerator",
     ):
         GCNSupervisedGraphClassification(
             layer_sizes=[16],
