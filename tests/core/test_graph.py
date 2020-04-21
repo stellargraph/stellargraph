@@ -771,9 +771,9 @@ def test_isolated_node_neighbor_methods(is_directed):
     graph = cls(
         nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
     )
-    assert graph.neighbors(1) == []
-    assert graph.in_nodes(1) == []
-    assert graph.out_nodes(1) == []
+    assert len(graph.neighbors(1)) == 0
+    assert len(graph.in_nodes(1)) == 0
+    assert len(graph.out_nodes(1)) == 0
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
