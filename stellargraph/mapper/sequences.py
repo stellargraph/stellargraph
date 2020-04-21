@@ -583,7 +583,7 @@ class PaddedGraphSequence(Sequence):
         if self.normalize_adj:
             self.normalized_adjs = [
                 normalize_adj(
-                    graph.to_adjacency_matrix(), symmetric=symmetric_normalization
+                    graph.to_adjacency_matrix(), symmetric=symmetric_normalization, add_self_loops=True
                 )
                 for graph in graphs
             ]
