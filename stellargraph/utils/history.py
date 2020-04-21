@@ -34,6 +34,10 @@ def plot_history(history, individual_figsize=(7, 4), **kwargs):
         history: the training history, as returned by :meth:`tf.keras.Model.fit`
         individual_figsize (tuple of numbers): the size of the plot for each metric
         kwargs: additional arguments to pass to :meth:`matplotlib.pyplot.subplots`
+
+    Returns:
+        [matplotlib.figure.Figure]: The figure object with the plots
+
     """
 
     # explicit colours are needed if there's multiple train or multiple validation series, because
@@ -88,3 +92,5 @@ def plot_history(history, individual_figsize=(7, 4), **kwargs):
 
     # minimise whitespace
     fig.tight_layout()
+
+    return fig
