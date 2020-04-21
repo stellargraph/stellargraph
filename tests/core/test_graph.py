@@ -263,6 +263,44 @@ def test_feature_conversion_from_nodes():
     assert sg.node_feature_sizes()["default"] == 8
 
 
+def test_node_features():
+    feature_sizes = {"A": 4, "B": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes)
+
+    one_zero = np.array([[1] * 4, [0] * 4])
+
+    # inference
+    np.testing.assert_array_equal(sg.node_features(nodes=[1, 0]), one_zero)
+    # specified
+    np.testing.assert_array_equal(
+        sg.node_features(nodes=[1, 0], node_type="A"), one_zero
+    )
+
+    # wrong type
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[1, 0], node_type="B")
+
+    # mixed types, inference
+    with pytest.raises(ValueError, match="all nodes must have the same type"):
+        sg.node_features(nodes=[0, 4])
+
+    # mixed types, specified
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[0, 4], node_type="A")
+
+
+def test_node_features_node_type():
+    feature_sizes = {"A": 4, "B": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes)
+
+    np.testing.assert_array_equal(
+        sg.node_features(node_type="A"), [[0] * 4, [1] * 4, [2] * 4, [3] * 4],
+    )
+    np.testing.assert_array_equal(
+        sg.node_features(node_type="B"), [[4] * 6, [5] * 6, [6] * 6]
+    )
+
+
 def test_node_features_missing_id():
     sg = example_graph(feature_size=6)
     with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
@@ -305,6 +343,14 @@ def test_node_types():
 
     sg = example_hin_1()
     assert sg.node_types == {"A", "B"}
+
+
+def test_edge_types():
+    sg = example_graph(feature_size=6)
+    assert set(sg.edge_types) == {"default"}
+
+    sg = example_hin_1()
+    assert set(sg.edge_types) == {"F", "R"}
 
 
 def test_feature_conversion_from_dataframe():
@@ -1118,7 +1164,7 @@ def test_to_adjacency_matrix_weighted_undirected():
     actual[2, 4] = actual[4, 2] = 1
     actual[3, 5] = actual[5, 3] = 1
     actual[4, 5] = actual[5, 4] = 10
-    actual[5, 5] = 11 + 12
+    actual[5, 5] = 1 + 11 + 12
     assert np.array_equal(matrix, actual)
 
     # just to confirm, it should be symmetric
@@ -1130,7 +1176,7 @@ def test_to_adjacency_matrix_weighted_undirected():
     one, six, five = 0, 1, 2
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = actual[five, one] = 1
-    actual[five, five] = 11 + 12
+    actual[five, five] = 1 + 11 + 12
     assert np.array_equal(subgraph, actual)
 
 
@@ -1145,7 +1191,7 @@ def test_to_adjacency_matrix_weighted_directed():
     actual[2, 4] = 1
     actual[5, 3] = 1
     actual[4, 5] = 10
-    actual[5, 5] = 11 + 12
+    actual[5, 5] = 1 + 11 + 12
 
     assert np.array_equal(matrix, actual)
 
@@ -1155,7 +1201,7 @@ def test_to_adjacency_matrix_weighted_directed():
     one, six, five = 0, 1, 2
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = 1
-    actual[five, five] = 11 + 12
+    actual[five, five] = 1 + 11 + 12
     assert np.array_equal(subgraph, actual)
 
 
@@ -1170,8 +1216,53 @@ def test_to_adjacency_matrix():
     actual[2, 4] = actual[4, 2] = 1
     actual[3, 5] = actual[5, 3] = 1
     actual[4, 5] = actual[5, 4] = 1
-    actual[5, 5] = 2
+    actual[5, 5] = 3
     assert np.array_equal(matrix, actual)
+
+
+def test_to_adjacency_matrix_edge_type():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    matrix_r = g.to_adjacency_matrix(edge_type="R").todense()
+    actual_r = np.zeros((7, 7), dtype=matrix_r.dtype)
+    actual_r[0, 4] = actual_r[4, 0] = 1
+    actual_r[1, 5] = actual_r[5, 1] = 1
+    actual_r[1, 4] = actual_r[4, 1] = 1
+    actual_r[2, 4] = actual_r[4, 2] = 1
+    actual_r[3, 5] = actual_r[5, 3] = 1
+    actual_r[5, 5] = 1
+    np.testing.assert_array_equal(np.asarray(matrix_r), actual_r)
+
+    matrix_f = g.to_adjacency_matrix(edge_type="F").todense()
+    actual_f = np.zeros((7, 7), dtype=matrix_r.dtype)
+    actual_f[4, 5] = actual_f[5, 4] = 1
+    actual_f[5, 5] = 2
+    np.testing.assert_array_equal(np.asarray(matrix_f), actual_f)
+
+
+def test_to_adjacency_matrix_edge_type_subgraph():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    nodes = [5, 4, 1, 0]
+    # indices in the final matrix
+    five = 0
+    four = 1
+    one = 2
+    zero = 3
+
+    matrix_r = g.to_adjacency_matrix(nodes=nodes, edge_type="R").todense()
+    actual_r = np.zeros((4, 4), dtype=matrix_r.dtype)
+    actual_r[zero, four] = actual_r[four, zero] = 1
+    actual_r[one, five] = actual_r[five, one] = 1
+    actual_r[one, four] = actual_r[four, one] = 1
+    actual_r[five, five] = 1
+    np.testing.assert_array_equal(np.asarray(matrix_r), actual_r)
+
+    matrix_f = g.to_adjacency_matrix(nodes=nodes, edge_type="F").todense()
+    actual_f = np.zeros((4, 4), dtype=matrix_r.dtype)
+    actual_f[four, five] = actual_f[five, four] = 1
+    actual_f[five, five] = 2
+    np.testing.assert_array_equal(matrix_f, actual_f)
 
 
 @pytest.mark.benchmark(group="StellarGraph to_adjacency_matrix")
@@ -1187,7 +1278,7 @@ def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
 def test_edge_weights_undirected():
     g = example_hin_1(is_directed=False, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(5, 5) == [11.0, 12.0, 1.0]
     assert g._edge_weights(4, 5) == [10.0]
     assert g._edge_weights(5, 4) == [10.0]
     assert g._edge_weights(0, 4) == [1]
@@ -1197,7 +1288,7 @@ def test_edge_weights_undirected():
 def test_edge_weights_directed():
     g = example_hin_1(is_directed=True, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(5, 5) == [11.0, 12.0, 1.0]
     assert g._edge_weights(4, 5) == [10.0]
     assert g._edge_weights(5, 4) == []
     assert g._edge_weights(0, 4) == []
