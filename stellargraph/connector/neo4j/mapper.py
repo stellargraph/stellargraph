@@ -100,7 +100,7 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
             seed=seed,
         )
 
-    flow.__doc__ = super().flow.__doc__
+    # flow.__doc__ = super.flow.__doc__
 
 
 @experimental(reason="the class is not fully tested")
