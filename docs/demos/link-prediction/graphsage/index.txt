@@ -5,4 +5,5 @@ Graphsage
     :titlesonly:
     :glob:
 
+    */index
     ./*
