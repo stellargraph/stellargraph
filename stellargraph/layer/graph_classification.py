@@ -182,7 +182,7 @@ class GCNSupervisedGraphClassification:
     build = deprecated_model_function(in_out_tensors, "build")
 
 
-@experimental(reason="Missing unit tests and generally untested.")
+@experimental(reason="Missing unit tests and generally untested.", issues=[1297])
 class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
     """
     A stack of :class:`GraphClassificationConvolution` layers together with a `SortPooling` layer
