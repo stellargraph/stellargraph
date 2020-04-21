@@ -1,0 +1,8 @@
+Knowledge Graphs
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    ./*

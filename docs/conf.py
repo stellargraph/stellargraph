@@ -58,6 +58,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "recommonmark",
     "sphinx_markdown_tables",
+    "nbsphinx",
+    "nbsphinx_link",
 ]
 
 # Add mappings

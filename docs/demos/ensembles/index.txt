@@ -1,0 +1,8 @@
+Ensembles
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    ./*

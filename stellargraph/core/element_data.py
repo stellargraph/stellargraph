@@ -259,6 +259,15 @@ class NodeData(ElementData):
 
         self._features = features
 
+    def features_of_type(self, type_name) -> np.ndarray:
+        """
+        Returns all features for a given type.
+
+        Args:
+            type_name (hashable): the name of the type
+        """
+        return self._features[type_name]
+
     def features(self, type_name, id_ilocs) -> np.ndarray:
         """
         Return features for a set of IDs within a given type.
@@ -296,8 +305,8 @@ class NodeData(ElementData):
         }
 
 
-def _numpyise(d):
-    return {k: np.array(v) for k, v in d.items()}
+def _numpyise(d, dtype):
+    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
 class EdgeData(ElementData):
@@ -329,9 +338,10 @@ class EdgeData(ElementData):
             if src != tgt:
                 undirected.setdefault(src, []).append(i)
 
-        self._edges_in_dict = _numpyise(in_dict)
-        self._edges_out_dict = _numpyise(out_dict)
-        self._edges_dict = _numpyise(undirected)
+        dtype = np.min_scalar_type(len(self.sources))
+        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
+        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
+        self._edges_dict = _numpyise(undirected, dtype=dtype)
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
