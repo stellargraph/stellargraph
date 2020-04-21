@@ -213,7 +213,7 @@ class GraphConvolutionLSTM:
            gc_activations (list of str or func): Activations applied to each layer's output;
                 defaults to ['relu', ..., 'relu'].
            lstm_activations (list of str or func): Activations applied to each layer's output;
-                defaults to ['tanh', ..., 'tanh'].     
+                defaults to ['tanh', ..., 'tanh'].
            kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
            kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
            kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
