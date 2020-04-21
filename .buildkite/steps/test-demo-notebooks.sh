@@ -38,12 +38,8 @@ case $(basename "$f") in
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
-    # FIXME #849: CI does not have neo4j
-    # FIXME #907: socialcomputing.asu.edu is down
     # FIXME #1303: METR_LA dataset can't be downloaded automatically
-    # FIXME #818: datasets can't be downloaded
-    # FIXME #819: out-of-memory
-
+  
     echo "+++ :python: :skull_and_crossbones: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
