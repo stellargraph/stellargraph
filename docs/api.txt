@@ -150,9 +150,6 @@ GCN Supervised Graph Classification
 .. autoclass:: GCNSupervisedGraphClassification
   :members:
 
-.. autoclass:: GraphClassificationConvolution
-  :members:
-
 Deep Graph Convolutional Neural Network
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
