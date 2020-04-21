@@ -707,7 +707,8 @@ def test_neighbors_unweighted_hom(is_directed):
     graph = example_unweighted_hom(is_directed=is_directed)
     assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
     assert_items_equal(
-        list(zip(*graph.neighbors(1, include_edge_weight=True))), [(0, 1), (0, 1), (2, 1), (3, 1)],
+        list(zip(*graph.neighbors(1, include_edge_weight=True))),
+        [(0, 1), (0, 1), (2, 1), (3, 1)],
     )
     assert_items_equal(
         list(zip(*graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]))), []
@@ -734,7 +735,9 @@ def test_in_nodes_weighted_hin():
 def test_in_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.in_nodes(1), [0, 0])
-    assert_items_equal(list(zip(*graph.in_nodes(1, include_edge_weight=True))), [(0, 1), (0, 1)])
+    assert_items_equal(
+        list(zip(*graph.in_nodes(1, include_edge_weight=True))), [(0, 1), (0, 1)]
+    )
     assert_items_equal(
         list(zip(*graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]))), []
     )
@@ -754,7 +757,9 @@ def test_out_nodes_weighted_hin():
 def test_out_nodes_unweighted_hom():
     graph = example_unweighted_hom()
     assert_items_equal(graph.out_nodes(1), [2, 3])
-    assert_items_equal(list(zip(*graph.out_nodes(1, include_edge_weight=True))), [(2, 1), (3, 1)])
+    assert_items_equal(
+        list(zip(*graph.out_nodes(1, include_edge_weight=True))), [(2, 1), (3, 1)]
+    )
     assert_items_equal(
         list(zip(*graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]))), []
     )
