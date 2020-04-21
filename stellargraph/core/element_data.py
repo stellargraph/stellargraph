@@ -259,6 +259,15 @@ class NodeData(ElementData):
 
         self._features = features
 
+    def features_of_type(self, type_name) -> np.ndarray:
+        """
+        Returns all features for a given type.
+
+        Args:
+            type_name (hashable): the name of the type
+        """
+        return self._features[type_name]
+
     def features(self, type_name, id_ilocs) -> np.ndarray:
         """
         Return features for a set of IDs within a given type.
