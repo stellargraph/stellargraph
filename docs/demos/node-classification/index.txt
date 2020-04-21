@@ -1,4 +1,4 @@
-node-classification
+Node Classification
 ====================================
 
 .. toctree::

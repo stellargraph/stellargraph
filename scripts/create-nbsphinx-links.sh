@@ -12,9 +12,14 @@ for nb_path in demos/**/*.ipynb; do
     nb_link_parent_index="$nb_link_dir/index.txt"
     if [[ ! -f "$nb_link_parent_index" ]]; then
       echo "Creating '$nb_link_parent_index'"
+      section_title=$(
+        basename "$nb_link_dir" |
+          sed -E "s/(-|_)/ /g" |
+          awk '{ for (i=1;i<=NF;i++) { $i=toupper(substr($i,1,1)) tolower(substr($i,2)); } print }'
+      )
       mkdir -p "$nb_link_dir"
       cat > "$nb_link_parent_index" << EOF
-$(basename "$nb_link_dir")
+$section_title
 ====================================
 
 .. toctree::

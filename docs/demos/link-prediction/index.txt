@@ -1,4 +1,4 @@
-link-prediction
+Link Prediction
 ====================================
 
 .. toctree::

@@ -1,4 +1,4 @@
-random-walks
+Random Walks
 ====================================
 
 .. toctree::

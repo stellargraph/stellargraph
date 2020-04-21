@@ -1,4 +1,4 @@
-calibration
+Calibration
 ====================================
 
 .. toctree::

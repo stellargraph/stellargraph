@@ -1,4 +1,4 @@
-interpretability
+Interpretability
 ====================================
 
 .. toctree::

@@ -1,4 +1,4 @@
-ensembles
+Ensembles
 ====================================
 
 .. toctree::
