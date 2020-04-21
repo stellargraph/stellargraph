@@ -553,6 +553,8 @@ class PaddedGraphSequence(Sequence):
             matrix by the inverse of the degree matrix. This parameter is ignored if normalize=False.
         batch_size (int, optional): The batch size. It defaults to 1.
         name (str, optional): An optional name for this generator object.
+        shuffle (bool, optional): If True the node IDs will be shuffled at the end of each epoch.
+        seed (int, optional): Random seed.
     """
 
     def __init__(
@@ -563,6 +565,8 @@ class PaddedGraphSequence(Sequence):
         symmetric_normalization=True,
         batch_size=1,
         name=None,
+        shuffle=False,
+        seed=None,
     ):
 
         self.name = name
@@ -591,6 +595,8 @@ class PaddedGraphSequence(Sequence):
             self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
 
         self.normalized_adjs = np.asanyarray(self.normalized_adjs)
+        self._rs, _ = random_state(seed)
+        self.shuffle = shuffle
 
         self.on_epoch_end()
 
@@ -647,9 +653,11 @@ class PaddedGraphSequence(Sequence):
         """
          Shuffle all graphs at the end of each epoch
         """
-        indexes = list(range(len(self.graphs)))
-        random.shuffle(indexes)
-        self.graphs = self.graphs[indexes]
-        self.normalized_adjs = self.normalized_adjs[indexes]
-        if self.targets is not None:
-            self.targets = self.targets[indexes]
+        if self.shuffle:
+            indexes = list(range(len(self.graphs)))
+            self._rs.shuffle(indexes)
+            print(indexes)
+            self.graphs = self.graphs[indexes]
+            self.normalized_adjs = self.normalized_adjs[indexes]
+            if self.targets is not None:
+                self.targets = self.targets[indexes]
