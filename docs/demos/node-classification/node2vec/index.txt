@@ -5,4 +5,5 @@ Node2vec
     :titlesonly:
     :glob:
 
+    */index
     ./*

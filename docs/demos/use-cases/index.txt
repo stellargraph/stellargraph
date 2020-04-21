@@ -5,4 +5,5 @@ Use Cases
     :titlesonly:
     :glob:
 
+    */index
     ./*

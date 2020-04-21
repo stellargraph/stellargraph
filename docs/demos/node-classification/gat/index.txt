@@ -5,4 +5,5 @@ Gat
     :titlesonly:
     :glob:
 
+    */index
     ./*

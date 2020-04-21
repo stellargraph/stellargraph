@@ -26,6 +26,7 @@ $section_title
     :titlesonly:
     :glob:
 
+    */index
     ./*
 EOF
     else
