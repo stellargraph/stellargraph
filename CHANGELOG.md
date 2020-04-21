@@ -6,17 +6,32 @@
 
 This is the first release candidate for StellarGraph 1.0. The 1.0 release will be the culmination of 2 years of activate development, and this release candidate is the first milestone for that release.
 
+Jump in to this release, with the new demos and examples:
+
+- [More helpful indexing and guidance in demo READMEs](demos/)
+- [Loading from Neo4j][neo4j]
+- [More explanatory Node2Vec link prediction][n2v-lp]
+- [Unsupervised `GraphSAGE` and `HinSAGE` via `DeepGraphInfomax`][dgi]
+- [Graph classification with `GCNSupervisedGraphClassification`][gc]
+- [Time series prediction using spatial information, using `GraphConvolutionLSTM`][gcn-lstm] (experimental)
+
+[neo4j]: demos/basics/loading-saving-neo4j.ipynb
+[n2v-lp]: demos/link-prediction/random-walks/cora-lp-demo.ipynb
+[dgi]: demos/embeddings/deep-graph-infomax-cora.ipynb
+[gc]: demos/graph-classification/supervised-graph-classification.ipynb
+[gcn-lstm]: demos/spatio-temporal/gcn-lstm-LA.ipynb
+
 ### Major features and improvements
 
 - Better demonstration notebooks and documentation to make the library more accessible to new and existing users:
   - The [demos READMEs](demos/) now contain more guidance and explanation to make it easier to find a relevant example [\#1200](https://github.com/stellargraph/stellargraph/pull/1200)
-  - A [demo for loading data from Neo4j](demos/basics/loading-saving-neo4j.ipynb) has been added [\#1184](https://github.com/stellargraph/stellargraph/pull/1184)
-  - The [demo for link prediction using Node2Vec](demos/link-prediction/random-walks/cora-lp-demo.ipynb) has been rewritten to be clearer [\#1190](https://github.com/stellargraph/stellargraph/pull/1190)
+  - A [demo for loading data from Neo4j][neo4j] has been added [\#1184](https://github.com/stellargraph/stellargraph/pull/1184)
+  - The [demo for link prediction using Node2Vec][n2v-lp] has been rewritten to be clearer [\#1190](https://github.com/stellargraph/stellargraph/pull/1190)
   - Notebooks are [now included in the API documentation](https://stellargraph.readthedocs.io/en/latest/demos/index.html), for more convenient access [\#1279](https://github.com/stellargraph/stellargraph/pull/1279)
   - Notebooks now detect if they're being used with an incorrect version of the StellarGraph library, elimanting confusion about version mismatches [\#1242](https://github.com/stellargraph/stellargraph/pull/1242)
 - New algorithms:
-  - `GCNSupervisedGraphClassification`: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929), [demo](demos/graph-classification/supervised-graph-classification.ipynb).
-- `DeepGraphInfomax` can be used to train almost any model in an unsupervised way, via the `corrupt_index_groups` parameter to `CorruptedGenerator` [\#1243](https://github.com/stellargraph/stellargraph/pull/1243), [demo](demos/embeddings/deep-graph-infomax-cora.ipynb). Additionally, many algorithms provide defaults and so can be used with `DeepGraphInfomax` without specifying this parameter:
+  - `GCNSupervisedGraphClassification`: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929), [demo][gc].
+- `DeepGraphInfomax` can be used to train almost any model in an unsupervised way, via the `corrupt_index_groups` parameter to `CorruptedGenerator` [\#1243](https://github.com/stellargraph/stellargraph/pull/1243), [demo][dgi]. Additionally, many algorithms provide defaults and so can be used with `DeepGraphInfomax` without specifying this parameter:
   - any model using `FullBatchNodeGenerator`, including models supported in StellarGraph 0.11: `GCN`, `GAT`, `PPNP` and `APPNP`
   - `GraphSAGE` [\#1162](https://github.com/stellargraph/stellargraph/pull/1162)
   - `HinSAGE` for heterogeneous graphs with node features [\#1254](https://github.com/stellargraph/stellargraph/pull/1254)
@@ -36,7 +51,7 @@ This is the first release candidate for StellarGraph 1.0. The 1.0 release will b
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
 - `DeepGraphConvolutionalNeuralNetwork`: supervised graph classification based on GCN, the new `SortPooling` pooling layer and asymmetric adjacency normalisation [\#1210](https://github.com/stellargraph/stellargraph/pull/1210) [\#1212](https://github.com/stellargraph/stellargraph/pull/1212) [\#1265](https://github.com/stellargraph/stellargraph/pull/1265)
-- `GraphConvolutionLSTM`: time series prediction on spatio-temporal data, combining GCN with a [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) model to augment the conventional time-series model with information from nearby data points [\#1085](https://github.com/stellargraph/stellargraph/pull/1085), [demo](demos/spatio-temporal/gcn-lstm-LA.ipynb)
+- `GraphConvolutionLSTM`: time series prediction on spatio-temporal data, combining GCN with a [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) model to augment the conventional time-series model with information from nearby data points [\#1085](https://github.com/stellargraph/stellargraph/pull/1085), [demo][gcn-lstm]
 
 ### Bug fixes and other changes
 
