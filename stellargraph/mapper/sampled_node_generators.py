@@ -638,7 +638,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
         """
         Creates a generator/sequence object for node representation prediction
         with the supplied node ids. This should be used with a trained ``Node2Vec``
-        model in order to transform node ids to node embeddings. For training, 
+        model in order to transform node ids to node embeddings. For training,
         see ``Node2VecLinkGenerator`` instead.
 
         The node IDs are the nodes to inference on: the embeddings
