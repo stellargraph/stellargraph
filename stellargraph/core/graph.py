@@ -499,8 +499,7 @@ class StellarGraph:
             node_type (hashable, optional): a type of nodes that exist in the graph
 
         Returns:
-            All the nodes in the graph if ``node_type`` is ``None``, otherwise all the nodes in the
-            graph of type ``node_type``.
+            The graph edges. If edge weights are included then a tuple of (edges, weights)
         """
         if node_type is None:
             return self._nodes.ids.pandas_index
@@ -511,6 +510,19 @@ class StellarGraph:
     def edges(
         self, include_edge_type=False, include_edge_weight=False
     ) -> Iterable[np.array]:
+        """
+        Obtains the collection of edges in the graph.
+
+        Args:
+            include_edge_type (bool): A flag that indicates whether to return edge types
+            of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
+            include_edge_weight (bool): A flag that indicates whether to return edge weights.
+            Weights are returned in a separate list.
+
+        Returns:
+            A tuple containing 1D arrays of the source and target nodes (sources, targets). Setting include_edge_type
+                and/or include_edge_weight to True will include arrays of edge types and/or edge weights in this tuple.
+        """
         return self.edge_arrays(include_edge_type, include_edge_weight).to_edges()
 
     def edge_arrays(
@@ -520,10 +532,8 @@ class StellarGraph:
         Obtains the collection of edges in the graph.
 
         Args:
-            include_edge_type (bool): A flag that indicates whether to return edge types
-            of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
+            include_edge_type (bool): A flag that indicates whether to return edge types.
             include_edge_weight (bool): A flag that indicates whether to return edge weights.
-            Weights are returned in a separate list.
 
         Returns:
             A tuple containing 1D arrays of the source and target nodes (sources, targets). Setting include_edge_type
@@ -575,7 +585,9 @@ class StellarGraph:
             ]
         return list(neigh_arrs)
 
-    def neighbor_arrays(self, node: Any, include_edge_weight=False, edge_types=None) -> Iterable[np.ndarray]:
+    def neighbor_arrays(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[np.ndarray]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
@@ -597,7 +609,9 @@ class StellarGraph:
             other_node_id, ilocs, include_edge_weight, edge_types
         )
 
-    def neighbors(self, node: Any, include_edge_weight=False, edge_types=None) -> Iterable[any]:
+    def neighbors(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[any]:
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
