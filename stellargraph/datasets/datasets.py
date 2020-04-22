@@ -29,6 +29,7 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
+from ..core.experimental import experimental
 
 
 log = logging.getLogger(__name__)
@@ -61,11 +62,11 @@ def _load_cora_or_citeseer(
         column_names = feature_names + [subject]
 
     node_data = pd.read_csv(
-        content, sep="\t", header=None, names=column_names, dtype={0: nodes_dtype},
+        content, sep="\t", header=None, names=column_names, dtype={0: nodes_dtype}
     )
 
     edgelist = pd.read_csv(
-        cites, sep="\t", header=None, names=["target", "source"], dtype=nodes_dtype,
+        cites, sep="\t", header=None, names=["target", "source"], dtype=nodes_dtype
     )
 
     valid_source = node_data.index.get_indexer(edgelist.source) >= 0
@@ -265,7 +266,7 @@ class BlogCatalog3(
     DatasetLoader,
     name="BlogCatalog3",
     directory_name="BlogCatalog-dataset",
-    url="http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip",
+    url="https://ndownloader.figshare.com/files/22349970",
     url_archive_format="zip",
     expected_files=[
         "data/edges.csv",
@@ -275,7 +276,7 @@ class BlogCatalog3(
     ],
     description="This dataset is crawled from a social blog directory website BlogCatalog "
     "http://www.blogcatalog.com and contains the friendship network crawled and group memberships.",
-    source="http://socialcomputing.asu.edu/datasets/BlogCatalog3",
+    source="https://figshare.com/articles/BlogCatalog_dataset/11923611",
     data_subdirectory_name="data",
 ):
     def load(self):
@@ -526,6 +527,72 @@ class AIFB(
         return graph, onehot_affiliation
 
 
+def _load_graph_kernel_dataset(dataset):
+
+    dataset.download()
+
+    def _load_from_txt_file(filename, names=None, dtype=None, index_increment=None):
+        df = pd.read_csv(
+            dataset._resolve_path(filename=f"{dataset.name}_{filename}.txt"),
+            header=None,
+            index_col=False,
+            dtype=dtype,
+            names=names,
+        )
+        # We optional increment the index by 1 because indexing, e.g. node IDs, for this dataset starts
+        # at 1 whereas the Pandas DataFrame implicit index starts at 0 potentially causing confusion selecting
+        # rows later on.
+        if index_increment:
+            df.index = df.index + index_increment
+        return df
+
+    # edge information:
+    df_graph = _load_from_txt_file(filename="A", names=["source", "target"])
+
+    if dataset._edge_labels_as_weights:
+        # there's some edge labels, that can be used as edge weights
+        df_edge_labels = _load_from_txt_file(
+            filename="edge_labels", names=["weight"], dtype=int
+        )
+        df_graph = pd.concat([df_graph, df_edge_labels], axis=1)
+
+    # node information:
+    df_graph_ids = _load_from_txt_file(
+        filename="graph_indicator", names=["graph_id"], index_increment=1
+    )
+
+    df_node_labels = _load_from_txt_file(
+        filename="node_labels", dtype="category", index_increment=1
+    )
+    # One-hot encode the node labels because these are used as node features in graph classification
+    # tasks.
+    df_node_features = pd.get_dummies(df_node_labels)
+
+    if dataset._node_attributes:
+        # there's some actual node attributes
+        df_node_attributes = _load_from_txt_file(
+            filename="node_attributes", dtype=np.float32, index_increment=1
+        )
+
+        df_node_features = pd.concat([df_node_features, df_node_attributes], axis=1)
+
+    # graph information:
+    df_graph_labels = _load_from_txt_file(
+        filename="graph_labels", dtype="category", names=["label"], index_increment=1
+    )
+
+    # split the data into each of the graphs, based on the nodes in each one
+    def graph_for_nodes(nodes):
+        # each graph is disconnected, so the source is enough to identify the graph for an edge
+        edges = df_graph[df_graph["source"].isin(nodes.index)]
+        return StellarGraph(nodes, edges)
+
+    groups = df_node_features.groupby(df_graph_ids["graph_id"])
+    graphs = [graph_for_nodes(nodes) for _, nodes in groups]
+
+    return graphs, df_graph_labels["label"]
+
+
 class MUTAG(
     DatasetLoader,
     name="MUTAG",
@@ -544,22 +611,8 @@ class MUTAG(
     "The dataset includes 188 graphs with 18 nodes and 20 edges on average for each graph. Graph nodes have 7 labels and each graph is labelled as belonging to 1 of 2 classes.",
     source="https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets",
 ):
-    def _load_from_txt_file(
-        self, filename, names=None, dtype=None, index_increment=None
-    ):
-        df = pd.read_csv(
-            self._resolve_path(filename=filename),
-            header=None,
-            index_col=False,
-            dtype=dtype,
-            names=names,
-        )
-        # We optional increment the index by 1 because indexing, e.g. node IDs, for this dataset starts
-        # at 1 whereas the Pandas DataFrame implicit index starts at 0 potentially causing confusion selecting
-        # rows later on.
-        if index_increment:
-            df.index = df.index + index_increment
-        return df
+    _edge_labels_as_weights = False
+    _node_attributes = False
 
     def load(self):
         """
@@ -572,46 +625,40 @@ class MUTAG(
         Returns:
             A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
         """
-        self.download()
+        return _load_graph_kernel_dataset(self)
 
-        df_graph = self._load_from_txt_file(
-            filename="MUTAG_A.txt", names=["source", "target"]
-        )
-        df_edge_labels = self._load_from_txt_file(
-            filename="MUTAG_edge_labels.txt", names=["weight"], dtype=int
-        )
-        df_graph = pd.concat([df_graph, df_edge_labels], axis=1)  # add edge weights
-        df_graph_ids = self._load_from_txt_file(
-            filename="MUTAG_graph_indicator.txt", names=["graph_id"], index_increment=1
-        )
-        df_graph_labels = self._load_from_txt_file(
-            filename="MUTAG_graph_labels.txt",
-            dtype="category",
-            names=["label"],
-            index_increment=1,
-        )  # binary labels {-1, 1}
-        df_node_labels = self._load_from_txt_file(
-            filename="MUTAG_node_labels.txt", dtype="category", index_increment=1
-        )
 
-        # Let us one-hot encode the node labels because these are used as node features
-        # in graph classification tasks.
-        df_node_labels = pd.get_dummies(df_node_labels)
+class PROTEINS(
+    DatasetLoader,
+    name="PROTEINS",
+    directory_name="PROTEINS",
+    url="https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/PROTEINS.zip",
+    url_archive_format="zip",
+    expected_files=[
+        "PROTEINS_A.txt",
+        "PROTEINS_graph_indicator.txt",
+        "PROTEINS_node_labels.txt",
+        "PROTEINS_node_attributes.txt",
+        "PROTEINS_graph_labels.txt",
+        "README.txt",
+    ],
+    description="Each graph represents a protein and graph labels represent whether they are are enzymes or non-enzymes. "
+    "The dataset includes 1113 graphs with 39 nodes and 73 edges on average for each graph. "
+    "Graph nodes have 4 attributes (including a one-hot encoding of their label), and each graph is labelled as belonging to 1 of 2 classes.",
+    source="https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets",
+):
 
-        graphs = []
-        for graph_id in np.unique(df_graph_ids):
-            # find the subgraph with nodes that correspond to graph_id
-            node_ids = list(
-                df_graph_ids.loc[df_graph_ids["graph_id"] == graph_id].index
-            )
+    _edge_labels_as_weights = False
+    _node_attributes = True
 
-            df_subgraph = df_graph[df_graph["source"].isin(node_ids)]
-            # nodes should be DataFrame with node features; DataFrame index indicates node IDs
-            # edges should be DataFrame of edges, 2 columns "source" and "target"
-            graph = StellarGraph(nodes=df_node_labels.loc[node_ids], edges=df_subgraph)
-            graphs.append(graph)
+    def load(self):
+        """
+        Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
 
-        return graphs, df_graph_labels["label"]
+        Returns:
+            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
+        """
+        return _load_graph_kernel_dataset(self)
 
 
 def _load_tsv_knowledge_graph(dataset):
@@ -626,9 +673,7 @@ def _load_tsv_knowledge_graph(dataset):
 
     all_data = pd.concat([train, test, valid], ignore_index=True)
 
-    edges = {name: df.drop(columns="label") for name, df in all_data.groupby("label")}
-
-    return StellarDiGraph(edges=edges), train, test, valid
+    return StellarDiGraph(edges=all_data, edge_type_column="label"), train, test, valid
 
 
 class WN18(
@@ -803,3 +848,65 @@ class IAEnronEmployees(
         )
 
         return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges
+
+
+@experimental(reason="the data isn't downloaded automatically", issues=[1303])
+class METR_LA(
+    DatasetLoader,
+    name="METR-LA",
+    directory_name="METR-LA",
+    url="https://github.com/lehaifeng/T-GCN/tree/master/data",
+    url_archive_format="n/a",
+    expected_files=["los_speed.csv", "los_adj.csv"],
+    description="This traffic dataset contains traffic information collected from loop detectors in the highway of Los Angeles County (Jagadish et al., 2014).",
+    source="https://github.com/lehaifeng/T-GCN/tree/master/data",
+):
+    def download(self, ignore_cache=False):
+        # FIXME(#1303): downloading METR_LA isn't currently supported
+        pass
+
+    def load(self):
+        los_adj = pd.read_csv(r"data/los_adj.csv", header=None)
+        adj = np.mat(los_adj)
+        los_tf = pd.read_csv(r"data/los_speed.csv")
+        return los_tf, adj
+
+    def train_test_split(self, data, train_portion):
+        time_len = data.shape[0]
+        train_size = int(time_len * train_portion)
+        train_data = np.array(data[:train_size])
+        test_data = np.array(data[train_size:])
+        return train_data, test_data
+
+    def scale_data(self, train_data, test_data):
+        max_speed = train_data.max()
+        min_speed = train_data.min()
+        train_scaled = (train_data - min_speed) / (max_speed - min_speed)
+        test_scaled = (test_data - min_speed) / (max_speed - min_speed)
+        return train_scaled, test_scaled
+
+    def sequence_data_preparation(self, seq_len, pre_len, train_data, test_data):
+        trainX, trainY, testX, testY = [], [], [], []
+
+        for i in range(len(train_data) - int(seq_len + pre_len - 1)):
+            a = train_data[
+                i : i + seq_len + pre_len,
+            ]
+            trainX.append(a[:seq_len])
+            trainY.append(a[-1])
+
+        for i in range(len(test_data) - int(seq_len + pre_len - 1)):
+            b = test_data[
+                i : i + seq_len + pre_len,
+            ]
+            testX.append(
+                b[:seq_len,]
+            )
+            testY.append(b[-1])
+
+        trainX = np.array(trainX)
+        trainY = np.array(trainY)
+        testX = np.array(testX)
+        testY = np.array(testY)
+
+        return trainX, trainY, testX, testY

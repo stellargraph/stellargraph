@@ -16,7 +16,7 @@ This table lists all representation learning demos, including the algorithms tra
 
 | demo | algorithm(s) | training method | node features | downstream tasks shown |
 |---|---|---|---|---|
-| [Deep Graph Infomax][dgi] | GCN, GAT, PPNP, APPNP, GraphSAGE | `DeepGraphInfomax` (mutual information) | yes | visualisation, node classification |
+| [Deep Graph Infomax][dgi] | GCN, GAT, PPNP, APPNP, GraphSAGE, HinSAGE | `DeepGraphInfomax` (mutual information) | yes | visualisation, node classification |
 | [Unsupervised GraphSAGE][graphsage] | GraphSAGE | `UnsupervisedSampler` (link prediction) | yes | visualisation, node classification |
 | [Attri2Vec][attri2vec] | Attri2Vec | `UnsupervisedSampler` (link prediction) | yes | visualisation |
 | [Metapath2Vec][metapath2vec] | Metapath2Vec | natively unsupervised | | visualisation |

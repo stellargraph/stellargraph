@@ -38,6 +38,7 @@ import scipy.sparse as sps
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
+from collections import defaultdict
 
 from ..data import (
     SampledBreadthFirstWalk,
@@ -46,11 +47,11 @@ from ..data import (
 )
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
-from . import NodeSequence
+from . import NodeSequence, Generator
 from ..random import SeededPerBatch
 
 
-class BatchedNodeGenerator(abc.ABC):
+class BatchedNodeGenerator(Generator):
     """
     Abstract base class for graph data generators.
 
@@ -96,6 +97,9 @@ class BatchedNodeGenerator(abc.ABC):
     @abc.abstractmethod
     def sample_features(self, head_nodes, batch_num):
         pass
+
+    def num_batch_dims(self):
+        return 1
 
     def flow(self, node_ids, targets=None, shuffle=False, seed=None):
         """
@@ -272,6 +276,10 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         ]
         return batch_feats
 
+    def default_corrupt_input_index_groups(self):
+        # everything can be shuffled together
+        return [list(range(len(self.num_samples) + 1))]
+
 
 class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
     """
@@ -325,6 +333,10 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             G, graph_schema=self.schema, seed=seed
         )
 
+    def _max_slots(self):
+        max_hops = len(self.in_samples)
+        return 2 ** (max_hops + 1) - 1
+
     def sample_features(self, head_nodes, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
@@ -353,8 +365,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         node_type = self.head_node_types[0]
 
-        max_hops = len(self.in_samples)
-        max_slots = 2 ** (max_hops + 1) - 1
+        max_slots = self._max_slots()
         features = [None] * max_slots  # flattened binary tree
 
         for slot in range(max_slots):
@@ -366,6 +377,10 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             )
 
         return features
+
+    def default_corrupt_input_index_groups(self):
+        # everything can be shuffled together
+        return [list(range(self._max_slots()))]
 
 
 class HinSAGENodeGenerator(BatchedNodeGenerator):
@@ -481,6 +496,16 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         ]
 
         return batch_feats
+
+    def default_corrupt_input_index_groups(self):
+        # every sample of a given node type can be grouped together
+        indices_per_nt = defaultdict(list)
+        for tensor_idx, (nt, _) in enumerate(self._sampling_schema[0]):
+            indices_per_nt[nt].append(tensor_idx)
+
+        # ensure there's a consistent order both within each group, and across groups, ensure the
+        # shuffling is deterministic (at least with respect to the model)
+        return sorted(sorted(idx) for idx in indices_per_nt.values())
 
 
 class Attri2VecNodeGenerator(BatchedNodeGenerator):

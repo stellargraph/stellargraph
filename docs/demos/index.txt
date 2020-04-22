@@ -1,0 +1,9 @@
+Demos
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

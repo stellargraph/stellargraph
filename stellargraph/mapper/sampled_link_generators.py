@@ -48,9 +48,10 @@ from ..data import (
 from ..core.utils import is_real_iterable
 from . import LinkSequence, OnDemandLinkSequence
 from ..random import SeededPerBatch
+from .base import Generator
 
 
-class BatchedLinkGenerator(abc.ABC):
+class BatchedLinkGenerator(Generator):
     def __init__(self, G, batch_size, schema=None, use_node_features=True):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
@@ -82,6 +83,9 @@ class BatchedLinkGenerator(abc.ABC):
     @abc.abstractmethod
     def sample_features(self, head_links, batch_num):
         pass
+
+    def num_batch_dims(self):
+        return 1
 
     def flow(self, link_ids, targets=None, shuffle=False, seed=None):
         """

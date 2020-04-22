@@ -69,6 +69,7 @@ custom_keras_layers = {
     "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
     "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer,
     "GatherIndices": layer.misc.GatherIndices,
+    "SortPooling": layer.SortPooling,
 }
 
 
