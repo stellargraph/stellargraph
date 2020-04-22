@@ -64,7 +64,7 @@ class SortPooling(Layer):
             An input shape tuple.
         """
         if self.flatten_output:
-            return input_shapes[0], self.k * input_shapes[2]
+            return input_shapes[0], self.k * input_shapes[2], 1
         else:
             return input_shapes[0], self.k, input_shapes[2]
 
@@ -125,6 +125,6 @@ class SortPooling(Layer):
         )
 
         if self.flatten_output:
-            outputs = tf.reshape(outputs, [tf.shape(outputs)[0], -1])
+            outputs = tf.reshape(outputs, [tf.shape(outputs)[0], -1, 1])
 
         return outputs
