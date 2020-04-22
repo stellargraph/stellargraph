@@ -62,6 +62,7 @@ Some new algorithms and features are still under active development, and are ava
 - The `BlogCatalog3` dataset can now be successfully downloaded again [\#1283](https://github.com/stellargraph/stellargraph/pull/1283)
 - Knowledge graph model evaluation via `rank_edges_against_all_nodes` now defaults to the `random` strategy for breaking ties, and supports `top` (previous default) and `bottom` as alternatives [\#1223](https://github.com/stellargraph/stellargraph/pull/1223)
 - Creating a `RelationalFullBatchNodeGenerator` is now significantly faster and requires much less memory (18× speedup and 560× smaller for the `stellargraph.datasets.AIFB` dataset) [\#1274](https://github.com/stellargraph/stellargraph/pull/1274)
+- `StellarGraph.info` now shows a summary of the edge weights for each edge type [\#1240](https://github.com/stellargraph/stellargraph/pull/1240)
 - Various documentation, demo and error message fixes and improvements: [\#1141](https://github.com/stellargraph/stellargraph/pull/1141), [\#1219](https://github.com/stellargraph/stellargraph/pull/1219), [\#1246](https://github.com/stellargraph/stellargraph/pull/1246), [\#1260](https://github.com/stellargraph/stellargraph/pull/1260), [\#1266](https://github.com/stellargraph/stellargraph/pull/1266)
 - DevOps changes:
   - CI: [\#1161](https://github.com/stellargraph/stellargraph/pull/1161), [\#1189](https://github.com/stellargraph/stellargraph/pull/1189), [\#1230](https://github.com/stellargraph/stellargraph/pull/1230), [\#1122](https://github.com/stellargraph/stellargraph/pull/1122)
