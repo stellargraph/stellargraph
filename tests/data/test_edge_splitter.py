@@ -251,7 +251,7 @@ class TestEdgeSplitterHomogeneous(object):
     def test_stellargraph(self):
         original_graph = example_graph_random(n_nodes=20, n_edges=50)
 
-        directed_edges = list(zip(*original_graph.edges()[:2]))
+        directed_edges = list(zip(*original_graph.edge_arrays()[:2]))
         true_edges = set(directed_edges) | {(tgt, src) for src, tgt in directed_edges}
 
         def check(split_graph, ids, labels):

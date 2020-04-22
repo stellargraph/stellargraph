@@ -143,7 +143,7 @@ class Test_GraphSAGELinkGenerator:
         generator = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
         )
-        mapper = generator.flow(G.edges(), edge_labels)
+        mapper = generator.flow(G.edge_arrays(), edge_labels)
         assert generator.batch_size == self.batch_size
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
@@ -153,7 +153,7 @@ class Test_GraphSAGELinkGenerator:
         generator = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
         )
-        mapper = generator.flow(G.edges(), edge_labels)
+        mapper = generator.flow(G.edge_arrays(), edge_labels)
         assert generator.batch_size == self.batch_size
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
@@ -166,7 +166,7 @@ class Test_GraphSAGELinkGenerator:
 
         mapper = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
-        ).flow(G.edges(), edge_labels)
+        ).flow(G.edge_arrays(), edge_labels)
 
         assert len(mapper) == 2
 
@@ -194,7 +194,7 @@ class Test_GraphSAGELinkGenerator:
     def test_GraphSAGELinkGenerator_shuffle(self):
         def test_edge_consistency(shuffle):
             G = example_graph(feature_size=1)
-            sources, targets, _, _ = G.edges()
+            sources, targets, _, _ = G.edge_arrays()
             edge_labels = list(range(len(sources)))
 
             mapper = GraphSAGELinkGenerator(G, batch_size=2, num_samples=[0]).flow(
@@ -251,7 +251,7 @@ class Test_GraphSAGELinkGenerator:
 
         mapper = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=[0]
-        ).flow(G.edges(), edge_labels)
+        ).flow(G.edge_arrays(), edge_labels)
 
         assert len(mapper) == 2
 
@@ -286,7 +286,7 @@ class Test_GraphSAGELinkGenerator:
 
         mapper = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=[]
-        ).flow(G.edges(), edge_labels)
+        ).flow(G.edge_arrays(), edge_labels)
 
         assert len(mapper) == 2
         with pytest.raises(ValueError):
@@ -299,7 +299,7 @@ class Test_GraphSAGELinkGenerator:
         G = example_graph(feature_size=self.n_feat)
         gen = GraphSAGELinkGenerator(
             G, batch_size=self.batch_size, num_samples=self.num_samples
-        ).flow(G.edges())
+        ).flow(G.edge_arrays())
         for i in range(len(gen)):
             assert gen[i][1] is None
 
@@ -474,7 +474,7 @@ class Test_HinSAGELinkGenerator(object):
             ).flow((sources, targets), link_labels)
 
         # all edges in G, which have multiple link types
-        links = G.edges()
+        links = G.edge_arrays()
         link_labels = [0] * len(links[0])
 
         with pytest.raises(ValueError):
@@ -646,7 +646,7 @@ class Test_Attri2VecLinkGenerator:
         edge_labels = [0] * G.number_of_edges()
 
         generator = Attri2VecLinkGenerator(G, batch_size=self.batch_size)
-        mapper = generator.flow(G.edges(), edge_labels)
+        mapper = generator.flow(G.edge_arrays(), edge_labels)
         assert generator.batch_size == self.batch_size
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
@@ -654,7 +654,7 @@ class Test_Attri2VecLinkGenerator:
         G = example_graph(feature_size=self.n_feat, is_directed=True)
         edge_labels = [0] * G.number_of_edges()
         generator = Attri2VecLinkGenerator(G, batch_size=self.batch_size)
-        mapper = generator.flow(G.edges(), edge_labels)
+        mapper = generator.flow(G.edge_arrays(), edge_labels)
         assert generator.batch_size == self.batch_size
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
@@ -666,7 +666,7 @@ class Test_Attri2VecLinkGenerator:
         edge_labels = [0] * data_size
 
         mapper = Attri2VecLinkGenerator(G, batch_size=self.batch_size).flow(
-            G.edges(), edge_labels
+            G.edge_arrays(), edge_labels
         )
 
         assert len(mapper) == 2
@@ -684,7 +684,7 @@ class Test_Attri2VecLinkGenerator:
 
     def test_edge_consistency(self):
         G = example_graph(feature_size=1)
-        sources, targets, _, _ = G.edges()
+        sources, targets, _, _ = G.edge_arrays()
         nodes = list(G.nodes())
         edge_labels = list(range(len(sources)))
 
@@ -722,7 +722,9 @@ class Test_Attri2VecLinkGenerator:
         This tests link generator's iterator for prediction, i.e., without targets provided
         """
         G = example_graph(feature_size=self.n_feat)
-        gen = Attri2VecLinkGenerator(G, batch_size=self.batch_size).flow(G.edges())
+        gen = Attri2VecLinkGenerator(G, batch_size=self.batch_size).flow(
+            G.edge_arrays()
+        )
         for i in range(len(gen)):
             assert gen[i][1] is None
 
@@ -800,7 +802,7 @@ class Test_DirectedGraphSAGELinkGenerator:
             in_samples=self.in_samples,
             out_samples=self.out_samples,
         )
-        mapper = generator.flow(G.edges(), edge_labels)
+        mapper = generator.flow(G.edge_arrays(), edge_labels)
         assert generator.batch_size == self.batch_size
         assert mapper.data_size == G.number_of_edges()
         assert len(mapper.ids) == G.number_of_edges()
@@ -816,7 +818,7 @@ class Test_DirectedGraphSAGELinkGenerator:
             batch_size=self.batch_size,
             in_samples=self.in_samples,
             out_samples=self.out_samples,
-        ).flow(G.edges(), edge_labels)
+        ).flow(G.edge_arrays(), edge_labels)
 
         assert len(mapper) == 2
 
@@ -850,7 +852,7 @@ class Test_DirectedGraphSAGELinkGenerator:
     def test_shuffle(self, shuffle):
 
         G = example_graph(feature_size=1, is_directed=True)
-        edges = G.edges()
+        edges = G.edge_arrays()
         edge_labels = list(range(len(edges[0])))
 
         mapper = DirectedGraphSAGELinkGenerator(
@@ -876,7 +878,7 @@ class Test_DirectedGraphSAGELinkGenerator:
 
         mapper = DirectedGraphSAGELinkGenerator(
             G, batch_size=self.batch_size, in_samples=[0], out_samples=[0],
-        ).flow(G.edges(), edge_labels)
+        ).flow(G.edge_arrays(), edge_labels)
 
         assert len(mapper) == 2
 
@@ -910,7 +912,7 @@ class Test_DirectedGraphSAGELinkGenerator:
             batch_size=self.batch_size,
             in_samples=in_samples,
             out_samples=out_samples,
-        ).flow(G.edges(), edge_labels)
+        ).flow(G.edge_arrays(), edge_labels)
         assert len(mapper) == 2
         with pytest.raises(ValueError):
             nf, nl = mapper[0]
@@ -925,7 +927,7 @@ class Test_DirectedGraphSAGELinkGenerator:
             batch_size=self.batch_size,
             in_samples=self.in_samples,
             out_samples=self.out_samples,
-        ).flow(G.edges())
+        ).flow(G.edge_arrays())
         for i in range(len(gen)):
             assert gen[i][1] is None
 

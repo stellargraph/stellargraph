@@ -439,7 +439,9 @@ def test_edges_include_edge_type():
     f = {(4, 5, "F")}
     expected = normalize_edges(r | f, directed=False)
     assert (
-        normalize_edges(list(zip(*g.edges(include_edge_type=True)[:3])), directed=False)
+        normalize_edges(
+            list(zip(*g.edge_arrays(include_edge_type=True)[:3])), directed=False
+        )
         == expected
     )
 
@@ -1078,7 +1080,7 @@ def test_info_deprecated():
 
 def test_edges_include_weights():
     g = example_weighted_hin()
-    sources, targets, _, weights = g.edges(include_edge_weight=True)
+    sources, targets, _, weights = g.edge_arrays(include_edge_weight=True)
 
     nxg = g.to_networkx()
     assert len(sources) == len(targets) == len(weights) == len(nxg.edges())
@@ -1279,10 +1281,10 @@ def test_from_networkx_smoke():
             assert f(from_nx) == f(raw)
 
     both(lambda g: sorted(g.nodes()))
-    both(lambda g: sorted(g.edges()[0]))
-    both(lambda g: sorted(g.edges()[1]))
-    both(lambda g: sorted(g.edges(include_edge_type=True)[2]))
-    both(lambda g: sorted(g.edges(include_edge_weight=True)[2]))
+    both(lambda g: sorted(g.edge_arrays()[0]))
+    both(lambda g: sorted(g.edge_arrays()[1]))
+    both(lambda g: sorted(g.edge_arrays(include_edge_type=True)[2]))
+    both(lambda g: sorted(g.edge_arrays(include_edge_weight=True)[3]))
 
     nodes = raw.nodes()
 
@@ -1318,10 +1320,10 @@ def test_subgraph(is_directed, nodes):
 
     assert set(sub.nodes()) == set(expected.nodes())
 
-    sub_sources, sub_targets, _, sub_weights = sub.edges(
+    sub_sources, sub_targets, _, sub_weights = sub.edge_arrays(
         include_edge_type=True, include_edge_weight=True
     )
-    exp_sources, exp_targets, _, exp_weights = expected.edges(
+    exp_sources, exp_targets, _, exp_weights = expected.edge_arrays(
         include_edge_type=True, include_edge_weight=True
     )
 
@@ -1362,7 +1364,7 @@ def test_connected_components(is_directed):
     assert set(c) == {3}
 
     # check that `connected_components` works with `subgraph`
-    assert set(list(zip(*g.subgraph(a).edges()[:2]))) == {(0, 2), (2, 5)}
+    assert set(list(zip(*g.subgraph(a).edge_arrays()[:2]))) == {(0, 2), (2, 5)}
 
 
 def test_nodes_node_type_filter():

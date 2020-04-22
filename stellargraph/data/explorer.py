@@ -1033,7 +1033,7 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         num_cw_curr = 0
 
-        sources, targets, _, times = self.graph.edges(include_edge_weight=True)
+        sources, targets, _, times = self.graph.edge_arrays(include_edge_weight=True)
         edge_biases = self._temporal_biases(
             times, None, bias_type=initial_edge_bias, is_forward=False,
         )

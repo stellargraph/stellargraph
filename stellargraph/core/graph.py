@@ -501,6 +501,12 @@ class StellarGraph:
     def edges(
         self, include_edge_type=False, include_edge_weight=False
     ) -> Iterable[np.array]:
+        edge_arrs = self.edge_arrays(include_edge_type, include_edge_weight)
+        return list(zip(arr for arr in edge_arrs if arr is not None))
+
+    def edge_arrays(
+        self, include_edge_type=False, include_edge_weight=False
+    ) -> EdgeList:
         """
         Obtains the collection of edges in the graph.
 
@@ -514,18 +520,8 @@ class StellarGraph:
             A tuple containing 1D arrays of the source and target nodes (sources, targets). Setting include_edge_type
                 and/or include_edge_weight to True will include arrays of edge types and/or edge weights in this tuple.
         """
-        # edges = (self._edges.sources, self._edges.targets)
-
-        if include_edge_type:
-            types = self._edges.type_of_iloc(slice(None))
-        else:
-            types = np.array([], dtype=np.uint8)
-
-        if include_edge_weight:
-            weights = self._edges.weights
-        else:
-            weights = np.array([], dtype=np.uint8)
-
+        types = self._edges.type_of_iloc(slice(None)) if include_edge_type else None
+        weights = self._edges.weights if include_edge_weight else None
         return EdgeList(self._edges.sources, self._edges.targets, types, weights)
 
     def has_node(self, node: Any) -> bool:

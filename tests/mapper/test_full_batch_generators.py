@@ -356,7 +356,7 @@ class Test_FullBatchLinkGenerator:
         return A_dense, tind, y
 
     def test_generator_flow_notargets(self):
-        sources, targets, _, _ = self.G.edges()
+        sources, targets, _, _ = self.G.edge_arrays()
         sources, targets = sources[:3], targets[:3]
         link_ids = (sources, targets)
         expected = np.stack(link_ids, axis=1).reshape((1, 3, 2))
@@ -371,7 +371,7 @@ class Test_FullBatchLinkGenerator:
         assert np.allclose(tind, expected)
 
     def test_generator_flow_withtargets(self):
-        sources, targets, _, _ = self.G.edges()
+        sources, targets, _, _ = self.G.edge_arrays()
         sources, targets = sources[:3], targets[:3]
         link_ids = (sources, targets)
 
@@ -387,7 +387,7 @@ class Test_FullBatchLinkGenerator:
 
     def test_generator_flow_targets_as_list(self):
         generator = FullBatchLinkGenerator(self.G)
-        sources, targets, _, _ = self.G.edges()
+        sources, targets, _, _ = self.G.edge_arrays()
         sources, targets = sources[:3], targets[:3]
         link_ids = (sources, targets)
 
@@ -400,9 +400,9 @@ class Test_FullBatchLinkGenerator:
 
     def test_generator_flow_targets_not_iterator(self):
         generator = FullBatchLinkGenerator(self.G)
-        link_ids = self.G.edges()
+        link_ids = self.G.edge_arrays()
         link_targets = 1
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             generator.flow(link_ids, link_targets)
 
     def test_fullbatch_generator_transform(self):
@@ -417,7 +417,7 @@ class Test_FullBatchLinkGenerator:
 
     def test_generator_methods(self):
 
-        sources, targets, _, _ = self.G.edges()
+        sources, targets, _, _ = self.G.edge_arrays()
         link_ids = (sources[:10], targets[:10])
 
         Aadj = self.G.to_adjacency_matrix().toarray()

@@ -195,7 +195,7 @@ def test_cora_load_weighted() -> None:
 
     g, subjects = Cora().load(edge_weights=weights)
 
-    weights = g.edges(include_edge_weight=True)[3]
+    weights = g.edge_arrays(include_edge_weight=True)[3]
     # some edges have neither subject nor any features in common
     assert weights.min() == 0.0
     # "same subject" is either 0 or 1 and some edges definitely have 1, and jaccard is in [0, 1], so
@@ -220,7 +220,7 @@ def test_aifb_load() -> None:
     assert g.number_of_nodes() == 8285
     assert g.number_of_edges() == 29043
     # 'affiliation' and 'employs' are excluded
-    assert len(set(g.edges(include_edge_type=True)[2])) == 47 - 2
+    assert len(set(g.edge_arrays(include_edge_type=True)[2])) == 47 - 2
     assert g.node_feature_sizes() == {"default": 8285}
 
     assert len(affiliation) == 178
@@ -251,7 +251,7 @@ def _knowledge_graph_load(dataset, nodes, rels, train, test, valid):
 
     assert g.number_of_nodes() == nodes
     assert g.number_of_edges() == train + test + valid
-    assert len(set(g.edges(include_edge_type=True)[2])) == rels
+    assert len(set(g.edge_arrays(include_edge_type=True)[2])) == rels
 
     assert len(train_df) == train
     assert len(test_df) == test

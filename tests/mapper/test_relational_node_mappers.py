@@ -37,7 +37,7 @@ class Test_RelationalFullBatchNodeGenerator:
 
     G, features = create_graph_features()
     N = len(G.nodes())
-    sources, targets, types, _ = G.edges(include_edge_type=True)
+    sources, targets, types, _ = G.edge_arrays(include_edge_type=True)
     edge_types = sorted(set(types))
     num_relationships = len(edge_types)
 
@@ -160,7 +160,7 @@ class Test_RelationalFullBatchNodeGenerator:
         assert generator.name == "test"
 
         As = []
-        sources, targets, types, _ = G.edges(include_edge_type=True)
+        sources, targets, types, _ = G.edge_arrays(include_edge_type=True)
         edge_types = sorted(set(types))
         node_list = list(G.nodes())
         node_index = dict(zip(node_list, range(len(node_list))))

@@ -425,7 +425,7 @@ class RelationalFullBatchNodeGenerator:
 
         self.features = G.node_features(self.node_list)
 
-        sources, targets, types, _ = G.edges(include_edge_type=True)
+        sources, targets, types, _ = G.edge_arrays(include_edge_type=True)
         edge_types = sorted(set(types))
         self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
 
