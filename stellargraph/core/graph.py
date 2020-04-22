@@ -131,7 +131,7 @@ class StellarGraph:
     Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
     ``z``. A heterogeneous graph can have different features for each type.
 
-    Edges of different types work in the same way. example instance, if edges have different types based
+    Edges of different types can work in the same way. For instance, if edges have different types based
     on their orientation::
 
         horizontal_edges = pd.DataFrame(
@@ -150,6 +150,19 @@ class StellarGraph:
             {"foo": foo_nodes, "bar": bar_nodes},
             {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
         )
+
+    Alternatively, a single DataFrame can be provided, with an additional column of the type. This
+    column is specified by passing the ``edge_type_column`` argument::
+
+        orientation_edges = pd.DataFrame(
+            {
+                "source": ["a", "b", "c", "d", "a"],
+                "target": ["b", "c", "d", "a", "c"],
+                "type": ["h", "v", "h", "v", "d"]
+            }
+        )
+
+        StellarGraph(nodes, orientation_edges, edge_type_column="type")
 
     .. note::
 
@@ -193,6 +206,10 @@ class StellarGraph:
             The name of the column in each of the ``edges`` DataFrames to use as the weight of
             edges. If the column does not exist in any of them, it is defaulted to ``1``.
 
+        edge_type_column (str, optional):
+            The name of the column in the ``edges`` DataFrame to use as the edge type (if this is
+            set, ``edges`` must be a single DataFrame, not a dictionary).
+
         node_type_default (str, optional):
             The default node type to use, if ``nodes`` is passed as a DataFrame (not a ``dict``).
 
@@ -221,6 +238,7 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -278,6 +296,7 @@ class StellarGraph:
             source_column=source_column,
             target_column=target_column,
             weight_column=edge_weight_column,
+            type_column=edge_type_column,
         )
 
         nodes_from_edges = pd.unique(
@@ -1350,6 +1369,7 @@ class StellarDiGraph(StellarGraph):
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -1366,6 +1386,7 @@ class StellarDiGraph(StellarGraph):
             source_column=source_column,
             target_column=target_column,
             edge_weight_column=edge_weight_column,
+            edge_type_column=edge_type_column,
             node_type_default=node_type_default,
             edge_type_default=edge_type_default,
             dtype=dtype,

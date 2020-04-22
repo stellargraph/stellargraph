@@ -1,0 +1,9 @@
+Graph Classification
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*
