@@ -36,8 +36,12 @@ def test_node2vec_constructor():
     assert node2vec.multiplicity == 2
 
     # Check requirement for generator or node_num & multiplicity
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         Node2Vec(emb_size=4)
+    with pytest.raises(ValueError):
+        Node2Vec(emb_size=4, node_num=4)
+    with pytest.raises(ValueError):
+        Node2Vec(emb_size=4, multiplicity=2)
 
     # Construction from generator
     G = example_graph()
@@ -63,33 +67,17 @@ def test_node2vec_apply():
     actual = model1.predict(x)
     assert expected == pytest.approx(actual)
 
-    # Use the node model:
-    xinp, xout = node2vec.node_model()
-    model2 = keras.Model(inputs=xinp, outputs=xout)
-    model_weights2 = [np.ones_like(w) for w in model2.get_weights()]
-    model2.set_weights(model_weights2)
-    assert pytest.approx(expected) == model2.predict(x)
-
     x1 = np.array([[0]])
     x2 = np.array([[2]])
     y1 = np.array([[1, 1, 1, 1]])
     y2 = np.array([[1, 1, 1, 1]])
 
-    # Test the build function:
-    xinp, xout = node2vec.build()
-    model3 = keras.Model(inputs=xinp, outputs=xout)
-    model_weights3 = [np.ones_like(w) for w in model3.get_weights()]
-    model3.set_weights(model_weights3)
-    actual = model3.predict([x1, x2])
-    assert pytest.approx(y1) == actual[0]
-    assert pytest.approx(y2) == actual[1]
-
-    # Use the link model:
-    xinp, xout = node2vec.link_model()
-    model4 = keras.Model(inputs=xinp, outputs=xout)
-    model_weights4 = [np.ones_like(w) for w in model4.get_weights()]
-    model4.set_weights(model_weights4)
-    actual = model4.predict([x1, x2])
+    # Test the in_out_tensors function:
+    xinp, xout = node2vec.in_out_tensors()
+    model2 = keras.Model(inputs=xinp, outputs=xout)
+    model_weights2 = [np.ones_like(w) for w in model2.get_weights()]
+    model2.set_weights(model_weights2)
+    actual = model2.predict([x1, x2])
     assert pytest.approx(y1) == actual[0]
     assert pytest.approx(y2) == actual[1]
 

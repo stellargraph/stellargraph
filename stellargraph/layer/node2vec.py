@@ -30,6 +30,16 @@ from .misc import deprecated_model_function
 from ..mapper import Node2VecLinkGenerator, Node2VecNodeGenerator
 
 
+def _require_without_generator(value, name):
+    if value is not None:
+        return value
+    else:
+        raise ValueError(
+            f"{name}: expected a value for 'node_num' and 'multiplicity' when "
+            f"'generator' is not provided, found {name}=None."
+        )
+
+
 class Node2Vec:
     """
     Implementation of the Node2Vec algorithm of A. Grover and J. Leskovec with Keras layers.
@@ -40,17 +50,20 @@ class Node2Vec:
     Args:
         emb_size (int): The dimension of node embeddings.
         generator (Sequence): A NodeSequence or LinkSequence.
-        **kwargs: Parameters node_num(int) and multiplicity(int).
+        node_num(int, optional): The number of nodes in the given graph.
+        multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node inference
+          and 2 for link inference (currently no others are supported).
     """
 
-    def __init__(self, emb_size, generator=None, **kwargs):
+    def __init__(self, emb_size, generator=None, node_num=None, multiplicity=None):
 
         # Get the node_num from the generator if it is given
         self.generator = generator
         if generator is not None:
             self._get_sizes_from_generator(generator)
         else:
-            self._get_sizes_from_keywords(kwargs)
+            self.input_node_num = _require_without_generator(node_num, "node_num")
+            self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
 
         # Model parameters
         self.emb_size = emb_size
@@ -94,22 +107,7 @@ class Node2Vec:
         self.input_node_num = generator.graph.number_of_nodes()
 
         if len(list(generator.graph.node_types)) > 1:
-            raise RuntimeError("Node2Vec called on graph with more than one node type.")
-
-    def _get_sizes_from_keywords(self, kwargs):
-        """
-        Sets node_num and multiplicity from the keywords.
-        Args:
-             kwargs: The additional keyword arguments.
-        """
-        try:
-            self.input_node_num = kwargs["node_num"]
-            self.multiplicity = kwargs["multiplicity"]
-
-        except KeyError:
-            raise KeyError(
-                "Generator not provided; node_num and multiplicity must be specified."
-            )
+            raise ValueError("Node2Vec called on graph with more than one node type.")
 
     def __call__(self, xin, embedding):
         """
@@ -194,9 +192,7 @@ class Node2Vec:
         elif self.multiplicity == 2:
             return self._link_model()
         else:
-            raise RuntimeError(
-                "Currently only multiplicities of 1 and 2 are supported."
-            )
+            raise ValueError("Currently only multiplicities of 1 and 2 are supported.")
 
     def default_model(self, flatten_output=True):
         warnings.warn(
