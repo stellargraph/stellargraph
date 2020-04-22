@@ -36,6 +36,12 @@ from pathlib import Path
 from nbconvert import NotebookExporter, HTMLExporter, writers, preprocessors
 from black import format_str, FileMode, InvalidInput
 
+# determine the current stellargraph version
+version = {}
+with open("stellargraph/version.py", "r") as fh:
+    exec(fh.read(), version)
+SG_VERSION = version["__version__"]
+
 
 class ClearWarningsPreprocessor(preprocessors.Preprocessor):
     filter_all_stderr = Bool(True, help="Remove all stderr outputs.").tag(config=True)
@@ -148,11 +154,11 @@ class CloudRunnerPreprocessor(InsertTaggedCellsPreprocessor):
     git_branch = "master"
     demos_path_prefix = "demos/"
 
-    colab_import_code = """\
+    colab_import_code = f"""\
 # install StellarGraph if running on Google Colab
 import sys
 if 'google.colab' in sys.modules:
-  %pip install -q stellargraph[demos]"""
+  %pip install -q stellargraph[demos]=={SG_VERSION}"""
 
     def _binder_url(self, notebook_path):
         return f"https://mybinder.org/v2/gh/stellargraph/stellargraph/{self.git_branch}?urlpath=lab/tree/{notebook_path}"
@@ -196,12 +202,6 @@ if 'google.colab' in sys.modules:
 
 class VersionValidationPreprocessor(InsertTaggedCellsPreprocessor):
     metadata_tag = "VersionCheck"
-
-    # determine the current stellargraph version
-    version = {}
-    with open("stellargraph/version.py", "r") as fh:
-        exec(fh.read(), version)
-    SG_VERSION = version["__version__"]
 
     version_check_code = f"""\
 # verify that we're using the correct version of StellarGraph for this notebook
