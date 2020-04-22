@@ -50,7 +50,8 @@ Jump in to this release, with the new demos and examples:
 
 Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
 
-- `DeepGraphConvolutionalNeuralNetwork`: supervised graph classification based on GCN, the new `SortPooling` pooling layer and asymmetric adjacency normalisation [\#1210](https://github.com/stellargraph/stellargraph/pull/1210) [\#1212](https://github.com/stellargraph/stellargraph/pull/1212) [\#1265](https://github.com/stellargraph/stellargraph/pull/1265)
+- `SortPooling` layer: the node pooling layer introduced in [Zhang et al](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf) [\#1210](https://github.com/stellargraph/stellargraph/pull/1210)
+- `DeepGraphConvolutionalNeuralNetwork` (DGCNN): supervised graph classification using a stack of graph convolutional layers followed by `SortPooling`, and standard convolutional and pooling (such as `Conv1D` and `MaxPool1D`) [\#1212](https://github.com/stellargraph/stellargraph/pull/1212) [\#1265](https://github.com/stellargraph/stellargraph/pull/1265)
 - `GraphConvolutionLSTM`: time series prediction on spatio-temporal data, combining GCN with a [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) model to augment the conventional time-series model with information from nearby data points [\#1085](https://github.com/stellargraph/stellargraph/pull/1085), [demo][gcn-lstm]
 
 ### Bug fixes and other changes
