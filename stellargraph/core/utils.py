@@ -74,6 +74,12 @@ def normalized_laplacian(adj, symmetric=True):
     return laplacian
 
 
+def calculate_laplacian(adj):
+    D = np.diag(np.ravel(adj.sum(axis=0)) ** (-0.5))
+    adj = np.dot(D, np.dot(adj, D))
+    return adj
+
+
 def rescale_laplacian(laplacian):
     """
     Scale graph Laplacian by the largest eigenvalue of normalized graph Laplacian,

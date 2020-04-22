@@ -1,0 +1,9 @@
+Basics
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

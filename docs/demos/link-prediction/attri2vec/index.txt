@@ -1,0 +1,9 @@
+Attri2vec
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

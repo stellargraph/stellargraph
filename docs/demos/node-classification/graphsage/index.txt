@@ -1,0 +1,9 @@
+Graphsage
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

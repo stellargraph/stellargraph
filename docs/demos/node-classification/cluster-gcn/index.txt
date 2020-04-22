@@ -1,0 +1,9 @@
+Cluster Gcn
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

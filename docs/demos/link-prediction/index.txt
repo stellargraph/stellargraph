@@ -1,0 +1,9 @@
+Link Prediction
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

@@ -131,7 +131,7 @@ class StellarGraph:
     Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
     ``z``. A heterogeneous graph can have different features for each type.
 
-    Edges of different types work in the same way. example instance, if edges have different types based
+    Edges of different types can work in the same way. For instance, if edges have different types based
     on their orientation::
 
         horizontal_edges = pd.DataFrame(
@@ -150,6 +150,19 @@ class StellarGraph:
             {"foo": foo_nodes, "bar": bar_nodes},
             {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
         )
+
+    Alternatively, a single DataFrame can be provided, with an additional column of the type. This
+    column is specified by passing the ``edge_type_column`` argument::
+
+        orientation_edges = pd.DataFrame(
+            {
+                "source": ["a", "b", "c", "d", "a"],
+                "target": ["b", "c", "d", "a", "c"],
+                "type": ["h", "v", "h", "v", "d"]
+            }
+        )
+
+        StellarGraph(nodes, orientation_edges, edge_type_column="type")
 
     .. note::
 
@@ -193,6 +206,10 @@ class StellarGraph:
             The name of the column in each of the ``edges`` DataFrames to use as the weight of
             edges. If the column does not exist in any of them, it is defaulted to ``1``.
 
+        edge_type_column (str, optional):
+            The name of the column in the ``edges`` DataFrame to use as the edge type (if this is
+            set, ``edges`` must be a single DataFrame, not a dictionary).
+
         node_type_default (str, optional):
             The default node type to use, if ``nodes`` is passed as a DataFrame (not a ``dict``).
 
@@ -221,6 +238,7 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -278,6 +296,7 @@ class StellarGraph:
             source_column=source_column,
             target_column=target_column,
             weight_column=edge_weight_column,
+            type_column=edge_type_column,
         )
 
         nodes_from_edges = pd.unique(
@@ -691,6 +710,14 @@ class StellarGraph:
         """
         return set(self._nodes.types.pandas_index)
 
+    @property
+    def edge_types(self):
+        """
+        Returns:
+            a sequence of all edge types in the graph
+        """
+        return self._edges.types.pandas_index
+
     def node_feature_sizes(self, node_types=None):
         """
         Get the feature sizes for the specified node types.
@@ -724,20 +751,33 @@ class StellarGraph:
 
         # TODO: check the feature node_ids against the graph node ids?
 
-    def node_features(self, nodes, node_type=None):
+    def node_features(self, nodes=None, node_type=None):
         """
-        Get the numeric feature vectors for the specified node or nodes.
-        If the node type is not specified the node types will be found
-        for all nodes. It is therefore important to supply the ``node_type``
-        for this method to be fast.
+        Get the numeric feature vectors for the specified nodes or node type.
+
+        If ``nodes`` is not specified, this returns all features of the specified ``node_type``,
+        where the rows are ordered the same as ``self.nodes(node_type=node_type)``.
+
+        At least one of ``nodes`` and ``node_type`` must be passed. If ``nodes`` is passed without
+        specifying ``node_type``, the node type of ``nodes`` will be inferred (passing ``node_type``
+        in addition to ``nodes`` will therefore be faster).
+
 
         Args:
-            nodes (list or hashable): Node ID or list of node IDs
-            node_type (hashable): the type of the nodes.
+            nodes (list or hashable, optional): Node ID or list of node IDs, all of the same type
+            node_type (hashable, optional): the type of the nodes.
 
         Returns:
-            Numpy array containing the node features for the requested nodes.
+            Numpy array containing the node features for the requested nodes or node type.
         """
+        if nodes is None:
+            if node_type is None:
+                raise ValueError(
+                    "node_type: expected a node type to be specified when 'nodes' is not passed, found None"
+                )
+
+            return self._nodes.features_of_type(node_type)
+
         nodes = np.asarray(nodes)
 
         node_ilocs = self._nodes.ids.to_iloc(nodes)
@@ -1000,7 +1040,9 @@ class StellarGraph:
         """
         return self._edges.degrees()
 
-    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
+    def to_adjacency_matrix(
+        self, nodes: Optional[Iterable] = None, weighted=False, edge_type=None
+    ):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
 
@@ -1014,27 +1056,35 @@ class StellarGraph:
                 otherwise, it is computed for the full graph.
             weighted (bool): If true, use the edge weight column from the graph instead
                 of edge counts (weights from multi-edges are summed).
+            edge_type (hashable, optional): If set (to an edge type), only includes edges of that
+                type, otherwise uses all edges.
 
         Returns:
              The weighted adjacency matrix.
         """
+        if edge_type is None:
+            type_selector = slice(None)
+        else:
+            type_selector = self._edges.type_range(edge_type)
+
+        sources = self._edges.sources[type_selector]
+        targets = self._edges.targets[type_selector]
+
         if nodes is None:
             index = self._nodes._id_index
             selector = slice(None)
         else:
             nodes = list(nodes)
             index = ExternalIdIndex(nodes)
-            selector = np.isin(self._edges.sources, nodes) & np.isin(
-                self._edges.targets, nodes
-            )
+            selector = np.isin(sources, nodes) & np.isin(targets, nodes)
 
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
-        src_idx = index.to_iloc(self._edges.sources[selector])
-        tgt_idx = index.to_iloc(self._edges.targets[selector])
+        src_idx = index.to_iloc(sources[selector])
+        tgt_idx = index.to_iloc(targets[selector])
         if weighted:
-            weights = self._edges.weights[selector]
+            weights = self._edges.weights[type_selector][selector]
         else:
             weights = np.ones(src_idx.shape, dtype=self._edges.weights.dtype)
 
@@ -1319,6 +1369,7 @@ class StellarDiGraph(StellarGraph):
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -1335,6 +1386,7 @@ class StellarDiGraph(StellarGraph):
             source_column=source_column,
             target_column=target_column,
             edge_weight_column=edge_weight_column,
+            edge_type_column=edge_type_column,
             node_type_default=node_type_default,
             edge_type_default=edge_type_default,
             dtype=dtype,
