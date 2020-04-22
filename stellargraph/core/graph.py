@@ -43,7 +43,17 @@ from . import convert
 
 
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
-EdgeList = namedtuple("EdgeList", ["source", "target", "type", "weight"])
+
+_EdgeList = namedtuple("_EdgeList", ["source", "target", "type", "weight"])
+
+
+class EdgeList(_EdgeList):
+    def to_edges(self):
+        # return the tuple-d form
+        edges = list(zip(*(arr for arr in self[:3] if arr is not None)))
+        if self[3] is not None:
+            return edges, self[3]
+        return edges
 
 
 class StellarGraph:
@@ -501,8 +511,7 @@ class StellarGraph:
     def edges(
         self, include_edge_type=False, include_edge_weight=False
     ) -> Iterable[np.array]:
-        edge_arrs = self.edge_arrays(include_edge_type, include_edge_weight)
-        return list(zip(arr for arr in edge_arrs if arr is not None))
+        return self.edge_arrays(include_edge_type, include_edge_weight).to_edges()
 
     def edge_arrays(
         self, include_edge_type=False, include_edge_weight=False
