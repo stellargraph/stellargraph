@@ -847,21 +847,16 @@ class StellarGraph:
             self._nodes.types.from_iloc(tgt_ilocs),
         )
 
-    def _unique_type_triples(self, *, return_counts, selector=slice(None)):
+    def _unique_type_triples(self, selector=slice(None)):
         all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
 
         if len(all_type_ilocs) == 0:
             # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
             # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
             # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
-            if return_counts:
-                ret = None, [], []
-            else:
-                ret = None, []
+            ret = None, []
         else:
-            ret = np.unique(
-                all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
-            )
+            ret = np.unique(all_type_ilocs, axis=0, return_index=True)
 
         edge_ilocs = ret[1]
         # we've now got the indices for an edge with each triple, along with the counts of them, so
@@ -869,10 +864,19 @@ class StellarGraph:
         # getting the actual type for each type iloc in the triples)
         unique_ets = self._edge_type_triples(edge_ilocs)
 
-        if return_counts:
-            return zip(*unique_ets, ret[2])
-
         return zip(*unique_ets)
+
+    def _edge_metrics_by_type_triple(self, metrics):
+        src_ty, rel_ty, tgt_ty = self._edge_type_triples()
+        df = pd.DataFrame(
+            {
+                "src_ty": src_ty,
+                "rel_ty": rel_ty,
+                "tgt_ty": tgt_ty,
+                "weight": self._edges.weights,
+            }
+        )
+        return df.groupby(["src_ty", "rel_ty", "tgt_ty"]).agg(metrics)["weight"]
 
     def info(self, show_attributes=None, sample=None, truncate=20):
         """
@@ -937,6 +941,16 @@ class StellarGraph:
                 edge_types = "none"
             return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
 
+        def edge_type_info(et, metrics):
+            if metrics.min == metrics.max:
+                weights_text = (
+                    "all 1 (default)" if metrics.min == 1 else f"all {metrics.min:.6g}"
+                )
+            else:
+                weights_text = f"range=[{metrics.min:.6g}, {metrics.max:.6g}], mean={metrics.mean:.6g}, std={metrics.std:.6g}"
+
+            return f"{str_edge_type(et)}: [{metrics.count}]\n        Weights: {weights_text}"
+
         # sort the node types in decreasing order of frequency
         node_types = sorted(
             ((len(self.nodes(node_type=nt)), nt) for nt in gs.node_types), reverse=True
@@ -948,18 +962,19 @@ class StellarGraph:
             sep="\n  ",
         )
 
-        # FIXME: it would be better for the schema to just include the counts directly
-        unique_ets = self._unique_type_triples(return_counts=True)
+        metric_names = ["count", "min", "max", "mean", "std"]
+        et_metrics = self._edge_metrics_by_type_triple(metrics=metric_names)
+
         edge_types = sorted(
             (
-                (count, EdgeType(src_ty, rel_ty, tgt_ty))
-                for src_ty, rel_ty, tgt_ty, count in unique_ets
+                (metrics.count, EdgeType(*metrics.Index), metrics,)
+                for metrics in et_metrics.itertuples()
             ),
             reverse=True,
         )
 
         edges = separated(
-            [f"{str_edge_type(et)}: [{count}]" for count, et in edge_types],
+            [edge_type_info(et, metrics) for _, et, metrics in edge_types],
             limit=truncate,
             stringify=str,
             sep="\n    ",
@@ -1006,9 +1021,7 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        for n1, rel, n2 in self._unique_type_triples(
-            selector=selector, return_counts=False
-        ):
+        for n1, rel, n2 in self._unique_type_triples(selector=selector):
             edge_type_tri = EdgeType(n1, rel, n2)
             edge_types.add(edge_type_tri)
             graph_schema[n1].add(edge_type_tri)
