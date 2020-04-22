@@ -19,7 +19,7 @@
        - Version bumping: Change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
          - `stellargraph/version.py`
          - `meta.yaml`
-       - Update expected versions of demo notebooks: `scripts/format_notebooks.py --version_validation --overwrite demos/`
+       - Update expected versions of demo notebooks: `scripts/format_notebooks.py --default --overwrite demos/`
        - Update Changelog section header and "Full Changelog" link to point to specific version tag instead of `HEAD`. Note: these links will be broken until the tag is pushed later.
      - CAN do:
        - Minor bug fixes if necessary
