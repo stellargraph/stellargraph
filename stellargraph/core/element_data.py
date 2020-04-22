@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 
-from ..globalvar import SOURCE, TARGET, WEIGHT
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .validation import require_dataframe_has_columns, comma_sep
 
 
@@ -119,59 +119,52 @@ class ElementData:
     than indexing pandas dataframes, series or indices.
 
     Args:
-        shared (dict of type name to pandas DataFrame): information for the elements of each type
+        shared (pandas DataFrame): information for each element
+        type_starts (list of tuple of type name, int): the starting iloc of the elements of each type within ``shared``
     """
 
     # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
     # overridden by subclasses as appropriate)
     _SHARED_REQUIRED_COLUMNS = []
 
-    def __init__(self, shared):
-        if not isinstance(shared, dict):
-            raise TypeError(f"shared: expected dict, found {type(shared)}")
-
-        for key, value in shared.items():
-            if not isinstance(value, pd.DataFrame):
-                raise TypeError(
-                    f"shared[{key!r}]: expected pandas DataFrame', found {type(value)}"
-                )
-
-            require_dataframe_has_columns(
-                f"features[{key!r}]", value, self._SHARED_REQUIRED_COLUMNS
+    def __init__(self, shared, type_starts):
+        if not isinstance(shared, pd.DataFrame):
+            raise TypeError(
+                f"shared: expected pandas DataFrame, found {type(shared).__name__}"
             )
 
-        type_element_ilocs = {}
-        rows_so_far = 0
-        type_dfs = []
+        require_dataframe_has_columns("shared", shared, self._SHARED_REQUIRED_COLUMNS)
 
-        all_types = sorted(shared.keys())
-        type_sizes = []
+        if not isinstance(type_starts, list):
+            raise TypeError(
+                f"type_starts: expected list, found {type(type_starts).__name__}"
+            )
 
-        for type_name in all_types:
-            type_data = shared[type_name]
-            size = len(type_data)
+        type_ranges = {}
+        type_stops = type_starts[1:] + [(None, len(shared))]
+        consecutive_types = zip(type_starts, type_stops)
+        for idx, ((type_name, start), (_, stop)) in enumerate(consecutive_types):
+            if idx == 0 and start != 0:
+                raise ValueError(
+                    f"type_starts: expected first type ({type_name!r}) to start at index 0, found start {start}"
+                )
+            if start > stop:
+                raise TypeError(
+                    f"type_starts (for {type_name!r}): expected valid type range, found start ({start}) after stop ({stop})"
+                )
+            type_ranges[type_name] = range(start, stop)
 
-            type_element_ilocs[type_name] = range(rows_so_far, rows_so_far + size)
-            rows_so_far += size
-
-            type_sizes.append(size)
-            type_dfs.append(type_data)
-
-        if type_dfs:
-            all_columns = pd.concat(type_dfs)
-        else:
-            all_columns = pd.DataFrame(columns=self._SHARED_REQUIRED_COLUMNS)
-
-        self._id_index = ExternalIdIndex(all_columns.index)
-        self._columns = {
-            name: data.to_numpy() for name, data in all_columns.iteritems()
-        }
+        self._id_index = ExternalIdIndex(shared.index)
+        self._columns = {name: data.to_numpy() for name, data in shared.iteritems()}
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
+        all_types = [type_name for type_name, _ in type_starts]
+        type_sizes = [len(type_ranges[type_name]) for type_name in all_types]
+
         self._type_index = ExternalIdIndex(all_types)
         self._type_column = self._type_index.to_iloc(all_types).repeat(type_sizes)
-        self._type_element_ilocs = type_element_ilocs
+        self._type_element_ilocs = type_ranges
 
     def __len__(self) -> int:
         return len(self._id_index)
@@ -230,19 +223,20 @@ class ElementData:
 class NodeData(ElementData):
     """
     Args:
-        shared (dict of type name to pandas DataFrame): information for the nodes of each type
+        shared (pandas DataFrame): information for the nodes
+        type_starts (list of tuple of type name, int): the starting iloc of the nodes of each type within ``shared``
         features (dict of type name to numpy array): a 2D numpy or scipy array of feature vectors for the nodes of each type
     """
 
-    def __init__(self, shared, features):
-        super().__init__(shared)
+    def __init__(self, shared, type_starts, features):
+        super().__init__(shared, type_starts)
         if not isinstance(features, dict):
-            raise TypeError(f"features: expected dict, found {type(features)}")
+            raise TypeError(f"features: expected dict, found {type(features).__name__}")
 
         for key, data in features.items():
             if not isinstance(data, (np.ndarray, sps.spmatrix)):
                 raise TypeError(
-                    f"features[{key!r}]: expected numpy or scipy array, found {type(data)}"
+                    f"features[{key!r}]: expected numpy or scipy array, found {type(data).__name__}"
                 )
 
             if len(data.shape) != 2:
@@ -258,6 +252,15 @@ class NodeData(ElementData):
                 )
 
         self._features = features
+
+    def features_of_type(self, type_name) -> np.ndarray:
+        """
+        Returns all features for a given type.
+
+        Args:
+            type_name (hashable): the name of the type
+        """
+        return self._features[type_name]
 
     def features(self, type_name, id_ilocs) -> np.ndarray:
         """
@@ -296,20 +299,21 @@ class NodeData(ElementData):
         }
 
 
-def _numpyise(d):
-    return {k: np.array(v) for k, v in d.items()}
+def _numpyise(d, dtype):
+    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
 class EdgeData(ElementData):
     """
     Args:
-        shared (dict of type name to pandas DataFrame): information for the edges of each type
+        shared (pandas DataFrame): information for the edges
+        type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared):
-        super().__init__(shared)
+    def __init__(self, shared, type_starts):
+        super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
         self.sources = self._column(SOURCE)
@@ -329,9 +333,10 @@ class EdgeData(ElementData):
             if src != tgt:
                 undirected.setdefault(src, []).append(i)
 
-        self._edges_in_dict = _numpyise(in_dict)
-        self._edges_out_dict = _numpyise(out_dict)
-        self._edges_dict = _numpyise(undirected)
+        dtype = np.min_scalar_type(len(self.sources))
+        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
+        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
+        self._edges_dict = _numpyise(undirected, dtype=dtype)
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32

@@ -15,12 +15,13 @@
 # limitations under the License.
 
 import warnings
+import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
 from ..mapper import FullBatchGenerator
-from .misc import SqueezedSparseConversion, deprecated_model_function
+from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 from .preprocessing_layer import GraphPreProcessingLayer
 
 
@@ -34,29 +35,26 @@ class GraphConvolution(Layer):
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
 
     Notes:
-      - The inputs are tensors with a batch dimension of 1:
-        Keras requires this batch dimension, and for full-batch methods
-        we only have a single "batch".
+      - The batch axis represents independent graphs to be convolved with this GCN kernel (for
+        instance, for full-batch node prediction on a single graph, its dimension should be 1).
 
-      - There are three inputs required, the node features, the output
-        indices (the nodes that are to be selected in the final layer)
+      - If the adjancency matrix is dense, both it and the features should have a batch axis, with
+        equal batch dimension.
+
+      - If the adjancency matrix is sparse, it should not have a batch axis, and the batch
+        dimension of the features must be 1.
+
+      - There are two inputs required, the node features,
         and the normalized graph Laplacian matrix
 
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
-      - The output indices are used when ``final_layer=True`` and the returned outputs
-        are the final-layer features for the nodes indexed by output indices.
-
-      - If ``final_layer=False`` all the node features are output in the same ordering as
-        given by the adjacency matrix.
-
     Args:
         units (int): dimensionality of output feature vectors
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        final_layer (bool): If False the layer returns output for all nodes,
-                            if True it returns the subset specified by the indices passed to it.
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
         kernel_initializer (str or func, optional): The initialiser to use for the weights.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights.
         kernel_constraint (str or func, optional): The constraint to use for the weights.
@@ -70,7 +68,7 @@ class GraphConvolution(Layer):
         units,
         activation=None,
         use_bias=True,
-        final_layer=False,
+        final_layer=None,
         input_dim=None,
         kernel_initializer="glorot_uniform",
         kernel_regularizer=None,
@@ -78,7 +76,7 @@ class GraphConvolution(Layer):
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
@@ -86,7 +84,10 @@ class GraphConvolution(Layer):
         self.units = units
         self.activation = activations.get(activation)
         self.use_bias = use_bias
-        self.final_layer = final_layer
+        if final_layer is not None:
+            raise ValueError(
+                "'final_layer' is not longer supported, use 'tf.gather' or 'GatherIndices' separately"
+            )
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -109,7 +110,6 @@ class GraphConvolution(Layer):
         config = {
             "units": self.units,
             "use_bias": self.use_bias,
-            "final_layer": self.final_layer,
             "activation": activations.serialize(self.activation),
             "kernel_initializer": initializers.serialize(self.kernel_initializer),
             "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
@@ -134,13 +134,10 @@ class GraphConvolution(Layer):
         Returns:
             An input shape tuple.
         """
-        feature_shape, out_shape, *As_shapes = input_shapes
+        feature_shape, *As_shapes = input_shapes
 
         batch_dim = feature_shape[0]
-        if self.final_layer:
-            out_dim = out_shape[1]
-        else:
-            out_dim = feature_shape[1]
+        out_dim = feature_shape[1]
 
         return batch_dim, out_dim, self.units
 
@@ -182,7 +179,6 @@ class GraphConvolution(Layer):
         Args:
             inputs (list): a list of 3 input tensors that includes
                 node features (size 1 x N x F),
-                output indices (size 1 x M)
                 graph adjacency matrix (size N x N),
                 where N is the number of nodes in the graph, and
                 F is the dimensionality of node features.
@@ -190,35 +186,34 @@ class GraphConvolution(Layer):
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-        features, out_indices, *As = inputs
-        batch_dim, n_nodes, _ = K.int_shape(features)
-        if batch_dim != 1:
-            raise ValueError(
-                "Currently full-batch methods only support a batch dimension of one"
-            )
-
-        # Remove singleton batch dimension
-        features = K.squeeze(features, 0)
-        out_indices = K.squeeze(out_indices, 0)
+        features, *As = inputs
 
         # Calculate the layer operation of GCN
         A = As[0]
-        h_graph = K.dot(A, features)
+        if K.is_sparse(A):
+            # FIXME(#1222): batch_dot doesn't support sparse tensors, so we special case them to
+            # only work with a single batch element (and the adjacency matrix without a batch
+            # dimension)
+            if features.shape[0] != 1:
+                raise ValueError(
+                    f"features: expected batch dimension = 1 when using sparse adjacency matrix in GraphConvolution, found features batch dimension {features.shape[0]}"
+                )
+            if len(A.shape) != 2:
+                raise ValueError(
+                    f"adjacency: expected a single adjacency matrix when using sparse adjacency matrix in GraphConvolution (tensor of rank 2), found adjacency tensor of rank {len(A.shape)}"
+                )
+
+            features_sq = K.squeeze(features, axis=0)
+            h_graph = K.dot(A, features_sq)
+            h_graph = K.expand_dims(h_graph, axis=0)
+        else:
+            h_graph = K.batch_dot(A, features)
         output = K.dot(h_graph, self.kernel)
 
         # Add optional bias & apply activation
         if self.bias is not None:
             output += self.bias
         output = self.activation(output)
-
-        # On the final layer we gather the nodes referenced by the indices
-        if self.final_layer:
-            output = K.gather(output, out_indices)
-
-        # Add batch dimension back if we removed it
-        # print("BATCH DIM:", batch_dim)
-        if batch_dim == 1:
-            output = K.expand_dims(output, 0)
 
         return output
 
@@ -340,7 +335,6 @@ class GCN:
                     self.layer_sizes[ii],
                     activation=self.activations[ii],
                     use_bias=self.bias,
-                    final_layer=ii == (n_layers - 1),
                     kernel_initializer=kernel_initializer,
                     kernel_regularizer=kernel_regularizer,
                     kernel_constraint=kernel_constraint,
@@ -386,10 +380,8 @@ class GCN:
                     shape=(n_nodes, n_nodes), dtype=A_values.dtype
                 )([A_indices, A_values])
             ]
-
-        # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
@@ -403,12 +395,14 @@ class GCN:
             Ainput = [self.graph_norm_layer(Ainput[0])]
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
-                # For a GCN layer add the matrix and output indices
-                # Note that the output indices are only used if `final_layer=True`
-                h_layer = layer([h_layer, out_indices] + Ainput)
+                # For a GCN layer add the matrix
+                h_layer = layer([h_layer] + Ainput)
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
+
+        # only return data for the requested nodes
+        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
 
         return h_layer
 

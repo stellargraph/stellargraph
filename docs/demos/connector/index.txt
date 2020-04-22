@@ -1,0 +1,9 @@
+Connector
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

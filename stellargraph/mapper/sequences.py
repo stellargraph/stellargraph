@@ -25,8 +25,7 @@ __all__ = [
     "FullBatchSequence",
     "SparseFullBatchSequence",
     "RelationalFullBatchNodeSequence",
-    "GraphSequence",
-    "CorruptedNodeSequence",
+    "PaddedGraphSequence",
 ]
 
 import warnings
@@ -533,7 +532,7 @@ class RelationalFullBatchNodeSequence(Sequence):
         return self.inputs, self.targets
 
 
-class GraphSequence(Sequence):
+class PaddedGraphSequence(Sequence):
     """
     A Keras-compatible data generator for training and evaluating graph classification models.
     Use this class with the Keras methods :meth:`keras.Model.fit`,
@@ -541,7 +540,7 @@ class GraphSequence(Sequence):
         :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
-    :class:`GraphGenerator`.
+    :class:`PaddedGraphGenerator`.
 
     Args:
         graphs (list)): The graphs as StellarGraph objects.
@@ -549,11 +548,22 @@ class GraphSequence(Sequence):
             where N is the number of graphs and C is the target size (e.g., number of classes.)
         normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
             be normalized or not. The default is True.
+        symmetric_normalization (bool, optional): Use symmetric normalization if True, that is left and right multiply
+            the adjacency matrix by the inverse square root of the degree matrix; otherwise left multiply the adjacency
+            matrix by the inverse of the degree matrix. This parameter is ignored if normalize=False.
         batch_size (int, optional): The batch size. It defaults to 1.
         name (str, optional): An optional name for this generator object.
     """
 
-    def __init__(self, graphs, targets=None, normalize=True, batch_size=1, name=None):
+    def __init__(
+        self,
+        graphs,
+        targets=None,
+        normalize=True,
+        symmetric_normalization=True,
+        batch_size=1,
+        name=None,
+    ):
 
         self.name = name
         self.graphs = np.asanyarray(graphs)
@@ -572,7 +582,12 @@ class GraphSequence(Sequence):
 
         if self.normalize_adj:
             self.normalized_adjs = [
-                normalize_adj(graph.to_adjacency_matrix()) for graph in graphs
+                normalize_adj(
+                    graph.to_adjacency_matrix(),
+                    symmetric=symmetric_normalization,
+                    add_self_loops=True,
+                )
+                for graph in graphs
             ]
         else:
             self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
@@ -640,38 +655,3 @@ class GraphSequence(Sequence):
         self.normalized_adjs = self.normalized_adjs[indexes]
         if self.targets is not None:
             self.targets = self.targets[indexes]
-
-
-class CorruptedNodeSequence(Sequence):
-    """
-    Keras compatible data generator that wraps a FullBatchSequence ot SparseFullBatchSequence and provides corrupted
-    data for training Deep Graph Infomax.
-
-    Args:
-        base_generator: the uncorrupted Sequence object.
-    """
-
-    def __init__(self, base_generator):
-
-        if not isinstance(base_generator, (FullBatchSequence, SparseFullBatchSequence)):
-            raise TypeError(
-                f"base_generator: expected FullBatchSequence or SparseFullBatchSequence, "
-                f"found {type(base_generator).__name__}"
-            )
-
-        self.base_generator = base_generator
-        self.targets = np.zeros((1, len(base_generator.target_indices), 2))
-        self.targets[0, :, 0] = 1.0
-
-    def __len__(self):
-        return len(self.base_generator)
-
-    def __getitem__(self, index):
-
-        inputs, _ = self.base_generator[index]
-        features = inputs[0]
-
-        shuffled_idxs = np.random.permutation(features.shape[1])
-        shuffled_feats = features[:, shuffled_idxs, :]
-
-        return [shuffled_feats] + inputs, self.targets

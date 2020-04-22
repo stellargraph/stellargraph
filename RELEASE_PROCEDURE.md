@@ -19,6 +19,7 @@
        - Version bumping: Change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
          - `stellargraph/version.py`
          - `meta.yaml`
+       - Update expected versions of demo notebooks: `scripts/format_notebooks.py --default --overwrite demos/`
        - Update Changelog section header and "Full Changelog" link to point to specific version tag instead of `HEAD`. Note: these links will be broken until the tag is pushed later.
      - CAN do:
        - Minor bug fixes if necessary
@@ -85,6 +86,9 @@
      ```shell
      conda build .
      ```
+
+      NOTE: The Conda package is also built in CI, and uploaded to a Buildkite artifact in the "conda build" stage of the pipeline.  It's possible to download this artifact to be uploaded in the following step, rather than building the conda package locally.
+
    - Upload to Anaconda Cloud in the “stellargraph” organization
      ```shell
      conda build . --output # find the path to the package
@@ -131,6 +135,13 @@
      ```
    - Turn branch protection back on.
 
+7. **Prompt Binder to generate the docker image**
+
+   [Binder](https://mybinder.org) uses a docker image to package up the state of a repository. It takes a long time to build, and is only built lazily, for the first user to click one of our "launch binder" buttons. It is your job to do this:
+
+   - Find [any demo notebook](https://github.com/stellargraph/stellargraph/blob/master/demos/basics/loading-pandas.ipynb) on the `master` branch
+   - Click [the "launch binder" button](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/basics/loading-pandas.ipynb) (or just click this link)
+   - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
 
 ## More Information
 

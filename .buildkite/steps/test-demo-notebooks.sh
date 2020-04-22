@@ -34,17 +34,16 @@ f=${NOTEBOOKS[$INDEX]}
 case $(basename "$f") in
   'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'stellargraph-attri2vec-DBLP.ipynb' | \
     'node-link-importance-demo-gat.ipynb' | 'node-link-importance-demo-gcn.ipynb' | 'node-link-importance-demo-gcn-sparse.ipynb' | 'rgcn-aifb-node-classification-example.ipynb' | \
-    'stellargraph-metapath2vec.ipynb')
+    'stellargraph-metapath2vec.ipynb' | 'gcn-lstm-LA.ipynb')
     # These notebooks do not yet work on CI:
     # FIXME #818: datasets can't be downloaded
     # FIXME #819: out-of-memory
-    # FIXME #849: CI does not have neo4j
-    # FIXME #907: socialcomputing.asu.edu is down
+    # FIXME #1303: METR_LA dataset can't be downloaded automatically
     echo "+++ :python: :skull_and_crossbones: skipping $f"
     exit 2 # this will be a soft-fail for buildkite
     ;;
 
-  'directed-graphsage-on-cora-neo4j-example.ipynb' | 'undirected-graphsage-on-cora-neo4j-example.ipynb' | 'load-cora-into-neo4j.ipynb')
+  'loading-saving-neo4j.ipynb' | 'directed-graphsage-on-cora-neo4j-example.ipynb' | 'undirected-graphsage-on-cora-neo4j-example.ipynb' | 'load-cora-into-neo4j.ipynb')
     # these are tested separately (see test-neo4j-notebooks.sh)
     echo "+++ :python: skipping Neo4j notebook $f"
     exit 0

@@ -1,0 +1,9 @@
+Node2vec
+====================================
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

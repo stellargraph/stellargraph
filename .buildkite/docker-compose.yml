@@ -7,13 +7,16 @@ services:
       dockerfile: docker/stellargraph-ci-runner/Dockerfile
       args:
         PYTHON_VERSION: "3.6"
+        # this can be set at the build level to have the whole build use pre-release versions of
+        # dependencies
+        PRERELEASE_VERSIONS: &prerelease "${PRERELEASE_VERSIONS:-0}"
     working_dir: /workdir
-    volumes:
+    volumes: &runner-volumes
       - $PWD:/workdir
       # We need to manually bring in buildkite-agent
       # (https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/issues/158)
       - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
-    environment:
+    environment: &runner-environment
       - PYTHONDONTWRITEBYTECODE=1
       # make sure that no new uses of the legacy constructor are added (see also: test in
       # test_graph.py, filterwarnings in pytest.ini)
@@ -37,8 +40,9 @@ services:
       - BUILDKITE_COMMIT
       - BUILDKITE_TAG
       - CODECOV_TOKEN
+      - NEO4J_VERSION
     depends_on:
-      - neo4j
+      - ${RUNNER_DEPENDS_ON:-empty-service}
 
   runner-3_7:
     <<: *runner-config
@@ -46,9 +50,23 @@ services:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
+        PRERELEASE_VERSIONS: *prerelease
+
+  # a service that does nothing to use as a default depends_on for the runners
+  empty-service:
+    image: alpine:3.10
 
   neo4j:
-    build: docker/stellargraph-neo4j
+    build:
+      context: docker/stellargraph-neo4j
+      args:
+        - NEO4J_VERSION
     environment:
       # this is running entirely locally on a CI machine, so authentication is unnecessary
       NEO4J_AUTH: "none"
+
+  conda:
+    image: continuumio/anaconda3
+    working_dir: /workdir
+    volumes: *runner-volumes
+    environment: *runner-environment
