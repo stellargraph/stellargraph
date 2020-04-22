@@ -568,7 +568,14 @@ class StellarGraph:
 
         return other_node_id
 
-    def neighbors(self, node: Any, include_edge_weight=False, edge_types=None):
+    def _to_neighbors(self, neigh_arrs, include_edge_weight):
+        if include_edge_weight:
+            return [
+                NeighbourWithWeight(neigh, weight) for neigh, weight in zip(*neigh_arrs)
+            ]
+        return list(neigh_arrs)
+
+    def neighbor_arrays(self, node: Any, include_edge_weight=False, edge_types=None):
         """
         Obtains the collection of neighbouring nodes connected
         to the given node.
@@ -590,7 +597,11 @@ class StellarGraph:
             other_node_id, ilocs, include_edge_weight, edge_types
         )
 
-    def in_nodes(
+    def neighbors(self, node: Any, include_edge_weight=False, edge_types=None):
+        neigh_arrs = self.neighbor_arrays(node, include_edge_weight, edge_types)
+        return self._to_neighbors(neigh_arrs, include_edge_weight)
+
+    def in_node_arrays(
         self, node: Any, include_edge_weight=False, edge_types=None
     ) -> Iterable[Any]:
         """
@@ -610,7 +621,7 @@ class StellarGraph:
         """
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
-            return self.neighbors(
+            return self.neighbor_arrays(
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
@@ -618,7 +629,13 @@ class StellarGraph:
         source = self._edges.sources[ilocs]
         return self._transform_edges(source, ilocs, include_edge_weight, edge_types)
 
-    def out_nodes(
+    def in_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
+        neigh_arrs = self.in_node_arrays(node, include_edge_weight, edge_types)
+        return self._to_neighbors(neigh_arrs, include_edge_weight)
+
+    def out_node_arrays(
         self, node: Any, include_edge_weight=False, edge_types=None
     ) -> Iterable[Any]:
         """
@@ -638,13 +655,19 @@ class StellarGraph:
         """
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
-            return self.neighbors(
+            return self.neighbor_arrays(
                 node, include_edge_weight=include_edge_weight, edge_types=edge_types
             )
 
         ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
         target = self._edges.targets[ilocs]
         return self._transform_edges(target, ilocs, include_edge_weight, edge_types)
+
+    def out_nodes(
+        self, node: Any, include_edge_weight=False, edge_types=None
+    ) -> Iterable[Any]:
+        neigh_arrs = self.out_node_arrays(node, include_edge_weight, edge_types)
+        return self._to_neighbors(neigh_arrs, include_edge_weight)
 
     def nodes_of_type(self, node_type=None):
         """

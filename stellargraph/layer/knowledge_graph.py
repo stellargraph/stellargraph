@@ -570,9 +570,9 @@ def _ranks_from_score_columns(
     unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(unmodified_node_ilocs)
     true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
     if modified_object:
-        neigh_func = known_edges_graph.out_nodes
+        neigh_func = known_edges_graph.out_node_arrays
     else:
-        neigh_func = known_edges_graph.in_nodes
+        neigh_func = known_edges_graph.in_node_arrays
 
     # collect all the neighbours into a single array to do one _get_index_for_nodes call,
     # which has relatively high constant cost

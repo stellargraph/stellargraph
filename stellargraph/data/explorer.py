@@ -161,7 +161,7 @@ class GraphWalk(object):
     def neighbors(self, node):
         if not self.graph.has_node(node):
             self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbors(node)
+        return self.graph.neighbor_arrays(node)
 
     def run(self, *args, **kwargs):
         """
@@ -279,7 +279,7 @@ class UniformRandomWalk(RandomWalk):
         walk = [start_node]
         current_node = start_node
         for _ in range(length - 1):
-            neighbours = self.graph.neighbors(current_node)
+            neighbours = self.graph.neighbor_arrays(current_node)
             if len(neighbours) == 0:
                 # dead end, so stop
                 break
@@ -388,7 +388,7 @@ class BiasedRandomWalk(RandomWalk):
             # the same two nodes with different weights.
             for node in self.graph.nodes():
                 # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbors(node):
+                for neighbor in self.graph.neighbor_arrays(node):
 
                     wts = set()
                     name = f"Edge weight between ({node}) and ({neighbor})"
@@ -419,7 +419,7 @@ class BiasedRandomWalk(RandomWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.graph.neighbors(node)
+                neighbours = self.graph.neighbor_arrays(node)
 
                 previous_node = node
                 previous_node_neighbours = neighbours
@@ -445,7 +445,7 @@ class BiasedRandomWalk(RandomWalk):
                     current_node = rs.choice(neighbours)
                     for _ in range(length - 1):
                         walk.append(current_node)
-                        neighbours = self.graph.neighbors(current_node)
+                        neighbours = self.graph.neighbor_arrays(current_node)
 
                         if len(neighbours) == 0:
                             break
@@ -562,7 +562,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.graph.neighbors(current_node)
+                        neighbours = self.graph.neighbor_arrays(current_node)
                         # filter these by node type
                         neighbours = [
                             n_node
@@ -875,7 +875,9 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [None] * size
         neighbours = list(
-            self.graph.in_nodes(node) if idx == 0 else self.graph.out_nodes(node)
+            self.graph.in_node_arrays(node)
+            if idx == 0
+            else self.graph.out_node_arrays(node)
         )
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
@@ -1105,7 +1107,7 @@ class TemporalRandomWalk(GraphWalk):
         Perform 1 temporal step from a node. Returns None if a dead-end is reached.
 
         """
-        neighbours, times = self.graph.neighbors(node, include_edge_weight=True)
+        neighbours, times = self.graph.neighbor_arrays(node, include_edge_weight=True)
         neighbours = neighbours[times > time]
         times = times[times > time]
 

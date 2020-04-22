@@ -589,7 +589,7 @@ def test_benchmark_get_neighbours(benchmark):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i)
+            sg.neighbor_arrays(i)
 
     benchmark(f)
 
@@ -692,13 +692,15 @@ def example_unweighted_hom(is_directed=True):
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_weighted_hin(is_directed):
     graph = example_weighted_hin(is_directed=is_directed)
-    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+    assert_items_equal(graph.neighbor_arrays(1), [0, 0, 2, 3])
     assert_items_equal(
-        list(zip(*graph.neighbors(1, include_edge_weight=True))),
+        list(zip(*graph.neighbor_arrays(1, include_edge_weight=True))),
         [(0, 0.0), (0, 1.0), (2, 10.0), (3, 10.0)],
     )
     assert_items_equal(
-        list(zip(*graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]))),
+        list(
+            zip(*graph.neighbor_arrays(1, include_edge_weight=True, edge_types=["AB"]))
+        ),
         [(2, 10.0), (3, 10.0)],
     )
 
@@ -710,63 +712,80 @@ def assert_items_equal(l1, l2):
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_unweighted_hom(is_directed):
     graph = example_unweighted_hom(is_directed=is_directed)
-    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+    assert_items_equal(graph.neighbor_arrays(1), [0, 0, 2, 3])
     assert_items_equal(
-        list(zip(*graph.neighbors(1, include_edge_weight=True))),
+        list(zip(*graph.neighbor_arrays(1, include_edge_weight=True))),
         [(0, 1), (0, 1), (2, 1), (3, 1)],
     )
     assert_items_equal(
-        list(zip(*graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]))), []
+        list(
+            zip(*graph.neighbor_arrays(1, include_edge_weight=True, edge_types=["AB"]))
+        ),
+        [],
     )
 
 
 def test_undirected_hin_neighbor_methods():
     graph = example_weighted_hin(is_directed=False)
-    assert_items_equal(graph.neighbors(1), graph.in_nodes(1))
-    assert_items_equal(graph.neighbors(1), graph.out_nodes(1))
+    assert_items_equal(graph.neighbor_arrays(1), graph.in_node_arrays(1))
+    assert_items_equal(graph.neighbor_arrays(1), graph.out_node_arrays(1))
 
 
 def test_in_nodes_weighted_hin():
     graph = example_weighted_hin()
-    assert_items_equal(graph.in_nodes(1), [0, 0])
+    assert_items_equal(graph.in_node_arrays(1), [0, 0])
     assert_items_equal(
-        list(zip(*graph.in_nodes(1, include_edge_weight=True))), [(0, 0.0), (0, 1.0)]
+        list(zip(*graph.in_node_arrays(1, include_edge_weight=True))),
+        [(0, 0.0), (0, 1.0)],
     )
     assert_items_equal(
-        list(zip(*graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]))), []
+        list(
+            zip(*graph.in_node_arrays(1, include_edge_weight=True, edge_types=["AB"]))
+        ),
+        [],
     )
 
 
 def test_in_nodes_unweighted_hom():
     graph = example_unweighted_hom()
-    assert_items_equal(graph.in_nodes(1), [0, 0])
+    assert_items_equal(graph.in_node_arrays(1), [0, 0])
     assert_items_equal(
-        list(zip(*graph.in_nodes(1, include_edge_weight=True))), [(0, 1), (0, 1)]
+        list(zip(*graph.in_node_arrays(1, include_edge_weight=True))), [(0, 1), (0, 1)]
     )
     assert_items_equal(
-        list(zip(*graph.in_nodes(1, include_edge_weight=True, edge_types=["AA"]))), []
+        list(
+            zip(*graph.in_node_arrays(1, include_edge_weight=True, edge_types=["AA"]))
+        ),
+        [],
     )
 
 
 def test_out_nodes_weighted_hin():
     graph = example_weighted_hin()
-    assert_items_equal(graph.out_nodes(1), [2, 3])
+    assert_items_equal(graph.out_node_arrays(1), [2, 3])
     assert_items_equal(
-        list(zip(*graph.out_nodes(1, include_edge_weight=True))), [(2, 10.0), (3, 10.0)]
+        list(zip(*graph.out_node_arrays(1, include_edge_weight=True))),
+        [(2, 10.0), (3, 10.0)],
     )
     assert_items_equal(
-        list(zip(*graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]))), []
+        list(
+            zip(*graph.out_node_arrays(1, include_edge_weight=True, edge_types=["AA"]))
+        ),
+        [],
     )
 
 
 def test_out_nodes_unweighted_hom():
     graph = example_unweighted_hom()
-    assert_items_equal(graph.out_nodes(1), [2, 3])
+    assert_items_equal(graph.out_node_arrays(1), [2, 3])
     assert_items_equal(
-        list(zip(*graph.out_nodes(1, include_edge_weight=True))), [(2, 1), (3, 1)]
+        list(zip(*graph.out_node_arrays(1, include_edge_weight=True))), [(2, 1), (3, 1)]
     )
     assert_items_equal(
-        list(zip(*graph.out_nodes(1, include_edge_weight=True, edge_types=["AB"]))), []
+        list(
+            zip(*graph.out_node_arrays(1, include_edge_weight=True, edge_types=["AB"]))
+        ),
+        [],
     )
 
 
@@ -777,9 +796,9 @@ def test_isolated_node_neighbor_methods(is_directed):
         nodes=pd.DataFrame(index=[1]), edges=pd.DataFrame(columns=["source", "target"])
     )
 
-    assert len(graph.neighbors(1)) == 0
-    assert len(graph.in_nodes(1)) == 0
-    assert len(graph.out_nodes(1)) == 0
+    assert len(graph.neighbor_arrays(1)) == 0
+    assert len(graph.in_node_arrays(1)) == 0
+    assert len(graph.in_node_arrays(1)) == 0
 
 
 @pytest.mark.parametrize("is_directed", [False, True])
