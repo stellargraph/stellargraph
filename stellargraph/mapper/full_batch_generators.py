@@ -44,7 +44,7 @@ from . import (
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
 )
-from ..core.graph import StellarGraph
+from ..core.graph import StellarGraph, EdgeList
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 from ..core.validation import comma_sep
@@ -359,6 +359,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
                 - a tuple of 1D numpy arrays containing the source and target nodes in format (sources, targets)
                 - a 2D numpy array with shape (N_links, 2) where `link_ids[:, 0] = sources` and
                     `link_ids[:, 1] = targets`
+                - a `stellargraph.EdgeList` object
             targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
 
@@ -368,8 +369,16 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
-        if isinstance(link_ids, tuple):
+        if isinstance(link_ids, EdgeList):
             link_ids = np.stack(link_ids[:2], axis=1)
+
+        elif is_real_iterable(link_ids) and len(link_ids) == 2:
+            link_ids = np.stack(link_ids, axis=1)
+
+        # support old link ids format for backwards compatability
+        elif is_real_iterable(link_ids) and all(len(x) == 2 for x in link_ids):
+            link_ids = np.array(link_ids)
+
         return super().flow(link_ids, targets)
 
 

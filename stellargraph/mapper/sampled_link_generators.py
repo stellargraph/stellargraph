@@ -108,6 +108,7 @@ class BatchedLinkGenerator(Generator):
                 - a tuple of 1D numpy arrays containing the source and target nodes in format (sources, targets)
                 - a 2D numpy array with shape (N_links, 2) where `link_ids[:, 0] = sources` and
                     `link_ids[:, 1] = targets`
+                - a `stellargraph.EdgeList` object
                 - a `stellargraph.data.UnsupervisedSampler` object.
             targets: a 2D array of numeric targets with shape
                 `(len(link_ids), target_size)`
@@ -129,8 +130,15 @@ class BatchedLinkGenerator(Generator):
         if isinstance(link_ids, UnsupervisedSampler):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
-        elif isinstance(link_ids, tuple):
+        elif isinstance(link_ids, EdgeList):
             link_ids = np.stack(link_ids[:2], axis=1)
+
+        elif is_real_iterable(link_ids) and len(link_ids) == 2:
+            link_ids = np.stack(link_ids, axis=1)
+
+        # support old link ids format for backwards compatability
+        elif is_real_iterable(link_ids) and all(len(x) == 2 for x in link_ids):
+            link_ids = np.array(link_ids)
 
         if not (isinstance(link_ids, np.ndarray) and link_ids.shape[1] == 2):
             raise TypeError(
