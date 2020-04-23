@@ -274,9 +274,13 @@ class GraphConvolutionLSTM:
         if lstm_activations is None:
             lstm_activations = ["tanh"] * n_lstm_layers
         elif len(lstm_activations) != n_lstm_layers:
-            raise ValueError(
-                "Invalid number of activations; require one function per lstm layer"
-            )
+            padding_size = n_lstm_layers - len(lstm_activations)
+            if padding_size > 0:
+                lstm_activations = lstm_activations + ["tanh"] * padding_size
+            else:
+                raise ValueError(
+                    "Invalid number of activations; require one function per lstm layer"
+                )
         self.lstm_activations = lstm_activations
 
         self._layers = []
