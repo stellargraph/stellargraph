@@ -1619,3 +1619,30 @@ def test_nodes_of_type_deprecation():
     with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
         a = g.nodes_of_type("A")
     assert all(a == g.nodes(node_type="A"))
+
+
+def test_EdgeList_toedges():
+
+    es = EdgeList(np.zeros(10), np.ones(10), None, 3 * np.ones(10))
+    assert (e == (0, 1) for e in es)
+
+    es = EdgeList(np.zeros(10), np.ones(10), 2 * np.ones(10), 3 * np.ones(10))
+    assert (e == (0, 1, 2) for e in es)
+
+    es = EdgeList(np.zeros(10), np.ones(10), 2 * np.ones(10), None)
+    assert (e == (0, 1, 2) for e in es)
+
+
+def test_to_neighbors():
+    nodes = np.ones(5)
+    weights = np.zeros(5)
+
+    expected = [NeighbourWithWeight(n, w) for n, w in zip(nodes, weights)]
+    actual = StellarGraph()._to_neighbors((nodes, weights), include_edge_weight=True)
+
+    assert actual == expected
+
+    expected = list(nodes)
+    actual = StellarGraph()._to_neighbors(nodes, include_edge_weight=False)
+
+    assert actual == expected
