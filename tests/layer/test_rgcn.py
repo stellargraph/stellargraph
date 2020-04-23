@@ -80,7 +80,7 @@ def test_RelationalGraphConvolution_init():
 
 def test_RelationalGraphConvolution_sparse():
     G, features = create_graph_features()
-    n_edge_types = len(get_edge_types(G))
+    n_edge_types = len(G.edge_types)
 
     # We need to specify the batch shape as one for the GraphConvolutional logic to work
     n_nodes = features.shape[0]
@@ -129,7 +129,7 @@ def test_RelationalGraphConvolution_sparse():
 def test_RelationalGraphConvolution_dense():
 
     G, features = create_graph_features()
-    n_edge_types = len(get_edge_types(G))
+    n_edge_types = len(G.edge_types)
 
     # We need to specify the batch shape as one for the GraphConvolutional logic to work
     n_nodes = features.shape[0]
@@ -176,7 +176,7 @@ def test_RGCN_init():
 
 
 def test_RGCN_apply_sparse():
-    G, features = create_graph_features()
+    G, features = create_graph_features(is_directed=True)
 
     As = get_As(G)
     As = [A.tocoo() for A in As]
@@ -204,7 +204,7 @@ def test_RGCN_apply_sparse():
 
 
 def test_RGCN_apply_dense():
-    G, features = create_graph_features()
+    G, features = create_graph_features(is_directed=True)
 
     As = get_As(G)
     As = [np.expand_dims(A.todense(), 0) for A in As]
@@ -328,22 +328,23 @@ def test_RelationalGraphConvolution_edge_cases():
     assert str(error) == "units should be positive"
 
 
-def get_edge_types(G):
-    assert isinstance(G, StellarGraph)
-    return sorted(set(G.edge_arrays(include_edge_type=True)[2]))
-
-
 def get_As(G):
 
     As = []
-    edge_types = get_edge_types(G)
     node_list = list(G.nodes())
     node_index = dict(zip(node_list, range(len(node_list))))
 
-    sources, targets, types, _ = G.edge_arrays(include_edge_type=True)
-    for edge_type in edge_types:
-        col_index = [node_index[n] for n in sources[types == edge_type]]
-        row_index = [node_index[n] for n in targets[types == edge_type]]
+    for edge_type in G.edge_types:
+        col_index = [
+            node_index[n1]
+            for n1, n2, etype in G.edges(include_edge_type=True)
+            if etype == edge_type
+        ]
+        row_index = [
+            node_index[n2]
+            for n1, n2, etype in G.edges(include_edge_type=True)
+            if etype == edge_type
+        ]
         data = np.ones(len(col_index), np.float64)
 
         A = sps.coo_matrix(

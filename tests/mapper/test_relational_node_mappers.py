@@ -24,6 +24,7 @@ import pandas as pd
 import scipy.sparse as sps
 from ..test_utils.graphs import (
     relational_create_graph_features as create_graph_features,
+    example_hin_1,
 )
 
 
@@ -150,8 +151,15 @@ class Test_RelationalFullBatchNodeGenerator:
         with pytest.raises(TypeError):
             generator = RelationalFullBatchNodeGenerator(G, "test", transform=func)
 
+    def test_fullbatch_generator_init_heterogeneous_nodes(self):
+        G = example_hin_1(feature_sizes={})
+        with pytest.raises(
+            ValueError, match="G: expected one node type, found 'A', 'B'"
+        ):
+            RelationalFullBatchNodeGenerator(G)
+
     def test_fullbatch_generator_transform(self):
-        G, _ = create_graph_features()
+        G, _ = create_graph_features(is_directed=True)
 
         def func(features, A, **kwargs):
             return features, A.dot(A)

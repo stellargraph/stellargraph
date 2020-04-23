@@ -13,6 +13,7 @@ Welcome to StellarGraph's documentation!
    README
    api
    hinsage
+   demos/index
 
 
 Indices and tables

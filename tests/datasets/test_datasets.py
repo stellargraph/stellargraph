@@ -26,18 +26,7 @@ from unittest.mock import patch
 
 
 # use parametrize to automatically test each of the datasets that (directly) derive from DatasetLoader
-def _marks(cls):
-    if cls == BlogCatalog3:
-        return pytest.mark.xfail(
-            reason="https://github.com/stellargraph/stellargraph/issues/907"
-        )
-    return []
-
-
-@pytest.mark.parametrize(
-    "dataset_class",
-    [pytest.param(cls, marks=_marks(cls)) for cls in DatasetLoader.__subclasses__()],
-)
+@pytest.mark.parametrize("dataset_class", list(DatasetLoader.__subclasses__()))
 def test_dataset_download(dataset_class):
     dataset_class().download(ignore_cache=True)
 
@@ -84,7 +73,6 @@ def test_download_cache(mock_urlretrieve) -> None:
     assert not mock_urlretrieve.called
 
 
-@pytest.mark.xfail(reason="https://github.com/stellargraph/stellargraph/issues/907")
 def test_blogcatalog3_load() -> None:
     g = BlogCatalog3().load()
 
@@ -96,30 +84,75 @@ def test_blogcatalog3_load() -> None:
     assert g.number_of_nodes() == n_users + n_groups
     assert g.number_of_edges() == n_friendships + n_belongs_to
 
-    assert g.nodes(node_type="user") == [f"u{x}" for x in range(1, n_users + 1)]
-    assert g.nodes(node_type="group") == [f"g{x}" for x in range(1, n_groups + 1)]
+    assert list(g.nodes(node_type="user")) == [f"u{x}" for x in range(1, n_users + 1)]
+    assert list(g.nodes(node_type="group")) == [f"g{x}" for x in range(1, n_groups + 1)]
+
+
+def _graph_kernels_load(
+    dataset,
+    n_graphs,
+    total_nodes,
+    max_nodes,
+    mean_nodes,
+    total_edges,
+    mean_edges,
+    expected_labels,
+    node_features,
+):
+    graphs, labels = dataset.load()
+
+    assert len(graphs) == n_graphs
+    assert len(labels) == n_graphs
+
+    n_nodes = [g.number_of_nodes() for g in graphs]
+    assert sum(n_nodes) == total_nodes
+    assert max(n_nodes) == max_nodes
+
+    n_edges = [g.number_of_edges() for g in graphs]
+    assert sum(n_edges) == total_edges
+
+    # verify that the numbers we've written match the averages from the table in
+    # https://ls11-www.cs.tu-dortmund.de/staff/morris/graphkerneldatasets
+    assert np.mean(n_nodes) == pytest.approx(mean_nodes, 0.005)
+    # directed -> undirected doubles the number of edges
+    assert np.mean(n_edges) == pytest.approx(mean_edges * 2, 0.005)
+
+    assert set(labels) == expected_labels
+
+    # all graphs should be homogeneous
+    node_labels = {tuple(g.node_types) for g in graphs}
+    assert node_labels == {("default",)}
+
+    feature_sizes = {g.node_feature_sizes()["default"] for g in graphs}
+    assert feature_sizes == {node_features}
 
 
 def test_mutag_load() -> None:
-    graphs, labels = MUTAG().load()
+    _graph_kernels_load(
+        MUTAG(),
+        n_graphs=188,
+        total_nodes=3371,
+        max_nodes=28,  # graph 6
+        total_edges=7442,
+        expected_labels={"-1", "1"},
+        node_features=7,  # 7 labels
+        mean_nodes=17.93,
+        mean_edges=19.79,
+    )
 
-    n_graphs = 188
 
-    assert len(graphs) == n_graphs
-    assert len(labels) == n_graphs  # one label per graph
-
-    n_nodes = [g.number_of_nodes() for g in graphs]
-    n_edges = [g.number_of_edges() for g in graphs]
-
-    n_avg_nodes = np.mean(n_nodes)
-    max_nodes = np.max(n_nodes)
-
-    # average number of nodes should be 17.93085... or approximately 18.
-    assert n_avg_nodes == pytest.approx(17.9, 0.05)
-    assert sum(n_nodes) == 3371
-    assert sum(n_edges) == 7442
-    assert max_nodes == 28
-    assert set(labels) == {"-1", "1"}
+def test_proteins_load() -> None:
+    _graph_kernels_load(
+        PROTEINS(),
+        n_graphs=1113,
+        total_nodes=43471,
+        max_nodes=620,  # graph 77
+        total_edges=162088,
+        expected_labels={"1", "2"},
+        node_features=3 + 1,  # 3 labels, one attribute
+        mean_nodes=39.06,
+        mean_edges=72.82,
+    )
 
 
 def test_movielens_load() -> None:

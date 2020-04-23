@@ -126,14 +126,15 @@ def example_hin_1(
     b_ids = [4, 5, 6]
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
-    r = pd.DataFrame(
-        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
-    )
-    f_edges, f_index = [(4, 5)], [6]
+    r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
+    f_edges, f_index = [(4, 5)], [100]
     if self_loop:
-        # make it a multigraph
+        # make it a multigraph, across types and within a single one
+        r_edges.append((5, 5))
         f_edges.extend([(5, 5), (5, 5)])
-        f_index.extend([7, 8])
+        f_index.extend([101, 102])
+
+    r = pd.DataFrame(r_edges, columns=["source", "target"])
 
     # add some weights for the f edges, but not others
     f_columns = ["source", "target", "weight"]
@@ -198,7 +199,13 @@ def example_graph_1_saliency_maps(feature_size=None):
 
 
 def example_graph_random(
-    feature_size=4, n_edges=20, n_nodes=6, n_isolates=1, is_directed=False,
+    feature_size=4,
+    n_edges=20,
+    n_nodes=6,
+    n_isolates=1,
+    is_directed=False,
+    node_types=1,
+    edge_types=1,
 ):
     # core/utils, link mapper, node mapper graph 3
 
@@ -207,21 +214,37 @@ def example_graph_random(
     else:
         cls = StellarGraph
 
-    node_ids = range(n_nodes)
-    if feature_size is None:
-        nodes = pd.DataFrame(index=node_ids)
-    else:
-        nodes = pd.DataFrame(
-            np.random.random((len(node_ids), feature_size)), index=node_ids
-        )
+    default_feature_size = 0
+    if not isinstance(feature_size, dict):
+        if isinstance(feature_size, int):
+            default_feature_size = feature_size
+        feature_size = {}
+
+    def nodes(node_type):
+        node_ids = range(n_nodes * node_type, n_nodes * (node_type + 1))
+        feat_dim = feature_size.get(node_type, default_feature_size)
+        features = np.random.random((len(node_ids), feat_dim))
+        return pd.DataFrame(features, index=node_ids)
 
     n_noniso = n_nodes - n_isolates
-    elist = [
-        (random.randint(0, n_noniso - 1), random.randint(0, n_noniso - 1))
-        for _ in range(n_edges)
-    ]
-    edges = pd.DataFrame(elist, columns=["source", "target"])
-    return cls(nodes, edges)
+
+    def edges(edge_type):
+        edge_ids = range(n_edges * edge_type, n_edges * (edge_type + 1))
+        # separately compute the within-type and type part of the node IDs for each edge, so that
+        # each type has some isolated nodes (rather than just the last type)
+        within_type = np.random.randint(0, n_noniso, size=(n_edges, 2))
+        which_type = np.random.randint(0, node_types, size=within_type.shape)
+        return pd.DataFrame(
+            within_type + which_type * n_nodes,
+            columns=["source", "target"],
+            index=edge_ids,
+        )
+
+    # string node types are more realistic
+    return cls(
+        {f"n-{nt}": nodes(nt) for nt in range(node_types)},
+        {f"e-{et}": edges(et) for et in range(edge_types)},
+    )
 
 
 def node_features(seed=0) -> pd.DataFrame:
@@ -287,3 +310,38 @@ def tree_graph() -> StellarGraph:
 @pytest.fixture
 def barbell():
     return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
+
+
+@pytest.fixture
+def weighted_hin():
+    a_ids = [0, 1, 2, 3]
+    a = pd.DataFrame(index=a_ids)
+
+    b_ids = [4, 5, 6]
+    b = pd.DataFrame(index=b_ids)
+
+    # no weights A-R->A
+    r_ids = [7, 8]
+    r = pd.DataFrame([(0, 1), (0, 2)], columns=["source", "target"], index=r_ids)
+
+    # single weighted edge A-S->A
+    s_ids = [9, 10]
+    s = pd.DataFrame([(0, 3, 2)], columns=["source", "target", "weight"], index=s_ids)
+
+    # 3 edges with same weight A-T->B
+    t_ids = [11, 12, 13]
+    t = pd.DataFrame(
+        [(0, 4, 2), (0, 5, 2), (0, 6, 2)],
+        columns=["source", "target", "weight"],
+        index=t_ids,
+    )
+
+    # weights [2, 3] A-U->A; weights [4, 5, 6] A-U->B
+    u_ids = [14, 15, 16, 17, 18]
+    u = pd.DataFrame(
+        [(1, 2, 2), (1, 3, 3), (1, 4, 4), (1, 4, 5), (6, 1, 5)],
+        columns=["source", "target", "weight"],
+        index=u_ids,
+    )
+
+    return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "S": s, "T": t, "U": u})

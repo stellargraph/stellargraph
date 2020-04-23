@@ -23,7 +23,6 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
-    "CorruptedGenerator",
 ]
 
 import warnings
@@ -38,21 +37,20 @@ from functools import reduce
 from tensorflow.keras.utils import Sequence
 
 from . import (
+    Generator,
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
-    CorruptedNodeSequence,
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
+from ..core.validation import comma_sep
 
-from abc import ABC
 
-
-class FullBatchGenerator(ABC):
+class FullBatchGenerator(Generator):
     multiplicity = None
 
     def __init__(
@@ -158,6 +156,9 @@ class FullBatchGenerator(ABC):
                 "Accepted: 'gcn' (default), 'sgc', and 'self_loops'."
             )
 
+    def num_batch_dims(self):
+        return 2
+
     def flow(self, node_ids, targets=None):
         """
         Creates a generator/sequence object for training or evaluation
@@ -175,7 +176,6 @@ class FullBatchGenerator(ABC):
             and :meth:`predict`
 
         """
-
         if targets is not None:
             # Check targets is an iterable
             if not is_real_iterable(targets):
@@ -280,6 +280,9 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         """
         return super().flow(node_ids, targets)
 
+    def default_corrupt_input_index_groups(self):
+        return [[0]]
+
 
 class FullBatchLinkGenerator(FullBatchGenerator):
     """
@@ -370,7 +373,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         return super().flow(link_ids, targets)
 
 
-class RelationalFullBatchNodeGenerator:
+class RelationalFullBatchNodeGenerator(Generator):
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
@@ -423,30 +426,22 @@ class RelationalFullBatchNodeGenerator:
         G.check_graph_for_ml()
 
         # extract node, feature, and edge type info from G
-        self.node_list = list(G.nodes())
+        node_types = list(G.node_types)
+        if len(node_types) != 1:
+            raise ValueError(
+                f"G: expected one node type, found {comma_sep(sorted(node_types))}",
+            )
 
-        self.features = G.node_features(self.node_list)
-
-        sources, targets, types, _ = G.edge_arrays(include_edge_type=True)
-        edge_types = sorted(set(types))
-        self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
+        self.features = G.node_features(node_type=node_types[0])
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
         self.As = []
 
-        for edge_type in edge_types:
-
-            col_index = [self.node_index[n] for n in sources[types == edge_type]]
-            row_index = [self.node_index[n] for n in targets[types == edge_type]]
-            data = np.ones(len(col_index), np.float64)
-
+        for edge_type in G.edge_types:
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
-            A = sps.coo_matrix(
-                (data, (row_index, col_index)),
-                shape=(len(self.node_list), len(self.node_list)),
-            )
+            A = G.to_adjacency_matrix(edge_type=edge_type).transpose()
 
             if transform is None:
                 # normalize here and replace zero row sums with 1
@@ -462,8 +457,8 @@ class RelationalFullBatchNodeGenerator:
             A = A.tocoo()
             self.As.append(A)
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+    def num_batch_dims(self):
+        return 2
 
     def flow(self, node_ids, targets=None):
         """
@@ -490,46 +485,8 @@ class RelationalFullBatchNodeGenerator:
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        # use dictionary for faster index look-up time
-        node_indices = np.array([self.node_index[n] for n in node_ids])
+        node_indices = self.graph._get_index_for_nodes(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
-
-
-class CorruptedGenerator:
-    """
-    Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
-    data for training Deep Graph Infomax.
-
-    Args:
-        base_generator: the uncorrupted Sequence object.
-    """
-
-    def __init__(self, base_generator):
-
-        if not isinstance(
-            base_generator,
-            (
-                FullBatchNodeGenerator,
-                GraphSAGENodeGenerator,
-                DirectedGraphSAGENodeGenerator,
-            ),
-        ):
-            raise TypeError(
-                f"base_generator: expected FullBatchNodeGenerator, GraphSAGENodeGenerator, "
-                f"or DirectedGraphSAGENodeGenerator, found {type(base_generator).__name__}"
-            )
-        self.base_generator = base_generator
-
-    def flow(self, *args, **kwargs):
-        """
-        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
-
-        Args:
-            args: the positional arguments for the self.base_generator.flow(...) method
-            kwargs: the keyword arguments for the self.base_generator.flow(...) method
-        """
-        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))
