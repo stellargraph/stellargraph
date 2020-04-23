@@ -287,14 +287,22 @@ class GraphConvolutionLSTM:
                 )
             )
 
-        for ii in range(n_lstm_layers):
+        for ii in range(n_lstm_layers - 1):
             self._layers.append(
                 LSTM(
-                    self.lstm_layer_sizes[ii],
+                    self.lstm_layer_size[ii],
                     activation=self.lstm_activations[ii],
-                    return_sequences=False,
+                    return_sequences=True,
                 )
             )
+
+        self._layers.append(
+            LSTM(
+                self.lstm_layer_size[-1],
+                activation=self.lstm_activations[-1],
+                return_sequences=False,
+            )
+        )
         self._layers.append(Dropout(self.dropout))
         self._layers.append(Dense(self.outputs, activation="sigmoid"))
 
