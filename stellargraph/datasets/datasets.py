@@ -850,25 +850,22 @@ class IAEnronEmployees(
         return StellarGraph(nodes=nodes, edges=edges, edge_weight_column="time"), edges
 
 
-@experimental(reason="the data isn't downloaded automatically", issues=[1303])
 class METR_LA(
     DatasetLoader,
     name="METR-LA",
     directory_name="METR-LA",
-    url="https://github.com/lehaifeng/T-GCN/tree/master/data",
-    url_archive_format="n/a",
-    expected_files=["los_speed.csv", "los_adj.csv"],
+    url="https://github.com/lehaifeng/T-GCN/archive/master.zip",
+    url_archive_format="zip",
+    url_archive_contains_directory=False,
+    expected_files=["T-GCN-master/data/los_speed.csv", "T-GCN-master/data/los_adj.csv"],
     description="This traffic dataset contains traffic information collected from loop detectors in the highway of Los Angeles County (Jagadish et al., 2014).",
     source="https://github.com/lehaifeng/T-GCN/tree/master/data",
 ):
-    def download(self, ignore_cache=False):
-        # FIXME(#1303): downloading METR_LA isn't currently supported
-        pass
-
     def load(self):
-        los_adj = pd.read_csv(r"data/los_adj.csv", header=None)
+        self.download()
+        los_adj = pd.read_csv(self._resolve_path(self.expected_files[1]), header=None)
         adj = np.mat(los_adj)
-        los_tf = pd.read_csv(r"data/los_speed.csv")
+        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0]))
         return los_tf, adj
 
     def train_test_split(self, data, train_portion):
