@@ -100,7 +100,11 @@ class BatchedLinkGenerator(abc.ABC):
         False for prediction.
 
         Args:
-            link_ids: a tuple of 1D numpy arrays containing the source and target nodes (sources, targets)
+            link_ids: link_ids can be either:
+                - a tuple of 1D numpy arrays containing the source and target nodes in format (sources, targets)
+                - a 2D numpy array with shape (N_links, 2) where `link_ids[:, 0] = sources` and
+                    `link_ids[:, 1] = targets`
+                - a `stellargraph.data.UnsupervisedSampler` object.
             targets: a 2D array of numeric targets with shape
                 `(len(link_ids), target_size)`
             shuffle (bool): If True the links will be shuffled at each
@@ -121,47 +125,46 @@ class BatchedLinkGenerator(abc.ABC):
         if isinstance(link_ids, UnsupervisedSampler):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
-        # Otherwise pass iterable (check?) to standard LinkSequence
-        elif isinstance(link_ids, (EdgeList, tuple, np.ndarray)):
-            if not isinstance(link_ids, np.ndarray):
-                link_ids = np.stack(link_ids[:2], axis=1)
-            for ii in range(link_ids.shape[0]):
-                src, dst = link_ids[ii, 0], link_ids[ii, 1]
-                try:
-                    node_type_src = self.graph.node_type(src)
-                except KeyError:
-                    raise KeyError(
-                        f"Node ID {src} supplied to generator not found in graph"
-                    )
-                try:
-                    node_type_dst = self.graph.node_type(dst)
-                except KeyError:
-                    raise KeyError(
-                        f"Node ID {dst} supplied to generator not found in graph"
-                    )
+        elif isinstance(link_ids, tuple):
+            link_ids = np.stack(link_ids[:2], axis=1)
 
-                if self.head_node_types is not None and (
-                    node_type_src != expected_src_type
-                    or node_type_dst != expected_dst_type
-                ):
-                    raise ValueError(
-                        f"Node pair ({src}, {dst}) not of expected type ({expected_src_type}, {expected_dst_type})"
-                    )
-
-            return LinkSequence(
-                self.sample_features,
-                self.batch_size,
-                link_ids,
-                targets=targets,
-                shuffle=shuffle,
-                seed=seed,
-            )
-
-        else:
+        if not (isinstance(link_ids, np.ndarray) and link_ids.shape[1] == 2):
             raise TypeError(
                 "Argument to .flow not recognised. "
                 "Please pass a list of samples or a UnsupervisedSampler object."
             )
+
+        for ii in range(link_ids.shape[0]):
+
+            src, dst = link_ids[ii, 0], link_ids[ii, 1]
+            try:
+                node_type_src = self.graph.node_type(src)
+            except KeyError:
+                raise KeyError(
+                    f"Node ID {src} supplied to generator not found in graph"
+                )
+            try:
+                node_type_dst = self.graph.node_type(dst)
+            except KeyError:
+                raise KeyError(
+                    f"Node ID {dst} supplied to generator not found in graph"
+                )
+
+            if self.head_node_types is not None and (
+                node_type_src != expected_src_type or node_type_dst != expected_dst_type
+            ):
+                raise ValueError(
+                    f"Node pair ({src}, {dst}) not of expected type ({expected_src_type}, {expected_dst_type})"
+                )
+
+        return LinkSequence(
+            self.sample_features,
+            self.batch_size,
+            link_ids,
+            targets=targets,
+            shuffle=shuffle,
+            seed=seed,
+        )
 
     def flow_from_dataframe(self, link_targets, shuffle=False):
         """

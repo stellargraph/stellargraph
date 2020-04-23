@@ -175,8 +175,6 @@ class FullBatchGenerator(ABC):
             and :meth:`predict`
 
         """
-        if (self.multiplicity == 2) and isinstance(node_ids, tuple):
-            node_ids = np.stack(node_ids[:2], axis=1)
 
         if targets is not None:
             # Check targets is an iterable
@@ -354,8 +352,10 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         with the supplied node ids and numeric targets.
 
         Args:
-            link_ids: an iterable of link ids specified as tuples of node ids
-                or an array of shape (N_links, 2) specifying the links.
+            link_ids: link_ids can be either:
+                - a tuple of 1D numpy arrays containing the source and target nodes in format (sources, targets)
+                - a 2D numpy array with shape (N_links, 2) where `link_ids[:, 0] = sources` and
+                    `link_ids[:, 1] = targets`
             targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
                 or (len(node_ids), target_size)`
 
@@ -365,6 +365,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
+        if isinstance(link_ids, tuple):
+            link_ids = np.stack(link_ids[:2], axis=1)
         return super().flow(link_ids, targets)
 
 
