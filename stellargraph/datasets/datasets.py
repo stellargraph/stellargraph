@@ -854,11 +854,10 @@ class IAEnronEmployees(
 class METR_LA(
     DatasetLoader,
     name="METR-LA",
-    directory_name="METR-LA",
-    url="https://github.com/lehaifeng/T-GCN/archive/master.zip",
+    directory_name="T-GCN-8427128f04157e6fd0b239a8734a468d923cd0c9",
+    url="https://github.com/lehaifeng/T-GCN/archive/8427128f04157e6fd0b239a8734a468d923cd0c9.zip",
     url_archive_format="zip",
-    url_archive_contains_directory=False,
-    expected_files=["T-GCN-master/data/los_speed.csv", "T-GCN-master/data/los_adj.csv"],
+    expected_files=["data/los_speed.csv", "data/los_adj.csv"],
     description="This traffic dataset contains traffic information collected from loop detectors in the highway of Los Angeles County (Jagadish et al., 2014).",
     source="https://github.com/lehaifeng/T-GCN/tree/master/data",
 ):
