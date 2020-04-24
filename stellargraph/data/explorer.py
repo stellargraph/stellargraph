@@ -292,7 +292,7 @@ class UniformRandomWalk(RandomWalk):
                 current_node = rs.choice(neighbours)
             walk.append(current_node)
 
-        return walk
+        return self.graph.node_ilocs_to_ids(walk)
 
 
 def naive_weighted_choices(rs, weights):
@@ -472,7 +472,7 @@ class BiasedRandomWalk(RandomWalk):
                         previous_node_neighbours = neighbours
                         current_node = neighbours[choice]
 
-                walks.append(walk)
+                walks.append(self.graph.node_ilocs_to_ids(walk))
 
         return walks
 
@@ -588,7 +588,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
                             neighbours
                         )  # the next node in the walk
 
-                    walks.append(walk)  # store the walk
+                    walks.append(self.graph.node_ilocs_to_ids(walk))  # store the walk
 
         return walks
 
