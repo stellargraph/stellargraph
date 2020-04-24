@@ -178,6 +178,7 @@ def test_generator_adj_normalisation(symmetric_normalization):
     adj_norm_seq = seq.normalized_adjs[0].todense()
 
     adj = np.array(graph.to_adjacency_matrix().todense())
+    np.fill_diagonal(adj, 1)
     if symmetric_normalization:
         inv_deg = np.diag(np.sqrt(1.0 / adj.sum(axis=1)))
         adj_norm = inv_deg.dot(adj).dot(inv_deg)
