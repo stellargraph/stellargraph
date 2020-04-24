@@ -503,8 +503,8 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         target_ids = [head_link[0] for head_link in head_links]
         context_ids = [head_link[1] for head_link in head_links]
-        target_feats = self.graph.node_features(target_ids, use_ilocs=False)
-        context_feats = self.graph.node_ids_to_ilocs(context_ids)
+        target_feats = self.graph.node_features(target_ids, use_ilocs=True)
+        context_feats = np.array(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 
         return batch_feats

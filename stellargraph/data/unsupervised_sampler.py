@@ -153,6 +153,10 @@ class UnsupervisedSampler:
             ]
         )
 
+        positive_pairs = self.graph.node_ids_to_ilocs(positive_pairs.flatten()).reshape(
+            positive_pairs.shape
+        )
+
         negative_samples = self.np_random.choice(
             all_nodes, size=len(positive_pairs), p=sampling_distribution_norm
         )
