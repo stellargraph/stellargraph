@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import pytest
+import numpy as np
 from stellargraph.data.explorer import UniformRandomWalk
 from ..test_utils.graphs import create_test_graph
 
@@ -119,9 +120,7 @@ class TestUniformRandomWalk(object):
         assert len(subgraphs) == n * len(nodes)
         for i, subgraph in enumerate(subgraphs):
             assert len(subgraph) == length  # should be 1
-            assert (
-                subgraph[0] == g.node_ids_to_ilocs([nodes[i]])[0]
-            )  # should equal the root node
+            assert subgraph[0] == nodes[i]  # should equal the root node
 
         length = 2
         subgraphs = urw.run(nodes=nodes, n=n, length=length, seed=seed)
@@ -204,9 +203,7 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert (
-                    node == g.node_ids_to_ilocs(["self loner"])[0]
-                )  # all nodes should be the same node
+                assert node == "self loner"  # all nodes should be the same node
 
         n = 1
         length = 99
@@ -215,9 +212,7 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert (
-                    node == g.node_ids_to_ilocs(["self loner"])[0]
-                )  # all nodes should be the same node
+                assert node == "self loner"  # all nodes should be the same node
 
         n = 10
         length = 10
@@ -226,9 +221,7 @@ class TestUniformRandomWalk(object):
         for subgraph in subgraphs:
             assert len(subgraph) == length
             for node in subgraph:
-                assert (
-                    node == g.node_ids_to_ilocs(["self loner"])[0]
-                )  # all nodes should be the same node
+                assert node == "self loner"  # all nodes should be the same node
 
     def test_init_parameters(self):
         g = create_test_graph()
@@ -241,9 +234,9 @@ class TestUniformRandomWalk(object):
         urw = UniformRandomWalk(g, n=n, length=length, seed=seed)
         urw_no_params = UniformRandomWalk(g)
 
-        assert urw.run(nodes=nodes) == urw_no_params.run(
-            nodes=nodes, n=n, length=length, seed=seed
-        )
+        run_1 = urw.run(nodes=nodes)
+        run_2 = urw_no_params.run(nodes=nodes, n=n, length=length, seed=seed)
+        assert np.array_equal(run_1, run_2)
 
     def test_benchmark_uniformrandomwalk(self, benchmark):
 
