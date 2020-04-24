@@ -55,8 +55,8 @@ class DGIDiscriminator(Layer):
 
         Args:
             inputs: a list or tuple of tensors with shapes ``[(1, N, F), (1, F)]`` for full batch methods and shapes
-              ``[(B, F), (F,)]`` for sampled node methods, containing the node features and a summary feature vector.
-              Where ``N`` is the number of nodes in the graph, ``F`` is the feature dimension, and ``B`` is the batch size.
+                ``[(B, F), (F,)]`` for sampled node methods, containing the node features and a summary feature vector.
+                Where ``N`` is the number of nodes in the graph, ``F`` is the feature dimension, and ``B`` is the batch size.
         Returns:
             a Tensor with shape ``(1, N)`` for full batch methods and shape ``(B,)`` for sampled node methods.
         """
