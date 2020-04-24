@@ -1359,6 +1359,9 @@ def test_node_type():
     assert g.node_type(0) == "A"
     assert g.node_type(4) == "B"
 
+    assert g.node_type(g.node_ids_to_ilocs([0])[0], use_ilocs=True) == "A"
+    assert g.node_type(g.node_ids_to_ilocs([4])[0], use_ilocs=True) == "B"
+
     with pytest.raises(KeyError, match="1234"):
         g.node_type(1234)
 
