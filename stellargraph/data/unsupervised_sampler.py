@@ -156,7 +156,6 @@ class UnsupervisedSampler:
         negative_samples = self.np_random.choice(
             all_nodes, size=len(positive_pairs), p=sampling_distribution_norm
         )
-        negative_samples = self.graph.node_ids_to_ilocs(negative_samples)
 
         negative_pairs = np.column_stack((positive_pairs[:, 0], negative_samples))
 
