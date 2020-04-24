@@ -46,7 +46,7 @@ services:
       - STELLARGRAPH_MUST_USE_GPU
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - LD_LIBRARY_PATH="/usr/local/cuda10.1/lib64/:/var/lib/buildkite-agent/TensorRT-6.0.1.5/targets/x86_64-linux-gnu/lib/:/usr/lib64/libcublas.so.10:/usr/lib64/libcublasLt.so.10"
+      - LD_LIBRARY_PATH=/usr/local/cuda10.1/lib64/:/var/lib/buildkite-agent/TensorRT-6.0.1.5/targets/x86_64-linux-gnu/lib/:/usr/lib64/libcublas.so.10:/usr/lib64/libcublasLt.so.10
     depends_on:
       - ${RUNNER_DEPENDS_ON:-empty-service}
 
