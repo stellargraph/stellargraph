@@ -37,7 +37,7 @@ def plot_history(history, individual_figsize=(7, 4), return_figure=False, **kwar
         kwargs: additional arguments to pass to :meth:`matplotlib.pyplot.subplots`
 
     Returns:
-        [matplotlib.figure.Figure]: The figure object with the plots if `return_figure=True`, None otherwise
+        :class:`matplotlib.figure.Figure`: The figure object with the plots if ``return_figure=True``, None otherwise
 
     """
 
