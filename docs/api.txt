@@ -5,7 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph
-  :members: StellarGraph, StellarDiGraph, GraphSchema
+  :members: StellarGraph, StellarDiGraph, GraphSchema, custom_keras_layers
 
 
 Data
