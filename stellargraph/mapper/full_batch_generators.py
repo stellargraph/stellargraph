@@ -180,8 +180,13 @@ class FullBatchGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        node_indices = self.graph._get_index_for_nodes(node_ids)
+        # find the indices of the nodes, handling both multiplicity 1 [node, node, ...] and 2
+        # [(source, target), ...]
+        node_ids = np.asarray(node_ids)
+        flat_node_ids = node_ids.reshape(-1)
+        flat_node_indices = self.graph._get_index_for_nodes(flat_node_ids)
+        # back to the original shape
+        node_indices = flat_node_indices.reshape(node_ids.shape)
 
         if self.use_sparse:
             return SparseFullBatchSequence(
