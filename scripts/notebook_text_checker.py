@@ -26,8 +26,10 @@ from pathlib import Path
 
 # helpers
 
+
 def cell_source(cell):
     return "".join(cell.source)
+
 
 def cell_lines(cell, start, end):
     """
@@ -48,7 +50,8 @@ def cell_lines(cell, start, end):
     # we don't want to include either of the \n's: 'end' is already sliced exclusively, but 'start'
     # needs tweaking (note that start == -1 works correctly: that needs to slice from the start of
     # the string, and does exactly that source[0:end])
-    return start_num, source[start_line + 1:end_line]
+    return start_num, source[start_line + 1 : end_line]
+
 
 def message_with_line(cell, message, start=0, end=None):
     if end is None:
@@ -67,9 +70,11 @@ def message_with_line(cell, message, start=0, end=None):
 
     return f"{message}. Cell{cell_ref} lines:\n\n{indented}"
 
+
 ## checkers
 
 CHECKERS = []
+
 
 def checker(f):
     global CHECKERS
@@ -86,7 +91,11 @@ HEADING_RE = re.compile("^(?P<level>##*) *")
 def title_heading(notebook):
     first = notebook.cells[0]
     if first.cell_type != "markdown":
-        return [message_with_line(first, "first cell should be a markdown cell containing the title")]
+        return [
+            message_with_line(
+                first, "first cell should be a markdown cell containing the title"
+            )
+        ]
 
     source = cell_source(first)
 
@@ -96,7 +105,12 @@ def title_heading(notebook):
 
     title = TITLE_RE.search(source)
     if title is None:
-        return [message_with_line(first, "first cell should contain a markdown title for the notebook `# ...`")]
+        return [
+            message_with_line(
+                first,
+                "first cell should contain a markdown title for the notebook `# ...`",
+            )
+        ]
 
     # report the error nicely
     first_trailing_nonwhitespace = NON_WHITESPACE_RE.search(source, title.end())
@@ -105,7 +119,14 @@ def title_heading(notebook):
     else:
         end = first_trailing_nonwhitespace.end()
 
-    return [message_with_line(first, "first cell should contain only the markdown title for the notebook `# ...`", start=0, end=end)]
+    return [
+        message_with_line(
+            first,
+            "first cell should contain only the markdown title for the notebook `# ...`",
+            start=0,
+            end=end,
+        )
+    ]
 
 
 @checker
@@ -120,12 +141,24 @@ def other_headings(notebook):
         source = cell_source(cell)
         for heading in HEADING_RE.finditer(source):
             if TITLE_RE.match(heading[0]):
-                errors.append(message_with_line(cell, "only the first cell should contain a title heading `# ...`", start=heading.start()))
+                errors.append(
+                    message_with_line(
+                        cell,
+                        "only the first cell should contain a title heading `# ...`",
+                        start=heading.start(),
+                    )
+                )
 
             level = len(heading["level"])
             if level > previous_heading_level + 1:
                 previous = "#" * previous_heading_level
-                errors.append(message_with_line(cell, f"headings should not skip levels; previous heading was H{previous_heading_level} `{previous} ...`, this heading is H{level}", start=heading.start()))
+                errors.append(
+                    message_with_line(
+                        cell,
+                        f"headings should not skip levels; previous heading was H{previous_heading_level} `{previous} ...`, this heading is H{level}",
+                        start=heading.start(),
+                    )
+                )
 
             previous_heading_level = level
 
@@ -136,6 +169,7 @@ def other_headings(notebook):
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
 RESET = "\033[0m"
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -192,7 +226,11 @@ def main():
             whole_list = "\n".join(list_element(error) for error in errors)
             return f"**`{filename}`**:\n\n{whole_list}"
 
-        formatted = "\n\n".join(file_list(filename, errors) for filename, errors in all_errors)
+        file_lists = "\n\n".join(
+            file_list(filename, errors) for filename, errors in all_errors
+        )
+
+        formatted = "Found some notebooks with inconsistent formatting. These notebooks may be less clear or render incorrectly on Read the Docs. Please adjust them.\n\n{file_lists}"
 
         try:
             subprocess.run(
