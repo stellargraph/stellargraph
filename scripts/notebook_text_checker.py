@@ -219,7 +219,7 @@ def main():
             this_errors.extend(errors)
 
         if errors:
-            all_errors.append((file_loc, errors))
+            all_errors.append((file_loc, this_errors))
 
     if all_errors or True:
         # there was at least one problem!
