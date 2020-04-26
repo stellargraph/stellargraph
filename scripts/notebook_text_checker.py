@@ -48,9 +48,11 @@ def cell_lines(cell, start, end):
     start_num = source.count("\n", 0, start) + 1
 
     # we don't want to include either of the \n's: 'end' is already sliced exclusively, but 'start'
-    # needs tweaking (note that start == -1 works correctly: that needs to slice from the start of
-    # the string, and does exactly that source[0:end])
-    return start_num, source[start_line + 1 : end_line]
+    # needs tweaking (note that start == -1 works correctly: that case needs to slice from the start
+    # of the string, and it ends up as source[0:end], as desired)
+    text = source[start_line + 1 : end_line]
+
+    return start_num, text
 
 
 def message_with_line(cell, message, start=0, end=None):
@@ -58,17 +60,13 @@ def message_with_line(cell, message, start=0, end=None):
         end = start
 
     start_num, lines = cell_lines(cell, start, end)
-    if "execution_count" in cell:
-        cell_ref = f" [{cell.execution_count}]"
-    else:
-        cell_ref = ""
-
+    # indent the code (so it markdowns as a code block) and give it line numbers
     indented = "".join(
         f"    {line_num:3} | {line}"
         for line_num, line in enumerate(lines.splitlines(True), start=start_num)
     )
 
-    return f"{message}. Cell{cell_ref} lines:\n\n{indented}"
+    return f"{message}. Some relevant lines from the cell:\n\n{indented}"
 
 
 ## checkers
@@ -89,11 +87,15 @@ HEADING_RE = re.compile("^(?P<level>##*) *")
 
 @checker
 def title_heading(notebook):
+    """
+    The first cell should be the title (and only the title), so that the "cloud runner" cell appears
+    immediately after it.
+    """
     first = notebook.cells[0]
     if first.cell_type != "markdown":
         return [
             message_with_line(
-                first, "first cell should be a markdown cell containing the title"
+                first, "The first cell should be a markdown cell (containing only the title, like '# ...'). This one seems to be a code cell"
             )
         ]
 
@@ -108,7 +110,7 @@ def title_heading(notebook):
         return [
             message_with_line(
                 first,
-                "first cell should contain a markdown title for the notebook `# ...`",
+                "The first cell be just the title for the notebook (like `# ...`) but it seems to be missing here",
             )
         ]
 
@@ -122,7 +124,7 @@ def title_heading(notebook):
     return [
         message_with_line(
             first,
-            "first cell should contain only the markdown title for the notebook `# ...`",
+            "The first cell should contain only the title (like `# ...`) for the notebook. Additional introductory content can be in a separate following cell",
             start=0,
             end=end,
         )
@@ -131,6 +133,10 @@ def title_heading(notebook):
 
 @checker
 def other_headings(notebook):
+    """
+    There should be no other H1/titles in the notebook, so that table of contents levels are correct
+    on Read the Docs.
+    """
     previous_heading_level = 1
 
     errors = []
@@ -144,18 +150,20 @@ def other_headings(notebook):
                 errors.append(
                     message_with_line(
                         cell,
-                        "only the first cell should contain a title heading `# ...`",
+                        "Found another title (like `# ...`) in internal cell. Later sections should use a high level heading (like `## ...` or `### ...`)",
                         start=heading.start(),
                     )
                 )
 
             level = len(heading["level"])
-            if level > previous_heading_level + 1:
+            highest_valid_level = previous_heading_level + 1
+            if level > highest_valid_level:
                 previous = "#" * previous_heading_level
+                suggestions = ", ".join(f"`{'#' * i} ...`" for i in range(2, highest_valid_level + 1))
                 errors.append(
                     message_with_line(
                         cell,
-                        f"headings should not skip levels; previous heading was H{previous_heading_level} `{previous} ...`, this heading is H{level}",
+                        f"Found a heading H{level} that skips level(s) from previous heading (H{previous_heading_level} `{previous} ...`). Consider using: {suggestions}",
                         start=heading.start(),
                     )
                 )
@@ -213,7 +221,7 @@ def main():
         if errors:
             all_errors.append((file_loc, errors))
 
-    if all_errors:
+    if all_errors or True:
         # there was at least one problem!
 
         # try to annotate the build on buildkite with markdown
@@ -230,7 +238,13 @@ def main():
             file_list(filename, errors) for filename, errors in all_errors
         )
 
-        formatted = "Found some notebooks with inconsistent formatting. These notebooks may be less clear or render incorrectly on Read the Docs. Please adjust them.\n\n{file_lists}"
+        command = f"python {__file__} demos/"
+        formatted = f"""\
+Found some notebooks with inconsistent formatting. These notebooks may be less clear or render incorrectly on Read the Docs. Please adjust them.
+
+{file_lists}
+
+This check can be run locally, via `{command}`."""
 
         try:
             subprocess.run(
