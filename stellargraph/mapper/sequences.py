@@ -597,7 +597,7 @@ class PaddedGraphSequence(Sequence):
             self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
 
         self.normalized_adjs = np.asanyarray(self.normalized_adjs)
-        self._rs, _ = random_state(seed)
+        _, self._np_rs = random_state(seed)
         self.shuffle = shuffle
 
         self.on_epoch_end()
@@ -656,9 +656,7 @@ class PaddedGraphSequence(Sequence):
          Shuffle all graphs at the end of each epoch
         """
         if self.shuffle:
-            indexes = list(range(len(self.graphs)))
-            self._rs.shuffle(indexes)
-            print(indexes)
+            indexes = self._np_rs.permutation(len(self.graphs))
             self.graphs = self.graphs[indexes]
             self.normalized_adjs = self.normalized_adjs[indexes]
             if self.targets is not None:
