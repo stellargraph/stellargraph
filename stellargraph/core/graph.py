@@ -710,13 +710,13 @@ class StellarGraph:
         """
         return set(self._nodes.types.pandas_index)
 
-    def unique_node_type(self, message=None):
+    def unique_node_type(self, error_message=None):
         """
         Return the unique node type, for a homogeneous-node graph.
 
         Args:
-            message (str, optional): a custom message to use for the exception; this can use the
-                ``%(found)s`` placeholder to insert the real sequence of node types.
+            error_message (str, optional): a custom message to use for the exception; this can use
+                the ``%(found)s`` placeholder to insert the real sequence of node types.
 
         Returns:
             If this graph has only one node type, this returns that node type, otherwise it raises a
@@ -728,12 +728,12 @@ class StellarGraph:
             return all_types[0]
 
         found = comma_sep(all_types)
-        if message is None:
-            message = (
+        if error_message is None:
+            error_message = (
                 "Expected only one node type for 'unique_node_type', found: %(found)s"
             )
 
-        raise ValueError(message % {"found": found})
+        raise ValueError(error_message % {"found": found})
 
     @property
     def edge_types(self):
@@ -802,9 +802,10 @@ class StellarGraph:
             Numpy array containing the node features for the requested nodes or node type.
         """
         if nodes is None:
-            node_type = self.unique_node_type(
-                "node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: %(found)s"
-            )
+            if node_type is None:
+                node_type = self.unique_node_type(
+                    "node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: %(found)s"
+                )
 
             return self._nodes.features_of_type(node_type)
 
