@@ -5,7 +5,10 @@ Core
 ----------------
 
 .. automodule:: stellargraph
-  :members: StellarGraph, StellarDiGraph, GraphSchema, custom_keras_layers
+  :members: StellarGraph, StellarDiGraph, GraphSchema,
+
+.. autodata:: custom_keras_layers
+   :annotation: = {...}
 
 
 Data
