@@ -273,14 +273,6 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
             bias_constraint=bias_constraint,
         )
 
-        if not isinstance(k, int):
-            raise TypeError(
-                f"k: expected k to be integer type, found {type(k).__name__}."
-            )
-
-        if k <= 0:
-            raise ValueError(f"k: expected k to be strictly positive, found {k}")
-
         self.k = k
 
         # Add the SortPooling layer
