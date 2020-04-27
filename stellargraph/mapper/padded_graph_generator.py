@@ -46,11 +46,10 @@ class PaddedGraphGenerator(Generator):
                 raise TypeError(
                     f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
                 )
-            if len(graph.node_types) > 1:
-                raise ValueError(
-                    "graphs: node generator requires graphs with single node type, "
-                    f"found a graph with {len(graph.node_types)} node types."
-                )
+            # Check that there is only a single node type for GAT or GCN
+            _ = graph.unique_node_type(
+                "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
+            )
 
             graph.check_graph_for_ml()
 

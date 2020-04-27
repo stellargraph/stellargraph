@@ -82,14 +82,9 @@ class FullBatchGenerator(Generator):
         G.check_graph_for_ml()
 
         # Check that there is only a single node type for GAT or GCN
-        node_types = list(G.node_types)
-        if len(node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
