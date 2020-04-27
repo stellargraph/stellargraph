@@ -356,8 +356,8 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         self.name = name
 
         # This is a link generator and requires two nodes per query
-        # The head node type
         if head_node_types is None:
+            # infer the head node types, if this is a homogeneous-node graph
             node_type = G.unique_node_type(
                 "head_node_types: expected a pair of head node types because G has more than one node type, found node types: %(found)s"
             )

@@ -414,7 +414,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
          train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
          test_data_gen = G_generator.flow(test_node_ids)
 
-    """
+     """
 
     def __init__(
         self,
@@ -433,6 +433,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # The head node type
         if head_node_type is None:
+            # infer the head node type, if this is a homogeneous-node graph
             head_node_type = G.unique_node_type(
                 "head_node_type: expected a head node type because G has more than one node type, found node types: %(found)s"
             )
