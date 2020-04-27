@@ -488,7 +488,9 @@ class Test_HinSAGELinkGenerator(object):
         edge_types = 3
         batch_size = 2
         num_samples = [5, 7]
-        G = example_graph_random(feature_size=feature_size, node_types=1, edge_types=edge_types)
+        G = example_graph_random(
+            feature_size=feature_size, node_types=1, edge_types=edge_types
+        )
 
         # G is homogeneous so the head_node_types argument isn't required
         mapper = HinSAGELinkGenerator(G, batch_size=batch_size, num_samples=num_samples)
@@ -508,9 +510,17 @@ class Test_HinSAGELinkGenerator(object):
             for i in range(0, 2):
                 assert samples[i].shape == (this_batch_size, 1, feature_size)
             for i in range(2, 2 * (1 + edge_types)):
-                assert samples[i].shape == (this_batch_size, num_samples[0], feature_size)
+                assert samples[i].shape == (
+                    this_batch_size,
+                    num_samples[0],
+                    feature_size,
+                )
             for i in range(2 * (1 + edge_types), 2 * samples_per_head):
-                assert samples[i].shape == (this_batch_size, np.product(num_samples), feature_size)
+                assert samples[i].shape == (
+                    this_batch_size,
+                    np.product(num_samples),
+                    feature_size,
+                )
 
             assert labels is None
 
