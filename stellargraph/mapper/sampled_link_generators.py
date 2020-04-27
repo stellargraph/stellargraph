@@ -205,7 +205,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
@@ -462,7 +462,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and targets,
+    Use the :meth:`flow` method supplying the nodes and targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
@@ -516,7 +516,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
     machine learning. Currently the model requires node features for all
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
