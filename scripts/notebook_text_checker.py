@@ -225,7 +225,7 @@ def main():
         if errors:
             all_errors.append((file_loc, this_errors))
 
-    if all_errors or True:
+    if all_errors:
         # there was at least one problem!
 
         # try to annotate the build on buildkite with markdown
