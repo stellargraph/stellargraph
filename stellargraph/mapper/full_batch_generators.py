@@ -94,12 +94,7 @@ class FullBatchGenerator(Generator):
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes()
-        self.Aadj = G.to_adjacency_matrix(self.node_list)
-
-        # Function to map node IDs to indices for quicker node index lookups
-        # TODO: Move this to the graph class
-        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
-        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
+        self.Aadj = G.to_adjacency_matrix()
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
@@ -115,7 +110,7 @@ class FullBatchGenerator(Generator):
             self.use_sparse = sparse
 
         # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        self.features = G.node_features(node_type=node_types[0])
 
         if transform is not None:
             if callable(transform):
@@ -185,8 +180,13 @@ class FullBatchGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        node_indices = self._node_lookup(node_ids)
+        # find the indices of the nodes, handling both multiplicity 1 [node, node, ...] and 2
+        # [(source, target), ...]
+        node_ids = np.asarray(node_ids)
+        flat_node_ids = node_ids.reshape(-1)
+        flat_node_indices = self.graph._get_index_for_nodes(flat_node_ids)
+        # back to the original shape
+        node_indices = flat_node_indices.reshape(node_ids.shape)
 
         if self.use_sparse:
             return SparseFullBatchSequence(
