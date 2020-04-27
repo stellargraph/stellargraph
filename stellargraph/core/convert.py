@@ -349,7 +349,9 @@ def _features_from_node_data(nodes, node_type_default, data, dtype):
             )
 
         node_type = next(iter(nodes), node_type_default)
-        return _features_from_node_data(nodes, node_type_default, {node_type: data}, dtype)
+        return _features_from_node_data(
+            nodes, node_type_default, {node_type: data}, dtype
+        )
     elif isinstance(data, (Iterable, list)):
         id_to_data = dict(data)
         return {
@@ -402,7 +404,9 @@ def from_networkx(
             for node_type, node_info in nodes.items()
         }
     else:
-        node_frames = _features_from_node_data(nodes, node_type_default, node_features, dtype)
+        node_frames = _features_from_node_data(
+            nodes, node_type_default, node_features, dtype
+        )
 
     edges = nx.to_pandas_edgelist(graph, source=SOURCE, target=TARGET)
     _fill_or_assign(edges, edge_type_attr, edge_type_default)
