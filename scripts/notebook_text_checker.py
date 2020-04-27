@@ -245,7 +245,7 @@ def main():
                 pass
             else:
                 url = f"https://nbviewer.jupyter.org/github/stellargraph/stellargraph/blob/{commit}/{path}"
-                text = f"[{text}]({url})"
+                text = f"{text} ([rendered notebook]({url}))"
 
             return text
 
