@@ -54,9 +54,7 @@ class BatchedNodeGenerator(Generator):
     """
     Abstract base class for graph data generators.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Do not use this base class: use a subclass specific to the method.
 
@@ -184,9 +182,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -289,9 +285,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
     node samples (separately for in-nodes and out-nodes)
     for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarDiGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -388,9 +382,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the HinSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features for all node types.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -514,9 +506,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
     At minimum, supply the StellarGraph and the batch size.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes to get an object
     that can be used as a Keras data generator.

@@ -200,9 +200,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     """
     A data generator for use with full-batch models on homogeneous graphs,
     e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -288,9 +286,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     """
     A data generator for use with full-batch models on homogeneous graphs,
     e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
     of node IDs and (optionally) targets.
@@ -373,9 +369,7 @@ class RelationalFullBatchNodeGenerator(Generator):
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
-    The supplied graph G should be a StellarGraph or StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph or StellarDiGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
