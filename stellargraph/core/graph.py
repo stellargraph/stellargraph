@@ -780,19 +780,25 @@ class StellarGraph:
         """
         Get the numeric feature vectors for the specified nodes or node type.
 
-        At least, one of the following conditions must be true:
+        For graphs with a single node type:
 
-        - ``node_type`` is passed, in which case ``graph.node_features(node_type=some_type)``
-          returns the features for all nodes of type ``some_type``, in the same order as
-          ``graph.nodes(node_type=some_type)``.
-        - the graph has only one node type, in which case ``graph.node_features()`` returns the
-          features for all nodes (equivalent to the previous case with ``some_type`` set to the
-          single node type of ``graph``)
-        - ``nodes`` is passed, in which case ``graph.node_features(nodes=some_node_ids)`` returns
-          the features for each node in ``some_node_ids`` in the same order as that input. Every
-          node in ``nodes`` must have the same type. If ``nodes`` is passed without specifying
-          ``node_type``, the node type of ``nodes`` will be inferred (passing ``node_type`` in
-          addition to ``nodes`` will therefore be faster).
+        - ``graph.node_features()`` to retrieve features of all nodes, in the same order as
+          ``graph.nodes()``.
+
+        - ``graph.node_features(nodes=some_node_ids)`` to retrieve features for each node in
+          ``some_node_ids``.
+
+        For graphs with multiple node types:
+
+        - ``graph.node_features(node_type=some_type)`` to retrieve features of all nodes of type
+          ``some_type``, in the same order as ``graph.nodes(node_type=some_type)``.
+
+        - ``graph.node_features(nodes=some_node_ids, node_type=some_type)`` to retrieve features for
+          each node in ``some_node_ids``. All of the chosen nodes must be of type ``some_type``.
+
+        - ``graph.node_features(nodes=some_node_ids)`` to retrieve features for each node in
+          ``some_node_ids``. All of the chosen nodes must be of the same type, which will be
+          inferred. This will be slower than providing the node type explicitly in the previous example.
 
         Args:
             nodes (list or hashable, optional): Node ID or list of node IDs, all of the same type
