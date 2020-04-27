@@ -47,14 +47,14 @@ class PaddedGraphGenerator(Generator):
                     f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
                 )
             # Check that there is only a single node type for GAT or GCN
-            _ = graph.unique_node_type(
+            node_type = graph.unique_node_type(
                 "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
             )
 
             graph.check_graph_for_ml()
 
             # we require that all graphs have node features of the same dimensionality
-            f_dim = graph.node_feature_sizes()[list(graph.node_types)[0]]
+            f_dim = graph.node_feature_sizes()[node_type]
             if self.node_features_size is None:
                 self.node_features_size = f_dim
             elif self.node_features_size != f_dim:
