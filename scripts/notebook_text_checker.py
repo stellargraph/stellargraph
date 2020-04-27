@@ -112,7 +112,7 @@ def title_heading(notebook):
         return [
             message_with_line(
                 first,
-                "The first cell be just the title for the notebook (like `# ...`) but it seems to be missing here",
+                "The first cell should be just the title for the notebook (like `# ...`) but the title seems to be missing here",
             )
         ]
 
@@ -185,12 +185,12 @@ RESET = "\033[0m"
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Validates that the description in notebooks follows the expected message_with_line, so that they read consistently and render nicely."
+        description="Validates that the descriptions in notebooks follow the expected format, so that the notebooks read consistently and render nicely."
     )
     parser.add_argument(
         "locations",
         nargs="+",
-        help="Paths(s) to search for Jupyter notebooks to message_with_line",
+        help="Paths(s) to search for Jupyter notebooks to check",
     )
 
     args = parser.parse_args()
@@ -274,7 +274,7 @@ This check can be run locally, via `{command}`."""
                 ]
             )
         except FileNotFoundError:
-            # no agent, so probably on buildkite, and so silently no annotation
+            # no agent, so probably not on buildkite, and so silently continue without an annotation
             pass
 
         sys.exit(1)
