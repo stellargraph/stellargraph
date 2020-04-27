@@ -177,3 +177,19 @@ def test_pooling(pooling):
         ]
     )
     np.testing.assert_almost_equal(predictions, expected)
+
+
+def test_pool_all_layers():
+    gcn_graph_model = GCNSupervisedGraphClassification(
+        layer_sizes=[5, 7, 11, 1],
+        activations=["relu", "relu", "relu", "relu"],
+        generator=generator,
+        pool_all_layers=True,
+    )
+
+    train_graphs = [0, 1, 2]
+    train_gen = generator.flow(graph_ilocs=train_graphs, batch_size=2)
+    model = tf.keras.Model(*gcn_graph_model.in_out_tensors())
+
+    predictions = model.predict(train_gen)
+    assert predictions.shape == (3, 5 + 7 + 11 + 1)
