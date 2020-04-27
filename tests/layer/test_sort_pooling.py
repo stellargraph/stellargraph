@@ -122,3 +122,11 @@ def test_flatten_output():
     data_out = layer([data, mask])
 
     assert np.array_equal(data_out, data_sorted)
+
+
+def test_invalid_k():
+    with pytest.raises(TypeError, match="k: expected int, found str"):
+        SortPooling(k="false")
+
+    with pytest.raises(ValueError, match="k: expected integer >= 1, found 0"):
+        SortPooling(k=0)
