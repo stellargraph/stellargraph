@@ -1389,6 +1389,16 @@ def test_to_adjacency_matrix_edge_type_subgraph():
     np.testing.assert_array_equal(matrix_f, actual_f)
 
 
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_to_adjacency_matrix_empty(is_directed):
+    cls = StellarDiGraph if is_directed else StellarGraph
+    g = cls()
+    assert g.to_adjacency_matrix().shape == (0, 0)
+
+    g = example_hin_1(is_directed=is_directed, self_loop=True)
+    assert g.to_adjacency_matrix(nodes=[]).shape == (0, 0)
+
+
 @pytest.mark.benchmark(group="StellarGraph to_adjacency_matrix")
 @pytest.mark.parametrize("is_directed", [False, True])
 def test_benchmark_to_adjacency_matrix(is_directed, benchmark):

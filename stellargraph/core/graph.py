@@ -1104,9 +1104,12 @@ class StellarGraph:
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
-        if not self.is_directed():
+        if not self.is_directed() and n > 0:
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
-            # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
+            # weights from either "incoming" or "outgoing" edges, but not double-counting self loops.
+
+            # FIXME https://github.com/scipy/scipy/issues/11949: these operations, particularly the
+            # diagonal, don't work for an empty matrix (n == 0)
             backward = adj.transpose(copy=True)
             # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
             # matrix (https://github.com/scipy/scipy/issues/11600)
