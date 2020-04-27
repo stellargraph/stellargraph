@@ -18,6 +18,7 @@
 
 import argparse
 import nbformat
+import os
 import re
 import subprocess
 import sys
@@ -95,7 +96,8 @@ def title_heading(notebook):
     if first.cell_type != "markdown":
         return [
             message_with_line(
-                first, "The first cell should be a markdown cell (containing only the title, like '# ...'). This one seems to be a code cell"
+                first,
+                "The first cell should be a markdown cell (containing only the title, like '# ...'). This one seems to be a code cell",
             )
         ]
 
@@ -159,7 +161,9 @@ def other_headings(notebook):
             highest_valid_level = previous_heading_level + 1
             if level > highest_valid_level:
                 previous = "#" * previous_heading_level
-                suggestions = ", ".join(f"`{'#' * i} ...`" for i in range(2, highest_valid_level + 1))
+                suggestions = ", ".join(
+                    f"`{'#' * i} ...`" for i in range(2, highest_valid_level + 1)
+                )
                 errors.append(
                     message_with_line(
                         cell,
@@ -230,13 +234,26 @@ def main():
             # remove the indentation from the first line
             return f"- {indented[2:]}"
 
-        def file_list(filename, errors):
-            whole_list = "\n".join(list_element(error) for error in errors)
-            return f"**`{filename}`**:\n\n{whole_list}"
+        def render_path(path):
+            text = f"**`{path}`**"
 
-        file_lists = "\n\n".join(
-            file_list(filename, errors) for filename, errors in all_errors
-        )
+            # if the commit for the build is known, include a link to that exact rendered notebook,
+            # for convenience
+            try:
+                commit = os.environ["BUILDKITE_COMMIT"]
+            except KeyError:
+                pass
+            else:
+                url = f"https://nbviewer.jupyter.org/github/stellargraph/stellargraph/blob/{commit}/{path}"
+                text = f"[{text}]({url})"
+
+            return text
+
+        def file_list(path, errors):
+            whole_list = "\n".join(list_element(error) for error in errors)
+            return f"{render_path(path)}:\n\n{whole_list}"
+
+        file_lists = "\n\n".join(file_list(path, errors) for path, errors in all_errors)
 
         command = f"python {__file__} demos/"
         formatted = f"""\
@@ -252,7 +269,7 @@ This check can be run locally, via `{command}`."""
                     "buildkite-agent",
                     "annotate",
                     "--style=error",
-                    "--context=",
+                    "--context=notebook_text_checker",
                     formatted,
                 ]
             )
