@@ -82,8 +82,8 @@ def checker(f):
 
 
 NON_WHITESPACE_RE = re.compile(r"\S")
-TITLE_RE = re.compile("^# .*")
-HEADING_RE = re.compile("^(?P<level>##*) *")
+TITLE_RE = re.compile("^# .*", re.MULTILINE)
+HEADING_RE = re.compile("^(?P<level>##*) .*", re.MULTILINE)
 
 
 @checker
