@@ -47,8 +47,14 @@ class PaddedGraphGenerator(Generator):
                 )
             # Check that there is only a single node type for GAT or GCN
             node_type = graph.unique_node_type(
-                "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
+                "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s",
+                allow_no_types=True
             )
+
+            if node_type is None:
+                # empty graph
+                assert graph.number_of_nodes() == 0
+                continue
 
             graph.check_graph_for_ml()
 

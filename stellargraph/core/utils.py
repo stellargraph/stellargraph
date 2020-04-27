@@ -45,7 +45,7 @@ def normalize_adj(adj, symmetric=True, add_self_loops=False):
         Return a sparse normalized adjacency matrix.
     """
 
-    if add_self_loops:
+    if add_self_loops and adj.shape[0] > 0:
         adj = adj + sp.diags(np.ones(adj.shape[0]) - adj.diagonal())
 
     if symmetric:

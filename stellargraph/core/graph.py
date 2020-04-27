@@ -710,13 +710,15 @@ class StellarGraph:
         """
         return set(self._nodes.types.pandas_index)
 
-    def unique_node_type(self, error_message=None):
+    def unique_node_type(self, error_message=None, allow_no_types=False):
         """
         Return the unique node type, for a homogeneous-node graph.
 
         Args:
             error_message (str, optional): a custom message to use for the exception; this can use
                 the ``%(found)s`` placeholder to insert the real sequence of node types.
+            allow_no_types (bool, optional): if True, return ``None`` when there are no node types
+                at all, only throwing an exception if there are two or more.
 
         Returns:
             If this graph has only one node type, this returns that node type, otherwise it raises a
@@ -726,6 +728,9 @@ class StellarGraph:
         all_types = self._nodes.types.pandas_index
         if len(all_types) == 1:
             return all_types[0]
+
+        if len(all_types) == 0 and allow_no_types:
+            return None
 
         found = comma_sep(all_types)
         if error_message is None:
@@ -810,8 +815,13 @@ class StellarGraph:
         if nodes is None:
             if node_type is None:
                 node_type = self.unique_node_type(
-                    "node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: %(found)s"
+                    "node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: %(found)s",
+                    allow_no_types=True,
                 )
+
+            if node_type is None:
+                # still None means there were no types, so no features
+                return np.empty((0, 0), dtype=np.float32)
 
             return self._nodes.features_of_type(node_type)
 

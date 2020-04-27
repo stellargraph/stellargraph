@@ -325,6 +325,11 @@ def test_node_features_node_type_inference():
     # short-cut inference of the node type for a subset of the nodes with a homogenous graph
     np.testing.assert_array_equal(one_type.node_features([1]), [[1] * 4])
 
+    no_types = StellarGraph({}, {})
+    # make sure this testing the right case
+    assert no_types.node_types == set()
+    assert no_types.node_features().shape == (0, 0)
+
     # inference doesn't work for a heterogeneous graph:
     feature_sizes = {"A": 4, "B": 6}
     many_types = example_hin_1(feature_sizes=feature_sizes)

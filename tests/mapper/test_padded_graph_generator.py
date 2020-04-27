@@ -27,6 +27,7 @@ graphs = [
     example_graph_random(feature_size=4, n_nodes=6),
     example_graph_random(feature_size=4, n_nodes=5),
     example_graph_random(feature_size=4, n_nodes=3),
+    example_graph_random(feature_size=4, node_types=0, edge_types=0),
 ]
 
 
@@ -223,3 +224,22 @@ def test_generator_flow_shuffle():
         if not batches_all_equal(batches, get_next_epoch_batches(seq)):
             at_least_one_different = True
     assert at_least_one_different
+
+
+def test_generator_empty_graph():
+    generator = PaddedGraphGenerator(graphs=graphs)
+    seq_alone = generator.flow([3], batch_size=1)
+    assert len(seq_alone) == 1
+    (feats, masks, adj_graphs), _ = seq_alone[0]
+    assert feats.shape == (1, 0, 0)
+    assert masks.shape == (1, 0)
+    assert adj_graphs.shape == (1, 0, 0)
+
+    seq_together = generator.flow([2, 3], batch_size=2, shuffle=False)
+    assert len(seq_together) == 1
+    (feats, masks, adj_graphs), _ = seq_together[0]
+    assert feats.shape == (2, 3, 4)
+    assert masks.shape == (2, 3)
+    assert adj_graphs.shape == (2, 3, 3)
+    np.testing.assert_array_equal(masks, [[True] * 3, [False] * 3])
+    np.testing.assert_array_equal(adj_graphs[1, ...], [[0] * 3] * 3)
