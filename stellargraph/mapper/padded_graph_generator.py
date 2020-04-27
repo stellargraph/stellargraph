@@ -77,6 +77,8 @@ class PaddedGraphGenerator(Generator):
         symmetric_normalization=True,
         batch_size=1,
         name=None,
+        shuffle=False,
+        seed=None,
     ):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
@@ -93,6 +95,8 @@ class PaddedGraphGenerator(Generator):
                 matrix.
             batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
+            shuffle (bool, optional): If True the node IDs will be shuffled at the end of each epoch.
+            seed (int, optional): Random seed to use in the sequence object.
 
         Returns:
             A :class:`PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
@@ -127,4 +131,6 @@ class PaddedGraphGenerator(Generator):
             symmetric_normalization=symmetric_normalization,
             batch_size=batch_size,
             name=name,
+            shuffle=shuffle,
+            seed=seed,
         )
