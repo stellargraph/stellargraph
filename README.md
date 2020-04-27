@@ -80,9 +80,9 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
 
-Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the [`svn` command-line tool](https://subversion.apache.org/) to download the specific directory:
+Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the `curl` command below:
 ```bash
-svn export https://github.com/stellargraph/stellargraph/branches/master/demos
+curl https://codeload.github.com/stellargraph/stellargraph/tar.gz/master | tar -xz --strip=1 stellargraph-master/demos
 ```
 
 All dependencies required to run our demo notebooks locally can be installed using one of the following:
