@@ -116,13 +116,9 @@ class ClusterNodeGenerator(Generator):
         self.node_list = list(G.nodes())
 
         # Check that there is only a single node type
-        if len(G.node_types) > 1:
-            raise ValueError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         if isinstance(clusters, int):
             # We are not given graph clusters.
