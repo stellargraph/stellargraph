@@ -541,7 +541,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g, use_ilocs=True)
 
-        nodes = ["0"]
+        nodes = [0]
         n = 5
         n_size = [5, 5]
 
