@@ -652,6 +652,7 @@ def test_benchmark_get_features(benchmark, num_types, type_arg, feature_size):
     ty, all_ids = random.choice(ty_ids)
     selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
     selected_ilocs = sg.node_ids_to_ilocs(selected_ids)
+
     def f():
         # look up a random subset of the nodes for a random type, similar to what an algorithm that
         # does sampling might ask for
