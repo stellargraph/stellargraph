@@ -151,7 +151,7 @@ class BatchedLinkGenerator(Generator):
                         f"Node pair ({src}, {dst}) not of expected type ({expected_src_type}, {expected_dst_type})"
                     )
 
-            link_ids = list(map(self.graph.node_ids_to_ilocs, link_ids))
+            link_ids = [self.graph.node_ids_to_ilocs(ids) for ids in link_ids]
 
             return LinkSequence(
                 self.sample_features,
