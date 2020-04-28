@@ -29,6 +29,7 @@ from ..test_utils.graphs import (
     example_hin_1,
     line_graph,
     weighted_hin,
+    example_graph_random,
 )
 
 from .. import test_utils
@@ -313,6 +314,26 @@ def test_node_features_node_type():
     np.testing.assert_array_equal(
         sg.node_features(node_type="B"), [[4] * 6, [5] * 6, [6] * 6]
     )
+
+
+def test_node_features_node_type_inference():
+    one_type = example_graph(feature_size=4)
+    np.testing.assert_array_equal(
+        one_type.node_features(), [[1] * 4, [2] * 4, [3] * 4, [4] * 4]
+    )
+
+    # short-cut inference of the node type for a subset of the nodes with a homogenous graph
+    np.testing.assert_array_equal(one_type.node_features([1]), [[1] * 4])
+
+    # inference doesn't work for a heterogeneous graph:
+    feature_sizes = {"A": 4, "B": 6}
+    many_types = example_hin_1(feature_sizes=feature_sizes)
+
+    with pytest.raises(
+        ValueError,
+        match="node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: 'A', 'B'",
+    ):
+        many_types.node_features()
 
 
 def test_node_features_missing_id():
@@ -1584,3 +1605,25 @@ def test_nodes_of_type_deprecation():
     with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
         a = g.nodes_of_type("A")
     assert all(a == g.nodes(node_type="A"))
+
+
+def test_unique_node_type():
+    one_type = example_graph_random(node_types=1, edge_types=10)
+
+    assert one_type.unique_node_type() == "n-0"
+
+    many_types = example_graph_random(node_types=4, edge_types=1)
+
+    with pytest.raises(
+        ValueError,
+        match="Expected only one node type for 'unique_node_type', found: 'n-0', 'n-1', 'n-2', 'n-3'",
+    ):
+        many_types.unique_node_type()
+
+    with pytest.raises(ValueError, match="^ABC custom message 123$"):
+        many_types.unique_node_type("ABC custom message 123")
+
+    with pytest.raises(
+        ValueError, match="^ABC custom message 'n-0', 'n-1', 'n-2', 'n-3' 123$"
+    ):
+        many_types.unique_node_type("ABC custom message %(found)s 123")

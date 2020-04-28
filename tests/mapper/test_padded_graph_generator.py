@@ -70,7 +70,7 @@ def test_generator_init_hin():
 
     with pytest.raises(
         ValueError,
-        match="graphs: node generator requires graphs with single node type.*found.*2",
+        match="graphs: expected only graphs with a single node type.*found.*'A', 'B'",
     ):
         generator = PaddedGraphGenerator(graphs=graphs_mixed)
 

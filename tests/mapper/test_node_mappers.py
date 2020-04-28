@@ -614,6 +614,43 @@ def test_hinsage_corrupt_indices():
     assert {tensors[idx].shape[-1] for idx in groups[1]} == {7}
 
 
+def test_hinsage_homogeneous_inference():
+    feature_size = 4
+    edge_types = 3
+    batch_size = 2
+    num_samples = [5, 7]
+    G = example_graph_random(
+        feature_size=feature_size, node_types=1, edge_types=edge_types
+    )
+
+    # G is homogeneous so the head_node_type argument isn't required
+    mapper = HinSAGENodeGenerator(G, batch_size=batch_size, num_samples=num_samples)
+
+    assert mapper.head_node_types == ["n-0"]
+
+    nodes = [1, 4, 2]
+    seq = mapper.flow(nodes)
+    assert len(seq) == 2
+
+    samples_per_head = 1 + edge_types + edge_types * edge_types
+    for batch_idx, (samples, labels) in enumerate(seq):
+        this_batch_size = {0: batch_size, 1: 1}[batch_idx]
+
+        assert len(samples) == samples_per_head
+
+        assert samples[0].shape == (this_batch_size, 1, feature_size)
+        for i in range(1, 1 + edge_types):
+            assert samples[i].shape == (this_batch_size, num_samples[0], feature_size)
+        for i in range(1 + edge_types, samples_per_head):
+            assert samples[i].shape == (
+                this_batch_size,
+                np.product(num_samples),
+                feature_size,
+            )
+
+        assert labels is None
+
+
 def test_attri2vec_nodemapper_constructor_nx():
     """
     Attri2VecNodeGenerator requires a StellarGraph object
@@ -722,7 +759,10 @@ class Test_FullBatchNodeGenerator:
     def test_generator_constructor_hin(self):
         feature_sizes = {"t1": 1, "t2": 1}
         Ghin, nodes_type_1, nodes_type_2 = example_hin_3(feature_sizes)
-        with pytest.raises(TypeError):
+        with pytest.raises(
+            ValueError,
+            match="G: expected a graph with a single node type, found a graph with node types: 't1', 't2'",
+        ):
             generator = FullBatchNodeGenerator(Ghin)
 
     def generator_flow(
