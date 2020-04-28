@@ -28,9 +28,11 @@ HTML_INDENT = 2
 LINK_DEFAULT_TEXT = "demo"
 TRUE_TEXT = "yes"
 
+
 class LinkKind(enum.Enum):
     index = 1
     notebook = 2
+
 
 class HtmlBuilder:
     def __init__(self, indent=None):
@@ -179,7 +181,7 @@ class Html(Format):
 
         if isinstance(cell, list):
             for contents in cell:
-            # multiple elements? space them out
+                # multiple elements? space them out
                 self._render_cell(html, contents, one_line=False)
         else:
             html.add(self._render_t(cell), one_line=one_line)
@@ -254,6 +256,7 @@ def find_links(element, fmt):
     else:
         raise ValueError(f"unsupported element in link finding {element!r}")
 
+
 def link_is_valid_relative(link, base_dir):
     if link is None:
         return True
@@ -272,6 +275,7 @@ def link_is_valid_relative(link, base_dir):
 # Columns
 def index_link(*args, **kwargs):
     return T(*args, **kwargs, kind=LinkKind.index)
+
 
 ALGORITHM = T("Algorithm")
 HETEROGENEOUS = T("Heter.", details="Heterogeneous graphs")
@@ -370,9 +374,7 @@ ALGORITHMS = [
     Algorithm(
         "Cluster-GCN",
         features=True,
-        nc=T(
-            link="node-classification/cluster-gcn/cluster-gcn-node-classification"
-        ),
+        nc=T(link="node-classification/cluster-gcn/cluster-gcn-node-classification"),
         lp=True,
         inductive=True,
     ),
@@ -380,9 +382,7 @@ ALGORITHMS = [
         T("RGCN", details="Relational GCN"),
         heterogeneous=HETEROGENEOUS_EDGE,
         features=True,
-        nc=T(
-            link="node-classification/rgcn/rgcn-aifb-node-classification-example"
-        ),
+        nc=T(link="node-classification/rgcn/rgcn-aifb-node-classification-example"),
         lp=True,
     ),
     Algorithm(
@@ -404,18 +404,14 @@ ALGORITHMS = [
     Algorithm(
         T("PPNP", details="Personalized Propagation of Neural Predictions"),
         features=True,
-        nc=T(
-            link="node-classification/ppnp/ppnp-cora-node-classification-example"
-        ),
+        nc=T(link="node-classification/ppnp/ppnp-cora-node-classification-example"),
         lp=True,
         rl=[rl_us(), rl_dgi(link=None)],
     ),
     Algorithm(
         T("APPNP", details="Approximate PPNP"),
         features=True,
-        nc=T(
-            link="node-classification/ppnp/ppnp-cora-node-classification-example"
-        ),
+        nc=T(link="node-classification/ppnp/ppnp-cora-node-classification-example"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
     ),
@@ -445,10 +441,7 @@ ALGORITHMS = [
             link="node-classification/graphsage/graphsage-cora-node-classification-example"
         ),
         lp=T(link="link-prediction/graphsage/cora-links-example"),
-        rl=[
-            rl_us(link="embeddings/embeddings-unsupervised-graphsage-cora"),
-            rl_dgi(),
-        ],
+        rl=[rl_us(link="embeddings/embeddings-unsupervised-graphsage-cora"), rl_dgi()],
         inductive=T(
             link="node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example"
         ),
@@ -518,6 +511,7 @@ FILES = [
     Html("demos/README.md", "\n<!-- DEMO TABLE MARKER -->\n"),
 ]
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Edits or compares the table of all algorithms and their demos in `demos/README.md` and `docs/demos/index.txt`"
@@ -531,7 +525,9 @@ def main():
     args = parser.parse_args()
 
     def error(message, edit_fixit=False):
-        formatted = f"Error while generating algorithm tables for documentation: {message}"
+        formatted = (
+            f"Error while generating algorithm tables for documentation: {message}"
+        )
         if edit_fixit:
             formatted += f"\n\nTo fix, edit `{__file__}` as appropriate and run it like `python {__file__} --action=overwrite` to overwrite existing table with new one."
 
@@ -561,12 +557,17 @@ def main():
         base_dir = os.path.dirname(file_name)
         invalid_links = [
             (written, rendered)
-            for written, rendered in itertools.chain(find_links(COLUMNS, file_fmt), find_links(ALGORITHMS, file_fmt))
+            for written, rendered in itertools.chain(
+                find_links(COLUMNS, file_fmt), find_links(ALGORITHMS, file_fmt)
+            )
             if not link_is_valid_relative(rendered, base_dir)
         ]
 
         if invalid_links:
-            formatted = "\n".join(f"- `{written}` (missing target: `{base_dir}/{rendered}`)" for written, rendered in invalid_links)
+            formatted = "\n".join(
+                f"- `{written}` (missing target: `{base_dir}/{rendered}`)"
+                for written, rendered in invalid_links
+            )
             error(
                 f"expected all links in algorithm specifications in `{__file__}` to be relative links that are valid starting at `{base_dir}`, but found {len(invalid_links)} invalid:\n\n{formatted}",
                 edit_fixit=True,
