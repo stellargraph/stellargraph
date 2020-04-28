@@ -46,16 +46,15 @@ class PaddedGraphGenerator(Generator):
                 raise TypeError(
                     f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
                 )
-            if len(graph.node_types) > 1:
-                raise ValueError(
-                    "graphs: node generator requires graphs with single node type, "
-                    f"found a graph with {len(graph.node_types)} node types."
-                )
+            # Check that there is only a single node type for GAT or GCN
+            node_type = graph.unique_node_type(
+                "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
+            )
 
             graph.check_graph_for_ml()
 
             # we require that all graphs have node features of the same dimensionality
-            f_dim = graph.node_feature_sizes()[list(graph.node_types)[0]]
+            f_dim = graph.node_feature_sizes()[node_type]
             if self.node_features_size is None:
                 self.node_features_size = f_dim
             elif self.node_features_size != f_dim:
@@ -77,6 +76,8 @@ class PaddedGraphGenerator(Generator):
         symmetric_normalization=True,
         batch_size=1,
         name=None,
+        shuffle=False,
+        seed=None,
     ):
         """
         Creates a generator/sequence object for training, evaluation, or prediction
@@ -93,6 +94,8 @@ class PaddedGraphGenerator(Generator):
                 matrix.
             batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
+            shuffle (bool, optional): If True the node IDs will be shuffled at the end of each epoch.
+            seed (int, optional): Random seed to use in the sequence object.
 
         Returns:
             A :class:`PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
@@ -127,4 +130,6 @@ class PaddedGraphGenerator(Generator):
             symmetric_normalization=symmetric_normalization,
             batch_size=batch_size,
             name=name,
+            shuffle=shuffle,
+            seed=seed,
         )

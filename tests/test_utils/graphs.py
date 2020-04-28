@@ -310,3 +310,38 @@ def tree_graph() -> StellarGraph:
 @pytest.fixture
 def barbell():
     return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
+
+
+@pytest.fixture
+def weighted_hin():
+    a_ids = [0, 1, 2, 3]
+    a = pd.DataFrame(index=a_ids)
+
+    b_ids = [4, 5, 6]
+    b = pd.DataFrame(index=b_ids)
+
+    # no weights A-R->A
+    r_ids = [7, 8]
+    r = pd.DataFrame([(0, 1), (0, 2)], columns=["source", "target"], index=r_ids)
+
+    # single weighted edge A-S->A
+    s_ids = [9, 10]
+    s = pd.DataFrame([(0, 3, 2)], columns=["source", "target", "weight"], index=s_ids)
+
+    # 3 edges with same weight A-T->B
+    t_ids = [11, 12, 13]
+    t = pd.DataFrame(
+        [(0, 4, 2), (0, 5, 2), (0, 6, 2)],
+        columns=["source", "target", "weight"],
+        index=t_ids,
+    )
+
+    # weights [2, 3] A-U->A; weights [4, 5, 6] A-U->B
+    u_ids = [14, 15, 16, 17, 18]
+    u = pd.DataFrame(
+        [(1, 2, 2), (1, 3, 3), (1, 4, 4), (1, 4, 5), (6, 1, 5)],
+        columns=["source", "target", "weight"],
+        index=u_ids,
+    )
+
+    return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "S": s, "T": t, "U": u})

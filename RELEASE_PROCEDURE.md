@@ -2,9 +2,10 @@
 
 1. **Create release branch**
 
-   - Create and push the release branch
+   - Create and push the release branch from the latest `develop`
      ```shell
-     git checkout -b release-X.X.X develop
+     git fetch
+     git checkout -b release-X.X.X origin/develop
      git push -u origin release-X.X.X
      ```
 
@@ -19,7 +20,7 @@
        - Version bumping: Change version from “X.X.Xb” to “X.X.X”. E.g. version=”0.2.0b” to version=”0.2.0”
          - `stellargraph/version.py`
          - `meta.yaml`
-       - Update expected versions of demo notebooks: `scripts/format_notebooks.py --version_validation --overwrite demos/`
+       - Update expected versions of demo notebooks: `scripts/format_notebooks.py --default --overwrite demos/`
        - Update Changelog section header and "Full Changelog" link to point to specific version tag instead of `HEAD`. Note: these links will be broken until the tag is pushed later.
      - CAN do:
        - Minor bug fixes if necessary
@@ -122,6 +123,11 @@
    - Increase the version: in `stellargraph/version.py`, change version from `X.X.X` to `X.X+1.Xb`. E.g. `__version__ = "0.2.0"` to `__version__ = "0.3.0b"`. (To stay consistent we use `b` to indicate “beta”, but python will accept any string after the number. In semantic versioning: first number for major release, second number for minor release, third number for hotfixes.)
      ```shell
      git add stellargraph/version.py
+
+     # make sure things have the correct format and the notebooks are up to date
+     black .
+     scripts/format_notebooks.py --default --overwrite demos/
+
      git commit -m "Bump version"
      ```
    - Merge `master` into `develop` and resolve conflict by using the new version in `develop`:
