@@ -34,9 +34,8 @@ Find algorithms for a task
 Find a demo for an algorithm
 ----------------------------
 
-(Hover for explanation of abbreviations.)
-
-
+..
+   DEMO TABLE MARKER
 .. list-table::
    :header-rows: 1
 
@@ -256,6 +255,8 @@ Find a demo for an algorithm
      - yes
      -
      -
+..
+   DEMO TABLE MARKER
 
 See :doc:`the root README <../README>` or each algorithm's documentation for the relevant citation(s).
 
