@@ -61,6 +61,7 @@ class MarkdownCell:
     """
     A markdown cell, that's been preprocessed (e.g. parsed into a Markdown AST).
     """
+
     def __init__(self, cell):
         self.cell = cell
         self.source = cell_source(cell)
