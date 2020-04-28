@@ -620,7 +620,7 @@ def test_benchmark_get_neighbours(benchmark):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i)
+            sg.neighbors(i, use_ilocs=True)
 
     benchmark(f)
 
@@ -649,12 +649,13 @@ def test_benchmark_get_features(benchmark, num_types, type_arg, feature_size):
         # leave the argument as None, and so use inference of the type
         node_type = lambda ty: None
 
+    ty, all_ids = random.choice(ty_ids)
+    selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
+    selected_ilocs = sg.node_ids_to_ilocs(selected_ids)
     def f():
         # look up a random subset of the nodes for a random type, similar to what an algorithm that
         # does sampling might ask for
-        ty, all_ids = random.choice(ty_ids)
-        selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
-        sg.node_features(selected_ids, node_type(ty))
+        sg.node_features(selected_ilocs, node_type(ty), use_ilocs=True)
 
     benchmark(f)
 
