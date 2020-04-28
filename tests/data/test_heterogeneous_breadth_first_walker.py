@@ -504,7 +504,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
     def test_benchmark_sampledheterogeneousbreadthfirstwalk(self, benchmark):
 
         g = create_test_graph(self_loop=True)
-        bfw = SampledHeterogeneousBreadthFirstWalk(g)
+        bfw = SampledHeterogeneousBreadthFirstWalk(g, use_ilocs=True)
 
         nodes = [0]
         n = 5

@@ -224,7 +224,7 @@ class TestDirectedBreadthFirstNeighbours(object):
 
     def test_benchmark_bfs_walk(self, benchmark):
         g = create_test_graph(is_directed=True)
-        bfw = DirectedBreadthFirstNeighbours(g)
+        bfw = DirectedBreadthFirstNeighbours(g, use_ilocs=True)
 
         nodes = ["0"]
         n = 5

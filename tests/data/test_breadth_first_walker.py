@@ -539,7 +539,7 @@ class TestBreadthFirstWalk(object):
 
     def test_benchmark_bfs_walk(self, benchmark):
         g = create_test_graph()
-        bfw = SampledBreadthFirstWalk(g)
+        bfw = SampledBreadthFirstWalk(g, use_ilocs=True)
 
         nodes = ["0"]
         n = 5
