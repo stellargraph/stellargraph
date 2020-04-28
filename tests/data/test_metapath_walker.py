@@ -312,7 +312,7 @@ class TestMetaPathWalk(object):
         run_2 = mrw_no_params.run(
             nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed
         )
-
+        assert len(run_1) == len(run_2)
         assert all(np.array_equal(w1, w2) for w1, w2 in zip(run_1, run_2))
 
     def test_benchmark_uniformrandommetapathwalk(self, benchmark):
