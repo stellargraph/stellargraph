@@ -82,7 +82,7 @@ class FullBatchGenerator(Generator):
         G.check_graph_for_ml()
 
         # Check that there is only a single node type for GAT or GCN
-        _ = G.unique_node_type(
+        node_type = G.unique_node_type(
             "G: expected a graph with a single node type, found a graph with node types: %(found)s"
         )
 
@@ -105,7 +105,7 @@ class FullBatchGenerator(Generator):
             self.use_sparse = sparse
 
         # Get the features for the nodes
-        self.features = G.node_features(node_type=node_types[0])
+        self.features = G.node_features(node_type=node_type)
 
         if transform is not None:
             if callable(transform):
