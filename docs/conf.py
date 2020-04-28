@@ -192,8 +192,3 @@ texinfo_documents = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
-# -- Options for nbsphinx ----------------------------------------------------
-
-# Explicitly specify what language our code cells are
-nbsphinx_codecell_lexer = "python3"
