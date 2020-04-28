@@ -122,6 +122,12 @@ class T:
 
         return html.string()
 
+    def to_rst(self):
+        if self.link:
+            return f":any:`{self.text} <{self.link}>`"
+
+        return self.text
+
 
 def validate_links(element, base_dir, invalid):
     # traverse over the collection(s) to find the T's and check their links, collecting them in
@@ -152,6 +158,15 @@ def cell_html(html, cell):
     else:
         html.add(cell.to_html(), one_line=True)
 
+def cell_rst(cell):
+    if not cell:
+        return ""
+
+    if isinstance(cell, list):
+        return " ".join(contents.to_rst() for contents in cell)
+    else:
+        return cell.to_rst()
+
 
 def build_html(headings, algorithms):
     builder = HtmlBuilder(indent=2)
@@ -172,6 +187,23 @@ def build_html(headings, algorithms):
                         cell_html(builder, algorithm.columns[heading])
 
     return builder.string()
+
+def build_rst(headings, algorithms):
+    result = [".. list-table::", "   :header-rows: 1", ""]
+
+    new_row = "   *"
+    new_item = "     - "
+
+    result.append(new_row)
+    for heading in headings:
+        result.append(new_item + heading.to_rst())
+
+    for algorithm in algorithms:
+        result.append(new_row)
+        for heading in headings:
+            result.append(new_item + cell_rst(algorithm.columns[heading]))
+
+    return "\n".join(result)
 
 
 # Columns
@@ -468,6 +500,10 @@ def main():
             f"expected all links in algorithm specifications in `{__file__}` to be relative links that are valid starting at `{base_dir}`, but found {len(invalid_links)} invalid:\n\n{formatted}",
             edit_fixit=True,
         )
+
+    rst_table = build_rst(COLUMNS, ALGORITHMS)
+    print(rst_table)
+    return
 
     new_table = build_html(COLUMNS, ALGORITHMS)
 
