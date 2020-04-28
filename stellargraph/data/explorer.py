@@ -678,7 +678,8 @@ class SampledBreadthFirstWalk(GraphWalk):
                     )
                     if len(neighbours) == 0:
                         # Either node is unconnected or is in directed graph with no out-nodes.
-                        neighbours = [None] * n_size[cur_depth]
+                        _size = n_size[cur_depth]
+                        neighbours = [-1] * _size if self.use_ilocs else [None] * _size
                     else:
                         # sample with replacement
                         neighbours = rs.choices(neighbours, k=n_size[cur_depth])
@@ -757,7 +758,10 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             if len(neigh_et) > 0:
                                 samples = rs.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
-                                samples = [None] * n_size[depth - 1]
+                                _size = n_size[depth - 1]
+                                samples = (
+                                    [-1] * _size if self.use_ilocs else [None] * _size
+                                )
 
                             walk.append(samples)
                             q.extend(
@@ -887,7 +891,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         """
         if node is None:
             # Non-node, e.g. previously sampled from empty neighbourhood
-            return [None] * size
+            return [-1] * size if self.use_ilocs else [None] * size
         neighbours = list(
             self.graph.in_nodes(node, use_ilocs=self.use_ilocs)
             if idx == 0
@@ -895,7 +899,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         )
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
-            return [None] * size
+            return [-1] * size if self.use_ilocs else [None] * size
         # Sample with replacement
         return rs.choices(neighbours, k=size)
 

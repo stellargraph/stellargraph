@@ -809,14 +809,12 @@ class StellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        nodes = np.asarray(nodes)
 
-        if use_ilocs:
-            node_ilocs = nodes
-            node_ilocs[node_ilocs == None] = -1
-            node_ilocs = node_ilocs.astype(int)
-        else:
-            node_ilocs = self._nodes.ids.to_iloc(nodes)
+        # empty lists are cast to a default array type of float64 - must manually specify integer type if empty
+        nodes = (
+            np.asarray(nodes) if len(nodes) != 0 else np.asarray(nodes, dtype=np.uint8)
+        )
+        node_ilocs = nodes if use_ilocs else self._nodes.ids.to_iloc(nodes)
 
         valid = self._nodes.ids.is_valid(node_ilocs)
         all_valid = valid.all()
