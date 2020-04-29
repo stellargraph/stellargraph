@@ -276,44 +276,17 @@ def test_compile():
         keras_model = gnn_model[1]
         ens = Ensemble(keras_model, n_estimators=2, n_predictions=5)
 
-        # These are actually raised by keras but I added a check just to make sure
-        with pytest.raises(ValueError):
-            ens.compile(optimizer=Adam(), loss=None, weighted_metrics=["acc"])
-
         with pytest.raises(ValueError):  # must specify the optimizer to use
             ens.compile(
                 optimizer=None, loss=categorical_crossentropy, weighted_metrics=["acc"]
             )
 
-        with pytest.raises(
-            ValueError
-        ):  # The metric is made up so it should raise ValueError
-            ens.compile(
-                optimizer=Adam(),
-                loss=categorical_crossentropy,
-                weighted_metrics=["f1_accuracy"],
-            )
-
-        #
         # Repeat for BaggingEnsemble
         ens = BaggingEnsemble(keras_model, n_estimators=2, n_predictions=5)
 
-        # These are actually raised by keras but I added a check just to make sure
-        with pytest.raises(ValueError):
-            ens.compile(optimizer=Adam(), loss=None, weighted_metrics=["acc"])
-
         with pytest.raises(ValueError):  # must specify the optimizer to use
             ens.compile(
                 optimizer=None, loss=categorical_crossentropy, weighted_metrics=["acc"]
-            )
-
-        with pytest.raises(
-            ValueError
-        ):  # The metric is made up so it should raise ValueError
-            ens.compile(
-                optimizer=Adam(),
-                loss=categorical_crossentropy,
-                weighted_metrics=["f1_accuracy"],
             )
 
 

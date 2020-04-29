@@ -76,7 +76,7 @@ def train(
     Train a HinSAGE model on the specified graph G with given parameters.
 
     Args:
-        G: A StellarGraph object ready for machine learning
+        G: A StellarGraph object
         layer_size: A list of number of hidden nodes in each layer
         num_samples: Number of neighbours to sample at each layer
         batch_size: Size of batch for inference
