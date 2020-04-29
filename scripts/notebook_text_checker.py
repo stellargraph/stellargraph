@@ -258,7 +258,9 @@ def other_headings(cells):
                 # relative levels within the invalid section are correct. This means for all H3
                 # suggest only H2, but for H4 suggest H3 too (to continue nesting within (*)).
                 levels_from_first_invalid = elem.level - first_invalid_heading_level
-                max_suggestion_level = previous_valid_heading_level + levels_from_first_invalid + 1
+                max_suggestion_level = (
+                    previous_valid_heading_level + levels_from_first_invalid + 1
+                )
 
                 suggestions = ", ".join(
                     f"`{'#' * i} ...`" for i in range(2, max_suggestion_level + 1)
