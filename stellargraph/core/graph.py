@@ -811,13 +811,15 @@ class StellarGraph:
         """
 
         if len(nodes) == 0:
-            # empty lists are cast to a default array type of float64 - must manually
-            # specify integer type if empty, in which case we can pretend we received ilocs
-            node_ilocs = np.array([], dtype=np.uint8)
+            # empty lists are cast to a default array type of float64 -
+            # must manually specify integer type if empty, in which case we can pretend we received ilocs
+            node_ilocs = np.asarray(nodes, dtype=np.uint8)
             use_ilocs = True
         elif use_ilocs:
+            nodes = np.asarray(nodes)
             node_ilocs = np.asarray(nodes)
         else:
+            nodes = np.asarray(nodes)
             node_ilocs = self._nodes.ids.to_iloc(np.asarray(nodes))
 
         valid = self._nodes.ids.is_valid(node_ilocs)
