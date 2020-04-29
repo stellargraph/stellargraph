@@ -247,6 +247,7 @@ class RewriteLinks(docutils.transforms.Transform):
             refuri = node.get("refuri")
             parsed = urllib.parse.urlparse(refuri)
 
+            new_components = None
             if parsed.netloc == "" and parsed.path.endswith("README.md"):
                 # the notebooks include links to READMEs so that the links work locally and on
                 # GitHub, but on Read the Docs, the equivalent files are 'index', not 'README'.
@@ -259,7 +260,28 @@ class RewriteLinks(docutils.transforms.Transform):
                     parsed.query,
                     parsed.fragment,
                 )
+            elif parsed.netloc == "stellargraph.readthedocs.io":
+                # rewrite deep links to the Read the Docs documentation to
+                components = parsed.path.split("/", 3)
+                if len(components) == 4:
+                    empty, en, version, rest = components
+                    assert empty == ""
+                    assert en == "en"
 
+                    new_path = "/" + rest
+                else:
+                    new_path = "/"
+
+                new_components = (
+                    "", # scheme
+                    "", # netloc
+                    new_path,
+                    parsed.params,
+                    parsed.query,
+                    parsed.fragment,
+                )
+
+            if new_components is not None:
                 node["refuri"] = urllib.parse.urlunparse(new_components)
 
 
