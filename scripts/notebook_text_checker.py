@@ -63,11 +63,10 @@ class MarkdownCell:
     """
 
     def __init__(self, cell):
-        self.cell = cell
-        self.source = cell_source(cell)
-        self._lines = self.source.splitlines()
+        source = cell_source(cell)
+        self._lines = source.splitlines()
 
-        self.ast = COMMONMARK_PARSER.parse(self.source)
+        self.ast = COMMONMARK_PARSER.parse(source)
         # make sure we don't have to deal with '<text><text>' elements
         self.ast.normalize()
 
@@ -220,10 +219,15 @@ def title_heading(cells):
 @checker
 def other_headings(cells):
     """
-    There should be no other H1/titles in the notebook, so that table of contents levels are correct
-    on Read the Docs.
+    No other H1/titles, and no heading level skipping.
+
+    Extra titles break tables of contents, and heading level skipping causes Sphinx/reStructuredText
+    warnings.
     """
-    previous_heading_level = 1
+    # keep track of any heading level skips, but only compare to headings that are nested correctly,
+    # so an invalid section heading gets flagged, and so do any subheadings within that section.
+    previous_valid_heading_level = 1
+    first_invalid_heading_level = None
 
     errors = []
     for cell in cells[1:]:
@@ -244,21 +248,32 @@ def other_headings(cells):
                     )
                 )
 
-            highest_valid_level = previous_heading_level + 1
-            if elem.level > highest_valid_level:
-                previous = "#" * previous_heading_level
+            if elem.level > previous_valid_heading_level + 1:
+                previous = "#" * previous_valid_heading_level
+
+                if first_invalid_heading_level is None:
+                    first_invalid_heading_level = elem.level
+
+                # assume that there's only one level skip (e.g. H1, H3, H3(*), H4, H3), and that the
+                # relative levels within the invalid section are correct. This means for all H3
+                # suggest only H2, but for H4 suggest H3 too (to continue nesting within (*)).
+                levels_from_first_invalid = elem.level - first_invalid_heading_level
+                max_suggestion_level = previous_valid_heading_level + levels_from_first_invalid + 1
+
                 suggestions = ", ".join(
-                    f"`{'#' * i} ...`" for i in range(2, highest_valid_level + 1)
+                    f"`{'#' * i} ...`" for i in range(2, max_suggestion_level + 1)
                 )
                 errors.append(
                     message_with_line(
                         cell,
-                        f"Found a heading H{elem.level} that skips level(s) from previous heading (H{previous_heading_level} `{previous} ...`). Consider using: {suggestions}",
+                        f"Found a heading H{elem.level} that skips level(s) from most recent valid heading (H{previous_valid_heading_level} `{previous} ...`). Consider using: {suggestions}",
                         sourcepos=elem.sourcepos,
                     )
                 )
-
-            previous_heading_level = elem.level
+            else:
+                # this was valid, so we can reset our counts
+                previous_valid_heading_level = elem.level
+                first_invalid_heading_level = None
 
     if errors:
         raise FormattingError(errors)
