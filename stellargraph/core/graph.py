@@ -288,6 +288,13 @@ class StellarGraph:
         if edges is None:
             edges = {}
 
+        if nodes is not None:
+            node_data = convert.convert_nodes(
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype
+            )
+        else:
+            node_data = None
+
         self._is_directed = is_directed
         self._edges = convert.convert_edges(
             edges,
@@ -297,41 +304,23 @@ class StellarGraph:
             target_column=target_column,
             weight_column=edge_weight_column,
             type_column=edge_type_column,
+            node_data=node_data,
+            node_default_type=node_type_default,
         )
 
-        nodes_from_edges = pd.unique(
-            np.concatenate([self._edges.targets, self._edges.sources])
-        )
-
-        if nodes is None:
+        if node_data is None:
+            nodes_from_edges = pd.unique(
+                np.concatenate([self._edges.targets, self._edges.sources])
+            )
             nodes_after_inference = pd.DataFrame([], index=nodes_from_edges)
+            self._nodes = convert.convert_nodes(
+                nodes_after_inference,
+                name="nodes",
+                default_type=node_type_default,
+                dtype=dtype,
+            )
         else:
-            nodes_after_inference = nodes
-
-        self._nodes = convert.convert_nodes(
-            nodes_after_inference,
-            name="nodes",
-            default_type=node_type_default,
-            dtype=dtype,
-        )
-
-        if nodes is not None:
-            # check for dangling edges: make sure the explicitly-specified nodes parameter includes every
-            # node mentioned in the edges
-            try:
-                self._nodes.ids.to_iloc(
-                    nodes_from_edges, smaller_type=False, strict=True,
-                )
-            except KeyError as e:
-                missing_values = e.args[0]
-                if not is_real_iterable(missing_values):
-                    missing_values = [missing_values]
-                missing_values = pd.unique(missing_values)
-
-                raise ValueError(
-                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
-                    f"found some missing: {comma_sep(missing_values)}"
-                )
+            self._nodes = node_data
 
     @staticmethod
     def from_networkx(
@@ -585,7 +574,11 @@ class StellarGraph:
         return list(other_node_id)
 
     def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self,
+        node: Any,
+        include_edge_weight=False,
+        edge_types=None,
+        other_node_type=None,
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes connected
@@ -601,7 +594,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring nodes.
         """
-        ilocs = self._edges.edge_ilocs(node, ins=True, outs=True)
+        ilocs = self._edges.edge_ilocs(
+            node, ins=True, outs=True, other_node_type=other_node_type
+        )
         source = self._edges.sources[ilocs]
         target = self._edges.targets[ilocs]
         other_node_id = np.where(source == node, target, source)

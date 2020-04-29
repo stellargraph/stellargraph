@@ -216,6 +216,8 @@ def convert_edges(
     target_column,
     weight_column,
     type_column,
+    node_data,
+    node_default_type,
 ):
     selected = {
         source_column: SOURCE,
@@ -245,7 +247,7 @@ def convert_edges(
             f"{converter.name()}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
         )
 
-    return EdgeData(edges, type_starts)
+    return EdgeData(edges, type_starts, node_data, node_default_type)
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(

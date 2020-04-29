@@ -22,6 +22,7 @@ import scipy.sparse as sps
 
 from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .validation import require_dataframe_has_columns, comma_sep
+from .utils import is_real_iterable
 
 
 class ExternalIdIndex:
@@ -300,7 +301,9 @@ class NodeData(ElementData):
 
 
 def _numpyise(d, dtype):
-    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
+    return {
+        k: {t: np.array(w, dtype=dtype) for t, w in v.items()} for k, v in d.items()
+    }
 
 
 class EdgeData(ElementData):
@@ -308,11 +311,12 @@ class EdgeData(ElementData):
     Args:
         shared (pandas DataFrame): information for the edges
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
+        node_data (NodeData): node data
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, type_starts):
+    def __init__(self, shared, type_starts, node_data, node_default_type):
         super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
@@ -320,18 +324,44 @@ class EdgeData(ElementData):
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
 
+        if node_data is not None:
+            try:
+                source_ilocs = node_data.ids.to_iloc(
+                    self.sources, smaller_type=False, strict=True
+                )
+                target_ilocs = node_data.ids.to_iloc(
+                    self.targets, smaller_type=False, strict=True
+                )
+            except KeyError as e:
+                missing_values = e.args[0]
+                if not is_real_iterable(missing_values):
+                    missing_values = [missing_values]
+                missing_values = pd.unique(missing_values)
+
+                raise ValueError(
+                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                    f"found some missing: {comma_sep(missing_values)}"
+                )
+            self.source_types = node_data.type_of_iloc(source_ilocs)
+            self.target_types = node_data.type_of_iloc(target_ilocs)
+        else:
+            self.source_types = (node_default_type for _ in range(len(self.sources)))
+            self.target_types = (node_default_type for _ in range(len(self.sources)))
+
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
         out_dict = {}
         undirected = {}
 
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            in_dict.setdefault(tgt, []).append(i)
-            out_dict.setdefault(src, []).append(i)
+        for i, (src, tgt, src_type, tgt_type) in enumerate(
+            zip(self.sources, self.targets, self.source_types, self.target_types)
+        ):
+            in_dict.setdefault(tgt, {}).setdefault(src_type, []).append(i)
+            out_dict.setdefault(src, {}).setdefault(tgt_type, []).append(i)
 
-            undirected.setdefault(tgt, []).append(i)
+            undirected.setdefault(tgt, {}).setdefault(src_type, []).append(i)
             if src != tgt:
-                undirected.setdefault(src, []).append(i)
+                undirected.setdefault(src, {}).setdefault(tgt_type, []).append(i)
 
         dtype = np.min_scalar_type(len(self.sources))
         self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
@@ -370,7 +400,7 @@ class EdgeData(ElementData):
         adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
-    def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
+    def edge_ilocs(self, node_id, *, ins, outs, other_node_type=None) -> np.ndarray:
         """
         Return the integer locations of the edges for the given node_id
 
@@ -381,5 +411,13 @@ class EdgeData(ElementData):
         Returns:
             The integer locations of the edges for the given node_id.
         """
+        adj_by_type = self._adj_lookup(ins=ins, outs=outs).get(node_id, {})
 
-        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)
+        if other_node_type is not None:
+            return adj_by_type.get(other_node_type, self._empty_ilocs)
+        else:
+            values = adj_by_type.values()
+            if values:
+                return np.concatenate(list(values))
+            else:
+                return self._empty_ilocs

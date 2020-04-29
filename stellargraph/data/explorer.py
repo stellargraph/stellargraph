@@ -536,50 +536,44 @@ class UniformRandomMetaPathWalk(RandomWalk):
         rs = self._get_random_state(seed)
 
         walks = []
+        metapaths_for_node_type = self._augment_and_group_metapaths(metapaths, length)
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.node_type(node)
-            filtered_metapaths = [
-                metapath
-                for metapath in metapaths
-                if len(metapath) > 0 and metapath[0] == label
-            ]
+            node_type = self.graph.node_type(node)
+            filtered_metapaths = metapaths_for_node_type[node_type]
 
             for metapath in filtered_metapaths:
-                # augment metapath to be length long
-                # if (
-                #     len(metapath) == 1
-                # ):  # special case for random walks like in a homogeneous graphs
-                #     metapath = metapath * length
-                # else:
-                metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
                 for _ in range(n):
-                    walk = (
-                        []
-                    )  # holds the walk data for this walk; first node is the starting node
+                    # holds the walk data for this walk; first node is the starting node
+                    walk = []
                     current_node = node
-                    for d in range(length):
+                    for target_node_type in metapath:
                         walk.append(current_node)
-                        # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.graph.neighbors(current_node)
-                        # filter these by node type
-                        neighbours = [
-                            n_node
-                            for n_node in neighbours
-                            if self.graph.node_type(n_node) == metapath[d]
-                        ]
+                        neighbours = self.graph.neighbors(
+                            current_node, other_node_type=target_node_type
+                        )
+
+                        # if no neighbours of the required type as dictated by the metapath exist, then stop.
                         if len(neighbours) == 0:
-                            # if no neighbours of the required type as dictated by the metapath exist, then stop.
                             break
+
                         # select one of the neighbours uniformly at random
-                        current_node = rs.choice(
-                            neighbours
-                        )  # the next node in the walk
+                        current_node = rs.choice(neighbours)
 
                     walks.append(walk)  # store the walk
 
         return walks
+
+    def _augment_and_group_metapaths(self, metapaths, walk_length):
+        def augment_metapath(m):
+            return m[1:] * ((walk_length // (len(m) - 1)) + 1)
+
+        metapaths_for_node_type = defaultdict(list)
+        for metapath in metapaths:
+            metapaths_for_node_type[metapath[0]].append(augment_metapath(metapath))
+
+        return metapaths_for_node_type
 
     def _check_metapath_values(self, metapaths):
         """
