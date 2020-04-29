@@ -228,7 +228,7 @@ def test_cora_load_weighted() -> None:
 
     g, subjects = Cora().load(edge_weights=weights)
 
-    weights = g.edge_arrays(include_edge_weight=True).weights
+    weights = g.edge_arrays(include_edge_weight=True)[3]
     # some edges have neither subject nor any features in common
     assert weights.min() == 0.0
     # "same subject" is either 0 or 1 and some edges definitely have 1, and jaccard is in [0, 1], so
