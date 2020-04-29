@@ -546,10 +546,9 @@ class UniformRandomMetaPathWalk(RandomWalk):
             for metapath in filtered_metapaths:
                 for _ in range(n):
                     # holds the walk data for this walk; first node is the starting node
-                    walk = []
                     current_node = node
+                    walk = [current_node]
                     for target_node_type in metapath:
-                        walk.append(current_node)
                         neighbours = self.graph.neighbors(
                             current_node, other_node_type=target_node_type
                         )
@@ -560,6 +559,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
                         # select one of the neighbours uniformly at random
                         current_node = rs.choice(neighbours)
+                        walk.append(current_node)
 
                     walks.append(walk)  # store the walk
 
@@ -567,7 +567,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
     def _augment_and_group_metapaths(self, metapaths, walk_length):
         def augment_metapath(m):
-            return m[1:] * ((walk_length // (len(m) - 1)) + 1)
+            return np.resize(m[1:], walk_length - 1)
 
         metapaths_for_node_type = defaultdict(list)
         for metapath in metapaths:

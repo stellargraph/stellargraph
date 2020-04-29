@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME, NODE_TYPE_DEFAULT
 from .element_data import NodeData, EdgeData
 from .validation import comma_sep, require_dataframe_has_columns
 
@@ -216,8 +216,8 @@ def convert_edges(
     target_column,
     weight_column,
     type_column,
-    node_data,
-    node_default_type,
+    node_data=None,
+    node_default_type=NODE_TYPE_DEFAULT,
 ):
     selected = {
         source_column: SOURCE,

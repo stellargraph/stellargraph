@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 
-from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME, NODE_TYPE_DEFAULT
 from .validation import require_dataframe_has_columns, comma_sep
 from .utils import is_real_iterable
 
@@ -316,7 +316,9 @@ class EdgeData(ElementData):
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, type_starts, node_data, node_default_type):
+    def __init__(
+        self, shared, type_starts, node_data=None, node_default_type=NODE_TYPE_DEFAULT
+    ):
         super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
