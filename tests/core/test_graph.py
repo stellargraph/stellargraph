@@ -612,7 +612,8 @@ def test_networkx_attribute_message():
 
 
 @pytest.mark.benchmark(group="StellarGraph neighbours")
-def test_benchmark_get_neighbours(benchmark):
+@pytest.mark.parametrize("use_ilocs", [False, True])
+def test_benchmark_get_neighbours(benchmark, use_ilocs):
     nodes, edges = example_benchmark_graph()
     sg = StellarGraph(nodes=nodes, edges=edges)
     num_nodes = sg.number_of_nodes()
@@ -620,16 +621,19 @@ def test_benchmark_get_neighbours(benchmark):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i, use_ilocs=True)
+            sg.neighbors(i, use_ilocs=use_ilocs)
 
     benchmark(f)
 
 
 @pytest.mark.benchmark(group="StellarGraph node features")
+@pytest.mark.parametrize("use_ilocs", [None, False, True])
 @pytest.mark.parametrize("num_types", [1, 4])
 @pytest.mark.parametrize("type_arg", ["infer", "specify"])
 @pytest.mark.parametrize("feature_size", [10, 1000])
-def test_benchmark_get_features(benchmark, num_types, type_arg, feature_size):
+def test_benchmark_get_features(
+    benchmark, use_ilocs, num_types, type_arg, feature_size
+):
     SAMPLE_SIZE = 50
     N_NODES = 5000
     N_EDGES = 10000
@@ -649,14 +653,19 @@ def test_benchmark_get_features(benchmark, num_types, type_arg, feature_size):
         # leave the argument as None, and so use inference of the type
         node_type = lambda ty: None
 
-    ty, all_ids = random.choice(ty_ids)
-    selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
-    selected_ilocs = sg.node_ids_to_ilocs(selected_ids)
-
     def f():
         # look up a random subset of the nodes for a random type, similar to what an algorithm that
         # does sampling might ask for
-        sg.node_features(selected_ilocs, node_type(ty), use_ilocs=True)
+        ty, all_ids = random.choice(ty_ids)
+        selected_ids = random.choices(all_ids, k=SAMPLE_SIZE)
+        selected_ilocs = sg.node_ids_to_ilocs(selected_ids)
+
+        if use_ilocs is True:
+            sg.node_features(selected_ilocs, node_type(ty), use_ilocs=True)
+        elif use_ilocs is False:
+            sg.node_features(selected_ids, node_type(ty), use_ilocs=False)
+        elif use_ilocs is None:
+            pass
 
     benchmark(f)
 
