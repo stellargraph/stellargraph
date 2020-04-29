@@ -778,9 +778,9 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.graph.is_directed():
+    def __init__(self, graph, graph_schema=None, seed=None):
+        super().__init__(graph, graph_schema, seed)
+        if not graph.is_directed():
             self._raise_error("Graph must be directed")
 
     def run(self, nodes, in_size, out_size, n=1, seed=None):
