@@ -97,38 +97,38 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = ["loner"]
+        nodes = g.node_ids_to_ilocs(["loner"])
         n = 1
         n_size = [0]
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         assert len(subgraphs[0]) == 1  # all elements should the same node
-        assert subgraphs[0][0] == "loner"
+        assert subgraphs[0][0] == g.node_ids_to_ilocs(["loner"])[0]
 
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         assert len(subgraphs[0]) == expected_bfw_size(n_size)  # "loner" plus None
-        assert subgraphs[0][0] == "loner"
-        assert subgraphs[0][1] is None
+        assert subgraphs[0][0] == g.node_ids_to_ilocs(["loner"])[0]
+        assert subgraphs[0][1] == -1
 
         n_size = [2, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         # "loner" plus 2 * None + 2 * 2 * None
         assert len(subgraphs[0]) == expected_bfw_size(n_size)
-        assert subgraphs[0][0] == "loner"
-        assert subgraphs[0][1] is None
-        assert subgraphs[0][2] is None
-        assert subgraphs[0][6] is None
+        assert subgraphs[0][0] == g.node_ids_to_ilocs(["loner"])[0]
+        assert subgraphs[0][1] == -1
+        assert subgraphs[0][2] == -1
+        assert subgraphs[0][6] == -1
 
         n_size = [3, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         # "loner" plus 3 * None + 3 * 2 * None
         assert len(subgraphs[0]) == expected_bfw_size(n_size)
-        assert subgraphs[0][0] == "loner"
+        assert subgraphs[0][0] == g.node_ids_to_ilocs(["loner"])[0]
 
         n = 3
         n_size = [0]
@@ -137,7 +137,7 @@ class TestBreadthFirstWalk(object):
         assert len(subgraphs) == n
         for subgraph in subgraphs:
             assert len(subgraph) == 1  # root node only
-            assert subgraph[0] == "loner"
+            assert subgraph[0] == g.node_ids_to_ilocs(["loner"])[0]
 
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
@@ -145,7 +145,7 @@ class TestBreadthFirstWalk(object):
         for subgraph in subgraphs:
             # "loner" plus None
             assert len(subgraph) == expected_bfw_size(n_size)
-            assert subgraph[0] == "loner"
+            assert subgraph[0] == g.node_ids_to_ilocs(["loner"])[0]
 
         n = 99
         n_size = [2, 2]
@@ -154,7 +154,7 @@ class TestBreadthFirstWalk(object):
         for subgraph in subgraphs:
             # "loner" plus 2 * None + 2 * 2 * None
             assert len(subgraph) == expected_bfw_size(n_size)
-            assert subgraph[0] == "loner"
+            assert subgraph[0] == g.node_ids_to_ilocs(["loner"])[0]
 
         n = 17
         n_size = [3, 2]
@@ -163,7 +163,7 @@ class TestBreadthFirstWalk(object):
         for subgraph in subgraphs:
             # "loner" plus 3 * None + 3 * 2 * None
             assert len(subgraph) == expected_bfw_size(n_size)
-            assert subgraph[0] == "loner"
+            assert subgraph[0] == g.node_ids_to_ilocs(["loner"])[0]
 
     def test_directed_walk_generation_single_root_node(self, tree_graph):
         def _check_directed_walk(walk, n_size):
@@ -190,38 +190,38 @@ class TestBreadthFirstWalk(object):
 
         bfw = SampledBreadthFirstWalk(tree_graph)
 
-        nodes = ["root"]
+        nodes = tree_graph.node_ids_to_ilocs(["root"])
         n = 1
         n_size = [0]
 
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         assert len(subgraphs[0]) == 1  # all elements should be the same node
-        assert subgraphs[0][0] == "root"
+        assert subgraphs[0][0] == tree_graph.node_ids_to_ilocs(["root"])[0]
 
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         assert len(subgraphs[0]) == expected_bfw_size(n_size)  # "root" plus child
-        assert subgraphs[0][0] == "root"
+        assert subgraphs[0][0] == tree_graph.node_ids_to_ilocs(["root"])[0]
 
         n_size = [2, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         # "root" plus 2 * child + 2 * 2 * grandchild or None
         assert len(subgraphs[0]) == expected_bfw_size(n_size)
-        assert subgraphs[0][0] == "root"
-        assert subgraphs[0][1] is not None
-        assert subgraphs[0][2] is not None
-        _check_directed_walk(subgraphs[0], n_size)
+        assert subgraphs[0][0] == tree_graph.node_ids_to_ilocs(["root"])[0]
+        assert subgraphs[0][1] != -1
+        assert subgraphs[0][2] != -1
+        _check_directed_walk(tree_graph.node_ilocs_to_ids(subgraphs[0]), n_size)
 
         n_size = [3, 2]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
         assert len(subgraphs) == n
         # "root" plus 3 * child + 3 * 2 * grandchild or None
         assert len(subgraphs[0]) == expected_bfw_size(n_size)
-        assert subgraphs[0][0] == "root"
-        _check_directed_walk(subgraphs[0], n_size)
+        assert subgraphs[0][0] == tree_graph.node_ids_to_ilocs(["root"])[0]
+        _check_directed_walk(tree_graph.node_ilocs_to_ids(subgraphs[0]), n_size)
 
         n = 3
         n_size = [0]
@@ -230,7 +230,7 @@ class TestBreadthFirstWalk(object):
         assert len(subgraphs) == n
         for subgraph in subgraphs:
             assert len(subgraph) == 1  # root node only
-            assert subgraph[0] == "root"
+            assert subgraph[0] == tree_graph.node_ids_to_ilocs(["root"])[0]
 
         n_size = [1]
         subgraphs = bfw.run(nodes=nodes, n=n, n_size=n_size)
@@ -238,7 +238,7 @@ class TestBreadthFirstWalk(object):
         for subgraph in subgraphs:
             # "root" plus child
             assert len(subgraph) == expected_bfw_size(n_size)
-            assert subgraph[0] == "root"
+            assert subgraph[0] == tree_graph.node_ids_to_ilocs(["root"])[0]
 
         n = 99
         n_size = [2, 2]
@@ -247,8 +247,8 @@ class TestBreadthFirstWalk(object):
         for subgraph in subgraphs:
             # "root" plus 2 * child + 2 * 2 * grandchild or None
             assert len(subgraph) == expected_bfw_size(n_size)
-            assert subgraph[0] == "root"
-            _check_directed_walk(subgraph, n_size)
+            assert subgraph[0] == tree_graph.node_ids_to_ilocs(["root"])[0]
+            _check_directed_walk(tree_graph.node_ilocs_to_ids(subgraph), n_size)
 
         n = 17
         n_size = [3, 2]
@@ -257,13 +257,13 @@ class TestBreadthFirstWalk(object):
         for subgraph in subgraphs:
             # "root" plus 3 * child + 3 * 2 * grandchild or None
             assert len(subgraph) == expected_bfw_size(n_size)
-            assert subgraph[0] == "root"
+            assert subgraph[0] == tree_graph.node_ids_to_ilocs(["root"])[0]
 
     def test_walk_generation_single_root_node_self_loner(self):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = ["self loner"]
+        nodes = g.node_ids_to_ilocs(["self loner"])
         n = 1
 
         n_size = [0]
@@ -539,7 +539,7 @@ class TestBreadthFirstWalk(object):
 
     def test_benchmark_bfs_walk(self, benchmark):
         g = create_test_graph()
-        bfw = SampledBreadthFirstWalk(g, use_ilocs=True)
+        bfw = SampledBreadthFirstWalk(g)
 
         nodes = [0]
         n = 5

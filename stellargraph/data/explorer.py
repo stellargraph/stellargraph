@@ -102,12 +102,11 @@ class GraphWalk(object):
     Base class for exploring graphs.
     """
 
-    def __init__(self, graph, graph_schema=None, seed=None, use_ilocs=False):
+    def __init__(self, graph, graph_schema=None, seed=None):
         self.graph = graph
 
         # Initialize the random state
         self._check_seed(seed)
-        self.use_ilocs = use_ilocs
         self._random_state, self._np_random_state = random_state(seed)
 
         # We require a StellarGraph for this
@@ -130,7 +129,7 @@ class GraphWalk(object):
         if not adj:
             # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
             self.adj_types = adj = self.graph._adjacency_types(
-                self.graph_schema, use_ilocs=self.use_ilocs
+                self.graph_schema, use_ilocs=True
             )
         return adj
 
@@ -161,9 +160,7 @@ class GraphWalk(object):
         return rs
 
     def neighbors(self, node):
-        if not self.use_ilocs and not self.graph.has_node(node):
-            self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbors(node, use_ilocs=self.use_ilocs)
+        return self.graph.neighbors(node, use_ilocs=True)
 
     def run(self, *args, **kwargs):
         """
@@ -679,7 +676,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     if len(neighbours) == 0:
                         # Either node is unconnected or is in directed graph with no out-nodes.
                         _size = n_size[cur_depth]
-                        neighbours = [-1] * _size if self.use_ilocs else [None] * _size
+                        neighbours = [-1] * _size
                     else:
                         # sample with replacement
                         neighbours = rs.choices(neighbours, k=n_size[cur_depth])
@@ -730,7 +727,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph.node_type(node, use_ilocs=self.use_ilocs)
+                node_type = self.graph.node_type(node, use_ilocs=True)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
@@ -759,9 +756,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                                 samples = rs.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 _size = n_size[depth - 1]
-                                samples = (
-                                    [-1] * _size if self.use_ilocs else [None] * _size
-                                )
+                                samples = [-1] * _size
 
                             walk.append(samples)
                             q.extend(
@@ -891,15 +886,15 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         """
         if node is None:
             # Non-node, e.g. previously sampled from empty neighbourhood
-            return [-1] * size if self.use_ilocs else [None] * size
+            return [-1] * size
         neighbours = list(
-            self.graph.in_nodes(node, use_ilocs=self.use_ilocs)
+            self.graph.in_nodes(node, use_ilocs=True)
             if idx == 0
-            else self.graph.out_nodes(node, use_ilocs=self.use_ilocs)
+            else self.graph.out_nodes(node, use_ilocs=True)
         )
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
-            return [-1] * size if self.use_ilocs else [None] * size
+            return [-1] * size
         # Sample with replacement
         return rs.choices(neighbours, k=size)
 
