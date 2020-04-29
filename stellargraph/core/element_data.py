@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import itertools
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 import numpy as np
 import pandas as pd
@@ -301,9 +301,23 @@ class NodeData(ElementData):
 
 
 def _numpyise(d, dtype):
-    return {
-        k: {t: np.array(w, dtype=dtype) for t, w in v.items()} for k, v in d.items()
-    }
+    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
+
+
+_AdjIndex = namedtuple("_AdjIndex", ["undirected", "ins", "outs"])
+
+
+def _index_lookup(index: _AdjIndex, *, ins, outs):
+    if ins and outs:
+        return index.undirected
+    if ins:
+        return index.ins
+    if outs:
+        return index.outs
+
+    raise ValueError(
+        "expected at least one of 'ins' or 'outs' to be True, found neither"
+    )
 
 
 class EdgeData(ElementData):
@@ -363,6 +377,36 @@ class EdgeData(ElementData):
         for i, (src, tgt, src_type, tgt_type) in enumerate(
             zip(self.sources, self.targets, self.source_types, self.target_types)
         ):
+            in_dict.setdefault(tgt, []).append(i)
+            out_dict.setdefault(src, []).append(i)
+
+            undirected.setdefault(tgt, []).append(i)
+            if src != tgt:
+                undirected.setdefault(src, []).append(i)
+
+        dtype = np.min_scalar_type(len(self.sources))
+        self.dtype = dtype
+        self._edges_index = _AdjIndex(
+            _numpyise(undirected, dtype=dtype),
+            _numpyise(in_dict, dtype=dtype),
+            _numpyise(out_dict, dtype=dtype),
+        )
+
+        self._edges_index_by_other_node_type = None
+
+        # when there's no neighbors for something, an empty array should be returned; this uses a
+        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
+        # array, the result will still be int32).
+        self._empty_ilocs = np.array([], dtype=np.uint8)
+
+    def _init_edge_index_by_other_node_type(self):
+        in_dict = {}
+        out_dict = {}
+        undirected = {}
+
+        for i, (src, tgt, src_type, tgt_type) in enumerate(
+            zip(self.sources, self.targets, self.source_types, self.target_types)
+        ):
             in_dict.setdefault(tgt, {}).setdefault(src_type, []).append(i)
             out_dict.setdefault(src, {}).setdefault(tgt_type, []).append(i)
 
@@ -370,27 +414,22 @@ class EdgeData(ElementData):
             if src != tgt:
                 undirected.setdefault(src, {}).setdefault(tgt_type, []).append(i)
 
-        dtype = np.min_scalar_type(len(self.sources))
-        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
-        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
-        self._edges_dict = _numpyise(undirected, dtype=dtype)
+        def _numpyise_inner(d, dtype):
+            return {k: _numpyise(v, dtype) for k, v in d.items()}
 
-        # when there's no neighbors for something, an empty array should be returned; this uses a
-        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
-        # array, the result will still be int32).
-        self._empty_ilocs = np.array([], dtype=np.uint8)
+        self._edges_index_by_other_node_type = _AdjIndex(
+            _numpyise_inner(undirected, dtype=self.dtype),
+            _numpyise_inner(in_dict, dtype=self.dtype),
+            _numpyise_inner(out_dict, dtype=self.dtype),
+        )
+
+    def _adj_lookup_by_other_node_type(self, *, ins, outs):
+        if self._edges_index_by_other_node_type is None:
+            self._init_edge_index_by_other_node_type()
+        return _index_lookup(self._edges_index_by_other_node_type, ins=ins, outs=outs)
 
     def _adj_lookup(self, *, ins, outs):
-        if ins and outs:
-            return self._edges_dict
-        if ins:
-            return self._edges_in_dict
-        if outs:
-            return self._edges_out_dict
-
-        raise ValueError(
-            "expected at least one of 'ins' or 'outs' to be True, found neither"
-        )
+        return _index_lookup(self._edges_index, ins=ins, outs=outs)
 
     def degrees(self, *, ins=True, outs=True):
         """
@@ -418,13 +457,12 @@ class EdgeData(ElementData):
         Returns:
             The integer locations of the edges for the given node_id.
         """
-        adj_by_type = self._adj_lookup(ins=ins, outs=outs).get(node_id, {})
 
         if other_node_type is not None:
-            return adj_by_type.get(other_node_type, self._empty_ilocs)
+            return (
+                self._adj_lookup_by_other_node_type(ins=ins, outs=outs)
+                .get(node_id, {})
+                .get(other_node_type, self._empty_ilocs)
+            )
         else:
-            values = adj_by_type.values()
-            if values:
-                return np.concatenate(list(values))
-            else:
-                return self._empty_ilocs
+            return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)
