@@ -311,7 +311,9 @@ class EdgeData(ElementData):
     Args:
         shared (pandas DataFrame): information for the edges
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
-        node_data (NodeData): node data
+        node_data (NodeData, optional): node data containing node types and IDs. If not provided, all nodes are assumed
+            to be of default type.
+        node_default_type (string, optional): default node type to use when there's no node data provided
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
@@ -327,6 +329,8 @@ class EdgeData(ElementData):
         self.weights = self._column(WEIGHT)
 
         if node_data is not None:
+            # if node_data is provided, we should validate all the node IDs that occur in the edge data, and use the
+            # node types when building the adjacency lists grouped by type
             try:
                 source_ilocs = node_data.ids.to_iloc(
                     self.sources, smaller_type=False, strict=True
@@ -347,6 +351,7 @@ class EdgeData(ElementData):
             self.source_types = node_data.type_of_iloc(source_ilocs)
             self.target_types = node_data.type_of_iloc(target_ilocs)
         else:
+            # use default node type
             self.source_types = (node_default_type for _ in range(len(self.sources)))
             self.target_types = (node_default_type for _ in range(len(self.sources)))
 
