@@ -23,7 +23,6 @@ __all__ = [
     "StellarDiGraph",
     "GraphSchema",
     "NeighbourWithWeight",
-    "EdgeList",
 ]
 
 from typing import Iterable, Any, Mapping, List, Optional, Set
@@ -43,17 +42,6 @@ from . import convert
 
 
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
-
-_EdgeList = namedtuple("_EdgeList", ["source", "target", "type", "weight"])
-
-
-class EdgeList(_EdgeList):
-    def to_edges(self):
-        # return the tuple-d form
-        edges = list(zip(*(arr for arr in self[:3] if arr is not None)))
-        if self[3] is not None:
-            return edges, self[3]
-        return edges
 
 
 class StellarGraph:
@@ -526,6 +514,12 @@ class StellarGraph:
         ilocs = self._nodes.type_range(node_type)
         return self._nodes.ids.from_iloc(ilocs)
 
+    def _to_edges(self, edge_arrs):
+        edges = list(zip(*(arr for arr in edge_arrs[:3] if arr is not None)))
+        if edge_arrs[3] is not None:
+            return edges, edge_arrs[3]
+        return edges
+
     def edges(
         self, include_edge_type=False, include_edge_weight=False
     ) -> Iterable[Any]:
@@ -543,11 +537,13 @@ class StellarGraph:
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights).
         """
-        return self.edge_arrays(include_edge_type, include_edge_weight).to_edges()
+        edge_arrs = self.edge_arrays(include_edge_type, include_edge_weight)
+        edges = list(zip(*(arr for arr in edge_arrs[:3] if arr is not None)))
+        if include_edge_weight:
+            return edges, edge_arrs[3]
+        return self._to_edges(edge_arrs)
 
-    def edge_arrays(
-        self, include_edge_type=False, include_edge_weight=False
-    ) -> EdgeList:
+    def edge_arrays(self, include_edge_type=False, include_edge_weight=False) -> tuple:
         """
         Obtains the collection of edges in the graph.
 
@@ -561,7 +557,7 @@ class StellarGraph:
         """
         types = self._edges.type_of_iloc(slice(None)) if include_edge_type else None
         weights = self._edges.weights if include_edge_weight else None
-        return EdgeList(self._edges.sources, self._edges.targets, types, weights)
+        return self._edges.sources, self._edges.targets, types, weights
 
     def has_node(self, node: Any) -> bool:
         """

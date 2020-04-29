@@ -44,7 +44,7 @@ from . import (
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
 )
-from ..core.graph import StellarGraph, EdgeList
+from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
 from ..core.validation import comma_sep
@@ -360,10 +360,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
-        if isinstance(link_ids, EdgeList):
-            link_ids = np.stack(link_ids[:2], axis=1)
-
-        elif is_real_iterable(link_ids) and len(link_ids) == 2:
+        if is_real_iterable(link_ids) and len(link_ids) == 2:
             link_ids = np.stack(link_ids, axis=1)
 
         # support old link ids format for backwards compatability

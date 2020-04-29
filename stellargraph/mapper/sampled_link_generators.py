@@ -36,7 +36,7 @@ import abc
 import warnings
 from functools import reduce
 from tensorflow import keras
-from ..core.graph import StellarGraph, GraphSchema, EdgeList
+from ..core.graph import StellarGraph, GraphSchema
 from ..data import (
     SampledBreadthFirstWalk,
     SampledHeterogeneousBreadthFirstWalk,
@@ -130,10 +130,7 @@ class BatchedLinkGenerator(Generator):
         if isinstance(link_ids, UnsupervisedSampler):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
-        elif isinstance(link_ids, EdgeList):
-            link_ids = np.stack(link_ids[:2], axis=1)
-
-        elif is_real_iterable(link_ids) and len(link_ids) == 2:
+        if is_real_iterable(link_ids) and len(link_ids) == 2:
             link_ids = np.stack(link_ids, axis=1)
 
         # support old link ids format for backwards compatability

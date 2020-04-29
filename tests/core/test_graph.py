@@ -1674,16 +1674,43 @@ def test_unique_node_type():
         many_types.unique_node_type("ABC custom message %(found)s 123")
 
 
-def test_EdgeList_toedges():
+def test_toedges():
 
-    es = EdgeList(np.zeros(10), np.ones(10), None, 3 * np.ones(10))
-    assert (e == (0, 1) for e in es)
+    sources = np.zeros(10)
+    targets = np.ones(10)
+    types = None
+    weights = None
+    edges = StellarGraph()._to_edges((sources, targets, types, weights))
+    assert len(edges) == 10
+    assert all(e == (0, 1) for e in edges)
 
-    es = EdgeList(np.zeros(10), np.ones(10), 2 * np.ones(10), 3 * np.ones(10))
-    assert (e == (0, 1, 2) for e in es)
+    sources = np.zeros(10)
+    targets = np.ones(10)
+    types = 2 * np.ones(10)
+    weights = None
+    edges = StellarGraph()._to_edges((sources, targets, types, weights))
+    assert len(edges) == 10
+    assert all(e == (0, 1, 2) for e in edges)
 
-    es = EdgeList(np.zeros(10), np.ones(10), 2 * np.ones(10), None)
-    assert (e == (0, 1, 2) for e in es)
+    sources = np.zeros(10)
+    targets = np.ones(10)
+    types = None
+    weights = 3 * np.ones(10)
+    edges, weights = StellarGraph()._to_edges((sources, targets, types, weights))
+    assert len(edges) == 10
+    assert len(weights) == 10
+    assert all(e == (0, 1) for e in edges)
+    assert (weights == 3).all()
+
+    sources = np.zeros(10)
+    targets = np.ones(10)
+    types = 2 * np.ones(10)
+    weights = 3 * np.ones(10)
+    edges, weights = StellarGraph()._to_edges((sources, targets, types, weights))
+    assert len(edges) == 10
+    assert len(weights) == 10
+    assert all(e == (0, 1, 2) for e in edges)
+    assert (weights == 3).all()
 
 
 def test_to_neighbors():
