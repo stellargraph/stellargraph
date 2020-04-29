@@ -821,6 +821,24 @@ def test_in_nodes_unweighted_hom():
     )
 
 
+@pytest.mark.parametrize("other_node_type,expected", [("A", [0, 0]), ("B", [2, 3])])
+def test_neighbors_other_node_type(other_node_type, expected):
+    graph = example_weighted_hin()
+    assert_items_equal(graph.neighbors(1, other_node_type=other_node_type), expected)
+
+
+@pytest.mark.parametrize("other_node_type,expected", [("A", [0, 0]), ("B", [])])
+def test_in_nodes_other_node_type(other_node_type, expected):
+    graph = example_weighted_hin()
+    assert_items_equal(graph.in_nodes(1, other_node_type=other_node_type), expected)
+
+
+@pytest.mark.parametrize("other_node_type,expected", [("A", []), ("B", [2, 3])])
+def test_out_nodes_other_node_type(other_node_type, expected):
+    graph = example_weighted_hin()
+    assert_items_equal(graph.out_nodes(1, other_node_type=other_node_type), expected)
+
+
 def test_out_nodes_weighted_hin():
     graph = example_weighted_hin()
     assert_items_equal(graph.out_nodes(1), [2, 3])
