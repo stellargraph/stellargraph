@@ -239,7 +239,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         self._graph = G
         self._samplers = SeededPerBatch(
             lambda s: SampledBreadthFirstWalk(
-                self._graph, graph_schema=self.schema, seed=s, use_ilocs=True,
+                self._graph, graph_schema=self.schema, seed=s
             ),
             seed=seed,
         )
@@ -290,11 +290,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             # Get features for the sampled nodes
             batch_feats.append(
                 [
-                    self.graph.node_features(
-                        layer_nodes,
-                        node_type,
-                        use_ilocs=self._samplers[batch_num].use_ilocs,
-                    )
+                    self.graph.node_features(layer_nodes, node_type, use_ilocs=True,)
                     for layer_nodes in nodes_per_hop
                 ]
             )
@@ -374,7 +370,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
         # The sampler used to generate random samples of neighbours
         self.sampler = SampledHeterogeneousBreadthFirstWalk(
-            G, graph_schema=self.schema, seed=seed, use_ilocs=True,
+            G, graph_schema=self.schema, seed=seed
         )
 
     def _get_features(self, node_samples, head_size, use_ilocs=False):
@@ -450,9 +446,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
             for ab in zip(nodes_by_type[0], nodes_by_type[1])
         ]
 
-        batch_feats = self._get_features(
-            nodes_by_type, len(head_links), use_ilocs=self.sampler.use_ilocs
-        )
+        batch_feats = self._get_features(nodes_by_type, len(head_links), use_ilocs=True)
 
         return batch_feats
 
@@ -560,7 +554,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
 
         self._samplers = SeededPerBatch(
             lambda s: DirectedBreadthFirstNeighbours(
-                self._graph, graph_schema=self.schema, seed=s, use_ilocs=True
+                self._graph, graph_schema=self.schema, seed=s
             ),
             seed=seed,
         )
@@ -605,9 +599,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
                     element for sample in node_samples for element in sample[slot]
                 ]
                 features_for_slot = self.graph.node_features(
-                    nodes_in_slot,
-                    node_type,
-                    use_ilocs=self._samplers[batch_num].use_ilocs,
+                    nodes_in_slot, node_type, use_ilocs=True,
                 )
 
                 features[slot] = np.reshape(

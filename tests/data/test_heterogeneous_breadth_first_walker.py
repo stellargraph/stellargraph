@@ -23,8 +23,8 @@ from stellargraph.core.graph import StellarGraph
 
 def _recursive_items_equal(arr1, arr2):
     for y1, y2 in zip(arr1, arr2):
-        for i, (x1, x2) in enumerate(zip(y1, y2)):
-            return (set(x1) == set(x2)) and (len(x1) == x2)
+        for x1, x2 in zip(y1, y2):
+            return (set(x1) == set(x2)) and (len(x1) == len(x2))
 
 
 # FIXME (#535): Consider using graph fixtures. These two test graphs are very similar, and should be combined
@@ -466,6 +466,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
             ],
             [[4], ["5", 1], [2, 2], [1, 1], [6, 3], [4, 4], [2, 3], [1, 1], [4, 4]],
         ]
+        valid_result = [[_conv(x) for x in y] for y in valid_result]
         assert _recursive_items_equal(subgraphs, valid_result)
 
         n_size = [2, 3]
@@ -532,7 +533,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
     def test_benchmark_sampledheterogeneousbreadthfirstwalk(self, benchmark):
 
         g = create_test_graph(self_loop=True)
-        bfw = SampledHeterogeneousBreadthFirstWalk(g, use_ilocs=True)
+        bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
         nodes = [0]
         n = 5

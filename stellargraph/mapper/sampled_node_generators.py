@@ -218,9 +218,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Create sampler for GraphSAGE
         self._samplers = SeededPerBatch(
-            lambda s: SampledBreadthFirstWalk(
-                G, graph_schema=self.schema, seed=s, use_ilocs=True
-            ),
+            lambda s: SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=s),
             seed=seed,
         )
 
@@ -324,7 +322,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Create sampler for GraphSAGE
         self.sampler = DirectedBreadthFirstNeighbours(
-            G, graph_schema=self.schema, seed=seed, use_ilocs=True
+            G, graph_schema=self.schema, seed=seed
         )
 
     def sample_features(self, head_nodes, batch_num):
@@ -435,7 +433,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # Create sampler for HinSAGE
         self.sampler = SampledHeterogeneousBreadthFirstWalk(
-            G, graph_schema=self.schema, seed=seed, use_ilocs=True
+            G, graph_schema=self.schema, seed=seed
         )
 
     def sample_features(self, head_nodes, batch_num):
