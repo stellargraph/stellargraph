@@ -22,6 +22,7 @@ a machine-learning ready graph used by models.
 
 """
 import argparse
+import difflib
 import nbformat
 import re
 import shlex
@@ -459,6 +460,18 @@ if __name__ == "__main__":
 
                 if original != updated:
                     check_failed.append(str(file_loc))
+
+                    if on_ci:
+                        # CI doesn't provide enough state to diagnose a peculiar or
+                        # seemingly-spurious difference, so include a diff in the logs. This allows
+                        # us to inspect the change retroactive if required, but doesn't junk up the
+                        # final output/annotation.
+                        sys.stdout.writelines(
+                            difflib.unified_diff(
+                                original.splitlines(keepends=True),
+                                updated.splitlines(keepends=True),
+                            )
+                        )
 
                 tempdir.cleanup()
 
