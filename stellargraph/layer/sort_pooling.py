@@ -128,6 +128,8 @@ class SortPooling(Layer):
         )
 
         if self.flatten_output:
-            outputs = tf.reshape(outputs, [outputs_shape[0], embeddings.shape[-1]*self.k, 1])
+            outputs = tf.reshape(
+                outputs, [outputs_shape[0], embeddings.shape[-1] * self.k, 1]
+            )
 
         return outputs
