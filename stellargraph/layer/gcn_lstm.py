@@ -193,7 +193,7 @@ class FixedAdjacencyGraphConvolution(Layer):
 class GraphConvolutionLSTM:
 
     """
-        A stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
+        GraphConvolutionLSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
         This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction
                                           (https://arxiv.org/abs/1811.05320)
         The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
