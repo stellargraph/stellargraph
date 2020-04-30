@@ -64,6 +64,7 @@ class MarkdownCell:
 
     def __init__(self, cell):
         source = cell_source(cell)
+        self.metadata = cell.metadata
         self._lines = source.splitlines()
 
         self.ast = COMMONMARK_PARSER.parse(source)
@@ -303,6 +304,12 @@ def no_leading_block_quotes(cells):
     errors = []
     for cell in cells:
         if not isinstance(cell, MarkdownCell):
+            continue
+
+        # unfortunately, the cloud runner cells break this rule (and there doesn't seem to be a good
+        # way to avoid it), so skip them, and we just have to be careful that they get formatted
+        # correctly.
+        if "CloudRunner" in cell.metadata.get("tags", []):
             continue
 
         first = cell.ast.first_child
