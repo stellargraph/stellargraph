@@ -176,10 +176,10 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg" style="display: inline !important;"/></a>'
 
     def _colab_badge(self, notebook_path):
-        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" style="display: inline !important;"/></a>'
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
@@ -189,7 +189,7 @@ if 'google.colab' in sys.modules:
             )
         self.remove_tagged_cells_from_notebook(nb)
         # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
-        badge_markdown = f"<table><tr><td>Run the master version of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
+        badge_markdown = f"Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}"
         badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
         self.tag_cell(badge_cell)
         # the badges go after the first cell, unless the first cell is code
