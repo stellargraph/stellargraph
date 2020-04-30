@@ -171,7 +171,7 @@ class CorruptedSequence(Sequence):
         ]
 
         # create the appropriate labels
-        batch_size = inputs[0].shape[: self.num_batch_dims]
+        batch_size = min(inp.shape[: self.num_batch_dims] for inp in inputs)
         targets = np.broadcast_to([np.float32(1), 0], (*batch_size, 2))
 
         return shuffled_feats + inputs, targets
