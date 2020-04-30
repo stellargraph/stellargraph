@@ -75,6 +75,19 @@ def test_generator_init_hin():
         generator = PaddedGraphGenerator(graphs=graphs_mixed)
 
 
+def test_generator_init_empty():
+    graphs = [
+        example_graph_random(feature_size=2, n_nodes=4),
+        example_graph_random(feature_size=2, node_types=0, edge_types=0),
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match="graphs: expected every graph to be non-empty, found graph with no nodes",
+    ):
+        generator = PaddedGraphGenerator(graphs=graphs)
+
+
 def test_generator_flow_invalid_batch_size():
     with pytest.raises(
         ValueError, match="expected batch_size.*strictly positive integer, found -1"
