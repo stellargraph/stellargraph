@@ -182,13 +182,7 @@ if 'google.colab' in sys.modules:
         return f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({self._colab_url(notebook_path)})"
 
     def _badge_markdown(self, notebook_path):
-        # GitHub and nbsphinx (and so on) have special support for these alert classes
-        return f"""\
-<div class="alert alert-info">
-
-Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}
-
-</div>"""
+        return f"> Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}"
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
