@@ -21,7 +21,7 @@ RUN echo "+++ installing dependencies" \
     && pip uninstall -y stellargraph
 
 # Now copy the code in, to install stellargraph itself
-COPY --chown=stellar:stellar . /build
+COPY --chown=stellar:stellar . /build/
 # hadolint ignore=DL3013
 RUN echo "+++ installing stellargraph" && pip install --no-cache-dir /build/ --user
 WORKDIR /home/stellar
