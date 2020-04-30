@@ -7,8 +7,8 @@ ENV PATH=${PATH}:/home/stellar/.local/bin
 WORKDIR /build
 # Copy requirements first to install dependencies without having to recompute when the source code
 # changes
-COPY setup.py /build/setup.py
-COPY stellargraph/version.py /build/stellargraph/version.py
+COPY --chown=stellar setup.py /build/setup.py
+COPY --chown=stellar stellargraph/version.py /build/stellargraph/version.py
 # hadolint ignore=DL3013
 RUN echo "+++ installing dependencies" \
     # install stellargraph without any source code to install its dependencies, and then immediately
@@ -19,7 +19,7 @@ RUN echo "+++ installing dependencies" \
     && pip uninstall -y stellargraph
 
 # Now copy the code in, to install stellargraph itself
-COPY . /build/
+COPY --chown=stellar . /build/
 # hadolint ignore=DL3013
 RUN echo "+++ installing stellargraph" && pip install --no-cache-dir /build/ --user
 WORKDIR /home/stellar
