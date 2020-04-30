@@ -45,6 +45,14 @@ class PaddedGraphGenerator(Generator):
                 raise TypeError(
                     f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
                 )
+
+            if graph.number_of_nodes() == 0:
+                # an empty graph has no information at all and breaks things like mean pooling, so
+                # let's disallow them
+                raise ValueError(
+                    "graphs: expected every graph to be non-empty, found graph with no nodes"
+                )
+
             # Check that there is only a single node type for GAT or GCN
             node_type = graph.unique_node_type(
                 "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
