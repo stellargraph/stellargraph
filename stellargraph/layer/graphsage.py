@@ -325,7 +325,7 @@ class MeanAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            [tf.Tensor]: A tensor aggregation of the input nodes features.
+            tf.Tensor: A tensor aggregation of the input nodes features.
         """
         # The first group is assumed to be the self-tensor and we do not aggregate over it
         if group_idx == 0:
@@ -413,7 +413,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            [tf.Tensor]: A tensor aggregation of the input nodes features.
+            tf.Tensor: A tensor aggregation of the input nodes features.
         """
         if group_idx == 0:
             # Do not aggregate features for head nodes
