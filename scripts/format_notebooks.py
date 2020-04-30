@@ -130,6 +130,15 @@ class FormatCodeCellPreprocessor(preprocessors.Preprocessor):
         return cell, resources
 
 
+def hide_cell_from_docs(cell):
+    """
+    Add metadata so that the cell is removed from the Sphinx output.
+
+    https://nbsphinx.readthedocs.io/en/0.6.1/hidden-cells.html
+    """
+    cell["metadata"]["nbsphinx"] = "hidden"
+
+
 class InsertTaggedCellsPreprocessor(preprocessors.Preprocessor):
     # abstract class working with tagged notebook cells
     metadata_tag = ""  # tag for added cells so that we can find them easily; needs to be set in derived class
@@ -194,6 +203,7 @@ if 'google.colab' in sys.modules:
         )
         import_cell = nbformat.v4.new_code_cell(self.colab_import_code)
         self.tag_cell(import_cell)
+        hide_cell_from_docs(import_cell)
         nb.cells.insert(first_code_cell_id, import_cell)
 
         nb.cells.append(badge_cell)  # add a badge to the bottom of notebook
@@ -223,6 +233,7 @@ except AttributeError:
         )
         version_cell = nbformat.v4.new_code_cell(self.version_check_code)
         self.tag_cell(version_cell)
+        hide_cell_from_docs(version_cell)
         nb.cells.insert(first_code_cell_id, version_cell)
         return nb, resources
 
