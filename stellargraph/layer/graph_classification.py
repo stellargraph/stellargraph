@@ -202,7 +202,7 @@ class GCNSupervisedGraphClassification:
 
 
 @experimental(reason="Missing unit tests and generally untested.", issues=[1297])
-class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
+class DeepGCNN(GCNSupervisedGraphClassification):
     """
     A stack of :class:`GraphConvolution` layers together with a `SortPooling` layer
     that implement a supervised graph classification network (DGCNN) using the GCN convolution operator
@@ -224,7 +224,7 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
         connected dense layers one with dropout one used for binary classification::
 
             generator = PaddedGraphGenerator(graphs)
-            model = DeepGraphConvolutionalNeuralNetwork(
+            model = DeepGCNN(
                              layer_sizes=[32, 32, 32, 1],
                              activations=["tanh","tanh", "tanh", "tanh"],
                              generator=generator,
