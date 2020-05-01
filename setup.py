@@ -52,6 +52,7 @@ EXTRAS_REQUIRES = {
         "pytest==5.3.1",
         "pytest-benchmark>=3.1",
         "pytest-cov>=2.6.0",
+        "pytest-repeat>=0.8.0",
         "coverage>=4.4,<5.0",
         "black>=19.3b0",
         "nbconvert>=5.5.0",
