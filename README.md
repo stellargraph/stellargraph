@@ -78,7 +78,14 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 [The numerous detailed and narrated examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) are a good way to get started with StellarGraph. There is likely to be one that is similar to your data or your problem (if not, [let us know](#getting-help)).
 
-You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook. You can also run them locally, after installing StellarGraph. One of the following might be appropriate:
+You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
+
+Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the `curl` command below:
+```bash
+curl https://codeload.github.com/stellargraph/stellargraph/tar.gz/master | tar -xz --strip=1 stellargraph-master/demos
+```
+
+All dependencies required to run our demo notebooks locally can be installed using one of the following:
 
 - Using pip: `pip install stellargraph[demos]`
 - Using conda: `conda install -c stellargraph stellargraph`
@@ -184,6 +191,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Deep Graph Infomax [15] | Deep Graph Infomax trains unsupervised GNNs to maximize the shared information between node level and graph level features. |
 | Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
+| DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
 
 ## Installation
 
@@ -298,3 +306,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 16. Continuous-Time Dynamic Network Embeddings. Giang Hoang Nguyen, John Boaz Lee, Ryan A. Rossi, Nesreen K. Ahmed, Eunyee Koh, and Sungchul Kim. Proceedings of the 3rd International Workshop on Learning Representations for Big Networks (WWW BigNet) 2018. ([link](https://dl.acm.org/doi/10.1145/3184558.3191526))
 
 17. Embedding Entities and Relations for Learning and Inference in Knowledge Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng, ICLR, 2015. arXiv:1412.6575 ([link](https://arxiv.org/pdf/1412.6575))
+
+18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf))

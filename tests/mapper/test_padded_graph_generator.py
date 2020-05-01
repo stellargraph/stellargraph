@@ -21,7 +21,7 @@ from stellargraph.mapper.padded_graph_generator import (
 
 import numpy as np
 import pytest
-from ..test_utils.graphs import example_graph_random, example_hin_1
+from ..test_utils.graphs import example_graph_random, example_graph, example_hin_1
 
 graphs = [
     example_graph_random(feature_size=4, n_nodes=6),
@@ -70,9 +70,22 @@ def test_generator_init_hin():
 
     with pytest.raises(
         ValueError,
-        match="graphs: node generator requires graphs with single node type.*found.*2",
+        match="graphs: expected only graphs with a single node type.*found.*'A', 'B'",
     ):
         generator = PaddedGraphGenerator(graphs=graphs_mixed)
+
+
+def test_generator_init_empty():
+    graphs = [
+        example_graph_random(feature_size=2, n_nodes=4),
+        example_graph_random(feature_size=2, node_types=0, edge_types=0),
+    ]
+
+    with pytest.raises(
+        ValueError,
+        match="graphs: expected every graph to be non-empty, found graph with no nodes",
+    ):
+        generator = PaddedGraphGenerator(graphs=graphs)
 
 
 def test_generator_flow_invalid_batch_size():
@@ -163,3 +176,63 @@ def test_generator_flow_with_targets():
         assert batch[0][1].shape[0] == 1
         assert batch[0][2].shape[0] == 1
         assert batch[1].shape[0] == 1
+
+
+@pytest.mark.parametrize("symmetric_normalization", [True, False])
+def test_generator_adj_normalisation(symmetric_normalization):
+
+    graph = example_graph(feature_size=4)
+
+    generator = PaddedGraphGenerator(graphs=[graph])
+    seq = generator.flow(
+        graph_ilocs=[0], symmetric_normalization=symmetric_normalization
+    )
+
+    adj_norm_seq = seq.normalized_adjs[0].todense()
+
+    adj = np.array(graph.to_adjacency_matrix().todense())
+    np.fill_diagonal(adj, 1)
+    if symmetric_normalization:
+        inv_deg = np.diag(np.sqrt(1.0 / adj.sum(axis=1)))
+        adj_norm = inv_deg.dot(adj).dot(inv_deg)
+    else:
+        inv_deg = np.diag(1.0 / adj.sum(axis=1))
+        adj_norm = inv_deg.dot(adj)
+
+    assert np.allclose(adj_norm_seq, adj_norm)
+
+
+def test_generator_flow_shuffle():
+
+    generator = PaddedGraphGenerator(graphs=graphs)
+    num_epochs_to_check = 5
+
+    def get_batches(seq):
+        return [seq[i][0] for i in range(len(seq))]
+
+    def batches_all_equal(batches, other_batches):
+        checks = [
+            inp.shape == other_inp.shape and np.allclose(inp, other_inp)
+            for batch, other_batch in zip(batches, other_batches)
+            for inp, other_inp in zip(batch, other_batch)
+        ]
+        return all(checks)
+
+    def get_next_epoch_batches(seq):
+        seq.on_epoch_end()
+        return get_batches(seq)
+
+    # shuffle = False
+    seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2, shuffle=False)
+    batches = get_batches(seq)
+    for _ in range(num_epochs_to_check):
+        assert batches_all_equal(batches, get_next_epoch_batches(seq))
+
+    # shuffle = True, fixed seed
+    seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2, shuffle=True, seed=0)
+    batches = get_batches(seq)
+    at_least_one_different = False
+    for _ in range(num_epochs_to_check):
+        if not batches_all_equal(batches, get_next_epoch_batches(seq)):
+            at_least_one_different = True
+    assert at_least_one_different

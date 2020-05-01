@@ -82,6 +82,9 @@ class BatchedLinkGenerator(Generator):
     def sample_features(self, head_links, batch_num):
         pass
 
+    def num_batch_dims(self):
+        return 1
+
     def flow(self, link_ids, targets=None, shuffle=False, seed=None):
         """
         Creates a generator/sequence object for training or evaluation
@@ -198,11 +201,9 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
@@ -311,9 +312,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features for all node types.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -328,7 +327,8 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         g (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
-        head_node_types (list): List of the types (str) of the two head nodes forming the node pair.
+        head_node_types (list, optional): List of the types (str) of the two head nodes forming the
+            node pair. This does not need to be specified if ``G`` has only one node type.
         seed (int or str, optional): Random seed for the sampling methods.
 
     Example::
@@ -342,7 +342,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         G,
         batch_size,
         num_samples,
-        head_node_types,
+        head_node_types=None,
         schema=None,
         seed=None,
         name=None,
@@ -352,6 +352,13 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         self.name = name
 
         # This is a link generator and requires two nodes per query
+        if head_node_types is None:
+            # infer the head node types, if this is a homogeneous-node graph
+            node_type = G.unique_node_type(
+                "head_node_types: expected a pair of head node types because G has more than one node type, found node types: %(found)s"
+            )
+            head_node_types = [node_type, node_type]
+
         self.head_node_types = head_node_types
         if len(self.head_node_types) != 2:
             raise ValueError(
@@ -455,11 +462,9 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
     At minimum, supply the StellarGraph and the batch size.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
-    Use the :meth:`.flow` method supplying the nodes and targets,
+    Use the :meth:`flow` method supplying the nodes and targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
@@ -509,11 +514,9 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
     At minimum, supply the StellarDiGraph, the batch size, and the number of
     node samples (separately for in-nodes and out-nodes) for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarDiGraph object with node features.
 
-    Use the :meth:`.flow` method supplying the nodes and (optionally) targets,
+    Use the :meth:`flow` method supplying the nodes and (optionally) targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 

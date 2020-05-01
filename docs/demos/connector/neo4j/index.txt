@@ -1,0 +1,12 @@
+Neo4j
+====================================
+
+Table of contents
+-----------------
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

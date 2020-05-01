@@ -23,7 +23,6 @@ __all__ = [
     "FullBatchNodeGenerator",
     "FullBatchLinkGenerator",
     "RelationalFullBatchNodeGenerator",
-    "CorruptedGenerator",
 ]
 
 import warnings
@@ -42,13 +41,13 @@ from . import (
     FullBatchSequence,
     SparseFullBatchSequence,
     RelationalFullBatchNodeSequence,
-    CorruptedNodeSequence,
     GraphSAGENodeGenerator,
     DirectedGraphSAGENodeGenerator,
 )
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
+from ..core.validation import comma_sep
 
 
 class FullBatchGenerator(Generator):
@@ -83,24 +82,14 @@ class FullBatchGenerator(Generator):
         G.check_graph_for_ml()
 
         # Check that there is only a single node type for GAT or GCN
-        node_types = list(G.node_types)
-        if len(node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        node_type = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes()
-        self.Aadj = G.to_adjacency_matrix(self.node_list)
-
-        # Function to map node IDs to indices for quicker node index lookups
-        # TODO: Move this to the graph class
-        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
-        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
+        self.Aadj = G.to_adjacency_matrix()
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
@@ -116,7 +105,7 @@ class FullBatchGenerator(Generator):
             self.use_sparse = sparse
 
         # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        self.features = G.node_features(node_type=node_type)
 
         if transform is not None:
             if callable(transform):
@@ -157,6 +146,9 @@ class FullBatchGenerator(Generator):
                 "Accepted: 'gcn' (default), 'sgc', and 'self_loops'."
             )
 
+    def num_batch_dims(self):
+        return 2
+
     def flow(self, node_ids, targets=None):
         """
         Creates a generator/sequence object for training or evaluation
@@ -183,8 +175,13 @@ class FullBatchGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        node_indices = self._node_lookup(node_ids)
+        # find the indices of the nodes, handling both multiplicity 1 [node, node, ...] and 2
+        # [(source, target), ...]
+        node_ids = np.asarray(node_ids)
+        flat_node_ids = node_ids.reshape(-1)
+        flat_node_indices = self.graph._get_index_for_nodes(flat_node_ids)
+        # back to the original shape
+        node_indices = flat_node_indices.reshape(node_ids.shape)
 
         if self.use_sparse:
             return SparseFullBatchSequence(
@@ -198,9 +195,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     """
     A data generator for use with full-batch models on homogeneous graphs,
     e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -278,14 +273,15 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         """
         return super().flow(node_ids, targets)
 
+    def default_corrupt_input_index_groups(self):
+        return [[0]]
+
 
 class FullBatchLinkGenerator(FullBatchGenerator):
     """
     A data generator for use with full-batch models on homogeneous graphs,
     e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
     of node IDs and (optionally) targets.
@@ -368,9 +364,7 @@ class RelationalFullBatchNodeGenerator(Generator):
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
-    The supplied graph G should be a StellarGraph or StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph or StellarDiGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -417,37 +411,22 @@ class RelationalFullBatchNodeGenerator(Generator):
         G.check_graph_for_ml()
 
         # extract node, feature, and edge type info from G
-        self.node_list = list(G.nodes())
+        node_types = list(G.node_types)
+        if len(node_types) != 1:
+            raise ValueError(
+                f"G: expected one node type, found {comma_sep(sorted(node_types))}",
+            )
 
-        self.features = G.node_features(self.node_list)
-
-        edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
-        self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
+        self.features = G.node_features(node_type=node_types[0])
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
         self.As = []
 
-        for edge_type in edge_types:
-
-            col_index = [
-                self.node_index[n1]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            row_index = [
-                self.node_index[n2]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            data = np.ones(len(col_index), np.float64)
-
+        for edge_type in G.edge_types:
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
-            A = sps.coo_matrix(
-                (data, (row_index, col_index)),
-                shape=(len(self.node_list), len(self.node_list)),
-            )
+            A = G.to_adjacency_matrix(edge_type=edge_type).transpose()
 
             if transform is None:
                 # normalize here and replace zero row sums with 1
@@ -463,8 +442,8 @@ class RelationalFullBatchNodeGenerator(Generator):
             A = A.tocoo()
             self.As.append(A)
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+    def num_batch_dims(self):
+        return 2
 
     def flow(self, node_ids, targets=None):
         """
@@ -491,46 +470,8 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        # use dictionary for faster index look-up time
-        node_indices = np.array([self.node_index[n] for n in node_ids])
+        node_indices = self.graph._get_index_for_nodes(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
-
-
-class CorruptedGenerator(Generator):
-    """
-    Keras compatible data generator that wraps :class: `FullBatchNodeGenerator` and provides corrupted
-    data for training Deep Graph Infomax.
-
-    Args:
-        base_generator: the uncorrupted Sequence object.
-    """
-
-    def __init__(self, base_generator):
-
-        if not isinstance(
-            base_generator,
-            (
-                FullBatchNodeGenerator,
-                GraphSAGENodeGenerator,
-                DirectedGraphSAGENodeGenerator,
-            ),
-        ):
-            raise TypeError(
-                f"base_generator: expected FullBatchNodeGenerator, GraphSAGENodeGenerator, "
-                f"or DirectedGraphSAGENodeGenerator, found {type(base_generator).__name__}"
-            )
-        self.base_generator = base_generator
-
-    def flow(self, *args, **kwargs):
-        """
-        Creates the corrupted :class: `Sequence` object for training Deep Graph Infomax.
-
-        Args:
-            args: the positional arguments for the self.base_generator.flow(...) method
-            kwargs: the keyword arguments for the self.base_generator.flow(...) method
-        """
-        return CorruptedNodeSequence(self.base_generator.flow(*args, **kwargs))

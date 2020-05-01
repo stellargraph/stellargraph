@@ -23,8 +23,29 @@ class Generator(abc.ABC):
     """
 
     @abc.abstractmethod
+    def num_batch_dims(self):
+        """
+        Returns the number of batch dimensions in returned tensors (_not_ the batch size itself).
+
+        For instance, for full batch methods like GCN, the feature has shape ``1 × number of nodes ×
+        feature size``, where the 1 is a "dummy" batch dimension and ``number of nodes`` is the real
+        batch size (every node in the graph).
+        """
+        ...
+
+    @abc.abstractmethod
     def flow(self, *args, **kwargs):
         """
         Create a Keras Sequence or similar input, appropriate for a graph machine learning model.
         """
         ...
+
+    def default_corrupt_input_index_groups(self):
+        """
+        Optionally returns the indices of input tensors that can be shuffled for
+        :class:`CorruptGenerator` to use in :class:`DeepGraphInfomax`.
+
+        If this isn't overridden, this method returns None, indicating that the generator doesn't
+        have a default or "canonical" set of indices that can be corrupted for Deep Graph Infomax.
+        """
+        return None

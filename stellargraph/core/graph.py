@@ -131,7 +131,7 @@ class StellarGraph:
     Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
     ``z``. A heterogeneous graph can have different features for each type.
 
-    Edges of different types work in the same way. example instance, if edges have different types based
+    Edges of different types can work in the same way. For instance, if edges have different types based
     on their orientation::
 
         horizontal_edges = pd.DataFrame(
@@ -150,6 +150,19 @@ class StellarGraph:
             {"foo": foo_nodes, "bar": bar_nodes},
             {"h": horizontal_edges, "v": vertical_edges, "d": diagonal_edges}
         )
+
+    Alternatively, a single DataFrame can be provided, with an additional column of the type. This
+    column is specified by passing the ``edge_type_column`` argument::
+
+        orientation_edges = pd.DataFrame(
+            {
+                "source": ["a", "b", "c", "d", "a"],
+                "target": ["b", "c", "d", "a", "c"],
+                "type": ["h", "v", "h", "v", "d"]
+            }
+        )
+
+        StellarGraph(nodes, orientation_edges, edge_type_column="type")
 
     .. note::
 
@@ -193,6 +206,10 @@ class StellarGraph:
             The name of the column in each of the ``edges`` DataFrames to use as the weight of
             edges. If the column does not exist in any of them, it is defaulted to ``1``.
 
+        edge_type_column (str, optional):
+            The name of the column in the ``edges`` DataFrame to use as the edge type (if this is
+            set, ``edges`` must be a single DataFrame, not a dictionary).
+
         node_type_default (str, optional):
             The default node type to use, if ``nodes`` is passed as a DataFrame (not a ``dict``).
 
@@ -221,6 +238,7 @@ class StellarGraph:
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -278,6 +296,7 @@ class StellarGraph:
             source_column=source_column,
             target_column=target_column,
             weight_column=edge_weight_column,
+            type_column=edge_type_column,
         )
 
         nodes_from_edges = pd.unique(
@@ -498,10 +517,12 @@ class StellarGraph:
         Obtains the collection of edges in the graph.
 
         Args:
-            include_edge_type (bool): A flag that indicates whether to return edge types
-            of format (node 1, node 2, edge type) or edge pairs of format (node 1, node 2).
-            include_edge_weight (bool): A flag that indicates whether to return edge weights.
-            Weights are returned in a separate list.
+            include_edge_type (bool):
+                A flag that indicates whether to return edge types of format (node 1, node 2, edge
+                type) or edge pairs of format (node 1, node 2).
+            include_edge_weight (bool):
+                A flag that indicates whether to return edge weights.  Weights are returned in a
+                separate list.
 
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights)
@@ -689,6 +710,39 @@ class StellarGraph:
         """
         return set(self._nodes.types.pandas_index)
 
+    def unique_node_type(self, error_message=None):
+        """
+        Return the unique node type, for a homogeneous-node graph.
+
+        Args:
+            error_message (str, optional): a custom message to use for the exception; this can use
+                the ``%(found)s`` placeholder to insert the real sequence of node types.
+
+        Returns:
+            If this graph has only one node type, this returns that node type, otherwise it raises a
+            ``ValueError`` exception.
+        """
+
+        all_types = self._nodes.types.pandas_index
+        if len(all_types) == 1:
+            return all_types[0]
+
+        found = comma_sep(all_types)
+        if error_message is None:
+            error_message = (
+                "Expected only one node type for 'unique_node_type', found: %(found)s"
+            )
+
+        raise ValueError(error_message % {"found": found})
+
+    @property
+    def edge_types(self):
+        """
+        Returns:
+            a sequence of all edge types in the graph
+        """
+        return self._edges.types.pandas_index
+
     def node_feature_sizes(self, node_types=None):
         """
         Get the feature sizes for the specified node types.
@@ -722,20 +776,45 @@ class StellarGraph:
 
         # TODO: check the feature node_ids against the graph node ids?
 
-    def node_features(self, nodes, node_type=None):
+    def node_features(self, nodes=None, node_type=None):
         """
-        Get the numeric feature vectors for the specified node or nodes.
-        If the node type is not specified the node types will be found
-        for all nodes. It is therefore important to supply the ``node_type``
-        for this method to be fast.
+        Get the numeric feature vectors for the specified nodes or node type.
+
+        For graphs with a single node type:
+
+        - ``graph.node_features()`` to retrieve features of all nodes, in the same order as
+          ``graph.nodes()``.
+
+        - ``graph.node_features(nodes=some_node_ids)`` to retrieve features for each node in
+          ``some_node_ids``.
+
+        For graphs with multiple node types:
+
+        - ``graph.node_features(node_type=some_type)`` to retrieve features of all nodes of type
+          ``some_type``, in the same order as ``graph.nodes(node_type=some_type)``.
+
+        - ``graph.node_features(nodes=some_node_ids, node_type=some_type)`` to retrieve features for
+          each node in ``some_node_ids``. All of the chosen nodes must be of type ``some_type``.
+
+        - ``graph.node_features(nodes=some_node_ids)`` to retrieve features for each node in
+          ``some_node_ids``. All of the chosen nodes must be of the same type, which will be
+          inferred. This will be slower than providing the node type explicitly in the previous example.
 
         Args:
-            nodes (list or hashable): Node ID or list of node IDs
-            node_type (hashable): the type of the nodes.
+            nodes (list or hashable, optional): Node ID or list of node IDs, all of the same type
+            node_type (hashable, optional): the type of the nodes.
 
         Returns:
-            Numpy array containing the node features for the requested nodes.
+            Numpy array containing the node features for the requested nodes or node type.
         """
+        if nodes is None:
+            if node_type is None:
+                node_type = self.unique_node_type(
+                    "node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: %(found)s"
+                )
+
+            return self._nodes.features_of_type(node_type)
+
         nodes = np.asarray(nodes)
 
         node_ilocs = self._nodes.ids.to_iloc(nodes)
@@ -744,17 +823,21 @@ class StellarGraph:
         valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
 
         if node_type is None:
-            # infer the type based on the valid nodes
-            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
+            try:
+                # no inference required in a homogeneous-node graph
+                node_type = self.unique_node_type()
+            except ValueError:
+                # infer the type based on the valid nodes
+                types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
 
-            if len(types) == 0:
-                raise ValueError(
-                    "must have at least one node for inference, if `node_type` is not specified"
-                )
-            if len(types) > 1:
-                raise ValueError("all nodes must have the same type")
+                if len(types) == 0:
+                    raise ValueError(
+                        "must have at least one node for inference, if `node_type` is not specified"
+                    )
+                if len(types) > 1:
+                    raise ValueError("all nodes must have the same type")
 
-            node_type = types[0]
+                node_type = types[0]
 
         if all_valid:
             return self._nodes.features(node_type, valid_ilocs)
@@ -805,21 +888,16 @@ class StellarGraph:
             self._nodes.types.from_iloc(tgt_ilocs),
         )
 
-    def _unique_type_triples(self, *, return_counts, selector=slice(None)):
+    def _unique_type_triples(self, selector=slice(None)):
         all_type_ilocs = self._edge_type_iloc_triples(selector, stacked=True)
 
         if len(all_type_ilocs) == 0:
             # FIXME(https://github.com/numpy/numpy/issues/15559): if there's no edges, np.unique is
             # being called on a shape=(0, 3) ndarray, and hits "ValueError: cannot reshape array of
             # size 0 into shape (0,newaxis)", so we manually reproduce what would be returned
-            if return_counts:
-                ret = None, [], []
-            else:
-                ret = None, []
+            ret = None, []
         else:
-            ret = np.unique(
-                all_type_ilocs, axis=0, return_index=True, return_counts=return_counts
-            )
+            ret = np.unique(all_type_ilocs, axis=0, return_index=True)
 
         edge_ilocs = ret[1]
         # we've now got the indices for an edge with each triple, along with the counts of them, so
@@ -827,10 +905,19 @@ class StellarGraph:
         # getting the actual type for each type iloc in the triples)
         unique_ets = self._edge_type_triples(edge_ilocs)
 
-        if return_counts:
-            return zip(*unique_ets, ret[2])
-
         return zip(*unique_ets)
+
+    def _edge_metrics_by_type_triple(self, metrics):
+        src_ty, rel_ty, tgt_ty = self._edge_type_triples()
+        df = pd.DataFrame(
+            {
+                "src_ty": src_ty,
+                "rel_ty": rel_ty,
+                "tgt_ty": tgt_ty,
+                "weight": self._edges.weights,
+            }
+        )
+        return df.groupby(["src_ty", "rel_ty", "tgt_ty"]).agg(metrics)["weight"]
 
     def info(self, show_attributes=None, sample=None, truncate=20):
         """
@@ -895,6 +982,16 @@ class StellarGraph:
                 edge_types = "none"
             return f"{nt}: [{count}]\n    Features: {feature_text}\n    Edge types: {edge_types}"
 
+        def edge_type_info(et, metrics):
+            if metrics.min == metrics.max:
+                weights_text = (
+                    "all 1 (default)" if metrics.min == 1 else f"all {metrics.min:.6g}"
+                )
+            else:
+                weights_text = f"range=[{metrics.min:.6g}, {metrics.max:.6g}], mean={metrics.mean:.6g}, std={metrics.std:.6g}"
+
+            return f"{str_edge_type(et)}: [{metrics.count}]\n        Weights: {weights_text}"
+
         # sort the node types in decreasing order of frequency
         node_types = sorted(
             ((len(self.nodes(node_type=nt)), nt) for nt in gs.node_types), reverse=True
@@ -906,18 +1003,19 @@ class StellarGraph:
             sep="\n  ",
         )
 
-        # FIXME: it would be better for the schema to just include the counts directly
-        unique_ets = self._unique_type_triples(return_counts=True)
+        metric_names = ["count", "min", "max", "mean", "std"]
+        et_metrics = self._edge_metrics_by_type_triple(metrics=metric_names)
+
         edge_types = sorted(
             (
-                (count, EdgeType(src_ty, rel_ty, tgt_ty))
-                for src_ty, rel_ty, tgt_ty, count in unique_ets
+                (metrics.count, EdgeType(*metrics.Index), metrics,)
+                for metrics in et_metrics.itertuples()
             ),
             reverse=True,
         )
 
         edges = separated(
-            [f"{str_edge_type(et)}: [{count}]" for count, et in edge_types],
+            [edge_type_info(et, metrics) for _, et, metrics in edge_types],
             limit=truncate,
             stringify=str,
             sep="\n    ",
@@ -964,9 +1062,7 @@ class StellarGraph:
                 self._edges.targets, nodes
             )
 
-        for n1, rel, n2 in self._unique_type_triples(
-            selector=selector, return_counts=False
-        ):
+        for n1, rel, n2 in self._unique_type_triples(selector=selector):
             edge_type_tri = EdgeType(n1, rel, n2)
             edge_types.add(edge_type_tri)
             graph_schema[n1].add(edge_type_tri)
@@ -998,7 +1094,9 @@ class StellarGraph:
         """
         return self._edges.degrees()
 
-    def to_adjacency_matrix(self, nodes: Optional[Iterable] = None, weighted=False):
+    def to_adjacency_matrix(
+        self, nodes: Optional[Iterable] = None, weighted=False, edge_type=None
+    ):
         """
         Obtains a SciPy sparse adjacency matrix of edge weights.
 
@@ -1012,36 +1110,47 @@ class StellarGraph:
                 otherwise, it is computed for the full graph.
             weighted (bool): If true, use the edge weight column from the graph instead
                 of edge counts (weights from multi-edges are summed).
+            edge_type (hashable, optional): If set (to an edge type), only includes edges of that
+                type, otherwise uses all edges.
 
         Returns:
              The weighted adjacency matrix.
         """
+        if edge_type is None:
+            type_selector = slice(None)
+        else:
+            type_selector = self._edges.type_range(edge_type)
+
+        sources = self._edges.sources[type_selector]
+        targets = self._edges.targets[type_selector]
+
         if nodes is None:
             index = self._nodes._id_index
             selector = slice(None)
         else:
             nodes = list(nodes)
             index = ExternalIdIndex(nodes)
-            selector = np.isin(self._edges.sources, nodes) & np.isin(
-                self._edges.targets, nodes
-            )
+            selector = np.isin(sources, nodes) & np.isin(targets, nodes)
 
         # these indices are computed relative to the index above. If `nodes` is None, they'll be the
         # overall ilocs (for the original graph), otherwise they'll be the indices of the `nodes`
         # list.
-        src_idx = index.to_iloc(self._edges.sources[selector])
-        tgt_idx = index.to_iloc(self._edges.targets[selector])
+        src_idx = index.to_iloc(sources[selector])
+        tgt_idx = index.to_iloc(targets[selector])
         if weighted:
-            weights = self._edges.weights[selector]
+            weights = self._edges.weights[type_selector][selector]
         else:
             weights = np.ones(src_idx.shape, dtype=self._edges.weights.dtype)
 
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
-        if not self.is_directed():
+        if not self.is_directed() and n > 0:
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
+
+            # FIXME https://github.com/scipy/scipy/issues/11949: these operations, particularly the
+            # diagonal, don't work for an empty matrix (n == 0)
             backward = adj.transpose(copy=True)
             # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
             # matrix (https://github.com/scipy/scipy/issues/11600)
@@ -1317,6 +1426,7 @@ class StellarDiGraph(StellarGraph):
         source_column=globalvar.SOURCE,
         target_column=globalvar.TARGET,
         edge_weight_column=globalvar.WEIGHT,
+        edge_type_column=None,
         node_type_default=globalvar.NODE_TYPE_DEFAULT,
         edge_type_default=globalvar.EDGE_TYPE_DEFAULT,
         dtype="float32",
@@ -1333,6 +1443,7 @@ class StellarDiGraph(StellarGraph):
             source_column=source_column,
             target_column=target_column,
             edge_weight_column=edge_weight_column,
+            edge_type_column=edge_type_column,
             node_type_default=node_type_default,
             edge_type_default=edge_type_default,
             dtype=dtype,
