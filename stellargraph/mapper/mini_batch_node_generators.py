@@ -36,9 +36,7 @@ class ClusterNodeGenerator(Generator):
     """
     A data generator for use with ClusterGCN models on homogeneous graphs, [1].
 
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -116,13 +114,9 @@ class ClusterNodeGenerator(Generator):
         self.node_list = list(G.nodes())
 
         # Check that there is only a single node type
-        if len(G.node_types) > 1:
-            raise ValueError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         if isinstance(clusters, int):
             # We are not given graph clusters.
@@ -146,6 +140,9 @@ class ClusterNodeGenerator(Generator):
 
         # Get the features for the nodes
         self.features = G.node_features(self.node_list)
+
+    def num_batch_dims(self):
+        return 2
 
     def flow(self, node_ids, targets=None, name=None):
         """

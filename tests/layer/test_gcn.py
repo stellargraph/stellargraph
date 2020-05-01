@@ -68,20 +68,24 @@ def test_GraphConvolution_dense():
     adj = G.to_adjacency_matrix().toarray()[None, :, :]
     x = features[None, :, :]
 
-    # For dense matrix, remove batch dimension
-    A_mat = Lambda(lambda A: K.squeeze(A, 0))(A_t)
-
-    out = GraphConvolution(2)([x_t, A_mat])
+    out = GraphConvolution(2)([x_t, A_t])
     model = keras.Model(inputs=[x_t, A_t], outputs=out)
     preds = model.predict([x, adj], batch_size=1)
     assert preds.shape == (1, 3, 2)
 
-    # Check for errors with batch size != 1
-    # We need to specify the batch shape as one for the GraphConvolutional logic to work
-    x_t = Input(batch_shape=(2,) + features.shape)
-    output_indices_t = Input(batch_shape=(2, None), dtype="int32")
-    with pytest.raises(ValueError):
-        out = GraphConvolution(2)([x_t, A_t, output_indices_t])
+    # batch dimension > 1 should work with a dense matrix
+    x_t = Input(batch_shape=(10,) + features.shape)
+    A_t = Input(batch_shape=(10, 3, 3))
+    input_data = [np.broadcast_to(x, x_t.shape), np.broadcast_to(adj, A_t.shape)]
+
+    out = GraphConvolution(2)([x_t, A_t])
+    model = keras.Model(inputs=[x_t, A_t], outputs=out)
+
+    preds = model.predict(input_data, batch_size=10)
+    assert preds.shape == (10, 3, 2)
+    for i in range(1, 10):
+        # every batch element had the same input data, so the predictions should all be identical
+        np.testing.assert_array_equal(preds[i, ...], preds[0, ...])
 
 
 def test_GraphConvolution_sparse():
@@ -108,6 +112,20 @@ def test_GraphConvolution_sparse():
     model = keras.Model(inputs=[x_t, A_ind, A_val], outputs=out)
     preds = model.predict([x, A_indices, A_values], batch_size=1)
     assert preds.shape == (1, 3, 2)
+
+    x_t_10 = Input(batch_shape=(10,) + features.shape)
+    with pytest.raises(
+        ValueError,
+        match="features: expected batch dimension = 1 .* found features batch dimension 10",
+    ):
+        GraphConvolution(2)([x_t_10, A_mat])
+
+    A_mat = tf.sparse.expand_dims(A_mat, axis=0)
+    with pytest.raises(
+        ValueError,
+        match="adjacency: expected a single adjacency matrix .* found adjacency tensor of rank 3",
+    ):
+        GraphConvolution(2)([x_t, A_mat])
 
 
 def test_GCN_init():

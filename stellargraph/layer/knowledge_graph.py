@@ -137,7 +137,9 @@ class ComplEx:
 
         return node, rel
 
-    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
+    def rank_edges_against_all_nodes(
+        self, test_data, known_edges_graph, tie_breaking="random"
+    ):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -169,6 +171,11 @@ class ComplEx:
 
             known_edges_graph (StellarGraph):
                 a graph instance containing all known edges/triples
+
+            tie_breaking ('random', 'top' or 'bottom'):
+                How to rank true edges that tie with modified-object or modified-subject ones, see
+                `Sun et al. "A Re-evaluation of Knowledge Graph Completion Methods"
+                <http://arxiv.org/abs/1911.03903>`_
 
         Returns:
             A numpy array of integer raw ranks. It has shape ``N × 2``, where N is the number of
@@ -214,6 +221,7 @@ class ComplEx:
                 true_rel_ilocs=rels,
                 modified_object=True,
                 known_edges_graph=known_edges_graph,
+                tie_breaking=tie_breaking,
             )
             mod_s_raw, mod_s_filt = _ranks_from_score_columns(
                 mod_s_pred,
@@ -222,6 +230,7 @@ class ComplEx:
                 modified_object=False,
                 unmodified_node_ilocs=objects,
                 known_edges_graph=known_edges_graph,
+                tie_breaking=tie_breaking,
             )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
@@ -376,7 +385,9 @@ class DistMult:
             self._edge_type_embeddings.embeddings.numpy(),
         )
 
-    def rank_edges_against_all_nodes(self, test_data, known_edges_graph):
+    def rank_edges_against_all_nodes(
+        self, test_data, known_edges_graph, tie_breaking="random"
+    ):
         """
         Returns the ranks of the true edges in ``test_data``, when scored against all other similar
         edges.
@@ -408,6 +419,11 @@ class DistMult:
 
             known_edges_graph (StellarGraph):
                 a graph instance containing all known edges/triples
+
+            tie_breaking ('random', 'top' or 'bottom'):
+                How to rank true edges that tie with modified-object or modified-subject ones, see
+                `Sun et al. "A Re-evaluation of Knowledge Graph Completion Methods"
+                <http://arxiv.org/abs/1911.03903>`_
 
         Returns:
             A numpy array of integer raw ranks. It has shape ``N × 2``, where N is the number of
@@ -452,6 +468,7 @@ class DistMult:
                 true_rel_ilocs=rels,
                 modified_object=True,
                 known_edges_graph=known_edges_graph,
+                tie_breaking=tie_breaking,
             )
             mod_s_raw, mod_s_filt = _ranks_from_score_columns(
                 mod_s_pred,
@@ -460,6 +477,7 @@ class DistMult:
                 modified_object=False,
                 unmodified_node_ilocs=objects,
                 known_edges_graph=known_edges_graph,
+                tie_breaking=tie_breaking,
             )
 
             raws.append(np.column_stack((mod_o_raw, mod_s_raw)))
@@ -511,6 +529,23 @@ class DistMult:
     build = deprecated_model_function(in_out_tensors, "build")
 
 
+def _ranks_from_comparisons(greater, greater_equal, tie_breaking):
+    strict = 1 + greater.sum(axis=0)
+    # with_ties - strict = the number of elements exactly equal (including the true edge itself)
+    with_ties = greater_equal.sum(axis=0)
+
+    if tie_breaking == "top":
+        return strict
+    elif tie_breaking == "bottom":
+        return with_ties
+    elif tie_breaking == "random":
+        return np.random.randint(strict, with_ties + 1)
+    else:
+        raise ValueError(
+            f"tie_breaking: expected 'top', 'bottom' or 'random', found {tie_breaking!r}"
+        )
+
+
 def _ranks_from_score_columns(
     pred,
     *,
@@ -519,6 +554,7 @@ def _ranks_from_score_columns(
     true_rel_ilocs,
     modified_object,
     known_edges_graph,
+    tie_breaking,
 ):
     """
     Compute the raw and filtered ranks of a set of true edges ``E = (s, r, o)`` against all
@@ -558,9 +594,10 @@ def _ranks_from_score_columns(
 
     # for each column, compare all the scores against the score of the true edge
     greater = pred > true_scores
+    greater_equal = pred >= true_scores
 
     # the raw rank is the number of elements scored higher than the true edge
-    raw_rank = 1 + greater.sum(axis=0)
+    raw_rank = _ranks_from_comparisons(greater, greater_equal, tie_breaking)
 
     # the filtered rank is the number of unknown elements scored higher, where an element is
     # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
@@ -585,8 +622,11 @@ def _ranks_from_score_columns(
 
     neighbour_ilocs = known_edges_graph.node_ids_to_ilocs(neighbours)
     greater[neighbour_ilocs, columns] = False
+    greater_equal[neighbour_ilocs, columns] = False
+    # the actual elements should be counted as equal, whether or not it was a known edge or not
+    greater_equal[true_modified_node_ilocs, range(batch_size)] = True
 
-    filtered_rank = 1 + greater.sum(axis=0)
+    filtered_rank = _ranks_from_comparisons(greater, greater_equal, tie_breaking)
 
     assert raw_rank.shape == filtered_rank.shape == (batch_size,)
     return raw_rank, filtered_rank

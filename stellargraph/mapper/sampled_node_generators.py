@@ -37,6 +37,7 @@ import scipy.sparse as sps
 from tensorflow.keras import backend as K
 from functools import reduce
 from tensorflow.keras.utils import Sequence
+from collections import defaultdict
 
 from ..data import (
     SampledBreadthFirstWalk,
@@ -53,9 +54,7 @@ class BatchedNodeGenerator(Generator):
     """
     Abstract base class for graph data generators.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Do not use this base class: use a subclass specific to the method.
 
@@ -95,6 +94,9 @@ class BatchedNodeGenerator(Generator):
     @abc.abstractmethod
     def sample_features(self, head_nodes, batch_num):
         pass
+
+    def num_batch_dims(self):
+        return 1
 
     def flow(self, node_ids, targets=None, shuffle=False, seed=None):
         """
@@ -181,9 +183,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -272,6 +272,10 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         ]
         return batch_feats
 
+    def default_corrupt_input_index_groups(self):
+        # everything can be shuffled together
+        return [list(range(len(self.num_samples) + 1))]
+
 
 class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
     """
@@ -282,9 +286,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
     node samples (separately for in-nodes and out-nodes)
     for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarDiGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -325,6 +327,10 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             G, graph_schema=self.schema, seed=seed
         )
 
+    def _max_slots(self):
+        max_hops = len(self.in_samples)
+        return 2 ** (max_hops + 1) - 1
+
     def sample_features(self, head_nodes, batch_num):
         """
         Sample neighbours recursively from the head nodes, collect the features of the
@@ -353,8 +359,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         node_type = self.head_node_types[0]
 
-        max_hops = len(self.in_samples)
-        max_slots = 2 ** (max_hops + 1) - 1
+        max_slots = self._max_slots()
         features = [None] * max_slots  # flattened binary tree
 
         for slot in range(max_slots):
@@ -369,6 +374,10 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         return features
 
+    def default_corrupt_input_index_groups(self):
+        # everything can be shuffled together
+        return [list(range(self._max_slots()))]
+
 
 class HinSAGENodeGenerator(BatchedNodeGenerator):
     """Keras-compatible data mapper for Heterogeneous GraphSAGE (HinSAGE)
@@ -376,9 +385,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the HinSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features for all node types.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -390,8 +397,9 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         G (StellarGraph): The machine-learning ready graph
         batch_size (int): Size of batch to return
         num_samples (list): The number of samples per layer (hop) to take
-        head_node_type (str): The node type that will be given to the generator
-            using the `flow` method, the model will expect this node type.
+        head_node_type (str, optional): The node type that will be given to the generator using the
+            `flow` method, the model will expect this node type. This does not need to be specified
+            if ``G`` has only one node type.
         schema (GraphSchema, optional): Graph schema for G.
         seed (int, optional): Random seed for the node sampler
 
@@ -408,7 +416,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         G,
         batch_size,
         num_samples,
-        head_node_type,
+        head_node_type=None,
         schema=None,
         seed=None,
         name=None,
@@ -419,6 +427,12 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         self.name = name
 
         # The head node type
+        if head_node_type is None:
+            # infer the head node type, if this is a homogeneous-node graph
+            head_node_type = G.unique_node_type(
+                "head_node_type: expected a head node type because G has more than one node type, found node types: %(found)s"
+            )
+
         if head_node_type not in self.schema.node_types:
             raise KeyError("Supplied head node type must exist in the graph")
         self.head_node_types = [head_node_type]
@@ -484,6 +498,16 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         return batch_feats
 
+    def default_corrupt_input_index_groups(self):
+        # every sample of a given node type can be grouped together
+        indices_per_nt = defaultdict(list)
+        for tensor_idx, (nt, _) in enumerate(self._sampling_schema[0]):
+            indices_per_nt[nt].append(tensor_idx)
+
+        # ensure there's a consistent order both within each group, and across groups, ensure the
+        # shuffling is deterministic (at least with respect to the model)
+        return sorted(sorted(idx) for idx in indices_per_nt.values())
+
 
 class Attri2VecNodeGenerator(BatchedNodeGenerator):
     """
@@ -492,9 +516,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
     At minimum, supply the StellarGraph and the batch size.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes to get an object
     that can be used as a Keras data generator.

@@ -13,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import numpy as np
+import tensorflow as tf
 from stellargraph.layer.graph_classification import *
 from stellargraph.mapper import PaddedGraphGenerator, FullBatchNodeGenerator
 import pytest
@@ -128,3 +131,49 @@ def test_stateful():
     embeddings_2 = model_2.predict(train_gen)
 
     assert np.array_equal(embeddings_1, embeddings_2)
+
+
+@pytest.mark.parametrize("pooling", ["default", "custom"])
+def test_pooling(pooling):
+
+    # no GCN layers, to just test the pooling directly
+    if pooling == "default":
+        gcn_graph_model = GCNSupervisedGraphClassification(
+            layer_sizes=[], activations=[], generator=generator
+        )
+
+        def expected_values(array):
+            return array.mean(axis=0)
+
+    else:
+        # shift the features to make it a bit more interesting
+        shift = 10
+
+        def shifted_sum_pooling(tensor, mask):
+            mask_floats = tf.expand_dims(tf.cast(mask, tf.float32), axis=-1)
+            return tf.math.reduce_sum(tf.multiply(mask_floats, shift + tensor), axis=1)
+
+        gcn_graph_model = GCNSupervisedGraphClassification(
+            layer_sizes=[],
+            activations=[],
+            generator=generator,
+            pooling=shifted_sum_pooling,
+        )
+
+        def expected_values(array):
+            return (shift + array).sum(axis=0)
+
+    train_graphs = [0, 1, 2]
+    train_gen = generator.flow(graph_ilocs=train_graphs, batch_size=2, shuffle=False)
+    model = tf.keras.Model(*gcn_graph_model.in_out_tensors())
+
+    predictions = model.predict(train_gen)
+    assert predictions.shape == (3, 4)
+
+    expected = np.vstack(
+        [
+            expected_values(graphs[iloc].node_features(node_type="n-0"))
+            for iloc in train_graphs
+        ]
+    )
+    np.testing.assert_almost_equal(predictions, expected)

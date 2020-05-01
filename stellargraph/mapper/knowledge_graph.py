@@ -50,6 +50,9 @@ class KGTripleGenerator(Generator):
 
         self.batch_size = batch_size
 
+    def num_batch_dims(self):
+        return 1
+
     def flow(self, edges, negative_samples=None, shuffle=False, seed=None):
         """
         Create a Keras Sequence yielding the edges/triples in ``edges``, potentially with some negative

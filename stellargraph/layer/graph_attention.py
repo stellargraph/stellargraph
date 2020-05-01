@@ -722,7 +722,7 @@ class GAT:
         if not isinstance(activations, list):
             raise TypeError(
                 "{}: activations should be a list of strings; received {} instead".format(
-                    type(self).__name__, type(activations)
+                    type(self).__name__, type(activations).__name__
                 )
             )
         # check length:

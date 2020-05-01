@@ -581,6 +581,7 @@ class HinSAGE:
             model output tensor(s) of shape (batch_size, layer_sizes[-1]).
 
         """
+
         # Create tensor inputs
         x_inp = [Input(shape=s) for s in self._input_shapes()]
 

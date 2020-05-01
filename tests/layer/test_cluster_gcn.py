@@ -32,56 +32,6 @@ import pytest
 from ..test_utils.graphs import create_graph_features
 
 
-def test_ClusterGraphConvolution_config():
-    cluster_gcn_layer = ClusterGraphConvolution(units=16)
-    conf = cluster_gcn_layer.get_config()
-
-    assert conf["units"] == 16
-    assert conf["activation"] == "linear"
-    assert conf["use_bias"] == True
-    assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
-    assert conf["bias_initializer"]["class_name"] == "Zeros"
-    assert conf["kernel_regularizer"] == None
-    assert conf["bias_regularizer"] == None
-    assert conf["kernel_constraint"] == None
-    assert conf["bias_constraint"] == None
-
-
-def test_ClusterGraphConvolution_init():
-    cluster_gcn_layer = ClusterGraphConvolution(units=16, activation="relu")
-
-    assert cluster_gcn_layer.units == 16
-    assert cluster_gcn_layer.use_bias == True
-    assert cluster_gcn_layer.get_config()["activation"] == "relu"
-
-
-def test_GraphConvolution():
-    G, features = create_graph_features()
-
-    # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work
-    x_t = Input(batch_shape=(1,) + features.shape, name="X")
-    A_t = Input(batch_shape=(1, 3, 3), name="A")
-
-    # Note we add a batch dimension of 1 to model inputs
-    adj = G.to_adjacency_matrix().toarray()[None, :, :]
-    x = features[None, :, :]
-
-    # Remove batch dimension
-    A_mat = Lambda(lambda A: K.squeeze(A, 0))(A_t)
-
-    out = ClusterGraphConvolution(2)([x_t, A_mat])
-    model = keras.Model(inputs=[x_t, A_t], outputs=out)
-    preds = model.predict([x, adj], batch_size=1)
-    assert preds.shape == (1, 3, 2)
-
-    # Check for errors with batch size != 1
-    # We need to specify the batch shape as one for the ClusterGraphConvolutional logic to work
-    x_t = Input(batch_shape=(2,) + features.shape)
-    output_indices_t = Input(batch_shape=(2, None), dtype="int32")
-    with pytest.raises(ValueError):
-        out = ClusterGraphConvolution(2)([x_t, A_t, output_indices_t])
-
-
 def test_ClusterGCN_init():
     G, features = create_graph_features()
 
@@ -199,7 +149,7 @@ def test_kernel_and_bias_defaults():
         layer_sizes=[2, 2], activations=["relu", "relu"], generator=generator
     )
     for layer in cluster_gcn._layers:
-        if isinstance(layer, ClusterGraphConvolution):
+        if isinstance(layer, GraphConvolution):
             assert isinstance(layer.kernel_initializer, tf.initializers.GlorotUniform)
             assert isinstance(layer.bias_initializer, tf.initializers.Zeros)
             assert layer.kernel_regularizer is None
