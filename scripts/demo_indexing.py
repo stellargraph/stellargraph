@@ -638,7 +638,7 @@ def error(message, edit_fixit=False):
                 "buildkite-agent",
                 "annotate",
                 "--style=error",
-                "--context=demo_table",
+                "--context=demo_indexing",
                 formatted,
             ]
         )
