@@ -1462,11 +1462,18 @@ def test_node_type():
 def test_from_networkx_empty():
     empty = StellarGraph.from_networkx(nx.Graph())
     assert not empty.is_directed()
+    assert empty.node_types == set()
     assert isinstance(empty, StellarGraph)
 
     empty = StellarGraph.from_networkx(nx.DiGraph())
     assert empty.is_directed()
+    assert empty.node_types == set()
     assert isinstance(empty, StellarDiGraph)
+
+    # https://github.com/stellargraph/stellargraph/issues/1339
+    features = pd.DataFrame(columns=range(10))
+    empty_with_features = StellarGraph.from_networkx(nx.Graph(), node_features=features)
+    assert empty_with_features.node_types == set()
 
 
 def test_from_networkx_smoke():

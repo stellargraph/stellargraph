@@ -1,5 +1,8 @@
-Gat
+GAT
 ====================================
+
+Table of contents
+-----------------
 
 .. toctree::
     :titlesonly:

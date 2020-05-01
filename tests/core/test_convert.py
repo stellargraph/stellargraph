@@ -441,6 +441,29 @@ def test_from_networkx_default_features():
     assert edges == {}
 
 
+def test_from_networkx_empty():
+    g = nx.Graph()
+    # no features, means no types
+    nodes, edges = from_networkx_for_testing(g)
+    assert nodes == {}
+    assert edges == {}
+
+    # various forms of features:
+    nodes, edges = from_networkx_for_testing(g, node_features={})
+    assert nodes == {}
+    assert edges == {}
+
+    features = pd.DataFrame(columns=range(10))
+
+    nodes, edges = from_networkx_for_testing(g, node_features=features)
+    assert nodes == {}
+    assert edges == {}
+
+    nodes, edges = from_networkx_for_testing(g, node_features={"b": features})
+    assert nodes == {}
+    assert edges == {}
+
+
 def test_from_networkx_errors():
     het = nx.MultiDiGraph()
     het.add_nodes_from([(0, {"n": "a"}), (1, {"n": "b"})])

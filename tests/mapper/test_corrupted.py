@@ -197,14 +197,16 @@ def test_corrupted_batching(batch_dims):
     check(1, batch1_shape)
 
 
+@pytest.mark.parametrize("num_nodes", [10, 20])
 @pytest.mark.parametrize("sparse", [True, False])
-def test_corrupt_full_batch_generator(sparse):
+def test_corrupt_full_batch_generator(sparse, num_nodes):
 
     G = example_graph_random(n_nodes=20)
 
     generator = FullBatchNodeGenerator(G, sparse=sparse)
 
-    gen = CorruptedGenerator(generator).flow(G.nodes())
+    nodes = G.nodes()[:num_nodes]
+    gen = CorruptedGenerator(generator).flow(nodes)
 
     [shuffled_feats, features, *_], targets = gen[0]
 
@@ -217,6 +219,8 @@ def test_corrupt_full_batch_generator(sparse):
     np.testing.assert_array_equal(
         _sorted_feats([shuffled_feats]), _sorted_feats([features])
     )
+
+    assert targets.shape == (1, num_nodes, 2)
 
 
 @pytest.mark.parametrize("is_directed", [True, False])

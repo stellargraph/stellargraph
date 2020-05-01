@@ -1,5 +1,8 @@
-Sgc
+SGC
 ====================================
+
+Table of contents
+-----------------
 
 .. toctree::
     :titlesonly:
