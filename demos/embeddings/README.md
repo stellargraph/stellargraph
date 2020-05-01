@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/embeddings/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Node Representation Learning with attri2vec on Citeseer](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-attri2vec-citeseer.html) | [source](stellargraph-attri2vec-citeseer.ipynb) |
 | [Graph representation learning through Unsupervised GraphSAGE](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/embeddings-unsupervised-graphsage-cora.html) | [source](embeddings-unsupervised-graphsage-cora.ipynb) |

@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/basics/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Loading data into StellarGraph from Pandas](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-pandas.html) | [source](loading-pandas.ipynb) |
 | [Loading data into StellarGraph from NetworkX](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-networkx.html) | [source](loading-networkx.ipynb) |

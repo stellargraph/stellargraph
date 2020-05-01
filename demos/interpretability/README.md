@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/interpretability/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Interpreting Nodes and Edges by Saliency Maps in GAT](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gat/node-link-importance-demo-gat.html) | [source](gat/node-link-importance-demo-gat.ipynb) |
 | [Intepretability on Hateful Twitter Datasets](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/hateful-twitters-interpretability.html) | [source](gcn/hateful-twitters-interpretability.ipynb) |

@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/attri2vec/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Inductive Node Representation Learning through attri2vec](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/attri2vec/stellargraph-attri2vec-DBLP.html) | [source](stellargraph-attri2vec-DBLP.ipynb) |
 <!-- DOCS LINKS -->

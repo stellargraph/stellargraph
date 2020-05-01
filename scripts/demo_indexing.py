@@ -559,7 +559,7 @@ def demo_listing_table(root):
 
     os.chdir(root)
     try:
-        yield "| Demo (link to rendered) | Source |"
+        yield "| Demo (link to documentation version) | Source |"
         yield "|---|---|"
         for demo in glob.iglob("**/*.ipynb", recursive=True):
             if ".ipynb_checkpoint" in demo:

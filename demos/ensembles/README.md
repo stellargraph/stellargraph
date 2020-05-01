@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/ensembles/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Stellargraph Ensembles for node attribute inference](https://stellargraph.readthedocs.io/en/latest/demos/ensembles/ensemble-node-classification-example.html) | [source](ensemble-node-classification-example.ipynb) |
 | [StellarGraph Ensemble for link prediction](https://stellargraph.readthedocs.io/en/latest/demos/ensembles/ensemble-link-prediction-example.html) | [source](ensemble-link-prediction-example.ipynb) |

@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Stellargraph example: Graph Attention Network (GAT) on the CORA citation dataset](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gat/gat-cora-node-classification-example.html) | [source](gat/gat-cora-node-classification-example.ipynb) |
 | [Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network ](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html) | [source](graphsage/graphsage-pubmed-inductive-node-classification-example.ipynb) |

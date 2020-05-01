@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Link prediction example: GraphSAGE on the Cora citation dataset](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/graphsage/cora-links-example.html) | [source](graphsage/cora-links-example.ipynb) |
 | [Link prediction with Node2Vec on Cora](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/cora-lp-demo.html) | [source](random-walks/cora-lp-demo.ipynb) |

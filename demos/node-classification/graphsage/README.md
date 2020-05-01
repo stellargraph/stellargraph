@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network ](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html) | [source](graphsage-pubmed-inductive-node-classification-example.ipynb) |
 | [Stellargraph example: Fully directed GraphSAGE on a directed CORA citation network](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/directed-graphsage-on-cora-example.html) | [source](directed-graphsage-on-cora-example.ipynb) |

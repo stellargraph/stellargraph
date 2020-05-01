@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gcn/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Graph Convolutional Network (GCN) on the CORA citation dataset](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gcn/gcn-cora-node-classification-example.html) | [source](gcn-cora-node-classification-example.ipynb) |
 <!-- DOCS LINKS -->

@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/
 
-| Demo (link to rendered) | Source |
+| Demo (link to documentation version) | Source |
 |---|---|
 | [Notebook demo on loading Cora dataset into Neo4J Database](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/load-cora-into-neo4j.html) | [source](load-cora-into-neo4j.ipynb) |
 | [Stellargraph example: directed CORA citation network with directed GraphSAGE and Neo4J.](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html) | [source](directed-graphsage-on-cora-neo4j-example.ipynb) |
