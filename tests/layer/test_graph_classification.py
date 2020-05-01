@@ -17,6 +17,7 @@
 import numpy as np
 import tensorflow as tf
 from stellargraph.layer.graph_classification import *
+from stellargraph.layer import SortPooling
 from stellargraph.mapper import PaddedGraphGenerator, FullBatchNodeGenerator
 import pytest
 from ..test_utils.graphs import example_graph_random
@@ -193,3 +194,26 @@ def test_pool_all_layers():
 
     predictions = model.predict(train_gen)
     assert predictions.shape == (3, 5 + 7 + 11 + 1)
+
+
+def test_dgcnn_smoke():
+    # this is entirely implemented in terms of GCNSupervisedGraphClassification, and so it's enough
+    # to validate that the functionality is composed correctly.
+    dgcnn = DeepGraphConvolutionalNeuralNetwork(
+        layer_sizes=[2, 3, 4],
+        activations=["relu", "relu", "relu"],
+        # one graph is perfect, one graph requires padding and one requires truncation
+        k=5,
+        generator=generator,
+    )
+
+    # validate the expectations of the implementation
+    assert isinstance(dgcnn, GCNSupervisedGraphClassification)
+    assert isinstance(dgcnn.pooling, SortPooling)
+    assert dgcnn.pool_all_layers == True
+
+    # check it gives output of the expected shape
+    model = tf.keras.Model(*dgcnn.in_out_tensors())
+
+    preds = model.predict(generator.flow([0, 1, 2]))
+    assert preds.shape == (3, (2 + 3 + 4) * 5, 1)
