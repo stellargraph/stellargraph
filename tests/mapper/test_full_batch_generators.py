@@ -75,7 +75,10 @@ class Test_FullBatchNodeGenerator:
 
     def test_generator_constructor_hin(self):
         Ghin = example_hin_1({})
-        with pytest.raises(TypeError):
+        with pytest.raises(
+            ValueError,
+            match="G: expected a graph with a single node type, found a graph with node types: 'A', 'B'",
+        ):
             generator = FullBatchNodeGenerator(Ghin)
 
     def generator_flow(
@@ -306,7 +309,10 @@ class Test_FullBatchLinkGenerator:
 
     def test_generator_constructor_hin(self):
         Ghin = example_hin_1({})
-        with pytest.raises(TypeError):
+        with pytest.raises(
+            ValueError,
+            match="G: expected a graph with a single node type, found a graph with node types: 'A', 'B'",
+        ):
             generator = FullBatchLinkGenerator(Ghin)
 
     def generator_flow(

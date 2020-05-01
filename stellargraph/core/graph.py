@@ -710,6 +710,31 @@ class StellarGraph:
         """
         return set(self._nodes.types.pandas_index)
 
+    def unique_node_type(self, error_message=None):
+        """
+        Return the unique node type, for a homogeneous-node graph.
+
+        Args:
+            error_message (str, optional): a custom message to use for the exception; this can use
+                the ``%(found)s`` placeholder to insert the real sequence of node types.
+
+        Returns:
+            If this graph has only one node type, this returns that node type, otherwise it raises a
+            ``ValueError`` exception.
+        """
+
+        all_types = self._nodes.types.pandas_index
+        if len(all_types) == 1:
+            return all_types[0]
+
+        found = comma_sep(all_types)
+        if error_message is None:
+            error_message = (
+                "Expected only one node type for 'unique_node_type', found: %(found)s"
+            )
+
+        raise ValueError(error_message % {"found": found})
+
     @property
     def edge_types(self):
         """
@@ -755,13 +780,25 @@ class StellarGraph:
         """
         Get the numeric feature vectors for the specified nodes or node type.
 
-        If ``nodes`` is not specified, this returns all features of the specified ``node_type``,
-        where the rows are ordered the same as ``self.nodes(node_type=node_type)``.
+        For graphs with a single node type:
 
-        At least one of ``nodes`` and ``node_type`` must be passed. If ``nodes`` is passed without
-        specifying ``node_type``, the node type of ``nodes`` will be inferred (passing ``node_type``
-        in addition to ``nodes`` will therefore be faster).
+        - ``graph.node_features()`` to retrieve features of all nodes, in the same order as
+          ``graph.nodes()``.
 
+        - ``graph.node_features(nodes=some_node_ids)`` to retrieve features for each node in
+          ``some_node_ids``.
+
+        For graphs with multiple node types:
+
+        - ``graph.node_features(node_type=some_type)`` to retrieve features of all nodes of type
+          ``some_type``, in the same order as ``graph.nodes(node_type=some_type)``.
+
+        - ``graph.node_features(nodes=some_node_ids, node_type=some_type)`` to retrieve features for
+          each node in ``some_node_ids``. All of the chosen nodes must be of type ``some_type``.
+
+        - ``graph.node_features(nodes=some_node_ids)`` to retrieve features for each node in
+          ``some_node_ids``. All of the chosen nodes must be of the same type, which will be
+          inferred. This will be slower than providing the node type explicitly in the previous example.
 
         Args:
             nodes (list or hashable, optional): Node ID or list of node IDs, all of the same type
@@ -772,8 +809,8 @@ class StellarGraph:
         """
         if nodes is None:
             if node_type is None:
-                raise ValueError(
-                    "node_type: expected a node type to be specified when 'nodes' is not passed, found None"
+                node_type = self.unique_node_type(
+                    "node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: %(found)s"
                 )
 
             return self._nodes.features_of_type(node_type)
@@ -786,17 +823,21 @@ class StellarGraph:
         valid_ilocs = node_ilocs if all_valid else node_ilocs[valid]
 
         if node_type is None:
-            # infer the type based on the valid nodes
-            types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
+            try:
+                # no inference required in a homogeneous-node graph
+                node_type = self.unique_node_type()
+            except ValueError:
+                # infer the type based on the valid nodes
+                types = np.unique(self._nodes.type_of_iloc(valid_ilocs))
 
-            if len(types) == 0:
-                raise ValueError(
-                    "must have at least one node for inference, if `node_type` is not specified"
-                )
-            if len(types) > 1:
-                raise ValueError("all nodes must have the same type")
+                if len(types) == 0:
+                    raise ValueError(
+                        "must have at least one node for inference, if `node_type` is not specified"
+                    )
+                if len(types) > 1:
+                    raise ValueError("all nodes must have the same type")
 
-            node_type = types[0]
+                node_type = types[0]
 
         if all_valid:
             return self._nodes.features(node_type, valid_ilocs)
@@ -1104,9 +1145,12 @@ class StellarGraph:
         n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
-        if not self.is_directed():
+        if not self.is_directed() and n > 0:
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
             # weights from either "incoming" or "outgoing" edges, but not double-counting self loops
+
+            # FIXME https://github.com/scipy/scipy/issues/11949: these operations, particularly the
+            # diagonal, don't work for an empty matrix (n == 0)
             backward = adj.transpose(copy=True)
             # this is setdiag(0), but faster, since it doesn't change the sparsity structure of the
             # matrix (https://github.com/scipy/scipy/issues/11600)

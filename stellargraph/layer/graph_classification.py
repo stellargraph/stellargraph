@@ -26,7 +26,7 @@ from ..core.experimental import experimental
 
 class GCNSupervisedGraphClassification:
     """
-    A stack of :class:`GraphConvolution` layers together with a Keras `GlobalAveragePooling1D` layer
+    A stack of :class:`GraphConvolution` layers together with a Keras `GlobalAveragePooling1D` layer (by default)
     that implement a supervised graph classification network using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
@@ -60,6 +60,22 @@ class GCNSupervisedGraphClassification:
             training.
         bias (bool, optional): toggles an optional bias in graph convolutional layers.
         dropout (float, optional): dropout rate applied to input features of each GCN layer.
+
+        pooling (callable, optional): a Keras layer or function that takes two arguments and returns
+            a tensor representing the embeddings for each graph in the batch. Arguments:
+
+            - embeddings tensor argument with shape ``batch size × nodes × output size``, where ``nodes``
+              is the maximum number of nodes of a graph in the batch and ``output size`` is the size
+              of the final graph convolutional layer
+            - ``mask`` tensor named argument of booleans with shape ``batch size × nodes``. ``True``
+              values indicate which rows of the embeddings argument are valid, and all other rows
+              (corresponding to ``mask == False``) must be ignored.
+
+            The returned tensor can have any shape ``batch size``, ``batch size × N1``, ``batch size
+            × N1 × N2``, ..., as long as the ``N1``, ``N2``, ... are constant across all graphs:
+            they must not depend on the ``nodes`` dimension or on the number of ``True`` values in
+            ``mask``. ``pooling`` defaults to mean pooling via ``GlobalAveragePooling1D``.
+
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each graph
             convolutional layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each graph
@@ -72,7 +88,6 @@ class GCNSupervisedGraphClassification:
             convolutional.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer graph
             convolutional.
-
     """
 
     def __init__(
@@ -82,6 +97,7 @@ class GCNSupervisedGraphClassification:
         generator,
         bias=True,
         dropout=0.0,
+        pooling=None,
         kernel_initializer=None,
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -105,6 +121,11 @@ class GCNSupervisedGraphClassification:
         self.bias = bias
         self.dropout = dropout
         self.generator = generator
+
+        if pooling is not None:
+            self.pooling = pooling
+        else:
+            self.pooling = GlobalAveragePooling1D(data_format="channels_last")
 
         # Initialize a stack of GraphConvolution layers
         n_layers = len(self.layer_sizes)
@@ -154,10 +175,8 @@ class GCNSupervisedGraphClassification:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
 
-        # add mean pooling layer with mask in order to ignore the padded values
-        h_layer = GlobalAveragePooling1D(data_format="channels_last")(
-            h_layer, mask=mask
-        )
+        # mask to ignore the padded values
+        h_layer = self.pooling(h_layer, mask=mask)
 
         return h_layer
 
@@ -185,7 +204,7 @@ class GCNSupervisedGraphClassification:
 @experimental(reason="Missing unit tests and generally untested.", issues=[1297])
 class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
     """
-    A stack of :class:`GraphClassificationConvolution` layers together with a `SortPooling` layer
+    A stack of :class:`GraphConvolution` layers together with a `SortPooling` layer
     that implement a supervised graph classification network (DGCNN) using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
@@ -193,10 +212,11 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
     M. Zhang, Z. Cui, M. Neumann, and Y. Chen, AAAI 2018, https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf
 
     The model minimally requires specification of the GCN layer sizes as a list of ints corresponding to the feature
-    dimensions for each hidden layer, activation functions for each hidden layer, and a generator object.
+    dimensions for each hidden layer, activation functions for each hidden layer, a generator object, and the number of
+    output nodes for the class:`SortPooling` layer.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`PaddedGraphGenerator` class.
+    To use this class as a Keras model, the features and pre-processed adjacency matrix should be supplied using the
+    :class:`PaddedGraphGenerator` class.
 
     Examples:
         Creating a graph classification model from a list of :class:`StellarGraph`
@@ -208,12 +228,14 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
                              layer_sizes=[32, 32, 32, 1],
                              activations=["tanh","tanh", "tanh", "tanh"],
                              generator=generator,
+                             k=30
                 )
             x_inp, x_out = model.in_out_tensors()
 
             x_out = Conv1D(filters=16, kernel_size=97, strides=97)(x_out)
             x_out = MaxPool1D(pool_size=2)(x_out)
             x_out = Conv1D(filters=32, kernel_size=5, strides=1)(x_out)
+            x_out = Flatten()(x_out)
             x_out = Dense(units=128, activation="relu")(x_out)
             x_out = Dropout(rate=0.5)(x_out)
             predictions = Dense(units=1, activation="sigmoid")(x_out)
@@ -272,14 +294,6 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
             bias_regularizer=bias_regularizer,
             bias_constraint=bias_constraint,
         )
-
-        if not isinstance(k, int):
-            raise TypeError(
-                f"k: expected k to be integer type, found {type(k).__name__}."
-            )
-
-        if k <= 0:
-            raise ValueError(f"k: expected k to be strictly positive, found {k}")
 
         self.k = k
 

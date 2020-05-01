@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import warnings
-from tensorflow.keras.layers import Dense, Lambda, Dropout, Input, Layer
+from tensorflow.keras.layers import Dense, Lambda, Dropout, Input, Layer, InputLayer
 import tensorflow.keras.backend as K
 
 from ..mapper import FullBatchGenerator
@@ -434,7 +434,10 @@ class APPNP:
                 "APPNP does not currently support propagating a link model"
             )
 
-        return self._tensors(multiplicity=1, feature_layers=base_model.layers[1:])
+        feature_layers = [
+            layer for layer in base_model.layers if not isinstance(layer, InputLayer)
+        ]
+        return self._tensors(multiplicity=1, feature_layers=feature_layers)
 
     node_model = deprecated_model_function(_node_model, "node_model")
     link_model = deprecated_model_function(_link_model, "link_model")
