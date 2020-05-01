@@ -115,6 +115,40 @@ def is_title(elem):
     return is_heading(elem) and elem.level == 1
 
 
+def is_inline(elem):
+    return elem.t in ("heading", "emph", "strong", "link", "image", "custom_inline")
+
+
+def is_link(elem):
+    return elem.t == "link"
+
+
+def is_text(elem):
+    return elem.t == "text"
+
+
+SYNTAX_SUMMARY = {
+    "block_quote": "> text",
+    "code": "`code`",
+    "emph": "*text*",
+    "heading": "## text",
+    "html_inline": "<tag>html</tag>",
+    "image": "![text](url)",
+    "item": "- text",
+    "link": "[text](url)",
+    "list": "- text",
+    "strong": "**text**",
+    "thematic_break": "---",
+}
+
+
+def syntax_summary(elem):
+    """
+    Return a basic summary of markdown syntax to as an example for users
+    """
+    return SYNTAX_SUMMARY.get(elem.t)
+
+
 def direct_children(parent):
     """
     Iterate over the direct children of 'parent' (not all descendants, like 'parent.walker()')
@@ -131,6 +165,16 @@ def index_of_first(list_, pred):
             return i
 
     return None
+
+
+def closest_parent_sourcepos(elem):
+    """
+    Find the nearest defined sourcepos from a ancestor of elem.
+    """
+    while elem.sourcepos is None:
+        elem = elem.parent
+
+    return elem.sourcepos
 
 
 def surrounding_sourcepos(elems, start_index, end_index=None):
@@ -276,6 +320,58 @@ def other_headings(cells):
                 # this was valid, so we can reset our counts
                 previous_valid_heading_level = elem.level
                 first_invalid_heading_level = None
+
+    if errors:
+        raise FormattingError(errors)
+
+
+@checker
+def simple_inline_formatting(cells):
+    """
+    rST doesn't easily supported nested formatting, such as Markdown like [some `code` within a
+    link](...) or **`bold code`**, so we disallow it.
+
+    http://docutils.sourceforge.net/FAQ.html#is-nested-inline-markup-possible
+    """
+
+    errors = []
+    for cell in cells:
+        if not isinstance(cell, MarkdownCell):
+            continue
+
+        for elem, entering in cell.ast.walker():
+            if not entering:
+                # only look at things once
+                continue
+
+            if not is_inline(elem):
+                # not an inline formatting, so not relevant
+                continue
+
+            if all(is_text(child) for child in direct_children(elem)):
+                # if all of the children are plain text, this is perfect!
+                continue
+
+            # an inline element that contains non-text elements, error!
+            summary = syntax_summary(elem)
+            if summary is None:
+                summary = ""
+            else:
+                summary = f" (`` {summary} ``)"
+
+            suggestions = ["removing the some of the formatting"]
+            if is_link(elem):
+                suggestions.append(
+                    f"placing the link separately (like `<text> ([link](<url>))` or `<text> ([docs](<url>))`)"
+                )
+
+            errors.append(
+                message_with_line(
+                    cell,
+                    f"Found some nested formatting within a {elem.t} element{summary}, which isn't supported in reStructuredText, as used by Sphinx and Read the Docs. Consider: {'; '.join(suggestions)}",
+                    sourcepos=closest_parent_sourcepos(elem),
+                )
+            )
 
     if errors:
         raise FormattingError(errors)
