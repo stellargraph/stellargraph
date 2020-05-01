@@ -25,6 +25,7 @@ import pandas as pd
 from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
 from .validation import comma_sep, require_dataframe_has_columns
+from .utils import is_real_iterable
 
 
 class ColumnarConverter:
@@ -40,6 +41,7 @@ class ColumnarConverter:
         selected_columns (dict of hashable to hashable): renamings for columns, mapping original name to new name
         allow_features (bool): if True, columns that aren't selected are returned as a numpy feature matrix
         dtype (str or numpy dtype): the data type to use for the feature matrices
+        transform_columns (dict of hashable to callable): column transformations, maps column name to transform
     """
 
     def __init__(
@@ -50,6 +52,7 @@ class ColumnarConverter:
         column_defaults,
         selected_columns,
         allow_features,
+        transform_columns,
         dtype=None,
     ):
         if type_column is not None:
@@ -68,6 +71,7 @@ class ColumnarConverter:
         self.selected_columns = selected_columns
         self.default_type = default_type
         self.allow_features = allow_features
+        self.transform_columns = transform_columns
         self.dtype = dtype
 
     def name(self, type_name=None):
@@ -99,6 +103,9 @@ class ColumnarConverter:
         require_dataframe_has_columns(
             self.name(type_name), known, self.selected_columns
         )
+
+        for column, transform in self.transform_columns.items():
+            known[column] = transform(known[column])
 
         if self.allow_features:
             # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
@@ -198,6 +205,7 @@ def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
         column_defaults={},
         selected_columns={},
         allow_features=True,
+        transform_columns={},
         dtype=dtype,
     )
     nodes, type_starts, node_features = converter.convert(data)
@@ -216,7 +224,22 @@ def convert_edges(
     target_column,
     weight_column,
     type_column,
+    nodes,
 ):
+    def _node_ids_to_iloc(node_ids):
+        try:
+            return nodes.ids.to_iloc(node_ids, strict=True)
+        except KeyError as e:
+            missing_values = e.args[0]
+            if not is_real_iterable(missing_values):
+                missing_values = [missing_values]
+            missing_values = pd.unique(missing_values)
+
+            raise ValueError(
+                f"edges: expected all source and target node IDs to be contained in `nodes`, "
+                f"found some missing: {comma_sep(missing_values)}"
+            )
+
     selected = {
         source_column: SOURCE,
         target_column: TARGET,
@@ -232,6 +255,10 @@ def convert_edges(
         type_column=type_column,
         column_defaults={weight_column: DEFAULT_WEIGHT},
         selected_columns=selected,
+        transform_columns={
+            source_column: _node_ids_to_iloc,
+            target_column: _node_ids_to_iloc,
+        },
         allow_features=False,
     )
     edges, type_starts, edge_features = converter.convert(data)

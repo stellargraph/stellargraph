@@ -101,9 +101,12 @@ class TestBiasedWeightedRandomWalk(object):
 
         rw = BiasedRandomWalk(g, n=n, p=p, q=q, length=length, seed=seed, weighted=True)
         rw_no_params = BiasedRandomWalk(g)
-        assert rw.run(nodes=nodes) == rw_no_params.run(
+
+        run_1 = rw.run(nodes=nodes)
+        run_2 = rw_no_params.run(
             nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
         )
+        assert np.array_equal(run_1, run_2)
 
     def test_identity_unweighted_weighted_1_walks(self):
 
@@ -117,11 +120,13 @@ class TestBiasedWeightedRandomWalk(object):
         q = 1.0
 
         biasedrw = BiasedRandomWalk(g)
-        assert biasedrw.run(
+        run_1 = biasedrw.run(
             nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
-        ) == biasedrw.run(
-            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=False
         )
+        run_2 = biasedrw.run(
+            nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
+        )
+        assert np.array_equal(run_1, run_2)
 
     def test_weighted_walks(self):
 

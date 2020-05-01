@@ -70,6 +70,36 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
         # Create Neo4J graph database object
         self.neo4j_graphdb = neo4j_graphdb
 
+    def flow(self, node_ids, targets=None, shuffle=False, seed=None):
+
+        if self.head_node_types is not None:
+            expected_node_type = self.head_node_types[0]
+        else:
+            expected_node_type = None
+
+        # Check all IDs are actually in the graph and are of expected type
+        for n in node_ids:
+            try:
+                node_type = self.graph.node_type(n)
+            except KeyError:
+                raise KeyError(f"Node ID {n} supplied to generator not found in graph")
+
+            if expected_node_type is not None and (node_type != expected_node_type):
+                raise ValueError(
+                    f"Node ID {n} not of expected type {expected_node_type}"
+                )
+
+        return NodeSequence(
+            self.sample_features,
+            self.batch_size,
+            node_ids,
+            targets,
+            shuffle=shuffle,
+            seed=seed,
+        )
+
+    flow.__doc__ = BatchedNodeGenerator.flow.__doc__
+
 
 @experimental(reason="the class is not fully tested")
 class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
