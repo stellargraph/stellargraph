@@ -21,7 +21,6 @@ from ..mapper import PaddedGraphGenerator
 from .gcn import GraphConvolution
 from .sort_pooling import SortPooling
 from tensorflow.keras.layers import Input, Dropout, GlobalAveragePooling1D
-from ..core.experimental import experimental
 
 
 class GCNSupervisedGraphClassification:
@@ -214,7 +213,6 @@ class GCNSupervisedGraphClassification:
     build = deprecated_model_function(in_out_tensors, "build")
 
 
-@experimental(reason="Missing unit tests and generally untested.", issues=[1297])
 class DeepGraphCNN(GCNSupervisedGraphClassification):
     """
     A stack of :class:`GraphConvolution` layers together with a `SortPooling` layer
