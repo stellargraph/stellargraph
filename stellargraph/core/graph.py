@@ -605,8 +605,9 @@ class StellarGraph:
         self, node: Any, include_edge_weight=False, edge_types=None
     ) -> Iterable[np.ndarray]:
         """
-        Obtains the collection of neighbouring nodes connected
-        to the given node.
+        Obtains the collection of neighbouring nodes connected to the given node
+        as an array of node_ids. If `include_edge_weight` edge is `True` then
+        an array of edges weights is also returned in a tuple of `(neighbor_ids, edge_weights)`.
 
         Args:
             node (any): The node in question.
