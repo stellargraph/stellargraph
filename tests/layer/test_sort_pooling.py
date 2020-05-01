@@ -28,7 +28,7 @@ def test_sorting_padding():
 
     layer = SortPooling(k=4)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -41,7 +41,7 @@ def test_sorting_padding():
 
     layer = SortPooling(k=3)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -54,7 +54,7 @@ def test_sorting_truncation():
 
     layer = SortPooling(k=2)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -66,7 +66,7 @@ def test_sorting_truncation():
 
     layer = SortPooling(k=1)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -82,7 +82,7 @@ def test_sorting_negative_values():
 
     layer = SortPooling(k=3)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -95,7 +95,7 @@ def test_mask():
 
     layer = SortPooling(k=2)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -106,7 +106,7 @@ def test_mask():
 
     layer = SortPooling(k=4)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 
@@ -119,7 +119,7 @@ def test_flatten_output():
 
     layer = SortPooling(k=2, flatten_output=True)
 
-    data_out = layer([data, mask])
+    data_out = layer(data, mask=mask)
 
     assert np.array_equal(data_out, data_sorted)
 

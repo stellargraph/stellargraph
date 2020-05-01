@@ -64,9 +64,10 @@ class GCNSupervisedGraphClassification:
         pooling (callable, optional): a Keras layer or function that takes two arguments and returns
             a tensor representing the embeddings for each graph in the batch. Arguments:
 
-            - embeddings tensor argument with shape ``batch size × nodes × output size``, where ``nodes``
-              is the maximum number of nodes of a graph in the batch and ``output size`` is the size
-              of the final graph convolutional layer
+            - embeddings tensor argument with shape ``batch size × nodes × output size``, where
+              ``nodes`` is the maximum number of nodes of a graph in the batch and ``output size``
+              is the size of the final graph convolutional layer, or, if ``pool_all_layers``, the
+              sum of the sizes of each graph convolutional layers.
             - ``mask`` tensor named argument of booleans with shape ``batch size × nodes``. ``True``
               values indicate which rows of the embeddings argument are valid, and all other rows
               (corresponding to ``mask == False``) must be ignored.
@@ -76,6 +77,9 @@ class GCNSupervisedGraphClassification:
             they must not depend on the ``nodes`` dimension or on the number of ``True`` values in
             ``mask``. ``pooling`` defaults to mean pooling via ``GlobalAveragePooling1D``.
 
+        pool_all_layers (bool, optional): which layers to pass to the pooling method: if ``True``,
+            pass the concatenation of the output of every GCN layer, otherwise pass only the output
+            of the last GCN layer.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each graph
             convolutional layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each graph
@@ -98,6 +102,7 @@ class GCNSupervisedGraphClassification:
         bias=True,
         dropout=0.0,
         pooling=None,
+        pool_all_layers=False,
         kernel_initializer=None,
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -126,6 +131,8 @@ class GCNSupervisedGraphClassification:
             self.pooling = pooling
         else:
             self.pooling = GlobalAveragePooling1D(data_format="channels_last")
+
+        self.pool_all_layers = pool_all_layers
 
         # Initialize a stack of GraphConvolution layers
         n_layers = len(self.layer_sizes)
@@ -168,12 +175,18 @@ class GCNSupervisedGraphClassification:
         x_in, mask, As = x
         h_layer = x_in
 
+        gcn_layers = []
+
         for layer in self._layers:
             if isinstance(layer, GraphConvolution):
                 h_layer = layer([h_layer, As])
+                gcn_layers.append(h_layer)
             else:
                 # For other (non-graph) layers only supply the input tensor
                 h_layer = layer(h_layer)
+
+        if self.pool_all_layers:
+            h_layer = tf.concat(gcn_layers, axis=-1)
 
         # mask to ignore the padded values
         h_layer = self.pooling(h_layer, mask=mask)
@@ -287,6 +300,8 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
             generator=generator,
             bias=bias,
             dropout=dropout,
+            pooling=SortPooling(k=k, flatten_output=True),
+            pool_all_layers=True,
             kernel_initializer=kernel_initializer,
             kernel_regularizer=kernel_regularizer,
             kernel_constraint=kernel_constraint,
@@ -294,45 +309,3 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
             bias_regularizer=bias_regularizer,
             bias_constraint=bias_constraint,
         )
-
-        self.k = k
-
-        # Add the SortPooling layer
-        self._layers.append(SortPooling(k=self.k, flatten_output=True))
-
-    def __call__(self, x):
-        """
-        Apply a stack of :class:`GraphConvolution` layers to the inputs followed by a single
-        SortPooling layer.
-        The input tensors are expected to be a list of the following:
-        [
-            Node features shape (batch size, N, F),
-            Mask (batch size, N ),
-            Adjacency matrices (batch size, N, N),
-        ]
-        where N is the number of nodes and F the number of input features
-
-        Args:
-            x (Tensor): input tensors
-
-        Returns:
-            Output tensor
-        """
-        gcn_layers = []
-
-        x_in, mask, As = x
-        h_layer = x_in
-
-        for layer in self._layers:
-            if isinstance(layer, GraphConvolution):
-                h_layer = layer([h_layer, As])
-                gcn_layers.append(h_layer)
-            elif isinstance(layer, SortPooling):
-                # concatenate the GCN output tensors and use as input to the SortPooling layer
-                h_layer = tf.concat(gcn_layers, axis=-1)
-                h_layer = layer([h_layer, mask])
-            else:
-                # For other (non-graph) layers only supply the input tensor
-                h_layer = layer(h_layer)
-
-        return h_layer
