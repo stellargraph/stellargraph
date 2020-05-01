@@ -20,7 +20,6 @@ from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
 
 
-@experimental(reason="Missing unit tests and generally untested.", issues=[1044])
 class SortPooling(Layer):
     """
     Sort Pooling Keras layer.
