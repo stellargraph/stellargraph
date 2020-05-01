@@ -851,7 +851,7 @@ class StellarGraph:
         """
         return self._nodes.ids.from_iloc(node_ilocs)
 
-    def node_features(self, nodes, node_type=None, use_ilocs=False):
+    def node_features(self, nodes=None, node_type=None, use_ilocs=False):
         """
         Get the numeric feature vectors for the specified nodes or node type.
 

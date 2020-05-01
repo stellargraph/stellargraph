@@ -169,11 +169,11 @@ def test_graph_constructor_nodes_from_edges():
     # node inference shouldn't hide the real errors in an invalid 'edges' param
     # these tests indirectly check that `_infer_nodes_from_edges` doesn't throw errors
     # and allows errors to be picked up by ColumnarConverter
-    with pytest.raises(TypeError, match="edges: expected dict, found <class 'int'>"):
+    with pytest.raises(TypeError, match="edges: expected dict, found int"):
         StellarGraph(edges=1)
 
     with pytest.raises(
-        TypeError, match="edges.*: expected pandas DataFrame, found <class 'int'>"
+        TypeError, match="edges.*: expected pandas DataFrame, found int"
     ):
         StellarGraph(edges={"a": 1})
 
@@ -1466,7 +1466,7 @@ def test_to_adjacency_matrix_weighted_undirected():
     actual[1, 6] = actual[6, 1] = 1
     actual[0, 5] = actual[5, 0] = 1
     actual[6, 5] = actual[5, 6] = 10
-    actual[5, 5] = 11 + 12
+    actual[5, 5] = 1 + 11 + 12
     assert np.array_equal(matrix, actual)
 
     # just to confirm, it should be symmetric

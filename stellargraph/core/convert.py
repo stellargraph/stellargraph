@@ -224,8 +224,8 @@ def convert_edges(
     target_column,
     weight_column,
     type_column,
+    nodes,
 ):
-
     def _node_ids_to_iloc(node_ids):
         try:
             return nodes.ids.to_iloc(node_ids, strict=True)
@@ -254,11 +254,7 @@ def convert_edges(
         default_type,
         type_column=type_column,
         column_defaults={weight_column: DEFAULT_WEIGHT},
-        selected_columns={
-            source_column: SOURCE,
-            target_column: TARGET,
-            weight_column: WEIGHT,
-        },
+        selected_columns=selected,
         transform_columns={
             source_column: _node_ids_to_iloc,
             target_column: _node_ids_to_iloc,

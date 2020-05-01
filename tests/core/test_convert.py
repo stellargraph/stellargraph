@@ -31,8 +31,8 @@ _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 def test_columnar_convert_type_default():
     converter = ColumnarConverter("some_name", "foo", None, {}, {}, False, {})
-    shared, features = converter.convert(_EMPTY_DF)
-    assert "foo" in shared
+    shared, type_starts, features = converter.convert(_EMPTY_DF)
+    assert type_starts == [("foo", 0)]
     assert "foo" in features
 
 
@@ -63,8 +63,10 @@ def test_columnar_convert_selected_columns_missing():
 
 
 def test_columnar_convert_column_default():
-    converter = ColumnarConverter("some_name", "foo", None, {"before": 123}, {}, False, {})
-    shared, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    converter = ColumnarConverter(
+        "some_name", "foo", None, {"before": 123}, {}, False, {}
+    )
+    shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
     assert type_starts == [("x", 0), ("y", 2)]
 
@@ -95,10 +97,10 @@ def test_columnar_convert_features():
 
 
 def test_columnar_convert_disallow_features():
-    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False, {})
     df = _EMPTY_DF.assign(a=1)
     with pytest.raises(ValueError, match="expected zero feature columns, found 'a'"):
-        shared, features = converter.convert(df)
+        shared, type_starts, features = converter.convert(df)
 
 
 def test_columnar_convert_invalid_input():
@@ -115,7 +117,13 @@ def test_columnar_convert_invalid_input():
 
 def test_columnar_convert_type_column():
     converter = ColumnarConverter(
-        "some_name", "foo", "type_column", {}, {"type_column": "TC", "data": "D"}, False, {}
+        "some_name",
+        "foo",
+        "type_column",
+        {},
+        {"type_column": "TC", "data": "D"},
+        False,
+        {},
     )
 
     df = pd.DataFrame(
@@ -135,7 +143,7 @@ def test_columnar_convert_type_column():
         ValueError, match=r"allow_features: expected no features .* \('type_column'\)"
     ):
         ColumnarConverter(
-            "some_name", "foo", "type_column", {}, {"type_column": "TC"}, True
+            "some_name", "foo", "type_column", {}, {"type_column": "TC"}, True, {}
         )
 
     with pytest.raises(
@@ -149,6 +157,7 @@ def test_columnar_convert_type_column():
             {},
             {"TC": "type_column", "data": "D"},
             False,
+            {},
         )
 
 
@@ -171,18 +180,14 @@ def test_columnar_convert_transform_columns():
         allow_features=False,
     )
 
-    converted, _ = converter.convert(dfs)
-    assert (converted["x"]["ww"] == 2).all()
-    assert (converted["y"]["ww"] == 3).all()
-    assert (converted["z"]["ww"] == 4).all()
+    converted, type_starts, _ = converter.convert(dfs)
 
-    assert (converted["x"]["ss"] == 0).all()
-    assert (converted["y"]["ss"] == 0).all()
-    assert (converted["z"]["ss"] == 0).all()
+    assert (converted.iloc[type_starts[0][1] : type_starts[1][1]]["ww"] == 2).all()
+    assert (converted[type_starts[1][1] : type_starts[2][1]]["ww"] == 3).all()
+    assert (converted[type_starts[2][1] :]["ww"] == 4).all()
 
-    assert (converted["x"]["tt"] == 1).all()
-    assert (converted["y"]["tt"] == 1).all()
-    assert (converted["z"]["tt"] == 1).all()
+    assert (converted["ss"] == 0).all()
+    assert (converted["tt"] == 1).all()
 
 
 def test_convert_edges_weights():
@@ -230,6 +235,9 @@ def test_convert_edges_type_column():
         }
     )
 
+    nodes = pd.DataFrame([], index=[10, 20, 30, 40, 50, 60])
+    nodes = convert_nodes(nodes, name="other_name", default_type=np.int8, dtype=np.int8)
+
     edges = convert_edges(
         data,
         name="some_name",
@@ -238,10 +246,11 @@ def test_convert_edges_type_column():
         target_column="t",
         weight_column="w",
         type_column="l",
+        nodes=nodes,
     )
 
-    np.testing.assert_array_equal(edges.sources, [20, 30, 50, 10, 40])
-    np.testing.assert_array_equal(edges.targets, [30, 40, 60, 20, 50])
+    np.testing.assert_array_equal(edges.sources, [1, 2, 4, 0, 3])
+    np.testing.assert_array_equal(edges.targets, [2, 3, 5, 1, 4])
     np.testing.assert_array_equal(
         edges.type_of_iloc(slice(None)), ["a", "a", "b", "c", "c"]
     )
