@@ -171,7 +171,10 @@ class CorruptedSequence(Sequence):
         ]
 
         # create the appropriate labels
-        batch_size = inputs[0].shape[: self.num_batch_dims]
-        targets = np.broadcast_to([np.float32(1), 0], (*batch_size, 2))
+        # we assume the smallest batch shape is the correct output shape
+        # e.g. for fullbatch methods the correct output shape is (1, num_output_nodes) not (1, num_nodes_in_graph)
+        # this is true for all current methods but might have to be re-evaluated in the future
+        output_batch_shape = min(inp.shape[: self.num_batch_dims] for inp in inputs)
+        targets = np.broadcast_to([np.float32(1), 0], (*output_batch_shape, 2))
 
         return shuffled_feats + inputs, targets

@@ -193,7 +193,7 @@ class FixedAdjacencyGraphConvolution(Layer):
 class GraphConvolutionLSTM:
 
     """
-        A stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
+        GraphConvolutionLSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
         This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction
                                           (https://arxiv.org/abs/1811.05320)
         The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
@@ -228,10 +228,10 @@ class GraphConvolutionLSTM:
         adj,
         gc_layers,
         lstm_layer_size,
+        gc_activations,
+        lstm_activations=["tanh"],
         bias=True,
         dropout=0.5,
-        gc_activations=["relu", "relu"],
-        lstm_activations=["tanh"],
         kernel_initializer=None,
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -274,9 +274,13 @@ class GraphConvolutionLSTM:
         if lstm_activations is None:
             lstm_activations = ["tanh"] * n_lstm_layers
         elif len(lstm_activations) != n_lstm_layers:
-            raise ValueError(
-                "Invalid number of activations; require one function per lstm layer"
-            )
+            padding_size = n_lstm_layers - len(lstm_activations)
+            if padding_size > 0:
+                lstm_activations = lstm_activations + ["tanh"] * padding_size
+            else:
+                raise ValueError(
+                    "Invalid number of activations; require one function per lstm layer"
+                )
         self.lstm_activations = lstm_activations
 
         self._layers = []
@@ -287,14 +291,22 @@ class GraphConvolutionLSTM:
                 )
             )
 
-        for ii in range(n_lstm_layers):
+        for ii in range(n_lstm_layers - 1):
             self._layers.append(
                 LSTM(
-                    self.lstm_layer_sizes[ii],
+                    self.lstm_layer_size[ii],
                     activation=self.lstm_activations[ii],
-                    return_sequences=False,
+                    return_sequences=True,
                 )
             )
+
+        self._layers.append(
+            LSTM(
+                self.lstm_layer_size[-1],
+                activation=self.lstm_activations[-1],
+                return_sequences=False,
+            )
+        )
         self._layers.append(Dropout(self.dropout))
         self._layers.append(Dense(self.outputs, activation="sigmoid"))
 

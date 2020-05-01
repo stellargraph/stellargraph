@@ -1,5 +1,8 @@
-Gcn
+GCN
 ====================================
+
+Table of contents
+-----------------
 
 .. toctree::
     :titlesonly:

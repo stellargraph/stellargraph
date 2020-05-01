@@ -23,8 +23,7 @@ class PaddedGraphGenerator(Generator):
     """
     A data generator for use with graph classification algorithms.
 
-    The supplied graphs should be :class:`StellarGraph` objects ready for machine learning. The generator
-    requires node features to be available for all nodes in the graph.
+    The supplied graphs should be :class:`StellarGraph` objects with node features.
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -34,7 +33,7 @@ class PaddedGraphGenerator(Generator):
     valid and which are padding.
 
     Args:
-        graphs (list): a collection of ready for machine-learning StellarGraph-type objects
+        graphs (list): a collection of StellarGraph objects
         name (str): an optional name of the generator
     """
 
@@ -46,16 +45,23 @@ class PaddedGraphGenerator(Generator):
                 raise TypeError(
                     f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
                 )
-            if len(graph.node_types) > 1:
+
+            if graph.number_of_nodes() == 0:
+                # an empty graph has no information at all and breaks things like mean pooling, so
+                # let's disallow them
                 raise ValueError(
-                    "graphs: node generator requires graphs with single node type, "
-                    f"found a graph with {len(graph.node_types)} node types."
+                    "graphs: expected every graph to be non-empty, found graph with no nodes"
                 )
+
+            # Check that there is only a single node type for GAT or GCN
+            node_type = graph.unique_node_type(
+                "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
+            )
 
             graph.check_graph_for_ml()
 
             # we require that all graphs have node features of the same dimensionality
-            f_dim = graph.node_feature_sizes()[list(graph.node_types)[0]]
+            f_dim = graph.node_feature_sizes()[node_type]
             if self.node_features_size is None:
                 self.node_features_size = f_dim
             elif self.node_features_size != f_dim:
