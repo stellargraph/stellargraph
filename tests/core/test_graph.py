@@ -630,7 +630,7 @@ def test_benchmark_get_features(benchmark, num_types, type_arg, feature_size):
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [False, True])
+@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_benchmark_creation(
     benchmark, feature_size, num_nodes, num_edges, force_adj_lists
 ):
@@ -640,8 +640,13 @@ def test_benchmark_creation(
 
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists:
-            sg._edges._init_adj_lists()
+        if force_adj_lists == "directed":
+            sg._edges._init_directed_adj_lists()
+        elif force_adj_lists == "undirected":
+            sg._edges._init_undirected_adj_lists()
+        elif force_adj_lists == "both":
+            sg._edges._init_undirected_adj_lists()
+            sg._edges._init_directed_adj_lists()
         return sg
 
     benchmark(f)
@@ -654,7 +659,7 @@ def test_benchmark_creation(
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [False, True])
+@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation(
     allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
 ):
@@ -664,8 +669,13 @@ def test_allocation_benchmark_creation(
 
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists:
-            sg._edges._init_adj_lists()
+        if force_adj_lists == "directed":
+            sg._edges._init_directed_adj_lists()
+        elif force_adj_lists == "undirected":
+            sg._edges._init_undirected_adj_lists()
+        elif force_adj_lists == "both":
+            sg._edges._init_undirected_adj_lists()
+            sg._edges._init_directed_adj_lists()
         return sg
 
     allocation_benchmark(f)
