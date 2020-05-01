@@ -538,14 +538,12 @@ class StellarGraph:
             The graph edges. If edge weights are included then a tuple of (edges, weights).
         """
         edge_arrs = self.edge_arrays(include_edge_type, include_edge_weight)
-        edges = list(zip(*(arr for arr in edge_arrs[:3] if arr is not None)))
-        if include_edge_weight:
-            return edges, edge_arrs[3]
         return self._to_edges(edge_arrs)
 
     def edge_arrays(self, include_edge_type=False, include_edge_weight=False) -> tuple:
         """
-        Obtains the collection of edges in the graph as a tuple of arrays (sources, targets, types, weights). ``types`` and ``weights`` will be `None` if the optional parameters are not specified.
+        Obtains the collection of edges in the graph as a tuple of arrays (sources, targets, types, weights).
+        ``types`` and ``weights`` will be `None` if the optional parameters are not specified.
 
         Args:
             include_edge_type (bool): A flag that indicates whether to return edge types.
