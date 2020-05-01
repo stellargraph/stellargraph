@@ -5,8 +5,8 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/graph-classification/
 
-| Links | Demo |
+| Demo (link to rendered) | Source |
 |---|---|
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/graph-classification/supervised-graph-classification.html);<br> [open&nbsp;here](supervised-graph-classification.ipynb) | Supervised graph classification example |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/graph-classification/dgcnn-graph-classification.html);<br> [open&nbsp;here](dgcnn-graph-classification.ipynb) | Supervised graph classification with Deep Graph Convolutional Neural Networks |
+| [Supervised graph classification example](https://stellargraph.readthedocs.io/en/latest/demos/graph-classification/supervised-graph-classification.html) | [source](supervised-graph-classification.ipynb) |
+| [Supervised graph classification with Deep Graph Convolutional Neural Networks](https://stellargraph.readthedocs.io/en/latest/demos/graph-classification/dgcnn-graph-classification.html) | [source](dgcnn-graph-classification.ipynb) |
 <!-- DOCS LINKS -->

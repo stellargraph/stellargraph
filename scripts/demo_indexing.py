@@ -559,7 +559,7 @@ def demo_listing_table(root):
 
     os.chdir(root)
     try:
-        yield "| Links | Demo |"
+        yield "| Demo (link to rendered) | Source |"
         yield "|---|---|"
         for demo in glob.iglob("**/*.ipynb", recursive=True):
             if ".ipynb_checkpoint" in demo:
@@ -575,7 +575,7 @@ def demo_listing_table(root):
 
             # this looks better if the two links are separated (hence ; and the explicit new line),
             # and the "open here" doesn't get split across lines (hence non-breaking space)
-            yield f"| [rendered]({url});<br> [open&nbsp;here]({demo}) | {text} |"
+            yield f"| [{text}]({url}) | [source]({demo}) |"
     finally:
         os.chdir(repo_dir)
 

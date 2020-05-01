@@ -5,10 +5,10 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/interpretability/
 
-| Links | Demo |
+| Demo (link to rendered) | Source |
 |---|---|
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gat/node-link-importance-demo-gat.html);<br> [open&nbsp;here](gat/node-link-importance-demo-gat.ipynb) | Interpreting Nodes and Edges by Saliency Maps in GAT |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/hateful-twitters-interpretability.html);<br> [open&nbsp;here](gcn/hateful-twitters-interpretability.ipynb) | Intepretability on Hateful Twitter Datasets |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn.html);<br> [open&nbsp;here](gcn/node-link-importance-demo-gcn.ipynb) | Interpreting Nodes and Edges by Saliency Maps in GCN |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn-sparse.html);<br> [open&nbsp;here](gcn/node-link-importance-demo-gcn-sparse.ipynb) | Interpreting Nodes and Edges by Saliency Maps in GCN (sparse) |
+| [Interpreting Nodes and Edges by Saliency Maps in GAT](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gat/node-link-importance-demo-gat.html) | [source](gat/node-link-importance-demo-gat.ipynb) |
+| [Intepretability on Hateful Twitter Datasets](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/hateful-twitters-interpretability.html) | [source](gcn/hateful-twitters-interpretability.ipynb) |
+| [Interpreting Nodes and Edges by Saliency Maps in GCN](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn.html) | [source](gcn/node-link-importance-demo-gcn.ipynb) |
+| [Interpreting Nodes and Edges by Saliency Maps in GCN (sparse)](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn-sparse.html) | [source](gcn/node-link-importance-demo-gcn-sparse.ipynb) |
 <!-- DOCS LINKS -->

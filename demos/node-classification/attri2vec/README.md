@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/attri2vec/
 
-| Links | Demo |
+| Demo (link to rendered) | Source |
 |---|---|
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/attri2vec/attri2vec-citeseer-node-classification-example.html);<br> [open&nbsp;here](attri2vec-citeseer-node-classification-example.ipynb) | Node Representation Learning with attri2vec on Citeseer |
+| [Node Representation Learning with attri2vec on Citeseer](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/attri2vec/attri2vec-citeseer-node-classification-example.html) | [source](attri2vec-citeseer-node-classification-example.ipynb) |
 <!-- DOCS LINKS -->

@@ -5,14 +5,14 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/
 
-| Links | Demo |
+| Demo (link to rendered) | Source |
 |---|---|
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/graphsage/cora-links-example.html);<br> [open&nbsp;here](graphsage/cora-links-example.ipynb) | Link prediction example: GraphSAGE on the Cora citation dataset |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/cora-lp-demo.html);<br> [open&nbsp;here](random-walks/cora-lp-demo.ipynb) | Link prediction with Node2Vec on Cora |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/ctdne-link-prediction.html);<br> [open&nbsp;here](random-walks/ctdne-link-prediction.ipynb) | Continuous-Time Dynamic Network Embeddings |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/attri2vec/stellargraph-attri2vec-DBLP.html);<br> [open&nbsp;here](attri2vec/stellargraph-attri2vec-DBLP.ipynb) | Inductive Node Representation Learning through attri2vec |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/hinsage/movielens-recommender.html);<br> [open&nbsp;here](hinsage/movielens-recommender.ipynb) | Stellargraph example: Heterogeneous GraphSAGE on the Movielens recommendation dataset |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/knowledge-graphs/complex.html);<br> [open&nbsp;here](knowledge-graphs/complex.ipynb) | ComplEx on WN18 and FB15K |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/knowledge-graphs/distmult.html);<br> [open&nbsp;here](knowledge-graphs/distmult.ipynb) | DistMult on WN18 and FB15K |
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/gcn/cora-gcn-links-example.html);<br> [open&nbsp;here](gcn/cora-gcn-links-example.ipynb) | Link prediction example: GCN on the Cora citation dataset |
+| [Link prediction example: GraphSAGE on the Cora citation dataset](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/graphsage/cora-links-example.html) | [source](graphsage/cora-links-example.ipynb) |
+| [Link prediction with Node2Vec on Cora](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/cora-lp-demo.html) | [source](random-walks/cora-lp-demo.ipynb) |
+| [Continuous-Time Dynamic Network Embeddings](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/ctdne-link-prediction.html) | [source](random-walks/ctdne-link-prediction.ipynb) |
+| [Inductive Node Representation Learning through attri2vec](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/attri2vec/stellargraph-attri2vec-DBLP.html) | [source](attri2vec/stellargraph-attri2vec-DBLP.ipynb) |
+| [Stellargraph example: Heterogeneous GraphSAGE on the Movielens recommendation dataset](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/hinsage/movielens-recommender.html) | [source](hinsage/movielens-recommender.ipynb) |
+| [ComplEx on WN18 and FB15K](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/knowledge-graphs/complex.html) | [source](knowledge-graphs/complex.ipynb) |
+| [DistMult on WN18 and FB15K](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/knowledge-graphs/distmult.html) | [source](knowledge-graphs/distmult.ipynb) |
+| [Link prediction example: GCN on the Cora citation dataset](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/gcn/cora-gcn-links-example.html) | [source](gcn/cora-gcn-links-example.ipynb) |
 <!-- DOCS LINKS -->
