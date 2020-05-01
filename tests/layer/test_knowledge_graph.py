@@ -76,9 +76,9 @@ def test_complex(knowledge_graph):
 
     # compute the exact values based on the model by extracting the embeddings for each element and
     # doing the Re(<e_s, w_r, conj(e_o)>) inner product
-    s_idx = knowledge_graph._get_index_for_nodes(df.source)
+    s_idx = knowledge_graph.node_ids_to_ilocs(df.source)
     r_idx = knowledge_graph._edges.types.to_iloc(df.label)
-    o_idx = knowledge_graph._get_index_for_nodes(df.target)
+    o_idx = knowledge_graph.node_ids_to_ilocs(df.target)
 
     nodes, edge_types = complex_model.embeddings()
     # the rows correspond to the embeddings for the given edge, so we can do bulk operations
@@ -129,9 +129,9 @@ def test_distmult(knowledge_graph):
 
     # compute the exact values based on the model by extracting the embeddings for each element and
     # doing the y_(e_1)^T M_r y_(e_2) = <e_1, w_r, e_2> inner product
-    s_idx = knowledge_graph._get_index_for_nodes(df.source)
+    s_idx = knowledge_graph.node_ids_to_ilocs(df.source)
     r_idx = knowledge_graph._edges.types.to_iloc(df.label)
-    o_idx = knowledge_graph._get_index_for_nodes(df.target)
+    o_idx = knowledge_graph.node_ids_to_ilocs(df.target)
 
     nodes, edge_types = distmult_model.embeddings()
     # the rows correspond to the embeddings for the given edge, so we can do bulk operations

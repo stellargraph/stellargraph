@@ -146,10 +146,11 @@ class BatchedNodeGenerator(Generator):
                     f"Node ID {n} not of expected type {expected_node_type}"
                 )
 
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
         return NodeSequence(
             self.sample_features,
             self.batch_size,
-            node_ids,
+            node_ilocs,
             targets,
             shuffle=shuffle,
             seed=seed,
@@ -260,7 +261,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         # Get features for sampled nodes
         batch_feats = [
-            self.graph.node_features(layer_nodes, node_type)
+            self.graph.node_features(layer_nodes, node_type, use_ilocs=True)
             for layer_nodes in nodes_per_hop
         ]
 
@@ -363,7 +364,9 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = list(it.chain(*[sample[slot] for sample in node_samples]))
-            features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
+            features_for_slot = self.graph.node_features(
+                nodes_in_slot, node_type, use_ilocs=True
+            )
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
@@ -483,7 +486,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
         # Get features
         batch_feats = [
-            self.graph.node_features(layer_nodes, nt)
+            self.graph.node_features(layer_nodes, nt, use_ilocs=True)
             for nt, layer_nodes in nodes_by_type
         ]
 
@@ -547,7 +550,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             head node.
         """
 
-        batch_feats = self.graph.node_features(head_nodes)
+        batch_feats = self.graph.node_features(head_nodes, use_ilocs=True)
         return batch_feats
 
     def flow(self, node_ids):
@@ -567,8 +570,9 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             in the Keras method ``predict``.
 
         """
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
         return NodeSequence(
-            self.sample_features, self.batch_size, node_ids, shuffle=False
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
         )
 
     def flow_from_dataframe(self, node_ids):
