@@ -5,5 +5,5 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/ppnp/
 
-- Stellargraph example: Personalised Propagation of Neural Predictions (PPNP) and Approximate PPNP (APPNP) on the CORA citation dataset. View: [here](ppnp-cora-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/ppnp/ppnp-cora-node-classification-example.html)
+- Stellargraph example: Personalised Propagation of Neural Predictions (PPNP) and Approximate PPNP (APPNP) on the CORA citation dataset. **View this demo**: [here](ppnp-cora-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/ppnp/ppnp-cora-node-classification-example.html)
 <!-- DOCS LINKS -->

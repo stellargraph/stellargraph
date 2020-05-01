@@ -5,6 +5,6 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/ensembles/
 
-- Stellargraph Ensembles for node attribute inference. View: [here](ensemble-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/ensembles/ensemble-node-classification-example.html)
-- StellarGraph Ensemble for link prediction. View: [here](ensemble-link-prediction-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/ensembles/ensemble-link-prediction-example.html)
+- Stellargraph Ensembles for node attribute inference. **View this demo**: [here](ensemble-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/ensembles/ensemble-node-classification-example.html)
+- StellarGraph Ensemble for link prediction. **View this demo**: [here](ensemble-link-prediction-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/ensembles/ensemble-link-prediction-example.html)
 <!-- DOCS LINKS -->

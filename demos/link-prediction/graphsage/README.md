@@ -5,5 +5,5 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/graphsage/
 
-- Link prediction example: GraphSAGE on the Cora citation dataset. View: [here](cora-links-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/graphsage/cora-links-example.html)
+- Link prediction example: GraphSAGE on the Cora citation dataset. **View this demo**: [here](cora-links-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/graphsage/cora-links-example.html)
 <!-- DOCS LINKS -->

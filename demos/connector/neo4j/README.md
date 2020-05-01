@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/
 
-- Notebook demo on loading Cora dataset into Neo4J Database. View: [here](load-cora-into-neo4j.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/load-cora-into-neo4j.html)
-- Stellargraph example: directed CORA citation network with directed GraphSAGE and Neo4J.. View: [here](directed-graphsage-on-cora-neo4j-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html)
-- Undirected GraphSAGE on the CORA citation network using StellarGraph and Neo4j. View: [here](undirected-graphsage-on-cora-neo4j-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html)
+- Notebook demo on loading Cora dataset into Neo4J Database. **View this demo**: [here](load-cora-into-neo4j.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/load-cora-into-neo4j.html)
+- Stellargraph example: directed CORA citation network with directed GraphSAGE and Neo4J.. **View this demo**: [here](directed-graphsage-on-cora-neo4j-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html)
+- Undirected GraphSAGE on the CORA citation network using StellarGraph and Neo4j. **View this demo**: [here](undirected-graphsage-on-cora-neo4j-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html)
 <!-- DOCS LINKS -->

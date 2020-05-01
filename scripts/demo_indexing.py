@@ -564,7 +564,7 @@ def demo_list(root):
             demo_html = demo.replace(".ipynb", ".html")
             url = os.path.join(DOC_URL_BASE, root, demo_html)
 
-            yield f"- {text}. View: [here]({demo}), [rendered]({url})"
+            yield f"- {text}. **View this demo**: [here]({demo}), [rendered]({url})"
     finally:
         os.chdir(repo_dir)
 

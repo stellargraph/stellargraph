@@ -5,14 +5,14 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/embeddings/
 
-- Node Representation Learning with attri2vec on Citeseer. View: [here](stellargraph-attri2vec-citeseer.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-attri2vec-citeseer.html)
-- Graph representation learning through Unsupervised GraphSAGE. View: [here](embeddings-unsupervised-graphsage-cora.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/embeddings-unsupervised-graphsage-cora.html)
-- GraphWave aglorithm on a barbell graph. View: [here](graphwave-barbell.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/graphwave-barbell.html)
-- Node representation learning with Node2Vec on Cora. View: [here](stellargraph-node2vec.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-node2vec.html)
-- Node representation learning with Watch Your Step on Cora. View: [here](watch-your-step-cora-demo.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/watch-your-step-cora-demo.html)
-- GCN Deep Graph Infomax on MovieLens. View: [here](deep-graph-infomax-blogcatalog3.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-blogcatalog3.html)
-- GCN Deep Graph Infomax on MovieLens. View: [here](deep-graph-infomax-aifb.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-aifb.html)
-- Node representation learning with Metapath2Vec on BlogCatalog3. View: [here](stellargraph-metapath2vec.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-metapath2vec.html)
-- GCN Deep Graph Infomax on MovieLens. View: [here](deep-graph-infomax-movielens.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-movielens.html)
-- GCN Deep Graph Infomax on CORA. View: [here](deep-graph-infomax-cora.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-cora.html)
+- Node Representation Learning with attri2vec on Citeseer. **View this demo**: [here](stellargraph-attri2vec-citeseer.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-attri2vec-citeseer.html)
+- Graph representation learning through Unsupervised GraphSAGE. **View this demo**: [here](embeddings-unsupervised-graphsage-cora.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/embeddings-unsupervised-graphsage-cora.html)
+- GraphWave aglorithm on a barbell graph. **View this demo**: [here](graphwave-barbell.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/graphwave-barbell.html)
+- Node representation learning with Node2Vec on Cora. **View this demo**: [here](stellargraph-node2vec.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-node2vec.html)
+- Node representation learning with Watch Your Step on Cora. **View this demo**: [here](watch-your-step-cora-demo.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/watch-your-step-cora-demo.html)
+- GCN Deep Graph Infomax on MovieLens. **View this demo**: [here](deep-graph-infomax-blogcatalog3.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-blogcatalog3.html)
+- GCN Deep Graph Infomax on MovieLens. **View this demo**: [here](deep-graph-infomax-aifb.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-aifb.html)
+- Node representation learning with Metapath2Vec on BlogCatalog3. **View this demo**: [here](stellargraph-metapath2vec.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-metapath2vec.html)
+- GCN Deep Graph Infomax on MovieLens. **View this demo**: [here](deep-graph-infomax-movielens.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-movielens.html)
+- GCN Deep Graph Infomax on CORA. **View this demo**: [here](deep-graph-infomax-cora.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-cora.html)
 <!-- DOCS LINKS -->

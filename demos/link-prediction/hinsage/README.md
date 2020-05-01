@@ -5,5 +5,5 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/hinsage/
 
-- Stellargraph example: Heterogeneous GraphSAGE on the Movielens recommendation dataset. View: [here](movielens-recommender.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/hinsage/movielens-recommender.html)
+- Stellargraph example: Heterogeneous GraphSAGE on the Movielens recommendation dataset. **View this demo**: [here](movielens-recommender.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/hinsage/movielens-recommender.html)
 <!-- DOCS LINKS -->

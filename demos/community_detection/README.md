@@ -5,5 +5,5 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/community_detection/
 
-- Comparison of clustering of node embeddings with a traditional community detection method. View: [here](attacks_clustering_analysis.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/community_detection/attacks_clustering_analysis.html)
+- Comparison of clustering of node embeddings with a traditional community detection method. **View this demo**: [here](attacks_clustering_analysis.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/community_detection/attacks_clustering_analysis.html)
 <!-- DOCS LINKS -->

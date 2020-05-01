@@ -5,7 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/
 
-- Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network . View: [here](graphsage-pubmed-inductive-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html)
-- Stellargraph example: Fully directed GraphSAGE on a directed CORA citation network. View: [here](directed-graphsage-on-cora-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/directed-graphsage-on-cora-example.html)
-- Stellargraph example: GraphSAGE on the CORA citation network. View: [here](graphsage-cora-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-cora-node-classification-example.html)
+- Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network . **View this demo**: [here](graphsage-pubmed-inductive-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html)
+- Stellargraph example: Fully directed GraphSAGE on a directed CORA citation network. **View this demo**: [here](directed-graphsage-on-cora-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/directed-graphsage-on-cora-example.html)
+- Stellargraph example: GraphSAGE on the CORA citation network. **View this demo**: [here](graphsage-cora-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-cora-node-classification-example.html)
 <!-- DOCS LINKS -->

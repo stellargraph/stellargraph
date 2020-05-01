@@ -5,6 +5,6 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/
 
-- Link prediction with Node2Vec on Cora. View: [here](cora-lp-demo.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/cora-lp-demo.html)
-- Continuous-Time Dynamic Network Embeddings. View: [here](ctdne-link-prediction.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/ctdne-link-prediction.html)
+- Link prediction with Node2Vec on Cora. **View this demo**: [here](cora-lp-demo.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/cora-lp-demo.html)
+- Continuous-Time Dynamic Network Embeddings. **View this demo**: [here](ctdne-link-prediction.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/link-prediction/random-walks/ctdne-link-prediction.html)
 <!-- DOCS LINKS -->
