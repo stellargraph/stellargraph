@@ -333,11 +333,11 @@ def test_edge_type_names_to_from_ilocs(knowledge_graph):
     with pytest.raises(KeyError, match="'U'.*0"):
         knowledge_graph.edge_type_names_to_ilocs(["U", "W", 0])
 
-    with pytest.raises(IndexError, match="index 100 .* size 2"):
-        sg.edge_type_ilocs_to_names([100])
+    with pytest.raises(IndexError, match="index 100 .* size 4"):
+        knowledge_graph.edge_type_ilocs_to_names([100])
 
-    with pytest.raises(IndexError, match="index -100 .* size 2"):
-        sg.edge_type_ilocs_to_names([-100])
+    with pytest.raises(IndexError, match="index -100 .* size 4"):
+        knowledge_graph.edge_type_ilocs_to_names([-100])
 
 
 def test_feature_conversion_from_nodes():
@@ -921,10 +921,9 @@ def test_neighbors_unweighted_hom(is_directed, use_ilocs):
         zip(expected_nodes, expected_weights),
     )
 
-    edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AB"])
     assert_items_equal(
         graph.neighbors(
-            node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )
@@ -971,7 +970,6 @@ def test_in_nodes_unweighted_hom(use_ilocs):
     node = graph.node_ids_to_ilocs([1])[0] if use_ilocs else 1
     expected_nodes = graph.node_ids_to_ilocs([0, 0]) if use_ilocs else [0, 0]
     expected_weighted = zip(expected_nodes, [1, 1])
-    edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AA"])
 
     assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
@@ -980,7 +978,7 @@ def test_in_nodes_unweighted_hom(use_ilocs):
     )
     assert_items_equal(
         graph.in_nodes(
-            node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )
@@ -992,7 +990,6 @@ def test_out_nodes_weighted_hin(use_ilocs):
     node = graph.node_ids_to_ilocs([1])[0] if use_ilocs else 1
     expected_nodes = graph.node_ids_to_ilocs([2, 3]) if use_ilocs else [2, 3]
     expected_weighted = zip(expected_nodes, [10.0, 10.0])
-    edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AA"])
 
     assert_items_equal(graph.out_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
@@ -1001,7 +998,7 @@ def test_out_nodes_weighted_hin(use_ilocs):
     )
     assert_items_equal(
         graph.out_nodes(
-            node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )
