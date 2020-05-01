@@ -199,7 +199,7 @@ def test_pool_all_layers():
 def test_dgcnn_smoke():
     # this is entirely implemented in terms of GCNSupervisedGraphClassification, and so it's enough
     # to validate that the functionality is composed correctly.
-    dgcnn = DeepGraphConvolutionalNeuralNetwork(
+    dgcnn = DeepGraphCNN(
         layer_sizes=[2, 3, 4],
         activations=["relu", "relu", "relu"],
         # one graph is perfect, one graph requires padding and one requires truncation
