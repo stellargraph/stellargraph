@@ -665,6 +665,10 @@ def test_benchmark_get_features(
         elif use_ilocs is False:
             sg.node_features(selected_ids, node_type(ty), use_ilocs=False)
         elif use_ilocs is None:
+            # this measures the overhead of sampling the nodes and converting them to node ilocs
+            # which at the time of this comment is about 80% of the total benchmark time
+            # the random sampling is kept here to make the test more robust - it decreases
+            # inter-run variance
             pass
 
     benchmark(f)
