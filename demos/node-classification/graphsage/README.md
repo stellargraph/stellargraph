@@ -7,7 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Links | Demo |
 |---|---|
-| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html);<br> [open&nbsp;here](graphsage-pubmed-inductive-node-classification-example.ipynb) | Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html);<br> [open&nbsp;here](graphsage-pubmed-inductive-node-classification-example.ipynb) | Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network  |
 | [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/directed-graphsage-on-cora-example.html);<br> [open&nbsp;here](directed-graphsage-on-cora-example.ipynb) | Stellargraph example: Fully directed GraphSAGE on a directed CORA citation network |
 | [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/graphsage/graphsage-cora-node-classification-example.html);<br> [open&nbsp;here](graphsage-cora-node-classification-example.ipynb) | Stellargraph example: GraphSAGE on the CORA citation network |
 <!-- DOCS LINKS -->

@@ -16,7 +16,6 @@
 
 import abc
 import argparse
-import commonmark
 import contextlib
 import enum
 import glob
