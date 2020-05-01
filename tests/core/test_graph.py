@@ -28,6 +28,8 @@ from ..test_utils.graphs import (
     example_hin_1_nx,
     example_hin_1,
     line_graph,
+    weighted_hin,
+    example_graph_random,
 )
 
 from .. import test_utils
@@ -165,6 +167,19 @@ def test_graph_constructor_nodes_from_edges():
     assert sorted(g.nodes()) == [0, 1, 2, 4, 5]
 
 
+def test_graph_constructor_edge_labels():
+    edges = pd.DataFrame(
+        {"source": [4, 1, 5], "target": [0, 0, 2], "ET": ["b", "a", "b"]}
+    )
+
+    g = StellarGraph(edges=edges, edge_type_column="ET")
+    assert sorted(g.edges(include_edge_type=True)) == [
+        (1, 0, "a"),
+        (4, 0, "b"),
+        (5, 2, "b"),
+    ]
+
+
 def test_info():
     sg = create_graph_1()
     info_str = sg.info()
@@ -263,6 +278,64 @@ def test_feature_conversion_from_nodes():
     assert sg.node_feature_sizes()["default"] == 8
 
 
+def test_node_features():
+    feature_sizes = {"A": 4, "B": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes)
+
+    one_zero = np.array([[1] * 4, [0] * 4])
+
+    # inference
+    np.testing.assert_array_equal(sg.node_features(nodes=[1, 0]), one_zero)
+    # specified
+    np.testing.assert_array_equal(
+        sg.node_features(nodes=[1, 0], node_type="A"), one_zero
+    )
+
+    # wrong type
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[1, 0], node_type="B")
+
+    # mixed types, inference
+    with pytest.raises(ValueError, match="all nodes must have the same type"):
+        sg.node_features(nodes=[0, 4])
+
+    # mixed types, specified
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.node_features(nodes=[0, 4], node_type="A")
+
+
+def test_node_features_node_type():
+    feature_sizes = {"A": 4, "B": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes)
+
+    np.testing.assert_array_equal(
+        sg.node_features(node_type="A"), [[0] * 4, [1] * 4, [2] * 4, [3] * 4],
+    )
+    np.testing.assert_array_equal(
+        sg.node_features(node_type="B"), [[4] * 6, [5] * 6, [6] * 6]
+    )
+
+
+def test_node_features_node_type_inference():
+    one_type = example_graph(feature_size=4)
+    np.testing.assert_array_equal(
+        one_type.node_features(), [[1] * 4, [2] * 4, [3] * 4, [4] * 4]
+    )
+
+    # short-cut inference of the node type for a subset of the nodes with a homogenous graph
+    np.testing.assert_array_equal(one_type.node_features([1]), [[1] * 4])
+
+    # inference doesn't work for a heterogeneous graph:
+    feature_sizes = {"A": 4, "B": 6}
+    many_types = example_hin_1(feature_sizes=feature_sizes)
+
+    with pytest.raises(
+        ValueError,
+        match="node_type: in a non-homogeneous graph, expected a node type and/or 'nodes' to be passed; found neither 'node_type' nor 'nodes', and the graph has node types: 'A', 'B'",
+    ):
+        many_types.node_features()
+
+
 def test_node_features_missing_id():
     sg = example_graph(feature_size=6)
     with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
@@ -305,6 +378,14 @@ def test_node_types():
 
     sg = example_hin_1()
     assert sg.node_types == {"A", "B"}
+
+
+def test_edge_types():
+    sg = example_graph(feature_size=6)
+    assert set(sg.edge_types) == {"default"}
+
+    sg = example_hin_1()
+    assert set(sg.edge_types) == {"F", "R"}
 
 
 def test_feature_conversion_from_dataframe():
@@ -796,7 +877,8 @@ def test_info_homogeneous(is_directed):
     Edge types: ABC-xyz->ABC
 
  Edge types:
-    ABC-xyz->ABC: [4]"""
+    ABC-xyz->ABC: [4]
+        Weights: all 1 (default)"""
     )
 
 
@@ -819,8 +901,72 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     A-R->B: [3]
+        Weights: all 1 (default)
     B-R->A: [2]
-    B-F->B: [1]"""
+        Weights: all 1 (default)
+    B-F->B: [1]
+        Weights: all 10"""
+    )
+
+
+def test_info_weighted(weighted_hin):
+    # literal match to check the output is good for human consumption
+    assert (
+        weighted_hin.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 7, Edges: 12
+
+ Node types:
+  A: [4]
+    Features: none
+    Edge types: A-R->A, A-S->A, A-T->B, A-U->A, A-U->B
+  B: [3]
+    Features: none
+    Edge types: B-T->A, B-U->A
+
+ Edge types:
+    A-T->B: [3]
+        Weights: all 2
+    A-U->B: [2]
+        Weights: range=[4, 5], mean=4.5, std=0.707107
+    A-U->A: [2]
+        Weights: range=[2, 3], mean=2.5, std=0.707107
+    A-S->A: [2]
+        Weights: all 2
+    A-R->A: [2]
+        Weights: all 1 (default)
+    B-U->A: [1]
+        Weights: all 5"""
+    )
+
+
+def test_info_no_graph():
+    nodes = pd.DataFrame(np.ones((5, 1)), index=[0, 1, 2, 3, 4])
+    graph_nodes_only = StellarGraph(nodes=nodes)
+    assert (
+        graph_nodes_only.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 5, Edges: 0
+
+ Node types:
+  default: [5]
+    Features: float32 vector, length 1
+    Edge types: none
+
+ Edge types:"""
+    )
+    graph_nothing = StellarGraph(nodes={})
+    assert (
+        graph_nothing.info()
+        == """\
+StellarGraph: Undirected multigraph
+ Nodes: 0, Edges: 0
+
+ Node types:
+
+ Edge types:"""
     )
 
 
@@ -914,25 +1060,45 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     n_21-e_22->n_21: [45]
+        Weights: all 1 (default)
     n_21-e_21->n_21: [43]
+        Weights: all 1 (default)
     n_21-e_20->n_21: [41]
+        Weights: all 1 (default)
     n_21-e_19->n_21: [39]
+        Weights: all 1 (default)
     n_21-e_18->n_21: [37]
+        Weights: all 1 (default)
     n_21-e_17->n_21: [35]
+        Weights: all 1 (default)
     n_21-e_16->n_21: [33]
+        Weights: all 1 (default)
     n_21-e_15->n_21: [31]
+        Weights: all 1 (default)
     n_21-e_14->n_21: [29]
+        Weights: all 1 (default)
     n_21-e_13->n_21: [27]
+        Weights: all 1 (default)
     n_21-e_12->n_21: [25]
+        Weights: all 1 (default)
     n_21-e_11->n_21: [23]
+        Weights: all 1 (default)
     n_21-e_10->n_21: [21]
+        Weights: all 1 (default)
     n_21-e_9->n_21: [19]
+        Weights: all 1 (default)
     n_21-e_8->n_21: [17]
+        Weights: all 1 (default)
     n_21-e_7->n_21: [15]
+        Weights: all 1 (default)
     n_21-e_6->n_21: [13]
+        Weights: all 1 (default)
     n_21-e_5->n_21: [11]
+        Weights: all 1 (default)
     n_21-e_4->n_21: [9]
+        Weights: all 1 (default)
     n_21-e_3->n_21: [7]
+        Weights: all 1 (default)
     ... (3 more)"""
     )
 
@@ -953,7 +1119,9 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     n_21-e_22->n_21: [45]
+        Weights: all 1 (default)
     n_21-e_21->n_21: [43]
+        Weights: all 1 (default)
     ... (21 more)"""
     )
 
@@ -1033,28 +1201,51 @@ StellarGraph: Undirected multigraph
 
  Edge types:
     n_21-e_22->n_21: [45]
+        Weights: all 1 (default)
     n_21-e_21->n_21: [43]
+        Weights: all 1 (default)
     n_21-e_20->n_21: [41]
+        Weights: all 1 (default)
     n_21-e_19->n_21: [39]
+        Weights: all 1 (default)
     n_21-e_18->n_21: [37]
+        Weights: all 1 (default)
     n_21-e_17->n_21: [35]
+        Weights: all 1 (default)
     n_21-e_16->n_21: [33]
+        Weights: all 1 (default)
     n_21-e_15->n_21: [31]
+        Weights: all 1 (default)
     n_21-e_14->n_21: [29]
+        Weights: all 1 (default)
     n_21-e_13->n_21: [27]
+        Weights: all 1 (default)
     n_21-e_12->n_21: [25]
+        Weights: all 1 (default)
     n_21-e_11->n_21: [23]
+        Weights: all 1 (default)
     n_21-e_10->n_21: [21]
+        Weights: all 1 (default)
     n_21-e_9->n_21: [19]
+        Weights: all 1 (default)
     n_21-e_8->n_21: [17]
+        Weights: all 1 (default)
     n_21-e_7->n_21: [15]
+        Weights: all 1 (default)
     n_21-e_6->n_21: [13]
+        Weights: all 1 (default)
     n_21-e_5->n_21: [11]
+        Weights: all 1 (default)
     n_21-e_4->n_21: [9]
+        Weights: all 1 (default)
     n_21-e_3->n_21: [7]
+        Weights: all 1 (default)
     n_21-e_2->n_21: [5]
+        Weights: all 1 (default)
     n_21-e_1->n_21: [3]
-    n_21-e_0->n_21: [1]"""
+        Weights: all 1 (default)
+    n_21-e_0->n_21: [1]
+        Weights: all 1 (default)"""
     )
 
 
@@ -1118,7 +1309,7 @@ def test_to_adjacency_matrix_weighted_undirected():
     actual[2, 4] = actual[4, 2] = 1
     actual[3, 5] = actual[5, 3] = 1
     actual[4, 5] = actual[5, 4] = 10
-    actual[5, 5] = 11 + 12
+    actual[5, 5] = 1 + 11 + 12
     assert np.array_equal(matrix, actual)
 
     # just to confirm, it should be symmetric
@@ -1130,7 +1321,7 @@ def test_to_adjacency_matrix_weighted_undirected():
     one, six, five = 0, 1, 2
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = actual[five, one] = 1
-    actual[five, five] = 11 + 12
+    actual[five, five] = 1 + 11 + 12
     assert np.array_equal(subgraph, actual)
 
 
@@ -1145,7 +1336,7 @@ def test_to_adjacency_matrix_weighted_directed():
     actual[2, 4] = 1
     actual[5, 3] = 1
     actual[4, 5] = 10
-    actual[5, 5] = 11 + 12
+    actual[5, 5] = 1 + 11 + 12
 
     assert np.array_equal(matrix, actual)
 
@@ -1155,7 +1346,7 @@ def test_to_adjacency_matrix_weighted_directed():
     one, six, five = 0, 1, 2
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = 1
-    actual[five, five] = 11 + 12
+    actual[five, five] = 1 + 11 + 12
     assert np.array_equal(subgraph, actual)
 
 
@@ -1170,8 +1361,63 @@ def test_to_adjacency_matrix():
     actual[2, 4] = actual[4, 2] = 1
     actual[3, 5] = actual[5, 3] = 1
     actual[4, 5] = actual[5, 4] = 1
-    actual[5, 5] = 2
+    actual[5, 5] = 3
     assert np.array_equal(matrix, actual)
+
+
+def test_to_adjacency_matrix_edge_type():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    matrix_r = g.to_adjacency_matrix(edge_type="R").todense()
+    actual_r = np.zeros((7, 7), dtype=matrix_r.dtype)
+    actual_r[0, 4] = actual_r[4, 0] = 1
+    actual_r[1, 5] = actual_r[5, 1] = 1
+    actual_r[1, 4] = actual_r[4, 1] = 1
+    actual_r[2, 4] = actual_r[4, 2] = 1
+    actual_r[3, 5] = actual_r[5, 3] = 1
+    actual_r[5, 5] = 1
+    np.testing.assert_array_equal(np.asarray(matrix_r), actual_r)
+
+    matrix_f = g.to_adjacency_matrix(edge_type="F").todense()
+    actual_f = np.zeros((7, 7), dtype=matrix_r.dtype)
+    actual_f[4, 5] = actual_f[5, 4] = 1
+    actual_f[5, 5] = 2
+    np.testing.assert_array_equal(np.asarray(matrix_f), actual_f)
+
+
+def test_to_adjacency_matrix_edge_type_subgraph():
+    g = example_hin_1(is_directed=False, self_loop=True)
+
+    nodes = [5, 4, 1, 0]
+    # indices in the final matrix
+    five = 0
+    four = 1
+    one = 2
+    zero = 3
+
+    matrix_r = g.to_adjacency_matrix(nodes=nodes, edge_type="R").todense()
+    actual_r = np.zeros((4, 4), dtype=matrix_r.dtype)
+    actual_r[zero, four] = actual_r[four, zero] = 1
+    actual_r[one, five] = actual_r[five, one] = 1
+    actual_r[one, four] = actual_r[four, one] = 1
+    actual_r[five, five] = 1
+    np.testing.assert_array_equal(np.asarray(matrix_r), actual_r)
+
+    matrix_f = g.to_adjacency_matrix(nodes=nodes, edge_type="F").todense()
+    actual_f = np.zeros((4, 4), dtype=matrix_r.dtype)
+    actual_f[four, five] = actual_f[five, four] = 1
+    actual_f[five, five] = 2
+    np.testing.assert_array_equal(matrix_f, actual_f)
+
+
+@pytest.mark.parametrize("is_directed", [False, True])
+def test_to_adjacency_matrix_empty(is_directed):
+    cls = StellarDiGraph if is_directed else StellarGraph
+    g = cls()
+    assert g.to_adjacency_matrix().shape == (0, 0)
+
+    g = example_hin_1(is_directed=is_directed, self_loop=True)
+    assert g.to_adjacency_matrix(nodes=[]).shape == (0, 0)
 
 
 @pytest.mark.benchmark(group="StellarGraph to_adjacency_matrix")
@@ -1187,7 +1433,7 @@ def test_benchmark_to_adjacency_matrix(is_directed, benchmark):
 def test_edge_weights_undirected():
     g = example_hin_1(is_directed=False, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(5, 5) == [11.0, 12.0, 1.0]
     assert g._edge_weights(4, 5) == [10.0]
     assert g._edge_weights(5, 4) == [10.0]
     assert g._edge_weights(0, 4) == [1]
@@ -1197,7 +1443,7 @@ def test_edge_weights_undirected():
 def test_edge_weights_directed():
     g = example_hin_1(is_directed=True, self_loop=True)
 
-    assert g._edge_weights(5, 5) == [11.0, 12.0]
+    assert g._edge_weights(5, 5) == [11.0, 12.0, 1.0]
     assert g._edge_weights(4, 5) == [10.0]
     assert g._edge_weights(5, 4) == []
     assert g._edge_weights(0, 4) == []
@@ -1216,11 +1462,18 @@ def test_node_type():
 def test_from_networkx_empty():
     empty = StellarGraph.from_networkx(nx.Graph())
     assert not empty.is_directed()
+    assert empty.node_types == set()
     assert isinstance(empty, StellarGraph)
 
     empty = StellarGraph.from_networkx(nx.DiGraph())
     assert empty.is_directed()
+    assert empty.node_types == set()
     assert isinstance(empty, StellarDiGraph)
+
+    # https://github.com/stellargraph/stellargraph/issues/1339
+    features = pd.DataFrame(columns=range(10))
+    empty_with_features = StellarGraph.from_networkx(nx.Graph(), node_features=features)
+    assert empty_with_features.node_types == set()
 
 
 def test_from_networkx_smoke():
@@ -1369,3 +1622,25 @@ def test_nodes_of_type_deprecation():
     with pytest.warns(DeprecationWarning, match="'nodes_of_type' is deprecated"):
         a = g.nodes_of_type("A")
     assert all(a == g.nodes(node_type="A"))
+
+
+def test_unique_node_type():
+    one_type = example_graph_random(node_types=1, edge_types=10)
+
+    assert one_type.unique_node_type() == "n-0"
+
+    many_types = example_graph_random(node_types=4, edge_types=1)
+
+    with pytest.raises(
+        ValueError,
+        match="Expected only one node type for 'unique_node_type', found: 'n-0', 'n-1', 'n-2', 'n-3'",
+    ):
+        many_types.unique_node_type()
+
+    with pytest.raises(ValueError, match="^ABC custom message 123$"):
+        many_types.unique_node_type("ABC custom message 123")
+
+    with pytest.raises(
+        ValueError, match="^ABC custom message 'n-0', 'n-1', 'n-2', 'n-3' 123$"
+    ):
+        many_types.unique_node_type("ABC custom message %(found)s 123")

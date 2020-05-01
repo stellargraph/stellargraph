@@ -58,6 +58,7 @@ EXTRAS_REQUIRES = {
         "treon>=0.1.2",
         "papermill>=2.0.0",
         "rdflib",
+        "commonmark==0.9.1",
     ],
 }
 

@@ -27,8 +27,7 @@ class RelationalGraphConvolution(Layer):
         Relational Graph Convolution (RGCN) Keras layer.
 
         Original paper: Modeling Relational Data with Graph Convolutional Networks.
-        Thomas N. Kipf, Michael Schlichtkrull (2017).
-            https://arxiv.org/pdf/1703.06103.pdf
+        Thomas N. Kipf, Michael Schlichtkrull (2017). https://arxiv.org/pdf/1703.06103.pdf
 
         Notes:
           - The inputs are tensors with a batch dimension of 1:

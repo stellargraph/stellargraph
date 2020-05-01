@@ -115,7 +115,7 @@ steps:
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 44
+    parallelism: 46
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -162,6 +162,18 @@ steps:
     <<: *timeout
     depends_on: "runner-3_6"
     command: "python scripts/format_notebooks.py --default --ci demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":jupyter::book: check notebook text"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    command: "python scripts/notebook_text_checker.py demos/"
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:

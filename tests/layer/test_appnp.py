@@ -220,18 +220,7 @@ def test_APPNP_apply_propagate_model_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.parametrize(
-    "model_type",
-    [
-        pytest.param(
-            "sequential",
-            marks=pytest.mark.xfail(
-                reason="https://github.com/stellargraph/stellargraph/issues/1213"
-            ),
-        ),
-        "model",
-    ],
-)
+@pytest.mark.parametrize("model_type", ["sequential", "model"])
 def test_APPNP_propagate_model_matches_manual(model_type):
     dense_size = 5
 

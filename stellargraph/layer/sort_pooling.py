@@ -17,6 +17,7 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 from ..core.experimental import experimental
+from ..core.validation import require_integer_in_range
 
 
 @experimental(reason="Missing unit tests and generally untested.", issues=[1044])
@@ -37,6 +38,8 @@ class SortPooling(Layer):
 
     def __init__(self, k, flatten_output=False):
         super().__init__()
+
+        require_integer_in_range(k, "k", min_val=1)
 
         self.trainable = False
         self.k = k
@@ -64,7 +67,7 @@ class SortPooling(Layer):
             An input shape tuple.
         """
         if self.flatten_output:
-            return input_shapes[0], self.k * input_shapes[2]
+            return input_shapes[0], self.k * input_shapes[2], 1
         else:
             return input_shapes[0], self.k, input_shapes[2]
 
@@ -125,6 +128,8 @@ class SortPooling(Layer):
         )
 
         if self.flatten_output:
-            outputs = tf.reshape(outputs, [tf.shape(outputs)[0], -1])
+            outputs = tf.reshape(
+                outputs, [outputs_shape[0], embeddings.shape[-1] * self.k, 1]
+            )
 
         return outputs

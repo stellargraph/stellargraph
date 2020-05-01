@@ -115,10 +115,18 @@ def test_flatten_output():
     data = np.array([[3, 1], [1, 2], [5, 0], [0, -4]], dtype=int).reshape((2, 2, 2))
     mask = np.array([[True, True], [True, True]])
 
-    data_sorted = np.array([[1, 2, 3, 1], [5, 0, 0, -4]], dtype=int)
+    data_sorted = np.array([[1, 2, 3, 1], [5, 0, 0, -4]], dtype=int).reshape((2, 4, 1))
 
     layer = SortPooling(k=2, flatten_output=True)
 
     data_out = layer([data, mask])
 
     assert np.array_equal(data_out, data_sorted)
+
+
+def test_invalid_k():
+    with pytest.raises(TypeError, match="k: expected int, found str"):
+        SortPooling(k="false")
+
+    with pytest.raises(ValueError, match="k: expected integer >= 1, found 0"):
+        SortPooling(k=0)

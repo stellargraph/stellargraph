@@ -1,0 +1,271 @@
+StellarGraph demos
+==================
+
+`StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for graph machine learning. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
+
+The demo notebooks can be run without any installation of Python by using Binder or Google Colab - these both provide a cloud-based notebook environment.  The whole set of demos can be opened in Binder |binder| or you can click the Binder and Colab badges within each notebook.
+
+.. |binder| image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/README.md
+   :alt: Open in Binder
+
+
+Find algorithms for a task
+--------------------------
+
+
+* Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): :doc:`GCN on Cora <node-classification/gcn/gcn-cora-node-classification-example>`
+* Predicting attributes, such as classifying as a class or label, or regressing to calculate a continuous number:
+
+  * For nodes/vertices/entities: :doc:`node classification <./node-classification/index>`
+  * For edges/links/connections: :doc:`link prediction <./link-prediction/index>` (includes knowledge graph completion)
+  * For graphs/networks: :doc:`graph classification <./graph-classification/index>`
+  * Adjusting predictions scores to be probabilities (for any model): :doc:`calibration <./calibration/index>`
+  * Interpreting/introspecting models, for node classification: :doc:`interpretability <./interpretability/index>`
+
+* Representation learning or computing embedding vectors (including unsupervised tasks):
+
+  * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>` (and :doc:`community detection <./community_detection/index>` for using these to cluster nodes)
+
+* Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
+* Loading data into a ``StellarGraph`` object, with Pandas, Neo4j or NetworkX: :doc:`basics <./basics/index>`
+* Experimental: running GraphSAGE on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
+
+Find a demo for an algorithm
+----------------------------
+
+..
+   DEMO TABLE MARKER
+.. list-table::
+   :header-rows: 1
+
+   *
+     - Algorithm
+     - Heter.
+     - Dir.
+     - EW
+     - T
+     - NF
+     - :any:`NC <node-classification/index>`
+     - :any:`LP <link-prediction/index>`
+     - :any:`RL <embeddings/index>`
+     - Ind.
+     - :any:`GC <graph-classification/index>`
+   *
+     - GCN
+     - see RGCN
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/gcn/gcn-cora-node-classification-example>`
+     - :any:`demo <link-prediction/gcn/cora-gcn-links-example>`
+     - US :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     - see Cluster-GCN
+     - :any:`demo <graph-classification/supervised-graph-classification>`
+   *
+     - Cluster-GCN
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/cluster-gcn/cluster-gcn-node-classification>`
+     - yes
+     -
+     - yes
+     -
+   *
+     - RGCN
+     - yes, edges
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/rgcn/rgcn-aifb-node-classification-example>`
+     - yes
+     -
+     -
+     -
+   *
+     - GAT
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/gat/gat-cora-node-classification-example>`
+     - yes
+     - US :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     -
+     -
+   *
+     - SGC
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/sgc/sgc-node-classification-example>`
+     - yes
+     -
+     -
+     -
+   *
+     - PPNP
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
+     - yes
+     - US DGI
+     -
+     -
+   *
+     - APPNP
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
+     - yes
+     - US :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     -
+     -
+   *
+     - GraphWave
+     -
+     -
+     -
+     -
+     -
+     - via RL
+     - via RL
+     - :any:`demo <embeddings/graphwave-barbell>`
+     -
+     -
+   *
+     - Attri2Vec
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/attri2vec/attri2vec-citeseer-node-classification-example>`
+     - :any:`demo <link-prediction/attri2vec/stellargraph-attri2vec-DBLP>`
+     - :any:`demo <embeddings/stellargraph-attri2vec-citeseer>`
+     -
+     -
+   *
+     - GraphSAGE
+     - see HinSAGE
+     - :any:`demo <node-classification/graphsage/directed-graphsage-on-cora-example>`
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/graphsage/graphsage-cora-node-classification-example>`
+     - :any:`demo <link-prediction/graphsage/cora-links-example>`
+     - :any:`US <embeddings/embeddings-unsupervised-graphsage-cora>` :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     - :any:`demo <node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example>`
+     -
+   *
+     - HinSAGE
+     - yes
+     -
+     -
+     -
+     - yes
+     - yes
+     - :any:`demo <link-prediction/hinsage/movielens-recommender>`
+     - :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     - yes
+     -
+   *
+     - Node2Vec
+     -
+     -
+     - :any:`demo <node-classification/node2vec/stellargraph-node2vec-weighted-random-walks>`
+     -
+     -
+     - :any:`via RL <node-classification/node2vec/stellargraph-node2vec-node-classification>`
+     - :any:`via RL <link-prediction/random-walks/cora-lp-demo>`
+     - :any:`demo <embeddings/stellargraph-node2vec>`
+     -
+     -
+   *
+     - Metapath2Vec
+     - yes
+     -
+     -
+     -
+     -
+     - via RL
+     - via RL
+     - :any:`demo <embeddings/stellargraph-metapath2vec>`
+     -
+     -
+   *
+     - CTDNE
+     -
+     -
+     -
+     - yes
+     -
+     - via RL
+     - :any:`via RL <link-prediction/random-walks/ctdne-link-prediction>`
+     - yes
+     -
+     -
+   *
+     - Watch Your Step
+     -
+     -
+     -
+     -
+     -
+     - :any:`via RL <embeddings/watch-your-step-cora-demo>`
+     - via RL
+     - :any:`demo <embeddings/watch-your-step-cora-demo>`
+     -
+     -
+   *
+     - ComplEx
+     - yes, edges
+     - yes
+     -
+     -
+     -
+     - via RL
+     - :any:`demo <link-prediction/knowledge-graphs/complex>`
+     - yes
+     -
+     -
+   *
+     - DistMult
+     - yes, edges
+     - yes
+     -
+     -
+     -
+     - via RL
+     - :any:`demo <link-prediction/knowledge-graphs/distmult>`
+     - yes
+     -
+     -
+..
+   DEMO TABLE MARKER
+
+See :doc:`the root README <../README>` or each algorithm's documentation for the relevant citation(s).
+
+Table of contents
+-----------------
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*
