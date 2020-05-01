@@ -52,14 +52,10 @@ class GraphWaveGenerator(Generator):
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
-        node_types = list(G.node_types)
-        if len(node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        # Check that there is only a single node type
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         require_integer_in_range(degree, "degree", min_val=1)
 
@@ -67,7 +63,7 @@ class GraphWaveGenerator(Generator):
         adj = G.to_adjacency_matrix().tocoo()
 
         # Function to map node IDs to indices for quicker node index lookups
-        self._node_lookup = G._get_index_for_nodes
+        self._node_lookup = G.node_ids_to_ilocs
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj

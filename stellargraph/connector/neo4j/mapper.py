@@ -39,9 +39,7 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
     """
     Abstract base class for graph data generators from Neo4J.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Do not use this base class: use a subclass specific to the method.
 
@@ -72,6 +70,36 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
         # Create Neo4J graph database object
         self.neo4j_graphdb = neo4j_graphdb
 
+    def flow(self, node_ids, targets=None, shuffle=False, seed=None):
+
+        if self.head_node_types is not None:
+            expected_node_type = self.head_node_types[0]
+        else:
+            expected_node_type = None
+
+        # Check all IDs are actually in the graph and are of expected type
+        for n in node_ids:
+            try:
+                node_type = self.graph.node_type(n)
+            except KeyError:
+                raise KeyError(f"Node ID {n} supplied to generator not found in graph")
+
+            if expected_node_type is not None and (node_type != expected_node_type):
+                raise ValueError(
+                    f"Node ID {n} not of expected type {expected_node_type}"
+                )
+
+        return NodeSequence(
+            self.sample_features,
+            self.batch_size,
+            node_ids,
+            targets,
+            shuffle=shuffle,
+            seed=seed,
+        )
+
+    flow.__doc__ = BatchedNodeGenerator.flow.__doc__
+
 
 @experimental(reason="the class is not fully tested")
 class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
@@ -81,9 +109,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     At minimum, supply the StellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -168,9 +194,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     node samples (separately for in-nodes and out-nodes)
     for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features for all
-    nodes in the graph.
+    The supplied graph should be a StellarDiGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.

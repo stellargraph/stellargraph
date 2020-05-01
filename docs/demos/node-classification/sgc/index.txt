@@ -1,0 +1,12 @@
+SGC
+====================================
+
+Table of contents
+-----------------
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    */index
+    ./*

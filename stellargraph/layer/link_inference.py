@@ -100,12 +100,12 @@ class LinkEmbedding(Layer):
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
             One of:
-             * 'concat' -- concatenation,
-             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+            * 'concat' -- concatenation,
+            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
             For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
             edge embedding to transform to a vector of size `output_dim`.
 
@@ -219,12 +219,12 @@ def link_inference(
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
             One of:
-             * 'concat' -- concatenation,
-             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+            * 'concat' -- concatenation,
+            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         name (str): optional name of the defined function, used for error logging
@@ -294,12 +294,12 @@ def link_classification(
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
         edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
             One of:
-             * 'concat' -- concatenation,
-             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+            * 'concat' -- concatenation,
+            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
         Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
@@ -340,12 +340,12 @@ def link_regression(
             the LeakyClippedLinear unit is not applied.
         edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
             One of:
-             * 'concat' -- concatenation,
-             * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-             * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-             * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-             * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-             * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+            * 'concat' -- concatenation,
+            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
         Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and

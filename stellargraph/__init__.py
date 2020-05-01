@@ -69,7 +69,21 @@ custom_keras_layers = {
     "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
     "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer,
     "GatherIndices": layer.misc.GatherIndices,
+    "SortPooling": layer.SortPooling,
 }
+"""
+A dictionary of the ``tensorflow.keras`` layers defined by StellarGraph.
+
+When Keras models using StellarGraph layers are saved, they can be loaded by passing this value to
+the ``custom_objects`` parameter to model loading functions like
+``tensorflow.keras.models.load_model``.
+
+Example::
+
+    import stellargraph as sg
+    from tensorflow import keras
+    keras.models.load_model("/path/to/model", custom_objects=sg.custom_keras_layers)
+"""
 
 
 def _top_level_deprecation_warning(name, path):
