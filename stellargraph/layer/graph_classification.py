@@ -300,7 +300,7 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
             generator=generator,
             bias=bias,
             dropout=dropout,
-            pooling=pooling,
+            pooling=SortPooling(k=k, flatten_output=True),
             pool_all_layers=True,
             kernel_initializer=kernel_initializer,
             kernel_regularizer=kernel_regularizer,
