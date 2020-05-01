@@ -545,15 +545,15 @@ class StellarGraph:
 
     def edge_arrays(self, include_edge_type=False, include_edge_weight=False) -> tuple:
         """
-        Obtains the collection of edges in the graph.
+        Obtains the collection of edges in the graph as a tuple of arrays (sources, targets, types, weights). ``types`` and ``weights`` will be `None` if the optional parameters are not specified.
 
         Args:
             include_edge_type (bool): A flag that indicates whether to return edge types.
             include_edge_weight (bool): A flag that indicates whether to return edge weights.
 
         Returns:
-            A tuple containing 1D arrays of the source and target nodes (sources, targets). Setting include_edge_type
-                and/or include_edge_weight to True will include arrays of edge types and/or edge weights in this tuple.
+            A tuple containing 1D arrays of the source and target nodes (sources, targets, types, weights). Setting include_edge_type
+                and/or include_edge_weight to True will include arrays of edge types and/or edge weights in this tuple, otherwise they will be set to ``None``.
         """
         types = self._edges.type_of_iloc(slice(None)) if include_edge_type else None
         weights = self._edges.weights if include_edge_weight else None
