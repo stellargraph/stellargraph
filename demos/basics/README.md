@@ -5,7 +5,9 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/basics/
 
-- Loading data into StellarGraph from Pandas. **View this demo**: [here](loading-pandas.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-pandas.html)
-- Loading data into StellarGraph from NetworkX. **View this demo**: [here](loading-networkx.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-networkx.html)
-- Loading and saving data between StellarGraph and Neo4j. **View this demo**: [here](loading-saving-neo4j.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-saving-neo4j.html)
+| Links | Demo |
+|---|---|
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-pandas.html);<br> [open&nbsp;here](loading-pandas.ipynb) | Loading data into StellarGraph from Pandas |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-networkx.html);<br> [open&nbsp;here](loading-networkx.ipynb) | Loading data into StellarGraph from NetworkX |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/basics/loading-saving-neo4j.html);<br> [open&nbsp;here](loading-saving-neo4j.ipynb) | Loading and saving data between StellarGraph and Neo4j |
 <!-- DOCS LINKS -->

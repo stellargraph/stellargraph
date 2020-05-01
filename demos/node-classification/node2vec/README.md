@@ -5,6 +5,8 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/node2vec/
 
-- Node2Vec with weighted random walks. **View this demo**: [here](stellargraph-node2vec-weighted-random-walks.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.html)
-- Node classification with Node2Vec on Cora. **View this demo**: [here](stellargraph-node2vec-node-classification.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/node2vec/stellargraph-node2vec-node-classification.html)
+| Links | Demo |
+|---|---|
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.html);<br> [open&nbsp;here](stellargraph-node2vec-weighted-random-walks.ipynb) | Node2Vec with weighted random walks |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/node2vec/stellargraph-node2vec-node-classification.html);<br> [open&nbsp;here](stellargraph-node2vec-node-classification.ipynb) | Node classification with Node2Vec on Cora |
 <!-- DOCS LINKS -->

@@ -5,5 +5,7 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gat/
 
-- Stellargraph example: Graph Attention Network (GAT) on the CORA citation dataset. **View this demo**: [here](gat-cora-node-classification-example.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gat/gat-cora-node-classification-example.html)
+| Links | Demo |
+|---|---|
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gat/gat-cora-node-classification-example.html);<br> [open&nbsp;here](gat-cora-node-classification-example.ipynb) | Stellargraph example: Graph Attention Network (GAT) on the CORA citation dataset |
 <!-- DOCS LINKS -->

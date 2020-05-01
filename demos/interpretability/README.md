@@ -5,8 +5,10 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/interpretability/
 
-- Interpreting Nodes and Edges by Saliency Maps in GAT. **View this demo**: [here](gat/node-link-importance-demo-gat.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gat/node-link-importance-demo-gat.html)
-- Intepretability on Hateful Twitter Datasets. **View this demo**: [here](gcn/hateful-twitters-interpretability.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/hateful-twitters-interpretability.html)
-- Interpreting Nodes and Edges by Saliency Maps in GCN. **View this demo**: [here](gcn/node-link-importance-demo-gcn.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn.html)
-- Interpreting Nodes and Edges by Saliency Maps in GCN (sparse). **View this demo**: [here](gcn/node-link-importance-demo-gcn-sparse.ipynb), [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn-sparse.html)
+| Links | Demo |
+|---|---|
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gat/node-link-importance-demo-gat.html);<br> [open&nbsp;here](gat/node-link-importance-demo-gat.ipynb) | Interpreting Nodes and Edges by Saliency Maps in GAT |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/hateful-twitters-interpretability.html);<br> [open&nbsp;here](gcn/hateful-twitters-interpretability.ipynb) | Intepretability on Hateful Twitter Datasets |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn.html);<br> [open&nbsp;here](gcn/node-link-importance-demo-gcn.ipynb) | Interpreting Nodes and Edges by Saliency Maps in GCN |
+| [rendered](https://stellargraph.readthedocs.io/en/latest/demos/interpretability/gcn/node-link-importance-demo-gcn-sparse.html);<br> [open&nbsp;here](gcn/node-link-importance-demo-gcn-sparse.ipynb) | Interpreting Nodes and Edges by Saliency Maps in GCN (sparse) |
 <!-- DOCS LINKS -->
