@@ -34,7 +34,7 @@ from scipy.special import softmax
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from ..core.validation import require_integer_in_range
+from ..core.validation import require_integer_in_range, comma_sep
 from ..random import random_state
 from abc import ABC, abstractmethod
 
@@ -352,6 +352,32 @@ class BiasedRandomWalk(RandomWalk):
         self.p = p
         self.q = q
         self.weighted = weighted
+        self._checked_weights = False
+
+        if weighted:
+            self._check_weights_valid()
+
+    def _check_weights_valid(self):
+        if self._checked_weights:
+            # we only need to check the weights once, either in the constructor or in run, whichever
+            # sets `weighted=True` first
+            return
+
+        # Check that all edge weights are greater than or equal to 0.
+        edges, weights = self.graph.edges(include_edge_weight=True, use_ilocs=True)
+        (invalid,) = np.where((weights < 0) | ~np.isfinite(weights))
+        if len(invalid) > 0:
+
+            def format(idx):
+                s, t = edges[idx]
+                w = weights[idx]
+                return f"{s!r} to {t!r} (weight = {w})"
+
+            raise ValueError(
+                f"graph: expected all edge weights to be non-negative and finite, found some negative or infinite: {comma_sep(invalid, stringify=format)}"
+            )
+
+        self._checked_weights = True
 
     def run(
         self, nodes, *, n=None, length=None, p=None, q=None, seed=None, weighted=None
@@ -386,32 +412,7 @@ class BiasedRandomWalk(RandomWalk):
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
         if weighted:
-            # Check that all edge weights are greater than or equal to 0.
-            # Also, if the given graph is a MultiGraph, then check that there are no two edges between
-            # the same two nodes with different weights.
-            for node in self.graph.nodes():
-                # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbors(node, use_ilocs=True):
-
-                    wts = set()
-                    name = f"Edge weight between ({node}) and ({neighbor})"
-                    for weight in self.graph._edge_weights(node, neighbor):
-                        weight_is_valid = (
-                            isinstance(weight, (float, int))
-                            and np.isfinite(weight)
-                            and weight >= 0
-                        )
-                        if not weight_is_valid:
-                            raise ValueError(
-                                f"{name}: expected numeric value greater than or equal to 0, found {weight}"
-                            )
-                        wts.add(weight)
-                    if len(wts) > 1:
-                        # multigraph with different weights on edges between same pair of nodes
-                        raise ValueError(
-                            f"{name}: expected all edges between two particular nodes to have the "
-                            f"same weight value, found {list(wts)}"
-                        )
+            self._check_weights_valid()
 
         ip = 1.0 / p
         iq = 1.0 / q

@@ -155,7 +155,12 @@ class TestBiasedWeightedRandomWalk(object):
 
         biasedrw = BiasedRandomWalk(g)
 
-        with pytest.raises(ValueError):
+        neg_message = r"graph: expected all edge weights to be non-negative and finite, found some negative or infinite: 1 to 2 \(weight = -2\)"
+
+        with pytest.raises(ValueError, match=neg_message):
+            BiasedRandomWalk(g, weighted=True)
+
+        with pytest.raises(ValueError, match=neg_message):
             biasedrw.run(
                 nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
             )
@@ -165,7 +170,11 @@ class TestBiasedWeightedRandomWalk(object):
 
         biasedrw = BiasedRandomWalk(g)
 
-        with pytest.raises(ValueError):
+        inf_message = r"graph: expected all edge weights to be non-negative and finite, found some negative or infinite: 1 to 2 \(weight = inf\)"
+        with pytest.raises(ValueError, match=inf_message):
+            BiasedRandomWalk(g, weighted=True)
+
+        with pytest.raises(ValueError, match=inf_message):
             biasedrw.run(
                 nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
             )
