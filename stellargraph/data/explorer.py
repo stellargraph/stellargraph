@@ -414,6 +414,28 @@ class BiasedRandomWalk(RandomWalk):
         if weighted:
             self._check_weights_valid()
 
+            # calculate the appropriate unnormalised transition probability, given the history of
+            # the walk
+            def transition_probability(nn, current_node):
+                weight = self.graph._edge_weights(current_node, nn, use_ilocs=True)[0]
+
+                if nn == previous_node:  # d_tx = 0
+                    return ip * weight
+                elif nn in previous_node_neighbours:  # d_tx = 1
+                    return weight
+                else:  # d_tx = 2
+                    return iq * weight
+
+        else:
+            # without weights
+            def transition_probability(nn, current_node):
+                if nn == previous_node:  ## d_tx = 0
+                    return ip
+                elif nn in previous_node_neighbours:  # d_tx = 1
+                    return 1.0
+                else:  # d_tx = 2
+                    return iq
+
         ip = 1.0 / p
         iq = 1.0 / q
 
@@ -428,25 +450,6 @@ class BiasedRandomWalk(RandomWalk):
 
                 current_node = node
 
-                # calculate the appropriate unnormalised transition
-                # probability, given the history of the walk
-                def transition_probability(nn, current_node, weighted):
-
-                    if weighted:
-                        # TODO Encapsulate edge weights
-                        weight_cn = self.graph._edge_weights(
-                            current_node, nn, use_ilocs=True
-                        )[0]
-                    else:
-                        weight_cn = 1.0
-
-                    if nn == previous_node:  # d_tx = 0
-                        return ip * weight_cn
-                    elif nn in previous_node_neighbours:  # d_tx = 1
-                        return 1.0 * weight_cn
-                    else:  # d_tx = 2
-                        return iq * weight_cn
-
                 for _ in range(length - 1):
                     neighbours = self.graph.neighbors(current_node, use_ilocs=True)
 
@@ -457,10 +460,7 @@ class BiasedRandomWalk(RandomWalk):
                     # appropriate transition probabilities
                     choice = naive_weighted_choices(
                         rs,
-                        (
-                            transition_probability(nn, current_node, weighted)
-                            for nn in neighbours
-                        ),
+                        (transition_probability(nn, current_node) for nn in neighbours),
                     )
 
                     previous_node = current_node
