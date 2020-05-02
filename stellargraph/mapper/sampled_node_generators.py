@@ -119,7 +119,7 @@ class BatchedNodeGenerator(Generator):
         Args:
             node_ids: an iterable of node IDs
             targets: a 2D array of numeric targets with shape
-                `(len(node_ids), target_size)`
+                ``(len(node_ids), target_size)``
             shuffle (bool): If True the node_ids will be shuffled at each
                 epoch, if False the node_ids will be processed in order.
 

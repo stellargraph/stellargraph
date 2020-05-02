@@ -106,7 +106,7 @@ class BatchedLinkGenerator(Generator):
         Args:
             link_ids: an iterable of tuples of node IDs as (source, target)
             targets: a 2D array of numeric targets with shape
-                `(len(link_ids), target_size)`
+                ``(len(link_ids), target_size)``
             shuffle (bool): If True the links will be shuffled at each
                 epoch, if False the links will be processed in order.
             seed (int, optional): Random seed
@@ -414,7 +414,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
         Returns:
             A list of the same length as `num_samples` of collected features from
-            the sampled nodes of shape: `(len(head_nodes), num_sampled_at_layer, feature_size)`
+            the sampled nodes of shape: ``(len(head_nodes), num_sampled_at_layer, feature_size)``
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """

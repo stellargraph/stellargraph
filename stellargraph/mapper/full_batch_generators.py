@@ -157,8 +157,8 @@ class FullBatchGenerator(Generator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids),)`
-                or `(len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -262,8 +262,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -348,8 +348,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         Args:
             link_ids: an iterable of link ids specified as tuples of node ids
                 or an array of shape (N_links, 2) specifying the links.
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids),)`
-                or `(len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -453,7 +453,7 @@ class RelationalFullBatchNodeGenerator(Generator):
         Args:
             node_ids: and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets: a 2D array of numeric node targets with shape ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with RGCN models
