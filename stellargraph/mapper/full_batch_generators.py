@@ -128,8 +128,8 @@ class FullBatchGenerator(Generator):
         elif self.method in ["ppnp"]:
             if self.use_sparse:
                 raise ValueError(
-                    "use_sparse=true' is incompatible with 'ppnp'."
-                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                    "sparse: method='ppnp' requires 'sparse=False', found 'sparse=True' "
+                    "(consider using the APPNP model for sparse support)"
                 )
             self.features, self.Aadj = PPNP_Aadj_feats_op(
                 features=self.features,
