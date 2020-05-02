@@ -423,10 +423,10 @@ class BiasedRandomWalk(RandomWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.graph.neighbors(node, use_ilocs=True)
+                previous_node = None
+                previous_node_neighbours = []
 
-                previous_node = node
-                previous_node_neighbours = neighbours
+                current_node = node
 
                 # calculate the appropriate unnormalised transition
                 # probability, given the history of the walk
@@ -447,28 +447,27 @@ class BiasedRandomWalk(RandomWalk):
                     else:  # d_tx = 2
                         return iq * weight_cn
 
-                if neighbours:
-                    current_node = rs.choice(neighbours)
-                    for _ in range(length - 1):
-                        walk.append(current_node)
-                        neighbours = self.graph.neighbors(current_node, use_ilocs=True)
+                for _ in range(length - 1):
+                    neighbours = self.graph.neighbors(current_node, use_ilocs=True)
 
-                        if not neighbours:
-                            break
+                    if not neighbours:
+                        break
 
-                        # select one of the neighbours using the
-                        # appropriate transition probabilities
-                        choice = naive_weighted_choices(
-                            rs,
-                            (
-                                transition_probability(nn, current_node, weighted)
-                                for nn in neighbours
-                            ),
-                        )
+                    # select one of the neighbours using the
+                    # appropriate transition probabilities
+                    choice = naive_weighted_choices(
+                        rs,
+                        (
+                            transition_probability(nn, current_node, weighted)
+                            for nn in neighbours
+                        ),
+                    )
 
-                        previous_node = current_node
-                        previous_node_neighbours = neighbours
-                        current_node = neighbours[choice]
+                    previous_node = current_node
+                    previous_node_neighbours = neighbours
+                    current_node = neighbours[choice]
+
+                    walk.append(current_node)
 
                 walks.append(list(self.graph.node_ilocs_to_ids(walk)))
 
