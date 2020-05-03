@@ -324,6 +324,10 @@ class TestMetaPathWalk(object):
         nodes = np.arange(0, 5)
         n = 5
         length = 5
-        metapaths = [["n-0", "n-1", "n-1", "n-0"], ["n-0", "n-1", "n-0"], ["n-0", "n-0"]]
+        metapaths = [
+            ["n-0", "n-1", "n-1", "n-0"],
+            ["n-0", "n-1", "n-0"],
+            ["n-0", "n-0"],
+        ]
 
         benchmark(lambda: mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths))
