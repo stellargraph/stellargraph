@@ -236,7 +236,7 @@ class Rst(Format):
             return ""
 
         if isinstance(cell, list):
-            return " ".join(self._render_cell(contents) for contents in cell)
+            return ", ".join(self._render_cell(contents) for contents in cell)
         else:
             return self._render_t(cell)
 
@@ -283,7 +283,7 @@ ALGORITHM = T("Algorithm")
 HETEROGENEOUS = T("Heter.", details="Heterogeneous")
 DIRECTED = T("Dir.", details="Directed")
 WEIGHTED = T("EW", details="Edge weights")
-TEMPORAL = T("T", details="Time-varying & temporal")
+TEMPORAL = T("T", details="Time-varying, temporal")
 FEATURES = T("NF", details="Node features")
 NC = index_link("NC", link="node-classification", details="Node classification")
 LP = index_link("LP", link="link-prediction", details="Link prediction")
@@ -340,7 +340,7 @@ class Algorithm:
         self.columns = {name: T.textify(value) for name, value in columns.items()}
 
 
-HETEROGENEOUS_EDGE = T("yes, edges", details="Multiple edges types")
+HETEROGENEOUS_EDGE = T("yes, edges", details="multiple edges types")
 
 
 def rl_us(link=None):
@@ -352,7 +352,7 @@ def rl_dgi(link="embeddings/deep-graph-infomax-cora"):
 
 
 def via_rl(link=None):
-    return T("via RL", link=link, details="Using embedding vectors",)
+    return T("via RL", link=link, details="via embedding vectors",)
 
 
 ALGORITHMS = [

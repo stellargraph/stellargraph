@@ -44,7 +44,7 @@ Find a demo for an algorithm
      - Heterogeneous
      - Directed
      - Edge weights
-     - Time-varying & temporal
+     - Time-varying, temporal
      - Node features
      - :any:`Node classification <node-classification/index>`
      - :any:`Link prediction <link-prediction/index>`
@@ -60,7 +60,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/gcn/gcn-cora-node-classification-example>`
      - :any:`demo <link-prediction/gcn/cora-gcn-links-example>`
-     - UnsupervisedSampler :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
      - see Cluster-GCN
      - :any:`demo <graph-classification/supervised-graph-classification>`
    *
@@ -77,7 +77,7 @@ Find a demo for an algorithm
      -
    *
      - Relational GCN (RGCN)
-     - Multiple edges types
+     - multiple edges types
      -
      -
      -
@@ -96,7 +96,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/gat/gat-cora-node-classification-example>`
      - yes
-     - UnsupervisedSampler :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
      -
      -
    *
@@ -120,7 +120,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
      - yes
-     - UnsupervisedSampler DeepGraphInfomax
+     - UnsupervisedSampler, DeepGraphInfomax
      -
      -
    *
@@ -132,7 +132,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
      - yes
-     - UnsupervisedSampler :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
      -
      -
    *
@@ -142,8 +142,8 @@ Find a demo for an algorithm
      -
      -
      -
-     - Using embedding vectors
-     - Using embedding vectors
+     - via embedding vectors
+     - via embedding vectors
      - :any:`demo <embeddings/graphwave-barbell>`
      -
      -
@@ -168,7 +168,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/graphsage/graphsage-cora-node-classification-example>`
      - :any:`demo <link-prediction/graphsage/cora-links-example>`
-     - :any:`UnsupervisedSampler <embeddings/embeddings-unsupervised-graphsage-cora>` :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - :any:`UnsupervisedSampler <embeddings/embeddings-unsupervised-graphsage-cora>`, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
      - :any:`demo <node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example>`
      -
    *
@@ -190,8 +190,8 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/node2vec/stellargraph-node2vec-weighted-random-walks>`
      -
      -
-     - :any:`Using embedding vectors <node-classification/node2vec/stellargraph-node2vec-node-classification>`
-     - :any:`Using embedding vectors <link-prediction/random-walks/cora-lp-demo>`
+     - :any:`via embedding vectors <node-classification/node2vec/stellargraph-node2vec-node-classification>`
+     - :any:`via embedding vectors <link-prediction/random-walks/cora-lp-demo>`
      - :any:`demo <embeddings/stellargraph-node2vec>`
      -
      -
@@ -202,8 +202,8 @@ Find a demo for an algorithm
      -
      -
      -
-     - Using embedding vectors
-     - Using embedding vectors
+     - via embedding vectors
+     - via embedding vectors
      - :any:`demo <embeddings/stellargraph-metapath2vec>`
      -
      -
@@ -214,8 +214,8 @@ Find a demo for an algorithm
      -
      - yes
      -
-     - Using embedding vectors
-     - :any:`Using embedding vectors <link-prediction/random-walks/ctdne-link-prediction>`
+     - via embedding vectors
+     - :any:`via embedding vectors <link-prediction/random-walks/ctdne-link-prediction>`
      - yes
      -
      -
@@ -226,31 +226,31 @@ Find a demo for an algorithm
      -
      -
      -
-     - :any:`Using embedding vectors <embeddings/watch-your-step-cora-demo>`
-     - Using embedding vectors
+     - :any:`via embedding vectors <embeddings/watch-your-step-cora-demo>`
+     - via embedding vectors
      - :any:`demo <embeddings/watch-your-step-cora-demo>`
      -
      -
    *
      - ComplEx
-     - Multiple edges types
+     - multiple edges types
      - yes
      -
      -
      -
-     - Using embedding vectors
+     - via embedding vectors
      - :any:`demo <link-prediction/knowledge-graphs/complex>`
      - yes
      -
      -
    *
      - DistMult
-     - Multiple edges types
+     - multiple edges types
      - yes
      -
      -
      -
-     - Using embedding vectors
+     - via embedding vectors
      - :any:`demo <link-prediction/knowledge-graphs/distmult>`
      - yes
      -

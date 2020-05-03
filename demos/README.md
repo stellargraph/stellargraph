@@ -32,7 +32,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <th><span title='Heterogeneous'>Heter.</span></th>
     <th><span title='Directed'>Dir.</span></th>
     <th><span title='Edge weights'>EW</span></th>
-    <th><span title='Time-varying & temporal'>T</span></th>
+    <th><span title='Time-varying, temporal'>T</span></th>
     <th><span title='Node features'>NF</span></th>
     <th><span title='Node classification'><a href='node-classification/README.md'>NC</a></span></th>
     <th><span title='Link prediction'><a href='link-prediction/README.md'>LP</a></span></th>
@@ -71,7 +71,7 @@ The demo notebooks can be run without any installation of Python by using Binder
   </tr>
   <tr>
     <td><span title='Relational GCN (RGCN)'>RGCN</span></td>
-    <td><span title='Multiple edges types'>yes, edges</span></td>
+    <td><span title='multiple edges types'>yes, edges</span></td>
     <td></td>
     <td></td>
     <td></td>
@@ -150,8 +150,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
     <td><a href='embeddings/graphwave-barbell.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -205,8 +205,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='Using embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via RL</a></span></td>
-    <td><span title='Using embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via RL</a></span></td>
     <td><a href='embeddings/stellargraph-node2vec.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -218,8 +218,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
     <td><a href='embeddings/stellargraph-metapath2vec.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -231,8 +231,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td>yes</td>
     <td></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
-    <td><span title='Using embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via RL</a></span></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -244,20 +244,20 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='Using embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via RL</a></span></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
     <td><a href='embeddings/watch-your-step-cora-demo.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
   <tr>
     <td>ComplEx</td>
-    <td><span title='Multiple edges types'>yes, edges</span></td>
+    <td><span title='multiple edges types'>yes, edges</span></td>
     <td>yes</td>
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
     <td><a href='link-prediction/knowledge-graphs/complex.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
@@ -265,12 +265,12 @@ The demo notebooks can be run without any installation of Python by using Binder
   </tr>
   <tr>
     <td>DistMult</td>
-    <td><span title='Multiple edges types'>yes, edges</span></td>
+    <td><span title='multiple edges types'>yes, edges</span></td>
     <td>yes</td>
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via RL</span></td>
     <td><a href='link-prediction/knowledge-graphs/distmult.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
