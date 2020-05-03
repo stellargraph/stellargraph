@@ -342,9 +342,7 @@ class EdgeData(ElementData):
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(
-        self, shared, type_starts, node_data=None, node_default_type=NODE_TYPE_DEFAULT
-    ):
+    def __init__(self, shared, type_starts, nodes):
         super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
@@ -352,33 +350,27 @@ class EdgeData(ElementData):
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
 
-        if node_data is not None:
-            # if node_data is provided, we should validate all the node IDs that occur in the edge data, and use the
-            # node types when building the adjacency lists grouped by type
-            try:
-                source_ilocs = node_data.ids.to_iloc(
-                    self.sources, smaller_type=False, strict=True
-                )
-                target_ilocs = node_data.ids.to_iloc(
-                    self.targets, smaller_type=False, strict=True
-                )
-            except KeyError as e:
-                missing_values = e.args[0]
-                if not is_real_iterable(missing_values):
-                    missing_values = [missing_values]
-                missing_values = pd.unique(missing_values)
+        source_ilocs = nodes.ids.to_iloc(self.sources, smaller_type=False, strict=True)
+        target_ilocs = nodes.ids.to_iloc(self.targets, smaller_type=False, strict=True)
+        self.source_types = nodes.type_of_iloc(source_ilocs)
+        self.target_types = nodes.type_of_iloc(target_ilocs)
 
-                raise ValueError(
-                    f"edges: expected all source and target node IDs to be contained in `nodes`, "
-                    f"found some missing: {comma_sep(missing_values)}"
-                )
-            self.source_types = node_data.type_of_iloc(source_ilocs)
-            self.target_types = node_data.type_of_iloc(target_ilocs)
-        else:
-            # use default node type
-            self.source_types = (node_default_type for _ in range(len(self.sources)))
-            self.target_types = (node_default_type for _ in range(len(self.sources)))
+        # These are lazily initialized, to only pay the (construction) time and memory cost when
+        # actually using them
+        self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
 
+        self._edges_index_by_other_node_type = AdjIndex(
+            lambda: self._init_edge_index_by_other_node_type(ins=True, outs=True),
+            lambda: self._init_edge_index_by_other_node_type(ins=True, outs=False),
+            lambda: self._init_edge_index_by_other_node_type(ins=False, outs=True),
+        )
+
+        # when there's no neighbors for something, an empty array should be returned; this uses a
+        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
+        # array, the result will still be int32).
+        self._empty_ilocs = np.array([], dtype=np.uint8)
+
+    def _init_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
         out_dict = {}
@@ -403,17 +395,6 @@ class EdgeData(ElementData):
             lambda: _numpyise(in_dict, dtype=dtype),
             lambda: _numpyise(out_dict, dtype=dtype),
         )
-
-        self._edges_index_by_other_node_type = AdjIndex(
-            lambda: self._init_edge_index_by_other_node_type(ins=True, outs=True),
-            lambda: self._init_edge_index_by_other_node_type(ins=True, outs=False),
-            lambda: self._init_edge_index_by_other_node_type(ins=False, outs=True),
-        )
-
-        # when there's no neighbors for something, an empty array should be returned; this uses a
-        # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
-        # array, the result will still be int32).
-        self._empty_ilocs = np.array([], dtype=np.uint8)
 
     def _init_edge_index_by_other_node_type(self, *, ins, outs):
         index = {}

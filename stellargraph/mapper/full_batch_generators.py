@@ -128,8 +128,8 @@ class FullBatchGenerator(Generator):
         elif self.method in ["ppnp"]:
             if self.use_sparse:
                 raise ValueError(
-                    "use_sparse=true' is incompatible with 'ppnp'."
-                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                    "sparse: method='ppnp' requires 'sparse=False', found 'sparse=True' "
+                    "(consider using the APPNP model for sparse support)"
                 )
             self.features, self.Aadj = PPNP_Aadj_feats_op(
                 features=self.features,
@@ -179,10 +179,9 @@ class FullBatchGenerator(Generator):
         # [(source, target), ...]
         node_ids = np.asarray(node_ids)
         flat_node_ids = node_ids.reshape(-1)
-        flat_node_indices = self.graph._get_index_for_nodes(flat_node_ids)
+        flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
         # back to the original shape
         node_indices = flat_node_indices.reshape(node_ids.shape)
-
         if self.use_sparse:
             return SparseFullBatchSequence(
                 self.features, self.Aadj, targets, node_indices
@@ -470,7 +469,7 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        node_indices = self.graph._get_index_for_nodes(node_ids)
+        node_indices = self.graph.node_ids_to_ilocs(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
