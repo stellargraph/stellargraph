@@ -762,7 +762,7 @@ def test_benchmark_get_features(
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [False, True])
+@pytest.mark.parametrize("force_adj_lists", [None, "homogeneous", "by_other_node_type"])
 def test_benchmark_creation(
     benchmark, feature_size, num_nodes, num_edges, force_adj_lists
 ):
@@ -772,8 +772,10 @@ def test_benchmark_creation(
 
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists:
+        if force_adj_lists == "homogeneous":
             sg._edges._edges_index.force_init()
+        if force_adj_lists == "by_other_node_type":
+            sg._edges._edges_index_by_other_node_type.force_init()
         return sg
 
     benchmark(f)
@@ -786,7 +788,7 @@ def test_benchmark_creation(
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [False, True])
+@pytest.mark.parametrize("force_adj_lists", [None, "homogeneous", "by_other_node_type"])
 def test_allocation_benchmark_creation(
     allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
 ):
@@ -796,8 +798,10 @@ def test_allocation_benchmark_creation(
 
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists:
+        if force_adj_lists == "homogeneous":
             sg._edges._edges_index.force_init()
+        if force_adj_lists == "by_other_node_type":
+            sg._edges._edges_index_by_other_node_type.force_init()
         return sg
 
     allocation_benchmark(f)
