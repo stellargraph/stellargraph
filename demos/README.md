@@ -29,10 +29,10 @@ The demo notebooks can be run without any installation of Python by using Binder
 <table>
   <tr>
     <th>Algorithm</th>
-    <th><span title='Heterogeneous graphs'>Heter.</span></th>
+    <th><span title='Heterogeneous'>Heter.</span></th>
     <th><span title='Directed'>Dir.</span></th>
     <th><span title='Edge weights'>EW</span></th>
-    <th><span title='Time-varying or temporal graphs'>T</span></th>
+    <th><span title='Time-varying & temporal'>T</span></th>
     <th><span title='Node features'>NF</span></th>
     <th><span title='Node classification'><a href='node-classification/README.md'>NC</a></span></th>
     <th><span title='Link prediction'><a href='link-prediction/README.md'>LP</a></span></th>
@@ -41,7 +41,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <th><span title='Graph classification'><a href='graph-classification/README.md'>GC</a></span></th>
   </tr>
   <tr>
-    <td><span title='Graph Convolutional Network'>GCN</span></td>
+    <td><span title='Graph Convolutional Network (GCN)'>GCN</span></td>
     <td>see RGCN</td>
     <td></td>
     <td></td>
@@ -50,8 +50,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/gcn/gcn-cora-node-classification-example.ipynb'>demo</a></td>
     <td><a href='link-prediction/gcn/cora-gcn-links-example.ipynb'>demo</a></td>
     <td>
-      <span title='UnsupervisedSampler, using link prediction'>US</span>
-      <span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='UnsupervisedSampler'>US</span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
     </td>
     <td>see Cluster-GCN</td>
     <td><a href='graph-classification/supervised-graph-classification.ipynb'>demo</a></td>
@@ -70,8 +70,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
   </tr>
   <tr>
-    <td><span title='Relational GCN'>RGCN</span></td>
-    <td><span title='Multiple edges types and one node type'>yes, edges</span></td>
+    <td><span title='Relational GCN (RGCN)'>RGCN</span></td>
+    <td><span title='Multiple edges types'>yes, edges</span></td>
     <td></td>
     <td></td>
     <td></td>
@@ -83,7 +83,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
   </tr>
   <tr>
-    <td><span title='Graph ATtention Network'>GAT</span></td>
+    <td><span title='Graph ATtention Network (GAT)'>GAT</span></td>
     <td></td>
     <td></td>
     <td></td>
@@ -92,14 +92,14 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/gat/gat-cora-node-classification-example.ipynb'>demo</a></td>
     <td>yes</td>
     <td>
-      <span title='UnsupervisedSampler, using link prediction'>US</span>
-      <span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='UnsupervisedSampler'>US</span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
     </td>
     <td></td>
     <td></td>
   </tr>
   <tr>
-    <td><span title='Simplified Graph Convolution'>SGC</span></td>
+    <td><span title='Simplified Graph Convolution (SGC)'>SGC</span></td>
     <td></td>
     <td></td>
     <td></td>
@@ -112,7 +112,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
   </tr>
   <tr>
-    <td><span title='Personalized Propagation of Neural Predictions'>PPNP</span></td>
+    <td><span title='Personalized Propagation of Neural Predictions (PPNP)'>PPNP</span></td>
     <td></td>
     <td></td>
     <td></td>
@@ -121,14 +121,14 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/ppnp/ppnp-cora-node-classification-example.ipynb'>demo</a></td>
     <td>yes</td>
     <td>
-      <span title='UnsupervisedSampler, using link prediction'>US</span>
-      <span title='DeepGraphInfomax, using mutual information'>DGI</span>
+      <span title='UnsupervisedSampler'>US</span>
+      <span title='DeepGraphInfomax'>DGI</span>
     </td>
     <td></td>
     <td></td>
   </tr>
   <tr>
-    <td><span title='Approximate PPNP'>APPNP</span></td>
+    <td><span title='Approximate PPNP (APPNP)'>APPNP</span></td>
     <td></td>
     <td></td>
     <td></td>
@@ -137,8 +137,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/ppnp/ppnp-cora-node-classification-example.ipynb'>demo</a></td>
     <td>yes</td>
     <td>
-      <span title='UnsupervisedSampler, using link prediction'>US</span>
-      <span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='UnsupervisedSampler'>US</span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
     </td>
     <td></td>
     <td></td>
@@ -150,8 +150,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
     <td><a href='embeddings/graphwave-barbell.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -179,8 +179,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/graphsage/graphsage-cora-node-classification-example.ipynb'>demo</a></td>
     <td><a href='link-prediction/graphsage/cora-links-example.ipynb'>demo</a></td>
     <td>
-      <span title='UnsupervisedSampler, using link prediction'><a href='embeddings/embeddings-unsupervised-graphsage-cora.ipynb'>US</a></span>
-      <span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='UnsupervisedSampler'><a href='embeddings/embeddings-unsupervised-graphsage-cora.ipynb'>US</a></span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
     </td>
     <td><a href='node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.ipynb'>demo</a></td>
     <td></td>
@@ -194,7 +194,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td>yes</td>
     <td>yes</td>
     <td><a href='link-prediction/hinsage/movielens-recommender.ipynb'>demo</a></td>
-    <td><span title='DeepGraphInfomax, using mutual information'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
+    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
     <td>yes</td>
     <td></td>
   </tr>
@@ -205,8 +205,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td><a href='node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via RL</a></span></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via RL</a></span></td>
+    <td><span title='Using embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via RL</a></span></td>
+    <td><span title='Using embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via RL</a></span></td>
     <td><a href='embeddings/stellargraph-node2vec.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -218,8 +218,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
     <td><a href='embeddings/stellargraph-metapath2vec.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -231,8 +231,8 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td>yes</td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via RL</a></span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via RL</a></span></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -244,20 +244,20 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via RL</a></span></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via RL</a></span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
     <td><a href='embeddings/watch-your-step-cora-demo.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
   <tr>
     <td>ComplEx</td>
-    <td><span title='Multiple edges types and one node type'>yes, edges</span></td>
+    <td><span title='Multiple edges types'>yes, edges</span></td>
     <td>yes</td>
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
     <td><a href='link-prediction/knowledge-graphs/complex.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
@@ -265,12 +265,12 @@ The demo notebooks can be run without any installation of Python by using Binder
   </tr>
   <tr>
     <td>DistMult</td>
-    <td><span title='Multiple edges types and one node type'>yes, edges</span></td>
+    <td><span title='Multiple edges types'>yes, edges</span></td>
     <td>yes</td>
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='As a downstream task by training a classifier on reprentation/embedding vectors'>via RL</span></td>
+    <td><span title='Using embedding vectors'>via RL</span></td>
     <td><a href='link-prediction/knowledge-graphs/distmult.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
