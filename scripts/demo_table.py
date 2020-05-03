@@ -352,11 +352,7 @@ def rl_dgi(link="embeddings/deep-graph-infomax-cora"):
 
 
 def via_rl(link=None):
-    return T(
-        "via RL",
-        link=link,
-        details="Using embedding vectors",
-    )
+    return T("via RL", link=link, details="Using embedding vectors",)
 
 
 ALGORITHMS = [
