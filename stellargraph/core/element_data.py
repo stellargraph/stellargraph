@@ -338,9 +338,7 @@ class EdgeData(ElementData):
     Args:
         shared (pandas DataFrame): information for the edges
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
-        node_data (NodeData, optional): node data containing node types and IDs. If not provided, all nodes are assumed
-            to be of default type.
-        node_default_type (string, optional): default node type to use when there's no node data provided
+        nodes (NodeData): node data containing node types and IDs
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
