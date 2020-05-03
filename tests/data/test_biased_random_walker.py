@@ -20,7 +20,7 @@ import pytest
 import networkx as nx
 from stellargraph.data.explorer import BiasedRandomWalk
 from stellargraph.core.graph import StellarGraph
-from ..test_utils.graphs import create_test_graph
+from ..test_utils.graphs import create_test_graph, example_graph_random
 
 
 # FIXME (#535): Consider using graph fixtures
@@ -209,11 +209,11 @@ class TestBiasedWeightedRandomWalk(object):
         g[4][1]["wt"] = 4
 
     def test_benchmark_biasedweightedrandomwalk(self, benchmark):
-        g = create_test_weighted_graph()
+        g = example_graph_random(n_nodes=100, n_edges=500)
         biasedrw = BiasedRandomWalk(g)
 
-        nodes = ["0"]
-        n = 5
+        nodes = np.arange(0, 50)
+        n = 2
         p = 2
         q = 3
         length = 5
@@ -527,11 +527,11 @@ class TestBiasedRandomWalk(object):
         }
 
     def test_benchmark_biasedrandomwalk(self, benchmark):
-        g = create_test_graph()
+        g = example_graph_random(n_nodes=100, n_edges=500)
         biasedrw = BiasedRandomWalk(g)
 
-        nodes = ["0"]
-        n = 5
+        nodes = np.arange(0, 50)
+        n = 2
         p = 2
         q = 3
         length = 5
