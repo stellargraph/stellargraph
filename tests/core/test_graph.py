@@ -773,7 +773,7 @@ def test_benchmark_creation(
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
         if force_adj_lists:
-            sg._edges._init_adj_lists()
+            sg._edges._edges_index.force_init()
         return sg
 
     benchmark(f)
@@ -797,7 +797,7 @@ def test_allocation_benchmark_creation(
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
         if force_adj_lists:
-            sg._edges._init_adj_lists()
+            sg._edges._edges_index.force_init()
         return sg
 
     allocation_benchmark(f)
@@ -914,7 +914,7 @@ def test_in_nodes_weighted_hin(use_ilocs):
         graph.in_nodes(
             node, include_edge_weight=True, edge_types=["AB"], use_ilocs=use_ilocs
         ),
-        [],
+        [(3, 20.0)],
     )
 
 
@@ -974,7 +974,7 @@ def test_out_nodes_weighted_hin(use_ilocs):
         graph.out_nodes(
             node, include_edge_weight=True, edge_types=["AA"], use_ilocs=use_ilocs
         ),
-        [],
+        [(0, 2.0)],
     )
 
 

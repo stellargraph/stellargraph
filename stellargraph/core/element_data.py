@@ -305,24 +305,27 @@ def _numpyise(d, dtype):
 
 
 class AdjIndex:
-    def __init__(self, init_undirected, init_ins, init_outs):
-        self.init_undirected = init_undirected
-        self.init_ins = init_ins
-        self.init_outs = init_outs
+    def __init__(self, init_index):
+        self.init_index = init_index
         self.undirected = self.ins = self.outs = None
+
+    def force_init(self):
+        self.undirected = self.init_index(ins=True, outs=True)
+        self.ins = self.init_index(ins=True, outs=False)
+        self.outs = self.init_index(ins=False, outs=True)
 
     def lookup(self, *, ins, outs):
         if ins and outs:
             if self.undirected is None:
-                self.undirected = self.init_undirected()
+                self.undirected = self.init_index(ins=True, outs=True)
             return self.undirected
         if ins:
             if self.ins is None:
-                self.ins = self.init_ins()
+                self.ins = self.init_index(ins=True, outs=False)
             return self.ins
         if outs:
             if self.outs is None:
-                self.outs = self.init_outs()
+                self.outs = self.init_index(ins=False, outs=True)
             return self.outs
 
         raise ValueError(
@@ -350,19 +353,18 @@ class EdgeData(ElementData):
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
 
-        source_ilocs = nodes.ids.to_iloc(self.sources, smaller_type=False, strict=True)
-        target_ilocs = nodes.ids.to_iloc(self.targets, smaller_type=False, strict=True)
-        self.source_types = nodes.type_of_iloc(source_ilocs)
-        self.target_types = nodes.type_of_iloc(target_ilocs)
+        self.source_types = nodes.type_of_iloc(self.sources)
+        self.target_types = nodes.type_of_iloc(self.targets)
+
+        dtype = np.min_scalar_type(len(self.sources))
+        self.dtype = dtype
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
-        self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
+        self._edges_index = AdjIndex(self._init_edges_index)
 
         self._edges_index_by_other_node_type = AdjIndex(
-            lambda: self._init_edge_index_by_other_node_type(ins=True, outs=True),
-            lambda: self._init_edge_index_by_other_node_type(ins=True, outs=False),
-            lambda: self._init_edge_index_by_other_node_type(ins=False, outs=True),
+            self._init_edge_index_by_other_node_type
         )
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
@@ -370,31 +372,27 @@ class EdgeData(ElementData):
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
-    def _init_adj_lists(self):
-        # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = {}
-        out_dict = {}
-        undirected = {}
+    def _init_edges_index(self, *, ins, outs):
+        index = {}
+        edge_iter = enumerate(zip(self.sources, self.targets))
 
-        for i, (src, tgt, src_type, tgt_type) in enumerate(
-            zip(self.sources, self.targets, self.source_types, self.target_types)
-        ):
-            in_dict.setdefault(tgt, []).append(i)
-            out_dict.setdefault(src, []).append(i)
+        if ins and outs:
+            for i, (src, tgt) in edge_iter:
+                index.setdefault(tgt, []).append(i)
+                if src != tgt:
+                    index.setdefault(src, []).append(i)
+        elif ins:
+            for i, (src, tgt) in edge_iter:
+                index.setdefault(tgt, []).append(i)
+        elif outs:
+            for i, (src, tgt) in edge_iter:
+                index.setdefault(src, []).append(i)
+        else:
+            raise ValueError(
+                "expected at least one of 'ins' or 'outs' to be True, found neither"
+            )
 
-            undirected.setdefault(tgt, []).append(i)
-            if src != tgt:
-                undirected.setdefault(src, []).append(i)
-
-        dtype = np.min_scalar_type(len(self.sources))
-        self.dtype = dtype
-
-        # currently not very lazy
-        self._edges_index = AdjIndex(
-            lambda: _numpyise(undirected, dtype=dtype),
-            lambda: _numpyise(in_dict, dtype=dtype),
-            lambda: _numpyise(out_dict, dtype=dtype),
-        )
+        return _numpyise(index, self.dtype)
 
     def _init_edge_index_by_other_node_type(self, *, ins, outs):
         index = {}
@@ -435,25 +433,25 @@ class EdgeData(ElementData):
         adj = self._edges_index.lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
-    def edge_ilocs(self, node_id, *, ins, outs, other_node_type=None) -> np.ndarray:
+    def edge_ilocs(self, node_iloc, *, ins, outs, other_node_type=None) -> np.ndarray:
         """
-        Return the integer locations of the edges for the given node_id
+        Return the integer locations of the edges for the given node iloc
 
         Args:
-            node_id: the ID of the node
+            node_iloc: the iloc of the node
 
 
         Returns:
-            The integer locations of the edges for the given node_id.
+            The integer locations of the edges for the given node iloc.
         """
 
         if other_node_type is not None:
             return (
                 self._edges_index_by_other_node_type.lookup(ins=ins, outs=outs)
-                .get(node_id, {})
+                .get(node_iloc, {})
                 .get(other_node_type, self._empty_ilocs)
             )
         else:
             return self._edges_index.lookup(ins=ins, outs=outs).get(
-                node_id, self._empty_ilocs
+                node_iloc, self._empty_ilocs
             )
