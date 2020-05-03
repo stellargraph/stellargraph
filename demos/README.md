@@ -6,6 +6,8 @@
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/
 
 
+
+
 <!-- DOCS LINKS -->
 
 <!-- DEMO TABLE MARKER -->

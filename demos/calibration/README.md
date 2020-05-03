@@ -5,8 +5,10 @@
 
 These demos are displayed with detailed descriptions in the documentation: https://stellargraph.readthedocs.io/en/latest/demos/calibration/
 
-| Demo (link to documentation version) | Source |
+| Demo | Source |
 |---|---|
-| [Node Attribute Inference (multi-class) using GraphSAGE and the Pubmed-Diabetes citation network with calibration](https://stellargraph.readthedocs.io/en/latest/demos/calibration/calibration-pubmed-node-classification.html) | [source](calibration-pubmed-node-classification.ipynb) |
 | [Link prediction example and calibration: GraphSAGE on the PubMed-Diabetes citation dataset](https://stellargraph.readthedocs.io/en/latest/demos/calibration/calibration-pubmed-link-prediction.html) | [source](calibration-pubmed-link-prediction.ipynb) |
+| [Node Attribute Inference (multi-class) using GraphSAGE and the Pubmed-Diabetes citation network with calibration](https://stellargraph.readthedocs.io/en/latest/demos/calibration/calibration-pubmed-node-classification.html) | [source](calibration-pubmed-node-classification.ipynb) |
+
+The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->
