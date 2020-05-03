@@ -35,6 +35,9 @@ class ExternalIdIndex:
 
     def __init__(self, ids):
         self._index = pd.Index(ids)
+        # faster retrieval of the underlying numpy array (this shouldn't result in any additional
+        # memory use)
+        self._index_numpy_cache = self._index.to_numpy()
         self._dtype = np.min_scalar_type(len(self._index))
 
         if not self._index.is_unique:
@@ -101,11 +104,11 @@ class ExternalIdIndex:
             return internal_ids.astype(self._dtype)
         return internal_ids
 
-    def from_iloc(self, internal_ids) -> pd.Index:
+    def from_iloc(self, internal_ids) -> np.ndarray:
         """
         Convert integer locations to their corresponding external ID.
         """
-        return self._index[internal_ids]
+        return self._index_numpy_cache[internal_ids]
 
 
 class ElementData:
