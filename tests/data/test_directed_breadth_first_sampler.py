@@ -16,9 +16,10 @@
 
 import random
 import pytest
+import numpy as np
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph, tree_graph
+from ..test_utils.graphs import create_test_graph, tree_graph, example_graph_random
 
 
 class TestDirectedBreadthFirstNeighbours(object):
@@ -229,10 +230,10 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(subgraph[0][14]) == out_size[0] * out_size[1] * out_size[2]
 
     def test_benchmark_bfs_walk(self, benchmark):
-        g = create_test_graph(is_directed=True)
+        g = example_graph_random(n_nodes=100, n_edges=500, is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
-        nodes = [0]
+        nodes = np.arange(0, 50)
         n = 5
         in_size = [5, 5]
         out_size = [5, 5]
