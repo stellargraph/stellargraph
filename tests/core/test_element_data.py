@@ -42,18 +42,6 @@ def test_external_id_index_to_iloc(count, expected_missing):
     assert idx.to_iloc(["A"]) == expected_missing
 
 
-@pytest.mark.parametrize(
-    "dtype", [np.uint8, np.int, np.float32, np.float64, str, object]
-)
-def test_external_id_index_numpy_cache(dtype):
-    values = np.arange(10).astype(dtype)
-    idx = ExternalIdIndex(values)
-
-    # approximate validation that the cache of the underlying numpy array doesn't result in higher
-    # memory use: repeated to_numpy() calls should be all using the same memory
-    assert np.shares_memory(idx._index.to_numpy(), idx._index_numpy_cache)
-
-
 def test_benchmark_external_id_index_from_iloc(benchmark):
     N = 1000
     SIZE = 100
