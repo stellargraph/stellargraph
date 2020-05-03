@@ -45,7 +45,7 @@ class ClusterNodeGenerator(Generator):
 
     [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
 
-    For more information, please see the ClusterGCN demo: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see :doc:`the ClusterGCN demo <demos/node-classification/cluster-gcn/cluster-gcn-node-classification>`.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
