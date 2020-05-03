@@ -749,10 +749,14 @@ def example_weighted_hin(is_directed=True):
         nodes={"A": pd.DataFrame(index=[0, 1]), "B": pd.DataFrame(index=[2, 3])},
         edges={
             "AA": pd.DataFrame(
-                [(0, 1, 0.0), (0, 1, 1.0)], columns=edge_cols, index=[0, 1]
+                [(0, 1, 0.0), (0, 1, 1.0), (1, 0, 2.0)],
+                columns=edge_cols,
+                index=[0, 1, 2],
             ),
             "AB": pd.DataFrame(
-                [(1, 2, 10.0), (1, 3, 10.0)], columns=edge_cols, index=[2, 3]
+                [(1, 2, 10.0), (1, 3, 10.0), (3, 1, 20.0)],
+                columns=edge_cols,
+                index=[3, 4, 5],
             ),
         },
     )
@@ -768,14 +772,14 @@ def example_unweighted_hom(is_directed=True):
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_weighted_hin(is_directed):
     graph = example_weighted_hin(is_directed=is_directed)
-    assert_items_equal(graph.neighbors(1), [0, 0, 2, 3])
+    assert_items_equal(graph.neighbors(1), [0, 0, 0, 2, 3, 3])
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True),
-        [(0, 0.0), (0, 1.0), (2, 10.0), (3, 10.0)],
+        [(0, 0.0), (0, 1.0), (0, 2.0), (2, 10.0), (3, 10.0), (3, 20.0)],
     )
     assert_items_equal(
         graph.neighbors(1, include_edge_weight=True, edge_types=["AB"]),
-        [(2, 10.0), (3, 10.0)],
+        [(2, 10.0), (3, 10.0), (3, 20.0)],
     )
 
 
@@ -803,12 +807,12 @@ def test_undirected_hin_neighbor_methods():
 
 def test_in_nodes_weighted_hin():
     graph = example_weighted_hin()
-    assert_items_equal(graph.in_nodes(1), [0, 0])
+    assert_items_equal(graph.in_nodes(1), [0, 0, 3])
     assert_items_equal(
-        graph.in_nodes(1, include_edge_weight=True), [(0, 0.0), (0, 1.0)]
+        graph.in_nodes(1, include_edge_weight=True), [(0, 0.0), (0, 1.0), (3, 20.0)]
     )
     assert_items_equal(
-        graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]), []
+        graph.in_nodes(1, include_edge_weight=True, edge_types=["AB"]), [(3, 20.0)]
     )
 
 
@@ -821,19 +825,21 @@ def test_in_nodes_unweighted_hom():
     )
 
 
-@pytest.mark.parametrize("other_node_type,expected", [("A", [0, 0]), ("B", [2, 3])])
+@pytest.mark.parametrize(
+    "other_node_type,expected", [("A", [0, 0, 0]), ("B", [2, 3, 3])]
+)
 def test_neighbors_other_node_type(other_node_type, expected):
     graph = example_weighted_hin()
     assert_items_equal(graph.neighbors(1, other_node_type=other_node_type), expected)
 
 
-@pytest.mark.parametrize("other_node_type,expected", [("A", [0, 0]), ("B", [])])
+@pytest.mark.parametrize("other_node_type,expected", [("A", [0, 0]), ("B", [3])])
 def test_in_nodes_other_node_type(other_node_type, expected):
     graph = example_weighted_hin()
     assert_items_equal(graph.in_nodes(1, other_node_type=other_node_type), expected)
 
 
-@pytest.mark.parametrize("other_node_type,expected", [("A", []), ("B", [2, 3])])
+@pytest.mark.parametrize("other_node_type,expected", [("A", [0]), ("B", [2, 3])])
 def test_out_nodes_other_node_type(other_node_type, expected):
     graph = example_weighted_hin()
     assert_items_equal(graph.out_nodes(1, other_node_type=other_node_type), expected)
@@ -841,12 +847,12 @@ def test_out_nodes_other_node_type(other_node_type, expected):
 
 def test_out_nodes_weighted_hin():
     graph = example_weighted_hin()
-    assert_items_equal(graph.out_nodes(1), [2, 3])
+    assert_items_equal(graph.out_nodes(1), [0, 2, 3])
     assert_items_equal(
-        graph.out_nodes(1, include_edge_weight=True), [(2, 10.0), (3, 10.0)]
+        graph.out_nodes(1, include_edge_weight=True), [(0, 2.0), (2, 10.0), (3, 10.0)]
     )
     assert_items_equal(
-        graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]), []
+        graph.out_nodes(1, include_edge_weight=True, edge_types=["AA"]), [(0, 2.0)]
     )
 
 
