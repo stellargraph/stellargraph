@@ -5,10 +5,12 @@
     white-space: normal;
 }
 
-/* table can overhang the normal text width */
-.wy-table-responsive table {
-    background: white;
-}
-.wy-table-responsive {
-    overflow: visible;
+@media screen and (min-width: 1400px) {
+    /* if the screen is wide enough, allow the table to overhang the normal text width */
+    .wy-table-responsive table {
+        background: white;
+    }
+    .wy-table-responsive {
+        overflow: visible;
+    }
 }
