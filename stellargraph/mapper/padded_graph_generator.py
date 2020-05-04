@@ -41,6 +41,12 @@ class PaddedGraphGenerator(Generator):
     def __init__(self, graphs, name=None):
 
         self.node_features_size = None
+        self._check_graphs(graphs)
+
+        self.graphs = graphs
+        self.name = name
+
+    def _check_graphs(self, graphs):
         for graph in graphs:
             if not isinstance(graph, StellarGraph):
                 raise TypeError(
@@ -70,9 +76,6 @@ class PaddedGraphGenerator(Generator):
                     "graphs: expected node features for all graph to have same dimensions,"
                     f"found {self.node_features_size} vs {f_dim}"
                 )
-
-        self.graphs = graphs
-        self.name = name
 
     def num_batch_dims(self):
         return 1
@@ -134,6 +137,7 @@ class PaddedGraphGenerator(Generator):
 
         if isinstance(graph_ilocs[0], StellarGraph):
             graphs = graph_ilocs
+            self._check_graphs(graphs)
         else:
             graphs = [self.graphs[i] for i in graph_ilocs]
 
