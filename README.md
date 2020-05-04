@@ -27,9 +27,6 @@
   <a href="https://codecov.io/gh/stellargraph/stellargraph">
     <img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" />
   </a>
-  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
-    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
-  </a>
   <a href="https://pypi.org/project/stellargraph" alt="pypi downloads">
     <img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph">
   </a>
@@ -50,7 +47,6 @@
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
        * [Install StellarGraph in Anaconda Python](#Install-stellargraph-in-anaconda-python)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
-       * [Docker Image](#docker-image)
    * [Citing](#citing)
    * [References](#references)
 
@@ -240,13 +236,6 @@ Some of the examples in the `demos` directory require installing additional depe
 ```
 pip install .[demos]
 ```
-
-
-#### Docker Image
-
-* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
-
-Images can be pulled via `docker pull stellargraph/stellargraph`
 
 
 ## Citing
