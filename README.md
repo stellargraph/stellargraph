@@ -166,7 +166,7 @@ model.fit(generator.flow(train_targets.index, train_targets), epochs=5)
 print(f"Test set: loss = {loss}, accuracy = {accuracy}")
 ```
 
-This algorithm is spelled out in more detail in [its extended narrated notebook](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb). We provide [many more algorithms, each with a detailed example](https://github.com/stellargraph/stellargraph/tree/master/demos/).
+This algorithm is spelled out in more detail in [its extended narrated notebook](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn-node-classification.ipynb). We provide [many more algorithms, each with a detailed example](https://github.com/stellargraph/stellargraph/tree/master/demos/).
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
