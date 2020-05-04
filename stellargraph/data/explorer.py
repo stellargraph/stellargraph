@@ -416,7 +416,7 @@ class BiasedRandomWalk(RandomWalk):
 
             # calculate the appropriate unnormalised transition probability, given the history of
             # the walk
-            def transition_probability(nn, current_node):
+            def transition_probability(nn):
                 nn, weight = nn
 
                 if nn == previous_node:  # d_tx = 0
@@ -428,7 +428,7 @@ class BiasedRandomWalk(RandomWalk):
 
         else:
             # without weights
-            def transition_probability(nn, current_node):
+            def transition_probability(nn):
                 if nn == previous_node:  ## d_tx = 0
                     return ip
                 elif nn in previous_node_neighbours:  # d_tx = 1
