@@ -58,7 +58,10 @@ import warnings
 
 # the `link_inference` module is shadowed in `sg.layer` by the `link_inference` function, so these
 # layers need to be manually imported
-from .layer.link_inference import LinkEmbedding as _LinkEmbedding, LeakyClippedLinear as _LeakyClippedLinear
+from .layer.link_inference import (
+    LinkEmbedding as _LinkEmbedding,
+    LeakyClippedLinear as _LeakyClippedLinear,
+)
 
 custom_keras_layers = {
     class_.__name__: class_
