@@ -510,8 +510,8 @@ ALGORITHMS = [
     Algorithm(
         T("DGCNN", details="Deep Graph CNN"),
         features=True,
-        gc=T(link="graph-classification/dgcnn-graph-classification")
-    )
+        gc=T(link="graph-classification/dgcnn-graph-classification"),
+    ),
 ]
 
 
