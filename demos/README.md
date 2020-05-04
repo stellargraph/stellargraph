@@ -45,7 +45,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td>see RGCN</td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>see T-GCN</td>
     <td>yes</td>
     <td><a href='node-classification/gcn/gcn-cora-node-classification-example.ipynb'>demo</a></td>
     <td><a href='link-prediction/gcn/cora-gcn-links-example.ipynb'>demo</a></td>
@@ -78,6 +78,19 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td>yes</td>
     <td><a href='node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb'>demo</a></td>
     <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><span title='Temporal GCN, implemented as GCN-LSTM'>T-GCN</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>node features</td>
+    <td>time series, sequence</td>
+    <td><a href='time-series/gcn-lstm-LA.ipynb'>demo</a></td>
+    <td></td>
     <td></td>
     <td></td>
     <td></td>
@@ -280,16 +293,3 @@ The demo notebooks can be run without any installation of Python by using Binder
 <!-- DEMO TABLE MARKER -->
 
 See [the root README](../README.md) or each algorithm's documentation for the relevant citation(s).
-
-## Download the demos
-
-You can run download a local copy of the demos using the `curl` command below:
-
-```bash
-curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
-```
-
-The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
-
-- Using pip: `pip install stellargraph[demos]`
-- Using conda: `conda install -c stellargraph stellargraph`
