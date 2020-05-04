@@ -35,7 +35,7 @@ def test_generator_init():
     assert len(generator.graphs) == len(graphs)
 
 
-def test_generator_init_different_feature_numbers():
+def test_generator_different_feature_numbers():
     graphs_diff_num_features = [
         example_graph_random(feature_size=2, n_nodes=6),
         example_graph_random(feature_size=4, n_nodes=5),
@@ -46,6 +46,13 @@ def test_generator_init_different_feature_numbers():
         match="graphs: expected node features for all graph to have same dimensions,.*2.*4",
     ):
         generator = PaddedGraphGenerator(graphs=graphs_diff_num_features)
+
+    generator = PaddedGraphGenerator(graphs=graphs_diff_num_features[:1])
+    with pytest.raises(
+        ValueError,
+        match="graphs: expected node features for all graph to have same dimensions,.*2.*4",
+    ):
+        seq = generator.flow(graphs_diff_num_features)
 
 
 def test_generator_init_nx_graph():
@@ -62,7 +69,7 @@ def test_generator_init_nx_graph():
         generator = PaddedGraphGenerator(graphs=graphs_nx)
 
 
-def test_generator_init_hin():
+def test_generator_hin():
     graphs_mixed = [
         example_graph_random(feature_size=2, n_nodes=6),
         example_hin_1(is_directed=False),
@@ -74,8 +81,15 @@ def test_generator_init_hin():
     ):
         generator = PaddedGraphGenerator(graphs=graphs_mixed)
 
+    generator = PaddedGraphGenerator(graphs=graphs_mixed[:1])
+    with pytest.raises(
+        ValueError,
+        match="graphs: expected only graphs with a single node type.*found.*'A', 'B'",
+    ):
+        seq = generator.flow(graphs_mixed)
 
-def test_generator_init_empty():
+
+def test_generator_empty():
     graphs = [
         example_graph_random(feature_size=2, n_nodes=4),
         example_graph_random(feature_size=2, node_types=0, edge_types=0),
@@ -86,6 +100,13 @@ def test_generator_init_empty():
         match="graphs: expected every graph to be non-empty, found graph with no nodes",
     ):
         generator = PaddedGraphGenerator(graphs=graphs)
+
+    generator = PaddedGraphGenerator(graphs=graphs[:1])
+    with pytest.raises(
+        ValueError,
+        match="graphs: expected every graph to be non-empty, found graph with no nodes",
+    ):
+        seq = generator.flow(graphs)
 
 
 def test_generator_flow_invalid_batch_size():
