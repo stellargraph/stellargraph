@@ -751,6 +751,18 @@ class StellarGraph:
         assert len(type_sequence) == 1
         return type_sequence[0]
 
+    def vectorized_node_type(self, node_ilocs):
+        """
+        Get the type of the nodes
+
+        Args:
+            node_ilocs: a numpy array of node ilocs.
+
+        Returns:
+            a numpy array of node types
+        """
+        return self._nodes.type_of_iloc(node_ilocs)
+
     @property
     def node_types(self):
         """
