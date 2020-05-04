@@ -111,7 +111,7 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None, is_directed=False, self_loop=False
+    feature_sizes=None, is_directed=False, self_loop=False, reverse_order=False
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
@@ -121,19 +121,24 @@ def example_hin_1(
             return repeated_features(ids, feature_size)
 
     a_ids = [0, 1, 2, 3]
+    if reverse_order:
+        a_ids = a_ids[::-1]
     a = pd.DataFrame(features("A", a_ids), index=a_ids)
 
     b_ids = [4, 5, 6]
+    if reverse_order:
+        b_ids = b_ids[::-1]
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
-    r = pd.DataFrame(
-        [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)], columns=["source", "target"]
-    )
-    f_edges, f_index = [(4, 5)], [6]
+    r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
+    f_edges, f_index = [(4, 5)], [100]
     if self_loop:
-        # make it a multigraph
+        # make it a multigraph, across types and within a single one
+        r_edges.append((5, 5))
         f_edges.extend([(5, 5), (5, 5)])
-        f_index.extend([7, 8])
+        f_index.extend([101, 102])
+
+    r = pd.DataFrame(r_edges, columns=["source", "target"])
 
     # add some weights for the f edges, but not others
     f_columns = ["source", "target", "weight"]
@@ -309,3 +314,38 @@ def tree_graph() -> StellarGraph:
 @pytest.fixture
 def barbell():
     return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
+
+
+@pytest.fixture
+def weighted_hin():
+    a_ids = [0, 1, 2, 3]
+    a = pd.DataFrame(index=a_ids)
+
+    b_ids = [4, 5, 6]
+    b = pd.DataFrame(index=b_ids)
+
+    # no weights A-R->A
+    r_ids = [7, 8]
+    r = pd.DataFrame([(0, 1), (0, 2)], columns=["source", "target"], index=r_ids)
+
+    # single weighted edge A-S->A
+    s_ids = [9, 10]
+    s = pd.DataFrame([(0, 3, 2)], columns=["source", "target", "weight"], index=s_ids)
+
+    # 3 edges with same weight A-T->B
+    t_ids = [11, 12, 13]
+    t = pd.DataFrame(
+        [(0, 4, 2), (0, 5, 2), (0, 6, 2)],
+        columns=["source", "target", "weight"],
+        index=t_ids,
+    )
+
+    # weights [2, 3] A-U->A; weights [4, 5, 6] A-U->B
+    u_ids = [14, 15, 16, 17, 18]
+    u = pd.DataFrame(
+        [(1, 2, 2), (1, 3, 3), (1, 4, 4), (1, 4, 5), (6, 1, 5)],
+        columns=["source", "target", "weight"],
+        index=u_ids,
+    )
+
+    return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "S": s, "T": t, "U": u})

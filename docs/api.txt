@@ -5,7 +5,10 @@ Core
 ----------------
 
 .. automodule:: stellargraph
-  :members: StellarGraph, StellarDiGraph, GraphSchema
+  :members: StellarGraph, StellarDiGraph, GraphSchema,
+
+.. autodata:: custom_keras_layers
+   :annotation: = {...}
 
 
 Data
@@ -23,7 +26,7 @@ Generators
 
 
 Layers and models
------------
+-----------------
 
 .. automodule:: stellargraph.layer
 
@@ -150,6 +153,15 @@ GCN Supervised Graph Classification
 .. autoclass:: GCNSupervisedGraphClassification
   :members:
 
+Deep Graph Convolutional Neural Network
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: SortPooling
+  :members:
+
+.. autoclass:: DeepGraphCNN
+  :members:
+
 Deep Graph Infomax
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: DeepGraphInfomax
@@ -181,7 +193,7 @@ Calibration
 ------------------------
 
 .. automodule:: stellargraph.calibration
-  :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration, fit, predict
+  :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration
 
 Utilities
 ------------------------

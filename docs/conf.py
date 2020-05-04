@@ -6,6 +6,9 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+import urllib.parse
+import docutils
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -58,6 +61,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "recommonmark",
     "sphinx_markdown_tables",
+    "nbsphinx",
+    "nbsphinx_link",
 ]
 
 # Add mappings
@@ -87,7 +92,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "requirements.txt"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -190,3 +195,35 @@ texinfo_documents = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# -- StellarGraph customisation ----------------------------------------------
+
+
+class RewriteLinks(docutils.transforms.Transform):
+    # before NBSphinx's link processing
+    default_priority = 300
+
+    def apply(self):
+        env = self.document.settings.env
+        for node in self.document.traverse(docutils.nodes.reference):
+            refuri = node.get("refuri")
+            parsed = urllib.parse.urlparse(refuri)
+
+            if parsed.netloc == "" and parsed.path.endswith("README.md"):
+                # the notebooks include links to READMEs so that the links work locally and on
+                # Github, but on Read the Docs, the equivalent files are 'index', not 'README'.
+                new_path = parsed.path.replace("README.md", "index.txt")
+                new_components = (
+                    parsed.scheme,
+                    parsed.netloc,
+                    new_path,
+                    parsed.params,
+                    parsed.query,
+                    parsed.fragment,
+                )
+
+                node["refuri"] = urllib.parse.urlunparse(new_components)
+
+
+def setup(app):
+    app.add_transform(RewriteLinks)
