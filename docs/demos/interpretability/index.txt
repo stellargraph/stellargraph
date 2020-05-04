@@ -1,4 +1,4 @@
-Interpretability of node classification results using StellarGraph
+Interpretability of node classification results
 ==================================================================
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ has support for inspecting several different algorithms for :doc:`node classification <../node-classification/index>` to understand or interpret how they came to a decision. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
