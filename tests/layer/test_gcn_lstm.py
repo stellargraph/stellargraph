@@ -35,7 +35,7 @@ import pytest
 def get_timeseries_graph_data():
     featuresX = np.random.rand(10, 4, 5)
     featuresY = np.random.rand(10, 5)
-    adj = np.random.randint(0, 2, size=(5, 5))
+    adj = np.random.randint(0, 5, size=(5, 5))
     return featuresX, featuresY, adj
 
 
@@ -75,7 +75,38 @@ def test_gcn_lstm_model_parameters():
     assert len(gcn_lstm_model.lstm_layer_size) == len(gcn_lstm_model.lstm_activations)
 
 
-def test_lstm_layers():
+def test_gcn_lstm_activations():
+    fx, fy, a = get_timeseries_graph_data()
+
+    gcn_lstm_model = GraphConvolutionLSTM(
+        seq_len=fx.shape[-2], adj=a, gc_layers=5, lstm_layer_size=[8, 16, 32, 64],
+    )
+    assert gcn_lstm_model.gc_activations == ["relu", "relu", "relu", "relu", "relu"]
+    assert gcn_lstm_model.lstm_activations == ["tanh", "tanh", "tanh", "tanh"]
+
+    with pytest.raises(ValueError):
+        # More regularisers than layers
+        gcn_lstm_model = GraphConvolutionLSTM(
+            seq_len=fx.shape[-2],
+            adj=a,
+            gc_layers=2,
+            gc_activations=["relu"],
+            lstm_layer_size=[8, 16, 32, 64],
+        )
+
+    with pytest.raises(ValueError):
+        # More regularisers than layers
+        gcn_lstm_model = GraphConvolutionLSTM(
+            seq_len=fx.shape[-2],
+            adj=a,
+            gc_layers=1,
+            gc_activations=["relu"],
+            lstm_layer_size=[32],
+            lstm_activations=["tanh", "tanh"],
+        )
+
+
+def test_lstm_return_sequences():
     fx, fy, a = get_timeseries_graph_data()
 
     gcn_lstm_model = GraphConvolutionLSTM(
