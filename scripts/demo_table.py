@@ -385,7 +385,7 @@ ALGORITHMS = [
         lp=True,
     ),
     Algorithm(
-        T("T-GCN", details="Temporal GCN, implemented as GCN-LSTM"),
+        T("T-GCN", details="Temporal GCN (T-GCN), implemented as GCN-LSTM"),
         features="time series, sequence",
         temporal="node features",
         nc=T(link="time-series/gcn-lstm-LA"),

@@ -89,7 +89,7 @@ Find a demo for an algorithm
      -
      -
    *
-     - Temporal GCN, implemented as GCN-LSTM
+     - Temporal GCN (T-GCN), implemented as GCN-LSTM
      -
      -
      -

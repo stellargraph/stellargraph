@@ -83,7 +83,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
   </tr>
   <tr>
-    <td><span title='Temporal GCN, implemented as GCN-LSTM'>T-GCN</span></td>
+    <td><span title='Temporal GCN (T-GCN), implemented as GCN-LSTM'>T-GCN</span></td>
     <td></td>
     <td></td>
     <td></td>
