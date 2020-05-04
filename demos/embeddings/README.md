@@ -7,10 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [GCN Deep Graph Infomax on MovieLens](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-aifb.html) | [source](deep-graph-infomax-aifb.ipynb) |
-| [GCN Deep Graph Infomax on MovieLens](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-blogcatalog3.html) | [source](deep-graph-infomax-blogcatalog3.ipynb) |
 | [GCN Deep Graph Infomax on CORA](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-cora.html) | [source](deep-graph-infomax-cora.ipynb) |
-| [GCN Deep Graph Infomax on MovieLens](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/deep-graph-infomax-movielens.html) | [source](deep-graph-infomax-movielens.ipynb) |
 | [Graph representation learning through Unsupervised GraphSAGE](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/embeddings-unsupervised-graphsage-cora.html) | [source](embeddings-unsupervised-graphsage-cora.ipynb) |
 | [GraphWave aglorithm on a barbell graph](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/graphwave-barbell.html) | [source](graphwave-barbell.ipynb) |
 | [Node Representation Learning with attri2vec on Citeseer](https://stellargraph.readthedocs.io/en/latest/demos/embeddings/stellargraph-attri2vec-citeseer.html) | [source](stellargraph-attri2vec-citeseer.ipynb) |
