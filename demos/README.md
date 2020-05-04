@@ -289,6 +289,19 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td></td>
     <td></td>
   </tr>
+  <tr>
+    <td><span title='Deep Graph CNN'>DGCNN</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><a href='graph-classification/dgcnn-graph-classification.ipynb'>demo</a></td>
+  </tr>
 </table>
 <!-- DEMO TABLE MARKER -->
 
