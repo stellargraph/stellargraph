@@ -192,6 +192,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
+| TGCN [19] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
 
 ## Installation
 
