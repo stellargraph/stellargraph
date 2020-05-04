@@ -177,13 +177,15 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f"[![Open In Binder](https://mybinder.org/badge_logo.svg)]({self._binder_url(notebook_path)})"
+        # html needed to add the target="_parent" so that the links work from Github rendered notebooks
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
 
     def _colab_badge(self, notebook_path):
-        return f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({self._colab_url(notebook_path)})"
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
 
     def _badge_markdown(self, notebook_path):
-        return f"> Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}"
+        # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
+        return f"<table><tr><td>Run the latest release of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
@@ -194,6 +196,8 @@ if 'google.colab' in sys.modules:
         self.remove_tagged_cells_from_notebook(nb)
         badge_cell = nbformat.v4.new_markdown_cell(self._badge_markdown(notebook_path))
         self.tag_cell(badge_cell)
+        # badges are created separately in docs by nbsphinx prolog / epilog
+        hide_cell_from_docs(badge_cell)
         # the badges go after the first cell, unless the first cell is code
         if nb.cells[0].cell_type == "code":
             nb.cells.insert(0, badge_cell)
