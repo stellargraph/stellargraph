@@ -192,7 +192,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
-| TGCN [19] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
+| TGCN [19] | A Temporal Graph Convolutional Network for Traffic Prediction. |
 
 ## Installation
 
@@ -309,3 +309,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 17. Embedding Entities and Relations for Learning and Inference in Knowledge Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng, ICLR, 2015. arXiv:1412.6575 ([link](https://arxiv.org/pdf/1412.6575))
 
 18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf))
+
+19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. ([link](https://ieeexplore.ieee.org/document/8809901))
