@@ -21,6 +21,7 @@ import tensorflow as tf
 
 def _defined_in_stellargraph(obj):
     try:
+        print(obj, inspect.getfile(obj))
         return "stellargraph" in inspect.getfile(obj)
     except TypeError:
         return False
